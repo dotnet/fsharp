@@ -41,16 +41,16 @@ type ILReaderOptions =
 val mkDefault :  ILGlobals -> ILReaderOptions
 
 // The non-memory resources (i.e. the file handle) associated with 
-// the read can be recovered by calling CloseILModuleReader.  Any remaining 
+// the read can be recovered by calling Dispose.  Any remaining 
 // lazily-computed items in the metadata graph returned by MetadataOfILModuleReader 
 // will no longer be valid. 
 [<Sealed>]
 type ILModuleReader =
     member ILModuleDef : ILModuleDef
     member ILAssemblyRefs : ILAssemblyRef list
+    interface System.IDisposable
     
 val OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
-val CloseILModuleReader: ILModuleReader -> unit
 
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
