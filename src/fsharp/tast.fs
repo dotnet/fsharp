@@ -35,12 +35,12 @@ open Microsoft.FSharp.Core.CompilerServices
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
 //++GLOBAL MUTABLE STATE
-let newUnique = let i = ref 0L in fun () -> i := !i + 1L; !i
+let newUnique = let mutable i = 0L in fun () -> System.Threading.Interlocked.Increment(&i)
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 //++GLOBAL MUTABLE STATE
-let newStamp = let i = ref 0L in fun () -> i := !i + 1L; !i
+let newStamp = let mutable i = 0L in fun () -> System.Threading.Interlocked.Increment(&i)
 
 /// A global generator of compiler generated names
 // ++GLOBAL MUTABLE STATE

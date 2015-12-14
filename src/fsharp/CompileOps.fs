@@ -2371,13 +2371,10 @@ type AssemblyResolution =
         | Some(assref) -> assref
         | None ->
             let readerSettings : ILBinaryReader.ILReaderOptions = {pdbPath=None;ilGlobals = EcmaILGlobals;optimizeForMemory=false} // ??
-            let reader = ILBinaryReader.OpenILModuleReader this.resolvedPath readerSettings
-            try
-                let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-                this.ilAssemblyRef := Some(assRef)
-                assRef
-            finally 
-                ILBinaryReader.CloseILModuleReader reader
+            use reader = ILBinaryReader.OpenILModuleReader this.resolvedPath readerSettings
+            let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
+            this.ilAssemblyRef := Some(assRef)
+            assRef
 
 
 //----------------------------------------------------------------------------
@@ -2460,24 +2457,20 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
 #if SHADOW_COPY_REFERENCES
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
 #else
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
 #endif
-                try 
-                   let ilModule = ilReader.ILModuleDef
-                 
-                   match ilModule.ManifestOfAssembly.Version with 
-                   | Some(v1,v2,v3,_) -> 
-                       if v1 = 1us then 
-                           warning(Error(FSComp.SR.buildRequiresCLI2(filename),rangeStartup))
-                       let clrRoot = Some(Path.GetDirectoryName(Path.GetFullPath(filename)))
+                let ilModule = ilReader.ILModuleDef
+                match ilModule.ManifestOfAssembly.Version with 
+                | Some(v1,v2,v3,_) -> 
+                    if v1 = 1us then 
+                        warning(Error(FSComp.SR.buildRequiresCLI2(filename),rangeStartup))
+                    let clrRoot = Some(Path.GetDirectoryName(Path.GetFullPath(filename)))
 
-                       clrRoot, (int v1, sprintf "v%d.%d" v1 v2), (v1=5us && v2=0us && v3=5us) // SL5 mscorlib is 5.0.5.0
-                   | _ -> 
-                       failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
-                finally
-                   ILBinaryReader.CloseILModuleReader ilReader
+                    clrRoot, (int v1, sprintf "v%d.%d" v1 v2), (v1=5us && v2=0us && v3=5us) // SL5 mscorlib is 5.0.5.0
+                | _ -> 
+                    failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
             with _ -> 
                 error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
         | _ ->
@@ -2526,16 +2519,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             try 
 #if SHADOW_COPY_REFERENCES
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
 #else
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
+                use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
 #endif
-                try 
-                   checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
-                   let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
-                   fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
-                finally
-                   ILBinaryReader.CloseILModuleReader ilReader
+                checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
+                let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
+                fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
             with _ -> 
                 error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
         | _ ->
@@ -2790,12 +2780,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     else 
                         try
                             let readerSettings : ILBinaryReader.ILReaderOptions = {pdbPath=None;ilGlobals = EcmaILGlobals;optimizeForMemory=false}
-                            let reader = ILBinaryReader.OpenILModuleReader resolved readerSettings
-                            try
-                                let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-                                assRef.QualifiedName
-                            finally 
-                                ILBinaryReader.CloseILModuleReader reader
+                            use reader = ILBinaryReader.OpenILModuleReader resolved readerSettings
+                            let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
+                            assRef.QualifiedName
                         with e ->
                             ""
                 Some
@@ -3756,12 +3743,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #else
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData)
 #endif
-        tcImports.AttachDisposeAction(fun _ -> ILBinaryReader.CloseILModuleReader ilILBinaryReader);
+        tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
         error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message),m))
-
-
 
     (* auxModTable is used for multi-module assemblies *)
     member tcImports.MkLoaderForMultiModuleIlAssemblies m =

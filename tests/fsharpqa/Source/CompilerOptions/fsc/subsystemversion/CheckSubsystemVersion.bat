@@ -10,6 +10,8 @@ IF ERRORLEVEL 1 (
     )
 )
 
-link /dump /headers %1 | find "%2 subsystem version" > NUL
+SET LINK_EXE=%VS140COMNTOOLS%\..\..\VC\bin\link.exe
+
+"%LINK_EXE%" /dump /headers %1 | find "%2 subsystem version" > NUL
 IF ERRORLEVEL 1 EXIT /B 1
 EXIT /B 0
