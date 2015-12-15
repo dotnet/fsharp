@@ -52,8 +52,8 @@
       <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
-    <Compile Include="..\..\utils\reshaped_reflection.fs">
-      <Link>Reflection\reshaped_reflection.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>

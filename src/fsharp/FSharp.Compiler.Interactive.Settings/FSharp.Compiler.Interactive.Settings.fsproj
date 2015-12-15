@@ -23,8 +23,8 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
       <Link>Utilities/assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshaped_reflection.fs">
-      <Link>Reflection/reshaped_reflection.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="..\fsiattrs.fs">
       <Link>Utilities/fsiattrs.fs</Link>

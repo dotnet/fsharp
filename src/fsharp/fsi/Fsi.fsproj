@@ -33,8 +33,8 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>Utilities/assemblyinfo.fsi.exe.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshaped_reflection.fs">
-      <Link>Reflection/reshaped_reflection.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities/InternalCollections.fsi</Link>

@@ -22,8 +22,7 @@ open System.IO
 open System.Text
 open System.Threading
 open System.Reflection
-#if FX_NO_WINFORMS
-#else
+#if !FX_NO_WINFORMS
 open System.Windows.Forms
 #endif
 open Microsoft.FSharp.Compiler
@@ -66,8 +65,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 open System.Runtime.CompilerServices
-#if FX_NO_DEFAULT_DEPENDENCY_TYPE
-#else
+#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
@@ -227,8 +225,7 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
               | PrintExpr -> 
                   anyToLayoutCall.AnyToLayout(opts, x)
         with 
-#if FX_REDUCED_EXCEPTIONS
-#else
+#if !FX_REDUCED_EXCEPTIONS
         | :? ThreadAbortException -> Layout.wordL ""
 #endif
         | e ->
@@ -549,8 +546,7 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
             stopProcessingRecovery e range0; exit 1;
         inputFilesAcc
 
-#if FX_REDUCED_CONSOLE
-#else
+#if !FX_REDUCED_CONSOLE
     do 
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
@@ -627,8 +623,7 @@ let internal InstallErrorLoggingOnThisThread errorLogger =
     SetThreadErrorLoggerNoUnwind(errorLogger)
     SetThreadBuildPhaseNoUnwind(BuildPhase.Interactive)
 
-#if NO_SERVERCODEPAGES
-#else
+#if !NO_SERVERCODEPAGES
 /// Set the input/output encoding. The use of a thread is due to a known bug on 
 /// on Vista where calls to Console.InputEncoding can block the process.
 let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =     
@@ -1183,8 +1178,7 @@ module internal NativeMethods =
 
     type ControlEventHandler = delegate of int -> bool
 
-#if FX_REDUCED_CONSOLE
-#else
+#if !FX_REDUCED_CONSOLE
     [<DllImport("kernel32.dll")>]
     extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
 #endif
@@ -1814,8 +1808,7 @@ type internal FsiInteractionProcessor
             fsiInterruptController.InterruptAllowed <- InterruptIgnored;
             res
         with
-#if FX_REDUCED_EXCEPTIONS
-#else
+#if !FX_REDUCED_EXCEPTIONS
         | :? ThreadAbortException ->
            fsiInterruptController.InterruptRequest <- NoRequest;
            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
@@ -1935,8 +1928,7 @@ type internal FsiInteractionProcessor
         
     member processor.FsiOptions = fsiOptions
 
-#if FX_NO_WINFORMS
-#else
+#if !FX_NO_WINFORMS
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread
 //----------------------------------------------------------------------------
@@ -2010,8 +2002,7 @@ let internal TrySetUnhandledExceptionMode() =
       decr i;decr i;decr i;decr i;()
 #endif
 
-#if TODO_REWORK_SERVER
-#else
+#if !TODO_REWORK_SERVER
 //----------------------------------------------------------------------------
 // Server mode:
 //----------------------------------------------------------------------------
@@ -2174,8 +2165,7 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
               if !progress then fprintfn fsiConsoleOutput.Out "MAIN:  entering event loop...";
               fsi.EventLoop.Run()
             with
-#if FX_REDUCED_EXCEPTIONS
-#else
+#if !FX_REDUCED_EXCEPTIONS
             |  :? ThreadAbortException ->
               // If this TAE handler kicks it's almost certainly too late to save the
               // state of the process - the state of the message loop may have been corrupted 
@@ -2196,8 +2186,7 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
-#if NO_HEAPTERMINATION
-#else
+#if !NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #endif
 #if FX_LCIDFROMCODEPAGE
@@ -2213,8 +2202,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #endif
     let timeReporter = FsiTimeReporter(outWriter)
 
-#if FX_RESHAPED_CONSOLE
-#else
+#if !FX_RESHAPED_CONSOLE
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2294,8 +2282,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
       | None -> ()
 #endif
 
-#if NO_SERVERCODEPAGES
-#else
+#if !NO_SERVERCODEPAGES
     do 
       try 
           SetServerCodePages fsiOptions 
@@ -2378,16 +2365,14 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             console.SetCompletionFunction(fun (s1,s2) -> fsiIntellisenseProvider.CompletionsForPartialLID !istateRef (match s1 with | Some s -> s + "." + s2 | None -> s2)  |> Seq.ofList)
         | _ -> ()
 
-#if TODO_REWORK_SERVER
-#else
+#if !TODO_REWORK_SERVER
         if not runningOnMono && fsiOptions.IsInteractiveServer then 
             SpawnInteractiveServer (fsiOptions, fsiConsoleOutput, fsiInterruptController)
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Interactive)
 #endif
 
-#if TODO_REWORK_SERVER
-#else
+#if !TODO_REWORK_SERVER
         let threadException isFromThreadException exn = 
              fsi.EventLoop.Invoke (
                 fun () ->          
@@ -2462,8 +2447,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             let exitViaKillThread = fsiInterruptController.InstallKillThread(Thread.CurrentThread, pauseMilliseconds) 
             if !progress then fprintfn fsiConsoleOutput.Out "MAIN: got initial state, creating form";
 
-#if FX_NO_APP_DOMAINS
-#else
+#if !FX_NO_APP_DOMAINS
             // Route background exceptions to the exception handlers
             AppDomain.CurrentDomain.UnhandledException.Add (fun args -> 
                 match args.ExceptionObject with 
@@ -2471,8 +2455,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                 | _ -> ());
 #endif
 
-#if FX_NO_WINFORMS
-#else
+#if !FX_NO_WINFORMS
             if fsiOptions.Gui then 
                 try 
                     Application.EnableVisualStyles() 
@@ -2512,8 +2495,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]
-#if NO_LOADER_OPTIMIZATION
-#else
+#if !NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
 #endif
 let MainMain argv = 
@@ -2521,8 +2503,7 @@ let MainMain argv =
     let argv = System.Environment.GetCommandLineArgs()
 
     let evaluateSession () = 
-#if FX_REDUCED_CONSOLE
-#else
+#if !FX_REDUCED_CONSOLE
         // When VFSI is running, set the input/output encoding to UTF8.
         // Otherwise, unicode gets lost during redirection.
         // It is required only under Net4.5 or above (with unicode console feature).

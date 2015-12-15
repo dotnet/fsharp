@@ -32,11 +32,11 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
-    <Compile Include="..\..\utils\reshaped_reflection.fs">
-      <Link>Reflection\reshaped_reflection.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshaped_msbuild.fs">
-      <Link>Reflection\reshaped_msbuild.fs</Link>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Reflection\reshapedmsbuild.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>

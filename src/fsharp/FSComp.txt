@@ -1141,7 +1141,7 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1243,parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString,"Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters."
 1244,parsErrorParsingAsOperatorName,"Attempted to parse this as an operator name, but failed"
 1245,lexInvalidUnicodeLiteral,"\U%s is not a valid Unicode character escape sequence"
-# reshaped_msbuild.fs
+# reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version "%s" is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
 # Fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"

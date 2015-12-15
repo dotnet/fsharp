@@ -113,8 +113,8 @@
     <Compile Include="set.fs">
       <Link>Collections/set.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshaped_reflection.fs">
-      <Link>Reflection/reshaped_reflection.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="reflect.fsi">
       <Link>Reflection/reflect.fsi</Link>
