@@ -265,7 +265,6 @@ echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /outpu
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
 call :UPLOAD_XML "%XMLFILE%"
-
 goto :EOF
 
 :COMPILERUNIT
@@ -278,7 +277,6 @@ echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /outpu
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
 
 call :UPLOAD_XML "%XMLFILE%"
-
 goto :EOF
 
 :IDEUNIT
@@ -292,9 +290,6 @@ echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" 
      "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\Unittests.dll"
 popd
 call :UPLOAD_XML "%XMLFILE%"
-
-call :UPLOAD_XML
-
 goto :EOF
 
 :UPLOAD_XML
