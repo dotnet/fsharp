@@ -13,7 +13,7 @@ goto :USAGE
 set NUNITPATH=%~dp0\fsharpqa\testenv\bin\nunit\
 if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     pushd %~dp0
-    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    ..\.nuget\nuget.exe restore ..\packages.config -PackagesDirectory ..\packages
     call buildtesttools.cmd %FLAVOR%
     popd
 )

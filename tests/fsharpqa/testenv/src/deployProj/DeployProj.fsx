@@ -26,7 +26,7 @@ let GetArgumentFromCommandLine switchName defaultValue =
     | _ -> defaultValue
 
 let ProjectJson  = GetArgumentFromCommandLine       "--projectJson:"        @"tests\fsharp\project.json"
-let configFile   = GetArgumentFromCommandLine       "--configFile:"         @".nuget\nuget.config"
+let configFile   = GetArgumentFromCommandLine       "--nugetConfig:"        @".nuget\nuget.config"
 let ProjectJsonLock = GetArgumentFromCommandLine    "--projectJsonLock:"    @"tests\fsharp\project.lock.json"
 let PackagesDir  = GetArgumentFromCommandLine       "--packagesDir:"        @"packages"
 let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" @"DNXCore,Version=v5.0/win7-x64"

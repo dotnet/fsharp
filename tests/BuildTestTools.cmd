@@ -67,12 +67,14 @@ echo if not exist "%NUNITPATH%"
 if not exist "%NUNITPATH%" (
     echo here
     pushd %~dp0..
-    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    ..\.nuget\nuget.exe restore ..\packages.config -PackagesDirectory ..\packages
     popd
 )    
 
 echo %_fsiexe%
 rem deploy x86 version of compiler and dependencies
+echo %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/win7-x86 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x86 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\fsc\win7-x86 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:yes --v:quiet
+echo %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/win7-x86 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x86 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\win7-x86 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:no --v:quiet
 %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/win7-x86 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x86 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\fsc\win7-x86 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:yes --v:quiet
 %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/win7-x86 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x86 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\win7-x86 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:no --v:quiet
 
@@ -86,7 +88,7 @@ rem deploy linux version of built compiler
 
 rem deploy osx version of built compiler
 %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/osx.10.10-x64 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/ubuntu.14.04-x64 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\fsc\osx.10.10-x64 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:yes --v:quiet
-%_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx  --TargetPlatformName:DNXCore,Version=v5.0/osx.10.10-x64 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x64 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\osx.10.10-x64 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:no --v:quiet
+%_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/osx.10.10-x64 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x64 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\osx.10.10-x64 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:no --v:quiet
 
 echo  "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 xcopy "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y

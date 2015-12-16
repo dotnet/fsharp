@@ -174,12 +174,15 @@
           "lib/DNXCore50/System.Runtime.Loader.dll": {}
         }
       },
-      "System.Text.Encoding/4.0.0": {
+      "System.Text.Encoding/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Text.Encoding.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Text.Encoding.dll": {}
         }
       },
       "System.Threading/4.0.11-rc2-23604": {
@@ -191,12 +194,15 @@
           "ref/dotnet5.4/System.Threading.dll": {}
         }
       },
-      "System.Threading.Tasks/4.0.0": {
+      "System.Threading.Tasks/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Threading.Tasks.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Tasks.dll": {}
         }
       },
       "System.Threading.Thread/4.0.0-rc2-23604": {
@@ -569,6 +575,17 @@
           "lib/DNXCore50/System.Runtime.Loader.dll": {}
         }
       },
+      "System.Text.Encoding/4.0.10": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet/System.Text.Encoding.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Text.Encoding.dll": {}
+        }
+      },
       "System.Text.Encoding.Extensions/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )",
@@ -588,6 +605,17 @@
         },
         "compile": {
           "ref/dotnet5.4/System.Threading.dll": {}
+        }
+      },
+      "System.Threading.Tasks/4.0.10": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet/System.Threading.Tasks.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Tasks.dll": {}
         }
       },
       "System.Threading.Thread/4.0.0-rc2-23604": {
@@ -960,6 +988,17 @@
           "lib/DNXCore50/System.Runtime.Loader.dll": {}
         }
       },
+      "System.Text.Encoding/4.0.10": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet/System.Text.Encoding.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Text.Encoding.dll": {}
+        }
+      },
       "System.Text.Encoding.Extensions/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )",
@@ -979,6 +1018,17 @@
         },
         "compile": {
           "ref/dotnet5.4/System.Threading.dll": {}
+        }
+      },
+      "System.Threading.Tasks/4.0.10": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet/System.Threading.Tasks.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Tasks.dll": {}
         }
       },
       "System.Threading.Thread/4.0.0-rc2-23604": {
@@ -1165,12 +1215,15 @@
           "lib/DNXCore50/System.Runtime.Loader.dll": {}
         }
       },
-      "System.Text.Encoding/4.0.0": {
+      "System.Text.Encoding/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Text.Encoding.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Text.Encoding.dll": {}
         }
       },
       "System.Threading/4.0.11-rc2-23604": {
@@ -1182,12 +1235,15 @@
           "ref/dotnet5.4/System.Threading.dll": {}
         }
       },
-      "System.Threading.Tasks/4.0.0": {
+      "System.Threading.Tasks/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Threading.Tasks.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Tasks.dll": {}
         }
       },
       "System.Threading.Thread/4.0.0-rc2-23604": {
@@ -1374,12 +1430,15 @@
           "lib/DNXCore50/System.Runtime.Loader.dll": {}
         }
       },
-      "System.Text.Encoding/4.0.0": {
+      "System.Text.Encoding/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Text.Encoding.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Text.Encoding.dll": {}
         }
       },
       "System.Threading/4.0.11-rc2-23604": {
@@ -1391,12 +1450,15 @@
           "ref/dotnet5.4/System.Threading.dll": {}
         }
       },
-      "System.Threading.Tasks/4.0.0": {
+      "System.Threading.Tasks/4.0.10": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
         },
         "compile": {
           "ref/dotnet/System.Threading.Tasks.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Tasks.dll": {}
         }
       },
       "System.Threading.Thread/4.0.0-rc2-23604": {
@@ -2554,52 +2616,37 @@
         "[Content_Types].xml"
       ]
     },
-    "System.Text.Encoding/4.0.0": {
-      "sha512": "AMxFNOXpA6Ab8swULbXuJmoT2K5w6TnV3ObF5wsmEcIHQUJghoZtDVfVHb08O2wW15mOSI1i9Wg0Dx0pY13o8g==",
+    "System.Text.Encoding/4.0.10": {
+      "sha512": "fNlSFgy4OuDlJrP9SFFxMlaLazq6ipv15sU5TiEgg9UCVnA/OgoVUfymFp4AOk1jOkW5SVxWbeeIUptcM+m/Vw==",
       "type": "Package",
       "files": [
         "_rels/.rels",
         "System.Text.Encoding.nuspec",
-        "License.rtf",
-        "ref/dotnet/System.Text.Encoding.dll",
-        "ref/netcore50/System.Text.Encoding.dll",
-        "ref/win8/_._",
-        "lib/win8/_._",
-        "ref/net45/_._",
-        "lib/net45/_._",
-        "ref/MonoAndroid10/_._",
+        "lib/netcore50/System.Text.Encoding.dll",
+        "lib/DNXCore50/System.Text.Encoding.dll",
         "lib/MonoAndroid10/_._",
-        "ref/MonoTouch10/_._",
         "lib/MonoTouch10/_._",
-        "ref/wp80/_._",
-        "lib/wp80/_._",
-        "ref/wpa81/_._",
-        "lib/wpa81/_._",
-        "ref/xamarinios10/_._",
+        "lib/net46/_._",
         "lib/xamarinios10/_._",
-        "ref/xamarinmac20/_._",
         "lib/xamarinmac20/_._",
-        "ref/dotnet/zh-hant/System.Text.Encoding.xml",
-        "ref/netcore50/zh-hant/System.Text.Encoding.xml",
-        "ref/dotnet/de/System.Text.Encoding.xml",
-        "ref/netcore50/de/System.Text.Encoding.xml",
+        "ref/dotnet/System.Text.Encoding.dll",
         "ref/dotnet/System.Text.Encoding.xml",
-        "ref/netcore50/System.Text.Encoding.xml",
+        "ref/dotnet/zh-hant/System.Text.Encoding.xml",
+        "ref/dotnet/de/System.Text.Encoding.xml",
         "ref/dotnet/fr/System.Text.Encoding.xml",
-        "ref/netcore50/fr/System.Text.Encoding.xml",
         "ref/dotnet/it/System.Text.Encoding.xml",
-        "ref/netcore50/it/System.Text.Encoding.xml",
         "ref/dotnet/ja/System.Text.Encoding.xml",
-        "ref/netcore50/ja/System.Text.Encoding.xml",
         "ref/dotnet/ko/System.Text.Encoding.xml",
-        "ref/netcore50/ko/System.Text.Encoding.xml",
         "ref/dotnet/ru/System.Text.Encoding.xml",
-        "ref/netcore50/ru/System.Text.Encoding.xml",
         "ref/dotnet/zh-hans/System.Text.Encoding.xml",
-        "ref/netcore50/zh-hans/System.Text.Encoding.xml",
         "ref/dotnet/es/System.Text.Encoding.xml",
-        "ref/netcore50/es/System.Text.Encoding.xml",
-        "package/services/metadata/core-properties/8740abce9d6a472db9f21ed43f2fb149.psmdcp",
+        "runtimes/win8-aot/lib/netcore50/System.Text.Encoding.dll",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "package/services/metadata/core-properties/829e172aadac4937a5a6a4b386855282.psmdcp",
         "[Content_Types].xml"
       ]
     },
@@ -2697,52 +2744,37 @@
         "[Content_Types].xml"
       ]
     },
-    "System.Threading.Tasks/4.0.0": {
-      "sha512": "dA3y1B6Pc8mNt9obhEWWGGpvEakS51+nafXpmM/Z8IF847GErLXGTjdfA+AYEKszfFbH7SVLWUklXhYeeSQ1lw==",
+    "System.Threading.Tasks/4.0.10": {
+      "sha512": "NOwJGDfk79jR0bnzosbXLVD/PdI8KzBeESoa3CofEM5v9R5EBfcI0Jyf18stx+0IYV9okmDIDxVtxq9TbnR9bQ==",
       "type": "Package",
       "files": [
         "_rels/.rels",
         "System.Threading.Tasks.nuspec",
-        "License.rtf",
-        "ref/dotnet/System.Threading.Tasks.dll",
-        "ref/netcore50/System.Threading.Tasks.dll",
-        "ref/win8/_._",
-        "lib/win8/_._",
-        "ref/net45/_._",
-        "lib/net45/_._",
-        "ref/MonoAndroid10/_._",
+        "lib/netcore50/System.Threading.Tasks.dll",
+        "lib/DNXCore50/System.Threading.Tasks.dll",
         "lib/MonoAndroid10/_._",
-        "ref/MonoTouch10/_._",
         "lib/MonoTouch10/_._",
-        "ref/wp80/_._",
-        "lib/wp80/_._",
-        "ref/wpa81/_._",
-        "lib/wpa81/_._",
-        "ref/xamarinios10/_._",
+        "lib/net46/_._",
         "lib/xamarinios10/_._",
-        "ref/xamarinmac20/_._",
         "lib/xamarinmac20/_._",
-        "ref/dotnet/zh-hant/System.Threading.Tasks.xml",
-        "ref/netcore50/zh-hant/System.Threading.Tasks.xml",
-        "ref/dotnet/de/System.Threading.Tasks.xml",
-        "ref/netcore50/de/System.Threading.Tasks.xml",
+        "ref/dotnet/System.Threading.Tasks.dll",
         "ref/dotnet/System.Threading.Tasks.xml",
-        "ref/netcore50/System.Threading.Tasks.xml",
+        "ref/dotnet/zh-hant/System.Threading.Tasks.xml",
+        "ref/dotnet/de/System.Threading.Tasks.xml",
         "ref/dotnet/fr/System.Threading.Tasks.xml",
-        "ref/netcore50/fr/System.Threading.Tasks.xml",
         "ref/dotnet/it/System.Threading.Tasks.xml",
-        "ref/netcore50/it/System.Threading.Tasks.xml",
         "ref/dotnet/ja/System.Threading.Tasks.xml",
-        "ref/netcore50/ja/System.Threading.Tasks.xml",
         "ref/dotnet/ko/System.Threading.Tasks.xml",
-        "ref/netcore50/ko/System.Threading.Tasks.xml",
         "ref/dotnet/ru/System.Threading.Tasks.xml",
-        "ref/netcore50/ru/System.Threading.Tasks.xml",
         "ref/dotnet/zh-hans/System.Threading.Tasks.xml",
-        "ref/netcore50/zh-hans/System.Threading.Tasks.xml",
         "ref/dotnet/es/System.Threading.Tasks.xml",
-        "ref/netcore50/es/System.Threading.Tasks.xml",
-        "package/services/metadata/core-properties/e45094f04ec149d1ba36afbb03ce2e9e.psmdcp",
+        "runtimes/win8-aot/lib/netcore50/System.Threading.Tasks.dll",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "package/services/metadata/core-properties/a4ed35f8764a4b68bb39ec8d13b3e730.psmdcp",
         "[Content_Types].xml"
       ]
     },
@@ -2796,7 +2828,9 @@
       "System.Runtime >= 4.0.21-rc2-23604",
       "System.Runtime.Extensions >= 4.0.11-rc2-23604",
       "System.Runtime.Loader >= 4.0.0-rc2-23604",
+      "System.Text.Encoding >= 4.0.10-rc2-23604",
       "System.Threading >= 4.0.11-rc2-23604",
+      "System.Threading.Tasks >= 4.0.10-rc2-23604",
       "System.Threading.Thread >= 4.0.0-rc2-23604"
     ],
     "DNXCore,Version=v5.0": []
