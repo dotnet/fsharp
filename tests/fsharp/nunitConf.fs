@@ -137,13 +137,14 @@ type public InitializeSuiteAttribute () =
     override x.Targets with get() = ActionTargets.Test ||| ActionTargets.Suite
 
 
+[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
 [<assembly:InitializeSuite()>]
 ()
 
 module FSharpTestSuite =
 
     let getTagsOfFile path =
-        match File.ReadLines(path) |> Seq.take 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
+        match File.ReadLines(path) |> Seq.truncate 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
         | None -> []
         | Some line -> 
             line.TrimStart('/').Split([| '#' |], StringSplitOptions.RemoveEmptyEntries)
