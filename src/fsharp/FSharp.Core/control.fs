@@ -1465,13 +1465,12 @@ namespace Microsoft.FSharp.Control
         static member Choice(computations : Async<'T option> seq) : Async<'T option> =
             unprotectedPrimitive(fun args ->
                 let result =
-                    try Choice1Of2 <| Seq.toArray computations
-                    with exn -> Choice2Of2 <| ExceptionDispatchInfo.RestoreOrCapture(exn)
+                    try Seq.toArray computations |> Choice1Of2
+                    with exn -> ExceptionDispatchInfo.RestoreOrCapture exn |> Choice2Of2
 
                 match result with
                 | Choice2Of2 edi -> args.aux.econt edi
                 | Choice1Of2 [||] -> args.cont None
-                | Choice1Of2 [|P body|] -> body args
                 | Choice1Of2 computations ->
                     protectedPrimitiveCore args (fun args ->
                         let ({ aux = aux } as args) = delimitSyncContext args
@@ -1482,12 +1481,17 @@ namespace Microsoft.FSharp.Control
 
                         let scont (result : 'T option) =
                             match result with
-                            | Some _ when Interlocked.Increment exnCount = 1 -> 
-                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont result)
-                            | None when Interlocked.Increment noneCount = computations.Length -> 
-                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont None)
+                            | Some _ -> 
+                                if Interlocked.Increment exnCount = 1 then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont result)
+                                else
+                                    FakeUnit
 
-                            | _ -> FakeUnit
+                            | None ->
+                                if Interlocked.Increment noneCount = computations.Length then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont None)
+                                else
+                                    FakeUnit
  
                         let econt (exn : ExceptionDispatchInfo) =
                             if Interlocked.Increment exnCount = 1 then 

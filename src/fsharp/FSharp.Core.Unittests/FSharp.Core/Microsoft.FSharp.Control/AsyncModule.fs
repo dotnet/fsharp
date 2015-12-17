@@ -11,11 +11,13 @@ open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
 open FsCheck
+#endif
 
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
 [<AutoOpen>]
 module ChoiceUtils =
 
-    // FsCheck driven Async.Choice tests
+    // FsCheck driven Async.Choice specification test
 
     exception ChoiceExn of index:int
 
@@ -24,7 +26,7 @@ module ChoiceUtils =
         | NoneResultAfter of timeout:int
         | SomeResultAfter of timeout:int
         | ExceptionAfter of timeout:int
-    with
+
         member c.Timeout =
             match c with
             | NoneResultAfter t -> t
@@ -61,7 +63,7 @@ module ChoiceUtils =
         let mkOp (index : int) = function
             | NoneResultAfter t -> returnAfter t (fun () ->  None)
             | SomeResultAfter t -> returnAfter t (fun () -> Some index)
-            | ExceptionAfter t -> returnAfter t (fun () -> raise <| ChoiceExn index)
+            | ExceptionAfter t -> returnAfter t (fun () -> raise (ChoiceExn index))
 
         let choiceWorkflow = ops |> List.mapi mkOp |> Async.Choice
 
@@ -92,7 +94,7 @@ module ChoiceUtils =
             } |> Seq.min
 
         let verifyIndex index =
-            if index < 0 || index >=  ops.Length then
+            if index < 0 || index >= ops.Length then
                 Assert.Fail "Returned choice index is out of bounds."
         
         // Step 3a. check that output is up to spec
@@ -413,8 +415,8 @@ type AsyncModule() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
-    [<Test>]
-    member this.``Async.Choice correctness and cancellation``() =
+    [<Test; Category("CHOICE")>]
+    member this.``Async.Choice specification test``() =
         Check.QuickThrowOnFailure (normalize >> runChoice)
 #endif
 
