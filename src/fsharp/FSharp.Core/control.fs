@@ -1462,6 +1462,50 @@ namespace Microsoft.FSharp.Control
                             |> unfake);
                     FakeUnit))
 
+        static member Choice(computations : Async<'T option> seq) : Async<'T option> =
+            unprotectedPrimitive(fun args ->
+                let result =
+                    try Choice1Of2 <| Seq.toArray computations
+                    with exn -> Choice2Of2 <| ExceptionDispatchInfo.RestoreOrCapture(exn)
+
+                match result with
+                | Choice2Of2 edi -> args.aux.econt edi
+                | Choice1Of2 [||] -> args.cont None
+                | Choice1Of2 [|P body|] -> body args
+                | Choice1Of2 computations ->
+                    protectedPrimitiveCore args (fun args ->
+                        let ({ aux = aux } as args) = delimitSyncContext args
+                        let noneCount = ref 0
+                        let exnCount = ref 0
+                        let innerCts = new LinkedSubSource(aux.token)
+                        let trampolineHolder = aux.trampolineHolder
+
+                        let scont (result : 'T option) =
+                            match result with
+                            | Some _ when Interlocked.Increment exnCount = 1 -> 
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont result)
+                            | None when Interlocked.Increment noneCount = computations.Length -> 
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont None)
+
+                            | _ -> FakeUnit
+ 
+                        let econt (exn : ExceptionDispatchInfo) =
+                            if Interlocked.Increment exnCount = 1 then 
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.econt exn)
+                            else
+                                FakeUnit
+ 
+                        let ccont (exn : OperationCanceledException) =
+                            if Interlocked.Increment exnCount = 1 then
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.ccont exn)
+                            else
+                                FakeUnit
+
+                        for c in computations do
+                            queueAsync innerCts.Token scont econt ccont c |> unfake
+
+                        FakeUnit))
+
 #if FX_NO_TASK
 #else
     // Contains helpers that will attach continuation to the given task.
