@@ -18,7 +18,7 @@ if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     popd
 )
 SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-SET LKG_FSI=%~dp0%..\lkg\FSharp-4.0.30319.1\bin\Fsi.exe
+SET LKG_FSI=%~dp0%..\lkg\FSharp-14.0.23413.0\bin\Fsi.exe
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
