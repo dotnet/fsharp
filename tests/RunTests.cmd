@@ -18,6 +18,7 @@ if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     popd
 )
 SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
+SET LKG_FSI=%~dp0%..\lkg\FSharp-14.0.23413.0\bin\Fsi.exe
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
@@ -67,8 +68,28 @@ rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
-rem set folder where fsharp.core.dll can be loaded from
-set FSCOREDLL_CORECLR_PATH=%~dp0..\%FLAVOR%\coreclr\bin\fsharp.core.dll
+setlocal EnableDelayedExpansion
+
+SET CONV_V2_TO_V3_CMD="%LKG_FSI%" --exec --nologo "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
+echo %CONV_V2_TO_V3_CMD%
+
+SET CONV_V2_TO_V3_CMD_TEMPFILE=%~dp0%nunit3args.txt
+
+%CONV_V2_TO_V3_CMD% >%CONV_V2_TO_V3_CMD_TEMPFILE%
+
+IF ERRORLEVEL 1 (
+  echo Error converting args to nunit 3 test selection language, the nunit3-console --where argument
+  type "%CONV_V2_TO_V3_CMD_TEMPFILE%"
+  del /Q "%CONV_V2_TO_V3_CMD_TEMPFILE%"
+  exit /b 1
+)
+
+set /p TTAGS_NUNIT_WHERE=<%CONV_V2_TO_V3_CMD_TEMPFILE%
+if not '!TTAGS_NUNIT_WHERE!' == '' (set TTAGS_NUNIT_WHERE=--where "!TTAGS_NUNIT_WHERE!")
+
+del /Q "%CONV_V2_TO_V3_CMD_TEMPFILE%"
+
+setlocal DisableDelayedExpansion
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
@@ -141,17 +162,9 @@ goto :EOF
 
 set FSHARP_TEST_SUITE_CONFIGURATION=%FLAVOR%
 
-set XMLFILE=%RESULTSDIR%\FSharpNunit_Xml.xml
-set OUTPUTFILE=%RESULTSDIR%\FSharpNunit_Output.log
-set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
-
-setlocal EnableDelayedExpansion
-
-set TTAGS_NUNIT_ARG=
-if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--where "cat == !TTAGS!")
-
-set NO_TTAGS_NUNIT_ARG=
-rem if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--where "cat != !NO_TTAGS!")
+set XMLFILE=FSharpNunit_Xml.xml
+set OUTPUTFILE=FSharpNunit_Output.log
+set ERRORFILE=FSharpNunit_Error.log
 
 echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"
 "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"

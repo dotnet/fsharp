@@ -24,7 +24,7 @@ module Analyses =
             log "%s %s" path args
             let toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
-        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF true a b) |> (fun _ -> Success ())
+        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
         return out.ToArray() |> List.ofArray
         }
 
@@ -142,17 +142,24 @@ module Inline =
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
-        // "%FSC%" %fsc_flags% -g --optimize- --target:library -o:lib.dll lib.fs
-        do! fsc "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
-        // "%FSC%" %fsc_flags% --optimize --target:library -o:lib--optimize.dll -g lib.fs
-        do! fsc "%s --optimize --target:library -o:lib--optimize.dll -g" cfg.fsc_flags ["lib.fs"]
+        // "%FSC%" %fsc_flags% -g --optimize- --target:library -o:lib.dll lib.fs lib2.fs
+        do! fsc "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
 
-        // "%FSC%" %fsc_flags% -g --optimize- -o:test.exe test.fs -r:lib.dll
-        do! fsc "%s -g --optimize- -o:test.exe -r:lib.dll" cfg.fsc_flags ["test.fs "]
+        // "%FSC%" %fsc_flags% -g --optimize- --target:library -o:lib3.dll -r:lib.dll lib3.fs
+        do! fsc "%s -g --optimize- --target:library -o:lib3.dll -r:lib.dll " cfg.fsc_flags ["lib3.fs"]
 
-        // "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs -r:lib--optimize.dll
-        do! fsc "%s --optimize -o:test--optimize.exe -g -r:lib--optimize.dll" cfg.fsc_flags ["test.fs "]
+        // "%FSC%" %fsc_flags% -g --optimize- -o:test.exe test.fs -r:lib.dll -r:lib3.dll
+        do! fsc "%s -g --optimize- -o:test.exe -r:lib.dll -r:lib3.dll" cfg.fsc_flags ["test.fs "]
+
+        // "%FSC%" %fsc_flags% --optimize --target:library -o:lib--optimize.dll -g lib.fs  lib2.fs
+        do! fsc "%s --optimize --target:library -o:lib--optimize.dll -g" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
+
+        // "%FSC%" %fsc_flags% --optimize --target:library -o:lib3--optimize.dll -r:lib--optimize.dll -g lib3.fs  
+        do! fsc "%s --optimize --target:library -o:lib3--optimize.dll -r:lib--optimize.dll -g" cfg.fsc_flags ["lib3.fs"]
+
+        // "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs -r:lib--optimize.dll  -r:lib3--optimize.dll
+        do! fsc "%s --optimize -o:test--optimize.exe -g -r:lib--optimize.dll  -r:lib3--optimize.dll" cfg.fsc_flags ["test.fs "]
 
         }
 
@@ -261,12 +268,6 @@ module Stats =
 
         log "now:"
         log "%s" m
-        log "old (from 'stats.txt'):"
-        log "%s" (File.ReadAllLines(getfullpath "stats.txt") |> Seq.where (String.IsNullOrWhiteSpace >> not) |> Seq.last)
-        
-        //REVIEW test add a line to a versioned file 'stats.txt', but is not maintained anymore?
-        ignore (fun () -> File.AppendAllLines(getfullpath "stats.txt", [ m ]) )
-
 
         //    )
         //   )
