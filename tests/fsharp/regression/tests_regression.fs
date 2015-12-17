@@ -41,7 +41,7 @@ module ``655`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% -a -o:pack.dll xlibC.ml
         do! fsc "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
@@ -83,23 +83,19 @@ module ``655`` =
         })
 
 
-[<Category("fail_new"); Category("fail_reason_ILX_CONFIG")>]
 module ``656`` = 
 
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Printf.ksprintf (Commands.peverify exec cfg.PEVERIFY)
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
-        //REVIEW ILX_CONFIG?
-        let ILX_CONFIG = ""
+        // "%FSC%" %fsc_flags% -o:pack.exe misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs
+        do! fsc "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
 
-        // "%FSC%" %fsc_flags% -o:pack%ILX_CONFIG%.exe misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs
-        do! fsc "%s -o:pack%s.exe" cfg.fsc_flags ILX_CONFIG ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
-
-        // "%PEVERIFY%" pack%ILX_CONFIG%.exe
-        do! peverify "pack%s.exe" ILX_CONFIG
+        // "%PEVERIFY%" pack.exe
+        do! peverify "pack.exe"
         }
 
     let run cfg dir = processor {
@@ -107,19 +103,14 @@ module ``656`` =
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
 
-        //REVIEW ILX_CONFIG?
-        let ILX_CONFIG = ""
-
         // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard "test.ok"
 
-        // %CLIX% pack%ILX_CONFIG%.exe
-        do! exec ("."/(sprintf "pack%s.exe" ILX_CONFIG)) ""
+        // %CLIX% pack.exe
+        do! exec ("."/"pack.exe") ""
 
         // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
-
-        return! NUnitConf.genericError "env var 'ILX_CONFIG' not found, using '' as default the test pass"
         }
 
     [<Test; FSharpSuiteTest("regression/656")>]
@@ -180,7 +171,7 @@ module ``85`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // if "%CLR_SUPPORTS_GENERICS%"=="false" ( goto Skip)
         do! match cfg.EnvironmentVariables |> Map.tryFind "CLR_SUPPORTS_GENERICS" |> Option.map (fun s -> s.ToLower()) with
