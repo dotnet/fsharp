@@ -9,6 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
 open FsCheck
 
 [<AutoOpen>]
@@ -124,7 +125,7 @@ module ChoiceUtils =
             let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
             Assert.LessOrEqual(!completed, minTimeoutOps)
 
-
+#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -411,10 +412,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
     [<Test>]
     member this.``Async.Choice correctness and cancellation``() =
         Check.QuickThrowOnFailure (normalize >> runChoice)
+#endif
 
     [<Test>]
     member this.``error on one workflow should cancel all others``() =
