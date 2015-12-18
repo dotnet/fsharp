@@ -4,7 +4,7 @@ environment:
   matrix:
     - BUILD_PROFILE: net40,portable7,portable47,portable78,portable259,vs
     - BUILD_PROFILE: cambridge_suite,smoke_only
-    - BUILD_PROFILE: qa_suite
+    - BUILD_PROFILE: qa_suite,smoke_only
 
 init: 
 build_script: 
