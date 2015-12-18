@@ -18,7 +18,7 @@ if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     popd
 )
 SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-SET LKG_FSI=%~dp0%..\lkg\FSharp-14.0.23413.0\bin\Fsi.exe
+SET FSI=%FSHARPINSTALLDIR%\Fsi.exe
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
@@ -70,7 +70,7 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 setlocal EnableDelayedExpansion
 
-SET CONV_V2_TO_V3_CMD="%LKG_FSI%" --exec --nologo "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
+SET CONV_V2_TO_V3_CMD="%FSI%" --exec --nologo "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
 echo %CONV_V2_TO_V3_CMD%
 
 SET CONV_V2_TO_V3_CMD_TEMPFILE=%~dp0%nunit3args.txt
