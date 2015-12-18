@@ -280,7 +280,7 @@ namespace Microsoft.FSharp.Control
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
         /// for the other child computations to complete.</remarks>
         /// <param name="computations">A sequence of computations to be parallelized.</param>
-        /// <returns>A computation that returns the first succeeding computation in the sequence of input computations.</returns>
+        /// <returns>A computation that returns the first of the input computations to succeed.</returns>
         static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
 
         //---------- Thread Control
