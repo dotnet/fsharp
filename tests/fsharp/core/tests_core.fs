@@ -144,7 +144,7 @@ module Events =
     let build cfg dir = processor {
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None} p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
 
         // "%FSC%" %fsc_flags% -a -o:test.dll -g test.fs
@@ -246,7 +246,7 @@ module Forwarders =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let copy_y f = Commands.copy_y dir f >> checkResult
         let mkdir = Commands.mkdir_p dir
@@ -313,7 +313,7 @@ module FsFromCs =
     let build cfg dir = processor {
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -363,7 +363,7 @@ module FsFromFsViaCs =
     let build cfg dir = processor {
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -522,7 +522,7 @@ module Hiding =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc_flags = cfg.fsc_flags
 
         // "%FSC%" %fsc_flags% -a --optimize -o:lib.dll lib.mli lib.ml libv.ml
@@ -575,7 +575,7 @@ module QueriesCustomQueryOps =
     let build cfg dir = processor {
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -650,7 +650,6 @@ module QueriesCustomQueryOps =
                 
         })
 
-[<Category("fail_new")>]
 module Printing = 
 
     // "%FSI%" %fsc_flags_errors_ok%  --nologo --use:preludePrintSize200.fsx      <test.fsx >z.raw.output.test.200.txt     2>&1 
@@ -668,7 +667,7 @@ module Printing =
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let copy from' = Commands.copy_y dir from' >> checkResult
         let fileExists = Commands.fileExists dir >> Option.isSome
         let getfullpath = Commands.getfullpath dir
@@ -683,7 +682,7 @@ module Printing =
         let fsdiff a b = 
             let ``exec >`` f p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(f)); Input = None} p >> checkResult
             let diffFile = Path.ChangeExtension(a, ".diff")
-            Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF false a b
+            Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF a b
 
         let fsc_flags_errors_ok = ""
 
@@ -760,7 +759,7 @@ module Quotes =
     let build cfg dir = processor {
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc_flags = cfg.fsc_flags
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
 
@@ -868,7 +867,7 @@ module Parsing =
         
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc_flags = cfg.fsc_flags
 
         // "%FSC%" %fsc_flags% -a -o:crlf.dll -g crlf.ml
@@ -973,7 +972,7 @@ module InternalsVisible =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -1026,7 +1025,7 @@ module Interop =
             |> Map.add "FSCOREDLLNETCORE78PATH" cfg.FSCOREDLLNETCORE78PATH
 
         let exec p = Command.exec dir envVars { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let msbuild = Printf.ksprintf (Commands.msbuild exec (cfg.MSBUILD.Value))
 
         // rd /S /Q obj
@@ -1104,7 +1103,6 @@ module Lift =
         })
 
 
-[<Category("fail_new")>]
 module ``Load-Script`` = 
 
     let ``script > a 2>&1`` cfg dir to' = processor {
@@ -1229,7 +1227,7 @@ module ``Load-Script`` =
                 log "%s %s" path args
                 let toLog = redirectToLog ()
                 Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
-            do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF true a b) |> (fun _ -> Success ())
+            do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
             return out.ToArray() |> List.ofArray
             }
 
@@ -1606,27 +1604,22 @@ module Patterns =
 
 
 
-[<Category("fail_new"); Category("fail_reason_ILX_CONFIG")>]
 module Pinvoke = 
 
-    [<Test; FSharpSuiteTest("core/testData")>]
+    [<Test; FSharpSuiteTest("core/pinvoke")>]
     let pinvoke () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Printf.ksprintf (Commands.peverify exec cfg.PEVERIFY)
+        let peverify = Commands.peverify exec cfg.PEVERIFY
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
-        let ILX_CONFIG = ""
-
-        // "%FSC%" %fsc_flags% -o:test%ILX_CONFIG%.exe -g test.fsx
-        do! fsc "%s -o:test%s.exe -g" cfg.fsc_flags ILX_CONFIG ["test.fsx"]
+        // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
+        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
         // REM The IL is unverifiable code
-        // "%PEVERIFY%" /MD test%ILX_CONFIG%.exe
-        do! peverify "/MD test%s.exe" ILX_CONFIG
-
-        return! NUnitConf.genericError (sprintf "env var 'ILX_CONFIG' not found, using '%s' as default the test pass" ILX_CONFIG)
+        // "%PEVERIFY%" /MD test.exe
+        do! peverify "/MD" "test.exe"
                 
         })
 
@@ -1680,7 +1673,7 @@ module Portable =
 
 
 module ``test printf`` = 
-    let permutations = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
+    let permutations () = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
 
     [<Test; TestCaseSource("permutations")>]
     let printf p = check (processor {
@@ -1698,7 +1691,7 @@ module QueriesLeafExpressionConvert =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc_flags = cfg.fsc_flags
 
         // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
@@ -1771,7 +1764,7 @@ module QueriesNullableOperators =
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -1843,7 +1836,7 @@ module QueriesOverIEnumerable =
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
         // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
@@ -1916,7 +1909,7 @@ module QueriesOverIQueryable =
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
         // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
@@ -1989,7 +1982,7 @@ module QueriesOverOData =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
         do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -2060,7 +2053,7 @@ module QuotesDebugInfo =
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
         // "%FSC%" %fsc_flags% --quotations-debug+ --optimize -o:test.exe -g test.fsx
@@ -2133,7 +2126,7 @@ module QuotesInMultipleModules =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% -o:module1.dll --target:library module1.fsx
         do! fsc "%s -o:module1.dll --target:library" cfg.fsc_flags ["module1.fsx"]
@@ -2242,7 +2235,7 @@ module ``test resources`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let resgen = Printf.ksprintf (Commands.resgen exec cfg.RESGEN)
 
         // REM Note that you have a VS SDK dependence here.
@@ -2362,7 +2355,7 @@ module Topinit =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
@@ -2586,7 +2579,7 @@ module UnitsOfMeasure =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% --optimize- -o:test.exe -g test.fs
         do! fsc "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
@@ -2630,8 +2623,8 @@ module Verify =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
-        let peverify' = Printf.ksprintf (Commands.peverify exec cfg.PEVERIFY)
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
+        let peverify' = Commands.peverify exec cfg.PEVERIFY
         let getfullpath = Commands.getfullpath dir
 
         // "%PEVERIFY%" "%FSCOREDLLPATH%"
@@ -2657,7 +2650,7 @@ module Verify =
 
         // REM Use /MD because this contains some P/Invoke code  
         // "%PEVERIFY%" /MD "%FSCBinPath%\FSharp.Compiler.dll"
-        do! peverify' """/MD "%s" """ (cfg.FSCBinPath/"FSharp.Compiler.dll")
+        do! peverify' "/MD" (cfg.FSCBinPath/"FSharp.Compiler.dll")
 
         // "%PEVERIFY%" "%FSCBinPath%\fsi.exe"
         do! peverify (cfg.FSCBinPath/"fsi.exe")

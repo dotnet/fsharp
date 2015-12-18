@@ -3736,7 +3736,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     Some pdbDir
                 else 
                     None 
-            else   
+            else
                 None
 #if SHADOW_COPY_REFERENCES
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
