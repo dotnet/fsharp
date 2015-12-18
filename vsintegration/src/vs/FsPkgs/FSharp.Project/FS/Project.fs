@@ -568,10 +568,10 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
                                 ["4.4.1.0"                        // .NET 4 desktop
-                                 "3.47.4.1"                       // portable 47
-                                 "3.7.4.1"                        // portable 7
-                                 "3.78.4.1"                       // portable 78
-                                 "3.259.4.1"]                     // portable 259
+                                 "3.47.41.0"                       // portable 47
+                                 "3.7.41.0"                        // portable 7
+                                 "3.78.41.0"                       // portable 78
+                                 "3.259.41.0"]                     // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             
                             (legacyVersions |> List.exists ((=) currentVersion)) && (latestOnlyVersions |> List.exists ((=) newVersion))                                
