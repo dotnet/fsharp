@@ -103,7 +103,6 @@ module Builtin =
 
 
 
-[<Category("fail_new"); Category("fail_old")>]
 module DiamondAssembly = 
 
     let build cfg dir = processor {
@@ -138,7 +137,7 @@ module DiamondAssembly =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
 
@@ -162,8 +161,8 @@ module DiamondAssembly =
         // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard "test.ok"
 
-        // %CLIX% "%FSI%" %fsi_flags% test1.fsx test2a.fsx test2b.fsx test3.fsx && (
-        do! fsi "%s" cfg.fsi_flags ["test1.fsx"; "test2a.fsx"; "test2b.fsx"; "test3.fsx"]
+        // %CLIX% "%FSI%" %fsi_flags% test3.fsx && (
+        do! fsi "%s" cfg.fsi_flags ["test3.fsx"]
 
         // dir test.ok > NUL 2>&1 ) || (
         // @echo :FSI load failed
@@ -210,7 +209,7 @@ module HelloWorld =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let del = Commands.rm dir
         let execIn workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc' execIn = Printf.ksprintf (Commands.fsc execIn cfg.FSC)
@@ -376,7 +375,7 @@ module HelloWorldCSharp =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%PEVERIFY%" magic.dll
         do! peverify "magic.dll"
@@ -404,10 +403,9 @@ module HelloWorldCSharp =
 
 
 
-[<Category("fail_new"); Category("fail_old"); >] 
 module NegTests = 
 
-    let testData = 
+    let testData () = 
         // set TESTS_SIMPLE=neg2h neg4 neg1 neg1_a neg2 neg2c neg2e neg2g neg6
         let testsSimple = 
             ["neg2h"; "neg4"; "neg1"; "neg1_a"; "neg2"; "neg2c"; "neg2e"; "neg2g"; "neg6"]
@@ -653,7 +651,7 @@ module WedgeAssembly =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%PEVERIFY%" test2a.dll
         do! peverify "test2a.dll"
