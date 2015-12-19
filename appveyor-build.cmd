@@ -179,6 +179,10 @@ set APPVEYOR_CI=1
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if not '%VisualStudioVersion%' == '' goto dev15workarround
 if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
@@ -186,6 +190,19 @@ if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS120COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
+if not '%VisualStudioVersion%' == '' goto vsversionset
+
+:dev15workarround
+rem WARNING: the below commands must be run in admin mode to copy files into %ProgramFiles(x86)% directory
+set _dev15IDEAssembliesPath=%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\Common7\IDE
+set _dev15MSBVSSDKAssembliesPath=%ProgramFiles(x86)%\MSBuild\Microsoft\VisualStudio\v15.0\VSSDK
+copy /y "%_dev15IDEAssembliesPath%\Microsoft.VisualStudio.Settings.15.0.dll" "%_dev15MSBVSSDKAssembliesPath%\Microsoft.VisualStudio.Settings.15.0.dll"
+copy /y "%_dev15IDEAssembliesPath%\PublicAssemblies\Microsoft.VisualStudio.Shell.15.0.dll" "%_dev15MSBVSSDKAssembliesPath%\Microsoft.VisualStudio.Shell.15.0.dll"
+copy /y "%_dev15IDEAssembliesPath%\PublicAssemblies\Microsoft.VisualStudio.OLE.Interop.dll" "%_dev15MSBVSSDKAssembliesPath%\Microsoft.VisualStudio.OLE.Interop.dll"
+copy /y "%_dev15IDEAssembliesPath%\PublicAssemblies\microsoft.visualstudio.shell.interop.8.0.dll" "%_dev15MSBVSSDKAssembliesPath%\microsoft.visualstudio.shell.interop.8.0.dll"
+copy /y "%_dev15IDEAssembliesPath%\PublicAssemblies\Microsoft.VisualStudio.Shell.Interop.9.0.dll" "%_dev15MSBVSSDKAssembliesPath%\Microsoft.VisualStudio.Shell.Interop.9.0.dll"
+copy /y "%_dev15IDEAssembliesPath%\Microsoft.VisualStudio.Shell.UI.Internal.dll" "%_dev15IDEAssembliesPath%\PublicAssemblies\Microsoft.VisualStudio.Shell.UI.Internal.dll"
+copy /y "%_dev15IDEAssembliesPath%\PublicAssemblies\Microsoft.VisualStudio.Shell.Interop.dll" "%_dev15IDEAssembliesPath%\PrivateAssemblies\Microsoft.VisualStudio.Shell.Interop.dll"
 
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure

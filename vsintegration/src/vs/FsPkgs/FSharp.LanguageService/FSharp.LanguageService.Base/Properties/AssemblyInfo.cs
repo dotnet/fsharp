@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly:AssemblyVersion("14.0.0.9055")]       // The assembly version for THE OSS BUILD
-[assembly:AssemblyFileVersion("14.0.0.9055")]
+[assembly:AssemblyVersion("15.0.0.9055")]       // The assembly version for THE OSS BUILD
+[assembly:AssemblyFileVersion("15.0.0.9055")]
 
 [assembly: CLSCompliant(true)]
