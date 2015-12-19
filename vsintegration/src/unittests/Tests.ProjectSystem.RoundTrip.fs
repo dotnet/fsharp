@@ -12,7 +12,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type RoundTrip() = 
     inherit TheTests()
     
@@ -43,7 +43,7 @@ type RoundTrip() =
                 Assert.Fail("did not remove empty ItemGroups")
         ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Basic.NonemptyFoldersRemoved.Case1``() =
         this.``FsprojRoundtrip.PositiveTest``(
             MSBuildItems [CompileItem @"bar.fs"
@@ -52,7 +52,7 @@ type RoundTrip() =
             MSBuildItems [CompileItem @"bar.fs"
                           CompileItem @"Folder\foo.fs"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Basic.NonemptyFoldersRemoved.Case2``() =
         this.``FsprojRoundtrip.PositiveTest``(
             MSBuildItems [CompileItem @"bar.fs"
@@ -65,7 +65,7 @@ type RoundTrip() =
                           CompileItem @"A\B\C\foo.fs"
                           CompileItem @"A\qux.fs"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.ComplexButLegalCase``() =
         let items = MSBuildItems [CompileItem @"A\B\foo.fs"
                                   CompileItem @"A\bar.fs"
@@ -76,7 +76,7 @@ type RoundTrip() =
                                   ]
         this.``FsprojRoundtrip.PositiveTest``(items, items)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.EmptyFoldersArePreservedWhenRestIsIdempotent``() =
         let items = MSBuildItems [CompileItem @"bar.fs"
                                   FolderItem @"A\Empty1\"
@@ -85,7 +85,7 @@ type RoundTrip() =
                                   CompileItem @"A\qux.fs"]
         this.``FsprojRoundtrip.PositiveTest``(items, items)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.EmptyFoldersArePreservedWhenRestIsLegalButNotIdempotent``() =
         let origItems = [CompileItem @"bar.fs"
                          FolderItem @"A\Empty1\"        
@@ -100,13 +100,13 @@ type RoundTrip() =
                              CompileItem @"A\qux.fs"]
         this.``FsprojRoundtrip.PositiveTest``(MSBuildItems origItems, MSBuildItems expectedItems)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Regression.FoldersWithSameName``() =
         let items = MSBuildItems [CompileItem @"First\Second\bar.fs"
                                   CompileItem @"Second\qux.fs"]
         this.``FsprojRoundtrip.PositiveTest``(items, items)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Regression.FoldersWithSameName2``() =
         let items = MSBuildItems [CompileItem @"First\First\bar.fs"]
         this.``FsprojRoundtrip.PositiveTest``(items, items)
@@ -128,21 +128,21 @@ type RoundTrip() =
             ()
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Basic.Invalid.Case1``() =
         let items = MSBuildItems [CompileItem @"A\B\C\foo.fs"
                                   CompileItem @"B\bar.fs"
                                   CompileItem @"A\B\D\qux.fs"]  // would cause A to be rendered twice
         this.``Fsproj.NegativeTest`` items
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Basic.Invalid.Case2``() =
         let items = MSBuildItems [CompileItem @"A\foo.fs"
                                   CompileItem @"bar.fs"
                                   CompileItem @"A\qux.fs"]  // would cause A to be rendered twice
         this.``Fsproj.NegativeTest`` items
 
-    // REVIEW NYI: [<Test>]
+    // REVIEW NYI: [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``FsprojRoundTrip.Basic.Invalid.Case3``() =
         let items = MSBuildItems [CompileItem @"A\foo.fs"
                                   FolderItem @"A\"           // <Folder> must be before anything below it

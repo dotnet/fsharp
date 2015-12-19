@@ -8,10 +8,10 @@ open NUnit.Framework
 open System.Threading
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type CancellationType() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CancellationNoCallbacks() =
         let _ : CancellationTokenSource = null // compilation test
         use cts1 = new CancellationTokenSource()
@@ -26,7 +26,7 @@ type CancellationType() =
         cts2.Cancel()
         Assert.IsTrue(token2.IsCancellationRequested)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CancellationRegistration() =
         let cts = new CancellationTokenSource()
         let token = cts.Token
@@ -37,7 +37,7 @@ type CancellationType() =
         cts.Cancel()
         Assert.IsFalse(!called)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CancellationWithCallbacks() =
         let cts1 = new CancellationTokenSource()
         let cts2 = new CancellationTokenSource()
@@ -98,7 +98,7 @@ type CancellationType() =
             Assert.IsTrue(odeThrown)
         ()
         
-    [<Test>]    
+    [<Parallelizable(ParallelScope.Self)>][<Test>]    
     member this.CallbackOrder() = 
         use cts = new CancellationTokenSource()
         let current = ref 0
@@ -108,7 +108,7 @@ type CancellationType() =
         cts.Token.Register(Action<obj>(action), box 0) |> ignore
         cts.Cancel()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CallbackExceptions() =
         use cts = new CancellationTokenSource()
         let action (o:obj) = new InvalidOperationException(String.Format("{0}", o)) |> raise
@@ -127,7 +127,7 @@ type CancellationType() =
         Assert.IsTrue exnThrown
         Assert.IsTrue cts.Token.IsCancellationRequested
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.LinkedSources() =
         let () =
             use cts1 = new CancellationTokenSource()
@@ -184,7 +184,7 @@ type CancellationType() =
             
         ()
     
-    [<Test>]  
+    [<Parallelizable(ParallelScope.Self)>][<Test>]  
     member this.TestCancellationRace() =
         use cts = new CancellationTokenSource()
         let token = cts.Token
@@ -201,7 +201,7 @@ type CancellationType() =
         Assert.IsTrue(!callbackRun, "Callback should run at least once")
         
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TestRegistrationRace() =
         let asyncs =
             seq { for _ in 1..1000 do
@@ -216,7 +216,7 @@ type CancellationType() =
             }               
         (asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.LinkedSourceCancellationRace() =
         let asyncs =
             seq { for _ in 1..1000 do
@@ -230,7 +230,7 @@ type CancellationType() =
             }               
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Equality() =
         let cts1 = new CancellationTokenSource()
         let cts2 = new CancellationTokenSource()

@@ -88,7 +88,7 @@ type NavigationBarTests() =
         ""
         "    type EnumOneLine = (*5s*)| OUAaa = 0 | OUBbb = 3(*5e*)" ]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regions.NavigationFile1``() =        
         this.TestHiddenRegions NavigationBarTests.NavigationFile1
           [ "(*1s*)", "(*1e*)"
@@ -98,24 +98,24 @@ type NavigationBarTests() =
             "(*5s*)", "(*5e*)"
             "SomeModule", "(*5e*)" (* entire module *) ]
                           
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("PerfCheck")>]
     member public this.``Record1``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Rec" ["RFirst"; "RSecond"]
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Record2``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Rec2" ["R2First"; "R2Second"]
           
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Abbreviation``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Abbrev" []
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Enum``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Enum" [ "Aaa"; "Bbb" ]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Enum.OneLine``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.EnumOneLine" [ "OUAaa"; "OUBbb" ]
 
@@ -176,43 +176,43 @@ type NavigationBarTests() =
         "        let aa () ="
         "          1(*15e*)        " ]
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Record.WithMembers``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "A.RecWith" ["WRFirst"; "WRSecond"; "RecMember" ]
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Union.WithMembers``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.Union" ["UFirst"; "USecond"; "A"]
           
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Class``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.A" ["Prop"; "Func"; "Dispose"] // perhaps IDisposable.Dispose
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Exception``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.SomeCrash" [ ]
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Module.Alias``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.MyList" [ ]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``NestedEnum``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.MoreNested.MyEnum" [ "One"; "Two"; "Three" ]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Extension``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.AExt" [ "Extension1"; "Extension2" ]
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Type.EndingWithProperty.WithTypeAnnotation``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.Z" [ "Z" ]   
              
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Module.Nested``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.FooBaz" [ "toplevel" ]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Module.Nested.More``() =        
         this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.FooBaz.NestedModule" [ "nestedThing" ]   
 
@@ -225,14 +225,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit NavigationBarTests
    new() = { inherit NavigationBarTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit NavigationBarTests

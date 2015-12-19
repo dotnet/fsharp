@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type Miscellaneous() = 
     inherit TheTests()
 
@@ -32,7 +32,7 @@ type Miscellaneous() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    //[<Test>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working 
+    //[<Parallelizable(ParallelScope.Self)>][<Test>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working 
     member public this.EnsureThatUnhandledExceptionsCauseAnAssert() =
         this.MakeProjectAndDo([], ["System"], "", (fun proj ->
             let t = new System.Threading.Thread(new System.Threading.ThreadStart(fun () -> failwith "foo"))
@@ -40,7 +40,7 @@ type Miscellaneous() =
             System.Threading.Thread.Sleep(1000)
         ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Miscellaneous.CreatePropertiesObject`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -49,7 +49,7 @@ type Miscellaneous() =
             Assert.AreEqual(typeof<FSharpProjectNodeProperties>, prop.GetType())
             )
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Miscellaneous.TestProperties`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -73,7 +73,7 @@ type Miscellaneous() =
             Assert.AreEqual("a.exe", prop.OutputFileName)
             )            
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Miscellaneous.CreateServices`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -86,7 +86,7 @@ type Miscellaneous() =
             Assert.IsNull(badservice)
             )
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Miscellaneous.FSharpFileNode.GetRelativePath`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -98,7 +98,7 @@ type Miscellaneous() =
             Assert.AreEqual("orig1.fs", path)
             ))
            
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Miscellaneous.FSharpFileNode.CreateServices`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -113,7 +113,7 @@ type Miscellaneous() =
             ))
 
     
-    //[<Test>]    
+    //[<Parallelizable(ParallelScope.Self)>][<Test>]    
     member public this.AttemptDragAndDrop() =
         printfn "starting..."
         let fsproj = "D:\Depot\staging\Test.fsproj"
@@ -164,7 +164,7 @@ type Miscellaneous() =
         ()
 
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Automation.OutputGroup.OUTPUTLOC``() =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform(["x86",""],"x86"),
@@ -181,7 +181,7 @@ type Miscellaneous() =
             )
          )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Automation.OutputGroups``() =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences([],[],[],@"
@@ -243,7 +243,7 @@ type Miscellaneous() =
             AssertEqual expected ogInfos
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LoadProject.x86`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], ["System"],
             this.MSBuildProjectMultiPlatform(["x86",""],"x86"),
@@ -258,7 +258,7 @@ type Miscellaneous() =
                 AssertEqual 1 l.Count
         ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``BuildAndClean``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
              this.MSBuildProjectBoilerplate "Library", 
@@ -312,7 +312,7 @@ type Miscellaneous() =
         ))
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ErrorReporting.EmptyModuleReportedAtTheLastLine``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
@@ -346,15 +346,15 @@ type Miscellaneous() =
                ))
 
 #if NUNIT_V2
-    [<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
     member public this.``DebuggingDLLFails``() = this.``DebuggingDLLFailsFunc``()
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``DebuggingDLLFails``() =
         Assert.That((fun () -> this.``DebuggingDLLFailsFunc``()), NUnit.Framework.Throws.TypeOf(typeof<ClassLibraryCannotBeStartedDirectlyException>))
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``DebuggingEXESucceeds``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectBoilerplate "Exe",  
@@ -378,7 +378,7 @@ type Miscellaneous() =
                 ()
         ))
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``IsDocumentInProject`` () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let fakeCsLibProjectFile = @"..\CsLib\CsLib.csproj"            
@@ -401,7 +401,7 @@ type Miscellaneous() =
             checkInProject false "System.dll"
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PreBuildEvent`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], ["System"], "",
             (fun project projFileName ->
@@ -424,7 +424,7 @@ type Miscellaneous() =
                 Assert.IsTrue(!outputWindowPaneErrors |> List.exists (fun s -> expectedRegex.IsMatch(s)), "did not see expected value in build output")
             ))
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``BuildMacroValues`` () = 
         DoWithTempFile "MyAssembly.fsproj" (fun file ->
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferences([],[],[],""))
@@ -438,7 +438,7 @@ type Miscellaneous() =
             AssertEqual expectedTargetDir targetDir
         )
      
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.CreateFSharpManifestResourceName () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"")
@@ -465,7 +465,7 @@ type Miscellaneous() =
         Assert.AreEqual(VSConstants.S_OK, hr)
         cfgName
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``MSBuildExtensibility.BrokenCompileDependsOn.WithRecovery`` () =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs";"bar.fs"], [], 
 // define a legal 'Foo' configuration
@@ -512,7 +512,7 @@ type Miscellaneous() =
             Assert.AreEqual(expected, actual, "project site did not report expected set of source files after recovery")
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.TestBuildActions () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"<Import Project=\"My.targets\" />")
@@ -545,7 +545,7 @@ type Miscellaneous() =
             ()
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.TestBuildActionConversions () =
 
         let replace (pattern:string) (replacement:string) (input:string) = Regex.Replace(input, pattern, replacement)
@@ -597,7 +597,7 @@ type Miscellaneous() =
             ()
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``WildcardsInProjectFile.ThrowingCase`` () =
         DoWithTempFile "Test.fsproj"(fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["*.fs"],[],[],"")
@@ -616,7 +616,7 @@ type Miscellaneous() =
             Assert.IsTrue(exceptionThrown)
         )
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``WildcardsInProjectFile.OkCase`` () =
         DoWithTempFile "Test.fsproj"(fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["*.fs"],[],[],"")
@@ -678,7 +678,7 @@ module Regression5312 =
         let icons = extractIcon path true
         if icons.Length<>nExpected then failwithf "Expected %d icons in %s" nExpected path // "
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type Utilities() = 
     (*
         Simulation of the code found in Xaml editor that we were crashing. The relevent code is pasted below.
@@ -749,23 +749,23 @@ type Utilities() =
         Assert.AreEqual(expect, actual)
         SimulateXamlEditorReceivingThroughDTE(actual)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PublicKeyToken.0000000000000000``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;0uy|], "0000000000000000")
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PublicKeyToken.0000000000000001``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0000000000000001")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PublicKeyToken.0a00000000000001``() = CheckPublicKeyToString([|0xauy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0a00000000000001")
 
-    [<Test>]      
+    [<Parallelizable(ParallelScope.Self)>][<Test>]      
     member public this.``CheckIconsInProjectSystemDLL_Regression5312``() = 
         let path = typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpProjectPackage>.Assembly.Location
         Regression5312.checkIcons 4 path
         ()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Parse MSBuild property of type Int64`` () = 
         Assert.AreEqual(123L, ProjectNode.ParsePropertyValueToInt64("123"))
         Assert.AreEqual(255L, ProjectNode.ParsePropertyValueToInt64("0xFF"))

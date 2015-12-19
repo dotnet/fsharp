@@ -18,9 +18,9 @@ Make sure each method works on:
 *  (2 - 7 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ComparisonIdentityModule() =
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FromFunction() =
         // integer array  
         let intArr = [|1;5;8;2;6;3;7;4|]
@@ -39,7 +39,7 @@ type ComparisonIdentityModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Structural() =
         // integer array  
         let intArr = [|1;5;8;2;6;3;7;4|]

@@ -9,10 +9,10 @@ module U = Microsoft.FSharp.Data.TypeProviders.DesignTime.Utilities
 module CF = Microsoft.FSharp.Data.TypeProviders.DesignTime.ConfigFiles
 module Util = Microsoft.FSharp.Data.TypeProviders.Utility.Util
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type TypeProviderImplTests() = 
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``SanitizeFileName``() = 
         let tests = 
             [
@@ -29,7 +29,7 @@ type TypeProviderImplTests() =
             printfn "source: %s, expected %s, actual %s" source expected actual
             Assert.AreEqual(expected, actual)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParseCodegenToolErrors.RecognizeErrorLine``() = 
         let tests =
             [
@@ -57,7 +57,7 @@ type TypeProviderImplTests() =
                     Assert.IsTrue((actualErrs - expectedErrs).Count = 0)
                 | e -> sprintf "unexpected exception %A" e |> Assert.Fail
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParseCodegenToolErrors.FalsePositives``() = 
         let stdin = 
              [|
@@ -99,7 +99,7 @@ type TypeProviderImplTests() =
                 Assert.IsTrue(ae.InnerExceptions.[0].Message = "Error: Cannot obtain Metadata from http://bing.com/")
             | e -> sprintf "unexpected exception %A" e |> Assert.Fail
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PathResolutionUtils.MakeAbsolute``() = 
         use d = Util.TemporaryDirectory()
         let pru = Microsoft.FSharp.Data.TypeProviders.DesignTime.PathResolutionUtils(d.Path)
@@ -115,7 +115,7 @@ type TypeProviderImplTests() =
         // relative path
         Assert.AreEqual(subFolder, pru.MakeAbsolute(d.Path, "Subfolder"), "relative path should be converted to absolute")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PathResolutionUtils.GetAbsoluteDesignTimeDirectory``() = 
         use d = Util.TemporaryDirectory()
         let pru = Microsoft.FSharp.Data.TypeProviders.DesignTime.PathResolutionUtils(d.Path)
@@ -128,7 +128,7 @@ type TypeProviderImplTests() =
         let expected = Path.Combine(d.Path, name)
         Assert.AreEqual(expected, pru.GetAbsoluteDesignTimeDirectory(name), "relative path should be converted to absolute")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PathResolutionUtils.GetConfigFileWatchSpec.ResolvedPathsInSpecs``() = 
         let (++) a b = Path.Combine(a, b)
         (
@@ -273,7 +273,7 @@ type TypeProviderImplTests() =
             checkFound "#14" resFolder.Path custom <| fun _ -> custom
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ConfigFiles.findConfigFile``() = 
         let withTempFile name f = 
             use d = Util.TemporaryDirectory()
@@ -317,7 +317,7 @@ type TypeProviderImplTests() =
             | r -> sprintf "findConfigFile: CustomNotFound - unexpected result: %+A" r |> Assert.Fail
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ConfigFiles.tryReadConnectionString``() = 
         // 1. no file found
         (

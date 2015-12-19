@@ -14,7 +14,7 @@ let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let a = xs |> Seq.toArray |> Array.append (Seq.toArray xs2)
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``append is consistent`` () =
     Check.QuickThrowOnFailure append<int>
     Check.QuickThrowOnFailure append<string>
@@ -27,7 +27,7 @@ let averageFloat (xs : NormalFloat []) =
     let a = run (fun () -> xs |> Array.average)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``average is consistent`` () =
     Check.QuickThrowOnFailure averageFloat
 
@@ -39,7 +39,7 @@ let averageBy (xs : float []) f =
     let a = run (fun () -> xs |> Array.averageBy f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``averageBy is consistent`` () =
     Check.QuickThrowOnFailure averageBy
 
@@ -49,7 +49,7 @@ let contains<'a when 'a : equality> (xs : 'a []) x  =
     let a = xs |> Array.contains x
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``contains is consistent`` () =
     Check.QuickThrowOnFailure contains<int>
     Check.QuickThrowOnFailure contains<string>
@@ -61,7 +61,7 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let a = xs |> Array.choose f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``choose is consistent`` () =
     Check.QuickThrowOnFailure choose<int>
     Check.QuickThrowOnFailure choose<string>
@@ -73,7 +73,7 @@ let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
     let a = run (fun () -> xs |> Array.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``chunkBySize is consistent`` () =
     Check.QuickThrowOnFailure chunkBySize<int>
     Check.QuickThrowOnFailure chunkBySize<string>
@@ -85,7 +85,7 @@ let collect<'a> (xs : 'a []) f  =
     let a = xs |> Array.collect f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``collect is consistent`` () =
     Check.QuickThrowOnFailure collect<int>
     Check.QuickThrowOnFailure collect<string>
@@ -97,7 +97,7 @@ let compareWith<'a>(xs : 'a []) (xs2 : 'a []) f  =
     let a = (xs, xs2) ||> Array.compareWith f
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``compareWith is consistent`` () =
     Check.QuickThrowOnFailure compareWith<int>
     Check.QuickThrowOnFailure compareWith<string>
@@ -109,7 +109,7 @@ let concat<'a when 'a : equality> (xs : 'a [][]) =
     let a = xs |> Array.concat
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``concat is consistent`` () =
     Check.QuickThrowOnFailure concat<int>
     Check.QuickThrowOnFailure concat<string>
@@ -121,7 +121,7 @@ let countBy<'a> (xs : 'a []) f =
     let a = xs |> Array.countBy f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``countBy is consistent`` () =
     Check.QuickThrowOnFailure countBy<int>
     Check.QuickThrowOnFailure countBy<string>
@@ -133,7 +133,7 @@ let distinct<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.distinct
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``distinct is consistent`` () =
     Check.QuickThrowOnFailure distinct<int>
     Check.QuickThrowOnFailure distinct<string>
@@ -145,7 +145,7 @@ let distinctBy<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.distinctBy f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``distinctBy is consistent`` () =
     Check.QuickThrowOnFailure distinctBy<int>
     Check.QuickThrowOnFailure distinctBy<string>
@@ -157,7 +157,7 @@ let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckErrorType (fun () -> xs |> Array.exactlyOne)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``exactlyOne is consistent`` () =
     Check.QuickThrowOnFailure exactlyOne<int>
     Check.QuickThrowOnFailure exactlyOne<string>
@@ -169,7 +169,7 @@ let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
     let a = xs |> Array.except itemsToExclude
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``except is consistent`` () =
     Check.QuickThrowOnFailure except<int>
     Check.QuickThrowOnFailure except<string>
@@ -181,7 +181,7 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.exists f
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``exists is consistent`` () =
     Check.QuickThrowOnFailure exists<int>
     Check.QuickThrowOnFailure exists<string>
@@ -195,7 +195,7 @@ let exists2<'a when 'a : equality> (xs':('a*'a) []) f =
     let a = runAndCheckErrorType (fun () -> Array.exists2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     s = a && l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``exists2 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure exists2<int>
     Check.QuickThrowOnFailure exists2<string>
@@ -207,7 +207,7 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.filter predicate
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``filter is consistent`` () =
     Check.QuickThrowOnFailure filter<int>
     Check.QuickThrowOnFailure filter<string>
@@ -219,7 +219,7 @@ let find<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.find predicate)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``find is consistent`` () =
     Check.QuickThrowOnFailure find<int>
     Check.QuickThrowOnFailure find<string>
@@ -231,7 +231,7 @@ let findBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findBack predicate)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``findBack is consistent`` () =
     Check.QuickThrowOnFailure findBack<int>
     Check.QuickThrowOnFailure findBack<string>
@@ -243,7 +243,7 @@ let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findIndex predicate)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``findIndex is consistent`` () =
     Check.QuickThrowOnFailure findIndex<int>
     Check.QuickThrowOnFailure findIndex<string>
@@ -255,7 +255,7 @@ let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findIndexBack predicate)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``findIndexBack is consistent`` () =
     Check.QuickThrowOnFailure findIndexBack<int>
     Check.QuickThrowOnFailure findIndexBack<string>
@@ -267,7 +267,7 @@ let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> xs |> Array.fold f start)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``fold is consistent`` () =
     Check.QuickThrowOnFailure fold<int,int>
     Check.QuickThrowOnFailure fold<string,string>
@@ -282,7 +282,7 @@ let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let a = run (fun () -> Array.fold2 f start xs xs2)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``fold2 is consistent`` () =
     Check.QuickThrowOnFailure fold2<int,int,int>
     Check.QuickThrowOnFailure fold2<string,string,string>
@@ -297,7 +297,7 @@ let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> Array.foldBack f xs start)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``foldBack is consistent`` () =
     Check.QuickThrowOnFailure foldBack<int,int>
     Check.QuickThrowOnFailure foldBack<string,string>
@@ -312,7 +312,7 @@ let foldBack2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let a = run (fun () -> Array.foldBack2 f xs xs2 start)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``foldBack2 is consistent`` () =
     Check.QuickThrowOnFailure foldBack2<int,int,int>
     Check.QuickThrowOnFailure foldBack2<string,string,string>
@@ -327,7 +327,7 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.forall f
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``forall is consistent`` () =
     Check.QuickThrowOnFailure forall<int>
     Check.QuickThrowOnFailure forall<string>
@@ -341,7 +341,7 @@ let forall2<'a when 'a : equality> (xs':('a*'a) []) f =
     let a = runAndCheckErrorType (fun () -> Array.forall2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     s = a && l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``forall2 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure forall2<int>
     Check.QuickThrowOnFailure forall2<string>
@@ -353,7 +353,7 @@ let groupBy<'a when 'a : equality> (xs : 'a []) f =
     let a = run (fun () -> xs |> Array.groupBy f |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``groupBy is consistent`` () =
     Check.QuickThrowOnFailure groupBy<int>
     Check.QuickThrowOnFailure groupBy<string>
@@ -365,7 +365,7 @@ let head<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.head)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``head is consistent`` () =
     Check.QuickThrowOnFailure head<int>
     Check.QuickThrowOnFailure head<string>
@@ -377,7 +377,7 @@ let indexed<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.indexed
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``indexed is consistent`` () =
     Check.QuickThrowOnFailure indexed<int>
     Check.QuickThrowOnFailure indexed<string>
@@ -389,7 +389,7 @@ let init<'a when 'a : equality> count f =
     let a = run (fun () -> Array.init count f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``init is consistent`` () =
     Check.QuickThrowOnFailure init<int>
     Check.QuickThrowOnFailure init<string>
@@ -401,7 +401,7 @@ let isEmpty<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.isEmpty
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``isEmpty is consistent`` () =
     Check.QuickThrowOnFailure isEmpty<int>
     Check.QuickThrowOnFailure isEmpty<string>
@@ -413,7 +413,7 @@ let item<'a when 'a : equality> (xs : 'a []) index =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.item index)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``item is consistent`` () =
     Check.QuickThrowOnFailure item<int>
     Check.QuickThrowOnFailure item<string>
@@ -432,7 +432,7 @@ let iter<'a when 'a : equality> (xs : 'a []) f' =
     let xs = Seq.toList xs
     list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``iter looks at every element exactly once and in order - consistenly over all collections`` () =
     Check.QuickThrowOnFailure iter<int>
     Check.QuickThrowOnFailure iter<string>
@@ -453,7 +453,7 @@ let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = Seq.toList xs'
     list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``iter2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     Check.QuickThrowOnFailure iter2<int>
     Check.QuickThrowOnFailure iter2<string>
@@ -475,7 +475,7 @@ let iteri<'a when 'a : equality> (xs : 'a []) f' =
     list |> Seq.toList = (xs @ xs @ xs) &&
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``iteri looks at every element exactly once and in order - consistenly over all collections`` () =
     Check.QuickThrowOnFailure iteri<int>
     Check.QuickThrowOnFailure iteri<string>
@@ -499,7 +499,7 @@ let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     list |> Seq.toList = (xs @ xs @ xs) &&
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``iteri2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     Check.QuickThrowOnFailure iteri2<int>
     Check.QuickThrowOnFailure iteri2<string>
@@ -511,7 +511,7 @@ let last<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.last)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``last is consistent`` () =
     Check.QuickThrowOnFailure last<int>
     Check.QuickThrowOnFailure last<string>
@@ -523,7 +523,7 @@ let length<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.length
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``length is consistent`` () =
     Check.QuickThrowOnFailure length<int>
     Check.QuickThrowOnFailure length<string>
@@ -535,7 +535,7 @@ let map<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.map f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``map is consistent`` () =
     Check.QuickThrowOnFailure map<int>
     Check.QuickThrowOnFailure map<string>
@@ -557,7 +557,7 @@ let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``map2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     Check.QuickThrowOnFailure map2<int>
     Check.QuickThrowOnFailure map2<string>
@@ -580,7 +580,7 @@ let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``map3 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     Check.QuickThrowOnFailure map3<int>
     Check.QuickThrowOnFailure map3<string>
@@ -593,7 +593,7 @@ let mapFold<'a when 'a : equality> (xs : 'a []) f start =
     Seq.toArray s = a && List.toArray l = a &&
       sr = lr && sr = ar
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``mapFold is consistent`` () =
     Check.QuickThrowOnFailure mapFold<int>
     Check.QuickThrowOnFailure mapFold<string>
@@ -606,7 +606,7 @@ let mapFoldBack<'a when 'a : equality> (xs : 'a []) f start =
     Seq.toArray s = a && List.toArray l = a &&
       sr = lr && sr = ar
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``mapFold2 is consistent`` () =
     Check.QuickThrowOnFailure mapFoldBack<int>
     Check.QuickThrowOnFailure mapFoldBack<string>
@@ -618,7 +618,7 @@ let mapi<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.mapi f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``mapi is consistent`` () =
     Check.QuickThrowOnFailure mapi<int>
     Check.QuickThrowOnFailure mapi<string>
@@ -643,7 +643,7 @@ let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
       list |> Seq.toList = (xs @ xs @ xs) &&
       (Seq.toList indices = [0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``mapi2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     Check.QuickThrowOnFailure mapi2<int>
     Check.QuickThrowOnFailure mapi2<string>
@@ -655,7 +655,7 @@ let max<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``max is consistent`` () =
     Check.QuickThrowOnFailure max<int>
     Check.QuickThrowOnFailure max<string>
@@ -667,7 +667,7 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``maxBy is consistent`` () =
     Check.QuickThrowOnFailure maxBy<int>
     Check.QuickThrowOnFailure maxBy<string>
@@ -679,7 +679,7 @@ let min<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``min is consistent`` () =
     Check.QuickThrowOnFailure min<int>
     Check.QuickThrowOnFailure min<string>
@@ -691,7 +691,7 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``minBy is consistent`` () =
     Check.QuickThrowOnFailure minBy<int>
     Check.QuickThrowOnFailure minBy<string>
@@ -703,7 +703,7 @@ let pairwise<'a when 'a : comparison> (xs : 'a []) =
     let a = run (fun () -> xs |> Array.pairwise)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``pairwise is consistent`` () =
     Check.QuickThrowOnFailure pairwise<int>
     Check.QuickThrowOnFailure pairwise<string>
@@ -716,7 +716,7 @@ let partition<'a when 'a : comparison> (xs : 'a []) f =
     List.toArray l1 = a1 &&
       List.toArray l2 = a2
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``partition is consistent`` () =
     Check.QuickThrowOnFailure partition<int>
     Check.QuickThrowOnFailure partition<string>
@@ -740,7 +740,7 @@ let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let a = run (fun () -> xs |> Array.ofSeq |> Array.permute permutation)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``permute is consistent`` () =
     Check.QuickThrowOnFailure permute<int>
     Check.QuickThrowOnFailure permute<string>
@@ -752,7 +752,7 @@ let pick<'a when 'a : comparison> (xs : 'a []) f =
     let a = run (fun () -> xs |> Array.pick f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``pick is consistent`` () =
     Check.QuickThrowOnFailure pick<int>
     Check.QuickThrowOnFailure pick<string>
@@ -764,7 +764,7 @@ let reduce<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``reduce is consistent`` () =
     Check.QuickThrowOnFailure reduce<int>
     Check.QuickThrowOnFailure reduce<string>
@@ -776,7 +776,7 @@ let reduceBack<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduceBack f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``reduceBack is consistent`` () =
     Check.QuickThrowOnFailure reduceBack<int>
     Check.QuickThrowOnFailure reduceBack<string>
@@ -788,7 +788,7 @@ let replicate<'a when 'a : equality> x count =
     let a = runAndCheckIfAnyError (fun () -> Array.replicate count x)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``replicate is consistent`` () =
     Check.QuickThrowOnFailure replicate<int>
     Check.QuickThrowOnFailure replicate<string>
@@ -800,7 +800,7 @@ let rev<'a when 'a : equality> (xs : 'a []) =
     let a = Array.rev xs
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``rev is consistent`` () =
     Check.QuickThrowOnFailure rev<int>
     Check.QuickThrowOnFailure rev<string>
@@ -812,7 +812,7 @@ let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> xs |> Array.scan f start)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``scan is consistent`` () =
     Check.QuickThrowOnFailure scan<int,int>
     Check.QuickThrowOnFailure scan<string,string>
@@ -825,7 +825,7 @@ let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> Array.scanBack f xs start)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``scanBack is consistent`` () =
     Check.QuickThrowOnFailure scanBack<int,int>
     Check.QuickThrowOnFailure scanBack<string,string>
@@ -838,7 +838,7 @@ let singleton<'a when 'a : equality> (x : 'a) =
     let a = Array.singleton x
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``singleton is consistent`` () =
     Check.QuickThrowOnFailure singleton<int>
     Check.QuickThrowOnFailure singleton<string>
@@ -850,7 +850,7 @@ let skip<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.skip count xs)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``skip is consistent`` () =
     Check.QuickThrowOnFailure skip<int>
     Check.QuickThrowOnFailure skip<string>
@@ -862,7 +862,7 @@ let skipWhile<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> Array.skipWhile f xs)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``skipWhile is consistent`` () =
     Check.QuickThrowOnFailure skipWhile<int>
     Check.QuickThrowOnFailure skipWhile<string>
@@ -874,7 +874,7 @@ let sort<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sort
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
     Check.QuickThrowOnFailure sort<string>
@@ -888,7 +888,7 @@ let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a ->
     isSorted (Seq.map f s) && isSorted (Seq.map f l) && isSorted (Seq.map f a) &&
       haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
     Check.QuickThrowOnFailure sortBy<int,int>
     Check.QuickThrowOnFailure sortBy<int,string>
@@ -913,7 +913,7 @@ let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a 
     isSorted s && isSorted l && isSorted a &&
         haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
     Check.QuickThrowOnFailure sortWith<int,int>
     Check.QuickThrowOnFailure sortWith<int,string>
@@ -927,7 +927,7 @@ let sortDescending<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sortDescending
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sortDescending is consistent`` () =
     Check.QuickThrowOnFailure sortDescending<int>
     Check.QuickThrowOnFailure sortDescending<string>
@@ -941,7 +941,7 @@ let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []
     isSorted (Seq.map f s |> Seq.rev) && isSorted (Seq.map f l |> Seq.rev) && isSorted (Seq.map f a |> Seq.rev) &&
       haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
     Check.QuickThrowOnFailure sortByDescending<int,int>
     Check.QuickThrowOnFailure sortByDescending<int,string>
@@ -955,7 +955,7 @@ let sum (xs : int []) =
     let a = run (fun () -> xs |> Array.sum)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sum is consistent`` () =
     Check.QuickThrowOnFailure sum
 
@@ -965,7 +965,7 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let a = run (fun () -> xs |> Array.sumBy f)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``sumBy is consistent`` () =
     Check.QuickThrowOnFailure sumBy<int>
     Check.QuickThrowOnFailure sumBy<string>
@@ -977,7 +977,7 @@ let splitAt<'a when 'a : equality> (xs : 'a []) index =
     let a = run (fun () -> xs |> Array.splitAt index)
     l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``splitAt is consistent`` () =
     Check.QuickThrowOnFailure splitAt<int>
     Check.QuickThrowOnFailure splitAt<string>
@@ -989,7 +989,7 @@ let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``splitInto is consistent`` () =
     Check.QuickThrowOnFailure splitInto<int>
     Check.QuickThrowOnFailure splitInto<string>
@@ -1001,7 +1001,7 @@ let tail<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.tail)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tail is consistent`` () =
     Check.QuickThrowOnFailure tail<int>
     Check.QuickThrowOnFailure tail<string>
@@ -1013,7 +1013,7 @@ let take<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.take count xs)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``take is consistent`` () =
     Check.QuickThrowOnFailure take<int>
     Check.QuickThrowOnFailure take<string>
@@ -1025,7 +1025,7 @@ let takeWhile<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> Array.takeWhile f xs)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``takeWhile is consistent`` () =
     Check.QuickThrowOnFailure takeWhile<int>
     Check.QuickThrowOnFailure takeWhile<string>
@@ -1037,7 +1037,7 @@ let truncate<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.truncate count xs)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``truncate is consistent`` () =
     Check.QuickThrowOnFailure truncate<int>
     Check.QuickThrowOnFailure truncate<string>
@@ -1049,7 +1049,7 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFind predicate
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryFind is consistent`` () =
     Check.QuickThrowOnFailure tryFind<int>
     Check.QuickThrowOnFailure tryFind<string>
@@ -1061,7 +1061,7 @@ let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindBack predicate
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryFindBack is consistent`` () =
     Check.QuickThrowOnFailure tryFindBack<int>
     Check.QuickThrowOnFailure tryFindBack<string>
@@ -1073,7 +1073,7 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindIndex predicate
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryFindIndex is consistent`` () =
     Check.QuickThrowOnFailure tryFindIndex<int>
     Check.QuickThrowOnFailure tryFindIndex<string>
@@ -1085,7 +1085,7 @@ let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindIndexBack predicate
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryFindIndexBack is consistent`` () =
     Check.QuickThrowOnFailure tryFindIndexBack<int>
     Check.QuickThrowOnFailure tryFindIndexBack<string>
@@ -1097,7 +1097,7 @@ let tryHead<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.tryHead
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryHead is consistent`` () =
     Check.QuickThrowOnFailure tryHead<int>
     Check.QuickThrowOnFailure tryHead<string>
@@ -1109,7 +1109,7 @@ let tryItem<'a when 'a : equality> (xs : 'a []) index =
     let a = xs |> Array.tryItem index
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryItem is consistent`` () =
     Check.QuickThrowOnFailure tryItem<int>
     Check.QuickThrowOnFailure tryItem<string>
@@ -1121,7 +1121,7 @@ let tryLast<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.tryLast
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryLast is consistent`` () =
     Check.QuickThrowOnFailure tryLast<int>
     Check.QuickThrowOnFailure tryLast<string>
@@ -1133,7 +1133,7 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let a = xs |> Array.tryPick f
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``tryPick is consistent`` () =
     Check.QuickThrowOnFailure tryPick<int>
     Check.QuickThrowOnFailure tryPick<string>
@@ -1154,7 +1154,7 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
     s = a && l = a
 
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``unfold is consistent`` () =
     Check.QuickThrowOnFailure unfold<int,int>
     Check.QuickThrowOnFailure unfold<string,string>
@@ -1167,7 +1167,7 @@ let unzip<'a when 'a : equality> (xs:('a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.unzip xs)
     l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``unzip is consistent`` () =
     Check.QuickThrowOnFailure unzip<int>
     Check.QuickThrowOnFailure unzip<string>
@@ -1179,7 +1179,7 @@ let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.unzip3 xs)
     l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``unzip3 is consistent`` () =
     Check.QuickThrowOnFailure unzip3<int>
     Check.QuickThrowOnFailure unzip3<string>
@@ -1191,7 +1191,7 @@ let where<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.where predicate
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``where is consistent`` () =
     Check.QuickThrowOnFailure where<int>
     Check.QuickThrowOnFailure where<string>
@@ -1203,7 +1203,7 @@ let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
     let a = run (fun () -> xs |> Array.windowed windowSize)
     s = a && l = a
 
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``windowed is consistent`` () =
     Check.QuickThrowOnFailure windowed<int>
     Check.QuickThrowOnFailure windowed<string>
@@ -1217,7 +1217,7 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
     s = a && l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``zip is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure zip<int>
     Check.QuickThrowOnFailure zip<string>
@@ -1232,7 +1232,7 @@ let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.zip3 (Array.ofSeq xs) (Array.ofSeq xs2) (Array.ofSeq xs3))
     s = a && l = a
     
-[<Test>]
+[<Parallelizable(ParallelScope.Self)>][<Test>]
 let ``zip3 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure zip3<int>
     Check.QuickThrowOnFailure zip3<string>

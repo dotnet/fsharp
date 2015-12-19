@@ -56,7 +56,7 @@ module Int8 =
     let MinValue = SByte.MinValue
     let MaxValue = SByte.MaxValue
 
-[<TestFixture>]                                                              
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]                                                              
 type IntConversionsGenerated() =
 "
                 
@@ -70,7 +70,7 @@ type IntConversionsGenerated() =
         // -1 converted to unsigned types. Should become MaxValues
         let signedToUnsignedGenerator target =
             signedInts |> List.iter (fun source->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``%s.m1.To.%s`` () =" source.alias target.alias
                 shift ()
                 prn "let i : %s = -1%s" source.alias source.suffix
@@ -82,7 +82,7 @@ type IntConversionsGenerated() =
         // -1 converted to signed types. Should stay -1.
         let signedToSignedGenerator target =
             signedInts |> List.iter (fun source->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``%s.m1.To.%s`` () =" source.alias target.alias
                 shift ()
                 prn "let minus1 : %s = -1%s" target.alias target.suffix
@@ -96,7 +96,7 @@ type IntConversionsGenerated() =
         let unsignedToWiderGenerator target = 
             unsignedInts |> List.filter (fun source -> source.width < target.width)
             |> List.iter (fun source ->
-                    prn "[<Test>]"
+                    prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                     prn "member this.``%s.MaxValue.To.%s`` () =" source.alias target.alias
                     shift ()                
                     prn "let sourceMaxValue : %s = %s%s" target.alias (maxValueAsHexLiteral source) target.suffix
@@ -109,7 +109,7 @@ type IntConversionsGenerated() =
         let unsignedToNarrowerSignedGenerator target =
             unsignedInts |> List.filter (fun source -> source.width >= target.width)
             |> List.iter (fun source ->
-                    prn "[<Test>]"
+                    prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                     prn "member this.``%s.MaxValue.To.%s`` () =" source.alias target.alias
                     shift ()
                     prn "Assert.AreEqual (-1%s, %s %s.MaxValue)" target.suffix target.alias source.name
@@ -121,7 +121,7 @@ type IntConversionsGenerated() =
         let unsignedToNarrowerUnsignedGenerator target =
             unsignedInts |> List.filter (fun source -> source.width >= target.width)
             |> List.iter (fun source ->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``%s.MaxValue.To.%s`` () ="  source.alias target.alias
                 shift ()
                 prn "Assert.AreEqual (%s.MaxValue, %s %s.MaxValue)" target.name target.alias source.name
@@ -131,7 +131,7 @@ type IntConversionsGenerated() =
     
         // -1 to signed nativeint stays -1
         signedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``%s.m1.To.nativeint`` () =" source.alias
             shift ()
             prn "Assert.AreEqual (-1n, nativeint -1%s)" source.suffix
@@ -140,7 +140,7 @@ type IntConversionsGenerated() =
             
         // unsigned MaxValues to signed nativeint stay same for narrower types, become -1 for wider types
         unsignedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``%s.MaxValue.To.nativeint`` () =" source.alias
             shift ()
             prn "if sizeof<nativeint> > sizeof<%s> then" source.alias
@@ -162,7 +162,7 @@ type IntConversionsGenerated() =
     
         // -1 to unsigned nativeint should become MaxValue
         signedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``%s.m1.To.unativeint`` () =" source.alias
             shift ()        
             prn "Assert.AreEqual (this.UnativeintMaxValue, unativeint -1%s)" source.suffix
@@ -171,7 +171,7 @@ type IntConversionsGenerated() =
      
         // unsigned MaxValues to unsigned nativeint stay same for narrower types, become MaxValue for wider types
         unsignedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``%s.m1.To.unativeint`` () =" source.alias
             shift ()        
             prn "if sizeof<unativeint> > sizeof<%s> then" source.alias
@@ -188,7 +188,7 @@ type IntConversionsGenerated() =
         // -1 converted to unsigned types. Should throw
         let checkedSignedToUnsignedGenerator target =
             signedInts |> List.iter (fun source->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``Checked.%s.m1.To.%s`` () =" source.alias target.alias
                 shift ()
                 prn "let i : %s = -1%s" source.alias source.suffix
@@ -200,7 +200,7 @@ type IntConversionsGenerated() =
         // -1 converted to signed types. Should stay -1.
         let signedToSignedGenerator target =
             signedInts |> List.iter (fun source->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``Checked.%s.m1.To.%s`` () =" source.alias target.alias
                 shift ()
                 prn "let minus1 : %s = -1%s" target.alias target.suffix
@@ -214,7 +214,7 @@ type IntConversionsGenerated() =
         let checkedUnsignedToWiderGenerator target = 
             unsignedInts |> List.filter (fun source -> source.width < target.width)
             |> List.iter (fun source ->
-                    prn "[<Test>]"
+                    prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                     prn "member this.``Checked.%s.MaxValue.To.%s`` () =" source.alias target.alias
                     shift ()                
                     prn "let sourceMaxValue : %s = %s%s" target.alias (maxValueAsHexLiteral source) target.suffix
@@ -227,7 +227,7 @@ type IntConversionsGenerated() =
         let checkedUnsignedToNarrowerSignedGenerator target =
             unsignedInts |> List.filter (fun source -> source.width >= target.width && target.alias <> "int8")
             |> List.iter (fun source ->
-                    prn "[<Test>]"
+                    prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                     prn "member this.``Checked.%s.MaxValue.To.%s`` () =" source.alias target.alias
                     shift ()
                     prn "CheckThrowsExn<OverflowException> (fun () -> Checked.%s %s.MaxValue |> ignore)" target.alias source.name
@@ -239,7 +239,7 @@ type IntConversionsGenerated() =
         let checkedUnsignedToNarrowerUnsignedGenerator target =
             unsignedInts |> List.filter (fun source -> source.width > target.width)
             |> List.iter (fun source ->
-                prn "[<Test>]"
+                prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
                 prn "member this.``Checked.%s.MaxValue.To.%s`` () ="  source.alias target.alias
                 shift ()
                 prn "CheckThrowsExn<OverflowException> (fun () -> Checked.%s %s.MaxValue |> ignore)" target.alias source.name
@@ -249,7 +249,7 @@ type IntConversionsGenerated() =
     
         // -1 to signed nativeint stays -1
         signedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``Checked.%s.m1.To.nativeint`` () =" source.alias
             shift ()
             prn "Assert.AreEqual (-1n, Checked.nativeint -1%s)" source.suffix
@@ -258,7 +258,7 @@ type IntConversionsGenerated() =
             
         // unsigned MaxValues to signed nativeint stay same for narrower types, throw for wider types
         unsignedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``Checked.%s.MaxValue.To.nativeint`` () =" source.alias
             shift ()
             prn "if sizeof<nativeint> > sizeof<%s> then" source.alias
@@ -272,7 +272,7 @@ type IntConversionsGenerated() =
     
         // -1 to unsigned nativeint should throw
         signedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``Checked.%s.m1.To.unativeint`` () =" source.alias
             shift ()        
             prn "CheckThrowsExn<OverflowException> (fun () -> Checked.unativeint -1%s |> ignore)" source.suffix
@@ -281,7 +281,7 @@ type IntConversionsGenerated() =
      
         // unsigned MaxValues to unsigned nativeint stay same for narrower types, throw for wider types
         unsignedInts |> List.iter (fun source ->
-            prn "[<Test>]"
+            prn "[<Parallelizable(ParallelScope.Self)>][<Test>]"
             prn "member this.``Checked.%s.MaxValue.To.unativeint`` () =" source.alias
             shift ()        
             prn "if sizeof<unativeint> >= sizeof<%s> then" source.alias

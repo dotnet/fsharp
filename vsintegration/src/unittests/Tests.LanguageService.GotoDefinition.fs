@@ -79,7 +79,7 @@ type GotoDefinitionTests()  =
                 file 
                 result 
     
-    [<Test>]                                  
+    [<Parallelizable(ParallelScope.Self)>][<Test>]                                  
     member this.``Operators.TopLevel``() = 
         this.VerifyGotoDefnSuccessForNonIdentifierAtStartOfMarker(
             fileContents = """
@@ -90,7 +90,7 @@ type GotoDefinitionTests()  =
             pos=(1,21)
             )
 
-    [<Test>]                                  
+    [<Parallelizable(ParallelScope.Self)>][<Test>]                                  
     member this.``Operators.Member``() = 
         this.VerifyGotoDefnSuccessForNonIdentifierAtStartOfMarker(
             fileContents = """
@@ -103,7 +103,7 @@ type GotoDefinitionTests()  =
             pos=(3,35)
             )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Value``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -118,7 +118,7 @@ type GotoDefinitionTests()  =
             marker = "valueX (*GotoValDef*)",
             definitionCode = "let valueX = Beta(1.0M, ())(*GotoTypeDef*)")
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``DisUnionMember``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
                             fileContents = """
@@ -133,7 +133,7 @@ type GotoDefinitionTests()  =
             marker = "Beta(1.0M, ())(*GotoTypeDef*)",
             definitionCode = "| Beta of decimal * unit")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``PrimitiveType``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
             fileContents = """
@@ -141,7 +141,7 @@ type GotoDefinitionTests()  =
                 let bi = 123456I""",
             marker = "123456I")
            
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``OnTypeDefintion``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -152,7 +152,7 @@ type GotoDefinitionTests()  =
             marker = "One (*Marker1*)",
             definitionCode = "type One (*Marker1*) = One")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Parameter``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -163,7 +163,7 @@ type GotoDefinitionTests()  =
             marker = "One (*Marker2*)",
             definitionCode = "type One (*Marker1*) = One")    
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute")>]
     // This test case check the GotoDefinition (i.e. the TypeProviderDefinitionLocation Attribute)
@@ -287,7 +287,7 @@ type GotoDefinitionTests()  =
         ``Event.BasicScenario``()
 
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.NoSourceCodeAvailable``() = 
         this.VerifyGoToDefnFailAtStartOfMarker
             (
@@ -299,7 +299,7 @@ type GotoDefinitionTests()  =
                     )
             )
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.NoIdentifierAtLocation``() = 
         let useCases = 
             [
@@ -318,7 +318,7 @@ type GotoDefinitionTests()  =
                         )
                 )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ProvidedTypeNoDefinitionLocationAttribute``() =  
 
         this.VerifyGoToDefnFailAtStartOfMarker
@@ -334,7 +334,7 @@ type GotoDefinitionTests()  =
                 addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
             )
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ProvidedMemberNoDefinitionLocationAttribute``() = 
         let useCases = 
             [
@@ -361,7 +361,7 @@ type GotoDefinitionTests()  =
                         ),
                     addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
                 )
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Type
@@ -375,7 +375,7 @@ type GotoDefinitionTests()  =
             marker = "T(*GotoValDef*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     [<Ignore("Need some work to detect the line doesnot exist.")>]
@@ -390,7 +390,7 @@ type GotoDefinitionTests()  =
             marker = "T(*GotoValDef*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist.dll")])
      
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Constructor
@@ -406,7 +406,7 @@ type GotoDefinitionTests()  =
 
 
          
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     //This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Method
@@ -420,7 +420,7 @@ type GotoDefinitionTests()  =
             marker = "M(*GotoValDef*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Property
@@ -434,7 +434,7 @@ type GotoDefinitionTests()  =
             marker = "StaticProp(*GotoValDef*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
     //This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Event
@@ -449,7 +449,7 @@ type GotoDefinitionTests()  =
             marker = "Event1(*GotoValDef*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ModuleDefintion``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -460,7 +460,7 @@ type GotoDefinitionTests()  =
             marker = "Foo (*MarkerModuleDefinition*)",
             definitionCode = "module Foo (*MarkerModuleDefinition*) =")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Record.Field.Defintion``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -477,7 +477,7 @@ type GotoDefinitionTests()  =
             marker = "myX (*MarkerXFieldDefinition*)",   
             definitionCode = "{ myX (*MarkerXFieldDefinition*) : int")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Record.Field.Usage``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -538,7 +538,7 @@ type GotoDefinitionTests()  =
     member this.GotoDefinitionTestWithSimpleFile (startLoc : string)(exp : (string * string) option) : unit =
         this.SolutionGotoDefinitionTestWithSimpleFile startLoc exp 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.OverloadResolution``() =
         let lines =
           [ "type D() ="
@@ -555,7 +555,7 @@ type GotoDefinitionTests()  =
             "d.ToString$4$(\"aaa\") "
           ]
         this.GotoDefinitionTestWithMarkup lines
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.OverloadResolutionForProperties``() =
         let lines = [ "type D() ="
                       "  member this.Foo"
@@ -573,7 +573,7 @@ type GotoDefinitionTests()  =
             ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.OverloadResolutionWithOverrides``() =
         let lines =
           [ "[<AbstractClass>]"
@@ -592,7 +592,7 @@ type GotoDefinitionTests()  =
           ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.OverloadResolutionStatics``() =
         let lines =
           [   "type T ="
@@ -604,7 +604,7 @@ type GotoDefinitionTests()  =
           ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.Constructors``() =
         let lines =
           [   "type #1a##1b##1c##1d#B() ="
@@ -886,7 +886,7 @@ type GotoDefinitionTests()  =
     // ensure that we've found the correct position (i.e., these must be unique
     // in any given test source file)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.InheritedMembers``() =
         let lines =
             [ "[<AbstractClass>]"
@@ -906,209 +906,209 @@ type GotoDefinitionTests()  =
 
 
     /// let #x = () in $x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("PerfCheck")>]
     member public this.``GotoDefinition.InsideClass.Bug3176`` () =
       this.GotoDefinitionTestWithSimpleFile "id77 (*loc-77*)" (Some("val id77 (*loc-77*) : int", "id77"))
 
     /// let #x = () in $x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-1*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let #x = () in x$
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetRHSToRight`` () =
       this.GotoDefinitionTestWithSimpleFile " (*loc-1*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let $x = () in x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-2*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let x = () in let #x = () in $x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-4*)" (Some("let x = () (*loc-3*)", "x"))
 
     /// let x = () in let $x = () in x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameLHSInner`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-3*)" (Some("let x = () (*loc-3*)", "x"))
 
     /// let $x = () in let x = () in x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameLHSOuter`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-5*)" (Some("let x = () (*loc-5*)", "x"))
 
     /// let #x = () in let x = $x in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXIsX`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-6*)" (Some("let x = () (*loc-7*)", "x"))
 
     /// let x = () in let rec #x = fun y -> $x y in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXRec`` () =
       this.GotoDefinitionTestWithSimpleFile "x y (*loc-8*)" (Some("let rec x = (*loc-9*)", "x"))
 
     /// let x = () in let rec x = fun #y -> x $y in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXRecParam`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-8*)" (Some("fun y -> (*loc-10*)", "y"))
 
     /// let #(+) x _ = x in 2 $+ 3
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore "Bug 2514 filed.">]
     member public this.``GotoDefinition.Simple.Binding.Operator`` () =
       this.GotoDefinitionTestWithSimpleFile "+ 3 (*loc-11*)" (Some("let (+) x _ = x (*loc-2*)", "+"))
 
     /// type #Zero =
     /// let f (_ : $Zero) = 0
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NullType`` () =
       this.GotoDefinitionTestWithSimpleFile "Zero) : 'a = failwith \"hi\" (*loc-14*)" (Some("type Zero = (*loc-13*)", "Zero"))
 
     /// type One = $One
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeConsDef`` () =
       this.GotoDefinitionTestWithSimpleFile "One (*loc-15*)" (Some("One (*loc-15*)", "One"))
 
     /// type $One = One
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "One = (*loc-16*)" (Some("type One = (*loc-16*)", "One"))
 
     /// type One = #One
     /// let f (_ : One) = $One
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeCons`` () =
       this.GotoDefinitionTestWithSimpleFile "One (*loc-18*)" (Some("One (*loc-15*)", "One"))
 
     /// type #One = One
     /// let f (_ : $One) = One
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeTypename`` () =
       this.GotoDefinitionTestWithSimpleFile "One) = (*loc-17*)" (Some("type One = (*loc-16*)", "One"))
 
     /// type $Nat = Suc of Nat | Zro
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatTypeTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "Nat = (*loc-19*)" (Some("type Nat = (*loc-19*)", "Nat"))
 
     /// type #Nat = Suc of $Nat | Zro
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatTypeConsArg`` () =
       this.GotoDefinitionTestWithSimpleFile "Nat (*loc-20*)" (Some("type Nat = (*loc-19*)", "Nat"))
 
     /// type Nat = Suc of Nat | #Zro
     /// fun m -> match m with | $Zro -> () | _ -> ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatZro`` () =
       this.GotoDefinitionTestWithSimpleFile "Zro   -> (*loc-24*)" (Some("| Zro (*loc-21*)", "Zro"))
 
     /// type Nat = $Suc of Nat | Zro
     /// fun m -> match m with | Zro -> () | $Suc _ -> ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSuc`` () =
       this.GotoDefinitionTestWithSimpleFile "Suc m -> (*loc-25*)" (Some("| Suc of Nat (*loc-20*)", "Suc"))
 
     /// let rec plus m n = match m with | Zro -> n | Suc #m -> Suc (plus $m n)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSucVarUse`` () =
       this.GotoDefinitionTestWithSimpleFile "m n) (*loc-26*)" (Some("| Suc m -> (*loc-25*)", "m"))
 
     /// let rec plus m n = match m with | Zro -> n | Suc #m -> Suc (plus $m n)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSucOuterVarUse`` () =
       this.GotoDefinitionTestWithSimpleFile "n) (*loc-26*)" (Some("let rec plus m n = (*loc-23*)", "n"))
 
     /// type $MyRec = { myX : int ; myY : int }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "MyRec = (*loc-27*)" (Some("type MyRec = (*loc-27*)", "MyRec"))
 
     /// type MyRec = { $myX : int ; myY : int }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1Def`` () =
       this.GotoDefinitionTestWithSimpleFile "myX : int (*loc-28*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
     /// type MyRec = { myX : int ; $myY : int }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField2Def`` () =
       this.GotoDefinitionTestWithSimpleFile "myY : int (*loc-29*)" (Some("myY : int (*loc-29*)", "myY"))
 
     /// type MyRec = { #myX : int ; myY : int }
     /// let rDefault = { $myX = 2 ; myY = 3 }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1Use`` () =
       this.GotoDefinitionTestWithSimpleFile "myX = 2 (*loc-30*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
     /// type MyRec = { myX : int ; #myY : int }
     /// let rDefault = { myX = 2 ; $myY = 3 }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField2Use`` () =
       this.GotoDefinitionTestWithSimpleFile "myY = 3 (*loc-31*)" (Some("myY : int (*loc-29*)", "myY"))
 
     /// type MyRec = { #myX : int ; myY : int }
     /// let rDefault = { myX = 2 ; myY = 3 }
     /// let _ = { rDefault with $myX = 7 }
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1UseInWith`` () =
       this.GotoDefinitionTestWithSimpleFile "myX = 7 } (*loc-32*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
 
     /// let a = () in let id (x : '$a) : 'a = x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Polymorph.Leftmost`` () =
       this.GotoDefinitionTestWithSimpleFile "a) (*loc-33*)" None
 
     /// let a = () in let id (x : 'a) : '$a = x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Polymorph.NotLeftmost`` () =
       this.GotoDefinitionTestWithSimpleFile "a = x (*loc-34*)" None
 
     /// let foo = () in let f (_ as $foo) = foo in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.AsPatLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "foo) = (*loc-35*)" (Some("let f (_ as foo) = (*loc-35*)", "foo"))
 
     /// let foo = () in let f (_ as #foo) = $foo in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.AsPatRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "foo (*loc-36*)" (Some("let f (_ as foo) = (*loc-35*)", "foo"))
 
     /// fun $x x -> x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBind1`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-37*)" (Some("fun x (*loc-37*)", "x"))
 
     /// fun x $x -> x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBind2`` () =
       this.GotoDefinitionTestWithSimpleFile "x -> (*loc-38*)" (Some("x -> (*loc-38*)", "x"))
 
     /// fun x $x -> x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBindBody`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-39*)" (Some("x -> (*loc-38*)", "x"))
 
     /// let f = () in let $f = function f -> f in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsFunc`` () =
       this.GotoDefinitionTestWithSimpleFile "f = (*loc-41*)" (Some("let f = (*loc-41*)", "f"))
 
     /// let f = () in let f = function $f -> f in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsPat`` () =
       this.GotoDefinitionTestWithSimpleFile "f -> (*loc-42*)" (Some("function f -> (*loc-42*)", "f"))
 
     /// let f = () in let f = function #f -> $f in ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsUse`` () =
       this.GotoDefinitionTestWithSimpleFile "f (*loc-43*)" (Some("function f -> (*loc-42*)", "f"))
 
     /// let f x = match x with | Suc $x | x -> x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.OrPatLeft`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-44*)" (Some("| Suc x (*loc-44*)", "x"))
 
@@ -1118,88 +1118,88 @@ type GotoDefinitionTests()  =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-45*)" (Some("| Suc x (*loc-44*)", "x"))  // NOTE: or-patterns bind at first occurrence of the variable
 
     /// let f x = match x with | Suc #y & z -> $y
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.AndPat`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-46*)" (Some("| Suc y & z -> (*loc-47*)", "y"))
 
     /// let f xs = match xs with | #x :: xs -> $x
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPat`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-48*)" (Some("| x :: xs -> (*loc-49*)", "x"))
 
     /// let f p = match p with (#y, z) -> $y
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.PairPat`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-50*)" (Some("| (y : int, z) -> (*loc-51*)", "y"))
 
     /// fun xs -> match xs with x :: #xs when $xs <> [] -> x :: xs
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhen`` () =
       this.GotoDefinitionTestWithSimpleFile "xs <> [] -> (*loc-52*)" (Some("| x :: xs (*loc-54*)", "xs"))
 
     /// fun xs -> match xs with #x :: xs when xs <> [] -> $x :: xs
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsX`` () =
       this.GotoDefinitionTestWithSimpleFile "x :: xs (*loc-53*)" (Some("| x :: xs (*loc-54*)", "x"))
 
     /// fun xs -> match xs with x :: #xs when xs <> [] -> x :: $xs
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsXs`` () =
       this.GotoDefinitionTestWithSimpleFile "xs (*loc-53*)" (Some("| x :: xs (*loc-54*)", "xs"))
 
     /// let x = "$x"
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.InStringFails`` () =
       this.GotoDefinitionTestWithSimpleFile "x(*loc-72*)" None
 
     /// let x = "hello
     ///          $x
     ///         "
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.InMultiLineStringFails`` () =
       this.GotoDefinitionTestWithSimpleFile "x(*loc-73*)" None
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Tricky.QuotedKeyword`` () =
       this.GotoDefinitionTestWithSimpleFile "let`` = (*loc-74*)" (Some("let rec ``let`` = (*loc-74*)", "``let``"))
 
     /// module $Too = let foo = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Module.DefModname`` () =
       this.GotoDefinitionTestWithSimpleFile "Too = (*loc-55*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module Too = $foo = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Module.DefMember`` () =
       this.GotoDefinitionTestWithSimpleFile "foo = 0 (*loc-56*)" (Some("let foo = 0 (*loc-56*)", "foo"))
 
     /// module #Too = foo = ()
     /// module Bar = open $Too
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Module.Open`` () =
       this.GotoDefinitionTestWithSimpleFile "Too (*loc-57*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module #Too = foo = ()
     /// $Too.foo
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Module.QualifiedModule`` () =
       this.GotoDefinitionTestWithSimpleFile "Too.foo (*loc-58*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module Too = #foo = ()
     /// Too.$foo
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.Module.QualifiedMember`` () =
       this.GotoDefinitionTestWithSimpleFile "foo (*loc-58*)" (Some("let foo = 0 (*loc-56*)", "foo"))
 
     /// type Parity = Even | Odd
     /// let (|$Even|Odd|) x = if x % 0 = 0 then Even else Odd
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.ActivePat.ConsDefLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "Even|Odd|) x = (*loc-59*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
     /// type Parity = Even | Odd
     /// let (|#Even|Odd|) x = if x % 0 = 0 then $Even else Odd
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.ActivePat.ConsDefRhs`` () =
       this.GotoDefinitionTestWithSimpleFile "Even (*loc-60*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
@@ -1209,16 +1209,16 @@ type GotoDefinitionTests()  =
     ///   match x with
     ///   | $Even -> 1
     ///   | Odd  -> 0
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.ActivePat.PatUse`` () =
       this.GotoDefinitionTestWithSimpleFile "Even -> 1 (*loc-61*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
     /// let patval = (|Even|Odd|) (*loc-61b*)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.Simple.ActivePat.PatUseValue`` () =
       this.GotoDefinitionTestWithSimpleFile "en|Odd|) (*loc-61b*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("This is currently broken for dev enlistments.")>]
     member public this.``GotoDefinition.Library.InitialTest`` () =
       this.GotoDefinitionTestWithLib "map (*loc-1*)" (Some("map", "lis.fs"))
@@ -1227,32 +1227,32 @@ type GotoDefinitionTests()  =
 
     /// type #Class$ () =
     ///   member c.Method () = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ClassNameDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = (*loc-62*)" (Some("type Class () = (*loc-62*)", "Class"))
 
     /// type Class () =
     ///   member c.#Method$ () = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ILMethodDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = () (*loc-63*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
     /// type Class () =
     ///   member #c$.Method () = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ThisDef`` () =
       this.GotoDefinitionTestWithSimpleFile ".Method () = () (*loc-63*)" (Some("member c.Method () = () (*loc-63*)", "c"))
 
     /// type Class () =
     ///   static member #Foo$ () = ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.StaticMethodDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = () (*loc-64*)" (Some("static member Foo () = () (*loc-64*)", "Foo"))
 
     /// type #Class () =
     ///   member Method () = ()
     /// let c = Class$ ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ConstructorUse`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-65*)" (Some("type Class () = (*loc-62*)", "Class"))
 
@@ -1260,27 +1260,27 @@ type GotoDefinitionTests()  =
     ///   member #Method () = ()
     /// let c = Class ()
     /// c.Method$ ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.MethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-66*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
     /// type Class () =
     ///   static member #Foo () = ()
     /// Class.Foo$ ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.StaticMethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-67*)" (Some("static member Foo () = () (*loc-64*)", "Foo"))
 
     /// type Class () =
     ///   member c.Method# () = c.Method$ ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.MethodSelfInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-68*)" (Some("member c.Method  () = c.Method () (*loc-68*)", "c.Method"))
 
     /// type Class () =
     ///   member c.Method1 ()  = c.Method2$ ()
     ///   member #c.Method2 () = c.Method1 ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.MethodToMethodForward`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-69*)" (Some("member c.Method2 () = c.Method1 () (*loc-70*)", "c.Method2"))
 
@@ -1290,7 +1290,7 @@ type GotoDefinitionTests()  =
     ///   member c.Method () =
     ///     let #c = Class ()
     ///     c$.Method ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ShadowThis`` () =
       this.GotoDefinitionTestWithSimpleFile ".Method () (*loc-71*)" (Some("let c = Class ()", "c"))
 
@@ -1300,11 +1300,11 @@ type GotoDefinitionTests()  =
     ///   member c.Method () =
     ///     let c = Class ()
     ///     c.Method$ ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GotoDefinition.ObjectOriented.ShadowThisMethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-71*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``GotoDefinition.ObjectOriented.StructConstructor`` () =
       let lines = 
         [ "#light"
@@ -1355,54 +1355,54 @@ type GotoDefinitionTests()  =
       | (None,         Some _)  -> 
         Assert.Fail("Expected result, but didn't receive one!")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("PerfCheck")>]
     member public this.``GetCompleteIdTest.TrivialBefore`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let $ThisIsAnIdentifier = ()" (Some "ThisIsAnIdentifier")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.TrivialMiddle`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let This$IsAnIdentifier = ()" (Some "ThisIsAnIdentifier")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.TrivialEnd`` () =
       this.GetCompleteIdTest true "let ThisIsAnIdentifier$ = ()" (Some "ThisIsAnIdentifier")
       this.GetCompleteIdTest false "let ThisIsAnIdentifier$ = ()" None
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetsUpToDot1`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Te$st.Moo.Foo.bar" (Some "Test")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetsUpToDot2`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Mo$o.Foo.bar" (Some "Test.Moo")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetsUpToDot3`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Moo.Fo$o.bar" (Some "Test.Moo.Foo")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetsUpToDot4`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Moo.Foo.ba$r" (Some "Test.Moo.Foo.bar")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetsUpToDot5`` () =
       this.GetCompleteIdTest true "let ThisIsAnIdentifier = Test.Moo.Foo.bar$" (Some "Test.Moo.Foo.bar")
       this.GetCompleteIdTest false "let ThisIsAnIdentifier = Test.Moo.Foo.bar$" None
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``GetCompleteIdTest.GetOperator`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = 3 +$ 4" None
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Identifier.IsConstructor.Bug2516``() =
         let fileContents = """
             module GotoDefinition
@@ -1411,7 +1411,7 @@ type GotoDefinitionTests()  =
         let definitionCode = "type One(*Mark1*) = One"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark1*)",definitionCode) 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Identifier.IsTypeName.Bug2516``() =
         let fileContents = """
             module GotoDefinition
@@ -1420,7 +1420,7 @@ type GotoDefinitionTests()  =
         let definitionCode = "type One(*Mark1*) = One"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark2*)",definitionCode)       
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ModuleName.OnDefinitionSite.Bug2517``() =
         let fileContents = """
             namespace GotoDefinition
@@ -1429,7 +1429,7 @@ type GotoDefinitionTests()  =
         let definitionCode = "module Foo(*Mark*) ="
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark*)",definitionCode) 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     /// GotoDef on abbreviation
     member public this.``GotoDefinition.Abbreviation.Bug193064``() =
         let fileContents = """
@@ -1438,7 +1438,7 @@ type GotoDefinitionTests()  =
         let definitionCode = "let f (x:X) = x(*Marker*)"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"x(*Marker*)",definitionCode) 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     /// Verify the GotoDefinition on UoM yield does NOT jump out error dialog, 
     /// will do nothing in automation lab machine or GTD SI.fs on dev machine with enlistment.
     member public this.``GotoDefinition.UnitOfMeasure.Bug193064``() =
@@ -1457,14 +1457,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit GotoDefinitionTests
    new() = { inherit GotoDefinitionTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit GotoDefinitionTests

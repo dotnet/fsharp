@@ -18,10 +18,10 @@ Make sure each method works on:
 * Null string (null)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type StringModule() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Concat() =
         let e1 = String.concat null ["foo"]
         Assert.AreEqual("foo", e1)
@@ -49,7 +49,7 @@ type StringModule() =
         
         CheckThrowsArgumentNullException(fun () -> String.concat "foo" null |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
         let result = ref 0
         do String.iter (fun c -> result := !result + (int c)) "foo"
@@ -59,7 +59,7 @@ type StringModule() =
         do String.iter (fun c -> result := !result + (int c)) null
         Assert.AreEqual(0, !result)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IterI() =
         let result = ref 0
         do String.iteri(fun i c -> result := !result + (i*(int c))) "foo"
@@ -69,7 +69,7 @@ type StringModule() =
         do String.iteri(fun i c -> result := !result + (i*(int c))) null
         Assert.AreEqual(0, !result)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map() =
         let e1 = String.map (fun c -> c) "foo"
         Assert.AreEqual("foo", e1)
@@ -77,7 +77,7 @@ type StringModule() =
         let e2 = String.map (fun c -> c) null 
         Assert.AreEqual("", e2)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapI() =
         let e1 = String.mapi (fun i c -> char(int c + i)) "foo"
         Assert.AreEqual("fpq", e1)
@@ -85,7 +85,7 @@ type StringModule() =
         let e2 = String.mapi (fun i c -> c) null 
         Assert.AreEqual("", e2)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Filter() =
         let e1 = String.filter (fun c -> true) "foo"
         Assert.AreEqual("foo", e1)
@@ -99,7 +99,7 @@ type StringModule() =
         let e4 = String.filter (fun c -> c <> 'o') ""
         Assert.AreEqual("", e4)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Collect() =
         let e1 = String.collect (fun c -> "a"+string c) "foo"
         Assert.AreEqual("afaoao", e1)
@@ -110,7 +110,7 @@ type StringModule() =
         let e3 = String.collect (fun c -> "") null 
         Assert.AreEqual("", e3)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Init() =
         let e1 = String.init 0 (fun i -> "foo")
         Assert.AreEqual("", e1)
@@ -123,7 +123,7 @@ type StringModule() =
 
         CheckThrowsArgumentException(fun () -> String.init -1 (fun c -> "") |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Replicate() = 
         let e1 = String.replicate 0 "foo"
         Assert.AreEqual("", e1)
@@ -136,7 +136,7 @@ type StringModule() =
 
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Forall() = 
         let e1 = String.forall (fun c -> true) ""
         Assert.AreEqual(true, e1)
@@ -156,7 +156,7 @@ type StringModule() =
         let e6 = String.forall (fun c -> false) null 
         Assert.AreEqual(true, e6)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists() = 
         let e1 = String.exists (fun c -> true) ""
         Assert.AreEqual(false, e1)
@@ -173,7 +173,7 @@ type StringModule() =
         let e5 = String.exists (fun c -> false) (String.replicate 1000000 "x")
         Assert.AreEqual(false, e5)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length() = 
         let e1 = String.length ""
         Assert.AreEqual(0, e1)

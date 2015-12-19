@@ -13,10 +13,10 @@ open NUnit.Framework
 [<Measure>]
 type m
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type LanguagePrimitivesModule() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CastingUnits() =
         let f = 2.5
         Assert.AreEqual(f, f |> LanguagePrimitives.FloatWithMeasure<m> |> float)
@@ -39,7 +39,7 @@ type LanguagePrimitivesModule() =
         let y = 2y
         Assert.AreEqual(y, y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MaxMinNan() =
         Assert.IsTrue(Double.IsNaN(max nan 1.0))
         Assert.IsTrue(Double.IsNaN(max 1.0 nan))
@@ -57,7 +57,7 @@ type LanguagePrimitivesModule() =
         Assert.IsTrue(Single.IsNaN(min 1.0f Single.NaN))
         Assert.IsTrue(Single.IsNaN(min Single.NaN Single.NaN))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.DivideByInt() =
         // float32 
         let resultFloat32 = LanguagePrimitives.DivideByInt 3.0f 3
@@ -71,21 +71,21 @@ type LanguagePrimitivesModule() =
         let resultDecimal = LanguagePrimitives.DivideByInt 3.9M 3
         Assert.AreEqual(1.3M, resultDecimal)   
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.EnumOfValue() =  
         let monday = System.DayOfWeek.Monday
         let result = LanguagePrimitives.EnumOfValue<int,System.DayOfWeek>(1)
         
         Assert.AreEqual(monday, result)
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.EnumToValue() =
         let monday = System.DayOfWeek.Monday
         let result = LanguagePrimitives.EnumToValue monday
 
         Assert.AreEqual(1, result)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GuidToString() =
         let s = "F99D95E0-2A5E-47c4-9B92-6661D65AE6B3"
         let guid = new Guid(s)
@@ -95,7 +95,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual((string guid).ToLowerInvariant(), s.ToLowerInvariant())
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericComparison() =
         // value type
         let resultValue = LanguagePrimitives.GenericComparison 1 1
@@ -113,7 +113,7 @@ type LanguagePrimitivesModule() =
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericComparisonBiModal() =
         // value type
         let resultValue = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default 100 1
@@ -147,7 +147,7 @@ type LanguagePrimitivesModule() =
         
 #endif
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericEquality() =
         // value type
         let resultValue = LanguagePrimitives.GenericEquality 1 1
@@ -170,7 +170,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.GenericEquality "ABC" null
         Assert.IsFalse(resultNul)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericGreaterOrEqual() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterOrEqual 1 1
@@ -200,7 +200,7 @@ type LanguagePrimitivesModule() =
         Assert.IsFalse(resultNul)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericGreaterThan() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterThan 1 1
@@ -230,7 +230,7 @@ type LanguagePrimitivesModule() =
         Assert.IsTrue(resultNul)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericHash() =
         // value type
         let resultValue = LanguagePrimitives.GenericHash 1 
@@ -250,7 +250,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(0, resultNul)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericLessOrEqual() =
         // value type
         let resultValue = LanguagePrimitives.GenericLessOrEqual 1 1
@@ -283,7 +283,7 @@ type LanguagePrimitivesModule() =
         Assert.IsFalse(resultNul)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericLessThan() =
         // value type
         let resultValue = LanguagePrimitives.GenericLessThan 1 1
@@ -315,7 +315,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.GenericLessThan null null
         Assert.IsFalse(resultNul)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericMaximum() =
         // value type
         let resultValue = LanguagePrimitives.GenericMaximum 8 9
@@ -342,7 +342,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.GenericMaximum "ABCDE" null
         Assert.AreEqual("ABCDE", resultNul)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericMinimum() =
         // value type
         let resultValue = LanguagePrimitives.GenericMinimum 8 9
@@ -368,7 +368,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.GenericMinimum "ABC" null
         Assert.AreEqual(null, resultNul)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericOne() =
         // int type
         let resultValue = LanguagePrimitives.GenericOne<int> 
@@ -382,7 +382,7 @@ type LanguagePrimitivesModule() =
         let resultValue = LanguagePrimitives.GenericOne<bigint> 
         Assert.AreEqual(1I, resultValue)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GenericZero() =
         // int type
         let resultValue = LanguagePrimitives.GenericZero<int> 
@@ -396,7 +396,7 @@ type LanguagePrimitivesModule() =
         let resultValue = LanguagePrimitives.GenericZero<bigint> 
         Assert.AreEqual(0I, resultValue)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ParseInt32() =
         let resultValue = LanguagePrimitives.ParseInt32 "100" 
         Assert.AreEqual(typeof<int>, resultValue.GetType())
@@ -415,7 +415,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt32 null  |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ParseInt64() =
         let resultValue = LanguagePrimitives.ParseInt64 "100" 
         Assert.AreEqual(typeof<int64>, resultValue.GetType())    
@@ -431,7 +431,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt64 null  |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ParseUInt32() =
         let resultValue = LanguagePrimitives.ParseUInt32 "100" 
         Assert.AreEqual(typeof<uint32>, resultValue.GetType())   
@@ -441,7 +441,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt32 null  |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ParseUInt64() =
         let resultValue = LanguagePrimitives.ParseUInt64 "100" 
         Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
@@ -451,7 +451,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt64 null  |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ParseStringViaConversionOps() =
         let s : string = null
         CheckThrowsArgumentNullException2 "sbyte" (fun () -> sbyte s |> ignore)
@@ -472,7 +472,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsArgumentNullException2 "char" (fun () -> char s |> ignore)
 #endif        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PhysicalEquality() =
         // revordtype
         let ref1 = ref 8
@@ -510,7 +510,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.PhysicalEquality null null
         Assert.IsTrue(resultNul)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type HashCompareModule() = // this module is internal/obsolete, but contains code reachable from many public APIs
     member inline this.ComparisonsFor< ^T when ^T : comparison>(x : ^T, y : ^T) =
         Assert.IsTrue( x < y )
@@ -520,12 +520,12 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         Assert.IsFalse( x > y )
         Assert.IsFalse( (x = y) )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForArraysOfNativeInts() =
         this.ComparisonsFor( [|0n|], [|1n|] )
         this.ComparisonsFor( [|0un|], [|1un|] )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForArraysOfFloatingPoints() =
         this.ComparisonsFor( [|0.0|], [|1.0|] )
         this.ComparisonsFor( [|0.0f|], [|1.0f|] )
@@ -534,18 +534,18 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         Assert.IsFalse( [| System.Double.NaN |] < [| System.Double.NaN |] )
         Assert.IsFalse( [| System.Single.NaN |] < [| System.Single.NaN |] )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForOtherArrays() =
         this.ComparisonsFor( [|0uy|], [|1uy|] )
         this.ComparisonsFor( [|'a'|], [|'b'|] )
         this.ComparisonsFor( [|0UL|], [|1UL|] )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForStrings() =
         this.ComparisonsFor( "bar", "foo" )
         this.ComparisonsFor( [| "bar" |], [| "foo" |] )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForMultidimensionalIntArrays() =
         let N = 10
         let M = 100
@@ -564,7 +564,7 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         y.[2,2,2] <- Z
         this.ComparisonsFor( x, y )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ComparisonsForMultidimensionalInt64Arrays() =
         let N = 10L
         let M = 100L
@@ -583,17 +583,17 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         y.[2,2,2] <- Z
         this.ComparisonsFor( x, y )
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MonsterTuple() =
         let mt = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         let mt2 = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         Assert.AreEqual(mt,mt2)
     
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type UnitType() =
 
     // interface
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IComparable() =        
         let u:Unit = ()
         // value type
@@ -601,12 +601,12 @@ type UnitType() =
         CheckThrowsNullRefException(fun() ->ic.CompareTo(3) |>ignore) 
         
     // Base class methods
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ObjectGetHashCode() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.GetHashCode() |>ignore) 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ObjectEquals() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
@@ -615,29 +615,29 @@ type UnitType() =
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else     
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type SourceConstructFlagsEnum() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Getvalue() =
         let names = [| "None";"SumType";"RecordType";"ObjectType";"Field";
                        "Exception";"Closure";"Module";"UnionCase";"Value";
                        "KindMask";"NonPublicRepresentation" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<SourceConstructFlags>))
         
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type CompilationRepresentationFlagsEnum() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Getvalue() =
         let names = [| "None";"Static";"Instance";"ModuleSuffix";"UseNullAsTrueValue";"Event" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<CompilationRepresentationFlags>))
 #endif
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type MiscStuff() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ListToString() =
         Assert.AreEqual("[]", [].ToString())
         Assert.AreEqual("[1]", [1].ToString())
@@ -645,7 +645,7 @@ type MiscStuff() =
         Assert.AreEqual("[1; 2; 3]", [1;2;3].ToString())
         Assert.AreEqual("[1; 2; 3; ... ]", [1;2;3;4].ToString())
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Refs() =
         let x = ref 0
         incr x
@@ -655,9 +655,9 @@ type MiscStuff() =
         
         
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type UnboxAndOptionStuff() =
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryUnbox() =
         Assert.IsTrue( tryUnbox (box ([] : int list)) = Some ([]: int list))
         Assert.IsTrue( tryUnbox (box ([1] : int list)) = Some ([1]: int list))
@@ -675,7 +675,7 @@ type UnboxAndOptionStuff() =
         Assert.IsTrue( tryUnbox<string> (box "") = Some "")
         Assert.IsTrue( tryUnbox<string> (box 1) = None)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsNull() =
         Assert.IsTrue( isNull (null : string))
         Assert.IsTrue( isNull (null : string[]))

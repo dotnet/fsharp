@@ -7,9 +7,9 @@ open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ObsoleteListFunctions() =        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Nth() = 
         // integer List 
         let resultInt = List.nth [3;7;9;4;8;1;1;2] 3        

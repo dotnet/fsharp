@@ -19,7 +19,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =
@@ -29,7 +29,7 @@ type Array4Module() =
         if Array4D.length4 arr <> u then Assert.Fail("Array4D does not have expected dimensions.")
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Create() =
         // integer array  
         let intArr = Array4D.create 3 4 5 6 168
@@ -47,7 +47,7 @@ type Array4Module() =
         if eptArr1 <> eptArr2 then Assert.Fail()
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Init() =
             
         // integer array  
@@ -63,7 +63,7 @@ type Array4Module() =
         VerifyDimensions intArr 3 3 3 3
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Get() =
         
         // integer array  
@@ -93,7 +93,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.get nullArr 1 1 1 1 |> ignore)  
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length1() =
     
         // integer array  
@@ -117,7 +117,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length1 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length2() =
     
         // integer array  
@@ -141,7 +141,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length2 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length3() = 
     
         // integer array  
@@ -164,7 +164,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length3 nullArr |> ignore)  
         ()  
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length4() = 
     
         // integer array  
@@ -187,7 +187,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length4 nullArr |> ignore)  
         ()          
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Set() =
 
         // integer array  
@@ -219,7 +219,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.set  nullArr 0 0 0 0 "")  
         ()  
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ZeroCreate() =
             
         let intArr : int[,,,] = Array4D.zeroCreate 2 3 2 2

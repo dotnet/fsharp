@@ -8,7 +8,7 @@ open NUnit.Framework
 open Internal.Utilities.Collections
        
                 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 type MruCache = 
     new() = { }        
 
@@ -22,7 +22,7 @@ type MruCache =
         
     member private rb.NumToStringBox n = box (rb.NumToString n)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.Basic() = 
         let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
         let s = m.Get(5)
@@ -38,7 +38,7 @@ type MruCache =
         Assert.IsTrue("Eight"=s)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.MostRecentOfEmpty() = 
         let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
         match m.MostRecent with
@@ -46,7 +46,7 @@ type MruCache =
             | None->()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.SetAlternate() = 
         let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
         m.SetAlternate(2,"Banana")
@@ -60,7 +60,7 @@ type MruCache =
         let s = m.Get(2)
         Assert.AreEqual(banana,s)                    
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.CacheDepthIsHonored() = 
         let m = new MruCache<int,obj>(3, rb.NumToStringBox, (fun (x,y) -> x = y))
         rb.AddBanana(m) // Separate function to keep 'banana' out of registers
@@ -71,7 +71,7 @@ type MruCache =
         let s = m.Get(2)
         Assert.IsTrue("Two"=downcast s)
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.SubsumptionIsHonored() = 
         let PairToString (s,n) = rb.NumToString n
         let AreSameForSubsumption((s1,n1),(s2,n2)) = n1=n2
@@ -85,7 +85,7 @@ type MruCache =
         let s = m.Get (("x",2))
         Assert.IsTrue("Two"=s, "Check3") // Not banana because it was subsumed
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public rb.OnDiscardIsHonored() = 
         
         let AreSameForSubsumption((s1,n1),(s2,n2)) = s1=s2
@@ -111,7 +111,7 @@ type MruCache =
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
             
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 type AgedLookup() = 
     let mutable hold197 : byte [] = null
     let mutable hold198 : byte [] = null
@@ -210,7 +210,7 @@ type AgedLookup() =
         GC.Collect()
         
         
-    [<Test>] member public rb.WeakRef0() = WeakRefTest 0
-    [<Test>] member public rb.WeakRef1() = WeakRefTest 1
-    [<Test>] member public rb.WeakRef2() = WeakRefTest 2
-    [<Test>] member public rb.WeakRef3() = WeakRefTest 3
+    [<Parallelizable(ParallelScope.Self)>][<Test>] member public rb.WeakRef0() = WeakRefTest 0
+    [<Parallelizable(ParallelScope.Self)>][<Test>] member public rb.WeakRef1() = WeakRefTest 1
+    [<Parallelizable(ParallelScope.Self)>][<Test>] member public rb.WeakRef2() = WeakRefTest 2
+    [<Parallelizable(ParallelScope.Self)>][<Test>] member public rb.WeakRef3() = WeakRefTest 3

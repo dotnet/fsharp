@@ -7,9 +7,9 @@ namespace FSharp.Core.Unittests.SurfaceArea
 
 //open NUnit.Framework
 
-//[<TestFixture>]
+//[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type SurfaceAreaTest() =
-//    [<Test>]
+//    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.VerifyArea() =
         let file = typeof<int list>.Assembly.Location 
         let asm = System.Reflection.Assembly.ReflectionOnlyLoadFrom(file)

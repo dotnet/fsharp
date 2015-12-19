@@ -17,10 +17,10 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type SetModule() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Empty() =
         let emptySet = Set.empty
         if Set.count emptySet <> 0 then Assert.Fail()    
@@ -29,7 +29,7 @@ type SetModule() =
         let d : Set<string> = Set.empty
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Singleton() =
         let intSingleton = Set.singleton 5
         Assert.IsTrue(intSingleton.Count = 1)
@@ -38,7 +38,7 @@ type SetModule() =
         let stringSingleton = Set.singleton (null)
         Assert.IsFalse(stringSingleton.Contains(""))
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Add() =
         let empty = Set.empty
         let x     = Set.add 'x' empty
@@ -50,7 +50,7 @@ type SetModule() =
         Assert.IsTrue(Set.count xyz  = 3)
         Assert.IsTrue(Set.count wxyz = 4)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Contains() =
         // Empty set searching for null = false
         if Set.contains null (Set.empty) <> false then Assert.Fail()
@@ -63,7 +63,7 @@ type SetModule() =
         if Set.contains 6 odds <> false then Assert.Fail()
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Count() = 
         let empty = Set.empty
         if Set.count empty <> 0 then Assert.Fail()
@@ -75,7 +75,7 @@ type SetModule() =
         if Set.count multi <> 26 then Assert.Fail()
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Diff() = 
         // Given a large set and removing 0, 1, x elements...
         let alphabet = new Set<char>([| 'a' .. 'z' |])
@@ -108,7 +108,7 @@ type SetModule() =
         if (evensSansOdds = evens) <> true then Assert.Fail()
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Equal() =
         let emptySet1 : Set<string> = Set.empty
         let emptySet2 : Set<string> = Set.empty
@@ -123,7 +123,7 @@ type SetModule() =
         if (a = b) <> true then Assert.Fail()
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Compare() =
         // Comparing empty sets
         let emptyString1 = Set.empty : Set<string>
@@ -151,7 +151,7 @@ type SetModule() =
         if compare alphabet noVowelAlpa     <> -1 then Assert.Fail()
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists() =
         
         let emptyInt = Set.empty : Set<int>
@@ -166,7 +166,7 @@ type SetModule() =
         if Set.exists (fun (text, num) -> text = "four") letNumPairs           <> false then Assert.Fail()
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Filter() =
         
         let emptyComplex = Set.empty : Set<int * List<string * Set<decimal>> * Set<int * string * (char * char * char)>>
@@ -185,7 +185,7 @@ type SetModule() =
         ()
         
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map() =
         let emptySet : Set<string> = Set.empty
         
@@ -198,7 +198,7 @@ type SetModule() =
         if Set.exists (fun c -> c = Char.ToLower(c)) capped then Assert.Fail()
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold() =
         
         let emptySet : Set<decimal> = Set.empty
@@ -216,7 +216,7 @@ type SetModule() =
         if !callOrder <> [(10, 5); (6, 4); (3, 3); (1, 2); (0, 1)] then Assert.Fail()
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack() =
         
         let emptySet : Set<decimal> = Set.empty
@@ -234,7 +234,7 @@ type SetModule() =
         if !callOrder <> [(14, 1); (12, 2); (9, 3); (5, 4); (0, 5)] then Assert.Fail()
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll() =
 
         let emptySet : Set<string> = Set.empty
@@ -250,7 +250,7 @@ type SetModule() =
         Assert.IsFalse(result)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Intersect() =
         
         let emptySet1 : Set<int> = Set.empty
@@ -267,7 +267,7 @@ type SetModule() =
         Assert.IsFalse( (four = emptyInterX) )
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Intersect2() =
         let a = new Set<int>([3; 4; 5; 6])
         let b = new Set<int>([5; 6; 7; 8])
@@ -277,7 +277,7 @@ type SetModule() =
         Assert.IsTrue( (intersection = expectedResult) )
 
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IntersectMany() =
         (* IntersectAll
             1234567
@@ -299,7 +299,7 @@ type SetModule() =
         Assert.IsTrue(contains 6 result)
         Assert.IsTrue(contains 7 result)
                   
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IntersectMany2() =
         let all   = new Set<_>([1 .. 10])
         let odds  = new Set<_>([1 .. 2 .. 10])
@@ -308,7 +308,7 @@ type SetModule() =
         let result = Set.intersectMany [odds; evens; all]
         Assert.IsTrue(Set.count result = 0)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IntersectMany3() =
         let all   = new Set<_>([1 .. 10])
         let empty = Set.empty : Set<int>
@@ -317,12 +317,12 @@ type SetModule() =
         Assert.IsTrue(Set.count result = 0)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IntersectMany4() =
         CheckThrowsArgumentException (fun () -> Set.intersectMany (Seq.empty : seq<Set<int>>) |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Union() =
         let emptySet1 : Set<int> = Set.empty
         let emptySet2 : Set<int> = Set.empty
@@ -338,7 +338,7 @@ type SetModule() =
         Assert.IsTrue( (four = emptyUnionX) )
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Union2() =
         let a = new Set<int>([1; 2; 3; 4])
         let b = new Set<int>([5; 6; 7; 8])
@@ -347,7 +347,7 @@ type SetModule() =
         let expectedResult = new Set<int>([1 .. 8])
         Assert.IsTrue( (union = expectedResult) )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Union3() =
         let x = 
             Set.singleton 1
@@ -357,7 +357,7 @@ type SetModule() =
             
         Assert.IsTrue(x.Count = 1)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.UnionMany() =
         let odds  = new Set<int>([1 .. 2 .. 10])
         let evens = new Set<int>([2 .. 2 .. 10])
@@ -368,12 +368,12 @@ type SetModule() =
         let result = Set.unionMany [odds; evens; empty; rest; zero]
         Assert.IsTrue(result.Count = 20)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.UnionMany2() =
         let result = Set.unionMany (Seq.empty : seq<Set<string>>)
         Assert.IsTrue(result.Count = 0)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsEmpty() =
         let zero  = Set.empty : Set<decimal>
         let zero2 = new Set<int>([])
@@ -386,7 +386,7 @@ type SetModule() =
         Assert.IsFalse(Set.isEmpty one)
         Assert.IsFalse(Set.isEmpty n)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
 
         // Empty set
@@ -401,7 +401,7 @@ type SetModule() =
         
         Assert.IsTrue (Array.forall ( (=) true ) elements)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Parition() =
         
         // Empty
@@ -425,7 +425,7 @@ type SetModule() =
         let resulta, resultb = Set.partition isVowel alphabet
         Assert.IsTrue(resulta.Count = 5 && resultb.Count = 21)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Remove() =
         
         let emptySet : Set<int> = Set.empty
@@ -452,7 +452,7 @@ type SetModule() =
         
         Assert.IsFalse(Set.exists ( (=) 3 ) c)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_List() =
         
         // Empty
@@ -470,7 +470,7 @@ type SetModule() =
         let expected = new Set<_>(["mon"; "tue"; "wed"; "thu"; "fri"])
         Assert.IsTrue( (multi = expected) )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_List() =
 
         // Empty
@@ -485,7 +485,7 @@ type SetModule() =
         let multi = new Set<_>([5; 2; 3; 1; 4])
         Assert.IsTrue(Set.toList multi = [1; 2; 3; 4; 5])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_Array() =
         
         // Empty
@@ -503,7 +503,7 @@ type SetModule() =
         let expected = new Set<_>(["mon"; "tue"; "wed"; "thu"; "fri"])
         Assert.IsTrue( (multi = expected) )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_Array() =
 
         // Empty
@@ -519,7 +519,7 @@ type SetModule() =
         Assert.IsTrue(Set.toArray multi = [| 1; 2; 3; 4; 5 |])
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_Seq() =
         
         // Empty
@@ -537,7 +537,7 @@ type SetModule() =
         let expected = new Set<_>(["mon"; "tue"; "wed"; "thu"; "fri"])
         Assert.IsTrue( (multi = expected) )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_Seq() =
 
         // Empty
@@ -556,7 +556,7 @@ type SetModule() =
         Assert.IsTrue(Seq.toList multiSeq = [ 1; 2; 3; 4; 5 ])
         
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MinElement() =
         
         // Check for an argument exception "Set contains no members"
@@ -568,7 +568,7 @@ type SetModule() =
         let set2 = Set.ofList ["abcd"; "a"; "abc"; "ab"]
         Assert.AreEqual(Set.minElement set2, "a")
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MaxElement() =
         
         // Check for an argument exception "Set contains no members"
@@ -581,7 +581,7 @@ type SetModule() =
         Assert.AreEqual(Set.maxElement set2, "abcd")
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsProperSubset() =
         
         let set1 = Set.ofList [10; 8; 100]
@@ -591,7 +591,7 @@ type SetModule() =
         Assert.IsFalse(Set.isProperSubset Set.empty Set.empty)
         Assert.IsFalse(Set.isProperSubset set1 set2)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsProperSuperset() =
         
         let set1 = Set.ofList [10; 8; 100]
@@ -604,7 +604,7 @@ type SetModule() =
         
     // ----- Not associated with a module function -----
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GeneralTest1() =
         
         // Retruns a random permutation of integers between the two bounds.

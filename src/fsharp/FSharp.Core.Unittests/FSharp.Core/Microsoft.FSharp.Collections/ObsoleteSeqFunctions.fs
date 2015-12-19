@@ -8,10 +8,10 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ObsoleteSeqFunctions() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Nth() =
          
         // Negative index

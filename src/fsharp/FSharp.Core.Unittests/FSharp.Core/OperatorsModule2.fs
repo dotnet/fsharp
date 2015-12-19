@@ -10,7 +10,7 @@ open SystematicUnitTests.LibraryTestFx
 open NUnit.Framework
 open Microsoft.FSharp.Core.Operators.Checked
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type OperatorsModule2() =
 
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
@@ -121,13 +121,13 @@ type OperatorsModule2() =
         
         ()
         
-//    [<Test>]
+//    [<Parallelizable(ParallelScope.Self)>][<Test>]
 //    member this.invalidArg() =         
 //        CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
 //        
 //        ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.lock() = 
         // lock         
         printfn "test8 started"
@@ -150,7 +150,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.log() =  
         // double
         let result = Operators.log 10.0
@@ -166,7 +166,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.log10() =  
         // double
         let result = Operators.log10 10.0
@@ -182,7 +182,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.max() =  
         // value type
         let result = Operators.max 10 8
@@ -205,7 +205,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.min() =  
         // value type
         let result = Operators.min 10 8
@@ -228,7 +228,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.nan() =  
         // value type
         let result = Operators.nan 
@@ -236,7 +236,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.nanf() =  
         // value type
         let result = Operators.nanf 
@@ -271,7 +271,7 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.not() =  
         let result = Operators.not true
         Assert.IsFalse(result)
@@ -281,13 +281,13 @@ type OperatorsModule2() =
         
         ()
         
-//    [<Test>]
+//    [<Parallelizable(ParallelScope.Self)>][<Test>]
 //    member this.nullArg() =  
 //        CheckThrowsArgumentNullException(fun() -> Operators.nullArg "A" |> ignore)
 //          
 //        ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.pown() =  
         // int 
         let result = Operators.pown 10 2
@@ -321,14 +321,14 @@ type OperatorsModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.raise() =  
         CheckThrowsArgumentException(fun()-> Operators.raise <| new ArgumentException("Invalid Argument ")  |> ignore)
           
         ()
         
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ref() =
         // value type
         let result = Operators.ref 0    
@@ -348,7 +348,7 @@ type OperatorsModule2() =
         
         ()    
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.reraise() =
         // double
         try
@@ -358,7 +358,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.round() =
         // double
         let result = Operators.round 10.0
@@ -370,7 +370,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sbyte() =         
         // int 
         let result = Operators.sbyte 10
@@ -390,7 +390,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sign() =         
         // int 
         let result = Operators.sign 10
@@ -410,7 +410,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sin() = 
         
         let result = Operators.sin 0.5
@@ -418,7 +418,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.single() = 
         // int 
         let result = Operators.single 10
@@ -434,7 +434,7 @@ type OperatorsModule2() =
                 
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sinh() = 
      
         let result = Operators.sinh 1.0
@@ -442,7 +442,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sizeof() = 
         // value type        
         let result = Operators.sizeof<int>
@@ -462,7 +462,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.snd() = 
         // value type        
         let result = Operators.snd ("ABC",100)
@@ -478,7 +478,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.sqrt() = 
         // double        
         let result = Operators.sqrt 100.0
@@ -486,28 +486,28 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.stderr() =         
         let result = Operators.stderr 
         Assert.AreEqual(result.WriteLine("go"),null) 
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.stdin() =         
         let result = Operators.stdin 
         Assert.AreEqual(result.Dispose(),null)
         
         ()   
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.stdout() =         
         let result = Operators.stdout 
         Assert.AreEqual(result.WriteLine("go"),null)
         
         ()   
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.string() =  
         // value type
         let result = Operators.string 100
@@ -522,7 +522,7 @@ type OperatorsModule2() =
         
         ()      
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.tan() =  
         // double
         let result = Operators.tan 1.0
@@ -530,7 +530,7 @@ type OperatorsModule2() =
         
         ()    
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.tanh() =  
         // double
         let result = Operators.tanh 0.8
@@ -538,7 +538,7 @@ type OperatorsModule2() =
         
         ()    
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.truncate() =        
         // double
         let result = Operators.truncate 10.101
@@ -554,7 +554,7 @@ type OperatorsModule2() =
         
         ()    
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.typedefof() =        
         // value type
         let result = Operators.typedefof<int>
@@ -570,7 +570,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.typeof() =        
         // value type
         let result = Operators.typeof<int>
@@ -586,7 +586,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.uint16() =        
         // int        
         let result = Operators.uint16 100
@@ -602,7 +602,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.uint32() =        
         // int
         let result = Operators.uint32 100
@@ -618,7 +618,7 @@ type OperatorsModule2() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.uint64() =        
         // int
         let result = Operators.uint64 100
@@ -634,7 +634,7 @@ type OperatorsModule2() =
             
         ()   
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.unativeint() =        
         // int
         let result = Operators.unativeint 100
@@ -646,7 +646,7 @@ type OperatorsModule2() =
             
         ()     
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.unbox() =        
         // value type
         let oint = box 100
@@ -665,7 +665,7 @@ type OperatorsModule2() =
             
         ()     
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.using() =
         let sr = new System.IO.StringReader("ABCD")
         Assert.AreEqual(sr.ReadToEnd(),"ABCD")

@@ -21,7 +21,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type Config() = 
     inherit TheTests()
 
@@ -30,7 +30,7 @@ type Config() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TargetPlatform () =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectMulitplatBoilerplate "Library",  
@@ -42,28 +42,28 @@ type Config() =
                 ()
         ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.EnsureAtLeastOneConfiguration`` () =
         this.HelperEnsureAtLeastOne 
             @"<PropertyGroup Condition="" '$(Platform)' == 'x86' "" />" 
             [|"Debug"|]  // the goal of the test - when no configs, "Debug" should magically appear
             [|"x86"|]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.EnsureAtLeastOnePlatform`` () =
         this.HelperEnsureAtLeastOne 
             @"<PropertyGroup Condition="" '$(Configuration)' == 'Release' "" />"
             [|"Release"|]
             [|"Any CPU"|] // the goal of the test - when no platforms, "AnyCPU" should magically appear
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.EnsureAtLeastOneConfigurationAndPlatform`` () =
         this.HelperEnsureAtLeastOne 
             ""
             [|"Debug"|] // first goal of the test - when no configs, "Debug" should magically appear
             [|"Any CPU"|] // second goal of the test - when no platforms, "AnyCPU" should magically appear
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.EnsureAtLeastOneConfiguration.Imported`` () =
         // Take advantage of the fact that we always create projects one directory below TempPath
         let tmpTargets = Path.Combine(Path.GetTempPath(), "foo.targets")
@@ -80,7 +80,7 @@ type Config() =
         finally
             File.Delete tmpTargets
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.EnsureAtLeastOnePlatform.Imported`` () =
         // Take advantage of the fact that we always create projects one directory below TempPath
         // The unit test failed due to the previous test use the same target name "foo.targets". 
@@ -98,7 +98,7 @@ type Config() =
         finally
             File.Delete tmpTargets
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Renaming`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
@@ -114,7 +114,7 @@ type Config() =
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
             
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Deleting`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
@@ -129,7 +129,7 @@ type Config() =
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
@@ -144,7 +144,7 @@ type Config() =
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.AddingBaseless`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
@@ -160,7 +160,7 @@ type Config() =
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Platforms.Deleting`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
@@ -177,7 +177,7 @@ type Config() =
 
         ))
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Platforms.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"],
@@ -194,7 +194,7 @@ type Config() =
 
         ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Configs.Platforms.AddingBaseless`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],

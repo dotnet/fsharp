@@ -18,7 +18,7 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ArrayModule() =
 
     let rec IsNaN (x : obj) =
@@ -28,7 +28,7 @@ type ArrayModule() =
         | :? decimal as x -> Decimal.ToDouble(x) |> box |> IsNaN
         | _ -> failwith "Invalid input. Please provide a numeric type which could possibly be NaN"
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Empty() =
         let emptyArray = Array.empty
         if Array.length emptyArray <> 0 then Assert.Fail()    
@@ -41,7 +41,7 @@ type ArrayModule() =
         ()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Append() =
         // integer array
         let intArray = Array.append [| 1; 2 |] [| 3; 4 |]
@@ -69,7 +69,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Average() =   
       
         // empty float32 array
@@ -105,7 +105,7 @@ type ArrayModule() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.AverageBy() =  
     
         // empty double array   
@@ -144,7 +144,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ChunkBySize() =
 
         // int Seq
@@ -170,7 +170,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SplitInto() =
 
         // int array
@@ -197,7 +197,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.distinct() =
         // distinct should work on empty array
         Assert.AreEqual([||], Array.distinct [||])
@@ -217,7 +217,7 @@ type ArrayModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([|null, list|], Array.distinct [|null, list|])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.distinctBy() =
         // distinctBy should work on empty array
         Assert.AreEqual([||], Array.distinctBy (fun _ -> failwith "should not be executed") [||])
@@ -239,7 +239,7 @@ type ArrayModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([|null, list|], Array.distinctBy id [|null, list|])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Except() =
         // integer array
         let intArr1 = [| yield! {1..100}
@@ -271,7 +271,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Take() =
         Assert.AreEqual([||],Array.take 0 [||])
         Assert.AreEqual([||],Array.take 0 [|"str1";"str2";"str3";"str4"|])
@@ -284,7 +284,7 @@ type ArrayModule() =
         CheckThrowsInvalidOperationExn (fun () -> Array.take 5 [|"str1";"str2";"str3";"str4"|] |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.take 5 null |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.takeWhile() =
         Assert.AreEqual([||],Array.takeWhile (fun x -> failwith "should not be used") [||])
         Assert.AreEqual([|1;2;4;5|],Array.takeWhile (fun x -> x < 6) [|1;2;4;5;6;7|])
@@ -297,7 +297,7 @@ type ArrayModule() =
 
         CheckThrowsArgumentNullException (fun () -> Array.takeWhile (fun _ -> failwith "should not be used") null |> ignore) 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.splitAt() =        
         Assert.AreEqual([||], Array.splitAt 0 [||] |> fst)  
         Assert.AreEqual([||], Array.splitAt 0 [||] |> snd)
@@ -325,7 +325,7 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 0 null |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 1 null |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.replicate() =
         // replicate should create multiple copies of the given value
         Assert.AreEqual([||],Array.replicate 0 null)
@@ -335,7 +335,7 @@ type ArrayModule() =
 
         CheckThrowsArgumentException (fun () ->  Array.replicate -1 null |> ignore)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Blit() = 
         // int array   
         let intSrc = [| 1..10 |]
@@ -391,13 +391,13 @@ type ArrayModule() =
         
         () 
       
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Choose() = 
         this.ChooseTester Array.choose Array.choose
 
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Choose`` () = 
         this.ChooseTester Array.Parallel.choose Array.Parallel.choose
 #endif
@@ -427,11 +427,11 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Collect () =
         this.CollectTester Array.collect Array.collect
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CollectWithSideEffects () =
         let stamp = ref 0
         let f x = stamp := !stamp + 1; [| x |]
@@ -445,12 +445,12 @@ type ArrayModule() =
         
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Collect`` () =
         this.CollectTester Array.Parallel.collect Array.Parallel.collect
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.compareWith() =
         // compareWith should work on empty arrays
         Assert.AreEqual(0,Array.compareWith (fun _ -> failwith "should not be executed")  [||] [||])
@@ -475,7 +475,7 @@ type ArrayModule() =
         Assert.AreEqual(1,Array.compareWith (fun x y -> 1) [|"1";"2"|] [|"1";"3"|])
         Assert.AreEqual(-1,Array.compareWith (fun x y -> -1) [|"1";"2"|] [|"1";"3"|])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Concat() =
         // integer array
         let seqInt = 
@@ -507,7 +507,7 @@ type ArrayModule() =
                 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.countBy() =
         // countBy should work on empty array
         Assert.AreEqual([||], Array.countBy (fun _ -> failwith "should not be executed") [||])
@@ -519,7 +519,7 @@ type ArrayModule() =
         Assert.AreEqual([| 5,1; 2,2; 3,2 |],Array.countBy id [|5;2;2;3;3|])
         Assert.AreEqual([| 3,3; 2,2; 1,3 |],Array.countBy (fun x -> if x < 3 then x else 3) [|5;2;1;2;3;3;1;1|])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Copy() =
         // int array
         let intSrc:int [] = [| 3;5;7 |]    
@@ -543,7 +543,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Create() =
         // int array
         let intArr = Array.create 3 8    
@@ -565,7 +565,7 @@ type ArrayModule() =
         ()
 
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryHead() =
         // integer array
         let resultInt = Array.tryHead  [|2..2..20|]        
@@ -584,7 +584,7 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.tryHead nullArr |> ignore) 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists() =
         // integer array
         let intArr = [| 2;4;6;8 |]
@@ -609,7 +609,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists2() =
         // integer array
         let intFir = [| 2;4;6;8 |]
@@ -642,7 +642,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fill() =
         // integer array
         let intArr = [|1..5|]
@@ -673,7 +673,7 @@ type ArrayModule() =
          
         ()
 
-    [<Test>] 
+    [<Parallelizable(ParallelScope.Self)>][<Test>] 
     member this.Filter() =
         // integer array
         let intArr = [| 1..20 |]
@@ -699,7 +699,7 @@ type ArrayModule() =
         ()   
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Where() =
         // integer array
         let intArr = [| 1..20 |]
@@ -724,13 +724,13 @@ type ArrayModule() =
         
         ()   
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``where should work like filter``() =
         Assert.AreEqual([||], Array.where (fun x -> x % 2 = 0) [||])
         Assert.AreEqual([|0;2;4;6;8|], Array.where (fun x -> x % 2 = 0) [|0..9|])
         Assert.AreEqual([|"a";"b";"c"|], Array.where (fun _ -> true) [|"a";"b";"c"|])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Find() =
         // integer array
         let intArr = [| 1..20 |]
@@ -757,7 +757,7 @@ type ArrayModule() =
         
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindBack() =
         // integer array
         let funcInt x = if (x%5 = 0) then true else false
@@ -783,7 +783,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindIndex() =
         // integer array
         let intArr = [| 1..20 |]
@@ -810,7 +810,7 @@ type ArrayModule() =
         
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindIndexBack() =
         // integer array
         let funcInt x = if (x%5 = 0) then true else false
@@ -836,7 +836,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Pick() =
         // integers
         let intArr = [| 1..10 |]
@@ -849,7 +849,7 @@ type ArrayModule() =
         // make it not found
         CheckThrowsKeyNotFoundException (fun () -> Array.pick (fun n -> None) intArr |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.last() =
         // last should fail on empty array
         CheckThrowsArgumentException(fun () -> Array.last [||] |> ignore)
@@ -862,7 +862,7 @@ type ArrayModule() =
         Assert.AreEqual("2", Array.last [|"1"; "3"; "2"|])
         Assert.AreEqual(["4"], Array.last [|["1"; "3"]; []; ["4"]|])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryLast() =
         // integers array
         let IntSeq = [| 1..9 |]
@@ -882,14 +882,14 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () ->Array.tryLast nullArr |> ignore) 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ToSeq() =
         let intArr = [| 1..10 |]
         let seq = Array.toSeq intArr
         let sum = Seq.sum seq
         Assert.AreEqual(55, sum)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryPick() =
         // integer array
         let intArr = [| 1..10 |]    
@@ -920,7 +920,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold() =
         // integer array
         let intArr = [| 1..5 |]    
@@ -946,7 +946,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold2() =
         // integer array  
         let funcInt x y z = x + y.ToString() + z.ToString()
@@ -974,7 +974,7 @@ type ArrayModule() =
                 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack() =
         // integer array
         let intArr = [| 1..5 |]    
@@ -1000,7 +1000,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack2() =
         // integer array  
         let funcInt x y z = x.ToString() + y.ToString() + z
@@ -1028,7 +1028,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll() =
         // integer array
         let resultInt = Array.forall (fun x -> x > 2) [| 3..2..10 |]
@@ -1048,7 +1048,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll2() =
         // integer array
         let resultInt = Array.forall2 (fun x y -> x < y) [| 1..10 |] [|2..2..20|]
@@ -1073,7 +1073,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Get() =
         // integer array
         let intArr = [| 3;4;7;8;10 |]    
@@ -1096,25 +1096,25 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should return the element from singleton arrays``() =
         Assert.AreEqual(1, Array.exactlyOne [|1|])
         Assert.AreEqual("2", Array.exactlyOne [|"2"|])
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should fail on empty array``() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [||] |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should fail on null array``() =
         CheckThrowsArgumentNullException(fun () -> Array.exactlyOne null |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should fail on arrays with more than one element``() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GroupBy() =
         let funcInt x = x%5
              
@@ -1172,7 +1172,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Hd() =
         // integer array
         let resultInt = Array.head [|2..2..20|]
@@ -1186,11 +1186,11 @@ type ArrayModule() =
         CheckThrowsArgumentNullException(fun () -> Array.head null |> ignore)
         ()    
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Init() = 
         this.InitTester Array.init Array.init
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.InitWithSideEffects () =
         let stamp = ref 0
         let f i = 
@@ -1205,12 +1205,12 @@ type ArrayModule() =
         
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Init``() = 
         this.InitTester Array.Parallel.init Array.Parallel.init
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsEmpty() =
         // integer array
         let intArr = [| 3;4;7;8;10 |]    
@@ -1233,7 +1233,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1265,7 +1265,7 @@ type ArrayModule() =
         
         ()
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter2() =
         // integer array
         let resultInt = ref 0    
@@ -1301,7 +1301,7 @@ type ArrayModule() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1333,7 +1333,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri2() =
         // integer array
         let resultInt = ref 0    
@@ -1368,7 +1368,7 @@ type ArrayModule() =
         
         ()                
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``pairwise should return pairs of the input array``() =
         Assert.AreEqual([||],Array.pairwise [||])
         Assert.AreEqual([||],Array.pairwise [|1|])
@@ -1376,7 +1376,7 @@ type ArrayModule() =
         Assert.AreEqual([|1,2; 2,3|],Array.pairwise [|1;2;3|])
         Assert.AreEqual([|"H","E"; "E","L"; "L","L"; "L","O"|],Array.pairwise [|"H";"E";"L";"L";"O"|])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``pairwise should not work on null``() =
         CheckThrowsArgumentNullException(fun () -> Array.pairwise null |> ignore)
 
@@ -1400,11 +1400,11 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]  
+    [<Parallelizable(ParallelScope.Self)>][<Test>]  
     member this.Map () =
         this.MapTester Array.map Array.map
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapWithSideEffects () =
         let stamp = ref 0
         let f x = stamp := !stamp + 1; x + 1
@@ -1418,7 +1418,7 @@ type ArrayModule() =
         
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Map`` () =
         this.MapTester Array.Parallel.map Array.Parallel.map
 #endif
@@ -1442,11 +1442,11 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> mapiInt f nullArg |> ignore)        
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Mapi () = this.MapiTester Array.mapi Array.mapi
         
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapiWithSideEffects () =
         let stamp = ref 0
         let f i x = stamp := !stamp + 1; (i, x + 1)
@@ -1461,12 +1461,12 @@ type ArrayModule() =
         
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Mapi`` () =
         this.MapiTester Array.Parallel.mapi Array.Parallel.mapi
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Iter``() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1498,7 +1498,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Iteri``() =   
         // integer array
         let intArr = [| 1..10 |] 
@@ -1564,11 +1564,11 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> partString funcString nullArr |> ignore)
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Partition () =
         this.PartitionTester Array.partition Array.partition    
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
         Assert.AreEqual([|"1"|],Array.singleton "1")
@@ -1577,12 +1577,12 @@ type ArrayModule() =
 
 #if FX_NO_TPL_PARALLEL
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Parallel.Partition`` () =
         this.PartitionTester Array.Parallel.partition Array.Parallel.partition    
 #endif    
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Contains() =
         // integer array
         let intArr = [| 2;4;6;8 |]

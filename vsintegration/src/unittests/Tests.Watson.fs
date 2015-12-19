@@ -48,122 +48,122 @@ type Check =
         File.Delete("watson-test.fs")
 
 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 type Watson() = 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscOutOfMemory() = Check.FscLevelException<System.OutOfMemoryException>("fsc-oom")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscArgumentNull() = Check.FscLevelException<System.ArgumentNullException>("fsc-an")        
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscInvalidOperation() = Check.FscLevelException<System.InvalidOperationException>("fsc-invop")        
 
 // As of .NET 4.0 some exception types cannot be caught. As a result, we cannot test this case. I did visually confirm a Watson report is sent, though.
-//    [<Test>]
+//    [<Parallelizable(ParallelScope.Self)>][<Test>]
 //    member public w.FscAccessViolation() = Check.FscLevelException<System.AccessViolationException>("fsc-ac")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscArgumentOutOfRange() = Check.FscLevelException<System.ArgumentOutOfRangeException>("fsc-aor")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscDivideByZero() = Check.FscLevelException<System.DivideByZeroException>("fsc-dv0")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscNotFiniteNumber() = Check.FscLevelException<System.NotFiniteNumberException>("fsc-nfn")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscOverflow() = Check.FscLevelException<System.OverflowException>("fsc-oe")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscArrayTypeMismatch() = Check.FscLevelException<System.ArrayTypeMismatchException>("fsc-atmm")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscBadImageFormat() = Check.FscLevelException<System.BadImageFormatException>("fsc-bif")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscKeyNotFound() = Check.FscLevelException<System.Collections.Generic.KeyNotFoundException>("fsc-knf")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscIndexOutOfRange() = Check.FscLevelException<System.IndexOutOfRangeException>("fsc-ior")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscInvalidCast() = Check.FscLevelException<System.InvalidCastException>("fsc-ic")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscInvalidProgram() = Check.FscLevelException<System.InvalidProgramException>("fsc-ip")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscMemberAccess() = Check.FscLevelException<System.MemberAccessException>("fsc-ma")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscNotImplemented() = Check.FscLevelException<System.NotImplementedException>("fsc-ni")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscNullReference() = Check.FscLevelException<System.NullReferenceException>("fsc-nr")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.FscOperationCancelled() = Check.FscLevelException<System.OperationCanceledException>("fsc-oc")        
     
-    //[<Test>]
+    //[<Parallelizable(ParallelScope.Self)>][<Test>]
     //member public w.FscFailure() = Check.FscLevelException<Microsoft.FSharp.Core.FailureException>("fsc-fail")            
       
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckOutOfMemory() = Check.FscLevelException<System.OutOfMemoryException>("tc-oom")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckArgumentNull() = Check.FscLevelException<System.ArgumentNullException>("tc-an")        
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckInvalidOperation() = Check.FscLevelException<System.InvalidOperationException>("tc-invop")        
 
 // As of .NET 4.0 some exception types cannot be caught. As a result, we cannot test this case. I did visually confirm a Watson report is sent, though.
-//    [<Test>]
+//    [<Parallelizable(ParallelScope.Self)>][<Test>]
 //    member public w.TypeCheckAccessViolation() = Check.FscLevelException<System.AccessViolationException>("tc-ac")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckArgumentOutOfRange() = Check.FscLevelException<System.ArgumentOutOfRangeException>("tc-aor")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckDivideByZero() = Check.FscLevelException<System.DivideByZeroException>("tc-dv0")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckNotFiniteNumber() = Check.FscLevelException<System.NotFiniteNumberException>("tc-nfn")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckOverflow() = Check.FscLevelException<System.OverflowException>("tc-oe")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckArrayTypeMismatch() = Check.FscLevelException<System.ArrayTypeMismatchException>("tc-atmm")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckBadImageFormat() = Check.FscLevelException<System.BadImageFormatException>("tc-bif")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckKeyNotFound() = Check.FscLevelException<System.Collections.Generic.KeyNotFoundException>("tc-knf")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckIndexOutOfRange() = Check.FscLevelException<System.IndexOutOfRangeException>("tc-ior")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckInvalidCast() = Check.FscLevelException<System.InvalidCastException>("tc-ic")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckInvalidProgram() = Check.FscLevelException<System.InvalidProgramException>("tc-ip")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckMemberAccess() = Check.FscLevelException<System.MemberAccessException>("tc-ma")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckNotImplemented() = Check.FscLevelException<System.NotImplementedException>("tc-ni")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckNullReference() = Check.FscLevelException<System.NullReferenceException>("tc-nr")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckOperationCancelled() = Check.FscLevelException<System.OperationCanceledException>("tc-oc")        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public w.TypeCheckFailure() = Check.FscLevelException<System.Exception>("tc-fail")            
 

@@ -17,9 +17,9 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ListModule() =
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Empty() =
         let emptyList = List.empty
         let resultEpt = List.length emptyList
@@ -30,7 +30,7 @@ type ListModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Append() =
         // integer List
         let intList = List.append [ 1; 2 ] [ 3; 4 ]
@@ -45,7 +45,7 @@ type ListModule() =
         Assert.AreEqual([],emptyList)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Average() =     
         // empty float32 List
         let emptyFloatList = List.empty<System.Single> 
@@ -77,7 +77,7 @@ type ListModule() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.AverageBy() =  
         // empty double List   
         let emptyDouList = List.empty<System.Double>
@@ -108,7 +108,7 @@ type ListModule() =
             
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ChunkBySize() =
 
         // int list
@@ -128,7 +128,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SplitInto() =
 
         // int list
@@ -151,7 +151,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.distinct() = 
         // distinct should work on empty list
         Assert.AreEqual([], List.distinct [])
@@ -168,7 +168,7 @@ type ListModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([null, list], List.distinct [null, list])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.distinctBy() =
         // distinctBy should work on empty list
         Assert.AreEqual([], List.distinctBy (fun _ -> failwith "should not be executed") [])
@@ -187,7 +187,7 @@ type ListModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([null, list], List.distinctBy id [null, list])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Take() =
         Assert.AreEqual([], List.take 0 [])
         Assert.AreEqual(([] : string list), List.take 0 ["str1";"str2";"str3";"str4"])
@@ -198,7 +198,7 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.take -1 [0;1] |> ignore)
         CheckThrowsInvalidOperationExn (fun () -> List.take 5 ["str1";"str2";"str3";"str4"] |> ignore)
               
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Choose() = 
         // int List
         let intSrc:int list = [ 1..100 ]    
@@ -225,7 +225,7 @@ type ListModule() =
 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.compareWith() =
         // compareWith should work on empty lists
         Assert.AreEqual(0,List.compareWith (fun _ -> failwith "should not be executed")  [] [])
@@ -246,7 +246,7 @@ type ListModule() =
         Assert.AreEqual(1,List.compareWith (fun x y -> 1) ["1";"2"] ["1";"3"])
         Assert.AreEqual(-1,List.compareWith (fun x y -> -1) ["1";"2"] ["1";"3"])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.takeWhile() =
         Assert.AreEqual([], List.takeWhile (fun x -> failwith "should not be used") [])
         Assert.AreEqual([1;2;4;5],List.takeWhile (fun x -> x < 6) [1;2;4;5;6;7])
@@ -257,7 +257,7 @@ type ListModule() =
         Assert.AreEqual(["a"],List.takeWhile (fun _ -> true) ["a"])
         Assert.AreEqual(["a"],List.takeWhile (fun x -> x <> "ab") ["a"; "ab"; "abc"; "abcd"; "abcde"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Concat() =
         // integer List
         let seqInt = 
@@ -283,7 +283,7 @@ type ListModule() =
         Assert.AreEqual(1, result2.[1])
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.splitAt() =        
         Assert.IsTrue(([],[]) = List.splitAt 0 [])
 
@@ -308,7 +308,7 @@ type ListModule() =
         CheckThrowsInvalidOperationExn (fun () -> List.splitAt 5 ["str1";"str2";"str3";"str4"] |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.countBy() =
         // countBy should work on empty list
         Assert.AreEqual(([] : (obj*int) list), List.countBy (fun _ -> failwith "should not be executed") [])
@@ -317,7 +317,7 @@ type ListModule() =
         Assert.AreEqual([5,1; 2,2; 3,2],List.countBy id [5;2;2;3;3])
         Assert.AreEqual([3,3; 2,2; 1,3],List.countBy (fun x -> if x < 3 then x else 3) [5;2;1;2;3;3;1;1])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Except() =
         // integer list
         let intList1 = [ yield! {1..100}
@@ -346,7 +346,7 @@ type ListModule() =
         CheckThrowsArgumentNullException(fun () -> List.except nullSeq emptyIntList |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists() =
         // integer List
         let intArr = [ 2;4;6;8 ]
@@ -366,7 +366,7 @@ type ListModule() =
         Assert.IsFalse(resultEpt)
                
         ()
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists2() =
         // integer List
         let intFir = [ 2;4;6;8 ]
@@ -390,7 +390,7 @@ type ListModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Filter() =
         // integer List
         let intArr = [ 1..20 ]
@@ -411,7 +411,7 @@ type ListModule() =
             
         ()   
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Where() =
         // integer List
         let intArr = [ 1..20 ]
@@ -432,7 +432,7 @@ type ListModule() =
             
         ()   
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``where should work like filter``() =
         Assert.AreEqual(([] : int list), List.where (fun x -> x % 2 = 0) [])
         Assert.AreEqual([0;2;4;6;8], List.where (fun x -> x % 2 = 0) [0..9])
@@ -440,7 +440,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Find() =
         // integer List
         let intArr = [ 1..20 ]
@@ -463,7 +463,7 @@ type ListModule() =
 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.replicate() = 
         // replicate should create multiple copies of the given value
         Assert.AreEqual([], List.replicate 0 null)
@@ -473,7 +473,7 @@ type ListModule() =
 
         CheckThrowsArgumentException (fun () ->  List.replicate -1 null |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindBack() =
         // integer List
         let funcInt x = if (x%5 = 0) then true else false
@@ -496,7 +496,7 @@ type ListModule() =
         ()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindIndex() =
         // integer List
         let intArr = [ 1..20 ]
@@ -519,7 +519,7 @@ type ListModule() =
 
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindIndexBack() =
         // integer List
         let funcInt x = if (x%5 = 0) then true else false
@@ -541,7 +541,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryPick() =
         // integer List
         let intArr = [ 1..10 ]    
@@ -568,7 +568,7 @@ type ListModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold() =
         // integer List
         let intArr = [ 1..10 ]    
@@ -589,7 +589,7 @@ type ListModule() =
            
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold2() =
         // integer List  
         let funcInt x y z = x + y + z
@@ -608,7 +608,7 @@ type ListModule() =
             
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack() =
         // integer List
         let intArr = [ 1..10 ]    
@@ -646,7 +646,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack2() =
         // integer List  
         let funcInt x y z = x + y + z
@@ -686,7 +686,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll() =
         // integer List
         let resultInt = List.forall (fun x -> x > 2) [ 3..2..10 ]        
@@ -702,7 +702,7 @@ type ListModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll2() =
         // integer List
         let resultInt = List.forall2 (fun x y -> x < y) [ 1..10 ] [2..2..20]        
@@ -718,7 +718,7 @@ type ListModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GroupBy() =
         let funcInt x = x%5
              
@@ -754,7 +754,7 @@ type ListModule() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Hd() =
         // integer List
         let resultInt = List.head  [2..2..20]        
@@ -767,21 +767,21 @@ type ListModule() =
         CheckThrowsArgumentException(fun () -> List.head [] |> ignore)
         ()    
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should return the element from singleton lists``() =
         Assert.AreEqual(1, List.exactlyOne [1])
         Assert.AreEqual("2", List.exactlyOne ["2"])
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should fail on empty list``() = 
         CheckThrowsArgumentException(fun () -> List.exactlyOne [] |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``exactlyOne should fail on lists with more than one element``() =
         CheckThrowsArgumentException(fun () -> List.exactlyOne ["1"; "2"] |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryHead() =
         // integer List
         let resultInt = List.tryHead  [2..2..20]        
@@ -794,7 +794,7 @@ type ListModule() =
         let resultNone = List.tryHead []
         Assert.AreEqual(None, resultNone)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryLast() =
         // integer List
         let intResult = List.tryLast [1..9]
@@ -809,7 +809,7 @@ type ListModule() =
         Assert.IsTrue(emptyResult.IsNone)
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.last() =
         // last should fail on empty list
         CheckThrowsArgumentException(fun () -> List.last [] |> ignore)
@@ -819,7 +819,7 @@ type ListModule() =
         Assert.AreEqual("2", List.last ["1"; "3"; "2"])
         Assert.AreEqual(["4"], List.last [["1"; "3"]; []; ["4"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Init() = 
         // integer List
         let resultInt = List.init 3 (fun x -> x + 3)         
@@ -842,7 +842,7 @@ type ListModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsEmpty() =
         // integer List
         let intArr = [ 3;4;7;8;10 ]    
@@ -860,7 +860,7 @@ type ListModule() =
         Assert.IsTrue(resultEpt)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
         // integer List
         let intArr = [ 1..10 ]  
@@ -888,7 +888,7 @@ type ListModule() =
         
         ()
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter2() =
         // integer List
         let resultInt = ref 0    
@@ -914,7 +914,7 @@ type ListModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri() =
         // integer List
         let intArr = [ 1..10 ]  
@@ -942,7 +942,7 @@ type ListModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri2() =
         // integer List
         let resultInt = ref 0    
@@ -968,7 +968,7 @@ type ListModule() =
         
         ()        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Contains() =
         // integer List
         let intList = [ 2;4;6;8 ]
@@ -985,7 +985,7 @@ type ListModule() =
         let resultEpt = List.contains 4 emptyList
         Assert.IsFalse(resultEpt)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Singleton() =
         Assert.AreEqual([null],List.singleton null)
         Assert.AreEqual(["1"],List.singleton "1")
@@ -993,7 +993,7 @@ type ListModule() =
         Assert.AreEqual([[||]],List.singleton [||])
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``pairwise should return pairs of the input list``() =
         Assert.AreEqual(([] : (obj*obj) list), List.pairwise [])
         Assert.AreEqual(([] : (int*int) list), List.pairwise [1])

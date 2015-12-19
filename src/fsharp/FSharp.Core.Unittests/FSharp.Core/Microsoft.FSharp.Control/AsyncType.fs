@@ -20,14 +20,14 @@ type RunWithContinuationsTest_WhatToDo =
     | Cancel
     | Throw
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type AsyncType() =
 
     let ignoreSynchCtx f =
         f ()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.StartWithContinuations() =
 
         let whatToDo = ref Exit
@@ -79,7 +79,7 @@ type AsyncType() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.AsyncSleepCancellation1() =
         ignoreSynchCtx (fun () ->
             let computation = Async.Sleep(10000000)
@@ -95,7 +95,7 @@ type AsyncType() =
             Assert.AreEqual("Cancel", !result)
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.AsyncSleepCancellation2() =
         ignoreSynchCtx (fun () ->
             let computation = Async.Sleep(10)
@@ -122,7 +122,7 @@ type AsyncType() =
         Assert.IsTrue(result)        
       
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
@@ -136,7 +136,7 @@ type AsyncType() =
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
@@ -150,7 +150,7 @@ type AsyncType() =
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
       
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ExceptionPropagatesToTask () =
         let a = async { 
             do raise (Exception ())
@@ -169,7 +169,7 @@ type AsyncType() =
         Assert.IsTrue (t.IsFaulted)
         Assert.IsTrue(exceptionThrown)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CancellationPropagatesToTask () =
         let a = async {
                 while true do ()
@@ -188,7 +188,7 @@ type AsyncType() =
         Assert.IsTrue (exceptionThrown)   
         Assert.IsTrue(t.IsCanceled)            
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.CancellationPropagatesToGroup () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false
@@ -218,7 +218,7 @@ type AsyncType() =
         Assert.IsTrue(!cancelled)      
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
 #if FSHARP_CORE_NETCORE_PORTABLE
@@ -233,7 +233,7 @@ type AsyncType() =
             }
         Async.RunSynchronously(a, 1000) |> Assert.IsTrue        
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TaskAsyncValueException () =
 #if FSHARP_CORE_NETCORE_PORTABLE
         let t = 
@@ -249,7 +249,7 @@ type AsyncType() =
               }
         Async.RunSynchronously(a, 1000) |> Assert.IsTrue  
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
@@ -270,7 +270,7 @@ type AsyncType() =
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
 #if FSHARP_CORE_NETCORE_PORTABLE
@@ -286,7 +286,7 @@ type AsyncType() =
         let result =Async.RunSynchronously(a, 1000)
         (!hasBeenCalled && result) |> Assert.IsTrue
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.NonGenericTaskAsyncValueException () =
 #if FSHARP_CORE_NETCORE_PORTABLE
         let t = 
@@ -302,7 +302,7 @@ type AsyncType() =
               }
         Async.RunSynchronously(a, 3000) |> Assert.IsTrue  
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.NonGenericTaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()

@@ -11,10 +11,10 @@ open NUnit.Framework
 
 open System.Collections.Generic
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type HashIdentityModule() =
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FromFunction() =
     
         // value type
@@ -38,7 +38,7 @@ type HashIdentityModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Reference() =
         
         // reference type
@@ -59,7 +59,7 @@ type HashIdentityModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FromFunctions() =
         
         // value type

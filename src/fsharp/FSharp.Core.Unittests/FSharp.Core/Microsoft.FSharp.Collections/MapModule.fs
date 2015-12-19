@@ -20,9 +20,9 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type MapModule() =
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Empty() =
         let emptyMap = Map.empty        
         Assert.IsTrue(Map.isEmpty emptyMap)
@@ -33,7 +33,7 @@ type MapModule() =
               
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Add() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -63,7 +63,7 @@ type MapModule() =
          
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Exists() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -88,7 +88,7 @@ type MapModule() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Filter() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -113,7 +113,7 @@ type MapModule() =
         ()       
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Find() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -136,7 +136,7 @@ type MapModule() =
                
         ()  
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FindIndex() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -159,7 +159,7 @@ type MapModule() =
                
         ()          
      
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryPick() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -184,7 +184,7 @@ type MapModule() =
                
         ()     
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Pick() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -211,7 +211,7 @@ type MapModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Fold() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -235,7 +235,7 @@ type MapModule() =
                
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.FoldBack() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -259,7 +259,7 @@ type MapModule() =
                
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ForAll() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -284,7 +284,7 @@ type MapModule() =
         ()       
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsEmpty() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -308,7 +308,7 @@ type MapModule() =
                
         ()  
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -348,7 +348,7 @@ type MapModule() =
                
         ()          
      
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map() =
 
         // value keys
@@ -373,7 +373,7 @@ type MapModule() =
                
         ()     
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Contains() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -397,7 +397,7 @@ type MapModule() =
                
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_Array_Of_List_Of_Seq() =
         // value keys    
         let valueKeyMapOfArr = Map.ofArray [|(2,"b"); (3,"c"); (4,"d"); (5,"e")|]     
@@ -428,7 +428,7 @@ type MapModule() =
                 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Partition() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -459,7 +459,7 @@ type MapModule() =
         ()
     
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Remove() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -490,7 +490,7 @@ type MapModule() =
                                
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_Array() =
         // value keys    
         let valueKeyMapOfArr = Map.ofArray [|(1,1);(2,4);(3,9)|]     
@@ -514,7 +514,7 @@ type MapModule() =
 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_List() =
         // value keys    
         let valueKeyMapOfArr = Map.ofList [(1,1);(2,4);(3,9)]     
@@ -539,7 +539,7 @@ type MapModule() =
 
         ()     
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.To_Seq() =
         // value keys    
         let valueKeyMapOfArr = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]  
@@ -564,7 +564,7 @@ type MapModule() =
          
         ()           
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryFind() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -588,7 +588,7 @@ type MapModule() =
                
         ()      
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryFindIndex() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]

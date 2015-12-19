@@ -30,10 +30,10 @@ type MultiArgDelegate4 = delegate of obj * int * string * bool * int -> unit
 type MultiArgDelegate5 = delegate of obj * int * string * bool * int * string -> unit
 type MultiArgDelegate6 = delegate of obj * int * string * bool * int * string * bool -> unit
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type EventModule() =
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Choose() = 
         
         let coffeeCup = new EventfulCoffeeCup(10.0<ml>, 10.0<ml>)
@@ -64,7 +64,7 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Filter() = 
     
         let kexp = new RadioStation(90.3, "KEXP")
@@ -89,7 +89,7 @@ type EventModule() =
                                       "Flight of the Penguins - song 1"])
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Listen() = 
     
         let kqfc = new RadioStation(90.3, "KEXP")
@@ -111,7 +111,7 @@ type EventModule() =
     
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map() = 
     
         let numEvent = new Event<int>()
@@ -131,7 +131,7 @@ type EventModule() =
         Assert.AreEqual(!results, "333221")
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Merge() =
         
         let evensEvent = new Event<int>()
@@ -151,7 +151,7 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Pairwise() = 
     
         let numEvent = new Event<int>()
@@ -173,7 +173,7 @@ type EventModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Partition() = 
     
         let numEvent = new Event<int>()
@@ -196,7 +196,7 @@ type EventModule() =
 
         ()
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Scan() = 
     
         let numEvent = new Event<int>()
@@ -219,7 +219,7 @@ type EventModule() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Split() = 
     
         let numEvent = new Event<int>()
@@ -241,14 +241,14 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.InternalDelegate() = 
         let event = new Event<InternalDelegate, unit>()
         let p = event.Publish
         use s = p.Subscribe(fun _ -> ())
         event.Trigger(null, ())
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MultipleArguments() =  
         let count = ref 0
         let test (evt : Event<_, _>) arg = 

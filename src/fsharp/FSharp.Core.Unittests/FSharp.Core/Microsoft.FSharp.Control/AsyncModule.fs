@@ -20,7 +20,7 @@ module LeakUtils =
 
 // ---------------------------------------------------
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type AsyncModule() =
     
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count
@@ -71,7 +71,7 @@ type AsyncModule() =
             |> ignore
             if !c = 2 then Assert.Fail("both error and cancel continuations were called")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.AwaitIAsyncResult() =
 
         let beginOp, endOp, cancelOp = Async.AsBeginEnd(fun() -> getTicksTask)
@@ -98,7 +98,7 @@ type AsyncModule() =
         | true  -> Assert.Fail("Timeout expected")
         | false -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
         let startMs = DateTime.Now.Millisecond
@@ -113,7 +113,7 @@ type AsyncModule() =
         let delta = endMs - startMs
         Assert.IsTrue(abs ((abs delta) - 500) < 400, sprintf "Delta is too big %d" delta)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 
         use barrier = new System.Threading.ManualResetEvent(false)
         use waitHandle = new System.Threading.ManualResetEvent(false)
@@ -140,7 +140,7 @@ type AsyncModule() =
         let ok = wait barrier 10000
         if not ok then Assert.Fail("Async computation was not completed in given time")
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle1``() = 
         let wh = new System.Threading.ManualResetEvent(false)
         
@@ -155,7 +155,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously test
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
             let flag = ref 0
@@ -173,7 +173,7 @@ type AsyncModule() =
             Assert.IsTrue(isSet())
         for _i = 1 to 50 do test()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
         let test() = 
             let cts = new System.Threading.CancellationTokenSource()
@@ -200,7 +200,7 @@ type AsyncModule() =
         for _i = 1 to 50 do test()
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -234,7 +234,7 @@ type AsyncModule() =
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
         for _ in 1..100 do tryToLeak()
            
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
         let wh = new System.Threading.ManualResetEvent(false)
         let barrier = new System.Threading.ManualResetEvent(false)
@@ -254,7 +254,7 @@ type AsyncModule() =
         let ok = wait barrier 10000
         if not ok then Assert.Fail("Async computation was not completed in given time")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout``() = 
             let longRunningTask = async { sleep(5000) }
             try
@@ -265,7 +265,7 @@ type AsyncModule() =
 #if FSHARP_CORE_PORTABLE
 // do nothing
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
             let old = System.Threading.SynchronizationContext.Current
@@ -283,19 +283,19 @@ type AsyncModule() =
         run (System.Threading.SynchronizationContext())
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
 
         testErrorAndCancelRace(Async.AwaitWaitHandle disposedEvent)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``error on one workflow should cancel all others``() =
         let counter = 
             async {
@@ -314,7 +314,7 @@ type AsyncModule() =
 
         Assert.AreEqual(0, counter)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
         let wh = new System.Threading.ManualResetEvent(false)
         let test = async {
@@ -331,7 +331,7 @@ type AsyncModule() =
 #if FSHARP_CORE_NETCORE_PORTABLE
 // nothing
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
         let origTid = System.Threading.Thread.CurrentThread.ManagedThreadId 
@@ -353,7 +353,7 @@ type AsyncModule() =
         Assert.AreEqual(5000, !cnt)
 #endif
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``AwaitWaitHandle With Cancellation``() = 
         let run wh = async {
             let! r = Async.AwaitWaitHandle wh
@@ -382,7 +382,7 @@ type AsyncModule() =
 #endif
         for _ in 1..1000 do test()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``StartWithContinuationsVersusDoBang``() = 
         // worthwhile to note these three
         // case 1
@@ -414,7 +414,7 @@ type AsyncModule() =
 #if FSHARP_CORE_NETCORE_PORTABLE
 // nothing
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
         let errCount = ref 0
@@ -467,7 +467,7 @@ type AsyncModule() =
         Assert.AreEqual(expected, out)
 #if OPEN_BUILD
 #else
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``ContinuationsThreadingDetails.AsyncWithSyncContext``() =
         this.RunExeAndExpectOutput("AsyncWithSyncContext.exe", """
 EmptyParallel [|("ok", true); ("caught:boom", true)|]
@@ -498,7 +498,7 @@ FromContinuationsSchedulesFutureCancelAndThrowsSlowly [|("cancel", false);
 AwaitWaitHandleAlreadySignaled0 [|("ok", true); ("caught:boom", true)|]
 AwaitWaitHandleAlreadySignaled1 [|("ok", true); ("form exception:boom", true)|]
 """               )
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``ContinuationsThreadingDetails.AsyncSansSyncContext``() =
         this.RunExeAndExpectOutput("AsyncSansSyncContext.exe", """
 EmptyParallel [|("ok", true); ("caught:boom", true)|]

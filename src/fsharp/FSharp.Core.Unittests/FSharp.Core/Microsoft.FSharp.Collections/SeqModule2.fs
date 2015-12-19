@@ -15,10 +15,10 @@ type SeqWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type SeqModule2() =
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Hd() =
              
         let IntSeq =
@@ -40,7 +40,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryHead() =
         // int Seq     
         let IntSeq =
@@ -61,7 +61,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Tl() =
         // integer seq
         let resultInt = Seq.tail <| seq { 1..10 }
@@ -79,7 +79,7 @@ type SeqModule2() =
         CheckThrowsArgumentException(fun () -> Seq.tail Seq.empty |> Seq.iter (fun _ -> failwith "Should not be reached"))
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Last() =
              
         let IntSeq =
@@ -101,7 +101,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.last nullSeq) 
         () 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryLast() =
              
         let IntSeq =
@@ -123,7 +123,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore) 
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ExactlyOne() =
              
         let IntSeq =
@@ -150,7 +150,7 @@ type SeqModule2() =
         () 
         
                 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Init() =
 
         let funcInt x = x
@@ -175,7 +175,7 @@ type SeqModule2() =
         VerifySeqsEqual expectedNullSeq init_finiteNull
         () 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.InitInfinite() =
 
         let funcInt x = x
@@ -193,7 +193,7 @@ type SeqModule2() =
         Assert.AreEqual("100",resultstr)
        
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsEmpty() =
         
         //seq int
@@ -218,7 +218,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.isEmpty seqnull |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter() =
         //seq int
         let seqint =  seq [ 1..3]
@@ -247,7 +247,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.iter funcint nullseq |> ignore)  
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iter2() =
     
         //seq int
@@ -277,7 +277,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri() =
     
         // seq int
@@ -307,7 +307,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.iteri funcint nullseq |> ignore)  
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Iteri2() =
 
         //seq int
@@ -350,7 +350,7 @@ type SeqModule2() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Length() =
 
          // integer seq  
@@ -371,7 +371,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map() =
 
          // integer Seq
@@ -402,7 +402,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map2() =
          // integer Seq
         let funcInt x y = x+y
@@ -429,7 +429,7 @@ type SeqModule2() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map3() = 
         // Integer seq
         let funcInt a b c = (a + b) * c
@@ -461,7 +461,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapFold() =
         // integer Seq
         let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
@@ -486,7 +486,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapFoldBack() =
         // integer Seq
         let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
@@ -556,35 +556,35 @@ type SeqModule2() =
         CheckThrowsNotSupportedException(fun _ -> e.MoveNext() |> ignore)
         Assert.AreEqual(0, e.Current) // should not throw
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapWithSideEffects () =
         this.MapWithSideEffectsTester Seq.map true
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapWithException () =
         this.MapWithExceptionTester Seq.map
 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SingletonCollectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f-> Seq.collect (f >> Seq.singleton)) true
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SingletonCollectWithException () =
         this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
 #if FX_NO_LINQ
 #else     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SystemLinqSelectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SystemLinqSelectWithException () =
         this.MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
 #endif
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MapiWithSideEffects () =
         let i = ref 0
         let f _ x = i := !i + 1; x*x
@@ -618,7 +618,7 @@ type SeqModule2() =
         if e.MoveNext() then Assert.Fail()
         Assert.AreEqual(0,!i)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Map2WithSideEffects () =
         let i = ref 0
         let f x y = i := !i + 1; x*x
@@ -652,7 +652,7 @@ type SeqModule2() =
         if e.MoveNext() then Assert.Fail()
         Assert.AreEqual(0,!i)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Mapi2WithSideEffects () =
         let i = ref 0
         let f _ x y = i := !i + 1; x*x
@@ -686,7 +686,7 @@ type SeqModule2() =
         if e.MoveNext() then Assert.Fail()
         Assert.AreEqual(0,!i)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Collect() =
          // integer Seq
         let funcInt x = seq [x+1]
@@ -719,7 +719,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Mapi() =
 
          // integer Seq
@@ -748,7 +748,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Mapi2() =
          // integer Seq
         let funcInt x y z = x+y+z
@@ -784,7 +784,7 @@ type SeqModule2() =
         VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths shorterSeq longerSeq)
         VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths longerSeq shorterSeq)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Indexed() =
 
          // integer Seq
@@ -809,7 +809,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Max() =
          // integer Seq
         let resultInt = Seq.max { 10..20 } 
@@ -830,7 +830,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MaxBy() =
     
         // integer Seq
@@ -852,7 +852,7 @@ type SeqModule2() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MinBy() =
     
         // integer Seq
@@ -875,7 +875,7 @@ type SeqModule2() =
         ()
         
           
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Min() =
 
          // integer Seq
@@ -895,7 +895,7 @@ type SeqModule2() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Item() =
          // integer Seq
         let resultInt = Seq.item 3 { 10..20 }
@@ -920,7 +920,7 @@ type SeqModule2() =
         for i = 11 to 20 do
            CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_Array() =
          // integer Seq
         let resultInt = Seq.ofArray [|1..10|]
@@ -939,7 +939,7 @@ type SeqModule2() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Of_List() =
          // integer Seq
         let resultInt = Seq.ofList [1..10]
@@ -959,7 +959,7 @@ type SeqModule2() =
         ()
         
           
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Pairwise() =
          // integer Seq
         let resultInt = Seq.pairwise {1..3}
@@ -979,7 +979,7 @@ type SeqModule2() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Reduce() =
          
         // integer Seq
@@ -998,7 +998,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullSeq  |> ignore)   
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ReduceBack() =
         // int Seq
         let funcInt x y = x - y
@@ -1027,7 +1027,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Rev() =
         // integer Seq
         let resultInt = Seq.rev (seq [5;4;3;2;1])
@@ -1045,7 +1045,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.rev nullSeq  |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Scan() =
         // integer Seq
         let funcInt x y = x+y
@@ -1070,7 +1070,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.scan funcInt 5 seqNull |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ScanBack() =
         // integer Seq
         let funcInt x y = x+y
@@ -1110,7 +1110,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Singleton() =
         // integer Seq
         let resultInt = Seq.singleton 1
@@ -1130,7 +1130,7 @@ type SeqModule2() =
         ()
     
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Skip() =
     
         // integer Seq
@@ -1152,7 +1152,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.skip 1 null |> ignore)
         ()
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Skip_While() =
     
         // integer Seq
@@ -1175,7 +1175,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.skipWhile funcInt null |> ignore)
         ()
        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Sort() =
 
         // integer Seq
@@ -1197,7 +1197,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.sort null  |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SortBy() =
 
         // integer Seq
@@ -1221,7 +1221,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.sortBy funcInt null  |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SortDescending() =
 
         // integer Seq
@@ -1260,7 +1260,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.sort null  |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SortByDescending() =
 
         // integer Seq
@@ -1319,7 +1319,7 @@ type SeqModule2() =
 
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Sum() =
     
         // integer Seq
@@ -1359,7 +1359,7 @@ type SeqModule2() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.SumBy() =
 
         // integer Seq
@@ -1398,7 +1398,7 @@ type SeqModule2() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Take() =
         // integer Seq
         
@@ -1424,7 +1424,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.take 1 null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.takeWhile() =
         // integer Seq
         let funcInt x = (x < 6)
@@ -1448,7 +1448,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.takeWhile funcInt null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ToArray() =
         // integer Seq
         let resultInt = Seq.toArray(seq [1;2;4;5;7])
@@ -1470,32 +1470,32 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.toArray null |> ignore)
         ()
         
-    [<Test>]    
+    [<Parallelizable(ParallelScope.Self)>][<Test>]    
     member this.ToArrayFromICollection() =
         let inputCollection = ResizeArray(seq [1;2;4;5;7])
         let resultInt = Seq.toArray(inputCollection)
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
     
-    [<Test>]    
+    [<Parallelizable(ParallelScope.Self)>][<Test>]    
     member this.ToArrayEmptyInput() =
         let resultInt = Seq.toArray(Seq.empty<int>)
         let expectedInt = Array.empty<int>
         Assert.AreEqual(expectedInt,resultInt)        
 
-    [<Test>]    
+    [<Parallelizable(ParallelScope.Self)>][<Test>]    
     member this.ToArrayFromArray() =
         let resultInt = Seq.toArray([|1;2;4;5;7|])
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
     
-    [<Test>]    
+    [<Parallelizable(ParallelScope.Self)>][<Test>]    
     member this.ToArrayFromList() =
         let resultInt = Seq.toArray([1;2;4;5;7])
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)        
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ToList() =
         // integer Seq
         let resultInt = Seq.toList (seq [1;2;4;5;7])
@@ -1515,7 +1515,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.toList null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Truncate() =
         // integer Seq
         let resultInt = Seq.truncate 3 (seq [1;2;4;5;7])
@@ -1540,7 +1540,7 @@ type SeqModule2() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.tryFind() =
         // integer Seq
         let resultInt = Seq.tryFind (fun x -> (x%2=0)) (seq [1;2;4;5;7])
@@ -1567,7 +1567,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFind (fun x -> (x%2=0))  null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryFindBack() =
         // integer Seq
         let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;2;4;5;7])
@@ -1593,7 +1593,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFindBack (fun x -> (x%2=0))  null |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryFindIndex() =
 
         // integer Seq
@@ -1621,7 +1621,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndex (fun x -> (x % 2 = 0))  null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.TryFindIndexBack() =
 
         // integer Seq
@@ -1648,7 +1648,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndexBack (fun x -> (x % 2 = 0))  null |> ignore)
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Unfold() =
         // integer Seq
         
@@ -1662,7 +1662,7 @@ type SeqModule2() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Windowed() =
 
         let testWindowed config =
@@ -1726,7 +1726,7 @@ type SeqModule2() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Zip() =
     
         // integer Seq
@@ -1751,7 +1751,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.zip (seq [1..7]) null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Zip3() =
         // integer Seq
         let resultInt = Seq.zip3 (seq [1..7]) (seq [11..17]) (seq [21..27])
@@ -1776,7 +1776,7 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.zip3 (seq [1..7]) (seq [1..7]) null |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.tryPick() =
          // integer Seq
         let resultInt = Seq.tryPick (fun x-> if x = 1 then Some("got") else None) (seq [1..5])
@@ -1799,7 +1799,7 @@ type SeqModule2() =
    
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.tryItem() =
         // integer Seq
         let resultInt = Seq.tryItem 3 { 10..20 }

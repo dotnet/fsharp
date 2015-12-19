@@ -111,14 +111,14 @@ type ParameterInfoTests()  =
 
         Assert.AreEqual(expectedStr, methodstr.GetType(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.OnConstructor.881644``() =
         let fileContent = """new System.IO.StreamReader((*Mark*)"""
         let methodstr = this.GetMethodListForAMethodTip(fileContent,"(*Mark*)")
         if not (methodstr.GetDescription(0).Contains("#ctor")) then
             failwith "Expected parameter info to contain #ctor"
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.InsideWorkflow.6437``() =
         let fileContent = """
             open System.IO 
@@ -130,7 +130,7 @@ type ParameterInfoTests()  =
         if not (methodstr.GetDescription(0).Contains("AsyncRead")) then
             failwith "Expected parameter info to contain AsyncRead"
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("PerfCheck")>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_1``() =
         let fileContent = """
@@ -140,7 +140,7 @@ type ParameterInfoTests()  =
             ((new T()).X((*Mark*)"""
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int")
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_2``() =
         let fileContent = """
            type IFoo = interface
@@ -150,7 +150,7 @@ type ParameterInfoTests()  =
            i.f((*Mark*)"""
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int")
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_3``() =
         let fileContent = """
            type M() = 
@@ -159,7 +159,7 @@ type ParameterInfoTests()  =
            m.f((*Mark*)"""
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": unit")
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_4``() =
         let fileContent = """
            type T() =
@@ -168,14 +168,14 @@ type ParameterInfoTests()  =
            t.Foo((*Mark*)"""
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": string")    
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_5``() =
         let fileContent = """
            let f x y = x + y
            f((*Mark*)"""
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int -> int ")  
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case1``() =
         let fileContent = """
             type Foo() = 
@@ -184,7 +184,7 @@ type ParameterInfoTests()  =
             let z = Foo.Bar((*Mark*))"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["staticReturnsInt"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case2``() =
         let fileContent = """
             type Foo() = 
@@ -194,7 +194,7 @@ type ParameterInfoTests()  =
             let y = Hoo.Bar((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["instanceReturnsString"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.MethodInfo.Bug808310``() =
         let fileContent = """System.Console.WriteLine((*Mark*)"""
         let methodGroup = this.GetMethodListForAMethodTip(fileContent,"(*Mark*)")   
@@ -205,7 +205,7 @@ type ParameterInfoTests()  =
         Assert.IsTrue(noBracket>=0)
         Assert.AreEqual(noBracket, xmlCommentIndex)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``NoArguments``() =
         // we want to see e.g. 
         //     g() : int
@@ -228,19 +228,19 @@ type ParameterInfoTests()  =
         Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*3*)").GetParameterCount(0))
         Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*4*)").GetParameterCount(0))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Constructor1``() =
         let fileContent = """new System.DateTime((*Mark*)"""
         this.VerifyHasParameterInfo(fileContent, "(*Mark*)")
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Constructor2``() =
         let fileContent = """
             open System
             new DateTime((*Mark*)"""
         this.VerifyHasParameterInfo(fileContent, "(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DotNet.StaticMethod``() =
         let code = 
                                     ["#light"
@@ -253,26 +253,26 @@ type ParameterInfoTests()  =
         AssertMethodGroup(methodGroup, [["objA"; "objB"]])
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.NoParameterInfo.100I.Bug5038``() =
         let fileContent = """100I((*Mark*)"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContent,"(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DotNet.InstanceMethod``() =
         let fileContent = """
             let s = "Hello"
             s.Substring((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["startIndex"]; ["startIndex"; "length"]])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.BasicFSharpFunction``() =
         let fileContent = """
             let foo(x) = 1
             foo((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["'a"]])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DiscriminatedUnion.Construction``() =
         let fileContent = """
             type MyDU = 
@@ -292,7 +292,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark4*)",[["int"]])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Exception.Construction``() =
         let fileContent = """
             exception E1 of int * string
@@ -308,7 +308,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark2*)",[["V1: int"; "string"; "V3: bool" ]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string" ]])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes one (static) method that takes one argument works normally.
@@ -319,7 +319,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1"]],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
                   
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a (static) method that takes >1 arguments works normally.
@@ -330,7 +330,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1";"arg2"]],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify the TypeProvider static method return type or colon content of the method
@@ -344,7 +344,7 @@ type ParameterInfoTests()  =
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes no argument works normally.
@@ -355,7 +355,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",0,[],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
               
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes one argument works normally.
@@ -366,7 +366,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",1,["arg1"],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
          
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes >1 argument works normally.
@@ -377,7 +377,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",2,["arg1";"arg2"],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
          
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a static parameter that takes >1 argument works normally.
@@ -388,7 +388,7 @@ type ParameterInfoTests()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["Param1";"ParamIgnored"]],
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that after closing bracket ">" the ParamInfo isn't showing on a provided type that exposes a static parameter that takes >1 argument works normally.
@@ -400,7 +400,7 @@ type ParameterInfoTests()  =
         this.VerifyNoParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo is showing after delimiter "," on a provided type that exposes a static parameter that takes >1 argument works normally.
@@ -412,7 +412,7 @@ type ParameterInfoTests()  =
              [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         
               
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.InMatchClause``() =
         let fileContent = """
             let rec f l = 
@@ -509,17 +509,17 @@ type ParameterInfoTests()  =
             AssertMethodGroup(methodGroup, methReq)
             
     // Test on .NET functions with no parameter
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DotNet.NoParameters`` () = 
         this.TestSystematicParameterInfo("x.ToUpperInvariant(", [ [] ])
 
     // Test on .NET function with one parameter
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DotNet.OneParameter`` () = 
         this.TestSystematicParameterInfo("System.DateTime.Today.AddYears(", [ ["value: int"] ] )
 
     // Test appearance of PI on second parameter of .NET function
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:2394")>]
     member public this.``Single.DotNet.OnSecondParameter`` () = 
         this.TestSystematicParameterInfo("loc-1*),", [ ["format"; "args"];
@@ -528,7 +528,7 @@ type ParameterInfoTests()  =
                                                        ["format"; "arg0"; "arg1"];
                                                        ["format"; "arg0"; "arg1"; "arg2"] ] )
     // Test on .NET functions with parameter array
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:2394")>]
     member public this.``Single.DotNet.ParameterArray`` () = 
         this.TestSystematicParameterInfo("loc-2*),", [ ["format"; "args"];
@@ -537,26 +537,26 @@ type ParameterInfoTests()  =
                                                        ["format"; "arg0"; "arg1"];
                                                        ["format"; "arg0"; "arg1"; "arg2"] ] )
     // Test on .NET indexers
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:5245")>]
     member public this.``Single.DotNet.IndexerParameter`` () = 
         this.TestSystematicParameterInfo("alist.[", [ ["index: int"] ] )
     
     // Test on .NET parameters passed with 'out' keyword (byref)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:2394")>]
     member public this.``Single.DotNet.ParameterByReference`` () = 
         this.TestSystematicParameterInfo("Int32.TryParse(s,", [ ["s: string"; "result: int byref"]; ["s"; "style"; "provider"; "result"] ] )
         
     // Test on reference type and value type paramaters (e.g. string & DateTime)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.DotNet.RefTypeValueType`` () = 
         this.TestSystematicParameterInfo("loc-3*)Emp(", [ [];
                                                           ["name: string"; "dob: System.DateTime"];
                                                           ["name: string"; "salary: float"; "dob: System.DateTime"] ] )
                                                           
     // Test PI does not pop up at point of definition/declaration
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:5160")>]
     member public this.``Single.Locations.PointOfDefinition`` () = 
         this.TestSystematicParameterInfo("loc-4*)new(", [ ] )
@@ -564,41 +564,41 @@ type ParameterInfoTests()  =
         this.TestSystematicParameterInfo("member this.IncreaseBy(", [ ] )
         
     // Test PI does not pop up on whitespace after type annotation
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:5244")>]
     member public this.``Single.Locations.AfterTypeAnnotation`` () = 
         this.TestSystematicParameterInfo("(*loc-5*)", [], true)        
 
 
     // Test PI does not pop up after non-parameterized properties
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.AfterProperties`` () = 
         this.TestSystematicParameterInfo("System.DateTime.Today", [])
         //this.TestSystematicParameterInfo("(*loc-8*)", [], true)
 
     // Test PI does not pop up after non-function values
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.AfterValues`` () = 
         this.TestSystematicParameterInfo("(*loc-8*)", [], true)
     
     // Test PI does not pop up after non-parameterized properties and after values
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.EndOfFile`` () = 
         this.TestSystematicParameterInfo("System.Console.ReadLine(", [ [] ])
         
     // Test PI pop up on parameter list for attributes
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("FSharp1.0:5242")>]
     member public this.``Single.OnAttributes`` () = 
         this.TestSystematicParameterInfo("(*loc-6*)", [ []; [ "check: bool" ] ], true)
     
     // Test PI when quoted identifiers are used as parameter
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.QuotedIdentifier`` () = 
         this.TestSystematicParameterInfo("(*loc-7*)", [ []; [ "maxValue" ]; [ "minValue"; "maxValue" ] ], true)
         
     // Test PI with parameters of custom type 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.RecordAndUnionType`` () = 
         this.TestSystematicParameterInfo("(*loc-9*)", [ [ "Fruit"; "KeyValuePair" ] ], true)
 
@@ -616,42 +616,42 @@ type ParameterInfoTests()  =
         else
             AssertMethodGroup(methodGroup, methReq)
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.Typeof``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("typeof<int>(", [])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.MathAbs``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Math.Abs(", sevenTimes ["value"])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.ExchangeInt``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<int>(", sevenTimes ["location1"; "value"])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.Exchange``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange(", sevenTimes ["location1"; "value"])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.ExchangeUnder``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<_> (", sevenTimes ["location1"; "value"])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.Dictionary``() =
         this.TestGenericParameterInfo("System.Collections.Generic.Dictionary<_, option<int>>(", [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.List``() =
         this.TestGenericParameterInfo("new System.Collections.Generic.List< _ > ( ", [ []; ["capacity"]; ["collection"] ])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.ListInt``() =
         this.TestGenericParameterInfo("System.Collections.Generic.List<int>(", [ []; ["capacity"]; ["collection"] ])
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.EventHandler``() =
         this.TestGenericParameterInfo("new System.EventHandler( ", [ [""] ]) // function arg doesn't have a name
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.EventHandlerEventArgs``() =
         this.TestGenericParameterInfo("System.EventHandler<EventArgs>(", [ [""] ]) // function arg doesn't have a name
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Generics.EventHandlerEventArgsNew``() =
         this.TestGenericParameterInfo("new System.EventHandler<EventArgs> ( ", [ [""] ]) // function arg doesn't have a name
 
@@ -696,52 +696,52 @@ type ParameterInfoTests()  =
     // There are more comments below that explain particular tricky cases
     
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Simple``() =
         this.TestParameterInfoLocation("let a = System.Math.Sin($", 8)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.LineWithSpaces``() =
         this.TestParameterInfoLocation("let r =\n"+
                                        "   System.Math.Abs($0)", 3) // on the beginning of "System", not line!
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.FullCall``() =
         this.TestParameterInfoLocation("System.Math.Abs($0)", 0)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.SpacesAfterParen``() =
         this.TestParameterInfoLocation("let a = Math.Sign( $-10  )", 8)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.WithNamespace``() =
         this.TestParameterInfoLocation("let a = System.Threading.Interlocked.Exchange($", 8)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.Locations.WithoutNamespace``() =
         this.TestParameterInfoLocation("let a = Interlocked.Exchange($", 8)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.WithGenericArgs``() =
         this.TestParameterInfoLocation("Interlocked.Exchange<int>($", 0)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.FunctionWithSpace``() =
         this.TestParameterInfoLocation("let a = sin 0$.0", 8) 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.MethodCallWithoutParens``() =
         this.TestParameterInfoLocation("let n = Math.Sin 1$0.0", 8)
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.GenericCtorWithNamespace``() =
         this.TestParameterInfoLocation("let _ = new System.Collections.Generic.Dictionary<_, _>($)", 12) // on the beginning of "System" (not on "new")
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.GenericCtor``() =
         this.TestParameterInfoLocation("let _ = new Dictionary<_, _>($)", 12) // on the beginning of "System" (not on "new")
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo location on a provided type with namespace that exposes static parameter that takes >1 argument works normally.
@@ -749,7 +749,7 @@ type ParameterInfoTests()  =
         this.TestParameterInfoLocation("type boo = N1.T<$",11,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
@@ -759,7 +759,7 @@ type ParameterInfoTests()  =
             expectedPos = 11,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that no ParamInfo in a string for a provided type  that exposes static parameter that takes >1 argument works normally.
@@ -768,7 +768,7 @@ type ParameterInfoTests()  =
         this.TestParameterInfoNegative("type boo = \"N1.T<$\"",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that no ParamInfo in a Comment for a provided type that exposes static parameter that takes >1 argument works normally.
@@ -783,35 +783,35 @@ type ParameterInfoTests()  =
     // we *must* look at the previous line to find the location where NameRes info ends
     // so in these cases we can find the identifier and location of tooltip is beginning of it
     // (but in general, we don't search for it)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Multiline.IdentOnPrevLineWithGenerics``() =
         this.TestParameterInfoLocation("let d = Dictionary<_, option< int >>  \n" +
                                        "                ( $  )", 8) // on the "D" (line untestable)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Multiline.IdentOnPrevLine``() =
         this.TestParameterInfoLocation("do Console.WriteLine\n" + 
                                        "        ($\"Multiline\")", 3)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Multiline.IdentOnPrevPrevLine``() =
         this.TestParameterInfoLocation("do Console.WriteLine\n" + 
                                        "        (  \n" +
                                        "          $ \"Multiline\")", 3)
              
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.GenericCtorWithoutNew``() =
         this.TestParameterInfoLocation("let d = System.Collections.Generic.Dictionary<_, option< int >>   ( $ )", 8) // on "S" - standard 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Multiline.GenericTyargsOnTheSameLine``() =
         this.TestParameterInfoLocation("let dict3 = System.Collections.Generic.Dictionary<_, \n" +
                                        "                option< int>>( $ )", 12) // on "S" (beginning of "System")
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.Multiline.LongIdentSplit``() =
         this.TestParameterInfoLocation("let ll = new System.Collections.\n" +
                                        "                    Generic.List< _ > ($)", 13) // on "S" (beginning of "System")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Locations.OperatorTrick3``() =
         this.TestParameterInfoLocation
             ("let mutable n = null\n" + 
@@ -820,31 +820,31 @@ type ParameterInfoTests()  =
     // A several cases that are tricky and we don't want to show anything
     // in the following cases, we may return a location of an operator (its ambigous), but we don't want to show info about it!
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Negative.OperatorTrick1``() =
         this.TestParameterInfoNegative
             ("let fooo = 0\n" + 
              "             >($ 1 )") // this may be end of a generic args specification
                                        
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.Negative.OperatorTrick2``() =
         this.TestParameterInfoNegative
             ("let fooo = 0\n" + 
              "             <($ 1 )")
 
     /// No intellisense in comments/strings!
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.InString``() =        
         this.TestParameterInfoNegative
             ("let s = \"System.Console.WriteLine($)\"")
 
     /// No intellisense in comments/strings!
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Single.InComment``() =        
         this.TestParameterInfoNegative
             ("// System.Console.WriteLine($)")
   
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =        
         let code = [ "let f x = x   "
                      "let f1 y = y  "
@@ -876,7 +876,7 @@ type ParameterInfoTests()  =
         AssertEqual([|(3,11);(3,13);(3,13);(6,1)|], info.GetNoteworthyParamInfoLocations())
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
         let code = [ "type Foo() = class end" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -908,7 +908,7 @@ type ParameterInfoTests()  =
 (*
 This does not currently work, because the 'fallback to name environment' does weird QuickParse-ing and mangled the long id "Bar.Foo".
 We really need to rewrite some code paths here to use the real parse tree rather than QuickParse-ing.
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333``() =        
         let solution = CreateSolution(this.VS)
         let project = CreateProject(solution,"testproject")
@@ -941,7 +941,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         gpatcc.AssertExactly(0,0)
 *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.NamesOfParams``() =
         let testLines = [
             "type Foo ="
@@ -987,15 +987,15 @@ We really need to rewrite some code paths here to use the real parse tree rather
         if info=null then raise NoParamInfo
         AssertEqual(expectedLocs, info.GetNoteworthyParamInfoLocations()) 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Case1``() =        
         this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^^("hel$lo"^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Case2``() =        
         this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   ^(  "hel$lo {0}"  ^, "Brian" ^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Case3``() =        
         this.TestParameterInfoLocationOfParams(
             """^System.Console.WriteLine^  
@@ -1003,11 +1003,11 @@ We really need to rewrite some code paths here to use the real parse tree rather
                         "hel$lo {0}"  ^, 
                         "Brian" ^)  """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Case4``() =        
         this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   ^(  "hello {0}"  ^, ("tuples","don't $ confuse it") ^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.LocationOfParams.Bug112688``() =
         let testLines = [
             "let f x y = ()"
@@ -1023,7 +1023,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.LocationOfParams.Bug112340``() =
         let testLines = [
             """let a = typeof<N."""
@@ -1034,11 +1034,11 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.LocationOfParams.Bug91479``() =        
         this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^^($ """, markAtEOF=true)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Attributes.Bug230393``() =        
         this.TestParameterInfoLocationOfParams("""
             let paramTest((strA : string),(strB : string)) =
@@ -1049,30 +1049,30 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type RMB
         """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InfixOperators.Case1``() =        
         // infix operators like '+' do not give their own param info
         this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^^("" + "$"^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InfixOperators.Case2``() =        
         // infix operators like '+' do give param info when used as prefix ops
         this.TestParameterInfoLocationOfParams("""System.Console.WriteLine((^+^)^($3^)(4))""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.GenericMethodExplicitTypeArgs()``() =        
         this.TestParameterInfoLocationOfParams("""
             type T<'a> =
                 static member M(x:int, y:string) = x + y.Length
             let x = ^T<int>.M^^(1^, $"test"^)    """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsideAMemberOfAType``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
                 member x.a = (1 <> ^System.Int32.Parse^^("$"^)) """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsidePropertyGettersAndSetters.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
@@ -1082,7 +1082,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member x.P2 with get() = System.Int32.Parse("")
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsidePropertyGettersAndSetters.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
@@ -1092,7 +1092,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member x.P2 with get() = System.Int32.Parse("")
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsidePropertyGettersAndSetters.Case3``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
@@ -1102,7 +1102,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member x.P2 with get() = ^System.Int32.Parse^^("$"^)
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsidePropertyGettersAndSetters.Case4``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
@@ -1112,46 +1112,46 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member x.P2 with get() = System.Int32.Parse("")
                 member x.P2 with set(z) = ^System.Int32.Parse^^("$"^) |> ignore """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.InsideObjectExpression``() =        
         this.TestParameterInfoLocationOfParams("""
                 let _ = { new ^System.Object^^($^) with member __.GetHashCode() = 2}""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Nested1``() =        
         this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  ^(4$2.0 ^) )""")
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.MatchGuard``() =        
         this.TestParameterInfoLocationOfParams("""match [1] with | [x] when ^box^^($x^) <> null -> ()""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Nested2``() =        
         this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  ^4$2.0^ )""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Generics1``() =        
         this.TestParameterInfoLocationOfParams("""
             let f<'T,'U>(x:'T, y:'U) = (y,x)
             let r = ^f^<int,string>^(4$2^,""^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Generics2``() =        
         this.TestParameterInfoLocationOfParams("""let x = ^System.Collections.Generic.Dictionary^<int,int>^(42^,n$ull^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Unions1``() =        
         this.TestParameterInfoLocationOfParams("""
             type MyDU =
                 | FOO of int * string
             let r = ^FOO^^(42^,"$"^) """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case1``() =        
         this.TestParameterInfoLocationOfParams("""let a = new ^System.IO.FileStream^^($^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
             open System.Collections.Generic
@@ -1159,7 +1159,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let l = List<int>([||])
             ^l.Aggregate^^($^) // was once a bug""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
         // when only one 'statement' after the mismatched parens after a comma, the comma swallows it and it becomes a badly-indented
         // continuation of the expression from the previous line
@@ -1170,7 +1170,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^c.M^^(1^,2^,3^, $
             c.M(1,2,3,4)""", markAtEOF=true)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
         // when multiple 'statements' after the mismatched parens after a comma, the parser sees a single argument to the method that
         // is a statement sequence, e.g. a bunch of discarded expressions.  That is, 
@@ -1193,17 +1193,17 @@ We really need to rewrite some code paths here to use the real parse tree rather
             c.M(1,2,3,4)
             c.M(1,2,3,4)""", markAtEOF=true)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             ^System.Console.WriteLine^^( (4$2,43) ^) // oops""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
             ^System.Console.WriteLine^^( $(42,43) ^) // oops""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
         this.TestParameterInfoLocationOfParams("""
             type Expr = | Num of int
@@ -1213,14 +1213,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
  
             ^x.M1^^((1,$ """, markAtEOF=true)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Open``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
             arr.[1] <- ^System.Int32.Parse^^($
             open^ System""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Module``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
@@ -1228,7 +1228,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module Foo =
                 let x = 42""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Namespace``() =        
         this.TestParameterInfoLocationOfParams("""
             namespace Foo
@@ -1237,7 +1237,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 arr.[1] <- ^System.Int32.Parse^^($
             namespace^ Other""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.Ok``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
@@ -1246,7 +1246,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.AlsoOk``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
@@ -1255,7 +1255,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.NowGood``() =        
         // This case originally failed, by Design, as there is a finite limit to how many unmatched parens we can handle before the parser gives up and fails catastrophically.
         // However now that we recover from more kinds of tokens, e.g. OBLOCKEND, we can easily go much much deeper, and so this case (and most practical cases) now succeeds.
@@ -1266,7 +1266,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             module Inner =
@@ -1276,7 +1276,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
             do () """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case2``() =        
         // like previous test, but with explicit begin-end at module
         this.TestParameterInfoLocationOfParams("""
@@ -1288,7 +1288,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
             do () """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case1.WhenExtraModule``() =        
         this.TestParameterInfoLocationOfParams("""
             module Program
@@ -1301,7 +1301,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
             do () """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case2.OkWhenExtraModule``() =        
         // like previous test, but with explicit begin-end at module
         this.TestParameterInfoLocationOfParams("""
@@ -1316,7 +1316,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
             do () """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``LocationOfParams.InheritsClause.Bug192134``() =        
         this.TestParameterInfoLocationOfParams("""
             type B(x : int) = 
@@ -1324,7 +1324,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type A() =
                inherit ^B^^(1$^,2^)""")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.ThisOnceAsserted``() =        
         try
             this.TestParameterInfoLocationOfParams("""
@@ -1346,7 +1346,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
             | NoParamInfo -> () // expect there not to be any param info because parser failed
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.ThisOnceAssertedToo``() =        
         try
             this.TestParameterInfoLocationOfParams("""
@@ -1361,7 +1361,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
             | NoParamInfo -> () // expect there not to be any param info because parser failed
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1a``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1369,7 +1369,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1377,7 +1377,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1385,7 +1385,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2a``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1393,7 +1393,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1401,7 +1401,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
@@ -1409,7 +1409,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^module AA = 
                 let x = 10 """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.QueryCustomOperation.Bug222128``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1420,7 +1420,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                  ^skip^^($  
             ^} """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1431,7 +1431,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     for E in ^T().GetCollection().Aggregate^^($
                   ^} """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1442,7 +1442,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     for E in ^T().GetCollection().Aggregate^^(42$
                   ^} """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case3``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1453,7 +1453,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     for E in ^T().GetCollection().Aggregate^^(42^,$
                   ^} """)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.QueryCurlies.Bug204150.Case4``() =        
         this.TestParameterInfoLocationOfParams("""
             type T() =
@@ -1510,62 +1510,62 @@ We really need to rewrite some code paths here to use the real parse tree rather
             this.TestParameterInfoLocationOfParams (allText, markAtEOF=needMarkAtEnd, ?additionalReferenceAssemblies=additionalReferenceAssemblies)
         )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Basic``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42 ^>""", 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicNamed``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 ^>""", 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< $ """, // missing all params, just have <
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42 """, // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 """, // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, """, // missing last param
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored= """, // missing last param after name with equals
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored """, // missing last param after name sans equals
             markAtEnd = true,
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative1``() =       
         try 
             this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
@@ -1574,7 +1574,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
         | :? NoParamInfo -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative2``() =       
         try 
             this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
@@ -1583,7 +1583,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
         | :? NoParamInfo -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative3``() =       
         try 
             this.TestParameterInfoLocationOfParams("""
@@ -1593,7 +1593,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
         | :? NoParamInfo -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative4.Bug181000``() =       
         try 
             this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
@@ -1603,7 +1603,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
         | :? NoParamInfo -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =
         try
             this.TestParameterInfoLocationOfParams("""
@@ -1615,7 +1615,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         with
         | :? NoParamInfo -> ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        
         this.TestParameterInfoLocationOfParams("""
             let f() =
@@ -1623,25 +1623,25 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 r    """, 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42^, ^, ^>""", 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ^, ^>""", 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case3``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< ^,$ ^>""", 
             additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``TypeProvider.FormatOfNamesOfSystemTypes``() =
         let code = ["""type TTT = N1.T< "foo", ParamIgnored=42 > """]
         let references = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
@@ -1658,7 +1658,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         AssertEqual(expected, actualDisplays)
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterNamesInFunctionsDefinedByLetBindings``() = 
         let useCases = 
             [
@@ -1725,7 +1725,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                   
     (* Tests for multi-parameterinfos ------------------------------------------------------------------ *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.ArgumentsWithParamsArrayAttribute``() =
         let content = """let _ = System.String.Format("",(*MARK*))"""
         let methodTip = this.GetMethodListForAMethodTip(content, "(*MARK*)")
@@ -1749,12 +1749,12 @@ We really need to rewrite some code paths here to use the real parse tree rather
         | x -> Assert.Fail(sprintf "Expected overload not found, current result %A" x)
 
     (* DotNet functions for multi-parameterinfo tests -------------------------------------------------- *)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.StaticMethod``() =
         let fileContents = """System.Console.WriteLine("Today is {0:dd MMM yyyy}",(*Mark*)System.DateTime.Today)"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.StaticMethod.WithinClassMember``() =
         let fileContents = """
             type Widget(z) = 
@@ -1764,17 +1764,17 @@ We really need to rewrite some code paths here to use the real parse tree rather
             45"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.StaticMethod.WithinLambda``() =
         let fileContents = """let z = fun x -> x + System.Int16.Parse("",(*Mark*)"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.StaticMethod.WithinLambda2``() = 
         let fileContents = "let _ = fun file -> new System.IO.FileInfo((*Mark*)"
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["string"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.InstanceMethod``() = 
         let fileContents = """
             let s = "Hello"
@@ -1782,17 +1782,17 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"int"])
 
     (* Common functions for multi-parameterinfo tests -------------------------------------------------- *)
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.DotNet.Constructor``() = 
         let fileContents = "let _ = new System.DateTime(2010,12,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"int";"int"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Constructor.WithinObjectExpression``() = 
         let fileContents = "let _ = { new System.Object((*Mark*)) with member __.GetHashCode() = 2}"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",[])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.InTheClassMember``() = 
         let fileContents = """
             type Foo() = 
@@ -1803,14 +1803,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member this.A(a : string, b:int) = ()"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.ParamAsTupleType``() = 
         let fileContents = """
             let tuple((a : int, b : int), c : int) = a * b + c
             let result = tuple((1, 2)(*Mark*), 3)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int * int";"int"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.ParamAsCurryType``() = 
         let fileContents = """
             let multi (x : float) (y : float) = 0
@@ -1818,7 +1818,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let rtnValue = sum(multi (1.0(*Mark*)) 3.0, 5)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["float"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.MethodInMatchCause``() = 
         let fileContents = """
             let rec f l = 
@@ -1827,7 +1827,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     | x :: xs -> f xs"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("93945 - No param info shown on the Indexer Property")>]
     member public this.``Regression.Multi.IndexerProperty.Bug93945``() = 
         let fileContents = """
@@ -1845,7 +1845,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let randomDay = O'seven.[12,(*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("93188 - No param info shown in the Attribute memthod")>]
     member public this.``Regression.Multi.ExplicitAnnotate.Bug93188``() = 
         let fileContents = """
@@ -1856,7 +1856,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type Wombat() = class end"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"string"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.WithRecordType``() = 
         let fileContents = """
             type Vector =
@@ -1865,7 +1865,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             foo(12, { X = 10.0; Y = (*Mark*)20.0; Z = 30.0 })"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"Vector"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.AsParameter``() = 
         let fileContents = """
             let isLessThanZero x = (x < 0)
@@ -1877,14 +1877,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let _ = Option.get(containsNegativeNumbers [6; 20; (*Mark*)8; 45; 5])"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int list"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.WithOptionType``() = 
         let fileContents = """
             let foo( a : int option, b : string ref) = 0
             let _ = foo(Some(12),(*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int option";"string ref"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.WithOptionType2``() = 
         let fileContents = """
             let multi (x : float) (y : float) = x * y
@@ -1893,7 +1893,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let rtnOption = options(Some(sum(1, 3)), (*Mark*)Some(multi 3.1 5.0)) """
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int option";"float option"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Function.WithRefType``() = 
         let fileContents = """
             let foo( a : int ref, b : string ref) = 0
@@ -1902,12 +1902,12 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Overload list/Adjust method's param for multi-parameterinfo tests ------------------------------ *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.OverloadMethod.OrderedParamters``() = 
         let fileContents = "new System.DateTime(2000,12,(*Mark*)"
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",3(*The fourth method*),["int";"int";"int"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Overload.WithSameParameterCount``() = 
         let fileContents = """
             type Foo() = 
@@ -1917,7 +1917,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             foo.A1(1,1,(*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int";"string";"bool"];["int";"string";"int";"bool"]])
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ExtensionMethod.Overloads``() = 
         let fileContents = """
             module MyCode =
@@ -1933,7 +1933,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             foo.Method((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["string"];["int"]])
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("Parameterinfo not retrieved properly for indexed properties by test infra")>]
     member public this.``ExtensionProperty.Overloads``() = 
         let fileContents = """
@@ -1952,33 +1952,33 @@ We really need to rewrite some code paths here to use the real parse tree rather
         
     (* Generic functions for multi-parameterinfo tests ------------------------------------------------ *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Generic.ExchangeInt``() = 
         let fileContents = "System.Threading.Interlocked.Exchange<int>(123,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["byref<int>";"int"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Generic.Exchange.``() = 
         let fileContents = "System.Threading.Interlocked.Exchange(12.0,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["byref<float>";"float"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Generic.ExchangeUnder``() = 
         let fileContents = "System.Threading.Interlocked.Exchange<_> (obj,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["byref<obj>";"obj"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.Generic.Dictionary``() = 
         let fileContents = "System.Collections.Generic.Dictionary<_, option<int>>(12,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"System.Collections.Generic.IEqualityComparer<obj>"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("95862 - [Unittests] parseInfo(TypeCheckResult.TypeCheckInfo).GetMethods can not get MethodOverloads")>]
     member public this.``Multi.Generic.HashSet``() = 
         let fileContents = "System.Collections.Generic.HashSet<int>({ 1 ..12 },(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["Seq<'a>";"System.Collections.Generic.IEqualityComparer<'a>"])
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     [<Ignore("95862 - [Unittests] parseInfo(TypeCheckResult.TypeCheckInfo).GetMethods can not get MethodOverloads")>]
     member public this.``Multi.Generic.SortedList``() = 
         let fileContents = "System.Collections.Generic.SortedList<_,option<int>> (12,(*Mark*)"
@@ -1986,34 +1986,34 @@ We really need to rewrite some code paths here to use the real parse tree rather
     
     (* No Param Info Shown for multi-parameterinfo tests ---------------------------------------------- *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``ParameterInfo.Multi.NoParamterInfo.InComments``() = 
         let fileContents = "//let _ = System.Object((*Mark*))"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.NoParameterInfo.InComments2``() = 
         let fileContents = """(*System.Console.WriteLine((*Mark*)"Test on Fsharp style comments.")*)"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.NoParamterInfo.OnFunctionDeclaration``() = 
         let fileContents = "let Foo(x : int, (*Mark*)b : string) = ()"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.NoParamterInfo.WithinString``() = 
         let fileContents = """let s = "new System.DateTime(2000,12(*Mark*)" """
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.NoParamterInfo.OnProperty``() = 
         let fileContents = """
             let s = "Hello"
             let _ = s.Length(*Mark*)"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.NoParamterInfo.OnValues``() = 
         let fileContents = """
             type Foo = class
@@ -2025,7 +2025,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Project ref method for multi-parameterinfo tests ----------------------------------------------- *)
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Multi.ReferenceToProjectLibrary``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -2044,13 +2044,13 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Regression tests/negative tests for multi-parameterinfos --------------------------------------- *) 
     // To be added when the bugs are fixed...
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     //[<Ignore("90832 - [ParameterInfo] No Parameter Info shown on string parameter with operator")>]
     member public this.``Regrssion.ParameterWithOperators.Bug90832``() = 
         let fileContents = """System.Console.WriteLine("This(*Mark*) is a" + " bug.")"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string"])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.``Regression.OptionalArguuments.Bug4042``() = 
         let fileContents = """
             module ParameterInfo
@@ -2065,7 +2065,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let tt = TT((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     //[<Ignore("90798 - [ParameterInfo] No param info when typing ( for the first time")>]
     member public this.``Regression.ParameterFirstTypeOpenParen.Bug90798``() = 
         let fileContents = """
@@ -2075,7 +2075,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let p = 10"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["'Arg -> Async<'T>"]])
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     // regression test for bug 3878: no parameter info triggered by "("
     member public this.``Regression.NoParameterInfoTriggeredByOpenBrace.Bug3878``() = 
         let fileContents = """
@@ -2087,7 +2087,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let y = 1"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",[""])
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     // regression test for bug 4495 : Should alway sort method lists in order of argument count
     member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case1``() = 
         let fileContents = """
@@ -2097,7 +2097,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let m = a1.GetType("System.Decimal").GetConstructor((*Mark*)null)"""
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type []"])
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case2``() = 
         let fileContents = """
             module ParameterInfo
@@ -2109,7 +2109,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                                                                                 "System.Type []";
                                                                                 "System.Reflection.ParameterModifier []"])
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Ignore("Bug 95862")>]
     member public this.``BasicBehavior.WithReference``() = 
         let fileContents = """
@@ -2124,20 +2124,20 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let expected = ["System.Type";"System.Uri []"]
         AssertMethodGroupContain(methodstr,expected)
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     member public this.``BasicBehavior.CommonFunction``() = 
         let fileContents = """
             let f(x) = 1
             f((*Mark*))"""
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["'a"]])
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     member public this.``BasicBehavior.DotNet.Static``() = 
         let fileContents = """System.String.Format((*Mark*)"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj []"])
 
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // wroks fine In nested queries
@@ -2157,7 +2157,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker1*)",["obj"],queryAssemblyRefs)
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",["string";"obj []"],queryAssemblyRefs)
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // ParamInfo Still works when an error exists
@@ -2172,7 +2172,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 }"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker*)",["obj"],queryAssemblyRefs)
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     member public this.``Query.OperatorWithParentheses``() = 
@@ -2200,7 +2200,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker1*)",[],queryAssemblyRefs)
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",[],queryAssemblyRefs)
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // ParamInfo Still works when there is an optional argument
@@ -2224,7 +2224,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             }"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker*)",["int";"int"],queryAssemblyRefs)
 
-    [<Test>]   
+    [<Parallelizable(ParallelScope.Self)>][<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // ParamInfo Still works when there are overload methods with the same param count
@@ -2255,14 +2255,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit ParameterInfoTests
    new() = { inherit ParameterInfoTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit ParameterInfoTests

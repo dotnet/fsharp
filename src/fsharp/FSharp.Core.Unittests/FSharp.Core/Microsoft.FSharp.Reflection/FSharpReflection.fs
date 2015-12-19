@@ -75,7 +75,7 @@ module FSharpModule =
         class
         end
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type FSharpValueTests() =
     
     // global variables
@@ -116,7 +116,7 @@ type FSharpValueTests() =
     let exInt = ExceptionInt(1)
     let exDataless = DatalessException
  
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Equals() =
         // Record value                
         Assert.IsTrue(FSharpValue.Equals(recordtype1, recordtype1))
@@ -154,7 +154,7 @@ type FSharpValueTests() =
         Assert.IsFalse(FSharpValue.Equals(exInt,exDataless))      
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetExceptionFields() =
         
         // int 
@@ -175,7 +175,7 @@ type FSharpValueTests() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetRecordField() =
          
         // Record
@@ -199,7 +199,7 @@ type FSharpValueTests() =
 
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetRecordFields() =
         // Record
         let propertyinfo1 = (typeof<RecordType>).GetProperty("field1")
@@ -218,7 +218,7 @@ type FSharpValueTests() =
         ()
     
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetTupleField() =
         // Tuple
         Assert.AreEqual((FSharpValue.GetTupleField(tuple1,0)),1)
@@ -237,7 +237,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleField(tuple2,8)|> ignore)
         ()
       
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetTupleFields() =
         // Tuple
         Assert.AreEqual(FSharpValue.GetTupleFields(tuple1).[0],1)
@@ -253,7 +253,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleFields("Invalid")|> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetUnionFields() =
         // single case union  
         let (singlecaseinfo,singlevaluearray) = FSharpValue.GetUnionFields(singlecaseunion1,typeof<SingleCaseDiscUnion>)
@@ -269,7 +269,7 @@ type FSharpValueTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeFunction() =
     
         // Int function
@@ -286,7 +286,7 @@ type FSharpValueTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeRecord() =
         // Record
         let makeRecord = FSharpValue.MakeRecord(typeof<RecordType>,[|box"field1";box(Some(recordtype1));box( fun () -> (recordtype1,"")) |])
@@ -303,7 +303,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () ->  FSharpValue.MakeRecord(typeof<GenericRecordType<string,int>>,[|box(1);box("invalid param");box("invalid param") |])|> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeTuple() =
         // Tuple
         let makeTuple = FSharpValue.MakeTuple([|box(1);box("tuple")|], typeof<Tuple<int,string>>)
@@ -320,7 +320,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.MakeTuple([|box"invalid param";box"invalid param"|],typeof<Tuple<int,string>>)  |> ignore)
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeUnion() =
         // single case union  
         let (singlecaseinfo,singlevaluearray) = FSharpValue.GetUnionFields(singlecaseunion1,typeof<SingleCaseDiscUnion>)
@@ -334,7 +334,7 @@ type FSharpValueTests() =
       
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeRecordConstructor() =
         // Record
         let recCtor = FSharpValue.PreComputeRecordConstructor(typeof<RecordType>)
@@ -354,7 +354,7 @@ type FSharpValueTests() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeRecordConstructorInfo() =
         // Record
         let recordCtorInfo = FSharpValue.PreComputeRecordConstructorInfo(typeof<RecordType>)
@@ -371,7 +371,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordConstructorInfo(typeof<DiscUnionType<string>>) |> ignore)        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeRecordFieldReader() =
         // Record
         let recordFieldReader = FSharpValue.PreComputeRecordFieldReader((typeof<RecordType>).GetProperty("field1"))
@@ -385,7 +385,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordFieldReader(null)|> ignore)    
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeRecordReader() =
         // Record
         let recordReader = FSharpValue.PreComputeRecordReader(typeof<RecordType>)
@@ -402,7 +402,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordReader(typeof<DiscUnionType<string>>) |> ignore)        
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeTupleConstructor() =
         // Tuple
         let tupleCtor = FSharpValue.PreComputeTupleConstructor(tuple1.GetType())    
@@ -426,7 +426,7 @@ type FSharpValueTests() =
         
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeTupleConstructorInfo() =
         // Tuple
         let (tupleCtorInfo, tupleType) = FSharpValue.PreComputeTupleConstructorInfo(typeof<Tuple<int,string>>)    
@@ -444,7 +444,7 @@ type FSharpValueTests() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeTuplePropertyInfo() =
     
         // Tuple
@@ -462,7 +462,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTuplePropertyInfo(typeof<RecordType>,0) |> ignore)        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeTupleReader() =
     
         // Tuple
@@ -480,7 +480,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleReader(typeof<RecordType>) |> ignore)        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeUnionConstructor() =
     
         // SingleCaseUnion
@@ -497,7 +497,7 @@ type FSharpValueTests() =
               
         ()
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeUnionConstructorInfo() =
     
         // SingleCaseUnion
@@ -512,7 +512,7 @@ type FSharpValueTests() =
             
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeUnionReader() =
     
         // SingleCaseUnion
@@ -527,7 +527,7 @@ type FSharpValueTests() =
                    
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeUnionTagMemberInfo() =
     
         // SingleCaseUnion
@@ -545,7 +545,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeUnionTagMemberInfo(typeof<RecordType>) |> ignore)        
         ()
                    
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.PreComputeUnionTagReader() =
     
         // SingleCaseUnion
@@ -568,7 +568,7 @@ type FSharpValueTests() =
         
     
         
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type FSharpTypeTests() =    
     
     // instance for member this.ObjectEquals
@@ -600,7 +600,7 @@ type FSharpTypeTests() =
     let exDataless = DatalessException
     
     // Base class methods
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ObjectEquals() =       
         
         // Record value                
@@ -639,7 +639,7 @@ type FSharpTypeTests() =
        
     
     // Static methods
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetExceptionFields() =        
         
         // positive               
@@ -663,7 +663,7 @@ type FSharpTypeTests() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetFunctionElements() =    
                
         // positive
@@ -678,7 +678,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetRecordFields() =    
                
         // positve
@@ -694,7 +694,7 @@ type FSharpTypeTests() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetTupleElements() =    
                
         // positive
@@ -709,7 +709,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetUnionCases() =    
         // SingleCaseUnion
         let singlecaseUnionCaseInfoArray = FSharpType.GetUnionCases(typeof<SingleCaseDiscUnion>)  
@@ -730,7 +730,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsExceptionRepresentation() =    
         
         // positive
@@ -746,7 +746,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsFunction() =    
         
         // positive       
@@ -761,7 +761,7 @@ type FSharpTypeTests() =
         
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsModule() =   
     
         let getasm (t : Type) = t.Assembly
@@ -794,7 +794,7 @@ type FSharpTypeTests() =
               
         ()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsRecord() =    
         
         // positive       
@@ -810,7 +810,7 @@ type FSharpTypeTests() =
         ()
 
     // Regression for 5588, Reflection: unit is still treated as a record type, but only if you pass BindingFlags.NonPublic
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.``IsRecord.Regression5588``() =    
         
         // negative
@@ -824,7 +824,7 @@ type FSharpTypeTests() =
         ()
 
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsTuple() =    
                
         // positive
@@ -840,7 +840,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.IsUnion() =    
         
         // positive       
@@ -857,7 +857,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeFunctionType() =    
         
         // positive       
@@ -871,7 +871,7 @@ type FSharpTypeTests() =
         
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.MakeTupleType() =    
                
         // positive
@@ -888,7 +888,7 @@ type FSharpTypeTests() =
         ()
 
             
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type UnionCaseInfoTests() =    
     
     let singlenullarycaseunion = SingleNullaryCaseDiscUnion.SingleNullaryCaseTag
@@ -912,7 +912,7 @@ type UnionCaseInfoTests() =
     
     let ((recDiscCaseinfo:UnionCaseInfo),recDiscCasevaluearray) = FSharpValue.GetUnionFields(recDiscUniontypeB,typeof<DiscUnionType<int>>)
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.Equals() =   
         //positive
         // single case
@@ -938,7 +938,7 @@ type UnionCaseInfoTests() =
         Assert.IsFalse(singlecaseinfo.Equals(null))
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetCustomAttributes() =   
         
         // single case
@@ -957,7 +957,7 @@ type UnionCaseInfoTests() =
         CheckThrowsArgumentNullException(fun () -> singlecaseinfo.GetCustomAttributes(null) |> ignore )    
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetFields() =   
         
         // single case
@@ -979,7 +979,7 @@ type UnionCaseInfoTests() =
        
         ()
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetHashCode() =   
         
         // positive
@@ -1001,7 +1001,7 @@ type UnionCaseInfoTests() =
         ()
         
         
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.GetType() =   
   
         // single case
@@ -1015,7 +1015,7 @@ type UnionCaseInfoTests() =
         ()
        
     
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member this.ToString() =   
         
         // single case

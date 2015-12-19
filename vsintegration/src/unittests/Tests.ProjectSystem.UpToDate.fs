@@ -22,11 +22,11 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type UpToDate() = 
     inherit TheTests()
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.ItemInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <ItemGroup>
@@ -86,7 +86,7 @@ type UpToDate() =
                 Assert.IsTrue(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.PropertyInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <PropertyGroup>
@@ -134,7 +134,7 @@ type UpToDate() =
                 Assert.IsTrue(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.ProjectFile () =
         this.MakeProjectAndDoWithProjectFile(["file1.fs"], [], "", (fun project projFileName ->
             let configNameDebug = ConfigCanonicalName("Debug", "x86")
@@ -157,7 +157,7 @@ type UpToDate() =
             Assert.IsTrue(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.References () =
         let configNameDebug = ConfigCanonicalName("Debug", "x86")
         let output = VsMocks.vsOutputWindowPane(ref [])
@@ -211,7 +211,7 @@ type UpToDate() =
             )
        )
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.OutputFiles () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                <ItemGroup>
@@ -265,7 +265,7 @@ type UpToDate() =
                 Assert.IsTrue(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.ConfigChanges () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
@@ -314,7 +314,7 @@ type UpToDate() =
             Assert.IsTrue(releaseConfigAnyCPU.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.UTDCheckEnabled () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <PropertyGroup>
@@ -327,7 +327,7 @@ type UpToDate() =
             Assert.IsFalse(config.IsFastUpToDateCheckEnabled())
             ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.UTDOptionsFlags () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
@@ -351,7 +351,7 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.UTDOptionsFlagsUTDDisabled () =
         this.MakeProjectAndDo(["file1.fs"], [],  @"
                 <PropertyGroup>
@@ -379,10 +379,10 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
 type ``UpToDate PreserveNewest`` () = 
 
-    [<Test>]
+    [<Parallelizable(ParallelScope.Self)>][<Test>]
     member public this.IsUpToDatePreserveNewest () =
 
         let test (input, inputTimestamp) (output, outputTimestamp) =
