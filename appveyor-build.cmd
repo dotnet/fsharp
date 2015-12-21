@@ -1,5 +1,7 @@
 @echo off
 
+echo Execution started at %date% %time%
+
 :ARGUMENTS_VALIDATION
 
 if /I "%1" == "/help"   (goto :USAGE)
@@ -209,6 +211,8 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
+echo Started building at: %date% %time%
+
 :: Build
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
@@ -289,6 +293,8 @@ pushd tests
 call BuildTestTools.cmd release 
 @if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd release' failed && goto :failure
 
+echo Started testing at %date% %time%
+
 @echo on
 if '%TEST_CAMBRIDGE_SUITE%' == '1' (
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
@@ -338,7 +344,11 @@ rem tests for TEST_VS are not executed
 
 popd
 
+
+echo Success at %date% %time%
+
 goto :eof
 
 :failure
+echo Failure at %date% %time%
 exit /b 1
