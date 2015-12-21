@@ -272,7 +272,7 @@ if '%TEST_NET40%' == '1' (
 
     if '%TEST_PORTABLE%' == '1' (
         call RunTests.cmd release coreunitall
-        @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+        @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitall' failed && goto :failure
     )
     if not '%TEST_PORTABLE%' == '1' (
         call RunTests.cmd release coreunit
