@@ -22,16 +22,16 @@ SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.ex
 :: Check prerequisites
 set fsi=
 
-if exist "%VS140COMNTOOLS%..\ide\devenv.exe"                                        set FSI="%VS140COMNTOOLS%..\..\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
+if exist "%VS140COMNTOOLS%..\ide\devenv.exe"                                        set FSI=%VS140COMNTOOLS%..\..\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
 if not '%fsi%' == '' goto fsiset
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"  set FSI="%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"       set FSI="%ProgramFiles%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"  set FSI=%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
+if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"       set FSI=%ProgramFiles%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
 if not '%fsi%' == '' goto fsiset
 
-if exist "%VS120COMNTOOLS%..\ide\devenv.exe"                                        set FSI="%VS120COMNTOOLS%..\..\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
+if exist "%VS120COMNTOOLS%..\ide\devenv.exe"                                        set FSI=%VS120COMNTOOLS%..\..\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
 if not '%fsi%' == '' goto fsiset
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"  set FSI="%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"       set FSI="%ProgramFiles%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe"
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"  set FSI=%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
+if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"       set FSI=%ProgramFiles%\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe
 
 :fsiset
 if '%fsi%' == '' echo Error: Could not find an installation of FSI && goto :failure
