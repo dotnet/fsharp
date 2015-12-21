@@ -11,9 +11,9 @@ open NUnit.Framework
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type TypeForwardingModule() =
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.TypeForwarding() =
         let currentRuntimeVersion = System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion()
         let currentFSharpCoreTargetRuntime = typeof<int list>.Assembly.ImageRuntimeVersion

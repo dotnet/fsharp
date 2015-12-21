@@ -16,7 +16,7 @@ type Message =
     | Fetch of AsyncReplyChannel<int> 
     | Reset
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =
@@ -40,7 +40,7 @@ type MailboxProcessorType() =
             )
         mailbox
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DefaultTimeout() =
 
         let mailbox = getSimpleMailbox()
@@ -69,7 +69,7 @@ type MailboxProcessorType() =
 
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...

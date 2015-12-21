@@ -16,7 +16,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MultiTargeting() = 
     inherit TheTests()
     
@@ -35,7 +35,7 @@ type MultiTargeting() =
         File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferencesAndOtherFlags([], [refLibPath], [], null, "", "v2.0"))
         refLibPath
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.CheckIconForMismatchedAssemblyReference`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
@@ -50,7 +50,7 @@ type MultiTargeting() =
             Assert.AreEqual(true, ref.CanShowDefaultIcon())
         )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.CheckIconForMatchedAssemblyReference20`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()
@@ -65,7 +65,7 @@ type MultiTargeting() =
             Assert.AreEqual(true, ref.CanShowDefaultIcon())
         )
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.DetermineRuntimeAndSKU`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
@@ -80,35 +80,35 @@ type MultiTargeting() =
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2, 0))) "v2.0.50727" null
         )
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigNoStartupNode`` () =
         let root = XElement.Parse("<Configuration></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", "sku")
         Assert.IsTrue(dirty)
         Assert.IsTrue(root.ToString().Contains("<supportedRuntime version=\"version\" sku=\"sku\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigVersionExistsAddNewSku`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"version\" /></startup></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", "sku")
         Assert.IsTrue(dirty)
         Assert.IsTrue(root.ToString().Contains("<supportedRuntime version=\"version\" sku=\"sku\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigVersionExistsReplaceSku`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"version\" sku=\"oldsku\" /></startup></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", "sku")
         Assert.IsTrue(dirty)
         Assert.IsTrue(root.ToString().Contains("<supportedRuntime version=\"version\" sku=\"sku\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigVersionExistsRemoveSku`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"version\" sku=\"oldsku\" /></startup></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", null) 
         Assert.IsTrue(dirty)
         Assert.IsTrue(root.ToString().Contains("<supportedRuntime version=\"version\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigVersionReplaceOldRuntime`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"versionold\" sku=\"oldsku\" /></startup></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", "sku")
@@ -116,7 +116,7 @@ type MultiTargeting() =
         Assert.IsTrue(root.ToString().Contains("<supportedRuntime version=\"version\" sku=\"sku\" />"))
         Assert.IsFalse(root.ToString().Contains("<supportedRuntime version=\"versionold\" sku=\"oldsku\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AppConfigVersionReplaceOldRuntimes`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"versionold\" sku=\"oldsku\" /><supportedRuntime version=\"versionold2\" /></startup></Configuration>")
         let dirty = LangConfigFile.PatchUpXml(root, "version", "sku")
@@ -125,7 +125,7 @@ type MultiTargeting() =
         Assert.IsFalse(root.ToString().Contains("<supportedRuntime version=\"versionold\" sku=\"oldsku\" />"))
         Assert.IsFalse(root.ToString().Contains("<supportedRuntime version=\"versionold2\" />"))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.TestFrameworkNameToVersionString`` () =
         let validatePair name str =
             let res = HierarchyNode.GetFrameworkVersionString(name)
@@ -143,7 +143,7 @@ type MultiTargeting() =
         validatePair (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2,0,0,1))) "v2.0"
 
         (*
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multitargeting.AddAppConfigIfRetargetTo40Full`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()

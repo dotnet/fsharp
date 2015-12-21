@@ -19,11 +19,11 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ListType() =
     
     // Interfaces
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable() =
         
         // Legit IE
@@ -53,7 +53,7 @@ type ListType() =
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable_T() =
         
         // Legit IE
@@ -84,13 +84,13 @@ type ListType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
     
     // Base class methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectToString() =
         Assert.AreEqual("[1; 2; 3]", [1; 2; 3].ToString())
         Assert.AreEqual("[]", [].ToString())
         Assert.AreEqual("[]", ([] : decimal list list).ToString())
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectEquals() =
         // All three are different references, but equality has been
         // provided by the F# compiler.
@@ -125,7 +125,7 @@ type ListType() =
         Assert.IsFalse(a.Equals(null))
     
     // Instance methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length() =
     
         let l = [1 .. 10]
@@ -134,7 +134,7 @@ type ListType() =
         let e : int list list = List.empty
         Assert.AreEqual(e.Length, 0)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsEmpty() =
     
         let l = [1 .. 10]
@@ -145,7 +145,7 @@ type ListType() =
         
         Assert.IsTrue( ([] @ []).IsEmpty )
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Head() =
         
         let l = ['a'; 'e'; 'i'; 'o'; 'u']
@@ -153,7 +153,7 @@ type ListType() =
         
         CheckThrowsInvalidOperationExn(fun () -> ([] : string list).Head |> ignore)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Tail() =
         
         let l = ['a'; 'e'; 'i'; 'o'; 'u']
@@ -161,7 +161,7 @@ type ListType() =
         
         CheckThrowsInvalidOperationExn(fun () -> ([] : string list).Tail |> ignore)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Item() =
 
         let mutable l = [1]
@@ -183,7 +183,7 @@ type ListType() =
     
     // Static methods
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Empty() =
         let emptyList =  Microsoft.FSharp.Collections.List.Empty
         if List.length emptyList <> 0 then Assert.Fail()    
@@ -197,7 +197,7 @@ type ListType() =
         ()
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Cons() =
         // integer List
         let intList =  Microsoft.FSharp.Collections.List.Cons (1, [ 2;3; 4 ]) 
@@ -212,7 +212,7 @@ type ListType() =
         if emptyList <> [2] then Assert.Fail()
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Slicing() =
         let lst = [1;2;3;4;5;6]
 

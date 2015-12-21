@@ -43,7 +43,7 @@ type F1KeywordTests() =
                 Assert.AreEqual(expectedKeyword, keyword)) expectedKeywords poslist
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``NoKeyword.Negative`` () =
         let file =
@@ -56,7 +56,7 @@ type F1KeywordTests() =
         let keywords = [ None; None; None ] 
         this.TestF1Keywords(keywords, file)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor`` () =
         let file =
             [   "#i$f foobaz"
@@ -65,7 +65,7 @@ type F1KeywordTests() =
         let keywords = [ Some "#if_FS"; Some "#endif_FS" ] 
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.DotNetMethod.854364``()  =
         let file =
             [   "let i : int = 42"
@@ -78,7 +78,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Namespaces`` () =
         let file =
             [   "open Syst$em.N$et"
@@ -95,7 +95,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Namespaces.BeforeDot`` () =
         let file =
             [   "open System$.Net$"
@@ -117,7 +117,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Namespaces.AfterDot`` () =
         let file =
             [   "open $System.$Net"
@@ -140,7 +140,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuotedIdentifiers``() = 
         let file = 
             [
@@ -165,7 +165,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)        
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Attributes`` () = 
         let file = 
             [
@@ -190,7 +190,7 @@ type F1KeywordTests() =
         this.TestF1Keywords(keywords, file)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that when F1 is Hit on TypeProvider namespaces it contain the right keyword 
@@ -206,7 +206,7 @@ type F1KeywordTests() =
         this.TestF1Keywords(keywords, file, 
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that when F1 is Hit on TypeProvider Type it contain the right keyword 
@@ -225,7 +225,7 @@ type F1KeywordTests() =
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``EndOfLine``() =
         let file =
             [   "open System.Net$"
@@ -237,7 +237,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``EndOfLine2``() =
         let file =
             [   "module M"
@@ -251,7 +251,7 @@ type F1KeywordTests() =
         this.TestF1Keywords(keywords, file)
 
      
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Comments``() =
         let file =
             [   "($* co$mment *$)"
@@ -261,7 +261,7 @@ type F1KeywordTests() =
             [ Some "comment_FS"; Some "comment_FS"; Some "comment_FS"; Some "comment_FS"; Some "comment_FS"; ]
         this.TestF1Keywords(keywords, file)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FSharpEntities`` () =
         let file =
             [   "let (KeyValu$e(k,v)) = null"
@@ -293,7 +293,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Keywords`` () =
         let file =
             [   "l$et r = ref 0"
@@ -311,7 +311,7 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.NewInstance.854367`` () =
         let file =
             [   "let q1 = new System.Runtime.Remoting.Type$Entry()"
@@ -322,7 +322,7 @@ type F1KeywordTests() =
         this.TestF1Keywords(keywords, file)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Classes`` () =
         let file =
             [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
@@ -341,7 +341,7 @@ type F1KeywordTests() =
              ]
         this.TestF1Keywords(keywords, file)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Members`` () =        
         let file =
             [ "open System.Linq"
@@ -378,14 +378,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit F1KeywordTests
    new() = { inherit F1KeywordTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit F1KeywordTests

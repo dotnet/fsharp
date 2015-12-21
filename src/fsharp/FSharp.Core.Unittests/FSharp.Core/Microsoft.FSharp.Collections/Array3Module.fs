@@ -19,7 +19,7 @@ Make sure each method works on:
 *)
 
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Array3Module() =
 
     let VerifyDimensions arr x y z =
@@ -28,7 +28,7 @@ type Array3Module() =
         if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Create() =
         // integer array  
         let intArr = Array3D.create 3 4 5 168
@@ -47,7 +47,7 @@ type Array3Module() =
         
         () 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Init() =
             
         // integer array  
@@ -63,7 +63,7 @@ type Array3Module() =
         VerifyDimensions intArr 3 3 3
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Get() =
         
         // integer array  
@@ -91,7 +91,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.get nullArr 1 1 1 |> ignore)  
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Iter() =
 
         // integer array  
@@ -121,7 +121,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException(fun () -> Array3D.iter (fun x -> Assert.Fail("Souldn't be called")) nullArr)
         ()   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Iteri() =
 
         // integer array  
@@ -152,7 +152,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException (fun () -> Array3D.iteri funStr nullArr |> ignore)  
         ()  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length1() =
     
         // integer array  
@@ -176,7 +176,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length1 nullArr |> ignore)  
         () 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length2() =
     
         // integer array  
@@ -200,7 +200,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length2 nullArr |> ignore)  
         () 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length3() = 
     
         // integer array  
@@ -223,7 +223,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length3 nullArr |> ignore)  
         ()  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Map() =
         
         // integer array  
@@ -248,7 +248,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException (fun () -> Array3D.map funStr nullArr |> ignore)  
         ()   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Mapi() =
 
         // integer array  
@@ -276,7 +276,7 @@ type Array3Module() =
         () 
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Set() =
 
         // integer array  
@@ -307,7 +307,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.set  nullArr 0 0 0 "")  
         ()  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ZeroCreate() =
             
         let intArr : int[,,] = Array3D.zeroCreate 2 3 2

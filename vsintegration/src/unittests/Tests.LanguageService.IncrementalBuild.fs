@@ -23,7 +23,7 @@ module internal Vector =
         Vector.Demultiplex taskname Identity input
             
     
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 [<Category("LanguageService.ProjectSystem")>]
 type IncrementalBuild() = 
@@ -41,7 +41,7 @@ type IncrementalBuild() =
     // It verifies that incremental builder can handle changes to timestamps that happen _before_ the
     // stamp function exists. This ensures there's not a race in the data gathered for tracking file
     // timestamps in parsing.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.StampUpdate() =
         let path = Path.GetTempFileName()
 
@@ -91,7 +91,7 @@ type IncrementalBuild() =
 
             
     /// Test that stamp works
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.StampScan() =
         
         let mapSuffix = ref "Suffix1"
@@ -133,7 +133,7 @@ type IncrementalBuild() =
              
             
     /// Test case of zero elements in a vector
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.aaZeroElementVector() = // Starts with 'aa' to put it at the front.
         let stamp = ref DateTime.Now
         let Mult(i:int) : string array = Array.create i ""
@@ -172,7 +172,7 @@ type IncrementalBuild() =
          
             
     /// Here, we want a multiplex to increase the number of items processed.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.MultiplexTransitionUp() =
         let elements = ref 1
         let timestamp = ref System.DateTime.Now
@@ -219,7 +219,7 @@ type IncrementalBuild() =
         | None -> failwith ""
             
     /// Here, we want a multiplex to decrease the number of items processed.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.MultiplexTransitionDown() =
         let elements = ref 1
         let timestamp = ref System.DateTime.Now
@@ -295,7 +295,7 @@ type IncrementalBuild() =
         | None -> failwith "unexpected"
             
     /// Test that stamp works
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.StampMap() =
         
         let mapSuffix = ref "Suffix1"
@@ -336,7 +336,7 @@ type IncrementalBuild() =
         Assert.AreEqual("File2.fs.Suffix2",r.[1])
             
     /// Test that stamp works
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.StampDemultiplex() =
         
         let joinedResult = ref "Join1"
@@ -378,7 +378,7 @@ type IncrementalBuild() =
             
 
     /// Test that Demultiplex followed by ScanLeft works
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.DemultiplexScanLeft() =
         let Size(ar:_[]) = ar.Length
         let Scan acc (file :string) = eventually { return acc + file.Length }
@@ -398,7 +398,7 @@ type IncrementalBuild() =
             
             
     /// Test that Scalar.Multiplex works.
-    [<Parallelizable(ParallelScope.Self)>][<Test>] 
+    [<Test>] 
     member public rb.ScalarMultiplex() =
         let MultiplexScalar inp = [|inp+":1";inp+":2";inp+":3"|]
         
@@ -413,7 +413,7 @@ type IncrementalBuild() =
         Assert.AreEqual("A Scalar Value:2", r.[1])
             
     /// Test that Scalar.Map works.
-    [<Parallelizable(ParallelScope.Self)>][<Test>] 
+    [<Test>] 
     member public rb.ScalarMap() =
         let MapScalar inp = "out:"+inp
         
@@ -430,7 +430,7 @@ type IncrementalBuild() =
             | None -> Assert.Fail()                 
     
     /// Test that a simple scalar action works.
-    [<Parallelizable(ParallelScope.Self)>][<Test>] 
+    [<Test>] 
     member public rb.Scalar() =
         let build = new BuildDescriptionScope()
         let inScalar = InputScalar<string> "Scalar"
@@ -443,7 +443,7 @@ type IncrementalBuild() =
             | None -> Assert.Fail()
             
     /// Test that ScanLeft works.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.ScanLeft() =
         let DoIt (a:int*string) (b:string) =
             eventually { return ((fst a)+1,b) }
@@ -463,7 +463,7 @@ type IncrementalBuild() =
         ()     
             
     /// Convert a vector to a scalar
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.ToScalar() =
         let build = new BuildDescriptionScope()
         let inVector = InputVector<string> "InputVector"
@@ -483,7 +483,7 @@ type IncrementalBuild() =
             
     /// This test replicates the data flow of the assembly reference model. It includes several concepts 
     /// that were new at the time: Scalars, Invalidation, Disposal
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.AssemblyReferenceModel() =
         let Parse(filename) = sprintf "Parse(%s)" filename
         let ApplyMetaCommands(parseResults:string[]) = "tcConfig-of("+String.Join(",",parseResults)+")"
@@ -516,7 +516,7 @@ type IncrementalBuild() =
             let DoIt s = s
             ()
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.DuplicateExpressionNamesNotAllowed() =
             Assert.That((fun () -> let DoIt s = s
                                    let b = 
@@ -530,7 +530,7 @@ type IncrementalBuild() =
                                    ()), NUnit.Framework.Throws.TypeOf(typeof<Exception>))
 #endif
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.OneToOneWorks() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input
@@ -549,7 +549,7 @@ type IncrementalBuild() =
             
     /// In this bug, the desired output is between other outputs.
     /// The getExprById function couldn't find it.            
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.HiddenOutputGroup() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input
@@ -573,7 +573,7 @@ type IncrementalBuild() =
         ()               
             
     /// Empty build should just be a NOP.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.EmptyBuildIsNop() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input

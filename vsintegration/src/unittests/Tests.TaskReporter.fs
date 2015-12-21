@@ -20,7 +20,7 @@ open Salsa.VsMocks
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type TaskReporter() = 
     static let err(line) : 'a = 
         printfn "err() called on line %s with %s" line System.Environment.StackTrace 
@@ -94,7 +94,7 @@ type TaskReporter() =
 // One File Tests
     // For the next two, add tasks to the task list more than once to ensure that
     // hashing is occuring correctly   
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.LanguageServiceErrorsProperlyCoalesced``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -114,7 +114,7 @@ type TaskReporter() =
         
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.ProjectSystemErrorsProperlyCoalesced``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -134,7 +134,7 @@ type TaskReporter() =
         ()
         
     /// Test for multiple identical errors being properly coalesced in the error list (bug 2151)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.ErrorsProperlyCoalesced``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -153,7 +153,7 @@ type TaskReporter() =
         ()
     
     // modify the span, and check to see if we have two tasks now instead of one    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.ProjectSystemErrorsProperlyCoalesced2``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -175,7 +175,7 @@ type TaskReporter() =
         ()
         
     /// Ensure that text line markers are only created when a task is output to the the task list
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.TextLineMarkersCreatedOnce``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -212,7 +212,7 @@ type TaskReporter() =
  
     // both files open
     // errors in each file, build - no duplicates  
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.TwoFilesBothOpen``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -238,7 +238,7 @@ type TaskReporter() =
  
      // file open, one file closed
      // - error in closed file
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.TwoFilesOneOpenErrorInOpen``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -268,7 +268,7 @@ type TaskReporter() =
         ()           
  
     // all files open - build, then fix - no errors left
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.TwoFilesCorrectError``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -314,7 +314,7 @@ type TaskReporter() =
         
         
     // Make sure a 'typecheck' is treated as a background task
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.BackgroundTaskIsClassified``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -342,7 +342,7 @@ type TaskReporter() =
         
         
     // Make sure a 'ilxgen' is treated as a build task
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorList.BuildTaskIsClassified``() =  
         use taskReporter = CreateTaskReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)

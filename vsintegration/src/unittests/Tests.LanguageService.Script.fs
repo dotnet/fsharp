@@ -126,26 +126,26 @@ type ScriptTests() as this =
         AssertNotContains(tooltip, notexpected)
 
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.Squiggles.ShowInFsxFiles``() =  
         let fileContent = """open Thing1.Thing2"""
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Thing1")
         
     /// Regression test for FSharp1.0:4861 - #r to non-existent file causes the first line to be squiggled
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.Hash.RProperSquiggleForNonExistentFile``() =  
         let fileContent = """#r "NonExistent" """
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"was not found or is invalid") 
 
     /// Nonexistent hash. There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.Hash.RDoesNotExist.Bug3325``() =  
         let fileContent = """#r "ThisDLLDoesNotExist" """
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"'ThisDLLDoesNotExist' was not found or is invalid") 
 
     // There was a spurious error message on the first line.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.Bug4861``() =  
         let code = 
@@ -155,7 +155,7 @@ type ScriptTests() as this =
         let (project, _) = createSingleFileFsxFromLines code
         AssertExactlyOneErrorSeenContaining(project, "Nonexistent")   // ...and not an error on the first line.
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
         let fileContent = """
             #light
@@ -164,7 +164,7 @@ type ScriptTests() as this =
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Bar.fs") 
 
     // Transitive to existing property.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad1``() = 
         use _guard = this.UsingNewVS() 
@@ -189,7 +189,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)
 
     // Transitive to nonexisting property.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad2``() = 
         use _guard = this.UsingNewVS()  
@@ -212,7 +212,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "NonExistingProperty")
 
     /// FEATURE: Typing a #r into a file will cause it to be recognized by intellisense.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR.AddedIn``() =  
         let code =
@@ -233,7 +233,7 @@ type ScriptTests() as this =
         gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectDelete, because dependent DLL set changed *))
 
     // FEATURE: Adding a #load to a file will cause types from that file to be visible in intellisense
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashLoad.Added``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -264,7 +264,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)
 
     // FEATURE: Removing a #load to a file will cause types from that file to no longer be visible in intellisense
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashLoad.Removed``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -294,7 +294,7 @@ type ScriptTests() as this =
         TakeCoffeeBreak(this.VS)
         VerifyErrorListContainedExpetedStr("MyNamespace",project)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashLoad.Conditionals``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -329,7 +329,7 @@ type ScriptTests() as this =
         
 
     /// FEATURE: Removing a #r into a file will cause it to no longer be seen by intellisense.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR.Removed``() =  
         let code =
@@ -355,7 +355,7 @@ type ScriptTests() as this =
 
 
     // Corecursive load to existing property.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad3``() =  
         use _guard = this.UsingNewVS()
@@ -380,7 +380,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)
         
     // #load of .fsi is respected (for non-hidden property)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad9``() =  
         use _guard = this.UsingNewVS()
@@ -409,7 +409,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project) 
 
     // #load of .fsi is respected at second #load level (for non-hidden property) 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad10``() =  
         use _guard = this.UsingNewVS()
@@ -441,7 +441,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project) 
 
     // #load of .fsi is respected when dispersed between two #load levels (for non-hidden property)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad11``() =  
         use _guard = this.UsingNewVS()
@@ -473,7 +473,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #load of .fsi is respected when dispersed between two #load levels (the other way) (for non-hidden property)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad12``() =  
         use _guard = this.UsingNewVS()
@@ -505,7 +505,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #nowarn seen in closed .fsx is global to the closure
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad16``() =  
         use _guard = this.UsingNewVS()
@@ -527,7 +527,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)   
 
     /// FEATURE: #r in .fsx to a .dll name works.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.NoError.HashR.DllWithNoPath``() =  
         let fileContent = """
             #light
@@ -536,7 +536,7 @@ type ScriptTests() as this =
         this.VerifyFSXNoErrorList(fileContent)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     // 'System' is in the default set. Make sure we can still resolve it.
     member public this.``Fsx.NoError.HashR.BugDefaultReferenceFileIsAlsoResolved``() =  
         let fileContent = """
@@ -545,7 +545,7 @@ type ScriptTests() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.HashR.DoubleReference``() =  
         let fileContent = """
@@ -555,7 +555,7 @@ type ScriptTests() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
@@ -565,7 +565,7 @@ type ScriptTests() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
 
     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
@@ -576,7 +576,7 @@ type ScriptTests() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
     member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFolders``() = 
@@ -586,7 +586,7 @@ type ScriptTests() as this =
             """
         this.VerifyFSXNoErrorList(fileContent) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =         
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" )
@@ -594,7 +594,7 @@ type ScriptTests() as this =
         let (project, _) = createSingleFileFsxFromLines code
         AssertNoErrorsOrWarnings(project)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.HashR.RelativePath1``() = 
         use _guard = this.UsingNewVS()  
@@ -631,7 +631,7 @@ type ScriptTests() as this =
         let ans = GetSquiggleAtCursor(script1)
         AssertNoSquiggle(ans)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoError.HashR.RelativePath2``() = 
         use _guard = this.UsingNewVS()  
@@ -669,7 +669,7 @@ type ScriptTests() as this =
         AssertNoSquiggle(ans)
 
      /// FEATURE: #load in an .fsx file will include that file in the 'build' of the .fsx.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.NoError.HashLoad.Simple``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -691,7 +691,7 @@ type ScriptTests() as this =
         AssertNoErrorsOrWarnings(project)
 
     // In this bug the #loaded file contains a level-4 warning (copy to avoid mutation). This warning was reported at the #load in file2.fsx but shouldn't have been.s
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.NoWarn.OnLoadedFile.Bug4837``() =  
         use _guard = this.UsingNewVS()
@@ -712,7 +712,7 @@ type ScriptTests() as this =
 
     /// FEATURE: .fsx files have automatic imports of certain system assemblies.
     //There is a test bug here. The actual scenario works. Need to revisit.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("ReproX")>]  
     member public this.``Fsx.NoError.AutomaticImportsForFsxFiles``() =
         let fileContent = """
@@ -730,7 +730,7 @@ type ScriptTests() as this =
         this.VerifyFSXNoErrorList(fileContent) 
 
     // Corecursive load to nonexisting property.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad4``() =  
         use _guard = this.UsingNewVS()
@@ -754,7 +754,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "NonExistingProperty")  
 
     // #load of .fsi is respected
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad5``() =  
         use _guard = this.UsingNewVS()
@@ -783,7 +783,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")   
 
     // #load of .fsi is respected at second #load level
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad6``() =  
         use _guard = this.UsingNewVS()
@@ -815,7 +815,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty") 
         
     // #load of .fsi is respected when dispersed between two #load levels
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad7``() =  
         use _guard = this.UsingNewVS()
@@ -847,7 +847,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")    
         
     // #load of .fsi is respected when dispersed between two #load levels (the other way)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad8``() =  
         use _guard = this.UsingNewVS()
@@ -879,7 +879,7 @@ type ScriptTests() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")   
         
     // Bug seen during development: A #load in an .fs would be followed.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad15``() =  
         use _guard = this.UsingNewVS()
@@ -903,7 +903,7 @@ type ScriptTests() as this =
         TakeCoffeeBreak(this.VS)
         AssertExactlyOneErrorSeenContaining(project, "Namespace")  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.Bug4311HoverOverReferenceInFirstLine``() =
         let fileContent = """#r "PresentationFramework.dll"
                              
@@ -912,7 +912,7 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "PresentationFramework.dll"
         this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker "multiple results"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.QuickInfo.Bug4979``() =
         let code = 
                 ["System.ConsoleModifiers.Shift |> ignore "
@@ -940,7 +940,7 @@ type ScriptTests() as this =
     // they may be metadata-only assemblies.
     //
     // "Reference Assemblies" was only introduced in 3.5sp1, so not all 2.0 F# boxes will have it, so only run on 4.0
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.Bug5073``() =
         let fileContent = """#r "System" """
         let marker = "#r \"System"
@@ -948,19 +948,19 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker ".NET Framework"
 
     /// FEATURE: Hovering over a resolved #r file will show a data tip with the fully qualified path to that file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashR_QuickInfo.ShowFilenameOfResolvedAssembly``() =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "System.Transactions" """ // Pick anything that isn't in the standard set of assemblies.
             "#r \"System.Tra" "System.Transactions.dll"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashR_QuickInfo.BugDefaultReferenceFileIsAlsoResolved``() =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "System" """  // 'System' is in the default set. Make sure we can still resolve it.
             "#r \"Syst" "System.dll"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.DoubleReference``() =
         let fileContent = """#r "System" // Mark1
@@ -968,14 +968,14 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile fileContent "tem\" // Mark1" "System.dll"
         this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile fileContent "tem\" // Mark2" "System.dll"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromGAC``() = 
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
             "#r \"mscor" "Global Assembly Cache"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
         let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
@@ -983,7 +983,7 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
         let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
@@ -991,7 +991,7 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromFullyQualifiedPath``() = 
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" ) // Can be any fully qualified path to an assembly
@@ -1001,7 +1001,7 @@ type ScriptTests() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker expectedtooltip
         this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.InvalidHashReference.ShouldBeASquiggle.Bug3012``() =  
         let code = 
             ["#light"
@@ -1013,7 +1013,7 @@ type ScriptTests() as this =
         Assert.IsTrue(snd squiggle.Value |> fun str -> str.Contains("Bar.dll"))
 
     // Bug seen during development: The unresolved reference error would x-ray through to the root.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad14``() =  
         use _guard = this.UsingNewVS()
@@ -1050,20 +1050,20 @@ type ScriptTests() as this =
         | _ -> Assert.Fail() 
 
     /// FEATURE: #r, #I, #load are all errors when running under the language service
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case1``() =  
         this.TestFsxHashDirectivesAreErrors("#r \"Joe","#r")
      
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case2``() =  
         this.TestFsxHashDirectivesAreErrors("#I \"","#I")      
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case3``() =  
         this.TestFsxHashDirectivesAreErrors("#load \"Doo","may only be used in F# script files")      
 
     /// FEATURE: #reference against a non-assembly .EXE gives a reasonable error message
-    //[<Parallelizable(ParallelScope.Self)>][<Test>]
+    //[<Test>]
     member public this.``Fsx.HashReferenceAgainstNonAssemblyExe``() = 
         let windows = System.Environment.GetEnvironmentVariable("windir")
         let code =
@@ -1079,7 +1079,7 @@ type ScriptTests() as this =
     (* ---------------------------------------------------------------------------------- *)
 
      // FEATURE: A #loaded file is squiggled with an error if there are errors in that file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashLoadedFileWithErrors.Bug3149``() =
         use _guard = this.UsingNewVS()
@@ -1105,7 +1105,7 @@ type ScriptTests() as this =
         
         
      // FEATURE: A #loaded file is squiggled with a warning if there are warning that file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashLoadedFileWithWarnings.Bug3149``() =
         use _guard = this.UsingNewVS()
@@ -1129,7 +1129,7 @@ type ScriptTests() as this =
         AssertSquiggleIsWarningContaining(ans, "WarningHere")  
 
      // Bug: #load should report the first error message from a file
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashLoadedFileWithErrors.Bug3652``() =
         use _guard = this.UsingNewVS()
@@ -1156,7 +1156,7 @@ type ScriptTests() as this =
         AssertSquiggleIsErrorNotContaining(ans, "foo")
 
     // In this bug the .fsx project directory was wrong so it couldn't reference a relative file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.ScriptCanReferenceBinDirectoryOutput.Bug3151``() =
         use _guard = this.UsingNewVS()
         let stopWatch = new System.Diagnostics.Stopwatch()
@@ -1186,7 +1186,7 @@ type ScriptTests() as this =
                
 
     /// In this bug, multiple references to mscorlib .dll were causing problem in load closure
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.BugAllowExplicitReferenceToMsCorlib``() =  
         let code =
@@ -1200,7 +1200,7 @@ type ScriptTests() as this =
         AssertCompListContains(completions,"CommandLineArgs")        
         
     /// FEATURE: There is a global fsi module that should be in scope for script files.        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.Bug2530FsiObject``() =  
         let code = 
@@ -1214,7 +1214,7 @@ type ScriptTests() as this =
         AssertCompListContains(completions,"CommandLineArgs")
   
     // Ensure that the script closure algorithm gets the right order of hash directives
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.ScriptClosure.SurfaceOrderOfHashes``() =  
         let code = 
@@ -1237,7 +1237,7 @@ type ScriptTests() as this =
 #else
 
     /// FEATURE: #reference against a strong name should work.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.HashReferenceAgainstStrongName``() = 
         let code =
                                             ["#light"
@@ -1254,7 +1254,7 @@ type ScriptTests() as this =
 #endif
 
     /// Try out some bogus file names in #r, #I and #load.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.InvalidMetaCommandFilenames``() =
         let code = 
                                     [
@@ -1273,7 +1273,7 @@ type ScriptTests() as this =
         TakeCoffeeBreak(this.VS) // This used to assert
 
     /// FEATURE: .fsx files have INTERACTIVE #defined
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.INTERACTIVEIsDefinedInFsxFiles``() =
         let code =
                                     [
@@ -1286,7 +1286,7 @@ type ScriptTests() as this =
         AssertEqual(TokenType.Identifier ,GetTokenTypeAtCursor(file))  
 
     // Ensure that basic compile of an .fsx works        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_1``() =
@@ -1302,7 +1302,7 @@ type ScriptTests() as this =
         
 
     // Compile a script which #loads a source file. The build can't succeed without the loaded file.      
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_2``() =
@@ -1325,7 +1325,7 @@ type ScriptTests() as this =
         Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")
         
     // Compile a script which #loads a source file. The build can't succeed without 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_3``() =
@@ -1348,7 +1348,7 @@ type ScriptTests() as this =
         Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")        
         
     // Must be explicitly referenced by compile.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_Bug5416_1``() =
@@ -1365,7 +1365,7 @@ type ScriptTests() as this =
         Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")    
         
     // Must be explicitly referenced by compile.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_Bug5416_2``() =
@@ -1402,7 +1402,7 @@ type ScriptTests() as this =
         
         
     // Ensure that #load order is preserved when #loading multiple files. 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_5``() =
@@ -1433,7 +1433,7 @@ type ScriptTests() as this =
         
     // If an fs file is explicitly passed in to the compiler and also #loaded then 
     // the command-line order is respected rather than the #load order
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_6``() =
@@ -1465,7 +1465,7 @@ type ScriptTests() as this =
         
         
     // If a #loaded file does not exist, there should be an error
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_7``() =
@@ -1486,7 +1486,7 @@ type ScriptTests() as this =
         
         
     // #r references should be respected.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_8``() =
@@ -1507,7 +1507,7 @@ type ScriptTests() as this =
         
         
     // Missing script file should be a reasonable failure, not a callstack.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_Bug5414``() =
@@ -1531,7 +1531,7 @@ type ScriptTests() as this =
         
         
     /// There was a problem in which synthetic tokens like #load were causing asserts
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Fsx.SyntheticTokens``() =     
         Helper.ExhaustivelyScrutinize(
@@ -1545,7 +1545,7 @@ type ScriptTests() as this =
             )
                                  
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.ShouldBeAbleToReference30Assemblies.Bug2050``() =     
         let code = 
                                     ["#light"
@@ -1558,7 +1558,7 @@ type ScriptTests() as this =
         AssertCompListContains(completions,"Linq")
 
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.UnclosedHashReference.Case1``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1566,7 +1566,7 @@ type ScriptTests() as this =
             "#reference \"" // Unclosed
             "#reference \"Hello There\""]    
             )
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.UnclosedHashReference.Case2``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1576,7 +1576,7 @@ type ScriptTests() as this =
            )
                                      
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Fsx.UnclosedHashLoad``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner, 
@@ -1586,7 +1586,7 @@ type ScriptTests() as this =
             ) 
         
     //regression test for bug 2530
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("fsx moved from tao test")>]
     member public this.``Fsx.IntellisenseForFSI``() =
         let code = 
@@ -1600,7 +1600,7 @@ type ScriptTests() as this =
         let completions = DotCompletionAtStartOfMarker script1 marker
         AssertCompListContainsAll(completions, list)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.UnitsOfMeasure.SmokeTest1``() =
         let code =
@@ -1698,11 +1698,11 @@ type ScriptTests() as this =
         Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
@@ -1715,14 +1715,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit ScriptTests
    new() = { inherit ScriptTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit ScriptTests

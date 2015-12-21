@@ -8,7 +8,7 @@ open System.Diagnostics
 open UnitTests.TestLib.Utils
 open Microsoft.BuildSettings
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Script() = 
 #if OPEN_BUILD
     class end
@@ -38,7 +38,7 @@ type Script() =
                 printfn "%s" (replaceConstants line)
             Assert.AreEqual(baseline,combinedLines)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public __.NetModules_Bug915449() =
         let script = @"
 @echo off

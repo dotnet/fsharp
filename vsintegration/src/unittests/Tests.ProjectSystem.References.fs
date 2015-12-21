@@ -18,7 +18,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.Win32
 open System.Xml.Linq
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type References() = 
     inherit TheTests()
 
@@ -56,21 +56,21 @@ type References() =
         l.[0]  
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``BasicAssemblyReferences1``() =
         this.MakeProjectAndDo([], ["System"], "", (fun proj ->
             let systemRef = proj.FirstChild.FirstChild :?> AssemblyReferenceNode
             Assert.IsTrue(systemRef.CanShowDefaultIcon())
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``BasicAssemblyReferences2``() =
         this.MakeProjectAndDo([], ["System.Net"], "", (fun proj ->
             let systemRef = proj.FirstChild.FirstChild :?> AssemblyReferenceNode
             Assert.IsTrue(systemRef.CanShowDefaultIcon())
         ))
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddReference.StarredAssemblyName`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -90,7 +90,7 @@ type References() =
             TheTests.HelpfulAssertMatches '<' expectedFsprojRegex fsprojFileText
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``References.Bug787899.AddDuplicateUnresolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -107,7 +107,7 @@ type References() =
                 ))
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``References.Bug787899.AddDuplicateResolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -127,7 +127,7 @@ type References() =
                 ))
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.Works``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"], "", "v3.5", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
@@ -145,7 +145,7 @@ type References() =
             ))
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System"], "", "v3.5", (fun project ->
             let expectedRefInfo = [ "System", true  // In C#, one will be banged out, whereas
@@ -160,7 +160,7 @@ type References() =
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System.dll"], "", "v3.5", (fun project ->
             let expectedRefInfo = [ "System", false     // one will be banged out
@@ -175,7 +175,7 @@ type References() =
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames``() =
         match (Net20AssemExPath(), Net35RefAssemPath()) with
         | Some(net20), Some(net35) ->
@@ -195,7 +195,7 @@ type References() =
               ))
         |_ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
@@ -231,7 +231,7 @@ type References() =
             TheTests.HelpfulAssertMatches '<' expectedFsprojRegex fsprojFileText
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate1``() =
         match Net35RefAssemPath() with
         | Some(net35) ->
@@ -246,7 +246,7 @@ type References() =
                 TheTests.HelpfulAssertMatches ' ' "A reference to '.*' \\(with assembly name '.*'\\) could not be added. A reference to the component '.*' with the same assembly name already exists in the project." e.Message
         | _ -> ()
 
-    // see 5491 [<Parallelizable(ParallelScope.Self)>][<Test>]
+    // see 5491 [<Test>]
     member public this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate2``() =
         match Net35RefAssemPath() with
         | Some(net35) ->
@@ -261,7 +261,7 @@ type References() =
                 TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
         | _ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.FxAssembly.NetTab``() =
         match Net35RefAssemPath() with
         | Some(net35) ->
@@ -271,7 +271,7 @@ type References() =
                                            @"<Reference Include=""System.ServiceModel.Web"" />")
         | _ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.FxAssembly.BrowseTab.SameVersion``() =
         match Net35RefAssemPath() with
         | Some(net35) ->
@@ -288,7 +288,7 @@ type References() =
                 File.Delete(copy)
         | _ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.FxAssembly.BrowseTab.DifferentVersion``() =
         match Net35RefAssemPath() with
         | Some(net35) ->
@@ -307,7 +307,7 @@ type References() =
                 File.Delete(copy)
         | _ -> ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.NonFxAssembly.SeveralCandidates``() =
         let fsharp4300, fsharp4310 = 
             let root = Path.Combine(FSharpSDKHelper.FSharpReferenceAssembliesLocation, FSharpSDKHelper.NETFramework, FSharpSDKHelper.v40)
@@ -347,7 +347,7 @@ type References() =
             )
 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.NetTab``() =
         match Net20AssemExPath() with
         | Some(net20) ->
@@ -362,7 +362,7 @@ type References() =
                                  *)
         | _ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.SameVersion``() =
         match Net20AssemExPath() with
         | Some(net20) ->
@@ -392,7 +392,7 @@ type References() =
               File.Delete(copy)
         | _ -> ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
         match Net20AssemExPath() with
         | Some(net20) ->
@@ -470,7 +470,7 @@ type References() =
         let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
         k exe))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -502,7 +502,7 @@ type References() =
                 ))
         )
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir``() =
         this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
             // Let's create a run-of-the-mill 
@@ -536,7 +536,7 @@ type References() =
                 ))
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReferenceResolution.Bug4423.NotAValidDll.BrowseTab``() =
         let dirName = Path.GetTempPath()
         let dll = Path.Combine(dirName, "Foo.dll")
@@ -554,7 +554,7 @@ type References() =
         finally
             File.Delete(dll)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PathReferences.Existing`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let dirName = Path.GetDirectoryName(projFile)
@@ -585,7 +585,7 @@ type References() =
             AssertEqual "mscorlib" l.[1].Caption
         )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PathReferences.Existing.Captions`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferences(
@@ -603,7 +603,7 @@ type References() =
             Assert.IsNotNull(l.[1].ResolvedAssembly)
         )
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PathReferences.NonExistent`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let refLibPath = @"c:\foo\baz\blahblah.dll"
@@ -617,7 +617,7 @@ type References() =
         )
 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojPreferencePage.ProjSupportsPrefReadWrite``() =
         let testProp = "AssemblyName"
         let compileItem = [@"foo.fs"]
@@ -651,7 +651,7 @@ type References() =
         )
 
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddReference.COM`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))

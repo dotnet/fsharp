@@ -19,10 +19,10 @@ Make sure each method works on:
 * Null  
 *)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type LazyType() =
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Create() =
         
         // int 
@@ -37,7 +37,7 @@ type LazyType() =
         let nullLazy = Lazy.Create(fun () -> ())
         Assert.AreEqual(nullLazy.Value,null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CreateFromValue() =
         
         // int 
@@ -53,7 +53,7 @@ type LazyType() =
         Assert.AreEqual(nullLazy.Value,null)
          
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Force() =
         
         // int 
@@ -111,7 +111,7 @@ type LazyType() =
         
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Value() =
         
         // int 
@@ -126,7 +126,7 @@ type LazyType() =
         let nullLazy = Lazy.CreateFromValue(null)
         Assert.AreEqual(nullLazy.Value,null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsDelayed() =
         
         // int 
@@ -148,7 +148,7 @@ type LazyType() =
         let resultIsDelayed = nullLazy.Force()
         Assert.AreEqual( nullLazy.IsDelayed,false)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsForced() =
         
         // int 

@@ -5,10 +5,10 @@ open System
 open NUnit.Framework
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type IntConversions() =
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Unchecked.SignedToUInt64`` () =
         let d = System.Int32.MinValue
         let e = uint64 d
@@ -16,7 +16,7 @@ type IntConversions() =
         Assert.IsTrue (e <> f)                 
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Unchecked.SignedToUInt32`` () =
         let d = System.Int16.MinValue
         let e = uint32 d
@@ -24,7 +24,7 @@ type IntConversions() =
         Assert.IsTrue (e <> f)                 
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Checked.UnsignedToSignedInt32``() =
         let d = System.UInt16.MaxValue
         CheckThrowsExn<OverflowException>(fun() -> Checked.int16 d |> ignore)

@@ -28,7 +28,7 @@ type ErrorRecoveryTests()  =
                                 errorMessage.Contains(expectedStr)))
 
    // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4538_3``() = 
         let fileContent = """
@@ -40,7 +40,7 @@ type ErrorRecoveryTests()  =
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
     // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4538_4``() =  
         let fileContent = """
@@ -51,7 +51,7 @@ type ErrorRecoveryTests()  =
         let expectedStr = "Block following this 'use' is unfinished"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     [<Category("PerfCheck")>]
     member public this.``ErrorRecovery.Bug4881_1``() =  
@@ -68,7 +68,7 @@ type ErrorRecoveryTests()  =
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Split")       
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4881_2``() =  
         let code =
@@ -85,7 +85,7 @@ type ErrorRecoveryTests()  =
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Split")      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4881_3``() =  
         let code = 
@@ -103,7 +103,7 @@ type ErrorRecoveryTests()  =
         AssertCompListContains(completions,"Split")  
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4881_4``() =  
         let code = 
@@ -120,7 +120,7 @@ type ErrorRecoveryTests()  =
         
         
     // This case was fixed while investigating 4538.            
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.NotFixing4538_1``() =  
         let code = 
@@ -137,7 +137,7 @@ type ErrorRecoveryTests()  =
         AssertCompListContains(completions,"MyType")
         
     // This case was fixed while investigating 4538.            
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.NotFixing4538_2``() =  
         let code =
@@ -154,7 +154,7 @@ type ErrorRecoveryTests()  =
         AssertCompListContains(completions,"MyType")
         
     // This case was fixed while investigating 4538.            
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.NotFixing4538_3``() =  
         let code = 
@@ -169,7 +169,7 @@ type ErrorRecoveryTests()  =
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListContains(completions,"MyType")
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4538_1``() =  
         let code = 
@@ -185,7 +185,7 @@ type ErrorRecoveryTests()  =
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListContains(completions,"MyType")    
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4538_2``() =  
         let code = 
@@ -205,7 +205,7 @@ type ErrorRecoveryTests()  =
         
       
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4538_5``() =  
         let code = 
@@ -222,7 +222,7 @@ type ErrorRecoveryTests()  =
         AssertCompListContains(completions,"MyType")          
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("error_recovery")>]
     member public this.``ErrorRecovery.Bug4594_1``() =  
         let code = 
@@ -239,7 +239,7 @@ type ErrorRecoveryTests()  =
     /// In this bug, the Module. at the very end of the file was treated as if it were in the scope
     /// of Module rather than right after it. This check just makes sure we can see a data tip because
     /// Module is available.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorRecovery.5878_1``() =
         Helper.AssertMemberDataTipContainsInOrder
             (this.TestRunner,
@@ -272,14 +272,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit ErrorRecoveryTests
    new() = { inherit ErrorRecoveryTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit ErrorRecoveryTests

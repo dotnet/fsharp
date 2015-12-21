@@ -14,7 +14,7 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
     let sorted = indexed |> Array.distinctBy snd
     isStable sorted
     
-[<Parallelizable(ParallelScope.Self)>][<Test>]
+[<Test>]
 let ``Seq.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>

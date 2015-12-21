@@ -10,14 +10,14 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ProjectItems() = 
     inherit TheTests()
     
     //TODO: look for a way to remove the helper functions
     static let ANYTREE = Tree("",Nil,Nil)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RemoveAssemblyReference.NoIVsTrackProjectDocuments2Events``() =
         this.MakeProjectAndDo(["file.fs"], ["System.Numerics"],"", (fun project ->
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
@@ -43,7 +43,7 @@ type ProjectItems() =
             Assert.IsFalse(containsSystemNumerics(), "Project should not contains reference to System.Numerics")            
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFile``() =
         this.MakeProjectAndDo(["orig.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "a.fs")
@@ -58,7 +58,7 @@ type ProjectItems() =
                 File.Delete(absFilePath)
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItem.ToAFolder.ItemAppearsAtBottomOfFolder``() =
         this.MakeProjectAndDo(["orig.fs"; "Folder\\f1.fs"; "Folder\\f2.fs"; "final.fs"], [], "", (fun project ->
             let dir = Path.Combine(project.ProjectFolder, "Folder")
@@ -75,7 +75,7 @@ type ProjectItems() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFileEvenIfUnknownItemWithSameName``() =
         this.MakeProjectAndDo([], [], @"
                 <ItemGroup>
@@ -95,7 +95,7 @@ type ProjectItems() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItemBelow.ItemAppearsInRightSpot``() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")
@@ -118,7 +118,7 @@ type ProjectItems() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItemAbove.ItemAppearsInRightSpot.Case1``() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")
@@ -141,7 +141,7 @@ type ProjectItems() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AddNewItemAbove.ItemAppearsInRightSpot.Case2``() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")

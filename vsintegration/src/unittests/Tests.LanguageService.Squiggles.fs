@@ -86,7 +86,7 @@ type SquiggleTests() as this=
         else
             Assert.Fail(sprintf "Expected %A but got %A" expectedSquiggle squiggles)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.Expression.IllegalIntegerLiteral``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -98,7 +98,7 @@ type SquiggleTests() as this=
                                  "Missing qualification after '.'")) 
                                
                      
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.Expression.IncompleteDefine``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -107,7 +107,7 @@ type SquiggleTests() as this=
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "Unexpected symbol ';' in binding")) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.Expression.KeywordAsValue``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -118,7 +118,7 @@ type SquiggleTests() as this=
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "Incomplete structured construct at or before this point in binding"))
                               
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.Type.WithoutName``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -128,7 +128,7 @@ type SquiggleTests() as this=
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "Unexpected symbol '=' in type name"))         
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]                          
+    [<Test>]                          
     member public this.``AbstractClasses.Constructors.PositiveTests``() = 
 
         let testCases = 
@@ -195,7 +195,7 @@ type E =
                     | [] -> () // OK : no squiggles expected
                     | errs -> sprintf "Unexpected squiggles %A" errs |> Assert.Fail
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]                          
+    [<Test>]                          
     member public this.``AbstractClasses.Constructors.NegativeTests``() = 
         let testCases = 
             [
@@ -294,7 +294,7 @@ type X() =
 
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.Error.VerbatimStringAccident.GoodErrorMessage``() = 
         let r = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
@@ -310,7 +310,7 @@ type X() =
                           """Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters."""
         AssertEqual( [expected], squiggles )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.WarningAboutEmptyAssembly`` () =
         let emptyLoc = System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\EmptyAssembly.dll")
@@ -323,7 +323,7 @@ type X() =
             addtlRefAssy = [emptyLoc; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")],
             thereShouldBeNoOtherSquigglesHere=true)      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.Error.CodePrefix1.GoodErrorMessage`` () =
@@ -334,7 +334,7 @@ type X() =
                               "The static parameter 'Param1' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<Param1=...>'."),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.Error.CodePrefix2.GoodErrorMessage`` () =
@@ -345,7 +345,7 @@ type X() =
                               "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.Error.CodePrefix3.GoodErrorMessage`` () =
@@ -358,7 +358,7 @@ type X() =
                               "Expected type argument or static argument"),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.Error.CodePrefix4.GoodErrorMessage`` () =
@@ -371,7 +371,7 @@ type X() =
                               "Incomplete structured construct at or before this point in type arguments. Expected ',', '>' or other token."),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify the error squiggle shows up when TypeProvider StaticParameter is Invalid 
@@ -389,7 +389,7 @@ type X() =
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])   
 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify the No squiggle doesn't show up in the file content marker where TypeProvider line is
@@ -402,7 +402,7 @@ type X() =
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
     
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify the Warning squiggle does show up in the file content marker where TypeProvider line is
@@ -421,7 +421,7 @@ type X() =
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Waring.Construct.TypeMatchWithoutAnnotation``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -436,7 +436,7 @@ type X() =
                               "type variable 'a has been constrained to be " +
                               "type 'string'."))  
                                                       
-    [<Parallelizable(ParallelScope.Self)>][<Test>] 
+    [<Test>] 
     member public this.``Warning.Expression.IncorrectFormat``() = 
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -449,7 +449,7 @@ type X() =
                               "Try indenting this token further or using "+
                               "standard formatting conventions."))                                    
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.Method.ParameterNumDoseNotMatch``() =
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -466,7 +466,7 @@ type X() =
     now has two errors.  And Salsa just picks the 'first' squiggle (based on some arbitrary implementation
     artifacts of what order errors are put in the collection), so 'GetSquiggleAtCursor' is unreliable if there 
     is more that on squiggle there. Workaround here is to look through the whole error list for what we're looking for.  *) 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("Salsa limitation")>]                          
     member public this.``Error.Identifer.IllegalFloatPointLiteral``() = 
         this.VerifySquiggleAtStartOfMarker(
@@ -477,7 +477,7 @@ type X() =
                                 "Unexpected floating point literal in pattern. Expected identifier, '(', '(*)' or other token."))      
     
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.ErrorSquiggleSpan() =
         let fileContents = """
             #light
@@ -502,7 +502,7 @@ type X() =
         | Some(e) -> 
             Assert.IsTrue(e.Context = TextSpan(iStartLine=5, iStartIndex=31, iEndLine=5, iEndIndex=34), "error had wrong location")   
   
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.TypeCheck.ParseError.Bug67133``() =
         // Note: no 'open System', so DateTime is unknown
         this.VerifySquiggleAtStartOfMarker(
@@ -512,7 +512,7 @@ type X() =
             marker = "(*Mark*)",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,"The type 'DateTime' is not defined"))
  
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Error.CyclicalDeclarationDoesNotCrash``() =
         // Note: no 'open System', so DateTime is unknown
         this.VerifySquiggleAtStartOfMarker(
@@ -521,7 +521,7 @@ type X() =
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,"This type definition involves an immediate cyclic reference through an abbreviation"))       
 
     /// FEATURE: Flags from the MSBuild compile target are respected.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Warning.FlagsAndSettings.TargetOptionsRespected``() =  
         let fileContent = """
             [<System.Obsolete("x")>]
@@ -532,7 +532,7 @@ type X() =
 
     /// When a .fs file is opened with no project context we do show squiggles
     /// for missing types etc.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``OrphanFs.MissingTypesShouldNotShowErrors``() =
         let fileContent = """open Unknown(*Mark*)"""
@@ -540,14 +540,14 @@ type X() =
         
     /// When a .fs file is opened with no project context we still do want to show squiggles
     /// for parse errors which could not have been caused by a missing reference or prior source file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``OrphanFs.ParseErrorsStillShow``() =  
         let fileContent = """let foo = let(*Mark*)"""
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "Block following "))  
 
     /// FEATURE: If a .fs file has a BuildAction other than "Compile", it behaves like a
     /// single-file-project with regards to intellisense.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Project.FsFileWithBuildActionOtherThanCompileBehavesLikeSingleFileProject``() =
         use _guard = this.UsingNewVS()
@@ -568,7 +568,7 @@ type X() =
         Assert.IsTrue(snd squiggle.Value |> fun str -> str.Contains("The namespace"))// The namespace or module 'File1' is not defined
 
     /// FEATURE: Errors in the code are underlined with red squiggles and a clickable description of the error appears in the Error List.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Basic.Case1``() =
         let fileContent = """
@@ -577,7 +577,7 @@ type X() =
             let arr = [| 1; 2; 3 |]"""
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "This value is not a function and cannot be applied")) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Basic.Case2``() =
         let fileContent = """
@@ -588,7 +588,7 @@ type X() =
         this.VerifyNoSquiggleAtStartOfMarker(fileContent,"(*Mark*)")
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multiline.Bug5449.Case1``() =
         let fileContent = """
             let f x = 1
@@ -598,7 +598,7 @@ type X() =
             """
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "This value is not a function and cannot be applied"))  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Multiline.Bug5449.Case2``() =
         let fileContent = """
             let f x = 1
@@ -608,7 +608,7 @@ type X() =
             """
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "This value is not a function and cannot be applied"))  
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorAtTheEndOfFile``() =
         let fileContent = """3 + """
         let (sln, proj, file) = this.CreateSingleFileProject(fileContent)
@@ -621,7 +621,7 @@ type X() =
         else
             Assert.Fail(sprintf "Expected %A but got %A" expectedSquiggle squiggles)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.6095_a``() =
         let code = 
                                     ["let a = async {"
@@ -647,7 +647,7 @@ type X() =
         let ans = GetSquiggleAtCursor(file)
         AssertNoSquiggle(ans)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.6095_b``() =
         let code = 
                                     ["let a = async {"
@@ -678,7 +678,7 @@ type X() =
                            AssertContains(msg,"Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s).")
         | _ -> Assert.Fail("Expected squiggle in computation expression")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.6095_c``() =  // this one is not in a computation expression actually
         let code = ["let f = function | [| a;b |] -> ()"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -699,7 +699,7 @@ type X() =
                            AssertContains(msg,"Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s).")
         | _ -> Assert.Fail("Expected squiggle in computation expression")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.6095_d``() =  // this one is not in a computation expression actually
         let code = ["for [|a;b|] in [| [|42|] |] do ()"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -729,7 +729,7 @@ type X() =
         AssertNoSquiggle(ans)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``GloballyScoped.6284``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -745,7 +745,7 @@ type X() =
         let ans = GetSquiggleAtCursor(programFile)
         AssertNoSquiggle(ans)
                 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.914685``() =
         let code = ["async { if true then return 1 } |> ignore"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -757,7 +757,7 @@ type X() =
                                AssertContains(msg,"The type 'int'")
             | _ -> Assert.Fail("Expected squiggle in computation expression")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InComputationExpression.214740``() =
         this.VerifySquiggleAtStartOfMarker(
             fileContents = """
@@ -771,7 +771,7 @@ type X() =
                                  "The type 'string' does not match the type 'int'")) 
 
     /// Extra endif
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExtraEndif``() =
         let fileContent = """
             #if UNDEFINED //(*If*)
@@ -782,7 +782,7 @@ type X() =
             #endif(*Mark*) //(*Extra endif*)"""
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "#endif has no matching #if in implementation file")) 
          
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``DirectivesInString``() =
         let fileContent = """
             #if UNDEFINED
@@ -805,32 +805,32 @@ type X() =
                            AssertContains(msg, expected)
         | _ -> Assert.Fail(sprintf "No squiggle seen. Expected: '%s'" expected)   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashNotFirstSymbolA``() =
         this.TestSquiggle true [ "(**) #if IDENT"; "#endif" ] "if" "#if directive must appear as the first non-whitespace"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashNotFirstSymbolB``() =
         this.TestSquiggle true [ "#if FOO"; "(**) #else"; "#endif" ] "else" "#else directive must appear as the first non-whitespace"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashNotFirstSymbolC``() =
         this.TestSquiggle true [ "#if IDENT"; "#else"; "(**) #endif" ] "endif" "#endif directive must appear as the first non-whitespace"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashIfWithoutIdent``() =
         this.TestSquiggle true [ "#if"; "#endif" ] "if" "#if directive should be immediately followed by an identifier"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashIfWithMultilineComment``() =
         this.TestSquiggle true [ "#if IDENT (* aaa *)"; "#endif" ] "(* aaa" "Expected single line comment or end of line"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Squiggles.HashIfWithUnexpected``() =
         this.TestSquiggle true [ "#if IDENT whatever"; "#endif" ] "whatever" "Incomplete preprocessor expression"
 
      // FEATURE: Touching a depended-upon file will cause a intellisense to update in the currently edited file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Refresh.RefreshOfDependentOpenFiles.Bug2166.CaseA``() =    
         use _guard = this.UsingNewVS()
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -892,7 +892,7 @@ type X() =
         gpatcc.AssertExactly(notAA[],notAA[])
 
      // FEATURE: Touching a depended-upon file will cause a intellisense to update in the currently edited file.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Refresh.RefreshOfDependentOpenFiles.Bug2166.CaseB``() =  
         use _guard = this.UsingNewVS()  
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -943,7 +943,7 @@ type X() =
         gpatcc.AssertExactly(notAA[],notAA[])
         
     // FEATURE: Give a nice error message when a type in a unreferenced dependant assembly is used
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``MissingDependencyReferences.MissingAssemblyErrorMessage``() = 
         let code = 
                                     ["#light"
@@ -969,14 +969,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit SquiggleTests
    new() = { inherit SquiggleTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit SquiggleTests

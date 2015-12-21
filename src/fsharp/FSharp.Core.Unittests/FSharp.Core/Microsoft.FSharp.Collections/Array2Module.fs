@@ -18,9 +18,9 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Array2Module() =
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Base1() =
         // integer array  
         let intArr = 
@@ -49,7 +49,7 @@ type Array2Module() =
         
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Base2() =
         // integer array  
         let intArr = 
@@ -87,7 +87,7 @@ type Array2Module() =
 #endif
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Blit() =
         // integer array  
         let intArr = 
@@ -135,7 +135,7 @@ type Array2Module() =
 
 #if FX_NO_BASED_ARRAYS
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.BlitWithNonZeroBase() =
         let a = Array2D.createBased 1 1 3 3 0
         a.[1,1] <- 11
@@ -189,7 +189,7 @@ type Array2Module() =
         ()
 #endif
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Copy() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -213,7 +213,7 @@ type Array2Module() =
         
         ()          
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Create() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> 100)
@@ -235,7 +235,7 @@ type Array2Module() =
 
 #if FX_NO_BASED_ARRAYS
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.createBased() =
         // integer array  
         let intArr = Array2D.create 2 3 100
@@ -255,7 +255,7 @@ type Array2Module() =
         () 
 #endif
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Get() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -273,7 +273,7 @@ type Array2Module() =
         CheckThrowsNullRefException (fun () -> nullArr.[2,2] |> ignore)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.GetAndSetAPI() =
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
         let resultInt = Array2D.get intArr 1 1
@@ -283,7 +283,7 @@ type Array2Module() =
         Assert.AreEqual(1, resultInt)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Init() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -297,7 +297,7 @@ type Array2Module() =
         
 #if FX_NO_BASED_ARRAYS
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Init_Based() =
         // integer array  
         let intArr = Array2D.initBased 1 1 2 3 (fun i j -> i*100 + j)
@@ -311,7 +311,7 @@ type Array2Module() =
         () 
 #endif
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Iter() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -338,7 +338,7 @@ type Array2Module() =
 
 #if FX_NO_BASED_ARRAYS
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IterNonZeroBased() =
         let a = Array2D.createBased 1 5 10 10 1
         let result = ref 0
@@ -351,7 +351,7 @@ type Array2Module() =
 
 #endif
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Iteri() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -377,7 +377,7 @@ type Array2Module() =
         
         ()  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length1() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -400,7 +400,7 @@ type Array2Module() =
         
         ()  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Length2() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -424,7 +424,7 @@ type Array2Module() =
         
         () 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Map() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -450,7 +450,7 @@ type Array2Module() =
         
         ()   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Mapi() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -478,7 +478,7 @@ type Array2Module() =
 
 #if FX_NO_BASED_ARRAYS
 #else
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Rebase() =
         // integer array  
         let intArr = Array2D.createBased 2 3 2 3 168
@@ -503,7 +503,7 @@ type Array2Module() =
         ()
 #endif
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Set() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -522,7 +522,7 @@ type Array2Module() =
         
         () 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ZeroCreate() =
         // integer array  
         let intArr = Array2D.zeroCreate 2 3 
@@ -539,7 +539,7 @@ type Array2Module() =
         () 
 
     // Note: This is a top level primitive, not in the Array2D module
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.array2D() = 
 
         let m1 : int[,] = array2D []

@@ -99,7 +99,7 @@ type ErrorListTests() as this =
             else
                 failwithf "The error list number is not the expected %d" num
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``OverloadsAndExtensionMethodsForGenericTypes``() = 
         let fileContent = 
             """
@@ -119,7 +119,7 @@ let g (t : T) = t.Count()
         this.VerifyNoErrorListAtOpenProject(fileContent)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ErrorsInScriptFile``() = 
         let (solution, project, file) = this.CreateSingleFileProject("", fileKind = SourceFileKind.FSX)
         
@@ -145,7 +145,7 @@ let g (t : T) = t.Count()
         TakeCoffeeBreak(this.VS)
         checkErrors 0
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetErrors function doese not work for this case")>]
     member public this.``LineDirective``() = 
         use _guard = this.UsingNewVS()
@@ -164,7 +164,7 @@ let g (t : T) = t.Count()
         this.VerifyCountAtSpecifiedFile(project,1)
         VerifyErrorListContainedExpectedStr("The value or constructor 'y' is not defined",project)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InvalidConstructorOverload``() = 
         let content = """
         type X private() = 
@@ -196,7 +196,7 @@ The type 'float' is not compatible with the type 'int'."
                 for expected in expectedMessages do
                     assertContains errors expected
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
         let content = """
 let x = query { 
@@ -212,7 +212,7 @@ let x = query {
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Query.NonOpenedNullableModule.Join``() = 
         let content = """
 let t = 
@@ -229,7 +229,7 @@ let t =
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Query.NonOpenedNullableModule.GroupJoin``() = 
         let content = """
 let t = 
@@ -247,7 +247,7 @@ let t =
                     Assert.Fail("Unexpected content of error list")
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Query.InvalidJoinRelation.Join``() = 
         let content = """
 let x = 
@@ -265,7 +265,7 @@ let x =
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InvalidMethodOverload``() = 
         let content = """
         System.Console.WriteLine(null)
@@ -275,7 +275,7 @@ let x =
                 Assert.AreEqual(1, List.length errors)
                 assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``InvalidMethodOverload2``() = 
         let content = """
 type A<'T>() = 
@@ -292,7 +292,7 @@ b.Do(1, 1)
                 Assert.AreEqual(1, List.length errors)
                 assertContains errors "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member A.Do : a:int * b:'T -> unit, member A.Do : a:int * b:int -> unit"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``NoErrorInErrList``() = 
         use _guard = this.UsingNewVS()
         let fileContents1 = """
@@ -326,7 +326,7 @@ b.Do(1, 1)
         TakeCoffeeBreak(this.VS)
         this.VerifyCountAtSpecifiedFile(project,0)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``NoLevel4Warning``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -344,14 +344,14 @@ b.Do(1, 1)
 
         this.VerifyCountAtSpecifiedFile(project,0)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     //This is an verify action test & example
     member public this.``TestErrorMessage``() =
         let fileContent = """Console.WriteLine("test")"""
         let expectedStr = "The namespace or module 'Console' is not defined"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TestWrongKeywordInInterfaceImplementation``() = 
         let fileContent = 
             """
@@ -367,7 +367,7 @@ type staticInInterface =
                 | [err] -> Assert.IsTrue(err.Message.Contains("Unexpected keyword 'static' in member definition. Expected 'member', 'override' or other token"))
                 | x -> Assert.Fail(sprintf "Unexpected errors: %A" x)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.MultipleErrors")>]
     member public this.``TypeProvider.MultipleErrors`` () =
@@ -395,7 +395,7 @@ type staticInInterface =
         for i = 1 to 10 do
             checkList i
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Records")>]
     member public this.``Records.ErrorList.IncorrectBindings1``() = 
         for code in [ "{_}"; "{_ = }"] do
@@ -407,7 +407,7 @@ type staticInInterface =
                     assertContains errs "Field bindings must have the form 'id = expr;'"
                     assertContains errs "'_' cannot be used as field name"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Records")>]
     member public this.``Records.ErrorList.IncorrectBindings2``() =
         CheckErrorList "{_ = 1}" <|
@@ -415,7 +415,7 @@ type staticInInterface =
             | [err] -> Assert.AreEqual("'_' cannot be used as field name", err.Message)
             | x -> printfn "%A" x; Assert.Fail("unexpected content of error list")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Records")>]
     member public this.``Records.ErrorList.IncorrectBindings3``() =
         CheckErrorList "{a = 1; _; _ = 1}" <|
@@ -429,7 +429,7 @@ type staticInInterface =
                     else Assert.Fail (sprintf "Unexpected message %s" msg)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify the Error List shows the correct error message when the static parameter type is invalid
@@ -445,7 +445,7 @@ but here has type
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     [<Ignore("This is ignored because currently the Mock Type Provider is not evaluating the static parameter.")>]
@@ -459,7 +459,7 @@ but here has type
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that Error List shows the correct error message when Type Provider that takes two static parameter is given only one static parameter.
@@ -472,7 +472,7 @@ but here has type
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.ProhibitedMethods`` () =
         let cases = 
@@ -489,7 +489,7 @@ but here has type
                     addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
                 )    
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify that the Error list count is one in the Error list item when given invalid static parameter that raises an error.
@@ -500,7 +500,7 @@ but here has type
                             type foo = N1.T< const "Hello World",2>""",
             num = 1) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that the Warning list count is one in the Warning list item when there is incorrect indentation in the code.
@@ -513,7 +513,7 @@ but here has type
             expectedNum = 1,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that there is No Error list count in the Error list item when the file content is correct.
@@ -525,7 +525,7 @@ but here has type
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
     
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``NoError.FlagsAndSettings.TargetOptionsRespected``() =
         let fileContent = """
             [<System.Obsolete("x")>]
@@ -538,7 +538,7 @@ but here has type
         let errorList = GetErrors(project)
         Assert.IsTrue(errorList.IsEmpty)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``UnicodeCharactors``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -554,7 +554,7 @@ but here has type
                         |> List.exists(fun error -> (error.ToString().Contains("新規baProgram")))) 
 
     // In this bug, particular warns were still present after nowarn        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``NoWarn.Bug5424``() =  
         let fileContent = """
@@ -568,7 +568,7 @@ but here has type
         this.VerifyNoErrorListAtOpenProject(fileContent)
 
     /// FEATURE: Errors in flags are sent in Error list.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FlagsAndSettings.ErrorsInFlagsDisplayed``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -579,7 +579,7 @@ but here has type
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         VerifyErrorListContainedExpectedStr("nonexistent",project)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``BackgroundComplier``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -606,7 +606,7 @@ but here has type
                     """,
             num = 2)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList1``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -616,7 +616,7 @@ but here has type
                     let a = NoVal""",
             num = 1 )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList4``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = """
@@ -641,7 +641,7 @@ but here has type
                 2us
                 |] """ )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList5``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """                
@@ -650,7 +650,7 @@ but here has type
                 let x = 0 """,
             num = 1)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList6``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """               
@@ -663,7 +663,7 @@ but here has type
                     | B = 0N """,
             num = 2)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList7``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """               
@@ -694,14 +694,14 @@ but here has type
                 let foo = 1 """,
             num = 5)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList8``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """              
                 type EnumInt8s      = | A1 = - 10y """ ,
             num = 1 )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList9``() = 
         use _guard = this.UsingNewVS()
         let fileContents1 = """
@@ -729,7 +729,7 @@ but here has type
         Build(project) |> ignore
         this.VerifyCountAtSpecifiedFile(project,1)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``CompilerErrorsInErrList10``() = 
         let fileContents = """
             namespace Errorlist
@@ -741,26 +741,26 @@ but here has type
 
         this.VerifyCountAtSpecifiedFile(project,1)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``DoubleClickErrorListItem``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
                 let x = x """,
             num = 1)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FixingCodeAfterBuildRemovesErrors01``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
                 let x = 4 + "x" """,
             num = 2)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FixingCodeAfterBuildRemovesErrors02``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = "let x = 4" )   
                                  
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IncompleteExpression``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -772,7 +772,7 @@ but here has type
                 List.map (fun x -> x + 1) """ ,
             num = 2)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IntellisenseRequest``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -780,7 +780,7 @@ but here has type
                     member a.B(*Marker*) : int = "1" """,
             num = 1)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TypeChecking1``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -797,7 +797,7 @@ but here has type
                     x.Next <- Some x  """,
             num = 1)
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TypeChecking2``() = 
         this.VerifyErrorListContainedExpectedString(
             fileContents = """
@@ -814,7 +814,7 @@ but here has type
                     x.Next <- Some x  """,
             expectedStr = "Foo.Thread option")
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TypeChecking3``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -830,7 +830,7 @@ but here has type
                     x.Next <- Some 1 """,
             num = 1)
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TypeChecking4``() = 
         this.VerifyErrorListContainedExpectedString(
             fileContents = """
@@ -880,7 +880,7 @@ but here has type
         AssertContains(tooltip,"string")
 *)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Warning.ConsistentWithLanguageService``() =  
         let fileContent = """
             open System
@@ -891,7 +891,7 @@ but here has type
         let warnList = GetWarnings(project)
         Assert.AreEqual(20,warnList.Length)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Warning.ConsistentWithLanguageService.Comment``() =  
         let fileContent = """
             open System
@@ -902,7 +902,7 @@ but here has type
         let warnList = GetWarnings(project)
         Assert.AreEqual(0,warnList.Length)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetErrors function doese not work for this case")>]
     member public this.``Errorlist.WorkwithoutNowarning``() =  
         let fileContent = """
@@ -926,14 +926,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit ErrorListTests
    new() = { inherit ErrorListTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit ErrorListTests

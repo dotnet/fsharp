@@ -193,7 +193,7 @@ module Events =
 
 module ``FSI-Shadowcopy`` = 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     // "%FSI%" %fsi_flags%                          < test1.fsx
     [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
     // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
@@ -214,7 +214,7 @@ module ``FSI-Shadowcopy`` =
         do! testOkFile |> NUnitConf.checkGuardExists
         })
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
     [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
     // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
@@ -656,7 +656,7 @@ module Printing =
     // findstr /v "%CD%" z.raw.output.test.200.txt     | findstr /v -C:"--help' for options" > z.output.test.200.txt
     // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
     // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<SetCulture("en-US"); SetUICulture("en-US")>] //not enough
     [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.txt", "z.output.test.default.bsl")>]
     [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.txt", "z.output.test.1000.bsl")>]

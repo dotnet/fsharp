@@ -6,43 +6,43 @@ open System.Text
 open NUnit.Framework
 open Microsoft.FSharp.Compiler
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "abc" |])
         Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\"", mangled)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
         Assert.AreEqual("MyNamespace.Test", mangled)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DemangleNonDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,Foo=\"xyz\""
         Assert.AreEqual("MyNamespace.Test", name)
         Assert.AreEqual([| "Foo", "xyz" |], parameters)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DemangleDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,"
         Assert.AreEqual("MyNamespace.Test", name)
         Assert.AreEqual([||], parameters)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DemangleNewDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test"
         Assert.AreEqual("MyNamespace.Test", name)
         Assert.AreEqual([||], parameters)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ManglingNamesOfProvidedTypesWithMultipleParameter() = 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
@@ -51,7 +51,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
                        "Foo2", Some "foo2" |])
         Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\",Foo2=\"abc\"", mangled)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
@@ -60,7 +60,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
                        "Foo2", Some "abc" |])
         Assert.AreEqual("MyNamespace.Test", mangled)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DemangleMultiParameter() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "TestType,Foo=\"xyz\",Foo2=\"abc\""
         Assert.AreEqual("TestType", name)

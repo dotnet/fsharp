@@ -25,7 +25,7 @@ type ColorizerTests()  =
         MoveCursorToStartOfMarker(file, marker)
         AssertEqual(tokenType, GetTokenTypeAtCursor(file))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.SingleLine``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents =  """
@@ -33,7 +33,7 @@ type ColorizerTests()  =
             marker = "// Test1", 
             tokenType = TokenType.Comment)
       
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Conment.SingleLine.MultiConments``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents =  """
@@ -41,7 +41,7 @@ type ColorizerTests()  =
             marker = "// Test2", 
             tokenType = TokenType.Comment)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.MultiLine.AfterAnExpression``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -51,7 +51,7 @@ type ColorizerTests()  =
             marker = "Test1",
             tokenType = TokenType.Comment) 
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.MultiLine.WithLineBreakAndATab``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -62,7 +62,7 @@ type ColorizerTests()  =
             marker = "Test2",
             tokenType = TokenType.Comment)  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.MultiLine.WithLineBreakAfterQuotExp``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -73,7 +73,7 @@ type ColorizerTests()  =
             marker = "Test3",
             tokenType = TokenType.Comment)  
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.MultiLine.AfterANumber``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -84,7 +84,7 @@ type ColorizerTests()  =
             marker = "1(*Test4*)",
             tokenType = TokenType.Number) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Nested.Nested01``() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -102,7 +102,7 @@ type ColorizerTests()  =
             marker = "let l3",
             tokenType = TokenType.Comment)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Nested.Nested02``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -120,7 +120,7 @@ type ColorizerTests()  =
             marker = "let l2",
             tokenType = TokenType.Comment)
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Nested.Nested03``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -138,7 +138,7 @@ type ColorizerTests()  =
             marker = "let l1",
             tokenType = TokenType.Comment)   
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Nested.IdentAfterNestedComments``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -156,7 +156,7 @@ type ColorizerTests()  =
             marker = "let l0",
             tokenType = TokenType.Identifier)                                         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.CommentInString``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -165,7 +165,7 @@ type ColorizerTests()  =
             marker = "test1",
             tokenType = TokenType.String) 
   
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.StringInComment``() = 
         this.VerifyColorizerAtEndOfMarker(
             fileContents = """
@@ -175,7 +175,7 @@ type ColorizerTests()  =
             marker = "test2",
             tokenType = TokenType.Comment)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Unterminated.KeywordBeforeComment``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -187,7 +187,7 @@ type ColorizerTests()  =
             marker = "face(*ML Comment Start",
             tokenType = TokenType.Keyword) 
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Unterminated.KeywordInComment``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -206,7 +206,7 @@ type ColorizerTests()  =
             marker = "with(*Few Lines Later2*)",
             tokenType = TokenType.Comment)  
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Comment.Unterminated.NestedComments``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -227,14 +227,14 @@ type ColorizerTests()  =
             marker = "nd(*Few Lines Later3*)",
             tokenType = TokenType.Comment) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``String.AtEnd``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
                 let stringone = "simple string test"(*Simple String*) """, 
             marker = """est"(*Simple String*)""", tokenType = TokenType.String)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``String.MultiLines``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -243,7 +243,7 @@ type ColorizerTests()  =
             marker = "st(*MultiLine - First*)",
             tokenType = TokenType.String) 
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``String.MultiLines.LineBreak``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -252,7 +252,7 @@ type ColorizerTests()  =
             marker =  "\"(*MultiLine - Second*) ",
             tokenType = TokenType.String)
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``String.Literal``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """               
@@ -260,14 +260,14 @@ type ColorizerTests()  =
                             marker = """st"(*Literal String*)""",
             tokenType = TokenType.String)                                   
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``ByteString.AtEnd``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
                 let bytestringone = "abcdefg"B(*Byte String*)""", 
             marker = "B(*Byte String*)", tokenType = TokenType.String)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``ByteString.MultiLines``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -276,7 +276,7 @@ type ColorizerTests()  =
             marker =  """ing"B(*MultiLineB - Second*)""",
             tokenType = TokenType.String)
              
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``ByteString.Literal``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """                                  
@@ -284,21 +284,21 @@ type ColorizerTests()  =
             marker = """al"B(*Literal Byte*)""",
             tokenType = TokenType.String)             
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``EscapedIdentifier.word``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
             marker = "`this",
             tokenType = TokenType.Identifier)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``EscapedIdentifier.SpecialChar``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
             marker = "3ASDF@#",
             tokenType = TokenType.Identifier)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``EscapedIdentifier.EscapeChar``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
@@ -306,7 +306,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Identifier)
 
     /// Regression for 3609 - Colorizer: __SOURCE__ and others colorized as a string
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PredefinedIdentifier.SOURCE_DIRECTORY``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -314,7 +314,7 @@ type ColorizerTests()  =
             marker = "__(*Test1*)",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PredefinedIdentifier.SOURCE_FILE``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -322,7 +322,7 @@ type ColorizerTests()  =
             marker = "__(*Test2*)",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PredefinedIdentifier.LINE``() = 
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -331,7 +331,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Keyword)
 
     // Regression Test for FSB 3566, F# colorizer does not respect numbers 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Number.InAnExpression``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let f x = x + 9""",
@@ -339,7 +339,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Number)
            
     // Regression Test for FSB 1778 - Colorization seems to be confused after parsing a comment that contains a verbatim string that contains a \
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Number.AfterCommentWithBackSlash``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let f (* @"\\" *)x = x + 19(*Marker1*)""",
@@ -347,7 +347,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Number)
     
     // Regression Test for FSharp1.0:2539 -- lexing @"" strings inside (* *) comments?
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.AfterCommentWithLexingStrings``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -361,7 +361,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Keyword)
     
     // Regression Test for FSB 1380 - Language Service colorizes anything followed by a bang as a keyword
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.LetBang``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -374,7 +374,7 @@ type ColorizerTests()  =
             marker = "! x = [1 .. 10](*Marker1*)",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.Yield``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -387,7 +387,7 @@ type ColorizerTests()  =
             marker = "! x(*Marker2*)",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.Do``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -400,7 +400,7 @@ type ColorizerTests()  =
             marker = "! - = ()(*Marker3*)",
             tokenType = TokenType.Keyword)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.Invalid.Bang``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -411,7 +411,7 @@ type ColorizerTests()  =
             marker = "! = true(*Marker1*)",
             tokenType = TokenType.Identifier)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that the color of const is the keyword color
@@ -423,7 +423,7 @@ type ColorizerTests()  =
             tokenType = TokenType.Keyword)
 
     // Regression test for FSB 3696 - Colorization doesn't treat #if/else/endif correctly when embedded in a string literal
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PreProcessor.InStringLiteral01``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -437,7 +437,7 @@ type ColorizerTests()  =
             marker = "eMarker1",
             tokenType = TokenType.InactiveCode)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PreProcessor.InStringLiteral02``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -451,7 +451,7 @@ type ColorizerTests()  =
             marker = "fMarker2",
             tokenType = TokenType.InactiveCode)
   
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PreProcessor.ElseKeyword``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -465,7 +465,7 @@ type ColorizerTests()  =
             marker = "e//Marker3",
             tokenType = TokenType.PreprocessorKeyword)    
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PreProcessor.InStringLiteral03``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -479,7 +479,7 @@ type ColorizerTests()  =
             marker = "eMarker4",
             tokenType = TokenType.String)   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``PreProcessor.InStringLiteral04``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -494,7 +494,7 @@ type ColorizerTests()  =
             tokenType = TokenType.String)   
        
     // Regression test for FSHARP1.0:4279
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.asr``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -505,7 +505,7 @@ type ColorizerTests()  =
             marker = "asr",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.land``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -516,7 +516,7 @@ type ColorizerTests()  =
             marker = "land",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.lor``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -527,7 +527,7 @@ type ColorizerTests()  =
             marker = "lor",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.lsl``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -538,7 +538,7 @@ type ColorizerTests()  =
             marker = "lsl",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.lsr``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -549,7 +549,7 @@ type ColorizerTests()  =
             marker = "lsr",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.lxor``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -560,7 +560,7 @@ type ColorizerTests()  =
             marker = "lxor",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.mod``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -571,7 +571,7 @@ type ColorizerTests()  =
             marker = "mod",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.``Keyword.OCaml.sig``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -582,7 +582,7 @@ type ColorizerTests()  =
             marker = "sig",
             tokenType = TokenType.Keyword)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.InactiveCode() =
         let fileContents = """
                 #if UNDEFINED
@@ -644,7 +644,7 @@ type ColorizerTests()  =
 
 
         //ColorizerTest start
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Regression.Bug2986``() =
         let code = 
@@ -698,14 +698,14 @@ type ColorizerTests()  =
         MoveCursorToEndOfMarker(file,"open System.Security.Crypto")
         AssertEqual(TokenType.Identifier,GetTokenTypeAtCursor(file))   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Colorizer.AtString``() =
         let (_solution, _project, file) = this.CreateSingleFileProject("let s = @\"Bob\"")        
         // Check Bob
         MoveCursorToEndOfMarker(file,"let s = @\"B")
         AssertEqual(TokenType.String,GetTokenTypeAtCursor(file))   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Bug4860``() =        
         let fileContents = "
 let x = __SOURCE_DIRECTORY__(*Test1*)
@@ -724,7 +724,7 @@ let z = __LINE__(*Test3*)
         MoveCursorToStartOfMarker(file, "__(*Test3*)")
         AssertEqual(TokenType.Keyword, GetTokenTypeAtCursor(file))        
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Number.Regression.Bug3566``() =
         let otherNumbers = "let other = 0x4, 0b0100, 4L, 4UL, 4u, 4s, 4us, 4y, 4uy, 4.0, 4.0f, 4N, 4I, 1M, 123"
         let code = 
@@ -775,7 +775,7 @@ let z = __LINE__(*Test3*)
             
        
     /// FEATURE: Hash commands in .fsx files are colorized in PreprocessorKeyword color        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.InFsxFile``() =
         let code = 
             [
@@ -809,7 +809,7 @@ let z = __LINE__(*Test3*)
                              
         
     /// FEATURE: Script-specific hash commands do not show up in blue in .fs files.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.InFsFile``() =
         let code = 
             [
@@ -842,7 +842,7 @@ let z = __LINE__(*Test3*)
         AssertEqual(TokenType.Text ,GetTokenTypeAtCursor(file))                                    
 
     /// FEATURE: Nested (* *) comments are allowed and will be colorized with CommentColor. Only the final *) causes the comment to close.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Comment.AfterCommentBlock``() =
         let code = 
             ["(*Bob*)type Bob() = class end"
@@ -866,7 +866,7 @@ let z = __LINE__(*Test3*)
         AssertEqual(TokenType.Keyword,GetTokenTypeAtCursor(file))
         
     /// BUG: The comment used to be colored in black.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Bug1596``() =
         let code = [" let 2d (* Identifiers cannot start with numbers *)"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -877,7 +877,7 @@ let z = __LINE__(*Test3*)
   
         
     /// FEATURE: Code inside #if\#else\#endif blocks is colored with InactiveCodeColor depending on defines. This works for nested #if blocks as well.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.AfterPreprocessorBlock``() =
         let code = 
                ["(*Bob*)type Bob() = class end"
@@ -909,7 +909,7 @@ let z = __LINE__(*Test3*)
         check "(*Charles*)t" TokenType.Keyword 
 
     // Wrong "#else" in "#if" should be ignored
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.InvalidElseDirectiveIgnored``() =
         let code = 
                                     ["#if UNDEFINED"
@@ -926,7 +926,7 @@ let z = __LINE__(*Test3*)
         check "(*Larry*)t" TokenType.InactiveCode
         
     /// FEATURE: Code inside #if\#else\#endif blocks is colored with InactiveCodeColor depending on defines. This works for nested #if blocks as well.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.AfterPreprocessorBlockWithDefines``() =
         let code = 
                                     ["(*Bob*)type Bob() = class end"
@@ -959,7 +959,7 @@ let z = __LINE__(*Test3*)
         
     /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
     /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with with InactiveCode color.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.Keywords``() =
         let code = 
                                     ["#light (*Light*)"
@@ -988,7 +988,7 @@ let z = __LINE__(*Test3*)
 
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.ExtendedIfGrammar.Basic01``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -1001,7 +1001,7 @@ let z = __LINE__(*Test3*)
             marker = "activeCode",
             tokenType = TokenType.String)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.ExtendedIfGrammar.Basic02``() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """
@@ -1015,7 +1015,7 @@ let z = __LINE__(*Test3*)
             tokenType = TokenType.InactiveCode)
 
     /// #else / #endif in multiline strings is ignored
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.DirectivesInString``() =
         let code = 
                                     ["#light"
@@ -1031,7 +1031,7 @@ let z = __LINE__(*Test3*)
         AssertEqual(TokenType.Keyword,GetTokenTypeAtCursor(file))
         
     /// Bug 2076 - String literals were causing the endif stack information to be discarded
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.KeywordsWithStrings``() =
         let code = 
                                     ["#light (*Light*)"
@@ -1051,7 +1051,7 @@ let z = __LINE__(*Test3*)
         check "else //(*Else*)" TokenType.PreprocessorKeyword
         check "endif //(*Endif*)" TokenType.PreprocessorKeyword
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Comment.VerbatimStringInComment.Bug1778``() =
         let code = 
                                     ["#light"
@@ -1061,7 +1061,7 @@ let z = __LINE__(*Test3*)
         MoveCursorToStartOfMarker(file, "le")
         AssertEqual(TokenType.Keyword ,GetTokenTypeAtCursor(file))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Preprocessor.KeywordsWrongIf.Bug1577``() =
         let code = 
                                     ["#if !!!!!!!!!!!!!!!COMPILED"
@@ -1072,7 +1072,7 @@ let z = __LINE__(*Test3*)
 
 
     // This was an off-by-one bug in the replacement Colorizer
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Keyword.LastCharacterOfKeyword``() =
         let code = ["(*Bob*)type Bob() = int"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -1091,14 +1091,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit ColorizerTests
    new() = { inherit ColorizerTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit ColorizerTests

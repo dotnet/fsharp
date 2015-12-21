@@ -5,9 +5,9 @@ namespace FSharp.Core.Unittests.Portable.SurfaceArea
 open NUnit.Framework
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SurfaceAreaTest() =
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.VerifyArea() =
         let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)

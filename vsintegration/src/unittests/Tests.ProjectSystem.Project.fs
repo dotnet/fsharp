@@ -21,7 +21,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Project() = 
     inherit TheTests()
 
@@ -45,7 +45,7 @@ type Project() =
         project.FindNodesOfType(l)
         l.[0]     
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member public this.NoNewFolderOnProjectMenu() =
         printfn "starting..."
         let package = new FSharpProjectPackage()
@@ -62,7 +62,7 @@ type Project() =
             Assert.Fail("Unexpected: New Folder was not invisible")
         ()    
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case1``() =
         let compileItems = ["one.fs"; "two.fs"; "three.fs"]
         let expect = Tree("References", ANYTREE,
@@ -74,7 +74,7 @@ type Project() =
         // "one" "three" "two"
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, "", expect)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case2``() =
         let compileItems = [@"A\B\D\foo.fs"; @"A\B\C\bar.fs"]
         let expect = Tree("References", ANYTREE,
@@ -88,7 +88,7 @@ type Project() =
         // no alphabetization of files or folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, "", expect)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case3``() =
         let compileItems = [@"B\foo.fs"; @"A\bar.fs"]
         let other = @"
@@ -105,7 +105,7 @@ type Project() =
         // Including folder should not put folder at front of other folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case4``() =
         let compileItems = [@"foo.fs"; @"A\bar.fs"]
         let other = @"
@@ -122,7 +122,7 @@ type Project() =
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.LinksIntoFoldersAreRespected``() =
         let compileItems = []
         let other = @"
@@ -143,7 +143,7 @@ type Project() =
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Links.AddLinkToRootWorks``() =
         let compileItems = [@"Folder\foo.fs"; @"bar.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -164,7 +164,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Links.AddLinkToSubfolderWorks``() =
         let compileItems = [@"bar.fs"; @"Folder\foo.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -186,7 +186,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Links.AddLinkToRootWorksForNonFsFile``() =
         let compileItems = [@"Folder\foo.fs"; @"bar.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -210,7 +210,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Removal.ExcludeFileShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -231,7 +231,7 @@ type Project() =
             AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Removal.RemoveReferenceShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], ["System"], items.ToString(), (fun project fileName ->
@@ -252,7 +252,7 @@ type Project() =
             AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.MoveUpShouldDirtyProject``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -269,7 +269,7 @@ type Project() =
             TheTests.AssertSameTree(expect, project.FirstChild)
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.MoveDownShouldDirtyProject``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -300,7 +300,7 @@ type Project() =
                                                                     Tree("x3.fs", Nil, Nil))),
                                                                 t))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``SpecificVersion.OptionsSavedToFsprojFile``() =
         let items = MSBuildItems( [CompileItem "foo.fs"] )
         this.MakeProjectAndDoWithProjectFile([], ["System"], items.ToString(), (fun project fileName ->
@@ -334,7 +334,7 @@ type Project() =
                 f refNode
         ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileRenaming.RenamingAFileDoesNotChangeOrderInSolutionExplorerOrMSBuild``() =
         for entity, treeMaker in [this.SampleFileEntity; this.SampleEmptyFolderEntity] do
             let items = MSBuildItems( [CompileItem "foo.fs"] @ entity )
@@ -391,15 +391,15 @@ type Project() =
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleFileEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleEmptyFolderEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleFolderWithItemsEntity)
 
@@ -432,15 +432,15 @@ type Project() =
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleFileEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleEmptyFolderEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleFolderWithItemsEntity)
 
@@ -485,15 +485,15 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleFileEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleEmptyFolderEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleFolderWithItemsEntity)
 
@@ -538,19 +538,19 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleFileEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleEmptyFolderEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleFolderWithItemsEntity)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedAboveReferences``() =
         for entity in this.SampleEntities do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -563,7 +563,7 @@ type Project() =
             let foo = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveUpDisabled(foo)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedUpWhenTopOfFolder``() =
         for entity in this.SampleEntities |> List.map (fun e -> e.IntoFolder(@"Folder\")) do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -576,7 +576,7 @@ type Project() =
             let bar = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveUpDisabled(bar)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedDownWhenBottomOfFolder``() =
         for entity in this.SampleEntities |> List.map (fun e -> e.IntoFolder(@"Folder\")) do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -589,7 +589,7 @@ type Project() =
             let bar = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveDownDisabled(bar)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RenameFile.FailureToRenameInRDT.Bug616680.EnsureRevertToKnownConsistentState``() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -616,7 +616,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RenameFile.FailureToRenameInRDT.Bug616680.EnsureThatFileOrderDidNotChange``() =
         this.MakeProjectAndDo(["a.fs";"b.fs";"orig1.fs";"c.fs";"d.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -647,7 +647,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RenameFile.VerifyItemIdsRemainsTheSame``() =
         let name1 = "orig.fs"
         let name2 = "orig2.fs"
@@ -669,7 +669,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RenameFile.MainlineSuccessCase``() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -695,7 +695,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>] //ref bug https://github.com/Microsoft/visualfsharp/issues/259
+    [<Test>] //ref bug https://github.com/Microsoft/visualfsharp/issues/259
     member public this.``RenameFile.InFolder``() =
         this.MakeProjectAndDo(["file1.fs"; @"Folder1\file2.fs"; @"Folder1\nested1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
@@ -757,7 +757,7 @@ type Project() =
                 if File.Exists(absFilePath) then File.Delete(absFilePath)
             ))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
         let GetTextFromBuildAction (action:VSLangProj.prjBuildAction) =
             match action with
@@ -832,7 +832,7 @@ type Project() =
 
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojOutputWindow.ErrorOriginColumnsAreBase1``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
@@ -855,7 +855,7 @@ type Project() =
             AssertEqual (List.length errors) 1
         )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FsprojOutputWindow.HighUnicodeCharactersAreProperlyDisplayed``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)

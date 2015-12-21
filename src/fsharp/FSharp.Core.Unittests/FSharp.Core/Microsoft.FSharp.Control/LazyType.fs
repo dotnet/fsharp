@@ -8,10 +8,10 @@ open NUnit.Framework
 open Microsoft.FSharp.Collections
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type LazyType() =
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Create() =
         
         // int 
@@ -26,7 +26,7 @@ type LazyType() =
         let nullLazy = Lazy<_>.Create(fun () -> ())
         Assert.AreEqual(nullLazy.Value, null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CreateFromValue() =
         
         // int 
@@ -42,7 +42,7 @@ type LazyType() =
         Assert.AreEqual(nullLazy.Value,null)
          
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Force() =
         
         // int 
@@ -60,7 +60,7 @@ type LazyType() =
         let nullForce = nullLazy.Force()
         Assert.AreEqual(nullForce,null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Value() =
         
         // int 
@@ -75,7 +75,7 @@ type LazyType() =
         let nullLazy = Lazy<_>.CreateFromValue(null)
         Assert.AreEqual(nullLazy.Value,null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsDelayed() =
         
         // int 
@@ -97,7 +97,7 @@ type LazyType() =
         let resultIsDelayed = nullLazy.Force()
         Assert.AreEqual(not nullLazy.IsValueCreated,false)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsForced() =
         
         // int 
@@ -119,7 +119,7 @@ type LazyType() =
         let resultIsForced = nullLazy.Force()
         Assert.AreEqual( nullLazy.IsValueCreated,true)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Printing() =
         let n = lazy 12
         Assert.AreEqual( n.IsValueCreated, false )

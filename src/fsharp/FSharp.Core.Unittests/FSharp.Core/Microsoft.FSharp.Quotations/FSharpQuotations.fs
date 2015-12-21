@@ -20,40 +20,40 @@ module Check =
         |   :? System.ArgumentException-> ex <- true
         Assert.IsTrue(ex, "InvalidOperationException expected")
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FSharpQuotationsTests() =
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.MethodInfoNRE() =
         let f() = 
             E.Call(null, []) |> ignore
         CheckThrowsArgumentNullException f
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.FieldInfoNRE() =
         let f() =
             E.FieldGet(null) |> ignore
         CheckThrowsArgumentNullException f
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.ConstructorNRE() =
         let f() =
             E.NewObject(null,[]) |> ignore
         CheckThrowsArgumentNullException f
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.PropertyInfoNRE() =
         let f() =
             E.PropertyGet(null,[]) |> ignore
         CheckThrowsArgumentNullException f
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.UnionCaseInfoNRE() =
         let f() =
             E.NewUnionCase(Unchecked.defaultof<Microsoft.FSharp.Reflection.UnionCaseInfo>,[]) |> ignore
         CheckThrowsArgumentNullException f
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.ReShapeTypechecking_Let() = 
         let q0 = <@ let a = 1 in a @>
         match q0 with
@@ -68,6 +68,6 @@ type FSharpQuotationsTests() =
                 Check.argumentException(fun () -> ExprShape.RebuildShapeCombination(shape, [wrongValue;lambda]))
         |   _ -> Assert.Fail()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member x.GetConstructorFiltersOutStaticConstructor() =
         ignore <@ System.Exception() @>

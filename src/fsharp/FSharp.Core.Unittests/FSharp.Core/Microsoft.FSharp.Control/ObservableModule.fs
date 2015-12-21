@@ -78,10 +78,10 @@ type RadioStation(frequency, callsign) =
 
 // ---------------------------------------------------
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ObservableModule() =
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Choose() = 
         
         let coffeeCup = new EventfulCoffeeCup(10.0<ml>, 10.0<ml>)
@@ -112,7 +112,7 @@ type ObservableModule() =
         
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Filter() = 
     
         let kexp = new RadioStation(90.3, "KEXP")
@@ -137,7 +137,7 @@ type ObservableModule() =
                                       "Flight of the Penguins - song 1"])
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Listen() = 
     
         let kqfc = new RadioStation(90.3, "KEXP")
@@ -159,7 +159,7 @@ type ObservableModule() =
     
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Map() = 
     
         let numEvent = new Event<int>()
@@ -179,7 +179,7 @@ type ObservableModule() =
         Assert.AreEqual(!results, "333221")
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Merge() =
         
         let evensEvent = new Event<int>()
@@ -199,7 +199,7 @@ type ObservableModule() =
         
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Pairwise() = 
     
         let numEvent = new Event<int>()
@@ -221,7 +221,7 @@ type ObservableModule() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Partition() = 
     
         let numEvent = new Event<int>()
@@ -244,7 +244,7 @@ type ObservableModule() =
 
         ()
  
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Scan() = 
     
         let numEvent = new Event<int>()
@@ -267,7 +267,7 @@ type ObservableModule() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Split() = 
     
         let numEvent = new Event<int>()

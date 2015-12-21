@@ -20,7 +20,7 @@ Make sure each method works on:
 *)
 
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type BigIntStruct() =
     // global variable
     let bigPositiveA = 12345678901234567890I
@@ -29,14 +29,14 @@ type BigIntStruct() =
     let bigNegativeB = -bigPositiveB
         
     // Interfaces
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IComparable() =        
         // Legit IC
         let ic = bigPositiveA :> IComparable    
         Assert.AreEqual(ic.CompareTo(bigPositiveA), 0) 
                
     // Base class methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectToString() =
         Assert.AreEqual(bigPositiveA.ToString(), 
                         "12345678901234567890")
@@ -46,7 +46,7 @@ type BigIntStruct() =
         Assert.AreEqual(-0I.ToString(), "0")
         
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectEquals() =
         // All three are different constructor, but have equivalent value
         
@@ -69,7 +69,7 @@ type BigIntStruct() =
         Assert.IsFalse(a.Equals(null))  
     
     // static methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Abs() = 
         Assert.AreEqual(bigint.Abs(bigPositiveA),
                                    bigPositiveA)
@@ -83,7 +83,7 @@ type BigIntStruct() =
     
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.DivRem() = 
         Assert.AreEqual(bigint.DivRem(100I, 123I), (0I, 100I))
         Assert.AreEqual(bigint.DivRem(123I, 100I), (1I, 23I))
@@ -97,7 +97,7 @@ type BigIntStruct() =
         ()
         
 (*
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Factorial() = 
         Assert.AreEqual(bigint.Factorial(0I), 1I)
         Assert.AreEqual(bigint.Factorial(1I), 1I)
@@ -108,7 +108,7 @@ type BigIntStruct() =
         ()
 *)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.GCD() = 
                             
         Assert.AreEqual(bigint.Gcd(bigPositiveA, bigPositiveB), 900000000090I)
@@ -117,12 +117,12 @@ type BigIntStruct() =
                 
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.One() = 
         Assert.AreEqual(bigint.One, 1I)
         
         ()
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Parse() = 
         Assert.AreEqual(bigint.Parse("12345678901234567890"), 
                                      bigPositiveA)
@@ -133,7 +133,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Pow() = 
         Assert.AreEqual(bigint.Pow(2I, 3I), 8I)
         Assert.AreEqual(bigint.Pow(0I, 100I), 0I)
@@ -142,7 +142,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Sign() = 
         Assert.AreEqual(bigint.Sign(0I), 0)
         Assert.AreEqual(bigint.Sign(bigPositiveA), 1)
@@ -150,7 +150,7 @@ type BigIntStruct() =
                
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ToDouble() = 
         Assert.AreEqual(double 0I, 0)
         Assert.AreEqual(double 123I, 123.0)
@@ -158,7 +158,7 @@ type BigIntStruct() =
                
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ToInt32() = 
         Assert.AreEqual(int32 0I, 0)
         Assert.AreEqual(int32 123I, 123)
@@ -166,7 +166,7 @@ type BigIntStruct() =
                
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ToInt64() = 
         Assert.AreEqual(int64 0I, 0)
         Assert.AreEqual(int64 123I, 123L)
@@ -174,14 +174,14 @@ type BigIntStruct() =
          
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Zero() = 
         Assert.AreEqual(bigint.Zero, 0I)
          
         ()
      
     // operators    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Addition() = 
         Assert.AreEqual((123I + 456I), 579I)
         Assert.AreEqual((-123I + (-456I)), -579I)
@@ -191,7 +191,7 @@ type BigIntStruct() =
            
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Division() = 
         Assert.AreEqual((123I / 124I), 0I)
         Assert.AreEqual((123I / (-124I)), 0I)
@@ -199,7 +199,7 @@ type BigIntStruct() =
            
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member this.op_Equality() = 
         Assert.AreEqual((bigPositiveA = bigPositiveA), true)
         Assert.AreEqual((bigPositiveA = bigNegativeA), false)                                   
@@ -209,7 +209,7 @@ type BigIntStruct() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member this.op_GreaterThan() = 
         Assert.AreEqual((bigPositiveA > bigPositiveB), false)
         Assert.AreEqual((bigNegativeA > bigPositiveB), false)
@@ -218,7 +218,7 @@ type BigIntStruct() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member this.op_GreaterThanOrEqual() = 
         Assert.AreEqual((bigPositiveA >= bigPositiveB), false)
         Assert.AreEqual((bigPositiveA >= bigNegativeB), true)
@@ -228,7 +228,7 @@ type BigIntStruct() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member this.op_LessThan() = 
         Assert.AreEqual((bigPositiveA < bigPositiveB), true)
         Assert.AreEqual((bigNegativeA < bigPositiveB), true)
@@ -238,7 +238,7 @@ type BigIntStruct() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]    
+    [<Test>]    
     member this.op_LessThanOrEqual() = 
         Assert.AreEqual((bigPositiveA <= bigPositiveB), true)
         Assert.AreEqual((bigPositiveA <= bigNegativeB), false)
@@ -248,7 +248,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Modulus() = 
         Assert.AreEqual((bigPositiveA % bigPositiveB), bigPositiveA)
         Assert.AreEqual((bigNegativeA % bigNegativeB), bigNegativeA)
@@ -256,7 +256,7 @@ type BigIntStruct() =
            
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Multiply() = 
         Assert.AreEqual((123I * 100I), 12300I)
         Assert.AreEqual((123I * (-100I)), -12300I)
@@ -266,7 +266,7 @@ type BigIntStruct() =
            
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Range() = 
         let resultPos = [123I..128I]
         let seqPos = 
@@ -299,7 +299,7 @@ type BigIntStruct() =
         ()
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_RangeStep() = 
         let resultPos = [100I..3I..109I]
         let seqPos    = 
@@ -327,7 +327,7 @@ type BigIntStruct() =
                    
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_Subtraction() = 
         Assert.AreEqual((100I - 123I), -23I)
         Assert.AreEqual((0I - bigPositiveB), bigNegativeB)
@@ -338,7 +338,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_UnaryNegation() = 
         Assert.AreEqual(-bigPositiveA, bigNegativeA)
         Assert.AreEqual(-bigNegativeA, bigPositiveA)
@@ -346,7 +346,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.op_UnaryPlus() = 
         Assert.AreEqual(+bigPositiveA, bigPositiveA)
         Assert.AreEqual(+bigNegativeA, bigNegativeA)
@@ -355,7 +355,7 @@ type BigIntStruct() =
         ()
         
     // instance methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.New_int32() = 
         Assert.AreEqual(new bigint(0),  0I)
         Assert.AreEqual(new bigint(-10),  -10I)
@@ -363,7 +363,7 @@ type BigIntStruct() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.New_int64() = 
         Assert.AreEqual(new bigint(0L),  0I)
         Assert.AreEqual(new bigint(-100L),  -100I)

@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Ast
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type HashIfExpression()     =
 
     let preludes    = [|"#if "; "#elif "|]
@@ -92,7 +92,7 @@ type HashIfExpression()     =
     member this.TearDown() =
         tearDown ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.PositiveParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -153,7 +153,7 @@ type HashIfExpression()     =
 
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.NegativeParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -214,7 +214,7 @@ type HashIfExpression()     =
 
         Assert.AreEqual("", fails)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.LexerIfdefEvalTestCases()=
 
         let failures    = ResizeArray<string> ()

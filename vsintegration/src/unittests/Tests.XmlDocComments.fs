@@ -9,7 +9,7 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type XmlDocComments() = 
     inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = fst (Models.InstalledMSBuild()))
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 
@@ -64,7 +64,7 @@ type XmlDocComments() =
         MoveCursorToStartOfMarker(file, marker)
         GetQuickInfoAtCursor file
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromXMLDoc``() = 
         let expected = "XML comment"
@@ -72,7 +72,7 @@ type XmlDocComments() =
         printfn "%A" tooltip
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromCurrentProject``() = 
         let expected = "'summary'"
@@ -80,7 +80,7 @@ type XmlDocComments() =
         printfn "%A" tooltip
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.NoXMLComment.Bug5858``() = 
         let notexpected = "summary"
@@ -90,7 +90,7 @@ type XmlDocComments() =
         AssertNotContains(tooltip, notexpected)   
         AssertNotContains(tooltip, notexpected2)   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.Test() = 
         let fileContent = """

@@ -10,10 +10,10 @@ open SystematicUnitTests.LibraryTestFx
 open NUnit.Framework
 open Microsoft.FSharp.Core.Operators.Checked
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type OperatorsModule1() =
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkedbyte() =
         // int type   
         let intByte = Operators.Checked.byte 100
@@ -38,7 +38,7 @@ type OperatorsModule1() =
         
        
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkedchar() =
 
         // number
@@ -61,7 +61,7 @@ type OperatorsModule1() =
             | :? System.OverflowException -> ()
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CheckedInt() =
 
         // char
@@ -87,7 +87,7 @@ type OperatorsModule1() =
                   
         ()   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CheckedInt16() =
 
         // char
@@ -111,7 +111,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CheckedInt32() =
 
         // char
@@ -136,7 +136,7 @@ type OperatorsModule1() =
           
         ()   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CheckedInt64() =
 
         // char
@@ -161,7 +161,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CheckedNativeint() =
 
         // char
@@ -185,7 +185,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkedsbyte() =
 
         // char
@@ -210,7 +210,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkeduint16() =
 
         // char
@@ -234,7 +234,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkeduint32() =
 
         // char
@@ -259,7 +259,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkeduint64() =
 
         // char
@@ -283,7 +283,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Checkedunativeint() =
 
         // char
@@ -307,7 +307,7 @@ type OperatorsModule1() =
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.KeyValue() =
         
         
@@ -332,7 +332,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesGetArraySlice() =
 
         
@@ -353,7 +353,7 @@ type OperatorsModule1() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesGetArraySlice2D() =
 
         
@@ -380,7 +380,7 @@ type OperatorsModule1() =
         
         ()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesGetStringSlice() =
         let param1 = Some(4)
         let param2 = Some(6)
@@ -394,7 +394,7 @@ type OperatorsModule1() =
         ()
     
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesSetArraySlice() =
         let param1 = Some(1)
         let param2 = Some(2)
@@ -418,7 +418,7 @@ type OperatorsModule1() =
         CheckThrowsNullRefException(fun () -> nullArray1.[0].ToString() |> ignore)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesSetArraySlice2D() =
         let param1D1 = Some(0)
         let param1D2 = Some(1)
@@ -444,7 +444,7 @@ type OperatorsModule1() =
         CheckThrowsNullRefException(fun () -> nullArray2D1.[0,0].ToString()  |> ignore)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesSetArraySlice3D() =
         let intArray1 = Array3D.init 2 3 4 (fun i j k -> i*10+j)
         let intArray2 = Array3D.init 2 3 4 (fun i j k -> i*100+j)
@@ -452,7 +452,7 @@ type OperatorsModule1() =
         Assert.AreEqual(intArray1.[1,1,1],101)
         ()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.OptimizedRangesSetArraySlice4D() =
         let intArray1 = Array4D.init 2 3 4 5 (fun i j k l -> i*10+j)
         let intArray2 = Array4D.init 2 3 4 5 (fun i j k l -> i*100+j)
@@ -460,7 +460,7 @@ type OperatorsModule1() =
         Assert.AreEqual(intArray1.[1,1,1,1],101)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Uncheckeddefaultof () =
         
         // int
@@ -477,7 +477,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.abs () =
         
         // int
@@ -494,7 +494,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.acos () =
         
         // min value
@@ -510,7 +510,7 @@ type OperatorsModule1() =
         Assert.AreEqual(maxacos, 0.0)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.asin () =
         
         // min value
@@ -528,7 +528,7 @@ type OperatorsModule1() =
         
    
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.atan () =
         
         // min value
@@ -544,7 +544,7 @@ type OperatorsModule1() =
         Assert.AreEqual(maxatan, 1.5707963267948966)
         ()
        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.atan2 () =
         
         // min value
@@ -560,7 +560,7 @@ type OperatorsModule1() =
         Assert.AreEqual(maxatan2, 1.5707963267948966)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.box () =
         
         // int value
@@ -576,7 +576,7 @@ type OperatorsModule1() =
         CheckThrowsNullRefException(fun () -> nullbox.ToString()  |> ignore)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.byte() =
         // int type   
         let intByte = Operators.byte 100
@@ -598,7 +598,7 @@ type OperatorsModule1() =
             | :? System.OverflowException -> ()
             | _ -> Assert.Fail("Expectt overflow exception but not.")
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ceil() =
         // min value   
         let minceil = Operators.ceil 0.1
@@ -612,7 +612,7 @@ type OperatorsModule1() =
         let maxceil = Operators.ceil 1.7E+308
         Assert.AreEqual(maxceil, 1.7E+308)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.char() =
         // int type   
         let intchar = Operators.char 48
@@ -622,7 +622,7 @@ type OperatorsModule1() =
         let stringchar = Operators.char " "
         Assert.AreEqual(stringchar, ' ')
        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.compare() =
         // int type   
         let intcompare = Operators.compare 100 101
@@ -637,7 +637,7 @@ type OperatorsModule1() =
         Assert.AreEqual(boundcompare, 0)
    
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.cos () =
         
         // min value
@@ -653,7 +653,7 @@ type OperatorsModule1() =
         Assert.AreEqual(maxcos, 0.00079632671073326335)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.cosh () =
         
         // min value
@@ -673,7 +673,7 @@ type OperatorsModule1() =
         
     
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.decimal () =
         
         // int value
@@ -685,7 +685,7 @@ type OperatorsModule1() =
         Assert.AreEqual(maxdecimal, 1)
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.decr() =
         // zero   
         let zeroref = ref 0
@@ -702,7 +702,7 @@ type OperatorsModule1() =
         Operators.decr (normalref)
         Assert.AreEqual(normalref,(ref 99))
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.defaultArg() =
         // zero   
         let zeroOption = Some(0)
@@ -719,7 +719,7 @@ type OperatorsModule1() =
         let normalfaultArg = Operators.defaultArg normalOption 100
         Assert.AreEqual(normalfaultArg, 100)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.double() =
         // int type   
         let intdouble = Operators.double 100
@@ -730,7 +730,7 @@ type OperatorsModule1() =
         Assert.AreEqual(chardouble,48)
         ()
        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.enum() =
         // zero   
         let intarg : int32 = 0
@@ -765,7 +765,7 @@ type OperatorsModule1() =
         let boundexit = Operators.exit 100
         Assert.AreEqual(boundexit, 0)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.exp() =
         // zero   
         let zeroexp = Operators.exp 0.0
@@ -779,7 +779,7 @@ type OperatorsModule1() =
         let normalexp = Operators.exp 100.0
         Assert.AreEqual(normalexp, 2.6881171418161356E+43)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.failwith() =
         try 
             let _ = Operators.failwith "failwith"
@@ -790,7 +790,7 @@ type OperatorsModule1() =
             |_ -> Assert.Fail("Throw unexpected exception")
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.float() =
         // int type   
         let intfloat = Operators.float 100
@@ -803,7 +803,7 @@ type OperatorsModule1() =
         ()
        
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.float32() =
         // int type   
         let intfloat32 = Operators.float32 100
@@ -816,7 +816,7 @@ type OperatorsModule1() =
         ()
        
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.floor() =
         // float type   
         let intfloor = Operators.floor 100.0
@@ -826,7 +826,7 @@ type OperatorsModule1() =
         let charfloor = Operators.floor ((float32)100.0)
         Assert.AreEqual(charfloor,100)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.fst() =
         // int type   
         let intfst = Operators.fst (100,101)
@@ -840,7 +840,7 @@ type OperatorsModule1() =
         let boundfst = Operators.fst (null,null)
         Assert.AreEqual(boundfst, null)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.hash() =
         // int type   
         let inthash = Operators.hash 100
@@ -854,7 +854,7 @@ type OperatorsModule1() =
         let boundhash = Operators.hash "A"
         Assert.AreEqual(boundhash, -842352673)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.id() =
         // int type   
         let intid = Operators.id 100
@@ -869,7 +869,7 @@ type OperatorsModule1() =
         Assert.AreEqual(boundid, "A")
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ignore() =         
         // value type 
         let result = Operators.ignore 10
@@ -894,7 +894,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.infinity() =         
         
         let inf = Operators.infinity
@@ -916,7 +916,7 @@ type OperatorsModule1() =
         
         ()
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.infinityf() =         
         
         let inf = Operators.infinityf

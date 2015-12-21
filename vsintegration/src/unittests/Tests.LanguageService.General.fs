@@ -11,9 +11,9 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Salsa.Salsa
 open Salsa
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 type IdealSource() = 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public rb.MultipleSourceIsDirtyCallsChangeTimestamps() = 
         let recolorizeWholeFile() = ()
         let recolorizeLine (_line:int) = ()
@@ -97,7 +97,7 @@ type GeneralTests() =
                             n
                    ) 0
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PendingRequests``() =
         let makeRequest (reason : BackgroundRequestReason) = new BackgroundRequest(false, Reason = reason)
 
@@ -152,7 +152,7 @@ type GeneralTests() =
         Assert.AreEqual(0, requests.Count)
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PublicSurfaceArea.DotNetReflection``() =
         let ps = publicTypesInAsm @"fsharp.projectsystem.fsharp.dll"
         Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
@@ -171,7 +171,7 @@ type GeneralTests() =
         let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
         Assert.AreEqual(1, fsi)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``PublicSurfaceArea.DotNetReflectionAndTypeProviders``() =
         let tp = publicTypesInAsm @"FSharp.Data.TypeProviders.dll"
         Assert.AreEqual(1, tp)  // the 'DataProviders' type that is decorated with [<TypeProvider>] must be public\
@@ -271,7 +271,7 @@ EdmxFile
         let expected = expected.Replace("\r\n", "\n")
         Assert.AreEqual(expected, out)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ReconcileErrors.Test1``() = 
         let (_solution, project, file) = this.CreateSingleFileProject(["erroneous"])
         Build project |> ignore
@@ -279,7 +279,7 @@ EdmxFile
         ()
  
     /// FEATURE: (Project System only) Adding a file outside the project directory creates a link
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``ProjectSystem.FilesOutsideProjectDirectoryBecomeLinkedFiles``() =
         use _guard = this.UsingNewVS()
@@ -295,7 +295,7 @@ EdmxFile
             let projFileText = System.IO.File.ReadAllText(ProjectFile(project))
             AssertMatchesRegex '<' @"<ItemGroup>\s*<Compile Include=""..\\link.fs"">\s*<Link>link.fs</Link>" projFileText
                                   
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``Lexer.CommentsLexing.Bug1548``() =
         let scan = new FSharpScanner(fun source -> 
@@ -364,7 +364,7 @@ EdmxFile
            
         
     // This was a bug in ReplaceAllText (subsequent calls to SetMarker would fail)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Salsa.ReplaceAllText``() =
         let code = 
                 ["#light"; 
@@ -394,7 +394,7 @@ EdmxFile
     
 
     // Make sure that possible overloads (and other related errors) are shown in the error list
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``ErrorLogging.Bug5144``() =
         use _guard = this.UsingNewVS()
@@ -419,7 +419,7 @@ EdmxFile
                                       ["error FS0041: A unique overload for method 'Plot' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member N.M.LineChart.Plot : f:(float -> float) * xmin:float * xmax:float -> unit, member N.M.LineChart.Plot : f:System.Func<double,double> * xmin:float * xmax:float -> unit"])
 
     [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAsserted``() =     
         Helper.ExhaustivelyScrutinize(
           this.TestRunner,
@@ -430,7 +430,7 @@ EdmxFile
             )
 
     [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedToo``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -440,7 +440,7 @@ EdmxFile
               "        member __.CompareTo(v:obj) = 1" ]
             )
     [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedThree``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -450,7 +450,7 @@ EdmxFile
               "        with get() = x.Data"
               "        and set(v) = x.Data <- v" ]
               )
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedFour``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -458,12 +458,12 @@ EdmxFile
               "let z=4" ]
               )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedFive``() =     
         Helper.ExhaustivelyScrutinize(this.TestRunner, [ """CSV.File<@"File1.txt">.[0].""" ])  // <@ is one token, wanted < @"...
 
     [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.Bug2277``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -478,7 +478,7 @@ EdmxFile
                 )
                                      
     [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ExhaustivelyScrutinize.Bug2283``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -494,7 +494,7 @@ EdmxFile
 
    /// Verifies that token info returns correct trigger classes 
     /// - this is used in MPF for triggering various intellisense features
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TokenInfo.TriggerClasses``() =      
       let important = 
         [ // Member select for dot completions
@@ -512,7 +512,7 @@ EdmxFile
         let info = TestExpose.TokenInfo tok
         AssertEqual(expected, info)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``MatchingBraces.VerifyMatches``() = 
         let content = 
             [|
@@ -591,14 +591,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit GeneralTests
    new() = { inherit GeneralTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit GeneralTests

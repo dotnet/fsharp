@@ -10,9 +10,9 @@ type EnumUnion =
     | A
     | B
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsAsEnums() = 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanCompare() = 
         Assert.AreEqual(EnumUnion.B, EnumUnion.B)
         Assert.AreNotEqual(EnumUnion.A, EnumUnion.B)
@@ -23,37 +23,37 @@ type FlagsUnion =
     | Two = 2
     | Four = 4
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsAsFlags() = 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanCompareWithInts() = 
         Assert.AreEqual(int FlagsUnion.One, 1)
         Assert.AreEqual(int FlagsUnion.Two, 2)
         Assert.AreEqual(int FlagsUnion.Four, 4)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanCastFromInts() = 
         let four : FlagsUnion = enum 4
         Assert.AreEqual(four, FlagsUnion.Four)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanCreateValuesWithoutName() = 
         let unknown : FlagsUnion = enum 99 // strange, but valid
         Assert.AreEqual(int unknown, 99)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanParseViaBCL() = 
         let values = System.Enum.GetValues(typeof<FlagsUnion>)
         let fourFromString = System.Enum.Parse(typeof<FlagsUnion>, "Four", false) :?> FlagsUnion // downcast needed
         Assert.AreEqual(fourFromString, FlagsUnion.Four)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanUseBinaryOr() = 
         Assert.AreEqual(int (FlagsUnion.One ||| FlagsUnion.Two), 3)
         Assert.AreEqual(int (FlagsUnion.One ||| FlagsUnion.One), 1)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanCompareWithFlags() = 
         Assert.AreEqual(FlagsUnion.Two, FlagsUnion.Two)
         Assert.AreNotEqual(FlagsUnion.Two, FlagsUnion.One)
@@ -62,13 +62,13 @@ type UnionsWithData =
     | Alpha of int
     | Beta of string * float
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsWithData() = 
     let a1 = Alpha 1
     let a2 = Alpha 2
     let b1 = Beta("win", 8.1)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanAccessTheData() = 
         match a1 with
         | Alpha 1 -> ()
@@ -88,7 +88,7 @@ type UseUnionsWithData() =
             Assert.AreEqual(y, 8.1)
         | _ -> Assert.Fail()
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.CanAccessTheDataInGuards() = 
         match a1 with
         | Alpha x when x = 1 -> ()

@@ -19,11 +19,11 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SetType() =
 
     // Interfaces
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable() =        
         // Legit IE
         let ie = (new Set<char>(['a'; 'b'; 'c'])) :> IEnumerable
@@ -53,7 +53,7 @@ type SetType() =
         Assert.AreEqual(enum.MoveNext(), false)
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable_T() =        
         // Legit IE
         let ie =(new Set<char>(['a'; 'b'; 'c'])) :> IEnumerable<char>
@@ -83,7 +83,7 @@ type SetType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
         
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ICollection() =        
         // Legit IC        
         let ic = (new Set<int>([1;2;3;4])) :> ICollection<int>
@@ -100,7 +100,7 @@ type SetType() =
         let newArr = Array.create 5 "a"
         ic.CopyTo(newArr,0) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IComparable() =        
         // Legit IC
         let ic = (new Set<int>([1;2;3;4])) :> IComparable    
@@ -112,21 +112,21 @@ type SetType() =
         
         
     // Base class methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectGetHashCode() =
         // Verify order added is independent
         let x = Set.ofList [1; 2; 3]
         let y = Set.ofList [3; 2; 1]
         Assert.AreEqual(x.GetHashCode(), y.GetHashCode())
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectToString() =
         Assert.AreEqual("set [1; 2; 3; ... ]", (new Set<int>([1;2;3;4])).ToString())
         Assert.AreEqual("set []", (Set.empty).ToString())
         Assert.AreEqual("set [1; 3]", (new Set<decimal>([1M;3M])).ToString())
         
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectEquals() =
         // All three are different references, but equality has been
         // provided by the F# compiler.
@@ -162,7 +162,7 @@ type SetType() =
         
         
     // Instance methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Add() =    
         let l = new Set<int>([1 .. 10])
         let ad = l.Add 88
@@ -176,7 +176,7 @@ type SetType() =
         let ads = s.Add 100
         Assert.IsTrue(ads.Contains(100))
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Contains() =    
         let i = new Set<int>([1 .. 10])
         Assert.IsTrue(i.Contains(8))
@@ -187,7 +187,7 @@ type SetType() =
         let s = Set.singleton 168
         Assert.IsTrue(s.Contains(168))
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Count() =    
         let l = new Set<int>([1 .. 10])
         Assert.AreEqual(l.Count, 10)
@@ -198,7 +198,7 @@ type SetType() =
         let s = Set.singleton 'a'
         Assert.AreEqual(s.Count, 1)        
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsEmpty() =
         let i = new Set<int>([1 .. 10])
         Assert.IsFalse(i.IsEmpty)
@@ -209,7 +209,7 @@ type SetType() =
         let s = Set.singleton 168
         Assert.IsFalse(s.IsEmpty)   
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsSubsetOf() =
         let fir = new Set<int>([1 .. 20])
         let sec = new Set<int>([1 .. 10])
@@ -232,7 +232,7 @@ type SetType() =
             Assert.IsTrue( (set [0..i]).IsProperSubsetOf s101)
            
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsSupersetOf() =
         let fir = new Set<int>([1 .. 10])
         let sec = new Set<int>([1 .. 20])
@@ -254,7 +254,7 @@ type SetType() =
             Assert.IsTrue( s100.IsSupersetOf (set [0..i]))
             Assert.IsTrue( s101.IsSupersetOf (set [0..i]))
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Remove() =    
         let i = new Set<int>([1;2;3;4])
         Assert.AreEqual(i.Remove 3,(new Set<int>([1;2;4])))
@@ -267,7 +267,7 @@ type SetType() =
         
         
     // Static methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Addition() =
         let fir = new Set<int>([1;3;5])
         let sec = new Set<int>([2;4;6])
@@ -284,7 +284,7 @@ type SetType() =
         Assert.AreEqual(Set.op_Addition(s1,s2), new Set<int>([8;6]))
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Subtraction() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;6])
@@ -304,7 +304,7 @@ type SetType() =
         Assert.AreEqual(Set.op_Subtraction(s1,s2), new Set<int>([8]))
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MinimumElement() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;6])
@@ -314,7 +314,7 @@ type SetType() =
         Assert.AreEqual(Set.minElement sec, 2)
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.MaximumElement() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;7])

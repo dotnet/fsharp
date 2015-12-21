@@ -9,13 +9,13 @@ open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type PrintfTests() =
     let test fmt arg (expected:string) =
         let actual = sprintf fmt arg
         Assert.AreEqual(expected, actual)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.FormatAndPrecisionSpecifiers() =
         test "%10s"  "abc" "       abc"
         test "%-10s" "abc" "abc       "

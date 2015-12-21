@@ -21,11 +21,11 @@ Make sure each method works on:
 * Multi-element maps (2 - 7 elements)
 *)
 
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MapType() =
     
     // Interfaces
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable() =        
         // Legit IE
         let ie = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IEnumerable
@@ -55,7 +55,7 @@ type MapType() =
         Assert.AreEqual(enum.MoveNext(), false)
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)  
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IEnumerable_T() =        
         // Legit IE
         let ie = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IEnumerable<KeyValuePair<_,_>>
@@ -86,7 +86,7 @@ type MapType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)  
     
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IDictionary() =        
         // Legit ID
         let id = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IDictionary<_,_> 
@@ -112,7 +112,7 @@ type MapType() =
         Assert.AreEqual(id.Keys,   [| |] )
         Assert.AreEqual(id.Values, [| |] ) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ICollection() =        
         // Legit IC
         let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> ICollection<KeyValuePair<_,_>>
@@ -136,7 +136,7 @@ type MapType() =
         let newArr = Array.create 5 (new KeyValuePair<int,int>(0,0))
         ic.CopyTo(newArr,0) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IComparable() =        
         // Legit IC
         let ic = (Map.ofArray [|(1,1);(2,4);(3,9)|]) :> IComparable    
@@ -152,7 +152,7 @@ type MapType() =
     
     
     // Base class methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectGetHashCode() =
         // Works on empty maps
         let e = Map.ofList (List.empty<int * decimal>)
@@ -164,14 +164,14 @@ type MapType() =
         let y = Map.ofList [(2, -2.0M); (1, -1.0M)]
         Assert.AreEqual(x.GetHashCode(), y.GetHashCode())
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectToString() =
         Assert.AreEqual("map [(1, 1); (2, 4); (3, 9)]", (Map.ofArray [|(1,1);(2,4);(3,9)|]).ToString())
         Assert.AreEqual("map []", ([] |> Map.ofList).ToString())
         Assert.AreEqual("map []", 
                         (([] :(decimal*decimal)list) |> Map.ofList).ToString())
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ObjectEquals() =
         // All three are different references, but equality has been
         // provided by the F# compiler.
@@ -202,7 +202,7 @@ type MapType() =
         Assert.IsFalse(a.Equals(null))
 
     // Instance methods
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.New() =    
         let newMap = new Map<int,int>([|(1,1);(2,4);(3,9)|])
         let b = newMap.Add(4,16)
@@ -224,7 +224,7 @@ type MapType() =
         let ae = e.Add(1,"Monday")
         Assert.AreEqual(ae.[1], "Monday")
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.ContainsKey() =
     
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])        
@@ -234,7 +234,7 @@ type MapType() =
         Assert.IsFalse(e.ContainsKey(3)) 
     
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Count() =
     
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
@@ -243,7 +243,7 @@ type MapType() =
         let e  = Map.empty<int,string>
         Assert.AreEqual(e.Count, 0) 
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.IsEmpty() =
     
         let l = (Map.ofArray [|(1,1);(2,4);(3,9)|])
@@ -252,7 +252,7 @@ type MapType() =
         let e = Map.empty<int,int>
         Assert.IsTrue(e.IsEmpty)        
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Item() =
 
         let mutable l = [(1,1)] |> Map.ofList
@@ -271,7 +271,7 @@ type MapType() =
         CheckThrowsKeyNotFoundException(fun () -> l.[ -1 ] |> ignore)
         CheckThrowsKeyNotFoundException(fun () -> l.[1000] |> ignore)
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.Remove() =
     
         let l = (Map.ofArray [|(1,1);(2,4);(3,9)|])
@@ -283,7 +283,7 @@ type MapType() =
         let ae = e.Remove(2)
         Assert.AreEqual(ae.Count, 0)
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.TryFind() =
     
         let l = (Map.ofArray [|(1,1);(2,4);(3,9)|])

@@ -23,9 +23,9 @@ open NUnit.Framework
 
 // We don't have auotmated unit tests for Silverlight, so do a reflection-only version of silverlight checking as part of
 // the 4.0 tests.
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SilverlightSurfaceAreaTest() =
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member this.VerifyArea() =
         let asm = typeof<int list>.Assembly
 

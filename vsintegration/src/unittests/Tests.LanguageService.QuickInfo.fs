@@ -115,13 +115,13 @@ type QuickInfoTests() =
         AssertContainsInOrder(tooltip, expectedExactOrder)
   
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``EmptyTypeTooltipBody``() = 
         let content = """
         type X(*M*) = class end"""
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker content "(*M*)" "="
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``NestedTypesOrder``() = 
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = "type t = System.Runtime.CompilerServices.RuntimeHelpers(*M*)",
@@ -135,7 +135,7 @@ type QuickInfoTests() =
             expectedExactOrder = ["Enumerator"; "KeyCollection"; "ValueCollection"]
             )
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Operators.TopLevel``() =
         let source = """
             /// tooltip for operator
@@ -149,7 +149,7 @@ type QuickInfoTests() =
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsTrue(text.Contains "tooltip for operator"))
             )
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Operators.Member``() =
         let source = """
             type U = U
@@ -165,7 +165,7 @@ type QuickInfoTests() =
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsTrue(text.Contains "tooltip for operator"))
             )
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfo.HiddenMember``() =
         // Tooltips showed hidden members - #50
         let source = """
@@ -186,7 +186,7 @@ type QuickInfoTests() =
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member _Print"))
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfo.ObsoleteMember``() =
         // Tooltips showed obsolete members - #50
         let source = """
@@ -205,7 +205,7 @@ type QuickInfoTests() =
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member Print1"))
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfo.HideBaseClassMembersTP``() =
         let fileContents = "type foo = HiddenMembersInBaseClass.HiddenBaseMembersTP(*Marker*)"
         
@@ -215,7 +215,7 @@ type QuickInfoTests() =
             expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
         let source = """
             type A() =
@@ -242,7 +242,7 @@ type QuickInfoTests() =
                     f = (fun ((text : string, _), _) -> printfn "expected %s, actual %s" expected text; Assert.IsTrue (text.Contains(expected)))
                 )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfoForQuotedIdentifiers``() =
         let source = """
             /// The fff function
@@ -254,7 +254,7 @@ type QuickInfoTests() =
         for i = 1 to (identifier.Length - 1) do
             let marker = "+ " + (identifier.Substring(0, i))
             this.CheckTooltip (source, marker, false, checkTooltip "gg gg")
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfoSingleCharQuotedIdentifier``() = 
         let source = """
         let ``x`` = 10
@@ -262,7 +262,7 @@ type QuickInfoTests() =
         """
         this.CheckTooltip(source, "x``|>", true, checkTooltip "x")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
@@ -274,7 +274,7 @@ type QuickInfoTests() =
             extraRefs = [tpReference]
             ) 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``GetterSetterInsideInterfaceImpl.ThisOnceAsserted``() =
         let fileContent ="""
             type IFoo =
@@ -288,7 +288,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtStartOfMarker(fileContent, "id", "Operators.id")
 
     //regression test for bug 3184 -- intellisense should normalize to ¡°int[]¡± so that [] is not mistaken for list.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.IntArrayQuickInfo() = 
       
         let fileContents = """
@@ -299,7 +299,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "y(*MInt[]*)", "int []")
         
     //Verify no quickinfo -- link name string have 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.LinkNameStringQuickInfo() = 
       
         let fileContents = """
@@ -310,7 +310,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "\"x\"(*Marker1*)", "")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "\"y\"(*Marker2*)", "")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Type message is shown or not in the TypeProviderXmlDocAttribute
@@ -322,7 +322,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic type created by me!",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Type
@@ -335,7 +335,7 @@ type QuickInfoTests() =
          "This is a synthetic type created by me!. Which is used to test the tool tip of the typeprovider type to check if it shows the right message or not.",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Type
@@ -348,7 +348,7 @@ type QuickInfoTests() =
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T", 
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Type
@@ -362,7 +362,7 @@ type QuickInfoTests() =
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
          
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Type
@@ -375,7 +375,7 @@ type QuickInfoTests() =
          "This is a synthetic type Localized!  ኤፍ ሻርፕ",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Constructor message is shown or not in the TypeProviderXmlDocAttribute
@@ -387,7 +387,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic .ctor created by me for N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Constructor
@@ -400,7 +400,7 @@ type QuickInfoTests() =
          "This is a synthetic .ctor created by me for N.T. Which is used to test the tool tip of the typeprovider Constructor to check if it shows the right message or not.",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Constructor
@@ -413,7 +413,7 @@ type QuickInfoTests() =
          "N.T() : N.T", 
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Constructor
@@ -426,7 +426,7 @@ type QuickInfoTests() =
          "N.T() : N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Constructor
@@ -440,7 +440,7 @@ type QuickInfoTests() =
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
         
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider event message is shown or not in the TypeProviderXmlDocAttribute
@@ -454,7 +454,7 @@ type QuickInfoTests() =
          "This is a synthetic *event* created by me for N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -468,7 +468,7 @@ type QuickInfoTests() =
          "This is a synthetic *event* Localized!  ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("QuickInfo.ParamsAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Event
     member public this.``TypeProvider.ParamsAttributeTest``() = 
@@ -478,7 +478,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "[<System.ParamArray>] separator")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -492,7 +492,7 @@ type QuickInfoTests() =
          "This is a synthetic *event* created by me for N.T. Which is used to test the tool tip of the typeprovider Event to check if it shows the right message or not.!",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -506,7 +506,7 @@ type QuickInfoTests() =
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Event
@@ -521,7 +521,7 @@ type QuickInfoTests() =
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Method message is shown or not in the TypeProviderXmlDocAttribute
@@ -534,7 +534,7 @@ type QuickInfoTests() =
          "This is a synthetic *method* created by me!!",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -547,7 +547,7 @@ type QuickInfoTests() =
          "This is a synthetic *method* Localized!  ኤፍ ሻርፕ",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -560,7 +560,7 @@ type QuickInfoTests() =
          "This is a synthetic *method* created by me!!. Which is used to test the tool tip of the typeprovider Method to check if it shows the right message or not.!",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -573,7 +573,7 @@ type QuickInfoTests() =
          "N.T.M() : int []", 
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Method
@@ -587,7 +587,7 @@ type QuickInfoTests() =
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the correct TypeProvider Property message is shown or not in the TypeProviderXmlDocAttribute
@@ -600,7 +600,7 @@ type QuickInfoTests() =
          "This is a synthetic *property* created by me for N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test the multi-language in the TypeProviderXmlDocAttribute for TypeProvider Property
@@ -613,7 +613,7 @@ type QuickInfoTests() =
          "This is a synthetic *property* Localized!  ኤፍ ሻርፕ for N.T",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test for long message in the TypeProviderXmlDocAttribute for TypeProvider Property
@@ -626,7 +626,7 @@ type QuickInfoTests() =
          "This is a synthetic *property* created by me for N.T. Which is used to test the tool tip of the typeprovider Property to check if it shows the right message or not.!",
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when the message is null in the TypeProviderXmlDocAttribute for TypeProvider Property
@@ -639,7 +639,7 @@ type QuickInfoTests() =
          "property N.T.StaticProp: decimal", 
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]    
     [<Category("TypeProvider.XmlDocAttribute")>]
     //This is to test when there is empty message from the TypeProviderXmlDocAttribute for TypeProvider Property
@@ -653,7 +653,7 @@ type QuickInfoTests() =
          addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that when Hover over foo the correct quickinfo is displayed for TypeProvider static parameter
@@ -669,7 +669,7 @@ type QuickInfoTests() =
             expected = "type foo = N1.T",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that when Hover over foo the correct quickinfo is displayed
@@ -686,7 +686,7 @@ type QuickInfoTests() =
             expected = "type foo",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that when Hover over foo the XmlComment is shown in quickinfo
@@ -703,7 +703,7 @@ type QuickInfoTests() =
             expected = "XMLComment",
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.StaticParameters.QuickInfo.OnTheErasedType``() =
@@ -714,7 +714,7 @@ type QuickInfoTests() =
             expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\n\nFull name: File1.TTT",
             addtlRefAssy = ["System"; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
     member public this.``TypeProvider.StaticParameters.QuickInfo.OnNestedErasedTypeProperty``() =
@@ -730,7 +730,7 @@ type QuickInfoTests() =
             addtlRefAssy = ["System"; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     // Regression for 2948
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.TypeRecordQuickInfo() = 
       
         let fileContents = """namespace NS
@@ -739,7 +739,7 @@ type QuickInfoTests() =
         
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecored
     
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QuickInfo.LetBindingsInTypes``() = 
         let code = 
             """
@@ -749,7 +749,7 @@ type QuickInfoTests() =
         this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff : (int -> int)")
 
     // Regression for 2494
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.TypeConstructorQuickInfo() = 
       
         let fileContents = """
@@ -783,7 +783,7 @@ type QuickInfoTests() =
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "pq(*MarkerVal*)" expectedquickinfoVal
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "singleton(*MarkerLastLine*)" expectedquickinfoLastLine
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.NamedDUFieldQuickInfo() = 
       
         let fileContents = """
@@ -807,60 +807,60 @@ type QuickInfoTests() =
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Case3(*MarkerCase3*)" expectedquickinfoCase3
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "NamedExn(*MarkerException*)" expectedquickinfoException
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``EnsureNoAssertFromBadParserRangeOnAttribute``() = 
         let fileContents = """ 
                 [<System.Obsolete>]
                 Types foo = int"""
         this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "ype", "")  // just want to ensure there is no assertion fired by the parse tree walker
    
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ShiftKeyDown``() =
         ShiftKeyDown(this.VS)
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""#light""","#ligh","")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ActivePatterns.Declaration``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""let ( |One|Two| ) x = One(x+1)""","ne|Tw","int -> Choice")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ActivePatterns.Result``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""let ( |One|Two| ) x = One(x+1)""","= On","active pattern result One: int -> Choice")
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ActivePatterns.Value``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
          ("""let ( |One|Two| ) x = One(x+1)
              let patval = (|One|Two|) // use""","= (|On","int -> Choice")
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.InDeclaration.Bug3176a``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""type T<'a> = { aaaa : 'a; bbbb : int } ""","aa","aaaa")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.InDeclaration.Bug3176c``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""type C =
                 val aaaa : int""","aa","aaaa")
                       
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.InDeclaration.Bug3176d``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""type DU<'a> =
                 | DULabel of 'a""","DULab","DULabel")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Generic.3773a``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""let rec M2<'a>(a:'a) = M2(a)""","let rec M","val M2 : a:'a -> obj")
 
     // Before this fix, if the user hovered over 'cccccc' they would see 'Yield'
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ComputationExpressionMemberAppearingInQuickInfo``() =        
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker 
             """
@@ -877,7 +877,7 @@ type QuickInfoTests() =
     // they would see a quickinfo for any available function named get or set.
     // The tests below define a get function with 'let' and then test to make sure that
     // this isn't the get seen in the tool tip.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903a``() =        
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker 
             """namespace CountChocula
@@ -888,7 +888,7 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()""" 
             "with g" "string"
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903d``() =        
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker 
             """namespace CountChocula
@@ -899,7 +899,7 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()""" 
             "AMetho" "string"          
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903b``() =        
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker 
             """namespace CountChocula
@@ -910,7 +910,7 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()"""
             "and s" "seq"          
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903c``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""namespace CountChocula
@@ -922,7 +922,7 @@ type QuickInfoTests() =
             "let g","string")
           
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ParamsArrayArgument.OnType``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""
@@ -931,7 +931,7 @@ type QuickInfoTests() =
                 let r = A.Foo(42)""" ,
             "type A","[<ParamArray>] a:"    )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ParamsArrayArgument.OnMethod``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""
@@ -940,7 +940,7 @@ type QuickInfoTests() =
                 let r = A.Foo(42)""" ,
             "A.Foo","[<System.ParamArray>] a:"    )
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903e``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""namespace CountChocula
@@ -951,7 +951,7 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()""" ,
             "member source.Pr","Prop"    )
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903f``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""namespace CountChocula
@@ -962,7 +962,7 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()""" ,
             "member source.Pr","int"                   )
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903g``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
            ("""namespace CountChocula
@@ -973,13 +973,13 @@ type QuickInfoTests() =
                        and set(value:int) : unit = ()""" ,
             "member sou","source"                )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.RecursiveDefinition.Generic.3773b``() =        
         this.AssertQuickInfoContainsAtEndOfMarker 
           ("""let rec M1<'a>(a:'a) = M1(0)""","let rec M","val M1 : a:int -> 'a")
           
         //regression test for bug Dev11:138110 - "F# language service hover tip for ITypeProvider does now show Invalidate event"
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ImportedEvent.138110``() =
         let fileContents = """
 open Microsoft.FSharp.Core.CompilerServices
@@ -992,17 +992,17 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Declaration.CyclicalDeclarationDoesNotCrash``() =
         this.AssertQuickInfoContainsAtEndOfMarker
           ("""type (*1*)A = int * (*2*)A ""","(*2*)","type A")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``JustAfterIdentifier``() =
         this.AssertQuickInfoContainsAtEndOfMarker
           ("""let f x = x + 1 ""","let f","int")
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FrameworkClass``() =
         let fileContent = """let l = new System.Collections.Generic.List<int>()"""
         let marker = "Generic.List"
@@ -1014,13 +1014,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "get_Count"
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "set_Count"
           
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``FrameworkClassNoMethodImpl``() =
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker
           """let l = new System.Collections.Generic.LinkedList<int>()"""
            "Generic.LinkedList" "System.Collections.ICollection.ISynchronized" // Bug 5092: A framework class contained a private method impl
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ModulesFromExternalLibrariesBug5785``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1065,13 +1065,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
 
     /// Even though we don't show squiggles, some types will still be known. For example, System.String.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``OrphanFs.BaselineIntellisenseStillWorks``() = 
         this.AssertQuickInfoContainsAtEndOfMarker
            ("""let astring = "Hello" ""","let astr","string")
 
     /// FEATURE: User may hover over a type or identifier and get basic information about it in a tooltip.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Basic``() = 
         let fileContent = """type (*bob*)Bob() = 
                                   let x = 1"""
@@ -1079,7 +1079,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"Bob =")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"Bob =")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ModuleDefinition.ModuleNoNewLines``() = 
         let fileContent = """module XXX
                              type t = C3
@@ -1093,7 +1093,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"YY","module YYY\n\nfrom XXX")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"ZZ","module ZZZ\n\nfrom XXX\n<summary>\n\nDoc</summary>")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IdentifierWithTick``() = 
         let code = 
                                     ["#light"
@@ -1110,13 +1110,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip,"val x' : string")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``NegativeTest.CharLiteralNotConfusedWithIdentifierWithTick``() = 
         let fileContent = """let x = 1"
                              let y = 'x' """
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"'x","")   // no tooltips for char literals
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QueryExpression.QuickInfoSmokeTest1``() = 
         let fileContent = """let q = query { for x in ["1"] do select x }"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","custom operation: select", addtlRefAssy=standard40AssemblyRefs)
@@ -1124,7 +1124,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","Calls"   , addtlRefAssy=standard40AssemblyRefs)
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"selec","Linq.QueryBuilder.Select"  , addtlRefAssy=standard40AssemblyRefs )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QueryExpression.QuickInfoSmokeTest2``() = 
         let fileContent = """let q = query { for x in ["1"] do join y in ["2"] on (x = y); select (x,y) }"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"joi","custom operation: join"  , addtlRefAssy=standard40AssemblyRefs )
@@ -1132,7 +1132,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"joi","Calls"  , addtlRefAssy=standard40AssemblyRefs )
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"joi","Linq.QueryBuilder.Join"  , addtlRefAssy=standard40AssemblyRefs )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``QueryExpression.QuickInfoSmokeTest3``() = 
         let fileContent = """let q = query { for x in ["1"] do groupJoin y in ["2"] on (x = y) into g; select (x,g) }"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"groupJoin","custom operation: groupJoin"  , addtlRefAssy=standard40AssemblyRefs )
@@ -1142,7 +1142,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
 
     /// Hovering over a literal string should not show data tips for variable names that appear in the string
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``StringLiteralWithIdentifierLookALikes.Bug2360_A``() =
         let fileContent = """let y = 1
                              let f x = "x"
@@ -1150,13 +1150,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "f x = \"" "val"
 
     /// Hovering over a literal string should not show data tips for variable names that appear in the string
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.StringLiteralWithIdentifierLookALikes.Bug2360_B``() =
         let fileContent = """let y = 1"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"let ","int")
 
     /// FEATURE: Intellisense information from types in earlier files in the project is available in subsequent files.        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AcrossMultipleFiles``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1184,7 +1184,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         AssertContains(tooltip,"File1.Bob")
 
     /// FEATURE: Linked files work
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AcrossLinkedFiles``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1211,7 +1211,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         printf "Second-%s\n" tooltip
         AssertContains(tooltip,"Link.Bob")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TauStarter``() =
         let code =
                                     ["#light"
@@ -1284,13 +1284,13 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
               ("type Test0e = System.Collections.Generic.","KeyNotFoundException","Generic.KeyNotFoundException");  // note resolves to type
              ]
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TakesMoreThanFifteenSeconds")>]
     member public this.``LongPaths``() =
         let text,cases = this.GetLongPathsTestCases()
         this.QuickInfoResolutionTest text cases
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TakesMoreThanFifteenSeconds")>]
     member public this.``Global.LongPaths``() =
         let text,cases = this.GetLongPathsTestCases()
@@ -1303,7 +1303,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
         this.QuickInfoResolutionTest text cases
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``TypeAndModuleReferences``() =
         this.QuickInfoResolutionTest 
             ["let test1 = List.length"
@@ -1319,7 +1319,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("let test3 = (\"1\").","Length"                                   ,"String.Length");
             ("let test3b = (id \"1\").","Length"                               ,"String.Length") ]
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ModuleNameAndMisc``() =
         this.QuickInfoResolutionTest 
             ["module (*test3q*)MM3 ="
@@ -1332,7 +1332,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("let test4 = ","lock"                                             ,"lock");
             ("let (*test5*) ","ffff"                                           ,"ffff") ]
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``MemberIdentifiers``() =
         this.QuickInfoResolutionTest 
             ["type TestType() ="
@@ -1348,7 +1348,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("member (*test7*) xx.","QQQQ"                                     ,"float");
             ("let test8 = (TestType()).", "PPPP"                               , "PPPP") ]
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IdentifiersForFields``() =
         this.QuickInfoResolutionTest 
             ["type TestType9 = { XXX : int }"
@@ -1358,7 +1358,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
            [("type TestType9 = { ", "XXX"                                      , "XXX: int");
             ("let test11 = { ", "XXX"                                          , "XXX");] 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IdentifiersForUnionCases``() =
         this.QuickInfoResolutionTest 
             ["type TestType10 = Case1 | Case2 of int"
@@ -1370,7 +1370,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("let test12 = (", "Case1"                                         , "union case TestType10.Case1");
             ("let test12 = (Case1,", "Case2"                                   , "union case TestType10.Case2");] 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``IdentifiersInAttributes``() =
         this.QuickInfoResolutionTest 
             ["[<(*test13*)System.CLSCompliant(true)>]"
@@ -1384,7 +1384,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("[<(*test13*)System.", "CLSCompliant"                             , "CLSCompliantAttribute");
             ("[<(*test14*)", "CLSCompliant"                                    , "CLSCompliantAttribute");] 
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``ArgumentAndPropertyNames``() =
         this.QuickInfoResolutionTest 
             ["type R = { mutable AAA : int }"
@@ -1405,12 +1405,12 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ("let test16 = new System.Reflection.AssemblyName(", "assemblyName", "argument assemblyName")] 
         
     /// Quickinfo was throwing an exception when the mouse was over the end of a line.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AtEndOfLine``() =
         let fileContent = """#light"""
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "#light" "Bug:"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.FieldRepeatedInToolTip.Bug3538``() = 
         this.AssertIdentifierInToolTipExactlyOnce
           """#light
@@ -1421,7 +1421,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
                val mutable x : int"""
              "LayoutKind.Expl" "Explicit"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.FieldRepeatedInToolTip.Bug3818``() = 
         this.AssertIdentifierInToolTipExactlyOnce
           """#light
@@ -1430,7 +1430,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
                do ()"""
              "Inherite" "Inherited"  // Get the tooltip at "Inherite" & Verify that it contains the 'Inherited' fild exactly once
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``MethodAndPropTooltip``() = 
         let fileContent = """#light
                              open System
@@ -1440,7 +1440,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertIdentifierInToolTipExactlyOnce fileContent "Console.Cle" "Clear"
         this.AssertIdentifierInToolTipExactlyOnce fileContent "Console.Back" "BackgroundColor"
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626``() = 
         let fileContent = """
                              type Foo() =
@@ -1456,7 +1456,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*string*) Hoo.Ba","Foo.Bar")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*string*) Hoo.Ba","-> string")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Class.OnlyClassInfo``() = 
         let fileContent = """type TT(x : int, ?y : int) = 
                                  class end"""
@@ -1464,7 +1464,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"type T","type TT")
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "type T" "---"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Async.AsyncToolTips``() = 
         let fileContent = """let a = 
                              async {
@@ -1476,7 +1476,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"asy","AsyncBuilder")
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "asy" "---"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Exceptions.Bug3723``() = 
         let fileContent = """exception E3E of int * int
                              exception E4E of (int * int)
@@ -1488,7 +1488,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // E5E is an alias - should contain name of the aliased exception
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"exception E5","E4E")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Classes.Bug4066``() = 
         let fileContent = """type Foo() as this =
                                  do this |> ignore
@@ -1505,7 +1505,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"Bar() = thi","this")
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "Bar() = thi" "ref"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Classes.Bug2362``() = 
         let fileContent = """let append mm nn = fun ac -> mm (nn ac)"""
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"let appen","mm:('a -> 'b) -> nn:('c -> 'a) -> ac:'c -> 'b")
@@ -1513,14 +1513,14 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"let append m","'a -> 'b")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"let append mm n","'c -> 'a")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ModuleAlias.Bug3790a``() = 
         let fileContent = """module ``Some`` = Microsoft.FSharp.Collections.List
                              module None = Microsoft.FSharp.Collections.List"""
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "module ``So" "Option"
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "module No" "Option"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ModuleAlias.Bug3790b``() = 
         let code =
                                     [ "#light"
@@ -1533,14 +1533,14 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let tooltip = GetQuickInfoAtCursor file
         AssertNotContains(tooltip, "Option")
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ActivePatterns.Bug4100a``() = 
         let fileContent = """let (|Lazy|) x = x
                              match 0 with | Lazy y -> ()"""
         // Test quickinfo in place where the declaration is used
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "with | Laz" "'?"    // e.g. "Lazy: '?3107 -> '?3107", "Lazy: 'a -> 'a" will be fine
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ActivePatterns.Bug4100b``() = 
         let fileContent = """let Some (a:int) = a
                              match None with
@@ -1556,7 +1556,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // This shouldn't find the function returning string but a pattern returning int
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "| NSom" "int -> string"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ActivePatterns.Bug4103``() = 
         let fileContent = """let (|Lazy|) x = x
                              match 0 with | Lazy y -> ()"""
@@ -1566,7 +1566,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             
     // This test checks that we don't show any tooltips for operators
     // (which is currently not supported, but it used to collide with support for active patterns)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.NoTooltipForOperators.Bug4567``() = 
         let fileContent = """let ( |+| ) a b = a + b
                              let n = 1 |+| 2
@@ -1577,7 +1577,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"true |","")
 
     // Check to see that two distinct projects can be present
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``AcrossTwoProjects``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1607,7 +1607,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         Assert.IsTrue(tooltip.Contains("Bob2 ="))
         
     // In this bug, relative paths with .. in them weren't working.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``BugInRelativePaths``() =
         use _guard = this.UsingNewVS()
@@ -1636,7 +1636,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         AssertContains(tooltip,"File1.Bob")
 
     // QuickInfo over a type that references types in an unreferenced assembly works.        
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("PerfCheck")>]
     member public this.``MissingDependencyReferences.QuickInfo.Bug5409``() =     
         let code = 
@@ -1654,7 +1654,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     /// The fix--at the point in time it was fixed--was to modify the parser to send a limitted number
     /// of additional EOF tokens to allow the recovery code to proceed up the change of productions
     /// in the grammar.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Bug1605``() = 
         let fileContent = """let rec f l =
                                  match l with
@@ -1663,7 +1663,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         // This string doesn't matter except that it should prove there is some datatip present.
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"| [] -> str","string")
         
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Bug4642``() =   
         let fileContent = """ "AA".Chars """
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"\"AA\".Ch","int -> char")
@@ -1685,7 +1685,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ShowErrors(project)
             Assert.Fail()
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     //``CompletiongListItem.DocCommentsOnMembers`` and with //Regression 5856
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_1``() =
         this.AssertMemberDataTipContainsInOrder
@@ -1712,7 +1712,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_2``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1736,7 +1736,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_3``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1760,7 +1760,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_4``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1785,7 +1785,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_5``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1808,7 +1808,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_6``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1831,7 +1831,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_7``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1855,7 +1855,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_8``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1878,7 +1878,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_9``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1901,7 +1901,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_10``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1920,7 +1920,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )
  
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_12``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1948,7 +1948,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )    
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_13``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1968,7 +1968,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )   
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_14``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -1988,7 +1988,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
             )    
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_15``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2008,7 +2008,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
             ) 
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.ExtensionMethods.DocComments.Bug6028``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2029,7 +2029,7 @@ query."
              ]
             ) 
             
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.OnMscorlibMethodInScript.Bug6489``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2051,7 +2051,7 @@ query."
               
               
     /// BUG: intelisense on "self" parameter in implicit ctor classes is wrong
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.CompListItemInfo.Bug5694``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2073,7 +2073,7 @@ query."
 
 
     /// Bug 4592: Check that ctors are displayed from C# classes, i.e. the "new" lines below.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Class.Printing.CSharp.Classes.Only..Bug4592``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2091,7 +2091,7 @@ query."
               "  member NextDouble : unit -> float";]
             )
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``GenericDotNetMethodShowsComment``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2109,7 +2109,7 @@ query."
             )
 
     /// Bug 4624: Check the order in which members are printed, C# classes
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Class.Printing.CSharp.Classes.Bug4624``() =
         //let f (x:System.Security.Policy.CodeConnectAccess) = x.
         this.AssertMemberDataTipContainsInOrder
@@ -2137,7 +2137,7 @@ query."
              ])
 
     /// Bug 4624: Check the order in which members are printed, F# classes
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.Class.Printing.FSharp.Classes.Bug4624``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
@@ -2224,7 +2224,7 @@ query."
 *)
 
 (*------------------------------------------IDE automation starts here -------------------------------------------------*)
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.AccessibilityOnTypeMembers.Bug4168``() =
         let fileContent = """module Test
                              type internal Foo2(*Marker*) () = 
@@ -2242,7 +2242,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "member Prop2")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "member private Prop3")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.AccessorsAndMutators.Bug4276``() =
         let fileContent = """type TestType1(*Marker1*)( x : int , y : int ) =  
                                  let mutable x = x
@@ -2282,14 +2282,14 @@ query."
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "get_Length"
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "set_Length"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("DocComment issue")>]
     member public this.``Automation.AutoOpenMyNamespace``() =
         let fileContent ="""namespace System.Numerics
                             type t = BigInteger(*Marker1*)"""
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "r(*Marker1*)", "type BigInteger")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.BeforeAndAfterIdentifier.Bug4371``() =
         let fileContent = """module Test
                              let f arg1 (arg2, arg3, arg4) arg5 = 42
@@ -2302,7 +2302,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "property System.Console.BufferWidth: int")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker3*)","Full name: Test.printer")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.ConstrutorWithSameNameAsType.Bug2739``() =
         let fileContent = """namespace AA
                              module AA = 
@@ -2312,7 +2312,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "AA.AA: AA")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "BB.BB: string")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.EventImplementation.Bug5471``() =
         let fileContent = """namespace regressiontest
                              open System
@@ -2367,7 +2367,7 @@ query."
         AssertContains(tooltip, "override CommandReference.CanExecuteChanged : IEvent<EventHandler,EventArgs>") 
         AssertContains(tooltip, "regressiontest.CommandReference.CanExecuteChanged") 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.ExtensionMethod``() =
         let fileContent ="""namespace TestQuickinfo
 
@@ -2486,7 +2486,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "FSStruct.ExtentionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "fs struct extension property")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.GenericFunction.Bug2868``() =
         let fileContent ="""module Test
                             // Hovering over a generic function (generic argument decorated with [<Measure>] attribute yields a bad tooltip
@@ -2497,7 +2497,7 @@ query."
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker*)" "Exception"
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker*)" "thrown"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("DocComment issue")>]
     member public this.``Automation.IdentifierHaveDiffMeanings``() =
         let fileContent ="""namespace NS
@@ -2564,14 +2564,14 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker6_2*)", "member ValType.Value : int with set")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker6_2*)" "Microsoft.FSharp.Core.ExtraTopLevelOperators.set"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.ModuleIdentifier.Bug2937``() =
         let fileContent ="""module XXX(*Marker*)
                             type t = C3"""
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "module XXX")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker*)" "\n"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.NamesArgument.Bug3818``() =
         let fileContent ="""module m 
                             [<System.AttributeUsage(System.AttributeTargets.All, AllowMultiple(*Marker1*) = true)>]
@@ -2579,7 +2579,7 @@ query."
                                      end"""
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "property System.AttributeUsageAttribute.AllowMultiple: bool")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("DocComment issue")>]
     member public this.``Automation.OnUnitsOfMeasure``() =
         let fileContent ="""namespace TestQuickinfo
@@ -2620,7 +2620,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "from Microsoft.FSharp.Collections")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "Functional programming operators related to the Set<_> type.")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.OverRiddenMembers``() =
         let fileContent ="""namespace QuickinfoGeneric
 
@@ -2642,7 +2642,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker11*)", "override ByteOutputSink.WriteChar : c:char -> unit")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker12*)", "override ByteOutputSink.WriteString : s:string -> unit")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.QuotedIdentifier.Bug3790``() =
         let fileContent ="""module Test
                             module ``Some``(*Marker1*) = Microsoft.FSharp.Collections.List
@@ -2652,7 +2652,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "``(*Marker2*)", "module List")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "``(*Marker2*)" "Option.Some"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Ignore("Can not get QuickInfo tips")>]
     member public this.``Automation.Setter``() =
         let fileContent ="""type T() =
@@ -2693,7 +2693,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4*)", "T2.Foo : a:'a * b:'b -> string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5*)", "val foo : int -> int -> int")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.TupleException.Bug3723``() =
         let fileContent ="""namespace TestQuickinfo
                             exception E3(*Marker1*) of int * int
@@ -2705,7 +2705,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "Full name: TestQuickinfo.E4")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "exception E5 = E4")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.TypeAbbreviations``() =
         let fileContent ="""namespace NS
                             module TypeAbbreviation =
@@ -2767,7 +2767,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "type AbAttrName = AbstractClassAttribute")
         //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "implements: System.Runtime.InteropServices._Attribute")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.TypeInferenceSenarios.Bug2362&3538``() =
         let fileContent ="""module Test.Module1
 
@@ -2802,7 +2802,7 @@ query."
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker7*)","type A =")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker7*)","val mutable x: int")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.TypemoduleConstructorLastLine.Bug2494``() =
         let fileContent ="""namespace NS
                             open System
@@ -2830,7 +2830,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerVal*)", "val pq : PriorityQueue<'a,'b>")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerLastLine*)", "val singleton : k:'a -> a:'b -> PriorityQueue<'a,'b>")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.WhereQuickInfoShouldNotShowUp``() =
         let fileContent ="""namespace Test
 
@@ -2878,7 +2878,7 @@ query."
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker7*)" "bigint"
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker8*)" "myString"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.XmlDocComments.Bug3157``() =
         let fileContent ="""namespace TestQuickinfo
                             module XmlComment =
@@ -2892,7 +2892,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "Full name: TestQuickinfo.XmlComment.func")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker*)" "XmlComment K"
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.Regression.XmlDocCommentsOnExtensionMembers.Bug138112``() =
         let fileContent ="""module Module1 =
                                 type T() = 
@@ -2915,7 +2915,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "XmlComment M2")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "XmlComment M3")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.XmlDocCommentsForArguments() =
         let fileContent = """
                              type bar() =
@@ -3109,7 +3109,7 @@ query."
             AssertContains(tooltip, expectedTip)
 
                 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.XDelegateDUStructfromOwnCode``() =
         let fileContent ="""module Test
 
@@ -3150,7 +3150,7 @@ query."
                          ("(*Marker4*)", "Gets and sets X")]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.EnumDUInterfacefromFSBrowse``() =
         let fileContent ="""module Test
 
@@ -3197,7 +3197,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries true
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.RecordAndInterfaceFromFSProj``() =
         let fileContent ="""module Test
 
@@ -3257,7 +3257,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries true
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.StructDelegateDUfromOwnCode``() =
         let fileContent ="""module Test
 
@@ -3300,7 +3300,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.TupleRecordClassfromOwnCode``() =
         let fileContent ="""module Test
 
@@ -3352,7 +3352,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.TupleRecordfromFSBrowse``() =
         let fileContent ="""module Test
 
@@ -3389,7 +3389,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries true
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Automation.UnionAndStructFromFSProj``() =
         let fileContent ="""module Test
 
@@ -3497,7 +3497,7 @@ query."
         gpatcc.AssertExactly(0,0)   
 
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     [<Ignore("bug196137:Wrong type quickinfo in the query with errors elsewhere")>]
     // QuickInfo still works on valid operators in a query with errors elsewhere in it
@@ -3515,7 +3515,7 @@ query."
                 }"""
         this.AssertQuickInfoInQuery (fileContent, "(*Mark*)", "Product.ProductName: string")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // QuickInfo still works on valid operators in a query with errors elsewhere in it
     member public this.``Query.WithError2``() =
@@ -3530,7 +3530,7 @@ query."
                     }"""
         this.AssertQuickInfoInQuery (fileContent, "(*Mark*)", "custom operation: minBy ('Value)")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // QuickInfo works in a large query (using many operators)
     member public this.``Query.WithinLargeQuery``() =
@@ -3562,7 +3562,7 @@ query."
         this.AssertQuickInfoInQuery (fileContent, "(*Mark3*)", "custom operation: where (bool)")
         this.AssertQuickInfoInQuery (fileContent, "(*Mark4*)", "custom operation: distinct")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
     // quickinfo should be corroct including when the operator is causing an error
@@ -3577,7 +3577,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "n.GetType()", "val n : int",queryAssemblyRefs)
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "Type()", "System.Object.GetType() : System.Type",queryAssemblyRefs)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
     // quickinfo should be corroct In a nested query
@@ -3599,7 +3599,7 @@ query."
         this.AssertQuickInfoInQuery (fileContent, "(*Mark3*)", "custom operation: groupValBy ('Value) ('Key)")
         this.AssertQuickInfoInQuery (fileContent, "(*Mark4*)", "custom operation: select ('Result)")
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // A computation expression with its own custom operators has correct QuickInfo displayed
     member public this.``Query.ComputationExpression.Method``() =
@@ -3643,7 +3643,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark1*)", "member WorkflowBuilder.Combine : f:'b * g:'c -> 'c",queryAssemblyRefs)
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark2*)", "member WorkflowBuilder.Zero : unit -> unit",queryAssemblyRefs)
 
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("Query")>]
     // A computation expression with its own custom operators has correct QuickInfo displayed
     member public this.``Query.ComputationExpression.CustomOp``() =
@@ -3690,14 +3690,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit QuickInfoTests
    new() = { inherit QuickInfoTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit QuickInfoTests

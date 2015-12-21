@@ -43,7 +43,7 @@ type TimeStampTests()  =
 
     // In this bug, if you clean the dependent project, the dependee started getting errors again about the unresolved assembly.
     // The desired behavior is like C#, which is if the assembly disappears from disk, we use cached results of last time it was there.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.NoError.Timestamps.Bug3368b``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -85,7 +85,7 @@ type TimeStampTests()  =
         AssertNoErrorsOrWarnings(project2)  // this is key, project2 remembers what used to be on disk, does not fail due to missing assembly
 
     // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependant
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Regression.NoContainedString.Timestamps.Bug3368a``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -117,7 +117,7 @@ type TimeStampTests()  =
         AssertNoErrorSeenContaining(project2, "project1")
 
    // FEATURE: OnIdle() will reprocess open dirty files, even if those file do not currently have editor focus
-    // [<Parallelizable(ParallelScope.Self)>][<Test>] TODO This test does not work because the unit tests do not cover product code that implements this feature
+    // [<Test>] TODO This test does not work because the unit tests do not cover product code that implements this feature
     member public this.``Timestamps.Bug3368c``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -161,7 +161,7 @@ type TimeStampTests()  =
         AssertNoErrorsOrWarnings(project2)
 
    // FEATURE: When a referenced assembly's timestamp changes the reference is reread.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Timestamps.ReferenceAssemblyChangeAbsolute``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -205,7 +205,7 @@ type TimeStampTests()  =
         printfn "Completions=%A\n" completions
             
     // In this bug, relative paths to referenced assemblies weren't seen.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     member public this.``Timestamps.ReferenceAssemblyChangeRelative``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -258,7 +258,7 @@ type TimeStampTests()  =
         
 
     // FEATURE: When a referenced project's assembly timestamp changes the reference is reread.
-    [<Parallelizable(ParallelScope.Self)>][<Test>]
+    [<Test>]
     [<Category("TakesMoreThanFifteenSeconds")>]
     member public this.``Timestamps.ProjectReferenceAssemblyChange``() =
         use _guard = this.UsingNewVS()
@@ -318,14 +318,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit TimeStampTests
    new() = { inherit TimeStampTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<Parallelizable(ParallelScope.Self)>][<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit TimeStampTests
