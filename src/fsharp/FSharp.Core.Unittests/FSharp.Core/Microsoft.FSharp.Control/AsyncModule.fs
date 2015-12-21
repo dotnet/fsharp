@@ -20,7 +20,7 @@ module LeakUtils =
 
 // ---------------------------------------------------
 
-[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
+[<TestFixture>]
 type AsyncModule() =
     
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count
