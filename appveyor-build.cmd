@@ -1,4 +1,4 @@
-@echo off
+@if "%_echo%"=="" echo off
 
 :ARGUMENTS_VALIDATION
 
@@ -13,30 +13,24 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^|smoke^|smoke_only^>
+echo appveyor-build.cmd ^<all^|net40^|portable^|vs^|cambridge_suite^|qa_suite^|smoke^|smoke_only^>
 echo.
 echo No arguments default to 'smoke' ( build all profiles, run all unit tests, cambridge Smoke, fsharpqa Smoke)
 echo.
 echo To specify multiple values, separate strings by comma
 echo.
-echo The example below run portable47, vs and qa:
+echo The example below run portable tests, vs and qa:
 echo.
-echo appveyor-build.cmd portable47,vs,qa_suite
+echo appveyor-build.cmd portable,vs,qa_suite
 exit /b 1
 
 :ARGUMENTS_OK
 
 set DO_NET40=0
-set DO_PORTABLE47=0
-set DO_PORTABLE7=0
-set DO_PORTABLE78=0
-set DO_PORTABLE259=0
+set DO_PORTABLE=0
 set DO_VS=0
 set TEST_NET40=0
-set TEST_PORTABLE47=0
-set TEST_PORTABLE7=0
-set TEST_PORTABLE78=0
-set TEST_PORTABLE259=0
+set TEST_PORTABLE=0
 set TEST_VS=0
 set TEST_CAMBRIDGE_SUITE=0
 set CONF_CAMBRIDGE_SUITE=
@@ -71,24 +65,9 @@ if /i '%BUILD_PROFILE%' == 'net40' (
     set TEST_NET40=1
 )
 
-if /i '%BUILD_PROFILE%' == 'portable47' (
-    set DO_PORTABLE47=1
-    set TEST_PORTABLE47=1
-)
-
-if /i '%BUILD_PROFILE%' == 'portable7' (
-    set DO_PORTABLE7=1
-    set TEST_PORTABLE7=1
-)
-
-if /i '%BUILD_PROFILE%' == 'portable78' (
-    set DO_PORTABLE78=1
-    set TEST_PORTABLE78=1
-)
-
-if /i '%BUILD_PROFILE%' == 'portable259' (
-    set DO_PORTABLE259=1
-    set TEST_PORTABLE259=1
+if /i '%BUILD_PROFILE%' == 'portable' (
+    set DO_PORTABLE=1
+    set TEST_PORTABLE=1
 )
 
 if /i '%BUILD_PROFILE%' == 'vs' (
@@ -108,16 +87,10 @@ if /i '%BUILD_PROFILE%' == 'qa_suite' (
 
 if /i '%BUILD_PROFILE%' == 'all' (
     set DO_NET40=1
-    set DO_PORTABLE47=1
-    set DO_PORTABLE7=1
-    set DO_PORTABLE78=1
-    set DO_PORTABLE259=1
+    set DO_PORTABLE=1
     set DO_VS=1
     set TEST_NET40=1
-    set TEST_PORTABLE47=1
-    set TEST_PORTABLE7=1
-    set TEST_PORTABLE78=1
-    set TEST_PORTABLE259=1
+    set TEST_PORTABLE=1
     set TEST_VS=1
     set TEST_CAMBRIDGE_SUITE=1
     set TEST_QA_SUITE=1
@@ -125,16 +98,10 @@ if /i '%BUILD_PROFILE%' == 'all' (
 
 if /i '%BUILD_PROFILE%' == 'smoke' (
     set DO_NET40=1
-    set DO_PORTABLE47=1
-    set DO_PORTABLE7=1
-    set DO_PORTABLE78=1
-    set DO_PORTABLE259=1
+    set DO_PORTABLE=1
     set DO_VS=1
     set TEST_NET40=1
-    set TEST_PORTABLE47=1
-    set TEST_PORTABLE7=1
-    set TEST_PORTABLE78=1
-    set TEST_PORTABLE259=1
+    set TEST_PORTABLE=1
     set TEST_VS=1
     set TEST_CAMBRIDGE_SUITE=1
     set CONF_CAMBRIDGE_SUITE=Smoke
@@ -155,17 +122,11 @@ REM after this point, BUILD_PROFILE variable should not be used, use only DO_* o
 echo Build/Tests configuration:
 echo.
 echo DO_NET40=%DO_NET40%
-echo DO_PORTABLE47=%DO_PORTABLE47%
-echo DO_PORTABLE7=%DO_PORTABLE7%
-echo DO_PORTABLE78=%DO_PORTABLE78%
-echo DO_PORTABLE259=%DO_PORTABLE259%
+echo DO_PORTABLE=%DO_PORTABLE%
 echo DO_VS=%DO_VS%
 echo.
 echo TEST_NET40=%TEST_NET40%
-echo TEST_PORTABLE47=%TEST_PORTABLE47%
-echo TEST_PORTABLE7=%TEST_PORTABLE7%
-echo TEST_PORTABLE78=%TEST_PORTABLE78%
-echo TEST_PORTABLE259=%TEST_PORTABLE259%
+echo TEST_PORTABLE=%TEST_PORTABLE%
 echo TEST_VS=%TEST_VS%
 echo TEST_CAMBRIDGE_SUITE=%TEST_CAMBRIDGE_SUITE%
 echo CONF_CAMBRIDGE_SUITE=%CONF_CAMBRIDGE_SUITE%
@@ -228,65 +189,54 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
-if '%DO_PORTABLE47%' == '1' (
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-)
-
-if '%DO_PORTABLE7%' == '1' (
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-)
-
-if '%DO_PORTABLE78%' == '1' (
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-)
-
-if '%DO_PORTABLE259%' == '' (
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
+if '%DO_PORTABLE%' == '1' (
+    
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
-%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
-
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+    %_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
 @if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
-
-if '%TEST_PORTABLE47%' == '1' (
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
-)
-
-if '%TEST_PORTABLE7%' == '1' (
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
-)
-
-if '%TEST_PORTABLE78%' == '1' (
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
-)
-
-if '%TEST_PORTABLE259%' == '1' (
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
+    
+if '%TEST_PORTABLE%' == '1' (
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
+    
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 )
 
 if '%DO_VS%' == '1' (
-%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+    %_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 )
 
 if '%TEST_VS%' == '1' (
-%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
+    %_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 )
 
 @echo on
@@ -299,48 +249,39 @@ call BuildTestTools.cmd release
 @if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd release' failed && goto :failure
 
 @echo on
+
 if '%TEST_CAMBRIDGE_SUITE%' == '1' (
-set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
-
-%_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
-
-call RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
-set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
+    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
+    
+    %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
+    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
+    
+    call RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%
+    @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
+    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_QA_SUITE%' == '1' (
-call RunTests.cmd release fsharpqa %CONF_QA_SUITE%
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
+    call RunTests.cmd release fsharpqa %CONF_QA_SUITE%
+    @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
-call RunTests.cmd release compilerunit
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+    call RunTests.cmd release compilerunit
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
 
-call RunTests.cmd release coreunit
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+    if '%TEST_PORTABLE%' == '1' (
+        call RunTests.cmd release coreunitall
+        @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+    )
+    if not '%TEST_PORTABLE%' == '1' (
+        call RunTests.cmd release coreunit
+    )
 )
-
-if '%TEST_PORTABLE47%' == '1' (
-call RunTests.cmd release coreunitportable47
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable47' failed && goto :failure
-)
-
-if '%TEST_PORTABLE7%' == '1' (
-call RunTests.cmd release coreunitportable7
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable7' failed && goto :failure
-)
-
-if '%TEST_PORTABLE78%' == '1' (
-call RunTests.cmd release coreunitportable78
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable78' failed && goto :failure
-)
-
-if '%TEST_PORTABLE259%' == '1' (
-call RunTests.cmd release coreunitportable259
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable259' failed && goto :failure
+if '%TEST_NET40%' == '0' (
+    if '%TEST_PORTABLE%' == '1' (
+        call RunTests.cmd release coreunitportable
+    )
 )
 
 rem tests for TEST_VS are not executed

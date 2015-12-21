@@ -127,7 +127,7 @@ set command_line_args=%command_line_args% --targetPlatformName:DNXCore,Version=v
 set command_line_args=%command_line_args% --source:"%~d0%~p0coreclr_utilities.fs" --source:"%sources%" 
 set command_line_args=%command_line_args% --packagesDir:%~d0%~p0..\..\packages 
 set command_line_args=%command_line_args% --projectJsonLock:%~d0%~p0project.lock.json
-set command_line_args=%command_line_args% --fsharpCore:%FSCOREDLL_CORECLR_PATH%
+set command_line_args=%command_line_args% --fsharpCore:%~d0%~p0..\testbin\%flavor%\coreclr\fsc\%platform%\fsharp.core.dll
 set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
 set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
 set command_line_args=%command_line_args% --compilerPath:%~d0%~p0..\testbin\%flavor%\coreclr\fsc\%platform%

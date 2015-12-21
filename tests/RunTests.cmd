@@ -1,4 +1,4 @@
-@echo OFF
+@if "%_echo%"=="" echo off
 setlocal
 
 set FLAVOR=%1
@@ -63,6 +63,7 @@ set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
+ECHO FSCBINPATH%
 
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
@@ -99,6 +100,15 @@ if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
 )
+
+if /I "%2" == "coreunitall" (
+   goto :COREUNITALL
+)
+
+if /I "%2" == "coreunitportable" (
+   goto :COREUNITPORTABLE
+)
+
 if /I "%2" == "coreunit" (
    set coreunitsuffix=net40
    goto :COREUNIT
@@ -129,7 +139,7 @@ if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitall^|coreunitportable^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -170,8 +180,8 @@ set XMLFILE=FSharpNunit_Xml.xml
 set OUTPUTFILE=FSharpNunit_Output.log
 set ERRORFILE=FSharpNunit_Error.log
 
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% %NO_TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% %NO_TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%;format=nunit2"
 
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF
@@ -284,17 +294,42 @@ echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /outpu
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF
 
+:COREUNITALL
+
+set XMLFILE=%RESULTSDIR%\CoreUnit_all_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CoreUnit_all_Output.log
+set ERRORFILE=%RESULTSDIR%\CoreUnit_all_Error.log
+
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+
+call :UPLOAD_XML "%XMLFILE%"
+goto :EOF
+
+:COREUNITPORTABLE
+
+set XMLFILE=%RESULTSDIR%\CoreUnit_Portable_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CoreUnit_Portable_Output.log
+set ERRORFILE=%RESULTSDIR%\CoreUnit_Portable_Error.log
+
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+
+call :UPLOAD_XML "%XMLFILE%"
+goto :EOF
+
 :COREUNIT_CORECLR
 
 set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-set CORE_ROOT=%~dp0%..\packages\dnx-coreclr-win-x86.1.0.0-rc1-final\bin
-set CORERUNPATH=%~dp0%..\packages\runtime.win7-x86.Microsoft.NETCore.TestHost\1.0.0-rc2-23519\runtimes\win7-x86\native
+set testbinpath=%~dp0%testbin\
+set architecturepath=\coreclr\fsc\win7-x86
+set CORERUNPATH="%testbinpath%%flavor%%architecturepath%"
 
-echo "%CORERUNPATH%\corerun.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe
-     "%CORERUNPATH%\corerun.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe
+echo "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe"
+     "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe"
 
 goto :EOF
 
