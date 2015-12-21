@@ -20,7 +20,7 @@ type RunWithContinuationsTest_WhatToDo =
     | Cancel
     | Throw
 
-[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
+[<TestFixture>]
 type AsyncType() =
 
     let ignoreSynchCtx f =
