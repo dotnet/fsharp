@@ -149,9 +149,9 @@ let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
         // rem first see if we have got msbuild installed
         let mutable MSBuildToolsPath = envVars |> Map.tryFind "MSBuildToolsPath"
 
-        // if exist "%X86_PROGRAMFILES%\MSBuild\14.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\14.0\Bin\
-        if x86_ProgramFiles/"MSBuild"/"14.0"/"Bin"/"MSBuild.exe" |> fileExists
-        then  MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"14.0"/"Bin" |> Commands.pathAddBackslash)
+        // if exist "%X86_PROGRAMFILES%\MSBuild\15.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\15.0\Bin\
+        if x86_ProgramFiles/"MSBuild"/"15.0"/"Bin"/"MSBuild.exe" |> fileExists
+        then  MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"15.0"/"Bin" |> Commands.pathAddBackslash)
         // if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
         match MSBuildToolsPath with
         | Some x -> Some x

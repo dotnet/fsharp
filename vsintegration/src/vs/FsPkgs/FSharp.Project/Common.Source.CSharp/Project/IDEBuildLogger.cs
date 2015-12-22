@@ -24,7 +24,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 #if VS_VERSION_DEV12
         public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\12.0";
 #else
-        public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0";
+        public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0";
 #endif
         public const string BuildVerbosityRegistrySubKey = @"General";
         public const string BuildVerbosityRegistryValue = "MSBuildLoggerVerbosity";

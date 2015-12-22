@@ -17,6 +17,10 @@ exit /b 1
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%VS150COMNTOOLS%" set VisualStudioVersion=15.0
+if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%VS140COMNTOOLS%" set VisualStudioVersion=14.0
