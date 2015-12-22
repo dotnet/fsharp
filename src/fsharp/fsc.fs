@@ -1184,24 +1184,25 @@ module MainModuleBuilder =
         // a user cannot specify both win32res and win32manifest        
         if not(tcConfig.win32manifest = "") && not(tcConfig.win32res = "") then
             error(Error(FSComp.SR.fscTwoResourceManifests(),rangeCmdArgs));
-                      
+
         let win32Manifest =
-           // use custom manifest if provided
-           if not(tcConfig.win32manifest = "") then
-               tcConfig.win32manifest
-           // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
+            // use custom manifest if provided
+            if not(tcConfig.win32manifest = "") then tcConfig.win32manifest
+
+            // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
 #if ENABLE_MONO_SUPPORT
-           elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then
+            elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
 #else
-            elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") then
+            elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") then ""
 #endif
-               ""
-           // otherwise, include the default manifest
-           else
+            // otherwise, include the default manifest
+            else
 #if FX_NO_RUNTIMEENVIRONMENT
-                System.AppContext.BaseDirectory
+                // On coreclr default manifest is alongside the compiler
+                Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
 #else
-               System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() + @"default.win32manifest"
+                // On the desktop default manifest is alongside the clr
+                Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 #endif
         let nativeResources = 
             [ for av in assemblyVersionResources do
