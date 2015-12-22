@@ -21,7 +21,7 @@ Make sure each method works on:
 * Multi-element maps (2 - 7 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MapType() =
     
     // Interfaces

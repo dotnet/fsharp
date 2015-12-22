@@ -15,7 +15,7 @@ Make sure each method works on:
 * None   (0 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type OptionModule() =
 
     [<Test>]

@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UpToDate() = 
     inherit TheTests()
 
@@ -379,7 +379,7 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ``UpToDate PreserveNewest`` () = 
 
     [<Test>]

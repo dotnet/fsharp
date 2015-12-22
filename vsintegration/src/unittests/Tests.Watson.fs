@@ -48,7 +48,7 @@ type Check =
         File.Delete("watson-test.fs")
 
 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 type Watson() = 
 
     [<Test>]

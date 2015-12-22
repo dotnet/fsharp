@@ -10,7 +10,7 @@ type EnumUnion =
     | A
     | B
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsAsEnums() = 
     [<Test>]
     member this.CanCompare() = 
@@ -23,7 +23,7 @@ type FlagsUnion =
     | Two = 2
     | Four = 4
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsAsFlags() = 
     
     [<Test>]
@@ -62,7 +62,7 @@ type UnionsWithData =
     | Alpha of int
     | Beta of string * float
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UseUnionsWithData() = 
     let a1 = Alpha 1
     let a2 = Alpha 2

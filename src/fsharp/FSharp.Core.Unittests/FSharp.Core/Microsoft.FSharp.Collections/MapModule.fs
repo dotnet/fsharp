@@ -20,7 +20,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MapModule() =
     [<Test>]
     member this.Empty() =

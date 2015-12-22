@@ -5,7 +5,7 @@ open System
 open NUnit.Framework
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type IntConversions() =
 
     [<Test>]

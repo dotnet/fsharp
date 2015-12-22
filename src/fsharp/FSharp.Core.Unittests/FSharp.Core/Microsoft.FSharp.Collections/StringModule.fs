@@ -18,7 +18,7 @@ Make sure each method works on:
 * Null string (null)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type StringModule() =
 
     [<Test>]

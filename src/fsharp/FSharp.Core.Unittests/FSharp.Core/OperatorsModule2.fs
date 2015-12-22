@@ -10,7 +10,7 @@ open SystematicUnitTests.LibraryTestFx
 open NUnit.Framework
 open Microsoft.FSharp.Core.Operators.Checked
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type OperatorsModule2() =
 
     [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]

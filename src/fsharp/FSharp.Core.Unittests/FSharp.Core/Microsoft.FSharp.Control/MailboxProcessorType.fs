@@ -16,7 +16,7 @@ type Message =
     | Fetch of AsyncReplyChannel<int> 
     | Reset
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =

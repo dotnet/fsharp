@@ -18,7 +18,7 @@ Make sure each method works on:
 *  (2 - 7 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ComparisonIdentityModule() =
     [<Test>]
     member this.FromFunction() =

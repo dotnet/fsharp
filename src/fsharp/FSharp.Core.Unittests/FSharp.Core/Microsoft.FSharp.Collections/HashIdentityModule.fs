@@ -11,7 +11,7 @@ open NUnit.Framework
 
 open System.Collections.Generic
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type HashIdentityModule() =
     
     [<Test>]

@@ -21,7 +21,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type BigNum() =
     let g_positive1 = 1000000000000000000000000000000000018N
     let g_positive2 = 1000000000000000000000000000000000000N

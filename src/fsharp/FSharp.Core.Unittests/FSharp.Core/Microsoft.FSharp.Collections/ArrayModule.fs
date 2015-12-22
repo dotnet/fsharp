@@ -18,7 +18,7 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ArrayModule() =
 
     let rec IsNaN (x : obj) =

@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Miscellaneous() = 
     inherit TheTests()
 
@@ -678,7 +678,7 @@ module Regression5312 =
         let icons = extractIcon path true
         if icons.Length<>nExpected then failwithf "Expected %d icons in %s" nExpected path // "
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Utilities() = 
     (*
         Simulation of the code found in Xaml editor that we were crashing. The relevent code is pasted below.

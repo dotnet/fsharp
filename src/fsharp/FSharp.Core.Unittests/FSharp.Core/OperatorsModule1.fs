@@ -10,7 +10,7 @@ open SystematicUnitTests.LibraryTestFx
 open NUnit.Framework
 open Microsoft.FSharp.Core.Operators.Checked
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type OperatorsModule1() =
 
     [<Test>]

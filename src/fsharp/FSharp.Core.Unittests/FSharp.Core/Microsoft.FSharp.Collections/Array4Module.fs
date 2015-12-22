@@ -19,7 +19,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =

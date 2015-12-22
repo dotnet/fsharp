@@ -23,7 +23,7 @@ module internal Vector =
         Vector.Demultiplex taskname Identity input
             
     
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 [<Category("LanguageService.ProjectSystem")>]
 type IncrementalBuild() = 

@@ -8,7 +8,7 @@ open NUnit.Framework
 open Microsoft.FSharp.Collections
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type LazyType() =
    
     [<Test>]

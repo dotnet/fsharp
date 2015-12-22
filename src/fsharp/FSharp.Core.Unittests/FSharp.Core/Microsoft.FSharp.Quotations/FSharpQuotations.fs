@@ -20,7 +20,7 @@ module Check =
         |   :? System.ArgumentException-> ex <- true
         Assert.IsTrue(ex, "InvalidOperationException expected")
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FSharpQuotationsTests() =
     
     [<Test>]

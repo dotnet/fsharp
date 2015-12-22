@@ -101,7 +101,7 @@ type AsyncModule() =
     [<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
-        let startMs = DateTime.Now.Millisecond
+        let startTime = DateTime.Now
 
         let r = 
             Async.AwaitWaitHandle(waitHandle, 500)
@@ -109,9 +109,9 @@ type AsyncModule() =
 
         Assert.IsFalse(r, "Timeout expected")
 
-        let endMs = DateTime.Now.Millisecond
-        let delta = endMs - startMs
-        Assert.IsTrue(abs ((abs delta) - 500) < 400, sprintf "Delta is too big %d" delta)
+        let endTime = DateTime.Now
+        let delta = int (endTime - startTime).TotalMilliseconds
+        Assert.IsTrue(abs ((int delta) - 500) < 400, sprintf "Delta is too big %d" delta)
 
     [<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 

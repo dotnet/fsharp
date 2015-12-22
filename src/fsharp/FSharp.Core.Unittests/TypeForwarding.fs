@@ -11,7 +11,7 @@ open NUnit.Framework
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type TypeForwardingModule() =
     [<Test>]
     member this.TypeForwarding() =

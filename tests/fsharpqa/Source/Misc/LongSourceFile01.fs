@@ -7,7 +7,7 @@ namespace FSharp.Core.Unittests.SurfaceArea
 
 //open NUnit.Framework
 
-//[<TestFixture>]
+//[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SurfaceAreaTest() =
 //    [<Test>]
     member this.VerifyArea() =

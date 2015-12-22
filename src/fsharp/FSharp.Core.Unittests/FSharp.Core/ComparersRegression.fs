@@ -1746,7 +1746,7 @@ module ComparersRegression =
 
 open ComparersRegression
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type GeneratedTestSuite () =
  let _ = ()
 // ------------------------------------------------------------------------------

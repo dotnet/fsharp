@@ -3690,14 +3690,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit QuickInfoTests
    new() = { inherit QuickInfoTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit QuickInfoTests

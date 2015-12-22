@@ -9,7 +9,7 @@ module U = Microsoft.FSharp.Data.TypeProviders.DesignTime.Utilities
 module CF = Microsoft.FSharp.Data.TypeProviders.DesignTime.ConfigFiles
 module Util = Microsoft.FSharp.Data.TypeProviders.Utility.Util
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type TypeProviderImplTests() = 
     
     [<Test>]

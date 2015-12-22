@@ -20,7 +20,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type BigIntStruct() =
     // global variable
     let bigPositiveA = 12345678901234567890I

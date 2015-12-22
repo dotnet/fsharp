@@ -12,7 +12,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils.FilesystemHelpers
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FsLexTests() = 
     
     [<SetUp>]
@@ -50,7 +50,7 @@ type FsLexTests() =
         // Verify Unicode flag not specified
         Assert.AreEqual("", cmd)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FsYaccTests() = 
     
     [<SetUp>]

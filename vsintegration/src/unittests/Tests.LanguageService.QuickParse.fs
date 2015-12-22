@@ -7,7 +7,7 @@ open System.IO
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 [<Category("LanguageService.ProjectSystem")>]
 type QuickParse() = 

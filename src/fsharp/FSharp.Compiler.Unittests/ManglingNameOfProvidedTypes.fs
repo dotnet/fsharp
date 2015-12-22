@@ -6,7 +6,7 @@ open System.Text
 open NUnit.Framework
 open Microsoft.FSharp.Compiler
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
     
     [<Test>]
@@ -39,7 +39,7 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
         Assert.AreEqual("MyNamespace.Test", name)
         Assert.AreEqual([||], parameters)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ManglingNamesOfProvidedTypesWithMultipleParameter() = 
     
     [<Test>]

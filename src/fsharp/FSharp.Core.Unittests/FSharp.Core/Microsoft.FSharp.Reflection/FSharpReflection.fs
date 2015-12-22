@@ -75,7 +75,7 @@ module FSharpModule =
         class
         end
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FSharpValueTests() =
     
     // global variables
@@ -568,7 +568,7 @@ type FSharpValueTests() =
         
     
         
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type FSharpTypeTests() =    
     
     // instance for member this.ObjectEquals
@@ -888,7 +888,7 @@ type FSharpTypeTests() =
         ()
 
             
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UnionCaseInfoTests() =    
     
     let singlenullarycaseunion = SingleNullaryCaseDiscUnion.SingleNullaryCaseTag

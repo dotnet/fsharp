@@ -7719,28 +7719,28 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.MSBuild")>] 
 type ``AutoCompletionMSBuild`` = 
    inherit AutoCompletionListTests
    new() = { inherit AutoCompletionListTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``AutoCompletionProjectSystem`` = 
     inherit AutoCompletionListTests
     new() = { inherit AutoCompletionListTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
 
 // context msbuild
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 type ``DotCompletionMSBuild`` = 
    inherit DotCompletionListTests
    new() = { inherit DotCompletionListTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 [<Category("LanguageService.ProjectSystem")>]
 type ``DotCompletionProjectSystem`` = 
     inherit DotCompletionListTests

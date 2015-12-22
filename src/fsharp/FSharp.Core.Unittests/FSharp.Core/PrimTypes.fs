@@ -13,7 +13,7 @@ open NUnit.Framework
 [<Measure>]
 type m
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type LanguagePrimitivesModule() =
 
     [<Test>]
@@ -510,7 +510,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.PhysicalEquality null null
         Assert.IsTrue(resultNul)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type HashCompareModule() = // this module is internal/obsolete, but contains code reachable from many public APIs
     member inline this.ComparisonsFor< ^T when ^T : comparison>(x : ^T, y : ^T) =
         Assert.IsTrue( x < y )
@@ -589,7 +589,7 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         let mt2 = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         Assert.AreEqual(mt,mt2)
     
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UnitType() =
 
     // interface
@@ -615,7 +615,7 @@ type UnitType() =
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else     
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SourceConstructFlagsEnum() =
 
     [<Test>]
@@ -625,7 +625,7 @@ type SourceConstructFlagsEnum() =
                        "KindMask";"NonPublicRepresentation" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<SourceConstructFlags>))
         
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type CompilationRepresentationFlagsEnum() =
 
     [<Test>]
@@ -634,7 +634,7 @@ type CompilationRepresentationFlagsEnum() =
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<CompilationRepresentationFlags>))
 #endif
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type MiscStuff() =
 
     [<Test>]
@@ -655,7 +655,7 @@ type MiscStuff() =
         
         
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type UnboxAndOptionStuff() =
     [<Test>]
     member this.TryUnbox() =

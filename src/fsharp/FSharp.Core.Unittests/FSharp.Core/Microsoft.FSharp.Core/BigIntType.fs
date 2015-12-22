@@ -22,7 +22,7 @@ Make sure each method works on:
 * large    bigints
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type BigIntType() =
 
     // global variables

@@ -50,7 +50,7 @@ type FauxHostObject() =
     interface ITaskHost
         // no members
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Build() = 
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqual expected actual =

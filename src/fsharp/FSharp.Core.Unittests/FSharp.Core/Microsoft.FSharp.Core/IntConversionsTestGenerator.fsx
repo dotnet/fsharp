@@ -56,7 +56,7 @@ module Int8 =
     let MinValue = SByte.MinValue
     let MaxValue = SByte.MaxValue
 
-[<TestFixture>]                                                              
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]                                                              
 type IntConversionsGenerated() =
 "
                 

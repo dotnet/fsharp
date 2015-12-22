@@ -26,7 +26,7 @@ type ArrayWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ArrayModule2() =
 
     [<Test>]

@@ -18,7 +18,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.Win32
 open System.Xml.Linq
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type References() = 
     inherit TheTests()
 

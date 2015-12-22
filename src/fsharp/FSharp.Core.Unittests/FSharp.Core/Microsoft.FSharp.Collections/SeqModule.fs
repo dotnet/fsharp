@@ -19,7 +19,7 @@ Make sure each method works on:
 * Null Seq    (null)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SeqModule() =
 
     [<Test>]

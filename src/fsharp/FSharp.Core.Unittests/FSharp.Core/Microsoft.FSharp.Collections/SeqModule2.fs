@@ -15,7 +15,7 @@ type SeqWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SeqModule2() =
 
     [<Test>]

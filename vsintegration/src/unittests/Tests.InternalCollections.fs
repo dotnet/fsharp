@@ -8,7 +8,7 @@ open NUnit.Framework
 open Internal.Utilities.Collections
        
                 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 type MruCache = 
     new() = { }        
 
@@ -111,7 +111,7 @@ type MruCache =
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
             
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 type AgedLookup() = 
     let mutable hold197 : byte [] = null
     let mutable hold198 : byte [] = null

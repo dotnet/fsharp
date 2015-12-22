@@ -17,7 +17,7 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ListModule() =
     [<Test>]
     member this.Empty() =

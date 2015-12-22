@@ -8,7 +8,7 @@ open NUnit.Framework
 open System.Threading
 
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type CancellationType() =
 
     [<Test>]

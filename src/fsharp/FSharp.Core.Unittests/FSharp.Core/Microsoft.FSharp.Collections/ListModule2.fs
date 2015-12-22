@@ -25,7 +25,7 @@ type ListWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ListModule02() =
     [<Test>]
     member this.Length() =

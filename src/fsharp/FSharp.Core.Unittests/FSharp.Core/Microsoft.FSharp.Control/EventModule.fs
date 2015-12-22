@@ -30,7 +30,7 @@ type MultiArgDelegate4 = delegate of obj * int * string * bool * int -> unit
 type MultiArgDelegate5 = delegate of obj * int * string * bool * int * string -> unit
 type MultiArgDelegate6 = delegate of obj * int * string * bool * int * string * bool -> unit
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type EventModule() =
     
     [<Test>]

@@ -9,7 +9,7 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type XmlDocComments() = 
     inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = fst (Models.InstalledMSBuild()))
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 

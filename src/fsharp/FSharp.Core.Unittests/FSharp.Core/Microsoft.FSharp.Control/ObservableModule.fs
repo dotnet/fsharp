@@ -78,7 +78,7 @@ type RadioStation(frequency, callsign) =
 
 // ---------------------------------------------------
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type ObservableModule() =
     
     [<Test>]

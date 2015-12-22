@@ -11,7 +11,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Salsa.Salsa
 open Salsa
 
-[<TestFixture>] 
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>] 
 type IdealSource() = 
     [<Test>]
     member public rb.MultipleSourceIsDirtyCallsChangeTimestamps() = 
@@ -591,14 +591,14 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // context msbuild
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.MSBuild")>]
 type ``MSBuild`` = 
    inherit GeneralTests
    new() = { inherit GeneralTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 [<Category("LanguageService.ProjectSystem")>]
 type ``ProjectSystem`` = 
     inherit GeneralTests

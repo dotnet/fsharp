@@ -8,7 +8,7 @@ open System.Diagnostics
 open UnitTests.TestLib.Utils
 open Microsoft.BuildSettings
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type Script() = 
 #if OPEN_BUILD
     class end

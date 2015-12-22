@@ -17,7 +17,7 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>]
+[<Parallelizable(ParallelScope.Fixtures)>][<TestFixture>]
 type SetModule() =
 
     [<Test>]
