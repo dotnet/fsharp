@@ -17,11 +17,11 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23519" />
-                <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.1-rc2-23519" />
-                <dependency id="Microsoft.NETCore.TestHost" version="1.0.0-rc2-23519" />
-                <dependency id="Microsoft.NETCore.ConsoleHost" version="1.0.0-rc2-23519" />
-                <dependency id="Microsoft.NETCore.Windows.ApiSets" version="1.0.1-rc2-23519" />
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23616" />
+                <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.1-rc2-23616" />
+                <dependency id="Microsoft.NETCore.TestHost" version="1.0.0-rc2-23616" />
+                <dependency id="Microsoft.NETCore.ConsoleHost" version="1.0.0-rc2-23616" />
+                <dependency id="Microsoft.NETCore.Windows.ApiSets" version="1.0.1-rc2-23616" />
                 <dependency id="Microsoft.FSharp.Compiler.NetCore" version="$version$" />
             </group>
         </dependencies>
