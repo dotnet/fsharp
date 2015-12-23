@@ -2205,12 +2205,7 @@ type TcConfigBuilder =
             | Some f,_ -> f
         let assemblyName, assemblyNameIsInvalid = 
             let baseName = fileNameOfPath outfile
-            let assemblyName = fileNameWithoutExtension baseName
-            if not (Filename.checkSuffix (String.lowercase baseName) (ext())) then
-                errorR(Error(FSComp.SR.buildMismatchOutputExtension(),rangeCmdArgs))
-                assemblyName, true
-            else
-                assemblyName, false
+            (fileNameWithoutExtension baseName), false
 
         let pdbfile = 
             
