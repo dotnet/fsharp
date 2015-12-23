@@ -1,20 +1,8 @@
-
-1.fsx
-
-
 // #Conformance #FSI 
 printfn "Hello"
-
-2.fsx
-
-
 // #Conformance #FSI 
 #load "1.fsx"
 printfn "World"
-
-3.fsx
-
-
 // #Conformance #FSI 
 #load "2.fsx"
 printfn "-the end"

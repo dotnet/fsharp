@@ -1,4 +1,4 @@
-rem if "%_echo%"=="" echo off
+if "%_echo%"=="" echo off
 
 setlocal
 REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
@@ -23,8 +23,7 @@ echo ======== Differences From ========
 TYPE  out.diff
 echo ========= Differences To =========
 
-
-for /f %%c IN (out.diff do (
+for /f %%c IN (out.diff) do (
   echo NOTE -------------------------------------
   echo NOTE ---------- THERE ARE DIFFs ----------
   echo NOTE -------------------------------------
