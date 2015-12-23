@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 del 3.exe 2>nul 1>nul
 type 1.fsx 2.fsx 3.fsx
 echo Test 1=================================================

@@ -1,4 +1,4 @@
-if "%_echo%"=="" echo off
+rem if "%_echo%"=="" echo off
 
 setlocal
 REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
@@ -16,8 +16,8 @@ call script > out.txt 2>&1
 
 if NOT EXIST out.bsl COPY out.txt
 
-%FSDIFF% out.txt out.bsl > out.diff
-%FSDIFF% z.output.fsi.help.txt z.output.fsi.help.bsl > z.output.fsi.help.diff
+%FSDIFF% out.txt out.bsl normalize > out.diff
+%FSDIFF% z.output.fsi.help.txt z.output.fsi.help.bsl normalize > z.output.fsi.help.diff
 
 echo ======== Differences From ========
 TYPE  out.diff
