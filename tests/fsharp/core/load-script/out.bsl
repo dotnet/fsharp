@@ -1,18 +1,9 @@
-
-1.fsx
-
-
+// #Conformance #FSI 
 printfn "Hello"
-
-2.fsx
-
-
+// #Conformance #FSI 
 #load "1.fsx"
 printfn "World"
-
-3.fsx
-
-
+// #Conformance #FSI 
 #load "2.fsx"
 printfn "-the end"
 Test 1=================================================
@@ -25,9 +16,9 @@ World
 -the end
 Test 3=================================================
 
-> [Loading D:\staging\staging\src\tests\fsharp\core\load-script\1.fsx
- Loading D:\staging\staging\src\tests\fsharp\core\load-script\2.fsx
- Loading D:\staging\staging\src\tests\fsharp\core\load-script\3.fsx]
+\1.fsx
+\2.fsx
+\3.fsx]
 Hello
 World
 -the end
@@ -44,7 +35,7 @@ namespace FSI_0002
 Test 4=================================================
 Test 5=================================================
 
-usesfsi.fsx(1,1): error FS0039: The namespace or module 'fsi' is not defined
+usesfsi.fsx(2,1): error FS0039: The namespace or module 'fsi' is not defined
 Test 6=================================================
 Test 7=================================================
 Hello
@@ -65,7 +56,9 @@ COMPILED is defined
 Test 12=================================================
 COMPILED is defined
 Test 13=================================================
-INTERACTIVE is defined
+
+
+flagcheck.fs(2,1): error FS0222: Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.
 Test 14=================================================
 INTERACTIVE is defined
 Test 15=================================================

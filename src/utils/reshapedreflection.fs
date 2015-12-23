@@ -330,16 +330,13 @@ module internal ReflectionAdapters =
 
 #if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
-            //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
             globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
 
         static member UnsafeLoadFrom(filename:string) =
-            //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
             globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 
-            //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
             System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(path)
 #endif
 

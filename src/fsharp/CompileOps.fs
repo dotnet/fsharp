@@ -2203,20 +2203,13 @@ type TcConfigBuilder =
                 let modname = try Filename.chopExtension basic with _ -> basic
                 modname+(ext())
             | Some f,_ -> f
-        let assemblyName, assemblyNameIsInvalid = 
+        let assemblyName = 
             let baseName = fileNameOfPath outfile
-            let assemblyName = fileNameWithoutExtension baseName
-            if not (Filename.checkSuffix (String.lowercase baseName) (ext())) then
-                errorR(Error(FSComp.SR.buildMismatchOutputExtension(),rangeCmdArgs))
-                assemblyName, true
-            else
-                assemblyName, false
+            (fileNameWithoutExtension baseName)
 
         let pdbfile = 
             
             if tcConfigB.debuginfo then
-              // assembly name is invalid, we've already reported the error so just skip pdb name checks
-              if assemblyNameIsInvalid then None else
 #if FX_NO_PDB_WRITER
               Some (match tcConfigB.debugSymbolFile with None -> (Filename.chopExtension outfile) + (
 #if ENABLE_MONO_SUPPORT

@@ -40,7 +40,7 @@ Core03,coreclr		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03,Smoke		fsharp\core\libtest
 Core03,coreclr		fsharp\core\lift
-NO_CI,Core03		fsharp\core\load-script
+LoadScript,Core03		fsharp\core\load-script
 Core03		fsharp\core\longnames
 Core03,coreclr		fsharp\core\map
 Core04		..\testsprivate\fsharp\core\math\lapack

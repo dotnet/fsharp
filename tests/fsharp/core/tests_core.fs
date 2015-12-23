@@ -1146,7 +1146,6 @@ module ``Load-Script`` =
         // "%FSI%" --nologo < pipescr
         do! ``fsi <`` "--nologo" "pipescr"
         // echo.
-        echo ""
         // echo Test 4=================================================
         echo "Test 4================================================="
         // "%FSI%" usesfsi.fsx
@@ -1237,14 +1236,6 @@ module ``Load-Script`` =
 
         // if NOT EXIST out.bsl COPY out.txt
         ignore "useless, first run, same as use an empty file"
-
-        let normalizePaths f =
-            let text = File.ReadAllText(f)
-            let dummyPath = @"D:\staging\staging\src\tests\fsharp\core\load-script"
-            let contents = System.Text.RegularExpressions.Regex.Replace(text, System.Text.RegularExpressions.Regex.Escape(dir), dummyPath)
-            File.WriteAllText(f, contents)
-
-        normalizePaths (getfullpath "out.txt")
 
         // %FSDIFF% out.txt out.bsl > out.diff
         let! diffs = fsdiff (getfullpath "out.txt") (getfullpath "out.bsl")
