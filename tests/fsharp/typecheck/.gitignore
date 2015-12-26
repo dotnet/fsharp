@@ -1,7 +1,9 @@
 sigs/*.err
 sigs/*.vserr
-sigs/pos*.dll
-sigs/pos*.exe
+sigs/*.dll
+sigs/*.exe
+sigs/*.diff
+sigs/*.vsdiff
 
 full-rank-arrays/HighRankArrayTests.dll
 
