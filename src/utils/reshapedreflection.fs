@@ -324,10 +324,6 @@ module internal ReflectionAdapters =
         member this.Location = 
             this.ManifestModule.FullyQualifiedName
 
-        member this.GetReferencedAssemblies() : System.Reflection.AssemblyName array =
-            //Todo:  this is thoroughly incorrect. But GetReferencedAssemblies has gone so we need an alternative
-            Array.empty
-
 #if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
             globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))

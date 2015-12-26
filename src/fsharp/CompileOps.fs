@@ -1547,11 +1547,23 @@ let GetFSharpCoreLibraryName () = "FSharp.Core"
 type internal TypeInThisAssembly = class end
 let GetFSharpCoreReferenceUsedByCompiler() = 
     let fsCoreName = GetFSharpCoreLibraryName()
+#if FX_RESHAPED_REFLECTION
+    // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
+    // So use the fsharp.core.dll from alongside the fsc compiler.
+    // This can also be used for the out of gac work on DEV15
+    let fscCoreLocation = 
+        let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
+        Path.Combine(Path.GetDirectoryName(fscLocation), fsCoreName + ".dll")
+    if File.Exists(fscCoreLocation) then fsCoreName + ".dll"
+    else failwithf "Internal error: Could not find %s" fsCoreName
+#else
+    // TODO:  Remove this when we do out of GAC for DEV 15 because above code will work everywhere.
     typeof<TypeInThisAssembly>.Assembly.GetReferencedAssemblies()
     |> Array.pick (fun name ->
         if name.Name = fsCoreName then Some(name.ToString())
         else None
     )
+#endif
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
 // This list is the default set of references for "non-project" files. 
@@ -2039,7 +2051,7 @@ type TcConfigBuilder =
       }
 
 
-    static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =
+    static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =  
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
@@ -2433,7 +2445,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         let (_, fileNameOpt) as res = computeKnownDllReference(GetFSharpCoreLibraryName())
         match fileNameOpt with
         | None -> 
-            // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
+            // if FSharp.Core was not provided explicitly - use version that was used by the compiler
             AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler()), None
         | _ -> res
     let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
@@ -2474,7 +2486,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // so here we minimally validate if .Net version >= 4 or not.
     do if data.prefer32Bit && mscorlibMajorVersion < 4 then 
         error(Error(FSComp.SR.invalidPlatformTargetForOldFramework(),rangeCmdArgs))        
-    
+
     let systemAssemblies = SystemAssemblies data.primaryAssembly.Name
 
     // Check that the referenced version of FSharp.Core.dll matches the referenced version of mscorlib.dll 
@@ -2743,7 +2755,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         System.Diagnostics.Debug.Assert(not(result.Contains(@"\\")), "tcConfig.MakePathAbsolute results in a non-canonical filename with extra backslashes: "+result)
 #endif
         result
-        
+
     member tcConfig.TryResolveLibWithDirectories (AssemblyReference (m,nm) as r) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
         // Only want to resolve certain extensions (otherwise, 'System.Xml' is ambiguous).
@@ -4294,7 +4306,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     // If this ever changes then callers may need to begin disposing the TcImports (though remember, not before all derived 
     // non-frameworkk TcImports built related to this framework TcImports are disposed).
     static member BuildFrameworkTcImports (tcConfigP:TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-
+        
         let tcConfig = tcConfigP.Get()
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig,frameworkDLLs,[])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig,nonFrameworkDLLs,[])
@@ -4335,8 +4347,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
-                    //printfn "coreLibraryReference = %A" coreLibraryReference
-                    
+
                     let resolvedAssemblyRef = 
                         match tcResolutions.TryFindByOriginalReference coreLibraryReference with
                         | Some resolution -> Some resolution
@@ -4345,10 +4356,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
                             | _ -> tcResolutions.TryFindByOriginalReferenceText (GetFSharpCoreLibraryName())  // was the ".dll" elided?
-                    
+
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
-                        //printfn "coreLibraryResolution = '%s'" coreLibraryResolution.resolvedPath
                         match frameworkTcImports.RegisterAndImportReferencedAssemblies([coreLibraryResolution]) with
                         | (_, [ResolvedImportedAssembly(fslibCcuInfo) ]) -> fslibCcuInfo
                         | _ -> 
