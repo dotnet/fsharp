@@ -1,4 +1,4 @@
-namespace Neg95
+namespace Neg01
 
 (* Optimizer should not throw InternalError when it
    encounters an inline method that references `base`,

@@ -28,6 +28,9 @@ if ERRORLEVEL 1 goto Error
 "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs -r:lib--optimize.dll  -r:lib3--optimize.dll
 if ERRORLEVEL 1 goto Error
 
+call ..\..\single-neg-test.bat neg01
+@if ERRORLEVEL 1 goto Error
+
 :Ok
 echo Built fsharp %~f0 ok.
 echo. > build.ok

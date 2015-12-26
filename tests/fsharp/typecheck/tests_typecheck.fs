@@ -196,8 +196,7 @@ module Sigs =
         // call ..\..\single-neg-test.bat neg40
         // call ..\..\single-neg-test.bat neg41
         // call ..\..\single-neg-test.bat neg42
-        // call ..\..\single-neg-test.bat neg95
-        do! processor.For (["neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; "neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg69"; "neg68"; "neg67"; "neg66"; "neg65"; "neg64"; "neg61"; "neg63"; "neg62"; "neg20"; "neg24"; "neg32"; "neg37"; "neg37_a"; "neg60"; "neg59"; "neg58"; "neg57"; "neg56"; "neg56_a"; "neg56_b"; "neg55"; "neg54"; "neg53"; "neg52"; "neg51"; "neg50"; "neg49"; "neg48"; "neg47"; "neg46"; "neg10"; "neg10_a"; "neg45"; "neg44"; "neg43"; "neg38"; "neg39"; "neg40"; "neg41"; "neg42"; "neg95"], singleNegTest)
+        do! processor.For (["neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; "neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg69"; "neg68"; "neg67"; "neg66"; "neg65"; "neg64"; "neg61"; "neg63"; "neg62"; "neg20"; "neg24"; "neg32"; "neg37"; "neg37_a"; "neg60"; "neg59"; "neg58"; "neg57"; "neg56"; "neg56_a"; "neg56_b"; "neg55"; "neg54"; "neg53"; "neg52"; "neg51"; "neg50"; "neg49"; "neg48"; "neg47"; "neg46"; "neg10"; "neg10_a"; "neg45"; "neg44"; "neg43"; "neg38"; "neg39"; "neg40"; "neg41"; "neg42"], singleNegTest)
 
         // "%FSC%" %fsc_flags% -a -o:pos07.dll  pos07.fs 
         do! fsc "%s -a -o:pos07.dll" fsc_flags ["pos07.fs"]

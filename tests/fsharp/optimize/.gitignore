@@ -8,6 +8,8 @@ inline/FSharpOptimizationData.*
 inline/FSharpSignatureData.*
 inline/*.il
 inline/*.res
+inline/*.err
+inline/*.diff
 
 stats/*.resources
 stats/*.il

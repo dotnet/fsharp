@@ -308,9 +308,6 @@ call ..\..\single-neg-test.bat neg41
 call ..\..\single-neg-test.bat neg42
 @if ERRORLEVEL 1 goto Error
 
-call ..\..\single-neg-test.bat neg95
-@if ERRORLEVEL 1 goto Error
-
 "%FSC%" %fsc_flags% -a -o:pos07.dll  pos07.fs 
 @if ERRORLEVEL 1 goto Error
 
