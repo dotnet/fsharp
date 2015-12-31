@@ -1376,7 +1376,7 @@ type ScriptTests() as this =
 #if VS_VERSION_DEV12
             "4.3.1.0"
 #else
-            "4.4.0.0"
+            "4.4.1.0"
 #endif
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"

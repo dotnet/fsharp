@@ -1,8 +1,15 @@
-[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/fsharp4.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/fsharp4)
 
 [![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 #Visual F# Tools
+
+## Windows build
+
+| |Release|
+|:--:|:--:|
+|**master**| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master) |
+|**vs2015**| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/vs2015.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/vs2015) |
+|**coreclr**| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/coreclr.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/coreclr) |
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -14,7 +21,9 @@ Changes contributed here are packaged into the Visual F# Tools, the F# Open Edit
 
 ###Engineering status
 
-[F# 4.0 status](https://github.com/Microsoft/visualfsharp/wiki/F%23-4.0-Status)
+[F# for CoreCLR status](https://github.com/Microsoft/visualfsharp/wiki/F%23-for-CoreCLR---Status)
+
+[F# 4.0 status](https://github.com/Microsoft/visualfsharp/wiki/F%23-4.0-Status)   --- Completed, shipped.
 
 ###License
 
@@ -22,15 +31,45 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 
 ###Development and Testing
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing. A list of required frameworks and development tools can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Required-Software).
-
+See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing.
 Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
+ 
+###Required Tools for Windows Development and Testing
+
+###Development tools
+
+For F# 3.1.X development
+
+- [Visual Studio 2013](http://www.visualstudio.com/en-us/downloads) + latest updates (or the free [Visual Studio Community Edition](http://www.visualstudio.com/products/visual-studio-community-vs))
+- [Visual Studio 2013 SDK](https://www.microsoft.com/en-us/download/details.aspx?id=40758)
+
+For F# 4.0 development
+
+- [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+- [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+
+###Additional frameworks
+
+- [Git for windows](http://msysgit.github.io/)
+- [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
+- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
+- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
+- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
+- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 
 ###Contributing
 
 Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
-If you would like to contribute to the F# ecosystem more generally, please see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
+
+
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
+
+If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 ###Code Flow to Other Platforms
 

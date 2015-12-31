@@ -652,7 +652,7 @@ module private PrintTypes =
         match k with 
         | (ILAttrib(ilMethRef)) -> 
             let trimmedName = 
-                let name =  ilMethRef.EnclosingTypeRef.Name
+                let name = ilMethRef.EnclosingTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
                 | Some shortName -> shortName
                 | None -> name
@@ -1157,7 +1157,7 @@ module InfoMemberPrinting =
         | _, Some nm, true, ptyOpt -> 
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument
             let pty = defaultArg ptyOpt pty
-            bprintf os "?%s: " nm 
+            bprintf os "?%s: " nm.idText 
             outputTy denv os pty
         // Layout an unnamed argument 
         | _, None, _,_ -> 
@@ -1165,10 +1165,10 @@ module InfoMemberPrinting =
         // Layout a named argument 
         | true, Some nm,_,_ -> 
             layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
-            bprintf os " %s: " nm 
+            bprintf os " %s: " nm.idText 
             outputTy denv os pty
         | false, Some nm,_,_ -> 
-            bprintf os "%s: " nm 
+            bprintf os "%s: " nm.idText 
             outputTy denv os pty
 
     /// Format a method info using "F# style".

@@ -1438,9 +1438,11 @@ module DispatchSlotChecking =
         allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
 
             let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
-            if not isFakeEventProperty then 
-                
-                let overriden = 
+            let overriden = 
+                if isFakeEventProperty then 
+                    let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
+                    slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
+                else
                     [ for ((reqdTy,m),(SlotImplSet(_dispatchSlots,dispatchSlotsKeyed,_,_))) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overridenForThisSlotImplSet = 
@@ -1466,7 +1468,7 @@ module DispatchSlotChecking =
                           //    assert nonNil overridenForThisSlotImplSet
                           yield! overridenForThisSlotImplSet ]
                 
-                overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
+            overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
 
 
 //-------------------------------------------------------------------------
@@ -1500,7 +1502,7 @@ type CalledArg =
       OptArgInfo : OptionalArgInfo
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
-      NameOpt: string option
+      NameOpt: Ident option
       CalledArgumentType : TType }
 
 let CalledArg(pos,isParamArray,optArgInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
@@ -1676,7 +1678,7 @@ type CalledMeth<'T>
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
                     match calledArg.NameOpt with 
-                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm <> nm2.idText)   
+                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
@@ -1715,7 +1717,7 @@ type CalledMeth<'T>
                     match calledArg.NameOpt with 
                     | Some nm -> 
                         namedCallerArgs |> List.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
-                            if nm = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
+                            if nm.idText = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
                             else None) 
                     | _ -> None)
 
@@ -1723,7 +1725,7 @@ type CalledMeth<'T>
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
                     fullCalledArgs |> List.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
-                        | Some nm2 -> nm.idText <> nm2
+                        | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
 
             let attributeAssignedNamedItems,unassignedNamedItem = 

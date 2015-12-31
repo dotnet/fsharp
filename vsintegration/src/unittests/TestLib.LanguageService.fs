@@ -354,8 +354,13 @@ type LanguageServiceBaseTests() =
         GlobalFunctions.AddAssemblyReference(proj, ref)
 
     /// Called per test run
+#if NUNIT_V2
     [<TestFixtureSetUp>]
     member this.TestFixtureSetUp() =
+#else
+    [<OneTimeSetUp>]
+    member this.Init() =
+#endif
         match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with 
         | Some(folder) -> 
             let fscPath = Path.Combine(folder,"fsc.exe")
@@ -389,8 +394,13 @@ type LanguageServiceBaseTests() =
         defaultSolution <- GlobalFunctions.CreateSolution(defaultVS)
         cache.Clear()
 
+#if NUNIT_V2
     [<TestFixtureTearDown>]
     member this.Shutdown() =
+#else
+    [<OneTimeTearDown>]
+    member this.Cleanup() =
+#endif
         if box currentVS <> box defaultVS then
             failwith "LanguageServiceBaseTests.Shutdown was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         

@@ -101,6 +101,9 @@ type FullyQualifiedFlag =
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
+/// Lookup patterns in name resolution environment
+val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 
@@ -171,11 +174,11 @@ type TypeNameResolutionInfo =
 /// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess>]
 type internal ItemOccurence = 
-    | Binding = 0
-    | Use = 1
-    | UseInType = 2
-    | UseInAttribute = 3
-    | Pattern = 4
+    | Binding 
+    | Use 
+    | UseInType 
+    | UseInAttribute 
+    | Pattern 
   
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
@@ -264,7 +267,7 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
 /// Resolve a long identifier to a field
-val internal ResolveField                           : NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
+val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list

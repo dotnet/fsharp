@@ -1,8 +1,14 @@
 os: Visual Studio 2015
 
+environment:
+  matrix:
+    - BUILD_PROFILE: net40,portable7,portable47,portable78,portable259,vs
+    - BUILD_PROFILE: cambridge_suite,smoke_only
+    - BUILD_PROFILE: qa_suite,smoke_only
+
 init: 
 build_script: 
-  - cmd: appveyor-build.cmd
+  - cmd: appveyor-build.cmd %BUILD_PROFILE%
 
 # scripts that run after cloning repository
 install:

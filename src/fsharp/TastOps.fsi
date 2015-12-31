@@ -61,6 +61,7 @@ val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationP
 val stripExpr : Expr -> Expr
 
 val valsOfBinds : Bindings -> FlatVals 
+val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
@@ -311,7 +312,8 @@ type ValRemap = ValMap<ValRef>
 type Remap =
     { tpinst : TyparInst;
       valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap }
+      tyconRefRemap : TyconRefRemap;
+      removeTraitSolutions: bool }
 
     static member Empty : Remap
 
@@ -745,10 +747,11 @@ type SignatureHidingInfo =
       mhiVals       : Zset<Val>; 
       mhiRecdFields : Zset<RecdFieldRef>;
       mhiUnionCases : Zset<UnionCaseRef> }
+    static member Empty : SignatureHidingInfo
 
 val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 val ComputeRemappingFromImplementationToSignature : TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
-val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo
+val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
 val mkRepackageRemapping : SignatureRepackageInfo -> Remap 
 
 val wrapModuleOrNamespaceExprInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
@@ -1322,7 +1325,6 @@ val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
     member Names : string list 
-    member IsTotal: bool
 
     member ResultType : TcGlobals -> range -> TType list -> TType
     member OverallType : TcGlobals -> range -> TType -> TType list -> TType

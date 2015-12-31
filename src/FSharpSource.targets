@@ -3,12 +3,12 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
    <PropertyGroup>
        <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
-       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.0.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.0.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.4.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.1.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.1.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.9055</FSCoreVersion>
    </PropertyGroup>
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
@@ -33,17 +33,17 @@
             <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
             <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
               <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --version:4.4.0.9055</OtherFlags>
+                <OtherFlags>$(OtherFlags) --version:4.4.1.9055</OtherFlags>
               </PropertyGroup>
             </When>
             <Otherwise>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
-                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <OtherFlags>$(OtherFlags) --version:4.4.1.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true'">
-                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <OtherFlags>$(OtherFlags) --version:4.4.1.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
@@ -65,7 +65,7 @@
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
         <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
-        <OtherFlags>$(OtherFlags) --version:4.4.0.9055</OtherFlags>
+        <OtherFlags>$(OtherFlags) --version:4.4.1.9055</OtherFlags>
         <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
       </PropertyGroup>
     </Otherwise>
@@ -105,10 +105,10 @@
   </PropertyGroup>  
   
   <PropertyGroup>
-    <NUnitVersion>2.6.4</NUnitVersion>
-    <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
-    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
-    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NUnitToolsLibDir>
+    <NUnitVersion>3.0.0</NUnitVersion>
+    <NUnitFullVersion>3.0.5797.27534</NUnitFullVersion>
+    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
+    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Console.$(NUnitVersion)\tools\</NUnitToolsLibDir>
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
@@ -650,6 +650,13 @@
   </PropertyGroup>
 
   <Choose>
+    <When Condition="'$(BuildWith)' == 'LKG'">
+      <PropertyGroup>
+         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+         <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
+      </PropertyGroup>
+    </When>
     <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259'">
       <PropertyGroup>
         <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
@@ -665,6 +672,18 @@
         <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.FSharp-proto.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
+    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.1\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
+      <PropertyGroup>
+         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0\FSharp.Core.dll</FSCoreLKGPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
+      <PropertyGroup>
+         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll</FSCoreLKGPath>
+      </PropertyGroup>
+    </When>
     <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
       <PropertyGroup>
          <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
@@ -676,13 +695,6 @@
          <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
          <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll</FSCoreLKGPath>
          <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll</FSCoreLKGPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="'$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
-         <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
     <Otherwise>

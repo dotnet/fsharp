@@ -215,7 +215,7 @@ module internal FSharpEnvironment =
 
                 let key20 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
 #if FX_ATLEAST_45
-                let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #else
                 let key40 = @"Software\Microsoft\FSharp\2.0\Runtime\v4.0"
 #endif

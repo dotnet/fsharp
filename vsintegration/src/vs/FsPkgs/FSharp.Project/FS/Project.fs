@@ -559,19 +559,19 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     if not (currentVersion.Equals newVersion) then
                         let hasSwitchedToLatestOnlyVersionFromLegacy = 
                             let legacyVersions =
-                                ["2.3.0.0"             // .NET 2 desktop
-                                 "4.3.0.0"; "4.3.1.0"  // .NET 4 desktop
-                                 "2.3.5.0"; "2.3.5.1"  // portable 47
-                                 "3.3.1.0"             // portable 7
-                                 "3.78.3.1"            // portable 78
-                                 "3.259.3.1"]          // portable 259
+                                ["2.3.0.0"                        // .NET 2 desktop
+                                 "4.3.0.0"; "4.3.1.0"; "4.4.0.0"  // .NET 4 desktop
+                                 "2.3.5.0"; "2.3.5.1"; "3.47.4.0" // portable 47
+                                 "3.3.1.0"; "3.7.4.0"             // portable 7
+                                 "3.78.3.1"; "3.78.4.0"           // portable 78
+                                 "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.0.0"             // .NET 4 desktop
-                                 "3.47.4.0"            // portable 47
-                                 "3.7.4.0"             // portable 7
-                                 "3.78.4.0"            // portable 78
-                                 "3.259.4.0"]          // portable 259
+                                ["4.4.1.0"                        // .NET 4 desktop
+                                 "3.47.41.0"                       // portable 47
+                                 "3.7.41.0"                        // portable 7
+                                 "3.78.41.0"                       // portable 78
+                                 "3.259.41.0"]                     // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             
                             (legacyVersions |> List.exists ((=) currentVersion)) && (latestOnlyVersions |> List.exists ((=) newVersion))                                
@@ -901,7 +901,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             /// <param name="source">Full path to template file</param>
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
-                if not (Internal.Utilities.FileSystem.File.SafeExists(source)) then
+                if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
                     raise <| new FileNotFoundException(String.Format(FSharpSR.GetString(FSharpSR.TemplateNotFound), source))
 
                 // We assume that there is no token inside the file because the only
