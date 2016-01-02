@@ -448,6 +448,20 @@ type AutoCompletionListTests() as this  =
         AssertCtrlSpaceCompleteContains code "b a" ["aaa"; "bbb"] []
         AssertCtrlSpaceCompleteContains code "a b" ["aaa"; "bbb"] []
 
+    [<Test>]
+    member this.``AutoCompletion.OnTypeConstraintError``() =
+        let code =
+            [
+                "type Foo = Foo"
+                "    with"
+                "        member __.Bar = 1"
+                "        member __.SomeMethodForIntellisense() = 2"
+                ""
+                "let u: Unit ="
+                "    [ Foo ]"
+                "    |> List.map (fun abcd -> abcd.)"
+            ]
+        AssertCtrlSpaceCompleteContains code "abcd." ["GetType"; "ToString"] []
 
     [<Test>]
     [<Category("RangeOperator")>]
