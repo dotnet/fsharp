@@ -52,6 +52,10 @@ goto :MAIN
 :SET_CONFIG
 set BUILD_PROFILE=%~1
 
+if "%RestorePackages%"=="" ( 
+    set RestorePackages=true 
+)
+
 if "%BUILD_PROFILE%" == "1" if "%2" == "" (
     set BUILD_PROFILE=smoke
 )
@@ -180,10 +184,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release  /v:diag
 @if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
@@ -212,7 +216,7 @@ if '%TEST_NET40%' == '1' (
     @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
     
 if '%TEST_PORTABLE%' == '1' (
