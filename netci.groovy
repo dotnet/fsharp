@@ -1,4 +1,4 @@
-// TODO: the behaviour belyw matches the same appveyor workflow we have now.
+// TODO: the behaviour below matches the same appveyor workflow we have now.
 // The build scripts will need to be updated later to improve the process.
 
 // Import the utility functionality.
@@ -25,7 +25,7 @@ def project = GithubProject
         def newJobName = Utilities.getFullJobName(project, configuration, isPR)
         
         // Define build string
-		def buildString = """call appveyor-build.cmd ${configuration}"""
+        def buildString = """call appveyor-build.cmd ${configuration}"""
 
         // Create a new job with the specified name.  The brace opens a new closure
         // and calls made within that closure apply to the newly created job.
