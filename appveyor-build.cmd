@@ -174,6 +174,32 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
+set DOTNET_HOME  .\packages\dotnet
+
+rem check to see if the dotnet cli tool exists
+set _dotnetexe=".\packages\dotnet\bin\dotnet.exe"
+if not exist %_dotnetexe% (
+    echo Error: Could not find %_dotnetexe%.
+    rem do zipfile install nonsense
+    if not exist packages ( md packages )
+    if exist packages\dotnet ( rd packages /s /q )
+    powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/dev/Binaries/Latest/dotnet-win-x64.latest.zip packages
+    @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+)
+
+pushd .\lkg & ..\%_dotnetexe% restore project.json &popd
+@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+pushd .\lkg & ..\%_dotnetexe% publish project.json -f dnxcore50 -r win7-x64 -o ..\packages\lkg &popd
+@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+pushd .\packages\lkg & ren fsc.exe fsc.dll & popd
+copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsc.exe
+
+rem rename fsi and coreconsole to allow fsi.exe to to start interative
+pushd .\packages\lkg & ren fsi.exe fsi.dll & popd
+copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsi.exe
+
 :: Build
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
