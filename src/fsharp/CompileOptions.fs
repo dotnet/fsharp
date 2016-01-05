@@ -920,7 +920,8 @@ let miscFlagsBoth tcConfigB =
       
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB @
-    [   CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some (FSComp.SR.optsHelp()))
+    [   CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some (FSComp.SR.optsHelp()));
+        CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some (FSComp.SR.optsResponseFile()))
     ]
 let miscFlagsFsi tcConfigB = miscFlagsBoth tcConfigB
 
