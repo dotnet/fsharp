@@ -52,6 +52,10 @@ goto :MAIN
 :SET_CONFIG
 set BUILD_PROFILE=%~1
 
+if "%RestorePackages%"=="" ( 
+    set RestorePackages=true 
+)
+
 if "%BUILD_PROFILE%" == "1" if "%2" == "" (
     set BUILD_PROFILE=smoke
 )
@@ -170,6 +174,32 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
+set DOTNET_HOME  .\packages\dotnet
+
+rem check to see if the dotnet cli tool exists
+set _dotnetexe=".\packages\dotnet\bin\dotnet.exe"
+if not exist %_dotnetexe% (
+    echo Error: Could not find %_dotnetexe%.
+    rem do zipfile install nonsense
+    if not exist packages ( md packages )
+    if exist packages\dotnet ( rd packages /s /q )
+    powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/dev/Binaries/Latest/dotnet-win-x64.latest.zip packages
+    @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+)
+
+pushd .\lkg & ..\%_dotnetexe% restore project.json &popd
+@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+pushd .\lkg & ..\%_dotnetexe% publish project.json -f dnxcore50 -r win7-x64 -o ..\packages\lkg &popd
+@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+pushd .\packages\lkg & ren fsc.exe fsc.dll & popd
+copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsc.exe
+
+rem rename fsi and coreconsole to allow fsi.exe to to start interative
+pushd .\packages\lkg & ren fsi.exe fsi.dll & popd
+copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsi.exe
+
 :: Build
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
@@ -180,10 +210,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release  /v:diag
 @if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
@@ -212,7 +242,7 @@ if '%TEST_NET40%' == '1' (
     @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
     
 if '%TEST_PORTABLE%' == '1' (

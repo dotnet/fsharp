@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160104"
+  },
+  "runtimes": {
+    "win7-x64": { },
+  },
+  "frameworks": {
+    "dnxcore50": { }
+  }
+}
