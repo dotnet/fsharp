@@ -15,4 +15,7 @@
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscorenuget.fsx --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
   </Target>
+
+  <Target Name="Rebuild"  DependsOnTargets="Build" />
+
 </Project>
