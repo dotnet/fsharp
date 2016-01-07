@@ -259,12 +259,12 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
             let path = rsp.TrimStart('@') |> FileSystem.GetFullPathShim
 
             if not (FileSystem.SafeExists path) then
-                errorR(Error(FSComp.SR.responseFileNotFound(rsp, path),rangeCmdArgs))
+                errorR(Error(FSComp.SR.optsResponseFileNotFound(rsp, path),rangeCmdArgs))
                 []
             else
                 match ResponseFile.parseFile path with
                 | Choice2Of2 _ ->
-                    errorR(Error(FSComp.SR.invalidResponseFile(rsp, path),rangeCmdArgs))
+                    errorR(Error(FSComp.SR.optsInvalidResponseFile(rsp, path),rangeCmdArgs))
                     []
                 | Choice1Of2 rspData ->
                     let onlyOptions l =
