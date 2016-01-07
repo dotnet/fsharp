@@ -58,8 +58,6 @@ buildCouldNotReadVersionInfoFromMscorlib,"Could not read version from mscorlib.d
 242,buildArgInvalidFloat,"'%s' is not a valid floating point argument"
 243,buildUnrecognizedOption,"Unrecognized option: '%s'"
 244,buildInvalidModuleOrNamespaceName,"Invalid module or namespace name"
-246,invalidResponseFile,"Invalid response file '%s' ( '%s' )"
-258,responseFileNotFound,"Response file '%s' not found in '%s'"
 # -----------------------------------------------------------------------------
 # pickle.fs
 # -----------------------------------------------------------------------------
@@ -1348,3 +1346,5 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3188,checkNotSufficientlyGenericBecauseOfScopeAnon,"Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic."
 3189,checkRaiseFamilyFunctionArgumentCount,"Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments."
 3190,checkLowercaseLiteralBindingInPattern,"Lowercase literal '%s' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns."
+3191,invalidResponseFile,"Invalid response file '%s' ( '%s' )"
+3192,responseFileNotFound,"Response file '%s' not found in '%s'"
