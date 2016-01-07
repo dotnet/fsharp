@@ -25,5 +25,6 @@ testProfiles.each { profile ->
         
         Utilities.simpleInnerLoopJobSetup(newJob, project, isPullRequest, "Jenkins ${profile}")
         Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml')
+        Utilities.addArchival(newJob, "Release/**")
     }
 }
