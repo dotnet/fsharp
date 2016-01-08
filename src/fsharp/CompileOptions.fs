@@ -732,6 +732,27 @@ let cliRootFlag (_tcConfigB : TcConfigBuilder) =
         CompilerOption("cliroot", tagString, OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
                            Some(FSComp.SR.optsClirootDescription()))
 
+let parseCultureName (s: string) =
+    try
+        let culture = new Globalization.CultureInfo(s)
+        if (culture.CultureTypes.HasFlag(Globalization.CultureTypes.UserCustomCulture)) then
+            // Do not use user custom cultures.
+            Choice2Of2 ()
+        else
+            Choice1Of2 culture
+    with :? Globalization.CultureNotFoundException as _ex ->
+        Choice2Of2 ()
+
+let preferreduilangFlag (tcConfigB : TcConfigBuilder) = 
+        CompilerOption("preferreduilang", tagString, OptionString (fun s -> 
+                                               match s |> parseCultureName with
+                                               | Choice1Of2 culture ->
+                                                   tcConfigB.lcid <- Some(culture.LCID)
+                                               | Choice2Of2 () ->
+                                                   error(Error(FSComp.SR.optsInvalidPreferredUILang(s),rangeCmdArgs))), None,
+                           Some (FSComp.SR.optsPreferredUILang()))
+
+          
 let advancedFlagsBoth tcConfigB =
     [
         codePageFlag tcConfigB;
@@ -741,6 +762,7 @@ let advancedFlagsBoth tcConfigB =
 #endif
         fullPathsFlag tcConfigB;
         libFlag tcConfigB;
+        preferreduilangFlag tcConfigB;
     ]
 
 let noFrameworkFlag isFsc tcConfigB = 
