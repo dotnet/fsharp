@@ -14,7 +14,7 @@ testProfiles.each { profileName, testSuite ->
 	[true, false].each { isPullRequest ->
 	        
         def newJobName = Utilities.getFullJobName(project, profileName, isPullRequest)
-        def buildString = """call appveyor-build.cmd ${testSuite}"""
+        def buildString = """call jenkins-build.cmd"""
 
         def newJob = job(newJobName) {
             label('windows')
