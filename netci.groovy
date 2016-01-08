@@ -17,7 +17,7 @@ testProfiles.each { profileName, testSuite ->
         def buildString = """call jenkins-build.cmd"""
 
         def newJob = job(newJobName) {
-            label('windows')
+            label('windows-elevated')
             steps {
                 batchFile(buildString)
             }
