@@ -3190,6 +3190,9 @@ let TrySelectMemberVal g optFilter typ pri _membInfo (vref:ValRef) =
 /// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
 let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
+    let getFSharpMetadata() =
+        if not (isAppTy g typ) then []
+        else SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) (tcrefOfAppTy g typ)
     let minfos =
 
         match metadataOfTy g typ with 
@@ -3201,14 +3204,14 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
                 | Some name ->  st.PApplyArray ((fun st -> st.GetMethods() |> Array.filter (fun mi -> mi.Name = name) ), "GetMethods", m)
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
             [   for mi in meths -> ProvidedMeth(amap,mi.Coerce(m),None,m) ]
+            |> List.append (getFSharpMetadata()) // to account for any intrinsic type extensions
 #endif
         | ILTypeMetadata (_,tdef) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            if not (isAppTy g typ) then []
-            else SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) (tcrefOfAppTy g typ)
+            getFSharpMetadata()
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
 
@@ -3257,6 +3260,14 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
 /// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
 let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
+    let getFSharpMetadata() =
+        if not (isAppTy g typ) then []
+        else
+            let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
+            SelectImmediateMemberVals g None
+                       (fun membInfo vref -> propCollector.Collect(membInfo,vref); None)
+                       (tcrefOfAppTy g typ) |> ignore
+            propCollector.Close()
     let pinfos =
 
         match metadataOfTy g typ with 
@@ -3274,6 +3285,7 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             matchingProps
             |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
             |> List.ofSeq
+            |> List.append (getFSharpMetadata()) // to account for any intrinsic type extensions
 #endif
         | ILTypeMetadata (_,tdef) -> 
             let tinfo = ILTypeInfo.FromType g typ
@@ -3281,15 +3293,7 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pd -> ILProp(g,ILPropInfo(tinfo,pd))) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-            if not (isAppTy g typ) then []
-            else
-                let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
-                SelectImmediateMemberVals g None
-                           (fun membInfo vref -> propCollector.Collect(membInfo,vref); None)
-                           (tcrefOfAppTy g typ) |> ignore
-                propCollector.Close()
-
+            getFSharpMetadata()
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
 
