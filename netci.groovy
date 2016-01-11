@@ -50,7 +50,7 @@ def static getBuildJobName(def configuration, def os) {
             
             Utilities.simpleInnerLoopJobSetup(newJob, project, isPullRequest, "Jenkins ${os} ${configuration}")
             Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "${configuration}/**")
+            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
         }
     }
 }
