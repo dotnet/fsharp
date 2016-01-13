@@ -23,10 +23,7 @@ type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string opt
 
 val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string -> ILAttribute list * ILResource list
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> SigningInfo
-#if FX_NO_KEY_SIGNING
-#else
 val GetSigner : SigningInfo -> ILBinaryWriter.ILStrongNameSigner option
-#endif
 
 type ILResource with 
     /// Read the bytes from a resource local to an assembly

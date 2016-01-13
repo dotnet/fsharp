@@ -1695,13 +1695,11 @@ module StaticLinker =
 
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
-#if FX_NO_KEY_SIGNING
-#else
-let GetSigner(signingInfo) = 
+let GetSigner signingInfo = 
         let (SigningInfo(delaysign,signer,container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
         if isSome container then
-          Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
+            Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
         else
             match signer with 
             | None -> None
@@ -1714,13 +1712,9 @@ let GetSigner(signingInfo) =
                 with e -> 
                     // Note:: don't use errorR here since we really want to fail and not produce a binary
                     error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
-#endif
 
 module FileWriter = 
     let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
-#if FX_NO_KEY_SIGNING
-        ignore signingInfo
-#endif
         try
             if !progress then dprintn "Writing assembly...";
             try 
@@ -1730,10 +1724,7 @@ module FileWriter =
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     showTimes = tcConfig.showTimes
-#if FX_NO_KEY_SIGNING
-#else
                     signer = GetSigner signingInfo
-#endif
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },
                   ilxMainModule,

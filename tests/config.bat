@@ -13,7 +13,7 @@ for /f %%i in ("%FSHARP_HOME%") do set FSHARP_HOME=%%~fi
 
 REM Do we know where fsc.exe is?
 IF DEFINED FSCBinPath goto :FSCBinPathFound
-FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi
+FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi && goto :FSCBinPathFound
 :FSCBinPathFound
 
 SET CLIFLAVOUR=cli\4.5

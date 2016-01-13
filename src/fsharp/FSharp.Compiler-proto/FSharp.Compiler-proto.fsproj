@@ -172,6 +172,9 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>ilmorph.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+      <Link>ilsign.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>ilsupp.fsi</Link>
     </Compile>
