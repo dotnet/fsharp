@@ -92,6 +92,24 @@
           "lib/dotnet5.4/System.Collections.Concurrent.dll": {}
         }
       },
+      "System.Collections.Immutable/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Linq": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )"
+        },
+        "compile": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        }
+      },
       "System.Collections.NonGeneric/4.0.0": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -431,6 +449,30 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.Extensions.dll": {}
+        }
+      },
+      "System.Reflection.Metadata/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Reflection.Primitives": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.InteropServices": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )",
+          "System.Text.Encoding.Extensions": "[4.0.0, )",
+          "System.Reflection.Extensions": "[4.0.0, )",
+          "System.Collections.Immutable": "[1.1.37, )"
+        },
+        "compile": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23616": {
@@ -1209,6 +1251,24 @@
           "lib/dotnet5.4/System.Collections.Concurrent.dll": {}
         }
       },
+      "System.Collections.Immutable/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Linq": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )"
+        },
+        "compile": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        }
+      },
       "System.Collections.NonGeneric/4.0.1-rc2-23616": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -1548,6 +1608,30 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.Extensions.dll": {}
+        }
+      },
+      "System.Reflection.Metadata/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Reflection.Primitives": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.InteropServices": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )",
+          "System.Text.Encoding.Extensions": "[4.0.0, )",
+          "System.Reflection.Extensions": "[4.0.0, )",
+          "System.Collections.Immutable": "[1.1.37, )"
+        },
+        "compile": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23616": {
@@ -2425,6 +2509,24 @@
           "lib/dotnet5.4/System.Collections.Concurrent.dll": {}
         }
       },
+      "System.Collections.Immutable/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Linq": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )"
+        },
+        "compile": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        }
+      },
       "System.Collections.NonGeneric/4.0.1-rc2-23616": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -2764,6 +2866,30 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.Extensions.dll": {}
+        }
+      },
+      "System.Reflection.Metadata/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Reflection.Primitives": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.InteropServices": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )",
+          "System.Text.Encoding.Extensions": "[4.0.0, )",
+          "System.Reflection.Extensions": "[4.0.0, )",
+          "System.Collections.Immutable": "[1.1.37, )"
+        },
+        "compile": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23616": {
@@ -3554,6 +3680,24 @@
           "lib/dotnet5.4/System.Collections.Concurrent.dll": {}
         }
       },
+      "System.Collections.Immutable/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Linq": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )"
+        },
+        "compile": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        }
+      },
       "System.Collections.NonGeneric/4.0.1-rc2-23616": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -3890,6 +4034,30 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.Extensions.dll": {}
+        }
+      },
+      "System.Reflection.Metadata/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Reflection.Primitives": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.InteropServices": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )",
+          "System.Text.Encoding.Extensions": "[4.0.0, )",
+          "System.Reflection.Extensions": "[4.0.0, )",
+          "System.Collections.Immutable": "[1.1.37, )"
+        },
+        "compile": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23616": {
@@ -4664,6 +4832,24 @@
           "lib/dotnet5.4/System.Collections.Concurrent.dll": {}
         }
       },
+      "System.Collections.Immutable/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Linq": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )"
+        },
+        "compile": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.1/System.Collections.Immutable.dll": {}
+        }
+      },
       "System.Collections.NonGeneric/4.0.1-rc2-23616": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -5000,6 +5186,30 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.Extensions.dll": {}
+        }
+      },
+      "System.Reflection.Metadata/1.2.0-rc2-23616": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Resources.ResourceManager": "[4.0.0, )",
+          "System.Reflection.Primitives": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Diagnostics.Debug": "[4.0.0, )",
+          "System.Collections": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.InteropServices": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Runtime.Extensions": "[4.0.0, )",
+          "System.Threading": "[4.0.0, )",
+          "System.Text.Encoding.Extensions": "[4.0.0, )",
+          "System.Reflection.Extensions": "[4.0.0, )",
+          "System.Collections.Immutable": "[1.1.37, )"
+        },
+        "compile": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
+        },
+        "runtime": {
+          "lib/dotnet5.2/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23616": {
@@ -6751,6 +6961,20 @@
         "[Content_Types].xml"
       ]
     },
+    "System.Collections.Immutable/1.2.0-rc2-23616": {
+      "sha512": "Xji0tRjf3b29OEOGbtDOzwcf2T+5Aq0C1IslS0izPwtYVRoicx+zItLunej/O1GJ8Pz/N3iQ/9xbTcROUFiuOA==",
+      "type": "Package",
+      "files": [
+        "_rels/.rels",
+        "System.Collections.Immutable.nuspec",
+        "lib/dotnet5.1/System.Collections.Immutable.dll",
+        "lib/dotnet5.1/System.Collections.Immutable.xml",
+        "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.xml",
+        "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll",
+        "package/services/metadata/core-properties/94ee9d58c78343bf92896733794f7cb8.psmdcp",
+        "[Content_Types].xml"
+      ]
+    },
     "System.Collections.NonGeneric/4.0.0": {
       "sha512": "rVgwrFBMkmp8LI6GhAYd6Bx+2uLIXjRfNg6Ie+ASfX8ESuh9e2HNxFy2yh1MPIXZq3OAYa+0mmULVwpnEC6UDA==",
       "type": "Package",
@@ -8307,6 +8531,20 @@
         "[Content_Types].xml"
       ]
     },
+    "System.Reflection.Metadata/1.2.0-rc2-23616": {
+      "sha512": "UG+kWRWlyhuZO4VfmbPZTI1IWNTaIcB/v+6bIfyx6YpG8u1Sdl94kdUvLZWqF1oJuNk1ZHFIuqHwGV0jA1JwlA==",
+      "type": "Package",
+      "files": [
+        "_rels/.rels",
+        "System.Reflection.Metadata.nuspec",
+        "lib/dotnet5.2/System.Reflection.Metadata.dll",
+        "lib/dotnet5.2/System.Reflection.Metadata.xml",
+        "lib/portable-net45+win8/System.Reflection.Metadata.xml",
+        "lib/portable-net45+win8/System.Reflection.Metadata.dll",
+        "package/services/metadata/core-properties/88d499dbcf31499eb309c261ac4878c2.psmdcp",
+        "[Content_Types].xml"
+      ]
+    },
     "System.Reflection.Primitives/4.0.1-rc2-23616": {
       "sha512": "S+Gls2b4NGIomer5VOO327sPU71x4BDynmb2ZGT2gzs0Jmgj4npUFoRQbmiPHWMRzsmn0JUmCEb2vOZblcjN8A==",
       "type": "Package",
@@ -9412,6 +9650,7 @@
       "System.AppContext >= 4.0.1-rc2-23616",
       "System.Collections >= 4.0.11-rc2-23616",
       "System.Collections.Concurrent >= 4.0.11-rc2-23616",
+      "System.Collections.Immutable >= 1.2.0-rc2-23616",
       "System.Console >= 4.0.0-rc2-23616",
       "System.Diagnostics.Debug >= 4.0.11-rc2-23616",
       "System.Diagnostics.Process >= 4.1.0-rc2-23616",
@@ -9430,6 +9669,7 @@
       "System.Reflection.Emit >= 4.0.1-rc2-23616",
       "System.Reflection.Emit.ILGeneration >= 4.0.1-rc2-23616",
       "System.Reflection.Extensions >= 4.0.1-rc2-23616",
+      "System.Reflection.Metadata >= 1.2.0-rc2-23616",
       "System.Reflection.Primitives >= 4.0.1-rc2-23616",
       "System.Reflection.TypeExtensions >= 4.1.0-rc2-23616",
       "System.Resources.ResourceManager >= 4.0.1-rc2-23616",
