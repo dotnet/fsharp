@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 open System
 open System.Collections
+open System.Reflection
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections

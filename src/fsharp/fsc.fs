@@ -1567,7 +1567,8 @@ module StaticLinker =
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
                               { ilOrigTypeDef with 
                                     Name = ilTgtTyRef.Name
-                                    Access = (match ilOrigTypeDef.Access with 
+                                    Flags = ilOrigTypeDef.Flags.SetAccess
+                                             (match ilOrigTypeDef.Access with 
                                               | ILTypeDefAccess.Public when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Public 
                                               | ILTypeDefAccess.Private when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Assembly 
                                               | x -> x)

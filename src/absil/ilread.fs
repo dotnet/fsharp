@@ -12,6 +12,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System
 open System.IO
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open Internal.Utilities
@@ -1650,7 +1651,7 @@ and typeLayoutOfFlags ctxt flags tidx =
     elif f = 0x00000010 then  ILTypeDefLayout.Explicit (seekReadClassLayout ctxt tidx)
     else ILTypeDefLayout.Auto
 
-and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
+and typeKindOfFlags nm (super:ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
     else 
          let isEnum = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Enum")
@@ -1663,15 +1664,10 @@ and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
          elif isValueType then ILTypeDefKind.ValueType 
          else ILTypeDefKind.Class 
 
-and typeEncodingOfFlags flags = 
-    let f = (flags &&& 0x00030000)
-    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
-    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
-    else ILDefaultPInvokeEncoding.Ansi
 
 and isTopTypeDef flags =
-    (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
-     typeAccessOfFlags flags =  ILTypeDefAccess.Public
+    let f = (flags &&& 0x00000007)
+    (f = 0x00000000 || f = 0x00000001)
        
 and seekIsTopTypeDefOfIdx ctxt idx =
     let (flags,_,_, _, _,_) = seekReadTypeDefRow ctxt idx
@@ -1726,39 +1722,28 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            let hasLayout = (match layout with ILTypeDefLayout.Explicit _ -> true | _ -> false)
            let mdefs = seekReadMethods ctxt numtypars methodsIdx endMethodsIdx
            let fdefs = seekReadFields ctxt (numtypars,hasLayout) fieldsIdx endFieldsIdx
-           let kind = typeKindOfFlags nm mdefs fdefs super flags
+           let kind = typeKindOfFlags nm super flags
            let nested = seekReadNestedTypeDefs ctxt idx 
            let impls  = seekReadInterfaceImpls ctxt numtypars idx
            let sdecls =  seekReadSecurityDecls ctxt (TaggedIndex(hds_TypeDef,idx))
            let mimpls = seekReadMethodImpls ctxt numtypars idx
            let props  = seekReadProperties ctxt numtypars idx
            let events = seekReadEvents ctxt numtypars idx
-           { tdKind= kind;
-             Name=nm;
-             GenericParams=typars; 
-             Access= typeAccessOfFlags flags;
-             IsAbstract= (flags &&& 0x00000080) <> 0x0;
-             IsSealed= (flags &&& 0x00000100) <> 0x0; 
-             IsSerializable= (flags &&& 0x00002000) <> 0x0; 
-             IsComInterop= (flags &&& 0x00001000) <> 0x0; 
-             Layout = layout;
-             IsSpecialName= (flags &&& 0x00000400) <> 0x0;
-             Encoding=typeEncodingOfFlags flags;
-             NestedTypes= nested;
-             Implements = mkILTypes impls;  
-             Extends = super; 
-             Methods = mdefs; 
-             SecurityDecls = sdecls;
-             HasSecurity=(flags &&& 0x00040000) <> 0x0;
-             Fields=fdefs;
-             MethodImpls=mimpls;
-             InitSemantics=
-                 if kind = ILTypeDefKind.Interface then ILTypeInit.OnAny
-                 elif (flags &&& 0x00100000) <> 0x0 then ILTypeInit.BeforeField
-                 else ILTypeInit.OnAny; 
-             Events= events;
-             Properties=props;
-             CustomAttrs=cas; }
+           { tdKind= kind
+             Name=nm
+             GenericParams=typars 
+             Flags = enum<TypeAttributes> flags
+             Layout = layout
+             NestedTypes= nested
+             Implements = mkILTypes impls  
+             Extends = super 
+             Methods = mdefs 
+             SecurityDecls = sdecls
+             Fields=fdefs
+             MethodImpls=mimpls
+             Events= events
+             Properties=props
+             CustomAttrs=cas }
      Some (ns,n,cas,rest) 
 
 and seekReadTopTypeDefs ctxt () =
@@ -2278,29 +2263,11 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
 and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
-     let isStatic = (flags &&& 0x0010) <> 0x0
-     let final = (flags &&& 0x0020) <> 0x0
-     let virt = (flags &&& 0x0040) <> 0x0
-     let strict = (flags &&& 0x0200) <> 0x0
-     let hidebysig = (flags &&& 0x0080) <> 0x0
-     let newslot = (flags &&& 0x0100) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
-     let specialname = (flags &&& 0x0800) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
-     let export = (flags &&& 0x0008) <> 0x0
-     let _rtspecialname = (flags &&& 0x1000) <> 0x0
-     let reqsecobj = (flags &&& 0x8000) <> 0x0
-     let hassec = (flags &&& 0x4000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
-     let forwardref = (implflags &&& 0x0010) <> 0x0
-     let preservesig = (implflags &&& 0x0080) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let synchronized = (implflags &&& 0x0020) <> 0x0
-     let noinline = (implflags &&& 0x0008) <> 0x0
-     let mustrun = (implflags &&& 0x0040) <> 0x0
-     let cctor = (nm = ".cctor")
-     let ctor = (nm = ".ctor")
      let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
      if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef signature";
      
@@ -2314,33 +2281,10 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let ret,ilParams = seekReadParams ctxt (retty,argtys) paramIdx endParamIdx
 
      { Name=nm;
-       mdKind = 
-           (if cctor then MethodKind.Cctor 
-            elif ctor then MethodKind.Ctor 
-            elif isStatic then MethodKind.Static 
-            elif virt then 
-             MethodKind.Virtual 
-               { IsFinal=final; 
-                 IsNewSlot=newslot; 
-                 IsCheckAccessOnOverride=strict;
-                 IsAbstract=abstr; }
-            else MethodKind.NonVirtual);
-       Access = memberAccessOfFlags flags;
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef,idx));
-       HasSecurity=hassec;
+       ImplementationFlags=enum implflags
+       Flags=enum flags
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx);
-       IsReqSecObj=reqsecobj;
-       IsHideBySig=hidebysig;
-       IsSpecialName=specialname;
-       IsUnmanagedExport=export;
-       IsSynchronized=synchronized;
-       IsNoInline=noinline;
-       IsMustRun=mustrun;
-       IsPreserveSig=preservesig;
-       IsManaged = not unmanaged;
-       IsInternalCall = internalcall;
-       IsForwardRef = forwardref;
-       mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else (dprintn  "unsupported code type"; MethodCodeKind.Native));
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef,idx);
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef,idx)); 
        Parameters= ilParams;
@@ -2353,9 +2297,9 @@ and seekReadMethod ctxt numtypars (idx:int) =
            seekReadImplMap ctxt nm  idx
          elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
            if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA";
-           mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
+           mkMethBodyLazyAux (notlazy MethodBody.None)  
          else 
-           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA;   
+           seekReadMethodRVA ctxt (idx,nm,numtypars) codeRVA;   
      }
      
      
@@ -2879,9 +2823,9 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    instrs,rawToLabel, lab2pc, raw2nextLab
 
 #if NO_PDB_READER
-and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (_idx,nm,numtypars) rva = 
 #else
-and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (idx,nm,numtypars) rva = 
 #endif
   mkMethBodyLazyAux 
    (lazy
@@ -2967,7 +2911,6 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            MethodBody.IL
              { IsZeroInit=false;
                MaxStack= 8;
-               NoInlining=noinline;
                Locals=ILList.empty;
                SourceMarker=methRangePdbInfo; 
                Code=code }
@@ -3092,13 +3035,12 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            MethodBody.IL
              { IsZeroInit=initlocals;
                MaxStack= maxstack;
-               NoInlining=noinline;
                Locals=mkILLocals locals;
                Code=code;
                SourceMarker=methRangePdbInfo}
        else 
            if logging then failwith "unknown format";
-           MethodBody.Abstract
+           MethodBody.None
      end)
 
 and int32AsILVariantType ctxt (n:int32) = 

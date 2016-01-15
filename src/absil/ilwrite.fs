@@ -1416,37 +1416,13 @@ let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) =
     let flags = 
       if (isTypeNameForGlobalFunctions td.Name) then 0x00000000
       else
-        
-        GetTypeAccessFlags td.Access |||
-        begin 
-          match td.Layout with 
+        (int td.Flags) |||
+        (if td.IsInterface then 0x00000020  else 0x00000000) |||
+        (match td.Layout with 
           | ILTypeDefLayout.Auto ->  0x00000000
           | ILTypeDefLayout.Sequential _  -> 0x00000008
-          | ILTypeDefLayout.Explicit _ -> 0x00000010
-        end |||
-        begin 
-          match td.tdKind with
-          | ILTypeDefKind.Interface -> 0x00000020
-          | _ -> 0x00000000
-        end |||
-        (if td.IsAbstract then 0x00000080l else 0x00000000) |||
-        (if td.IsSealed then 0x00000100l else 0x00000000) ||| 
-        (if td.IsComInterop then 0x00001000l else 0x00000000)  |||
-        (if td.IsSerializable then 0x00002000l else 0x00000000) |||
-        begin 
-          match td.Encoding with 
-          | ILDefaultPInvokeEncoding.Ansi -> 0x00000000
-          | ILDefaultPInvokeEncoding.Auto -> 0x00020000
-          | ILDefaultPInvokeEncoding.Unicode ->  0x00010000
-        end |||
-        begin 
-          match td.InitSemantics with
-          |  ILTypeInit.BeforeField when not (match td.tdKind with ILTypeDefKind.Interface -> true | _ -> false) -> 0x00100000 
-          | _ -> 0x00000000
-        end |||
-        (if td.IsSpecialName then 0x00000400 else 0x00000000) |||
-          // @REVIEW    (if rtspecialname_of_tdef td then 0x00000800 else 0x00000000) ||| 
-        (if td.HasSecurity || not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
+          | ILTypeDefLayout.Explicit _ -> 0x00000010) |||
+        (if not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
 
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env td.Extends
     UnsharedRow 
@@ -2874,37 +2850,10 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
     let flags = 
-        GetMemberAccessFlags md.Access |||
-        (if (match md.mdKind with
-              | MethodKind.Static | MethodKind.Cctor -> true
-              | _ -> false) then 0x0010 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsFinal | _ -> false) then 0x0020 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual _ -> true | _ -> false) then 0x0040 else 0x0) |||
-        (if md.IsHideBySig then 0x0080 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsCheckAccessOnOverride | _ -> false) then 0x0200 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsNewSlot | _ -> false) then 0x0100 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsAbstract | _ -> false) then 0x0400 else 0x0) |||
-        (if md.IsSpecialName then 0x0800 else 0x0) |||
-        (if (match md.mdBody.Contents with MethodBody.PInvoke _ -> true | _ -> false) then 0x2000 else 0x0) |||
-        (if md.IsUnmanagedExport then 0x0008 else 0x0) |||
-        (if 
-          (match md.mdKind with
-          | MethodKind.Ctor | MethodKind.Cctor -> true 
-          | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
-        (if md.IsReqSecObj then 0x8000 else 0x0) |||
-        (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
-    let implflags = 
-        (match  md.mdCodeKind with 
-         | MethodCodeKind.Native -> 0x0001
-         | MethodCodeKind.Runtime -> 0x0003
-         | MethodCodeKind.IL  -> 0x0000) |||
-        (if md.IsInternalCall then 0x1000 else 0x0000) |||
-        (if md.IsManaged then 0x0000 else 0x0004) |||
-        (if md.IsForwardRef then 0x0010 else 0x0000) |||
-        (if md.IsPreserveSig then 0x0080 else 0x0000) |||
-        (if md.IsSynchronized then 0x0020 else 0x0000) |||
-        (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (int md.Flags) |||
+        (match md.mdBody.Contents with MethodBody.PInvoke _ -> 0x2000 | _ -> 0x0) |||
+        (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+    let implflags = int md.ImplementationFlags
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"

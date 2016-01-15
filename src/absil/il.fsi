@@ -6,6 +6,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open Internal.Utilities
 open System.Collections.Generic
+open System.Reflection
 
 /// The type used to store relatively small lists in the Abstract IL data structures, i.e. for ILTypes, ILGenericArgs, ILParameters and ILLocals.
 /// See comments in il.fs for why we've isolated this representation and the possible future choices we might use here.
@@ -981,9 +982,7 @@ type ILLocals = ILList<ILLocal>
 [<NoComparison; NoEquality>]
 type ILMethodBody = 
     { IsZeroInit: bool;
-      /// strictly speakin should be a uint16 
       MaxStack: int32; 
-      NoInlining: bool;
       Locals: ILLocals;
       Code: ILCode;
       SourceMarker: ILSourceMarker option }
@@ -1145,34 +1144,12 @@ type ILOverridesSpec =
     member EnclosingType: ILType 
 
 // REVIEW: fold this into ILMethodDef
-type ILMethodVirtualInfo =
-    { IsFinal: bool; 
-      IsNewSlot: bool; 
-      IsCheckAccessOnOverride: bool;
-      IsAbstract: bool; }
-
-[<RequireQualifiedAccess>]
-type MethodKind =
-    | Static 
-    | Cctor 
-    | Ctor 
-    | NonVirtual 
-    | Virtual of ILMethodVirtualInfo
-
-// REVIEW: fold this into ILMethodDef
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of ILMethodBody
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
-    | Abstract
+    | None
     | Native
-
-// REVIEW: fold this into ILMethodDef
-[<RequireQualifiedAccess>]
-type MethodCodeKind =
-    | IL
-    | Native
-    | Runtime
 
 /// Generic parameters.  Formal generic parameter declarations
 /// may include the bounds, if any, on the generic parameter.
@@ -1208,35 +1185,20 @@ type ILLazyMethodBody =
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
-      mdCodeKind: MethodCodeKind;   
-      IsInternalCall: bool;
-      IsManaged: bool;
-      IsForwardRef: bool;
+      ImplementationFlags : MethodImplAttributes
+      Flags : MethodAttributes
       SecurityDecls: ILPermissions;
       /// Note: some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       IsEntryPoint:bool;
-      IsReqSecObj: bool;
-      IsHideBySig: bool;
-      IsSpecialName: bool;
-      /// The method is exported to unmanaged code using COM interop.
-      IsUnmanagedExport: bool; 
-      IsSynchronized: bool;
-      IsPreserveSig: bool;
-      /// .NET 2.0 feature: SafeHandle finalizer must be run 
-      IsMustRun: bool; 
-      IsNoInline: bool;
-     
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
       
-    member ParameterTypes: ILTypes;
+    member Access: ILMemberAccess
+    member ParameterTypes: ILTypes
     member IsIL : bool
     member Code : ILCode option
     member Locals : ILLocals
@@ -1254,6 +1216,19 @@ type ILMethodDef =
     /// instance methods that are virtual or abstract or implement an interface slot.  The predicates (IsClassInitializer,IsConstructor,IsStatic,IsNonVirtualInstance,IsVirtual) form a complete, non-overlapping classification of this type
     member IsVirtual: bool
     
+    member IsInternalCall : bool
+    member IsManaged : bool
+    member IsForwardRef : bool
+    member IsHideBySig : bool
+    member IsReqSecObj : bool
+    member IsUnmanagedExport : bool
+    member IsSpecialName : bool
+    member IsRTSpecialName : bool
+    member IsSynchronized : bool
+    member IsMustRun : bool
+    member IsPreserveSig : bool
+    member IsNoInline : bool
+    member HasSecurity : bool
     member IsFinal: bool
     member IsNewSlot: bool
     member IsCheckAccessOnOverride : bool
@@ -1439,33 +1414,36 @@ and [<NoComparison; NoEquality>]
     { tdKind: ILTypeDefKind;
       Name: string;  
       GenericParams: ILGenericParameterDefs;  
-      Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      /// Class or interface generated for COM interop 
-      IsComInterop: bool; 
+      Flags : System.Reflection.TypeAttributes
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
     /// Note: some classes are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
-    member IsClass: bool;
-    member IsInterface: bool;
-    member IsEnum: bool;
-    member IsDelegate: bool;
+
+    member Access: ILTypeDefAccess
+    member IsClass: bool
+    member IsInterface: bool
+    member IsEnum: bool
+    member IsDelegate: bool
     member IsStructOrEnum : bool
+
+    member IsAbstract: bool
+    member IsSealed: bool
+    member IsSerializable: bool
+      /// Class or interface generated for COM interop 
+    member IsComInterop: bool
+    member IsSpecialName: bool
+    member HasSecurity: bool
+    member Encoding: ILDefaultPInvokeEncoding
+    member InitSemantics: ILTypeInit
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1622,6 +1600,36 @@ type ILModuleDef =
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
 val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
+
+type TypeAttributes with 
+    member SetSerializable : bool -> TypeAttributes
+    member SetComInterop : bool -> TypeAttributes
+    member SetSealed : bool -> TypeAttributes
+    member SetAbstract : bool -> TypeAttributes
+    member SetHasSecurity : bool -> TypeAttributes
+    member SetEncoding : ILDefaultPInvokeEncoding -> TypeAttributes
+    member SetSpecialName : bool -> TypeAttributes
+    member SetInitSemantics : ILTypeInit -> TypeAttributes
+    member SetAccess : ILTypeDefAccess -> TypeAttributes
+    static member None : TypeAttributes
+
+type MethodAttributes with 
+    member SetFinal : bool -> MethodAttributes
+    member SetAbstract : bool -> MethodAttributes
+    member SetCheckAccessOnOverride : bool -> MethodAttributes
+    member SetHideBySig : bool -> MethodAttributes
+    member SetNewSlot : bool -> MethodAttributes
+    member SetSpecialName : bool -> MethodAttributes
+    member SetHasSecurity : bool -> MethodAttributes
+    member SetAccess : ILMemberAccess -> MethodAttributes
+    member SetStatic : bool -> MethodAttributes
+    static member None : MethodAttributes
+
+type MethodImplAttributes with 
+    member SetPreserveSig : bool -> MethodImplAttributes
+    member SetSynchronized : bool -> MethodImplAttributes
+    member SetNoInlining : bool -> MethodImplAttributes
+
 
 // ------------------------------------------------------------------ 
 // Type Names

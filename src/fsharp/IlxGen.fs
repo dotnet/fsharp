@@ -10,6 +10,7 @@ module internal Microsoft.FSharp.Compiler.IlxGen
 
 open System.IO
 open System.Collections.Generic
+open System.Reflection
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -41,7 +42,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
 let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
-let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with IsSpecialName = true }
+let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with Flags = mdef.Flags.SetSpecialName(true) }
 
 let AddNonUserCompilerGeneratedAttribs g (mdef:ILMethodDef) = addMethodGeneratedAttrs  g.ilg mdef
 
@@ -1155,7 +1156,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
                  let vtdef  = mkRawDataValueTypeDef cenv.g.ilg (name,size,0us)
                  let vtref = NestedTypeRefForCompLoc cloc vtdef.Name 
                  let vtspec = mkILTySpec(vtref,[])
-                 let vtdef = {vtdef with Access= ComputeTypeAccess vtref true}
+                 let vtdef = {vtdef with Flags= vtdef.Flags.SetAccess(ComputeTypeAccess vtref true) }
                  mgbuf.AddTypeDef(vtref, vtdef, false, true);
                  vtspec), 
                keyComparer=HashIdentity.Structural)
@@ -3350,31 +3351,14 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | None -> eenv
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
-and fixupVirtualSlotFlags mdef = 
-    {mdef with
-        IsHideBySig=true; 
-        mdKind = (match mdef.mdKind with 
-                   | MethodKind.Virtual vinfo -> 
-                      MethodKind.Virtual
-                         {vinfo with 
-                             IsCheckAccessOnOverride=false }
-                   | _ -> failwith "fixupVirtualSlotFlags") } 
+and fixupVirtualSlotFlags (mdef: ILMethodDef) = 
+    {mdef with Flags = mdef.Flags.SetHideBySig(true).SetCheckAccessOnOverride(false) }
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
 
-and fixupMethodImplFlags mdef = 
-    {mdef with 
-               Access=ILMemberAccess.Private;
-               IsHideBySig=true; 
-               mdKind=(match mdef.mdKind with 
-                         | MethodKind.Virtual vinfo -> 
-                            MethodKind.Virtual
-                               {vinfo with 
-                                   IsCheckAccessOnOverride=false;
-                                   IsFinal=true;
-                                   IsNewSlot=true;  }
-                         | _ -> failwith "fixupMethodImpl") }
+and fixupMethodImplFlags (mdef: ILMethodDef) = 
+    {mdef with Flags=mdef.Flags.SetHideBySig(true).SetFinal(true).SetNewSlot(true).SetCheckAccessOnOverride(false).SetAccess(ILMemberAccess.Private) }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 
@@ -3552,15 +3536,19 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
 /// Generate the class for a closure type definition
 and GenClosureTypeDef cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls,ext, ilIntfTys) =
 
+    let flags = 
+        TypeAttributes.Sealed
+            .SetSpecialName(true)
+            .SetInitSemantics(ILTypeInit.BeforeField)
+            .SetEncoding(ILDefaultPInvokeEncoding.Auto)
+            .SetSerializable(cenv.opts.netFxHasSerializableAttribute)
+            .SetAccess(ComputeTypeAccess tref true)
     { Name = tref.Name; 
       Layout = ILTypeDefLayout.Auto;
-      Access =  ComputeTypeAccess tref true;
+      Flags = flags;
       GenericParams = ilGenParams;
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]);
       Fields = emptyILFields;
-      InitSemantics=ILTypeInit.BeforeField;         
-      IsSealed=true;
-      IsAbstract=false;
       tdKind=mkIlxTypeDefKind (IlxTypeDefKind.Closure  { cloSource=None;
                                                        cloFreeVars=ilCloFreeVars;  
                                                        cloStructure=ilCloLambdas;
@@ -3569,15 +3557,10 @@ and GenClosureTypeDef cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, i
       Properties = emptyILProperties;
       Methods= mkILMethods mdefs; 
       MethodImpls= mkILMethodImpls mimpls; 
-      IsSerializable= cenv.opts.netFxHasSerializableAttribute;
-      IsComInterop= false;    
-      IsSpecialName= true;
       NestedTypes=emptyILTypeDefs;
-      Encoding= ILDefaultPInvokeEncoding.Auto;
       Implements= mkILTypes ilIntfTys;  
       Extends= Some ext;
-      SecurityDecls= emptyILSecurityDecls;
-      HasSecurity=false; } 
+      SecurityDecls= emptyILSecurityDecls;} 
 
           
 and GenGenericParams cenv eenv tps =  tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
@@ -3606,32 +3589,32 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
                 let ilContractCtor =  mkILNonGenericEmptyCtor None cenv.g.ilg.typ_Object
 
-                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
+                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.None) ]
+
+                let ilContractTypeDefFlags = 
+                    TypeAttributes.Abstract
+                        .SetSpecialName(true)
+                        .SetEncoding(ILDefaultPInvokeEncoding.Auto)
+                        .SetInitSemantics(ILTypeInit.BeforeField)
+                        .SetSerializable(cenv.opts.netFxHasSerializableAttribute)
+                        .SetAccess(ComputeTypeAccess ilContractTypeRef true); // the contract type is an abstract type
 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name; 
                       Layout = ILTypeDefLayout.Auto;
-                      Access =  ComputeTypeAccess ilContractTypeRef true;
                       GenericParams = ilContractGenericParams;
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ];
                       Fields = emptyILFields;
-                      InitSemantics=ILTypeInit.BeforeField;         
-                      IsSealed=false;  // the contract type is an abstract type and not sealed
-                      IsAbstract=true; // the contract type is an abstract type
+                      Flags=ilContractTypeDefFlags;
                       tdKind=ILTypeDefKind.Class;
                       Events= emptyILEvents;
                       Properties = emptyILProperties;
                       Methods= mkILMethods ilContractMeths; 
                       MethodImpls= emptyILMethodImpls; 
-                      IsSerializable= cenv.opts.netFxHasSerializableAttribute; 
-                      IsComInterop=false;    
-                      IsSpecialName= true;
                       NestedTypes=emptyILTypeDefs;
-                      Encoding= ILDefaultPInvokeEncoding.Auto;
                       Implements= mkILTypes [];  
                       Extends= Some cenv.g.ilg.typ_Object;
-                      SecurityDecls= emptyILSecurityDecls;
-                      HasSecurity=false; } 
+                      SecurityDecls= emptyILSecurityDecls } 
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false);
                 
                 let ilCtorBody =  mkILMethodBody (true,emptyILLocals,8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
@@ -5057,13 +5040,18 @@ and GenMethodForBinding
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
         
+        let implflags = 
+            mdef.ImplementationFlags
+                .SetSynchronized(hasSynchronizedImplFlag)
+                .SetNoInlining(hasNoInliningFlag)
+                .SetPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg)
+        let flags = mdef.Flags.SetHasSecurity(securityAttributes.Length > 0)
+
         let mdef = 
             {mdef with 
-                IsPreserveSig = hasPreserveSigImplFlag || hasPreserveSigNamedArg;
-                IsSynchronized = hasSynchronizedImplFlag;
-                IsEntryPoint = isExplicitEntryPoint;
-                IsNoInline = hasNoInliningFlag;
-                HasSecurity = mdef.HasSecurity || (securityAttributes.Length > 0)
+                ImplementationFlags =  implflags
+                Flags = flags
+                IsEntryPoint = isExplicitEntryPoint
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5072,10 +5060,9 @@ and GenMethodForBinding
                // active pattern names
                mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
                // event add/remove method
-               v.Data.val_flags.IsGeneratedEventVal then
-                {mdef with IsSpecialName=true} 
-            else 
-                mdef
+               v.Data.val_flags.IsGeneratedEventVal 
+            then AddSpecialNameFlag mdef 
+            else mdef
         CountMethodDef();
         cgbuf.mgbuf.AddMethodDef(tref,mdef)
                 
@@ -5124,14 +5111,7 @@ and GenMethodForBinding
                let tcref =  v.MemberApparentParent
                not tcref.Deref.IsFSharpDelegateTycon
 
-           let mdef = 
-               {mdef with 
-                    mdKind=match mdef.mdKind with 
-                           | MethodKind.Virtual vinfo -> 
-                               MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal;
-                                                             IsAbstract=isAbstract; } 
-                           | k -> k }
-
+           let mdef = if mdef.IsVirtual then {mdef with Flags = mdef.Flags.SetFinal(memberInfo.MemberFlags.IsFinal).SetAbstract(isAbstract) } else mdef
            match memberInfo.MemberFlags.MemberKind with 
                
            | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
@@ -5623,7 +5603,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
              then [ (* mkCompilerGeneratedAttribute *) ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)
-    let tdef = { tdef with IsSealed=true; IsAbstract=true }
+    let tdef = { tdef with Flags=tdef.Flags.SetAbstract(true).SetSealed(true) }
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd)
 
 
@@ -5915,19 +5895,20 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         let ilParams = GenParams cenv eenvForMeth mspec argInfos None
         
         let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
-        let mdef = mkILGenericVirtualMethod (vref.CompiledName,ILMemberAccess.Public,ilMethTypars,ilParams,ilReturn,MethodBody.Abstract)
+        let mdef = mkILGenericVirtualMethod (vref.CompiledName,ILMemberAccess.Public,ilMethTypars,ilParams,ilReturn,MethodBody.None)
 
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 
-          {mdef with 
-            IsPreserveSig=hasPreserveSigImplFlag;
-            IsSynchronized=hasSynchronizedImplFlag;
-            IsNoInline=hasNoInliningFlag;
-            mdKind=match mdef.mdKind with 
-                    | MethodKind.Virtual vinfo -> 
-                        MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal;
-                                                      IsAbstract=memberInfo.MemberFlags.IsDispatchSlot; } 
-                    | k -> k }
+            {mdef with 
+                ImplementationFlags=
+                    mdef.ImplementationFlags
+                        .SetPreserveSig(hasPreserveSigImplFlag)
+                        .SetSynchronized(hasSynchronizedImplFlag)
+                        .SetNoInlining(hasNoInliningFlag)
+                Flags = 
+                    mdef.Flags
+                        .SetFinal(memberInfo.MemberFlags.IsFinal)
+                        .SetAbstract(memberInfo.MemberFlags.IsDispatchSlot) } 
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 
@@ -6323,7 +6304,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              | paraml -> paraml
                          GenActualSlotsig m cenv eenvinner (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) []
                      for ilMethodDef in mkILDelegateMethods cenv.g.ilg (p,r) do
-                        yield { ilMethodDef with Access=reprAccess }
+                        yield { ilMethodDef with Flags=ilMethodDef.Flags.SetAccess(reprAccess) }
                  | _ -> 
                      ()
 
@@ -6340,7 +6321,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                        
            match tycon.TypeReprInfo with 
            | TILObjModelRepr (_,_,td) ->
-               {td with Access = access;
+               {td with Flags = td.Flags.SetAccess(access);
                         CustomAttrs = mkILCustomAttrs CustomAttrs;
                         GenericParams = ilGenParams; }
 
@@ -6382,11 +6363,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let tdef = { tdef with  IsSealed = isSealedTy cenv.g thisTy || isTheSealedAttribute;
-                                       IsSerializable = IsSerializable;
-                                       MethodImpls=mkILMethodImpls methodImpls; 
-                                       IsAbstract=isAbstract;
-                                       IsComInterop=isComInteropTy cenv.g thisTy }
+               let tdef = 
+                   let flags = 
+                       tdef.Flags
+                          .SetSealed(isSealedTy cenv.g thisTy || isTheSealedAttribute)
+                          .SetSerializable(IsSerializable)
+                          .SetAbstract(isAbstract)
+                          .SetComInterop(isComInteropTy cenv.g thisTy)
+                   { tdef with  Flags=flags;
+                                MethodImpls=mkILMethodImpls methodImpls }
 
                let tdLayout,tdEncoding = 
                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -6424,9 +6409,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                             // In that case we generate a dummy field instead
                            (cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty) 
                            then 
-                            ILTypeDefLayout.Sequential { Size=None; Pack=None }, ILDefaultPInvokeEncoding.Ansi 
+                            ILTypeDefLayout.Sequential { Size=None; Pack=None }, ILDefaultPInvokeEncoding.Ansi
                         else
-                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, ILDefaultPInvokeEncoding.Ansi 
+                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, ILDefaultPInvokeEncoding.Ansi
                         
                     | _ -> 
                         ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
@@ -6449,8 +6434,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | ILTypeDefLayout.Sequential(_) -> List.iter validateSequential ilFieldDefs                     
                | _ -> ()
                
-               let tdef = { tdef with tdKind =  ilTypeDefKind; Layout=tdLayout; Encoding=tdEncoding }
-               let tdef = match ilTypeDefKind with ILTypeDefKind.Interface -> { tdef with Extends = None; IsAbstract=true } | _ -> tdef
+               let tdef = { tdef with tdKind =  ilTypeDefKind; Layout=tdLayout; Flags=tdef.Flags.SetEncoding(tdEncoding) }
+               let tdef = match ilTypeDefKind with ILTypeDefKind.Interface -> { tdef with Extends = None; Flags=tdef.Flags.SetAbstract(true) } | _ -> tdef
                tdef
 
            | TFiniteUnionRepr _ -> 
@@ -6462,7 +6447,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                { Name = ilTypeName;
                  Layout = ILTypeDefLayout.Auto;
-                 Access = access;
                  GenericParams = ilGenParams;
                  CustomAttrs = 
                      mkILCustomAttrs (CustomAttrs @ 
@@ -6470,9 +6454,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                           (int (if hiddenRepr
                                                 then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                 else SourceConstructFlags.SumType)) ]);
-                 InitSemantics=ILTypeInit.BeforeField;      
-                 IsSealed=true;
-                 IsAbstract=false;
+                 Flags = TypeAttributes.Sealed
+                            .SetInitSemantics(ILTypeInit.BeforeField)
+                            .SetEncoding(ILDefaultPInvokeEncoding.Auto)
+                            .SetSerializable(IsSerializable)
+                            .SetAccess(access);      
                  tdKind=
                      mkIlxTypeDefKind
                        (IlxTypeDefKind.Union
@@ -6489,19 +6475,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                  Properties = ilProperties;
                  Methods= mkILMethods ilMethods; 
                  MethodImpls= mkILMethodImpls methodImpls; 
-                 IsComInterop=false;    
-                 IsSerializable= IsSerializable; 
-                 IsSpecialName= false;
                  NestedTypes=emptyILTypeDefs;
-                 Encoding= ILDefaultPInvokeEncoding.Auto;
                  Implements= mkILTypes ilIntfTys;
                  Extends= Some cenv.g.ilg.typ_Object;
-                 SecurityDecls= emptyILSecurityDecls;
-                 HasSecurity=false }
+                 SecurityDecls= emptyILSecurityDecls }
 
            | _ -> failwith "??"
 
-        let tdef = {tdef with SecurityDecls= secDecls; HasSecurity=securityAttrs.Length > 0}
+        let tdef = {tdef with SecurityDecls= secDecls; Flags=tdef.Flags.SetHasSecurity(securityAttrs.Length > 0) }
         mgbuf.AddTypeDef(tref, tdef, false, false);
 
         // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
@@ -6604,7 +6585,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                 | Some securityPermissionAttributeType ->
                     { ilMethodDef with 
                            SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet cenv.g.ilg (ILSecurityAction.Demand,[(securityPermissionAttributeType, [("SerializationFormatter",cenv.g.ilg.typ_Bool, ILAttribElem.Bool(true))])])];
-                           HasSecurity=true }
+                           Flags=ilMethodDef.Flags.SetHasSecurity(true) }
             [ilCtorDefForSerialziation; getObjectDataMethodForSerialization]
 #endif                
 
@@ -6624,7 +6605,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
-        let tdef = { tdef with IsSerializable = cenv.opts.netFxHasSerializableAttribute }
+        let tdef = { tdef with Flags = tdef.Flags.SetSerializable(cenv.opts.netFxHasSerializableAttribute) }
         mgbuf.AddTypeDef(tref, tdef, false, false)
 
 

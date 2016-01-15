@@ -1242,7 +1242,6 @@ let emitLocal cenv emEnv (ilG : ILGenerator) (local: ILLocal) =
 
 let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) ilmbody =
     // XXX - REVIEW:
-    //      NoInlining: bool;
     //      SourceMarker: source option }
     // emit locals and record emEnv
     let localBs = Array.map (emitLocal cenv emEnv ilG) (ILList.toArray ilmbody.Locals)
@@ -1258,7 +1257,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     match mbody.Contents with
     | MethodBody.IL ilmbody       -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
     | MethodBody.PInvoke  _pinvoke -> () (* printf "EMIT: pinvoke method %s\n" name *) (* XXX - check *)
-    | MethodBody.Abstract         -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
+    | MethodBody.None             -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
     | MethodBody.Native           -> failwith "emitMethodBody cenv: native"               (* XXX - gap *)
 
 
@@ -1337,51 +1336,6 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
     let parB = defineParameter(i,attrs,name)
     emitCustomAttrs cenv emEnv (wrapCustomAttr parB.SetCustomAttribute) param.CustomAttrs
 
-//----------------------------------------------------------------------------
-// convMethodAttributes
-//----------------------------------------------------------------------------
-
-let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrKind = 
-        match mdef.mdKind with 
-        | MethodKind.Static        -> MethodAttributes.Static
-        | MethodKind.Cctor         -> MethodAttributes.Static
-        | MethodKind.Ctor          -> enum 0                 
-        | MethodKind.NonVirtual    -> enum 0
-        | MethodKind.Virtual vinfo -> MethodAttributes.Virtual |||
-                                      flagsIf vinfo.IsNewSlot   MethodAttributes.NewSlot |||
-                                      flagsIf vinfo.IsFinal     MethodAttributes.Final |||
-                                      flagsIf vinfo.IsCheckAccessOnOverride    MethodAttributes.CheckAccessOnOverride |||
-                                      flagsIf vinfo.IsAbstract  MethodAttributes.Abstract
-   
-    let attrAccess = 
-        match mdef.Access with
-        | ILMemberAccess.Assembly -> MethodAttributes.Assembly
-        | ILMemberAccess.CompilerControlled -> failwith "Method access compiler controled."
-        | ILMemberAccess.FamilyAndAssembly        -> MethodAttributes.FamANDAssem
-        | ILMemberAccess.FamilyOrAssembly         -> MethodAttributes.FamORAssem
-        | ILMemberAccess.Family             -> MethodAttributes.Family
-        | ILMemberAccess.Private            -> MethodAttributes.Private
-        | ILMemberAccess.Public             -> MethodAttributes.Public
-   
-    let attrOthers = flagsIf mdef.HasSecurity MethodAttributes.HasSecurity |||
-                     flagsIf mdef.IsSpecialName MethodAttributes.SpecialName |||
-                     flagsIf mdef.IsHideBySig   MethodAttributes.HideBySig |||
-                     flagsIf mdef.IsReqSecObj   MethodAttributes.RequireSecObject 
-   
-    attrKind ||| attrAccess ||| attrOthers
-
-let convMethodImplFlags mdef =    
-    (match  mdef.mdCodeKind with 
-     | MethodCodeKind.Native -> MethodImplAttributes.Native
-     | MethodCodeKind.Runtime -> MethodImplAttributes.Runtime
-     | MethodCodeKind.IL  -> MethodImplAttributes.IL) 
-    ||| flagsIf mdef.IsInternalCall MethodImplAttributes.InternalCall
-    ||| (if mdef.IsManaged then MethodImplAttributes.Managed else MethodImplAttributes.Unmanaged)
-    ||| flagsIf mdef.IsForwardRef MethodImplAttributes.ForwardRef
-    ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
-    ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
 
 //----------------------------------------------------------------------------
 // buildMethodPass2
@@ -1392,8 +1346,8 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
    // SecurityDecls: Permissions;
    // IsUnmanagedExport: bool; (* -- The method is exported to unmanaged code using COM interop. *)
    // IsMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
-    let attrs = convMethodAttributes mdef
-    let implflags = convMethodImplFlags mdef
+    let attrs = mdef.Flags
+    let implflags = mdef.ImplementationFlags
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref,mdef)   
     let emEnv = if mdef.IsEntryPoint && mdef.ParameterTypes.Length = 0 then 
@@ -1446,13 +1400,11 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
         envBindMethodRef emEnv mref methB
 
     | _ -> 
-      match mdef.Name with
-      | ".cctor" 
-      | ".ctor" ->
+      if mdef.IsConstructor || mdef.IsClassInitializer then 
           let consB = typB.DefineConstructorAndLog(attrs,cconv,convTypesToArray cenv emEnv mdef.ParameterTypes)
           consB.SetImplementationFlagsAndLog(implflags);
           envBindConsRef emEnv mref consB
-      | _name    ->
+      else
           // Note the return/argument types may involve the generic parameters
           let methB = typB.DefineMethodAndLog(mdef.Name,attrs,cconv) 
         
@@ -1479,8 +1431,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
         match mdef.mdBody.Contents with
         | MethodBody.PInvoke  _p -> true
         | _ -> false
-    match mdef.Name with
-    | ".cctor" | ".ctor" ->
+    if mdef.IsConstructor || mdef.IsClassInitializer then 
           let consB = envGetConsB emEnv mref
           // Constructors can not have generic parameters
           assert isNil mdef.GenericParams
@@ -1491,7 +1442,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.mdBody;
           emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
           ()
-     | _name ->
+    else
        
           let methB = envGetMethB emEnv mref
           let emEnv = envPushTyvars emEnv (Array.append
@@ -1685,16 +1636,8 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // -InitSemantics: ILTypeInit;
     // TypeAttributes
     let attrsKind   = typeAttrbutesOfTypeDefKind tdef.tdKind 
-    let attrsAccess = typeAttrbutesOfTypeAccess  tdef.Access
-    let attrsLayout,cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
-    let attrsEnc    = typeAttributesOfTypeEncoding tdef.Encoding
-    let attrsOther  = flagsIf tdef.IsAbstract     TypeAttributes.Abstract |||
-                      flagsIf tdef.IsSealed       TypeAttributes.Sealed |||
-                      flagsIf tdef.IsSerializable TypeAttributes.Serializable |||
-                      flagsIf tdef.IsSpecialName  TypeAttributes.SpecialName |||
-                      flagsIf tdef.HasSecurity  TypeAttributes.HasSecurity
-     
-    let attrsType = attrsKind ||| attrsAccess ||| attrsLayout ||| attrsEnc ||| attrsOther
+    let attrsLayout,cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout     
+    let attrsType = tdef.Flags ||| attrsKind ||| attrsLayout 
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name,attrsType)
