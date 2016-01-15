@@ -168,7 +168,6 @@ open System.Runtime.InteropServices
             use ms = new MemoryStream()
             use bw = new BinaryWriter(ms)
 
-            // Write out the CLR BLOB HEADER bits 
             bw.Write(int(CALG_RSA_SIGN))                                                // CLRHeader.aiKeyAlg 
             bw.Write(int(CALG_SHA1))                                                    // CLRHeader.aiHashAlg 
             bw.Write(int(modulusLength + BLOBHEADER_LENGTH))                            // CLRHeader.KeyLength
@@ -188,8 +187,8 @@ open System.Runtime.InteropServices
                 for i in 0 .. rsaParameters.Exponent.Length - 1 do
                    buffer <- (buffer <<< 8) ||| int(rsaParameters.Exponent.[i])
                 buffer
-            bw.Write(expAsDword)                                                        // RSAPubKey.pubExp 
 
+            bw.Write(expAsDword)                                                        // RSAPubKey.pubExp 
             bw.Write(rsaParameters.Modulus |> Array.rev)                                // Copy over the modulus for both public and private 
             if isPrivate = true then do
                 bw.Write(rsaParameters.P  |> Array.rev)
@@ -206,14 +205,14 @@ open System.Runtime.InteropServices
     let createSignature (hash:byte[]) (keyBlob:byte[]) keyType =
         use rsa = new RSACryptoServiceProvider()
         rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
-        let signature = rsa.SignData(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1)
+        let signature = rsa.SignHash(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1)
         signature |>Array.rev
 
     let patchSignature (stream:Stream) (peReader:PEReader) (signature:byte[]) =
         let peHeaders = peReader.PEHeaders
         let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
         let signatureOffset =
-            if signatureDirectory.Size < signature.Length then raise (BadImageFormatException("Invalid signature size"))
+            if signatureDirectory.Size > signature.Length then raise (BadImageFormatException("Invalid signature size"))
             match peHeaders.TryGetDirectoryOffset(signatureDirectory) with
             | false, _              -> raise (BadImageFormatException("No signature directory"))
             | true, signatureOffset -> int64(signatureOffset)
@@ -225,7 +224,7 @@ open System.Runtime.InteropServices
         stream.WriteByte((byte)(peHeaders.CorHeader.Flags ||| CorFlags.StrongNameSigned))
         ()
 
-    let signStream (stream:Stream) (keyBlob:byte[]) =
+    let signStream stream keyBlob =
         use peReader = new PEReader(stream, PEStreamOptions.PrefetchEntireImage ||| PEStreamOptions.LeaveOpen)
         let hash =
             use hashAlgorithm = IncrementalHash.CreateHash(HashAlgorithmName.SHA1)
@@ -233,7 +232,7 @@ open System.Runtime.InteropServices
         let signature = createSignature hash keyBlob KeyType.KeyPair
         patchSignature stream peReader signature
 
-    let SignFile (filename:string) (keyBlob:byte[]) =
+    let SignFile filename keyBlob =
         use fs = File.Open(filename, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
@@ -245,10 +244,11 @@ open System.Runtime.InteropServices
         let magic = reader.ReadInt32                                                    // Read magic
         if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then                   // RSAPubKey.magic 
             raise (CryptographicException("Invalid Public Key blob"))
-        reader.ReadInt32
+        let x = reader.ReadInt32 / 8
+        x
 
     // Returns a CLR Format Blob public key
-    let GetPublicKeyForKeyPair (keyBlob:byte[]) : byte[] =
+    let GetPublicKeyForKeyPair keyBlob =
         use rsa = new RSACryptoServiceProvider()
         rsa.ImportParameters(RSAParamatersFromBlob keyBlob KeyType.KeyPair)
         let rsaParameters = rsa.ExportParameters(false)

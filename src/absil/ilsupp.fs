@@ -1299,11 +1299,9 @@ let signerCloseKeyContainer (_kc:keyContainerName) :unit =
     raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
 
 let signerSignatureSize (pk:pubkey) : int = 
-    let reply = (StrongNameSign.SignatureSize pk)
-    reply
+    (StrongNameSign.SignatureSize pk)
 
 let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
-    printfn "leave signerSignFileWithKeyPair:kp %A" kp
     (StrongNameSign.SignFile fileName kp)
 
 let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  

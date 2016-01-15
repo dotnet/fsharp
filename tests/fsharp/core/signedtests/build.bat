@@ -34,10 +34,19 @@ REM full signed build of F# App with SHA1
 rem    "%FSC%" %fsc_flags% --keyfile:sha1full.snk -o:test-cl-sha1.exe test.fs
 rem    @if ERRORLEVEL 1 goto Error
 
-C:\KevinRansom\visualfsharp\release\net40\bin\fsc.exe --target:library --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
-@if ERRORLEVEL 1 goto Error
+rem C:\KevinRansom\visualfsharp\release\net40\bin\fsc.exe --target:library --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
+rem @if ERRORLEVEL 1 goto Error
 
 C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
+@if ERRORLEVEL 1 goto Error
+
+C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha256full.snk -o:test-cl-sha256.dll test.fs
+@if ERRORLEVEL 1 goto Error
+
+C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha512full.snk -o:test-cl-sha512.dll test.fs
+@if ERRORLEVEL 1 goto Error
+
+C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha1024full.snk -o:test-cl-sha1024.dll test.fs
 @if ERRORLEVEL 1 goto Error
 
 rem    REM full signed build of F# App with SHA256
