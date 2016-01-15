@@ -34,6 +34,9 @@ REM full signed build of F# App with SHA1
 rem    "%FSC%" %fsc_flags% --keyfile:sha1full.snk -o:test-cl-sha1.exe test.fs
 rem    @if ERRORLEVEL 1 goto Error
 
+C:\KevinRansom\visualfsharp\release\net40\bin\fsc.exe --target:library --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
+@if ERRORLEVEL 1 goto Error
+
 C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
 @if ERRORLEVEL 1 goto Error
 

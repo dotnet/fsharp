@@ -6,18 +6,20 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (System.DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Bytes
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-
+#if FX_NO_CORHOST_SIGNER
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
 open System
 open System.IO
 open System.Text
 open System.Reflection
+
 #if FX_NO_SYMBOLSTORE
 #else
 open System.Diagnostics.SymbolStore
@@ -1280,7 +1282,33 @@ type keyContainerName = string
 type keyPair = byte[]
 type pubkey = byte[]
 
-#if FX_NO_KEY_SIGNING
+#if FX_NO_CORHOST_SIGNER
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile   filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
+    let reply = (StrongNameSign.GetPublicKeyForKeyPair kp)
+    reply
+
+let signerGetPublicKeyForKeyContainer (_kcName:keyContainerName) : pubkey = 
+    raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
+ 
+let signerCloseKeyContainer (_kc:keyContainerName) :unit = 
+    raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
+
+let signerSignatureSize (pk:pubkey) : int = 
+    let reply = (StrongNameSign.SignatureSize pk)
+    reply
+
+let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
+    printfn "leave signerSignFileWithKeyPair:kp %A" kp
+    (StrongNameSign.SignFile fileName kp)
+
+let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  
+    raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
+
 #else
 // new mscoree functionality
 // This type represents methods that we don't currently need, so I'm leaving unimplemented
@@ -1389,13 +1417,11 @@ let CreateInterface (
                     ([<MarshalAs(UnmanagedType.LPStruct)>] _guid : System.Guid),
                     ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                         ICLRMetaHost byref)) : unit = failwith "CreateInterface"
-    
-let signerOpenPublicKeyFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
-let signerOpenKeyPairFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
 let mutable iclrsn : ICLRStrongName option = None
 let getICLRStrongName () =
     match iclrsn with
@@ -1420,6 +1446,7 @@ let getICLRStrongName () =
     | Some(sn) -> sn
 
 let signerGetPublicKeyForKeyPair kp =
+    printfn "Enter signerGetPublicKeyForKeyPair %A " kp
     let mutable pSize = 0u
     let mutable pBuffer : nativeint = (nativeint)0
     let iclrSN = getICLRStrongName()
@@ -1429,7 +1456,9 @@ let signerGetPublicKeyForKeyPair kp =
     // Copy the marshalled data over - we'll have to free this ourselves
     Marshal.Copy(pBuffer, keybuffer, 0, (int)pSize)
     iclrSN.StrongNameFreeBuffer(pBuffer) |> ignore
-    keybuffer
+    let reply = keybuffer
+    printfn "Leave signerGetPublicKeyForKeyPair %A" reply
+    reply
 
 let signerGetPublicKeyForKeyContainer kc =
     let mutable pSize = 0u
@@ -1450,9 +1479,11 @@ let signerSignatureSize pk =
     let mutable pSize =  0u
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
+    printfn "leave signerSignatureSize %A" pSize
     int pSize
 
 let signerSignFileWithKeyPair fileName kp = 
+    printfn "leave signerSignFileWithKeyPair:kp %A" kp
     let mutable pcb = 0u
     let mutable ppb = (nativeint)0
     let mutable ok = false

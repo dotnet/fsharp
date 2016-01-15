@@ -100,6 +100,7 @@ val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* 
 //---------------------------------------------------------------------
 // PDB writer.
 //---------------------------------------------------------------------
+
 type PdbDocumentWriter
 #endif
 
@@ -132,8 +133,6 @@ val pdbDefineSequencePoints: PdbWriter -> PdbDocumentWriter -> (int * int * int 
 val pdbGetDebugInfo: PdbWriter -> idd
 #endif
 
-#if FX_NO_KEY_SIGNING
-#else
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
@@ -144,10 +143,9 @@ type pubkey = byte[]
 
 val signerOpenPublicKeyFile: string -> pubkey 
 val signerOpenKeyPairFile: string -> keyPair 
+val signerSignatureSize: pubkey -> int 
 val signerGetPublicKeyForKeyPair: keyPair -> pubkey 
 val signerGetPublicKeyForKeyContainer: string -> pubkey 
 val signerCloseKeyContainer: keyContainerName -> unit 
-val signerSignatureSize: pubkey -> int 
 val signerSignFileWithKeyPair: string -> keyPair -> unit 
 val signerSignFileWithKeyContainer: string -> keyContainerName -> unit
-#endif

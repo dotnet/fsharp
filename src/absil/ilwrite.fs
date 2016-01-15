@@ -12,6 +12,9 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#if FX_NO_CORHOST_SIGNER
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
@@ -482,17 +485,13 @@ let DumpDebugInfo (outfile:string) (info:PdbData) =
 // Strong name signing
 //---------------------------------------------------------------------
 
-#if FX_NO_KEY_SIGNING
-type ILStrongNameSigner = unit
-
-#else
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
     | KeyPair of Support.keyPair
     | KeyContainer of Support.keyContainerName
 
     static member OpenPublicKeyFile s = PublicKeySigner(Support.signerOpenPublicKeyFile s)
-      
+
     static member OpenPublicKey pubkey = PublicKeySigner(pubkey)
 
     static member OpenKeyPairFile s = KeyPair(Support.signerOpenKeyPairFile s)
@@ -527,7 +526,6 @@ type ILStrongNameSigner =
         | PublicKeySigner _ -> ()
         | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
         | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
-#endif
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES
@@ -3893,11 +3891,7 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
-#if FX_NO_KEY_SIGNING
-#else
-                                  signer: ILStrongNameSigner option, 
-#endif
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, 
                                   fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -3905,8 +3899,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
     reportTime showTimes "Write Started";
     let isDll = modul.IsDLL
     
-#if FX_NO_KEY_SIGNING
-#else
     let signer = 
         match signer,modul.Manifest with
         | Some _, _ -> signer
@@ -3938,7 +3930,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         end;
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
-#endif
 
     let timestamp = absilWriteGetTimeStamp ()
 
@@ -3949,7 +3940,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
 
-#if FX_NO_KEY_SIGNING
+#if FX_NO_PDB_WRITER
     let pdbData,mappings =
 #else
     let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
@@ -4032,13 +4023,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           let metadataChunk,next = chunk metadata.Length next
           
           let strongnameChunk,next = 
-#if FX_NO_KEY_SIGNING
-            nochunk next
-#else
             match signer with 
             | None -> nochunk next
             | Some s -> chunk s.SignatureSize next
-#endif
+
           let resourcesChunk,next = chunk resources.Length next
          
           let rawdataChunk,next = chunk data.Length next
@@ -4374,11 +4362,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
             (if modul.IsILOnly then 0x01 else 0x00) ||| 
             (if modul.Is32Bit then 0x02 else 0x00) ||| 
             (if modul.Is32BitPreferred then 0x00020003 else 0x00) ||| 
-#if FX_NO_KEY_SIGNING
-            0x00
-#else
             (if (match signer with None -> false | Some s -> s.IsFullySigned) then 0x08 else 0x00)
-#endif
+
           let headerVersionMajor,headerVersionMinor = headerVersionSupportedByCLRVersion desiredMetadataVersion
 
           writePadding os "pad to cli header" cliHeaderPadding 
@@ -4412,11 +4397,9 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           writeBytes os metadata
           
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
-#if FX_NO_KEY_SIGNING
-#else
           if signer <> None then 
             write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy)
-#endif
+
           write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |]
           writeBytes os resources
           write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |]
@@ -4517,7 +4500,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
               FileSystemUtilites.setExecutablePermission outfile
           with _ -> 
               ()
-#if FX_NO_KEY_SIGNING
+#if FX_NO_PDB_WRITER
           pdbData,mappings
 #else
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
@@ -4591,8 +4574,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
     reportTime showTimes "Finalize PDB"
 #endif
 
-#if FX_NO_KEY_SIGNING
-#else
     /// Sign the binary.  No further changes to binary allowed past this point! 
     match signer with 
     | None -> ()
@@ -4601,24 +4582,20 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
             s.SignFile outfile
             s.Close() 
         with e -> 
-            failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
+            failwith ("Warning: A call to SignFile failed ("+e.Message+")")
             (try s.Close() with _ -> ())
             (try FileSystem.FileDelete outfile with _ -> ()) 
             ()
 
     reportTime showTimes "Signing Image"
     //Finished writing and signing the binary and debug info...
-#endif
     mappings
 
 
 type options =
    { ilg: ILGlobals;
      pdbfile: string option
-#if FX_NO_KEY_SIGNING
-#else
      signer: ILStrongNameSigner option
-#endif
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
      showTimes: bool
@@ -4626,12 +4603,9 @@ type options =
 
 
 let WriteILBinary (outfile, (args: options), modul, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile,
-#if FX_NO_KEY_SIGNING
-#else
-                                          args.signer, 
-#endif
-                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul noDebugData)
+    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, 
+                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, 
+                                          args.dumpDebugInfo) modul noDebugData)
 
 
 (******************************************************
