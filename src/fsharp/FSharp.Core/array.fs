@@ -696,23 +696,19 @@ namespace Microsoft.FSharp.Collections
             res
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State> (f : 'State -> 'T -> 'State) (acc: 'State) (array:'T[]) =
+        let inline fold<'T,'State> (f : 'State -> 'T -> 'State) (acc: 'State) (array:'T[]) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = acc 
-            let len = array.Length
-            for i = 0 to len - 1 do 
-                state <- f.Invoke(state,array.[i])
+            for i = 0 to array.Length - 1 do 
+                state <- f state array.[i]
             state
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'T,'State> (f : 'T -> 'State -> 'State) (array:'T[]) (acc: 'State) =
+        let inline foldBack<'T,'State> (f : 'T -> 'State -> 'State) (array:'T[]) (acc: 'State) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable res = acc 
-            let len = array.Length
-            for i = len - 1 downto 0 do 
-                res <- f.Invoke(array.[i],res)
+            for i = array.Length - 1 downto 0 do 
+                res <- f array.[i] res
             res
 
 
@@ -740,35 +736,27 @@ namespace Microsoft.FSharp.Collections
                 state <- f.Invoke(state,array1.[i],array2.[i])
             state
 
-
-        let foldSubRight f (array : _[]) start fin acc = 
-            checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable res = acc 
-            for i = fin downto start do
-                res <- f.Invoke(array.[i],res)
-            res
-
-        let scanSubLeft f  initState (array : _[]) start fin = 
-            checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable state = initState 
-            let res = create (2+fin-start) initState 
-            for i = start to fin do
-                state <- f.Invoke(state,array.[i]);
-                res.[i - start+1] <- state
-            res
-
         [<CompiledName("Scan")>]
-        let scan<'T,'State> f (acc:'State) (array : 'T[]) = 
+        let inline scan<'T,'State> f (acc:'State) (array : 'T[]) = 
             checkNonNull "array" array
-            let len = array.Length
-            scanSubLeft f acc array 0 (len - 1)
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length + 1)
+            let mutable state = acc
+            res.[0] <- state
+            for i = 0 to array.Length - 1 do
+                state <- f state array.[i]
+                res.[i + 1] <- state
+            res
 
         [<CompiledName("ScanBack")>]
-        let scanBack<'T,'State> f (array : 'T[]) (acc:'State) = 
-            checkNonNull "array" array
-            Microsoft.FSharp.Primitives.Basics.Array.scanSubRight f array 0 (array.Length - 1) acc
+        let inline scanBack<'T,'State> f (array : 'T[]) (acc:'State) = 
+            checkNonNull "array" array            
+            let mutable state = acc
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length + 1)
+            res.[res.Length - 1] <- state
+            for i = array.Length - 1 downto 0 do
+                state <- f array.[i] state
+                res.[i] <- state
+            res
 
         [<CompiledName("Singleton")>]
         let inline singleton value = [|value|]
@@ -780,24 +768,26 @@ namespace Microsoft.FSharp.Collections
             init (array.Length-1) (fun i -> array.[i],array.[i+1])
 
         [<CompiledName("Reduce")>]
-        let reduce f (array : _[]) = 
+        let inline reduce f (array : _[]) = 
             checkNonNull "array" array
-            let len = array.Length
-            if len = 0 then 
+            if array.Length = 0 then 
                 invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             else 
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let mutable res = array.[0]
-                for i = 1 to len - 1 do
-                    res <- f.Invoke(res,array.[i])
+                for i = 1 to array.Length - 1 do
+                    res <- f res array.[i]
                 res
 
         [<CompiledName("ReduceBack")>]
-        let reduceBack f (array : _[]) = 
+        let inline reduceBack f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
             if len = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
-            else foldSubRight f array 0 (len - 2) array.[len - 1]
+            else            
+                let mutable res = array.[len - 1] 
+                for i = len - 2 downto 0 do
+                    res <- f array.[i] res
+                res
 
         [<CompiledName("SortInPlaceWith")>]
         let sortInPlaceWith f (array : 'T[]) =
