@@ -11,79 +11,179 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
   goto Skip
 )
 
-
-rem  SET FSC=C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\coreclr C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll
-
-rem    REM unsigned build of F# app 
-rem    "%FSC%" %fsc_flags% -o:test-unsigned.exe -g test.fs      
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM =========================================================================================
-rem    REM test by signing with command line arguments
-rem    REM =========================================================================================
-rem    
-rem    REM delay signed build of F# App with SHA1
-rem    "%FSC%" %fsc_flags% --delaysign --keyfile:sha1delay.snk -o:test-cl-delay-sha1.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM delay signed build of F# App with SHA256
-rem    "%FSC%" %fsc_flags% --delaysign --keyfile:sha256delay.snk -o:test-cl-delay-sha256.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-
-REM full signed build of F# App with SHA1
-rem    "%FSC%" %fsc_flags% --keyfile:sha1full.snk -o:test-cl-sha1.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-
-rem C:\KevinRansom\visualfsharp\release\net40\bin\fsc.exe --target:library --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
-rem @if ERRORLEVEL 1 goto Error
-
-C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha1full.snk -o:test-cl-sha1.dll test.fs
+rem ===================================================
+rem Test unsigned build
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=
+set outfile=unsigned
+call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
 
-C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha256full.snk -o:test-cl-sha256.dll test.fs
+rem ===================================================
+rem Test SHA1 key full signed  Command Line
+rem ===================================================
+set test_keyfile=sha1full.snk
+set test_delaysign=
+set extra_defines=
+set test_outfile=sha1-full-cl
+call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
 
-C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha512full.snk -o:test-cl-sha512.dll test.fs
+rem ===================================================
+rem Test SHA1 key delayl signed  Command Line
+rem ===================================================
+set test_keyfile=sha1delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha1-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
 
-C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\corerun.exe C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\fsc.exe --targetprofile:netcore --noframework --simpleresolution --target:library -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\mscorlib.ni.dll -r:C:\KevinRansom\visualfsharp\tests\testbin\release\coreclr\fsc\win7-x86\system.runtime.dll --keyfile:sha1024full.snk -o:test-cl-sha1024.dll test.fs
+rem ===================================================
+rem Test SHA 256 bit key fully signed  Command Line
+rem ===================================================
+set test_keyfile=sha256full.snk
+set test_delaysign=
+set extra_defines=
+set test_outfile=sha256-full-cl
+call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
 
-rem    REM full signed build of F# App with SHA256
-rem    "%FSC%" %fsc_flags% --keyfile:sha256full.snk -o:test-cl-sha256.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM =========================================================================================
-rem    REM test by signing with Attributes
-rem    REM =========================================================================================
-rem    
-rem    REM delay signed build of F# App with SHA1
-rem    "%FSC%" %fsc_flags% --define:DELAYSIGN --define:SHA1 -o:test-attributes-delay-sha1.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM delay signed build of F# App with SHA256
-rem    "%FSC%" %fsc_flags% --define:DELAYSIGN --define:SHA256 -o:test-attributes-delay-sha256.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM full signed build of F# App with SHA1
-rem    "%FSC%" %fsc_flags% --define:SHA1 -o:test-attributes-sha1.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
-rem    
-rem    REM full signed build of F# App with SHA256
-rem    "%FSC%" %fsc_flags% --define:SHA256 -o:test-attributes-sha256.exe test.fs
-rem    @if ERRORLEVEL 1 goto Error
+rem ===================================================
+rem Test SHA 256 bit key delay signed  Command Line
+rem ===================================================
+set test_keyfile=sha256delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha256-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
 
-:Ok
-echo Built fsharp %~f0 ok.
-echo. > build.ok
+rem ===================================================
+rem Test SHA 512 bit key fully signed  Command Line
+rem ===================================================
+set test_keyfile=sha512full.snk
+set test_delaysign=
+set extra_defines=
+set test_outfile=sha512-full-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 512 bit key delay signed  Command Line
+rem ===================================================
+set test_keyfile=sha512delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha512-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 1024 bit key fully signed  Command Line
+rem ===================================================
+set test_keyfile=sha1024full.snk
+set test_delaysign=
+set extra_defines=
+set test_outfile=sha1024-full-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 1024 bit key delay signed  Command Line
+rem ===================================================
+set test_keyfile=sha1024delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha1024-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+
+rem ===================================================
+rem Test SHA1 key full signed  Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA1
+set test_outfile=sha1-full-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA1 key delayl signed  Attributes
+rem ===================================================
+set test_keyfile=sha1delay.snk
+set test_delaysign=true
+set extra_defines=--define:SHA1 --define:DELAY
+set test_outfile=sha1-delay-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 256 bit key fully signed  Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA256
+set test_outfile=sha256-full-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 256 bit key delay signed  Attributes
+rem ===================================================
+set test_keyfile=sha256delay.snk
+set test_delaysign=
+set extra_defines=--define:SHA256 --define:DELAY
+set test_outfile=sha256-delay-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 512 bit key fully signed  Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA512
+set test_outfile=sha512-full-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 512 bit key delay signed Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA512 --define:DELAY
+set test_outfile=sha512-delay-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 1024 bit key fully signed  Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA1024
+set test_outfile=sha1024-full-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 1024 bit key delay signed  Attributes
+rem ===================================================
+set test_keyfile=
+set test_delaysign=
+set extra_defines=--define:SHA1024 --define:DELAY
+set test_outfile=sha1024-delay-attributes
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+
 endlocal
 exit /b 0
-
-:Skip
-echo Skipped %~f0
-endlocal
-exit /b 0
-
 
 :Error
 endlocal

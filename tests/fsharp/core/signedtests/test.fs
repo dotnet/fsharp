@@ -6,7 +6,7 @@ open System.Reflection
 
 #if SHA1
 #if DELAY
-[<assembly:AssemblyDelaySignAttribute(true)]>
+[<assembly:AssemblyDelaySignAttribute(true)>]
 [<assembly:AssemblyKeyFileAttribute("sha1delay.snk")>]
 #else
 [<assembly:AssemblyKeyFileAttribute("sha1full.snk")>]
@@ -14,7 +14,7 @@ open System.Reflection
 #endif
 #if SHA256
 #if DELAY
-[<assembly:AssemblyDelaySignAttribute(true)]>
+[<assembly:AssemblyDelaySignAttribute(true)>]
 [<assembly:AssemblyKeyFileAttribute("sha256delay.snk")>]
 #else
 [<assembly:AssemblyKeyFileAttribute("sha256full.snk")>]
@@ -22,7 +22,7 @@ open System.Reflection
 #endif
 #if SHA512
 #if DELAY
-[<assembly:AssemblyDelaySignAttribute(true)]>
+[<assembly:AssemblyDelaySignAttribute(true)>]
 [<assembly:AssemblyKeyFileAttribute("sha512delay.snk")>]
 #else
 [<assembly:AssemblyKeyFileAttribute("sha512full.snk")>]
@@ -30,7 +30,7 @@ open System.Reflection
 #endif
 #if SHA1024
 #if DELAY
-[<assembly:AssemblyDelaySignAttribute(true)]>
+[<assembly:AssemblyDelaySignAttribute(true)>]
 [<assembly:AssemblyKeyFileAttribute("sha1024delay.snk")>]
 #else
 [<assembly:AssemblyKeyFileAttribute("sha1024full.snk")>]
