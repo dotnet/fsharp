@@ -32,6 +32,9 @@ type ILResource with
 /// Proccess the given set of command line arguments
 val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
 
+module internal StaticLinker =
+    val internal StaticLink : TcConfig * TcImports * ILGlobals -> (ILTypeRef * ILTypeDef) list * (ILModuleDef -> ILModuleDef)
+
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe
 
