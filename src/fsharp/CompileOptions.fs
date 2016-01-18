@@ -256,12 +256,20 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
     | [] -> ()
     | ((rsp: string) :: t) when rsp.StartsWith("@") ->
         let responseFileOptions =
-            let path = rsp.TrimStart('@') |> FileSystem.GetFullPathShim
+            let fullpath =
+                try
+                    Some (rsp.TrimStart('@') |> FileSystem.GetFullPathShim)
+                with _ ->
+                    None
 
-            if not (FileSystem.SafeExists path) then
+            match fullpath with
+            | None ->
+                errorR(Error(FSComp.SR.optsResponseFileNameInvalid(rsp),rangeCmdArgs))
+                []
+            | Some(path) when not (FileSystem.SafeExists path) ->
                 errorR(Error(FSComp.SR.optsResponseFileNotFound(rsp, path),rangeCmdArgs))
                 []
-            else
+            | Some path ->
                 match ResponseFile.parseFile path with
                 | Choice2Of2 _ ->
                     errorR(Error(FSComp.SR.optsInvalidResponseFile(rsp, path),rangeCmdArgs))
