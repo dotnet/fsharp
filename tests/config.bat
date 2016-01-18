@@ -142,6 +142,7 @@ IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\csc.exe
 
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\ngen.exe"            SET NGEN=%CORDIR%\ngen.exe
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\al.exe"              SET ALINK=%CORDIR%\al.exe
+IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\sn.exe"              SET SN=%CORDIR%\sn.exe
 
 REM ==
 REM == The logic here is: pick the latest msbuild
@@ -153,6 +154,7 @@ IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORS
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\resgen.exe"          SET RESGEN=%CORSDK%\resgen.exe
 IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\al.exe"              SET ALINK=%CORSDK%\al.exe
+IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\sn.exe"              SET SN=%CORSDK%\sn.exe
 
 IF NOT DEFINED FSC                                            SET FSC=fsc.exe
 IF NOT DEFINED FSI                                            SET FSI=%fsiroot%.exe
@@ -225,6 +227,7 @@ echo MSBUILDTOOLSPATH    =%MSBuildToolsPath%
 echo NGEN                =%ngen%
 echo PEVERIFY            =%PEVERIFY%
 echo RESGEN              =%RESGEN%
+echo SN                  =%SN%
 echo ---------------------------------------------------------------
 
 exit /b 0

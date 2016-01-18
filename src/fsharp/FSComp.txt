@@ -1029,6 +1029,19 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 # -----------------------------------------------------------------------------
 1135,ilwriteErrorCreatingPdb,"Unexpected error creating debug information file '%s'"
 # -----------------------------------------------------------------------------
+# ilsign errors
+# -----------------------------------------------------------------------------
+1300,ilSignInvalidMagicValue,"Invalid Magic value in CLR Header"
+1301,ilSignBadImageFormat,"Bad image format"
+1302,ilSignPrivateKeyExpected,"Private key expected"
+1303,ilSignRsaKeyExpected,"RSA key expected"
+1304,ilSignInvalidBitLen,"Invalid bitLen"
+1305,ilSignInvalidRSAParams,"Invalid RSAParameters structure - '{{0}}' expected"
+1306,ilSignInvalidAlgId,"Invalid algId - 'Exponent' expected"
+1307,ilSignInvalidSignatureSize,"Invalid signature size"
+1308,ilSignNoSignatureDirectory,"No signature directory"
+1309,ilSignInvalidPKBlob,"Invalid Public Key blob"
+# -----------------------------------------------------------------------------
 # lex.fsl errors
 # -----------------------------------------------------------------------------
 1138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"

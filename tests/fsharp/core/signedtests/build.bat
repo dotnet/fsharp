@@ -6,6 +6,11 @@ if EXIST build.ok DEL /f /q build.ok
 
 call %~d0%~p0..\..\..\config.bat
 
+if '%flavor%' == '' ( 
+    echo needs flavor to be set
+    exit /b 1
+)
+
 if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" ( 
   ECHO Skipping test for FSI.EXE
   goto Skip
@@ -17,8 +22,10 @@ rem ===================================================
 set test_keyfile=
 set test_delaysign=
 set extra_defines=
-set outfile=unsigned
+set test_outfile=unsigned
 call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -30,15 +37,9 @@ set extra_defines=
 set test_outfile=sha1-full-cl
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
-
-rem ===================================================
-rem Test SHA1 key delayl signed  Command Line
-rem ===================================================
-set test_keyfile=sha1delay.snk
-set test_delaysign=true
-set extra_defines=
-set test_outfile=sha1-delay-cl
-call %~d0%~p0..\..\single-test-build.bat
+echo here
+call :Verify
+echo and here
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -50,15 +51,7 @@ set extra_defines=
 set test_outfile=sha256-full-cl
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
-
-rem ===================================================
-rem Test SHA 256 bit key delay signed  Command Line
-rem ===================================================
-set test_keyfile=sha256delay.snk
-set test_delaysign=true
-set extra_defines=
-set test_outfile=sha256-delay-cl
-call %~d0%~p0..\..\single-test-build.bat
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -70,15 +63,7 @@ set extra_defines=
 set test_outfile=sha512-full-cl
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
-
-rem ===================================================
-rem Test SHA 512 bit key delay signed  Command Line
-rem ===================================================
-set test_keyfile=sha512delay.snk
-set test_delaysign=true
-set extra_defines=
-set test_outfile=sha512-delay-cl
-call %~d0%~p0..\..\single-test-build.bat
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -90,6 +75,44 @@ set extra_defines=
 set test_outfile=sha1024-full-cl
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA1 key delayl signed  Command Line
+rem ===================================================
+set test_keyfile=sha1delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha1-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 256 bit key delay signed  Command Line
+rem ===================================================
+set test_keyfile=sha256delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha256-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
+
+rem ===================================================
+rem Test SHA 512 bit key delay signed  Command Line
+rem ===================================================
+set test_keyfile=sha512delay.snk
+set test_delaysign=true
+set extra_defines=
+set test_outfile=sha512-delay-cl
+call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA 1024 bit key delay signed  Command Line
@@ -100,7 +123,8 @@ set extra_defines=
 set test_outfile=sha1024-delay-cl
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
-
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA1 key full signed  Attributes
@@ -110,6 +134,8 @@ set test_delaysign=
 set extra_defines=--define:SHA1
 set test_outfile=sha1-full-attributes
 call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -121,6 +147,8 @@ set extra_defines=--define:SHA1 --define:DELAY
 set test_outfile=sha1-delay-attributes
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA 256 bit key fully signed  Attributes
@@ -131,15 +159,19 @@ set extra_defines=--define:SHA256
 set test_outfile=sha256-full-attributes
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA 256 bit key delay signed  Attributes
 rem ===================================================
-set test_keyfile=sha256delay.snk
+set test_keyfile=
 set test_delaysign=
 set extra_defines=--define:SHA256 --define:DELAY
 set test_outfile=sha256-delay-attributes
 call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -151,6 +183,8 @@ set extra_defines=--define:SHA512
 set test_outfile=sha512-full-attributes
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA 512 bit key delay signed Attributes
@@ -160,6 +194,8 @@ set test_delaysign=
 set extra_defines=--define:SHA512 --define:DELAY
 set test_outfile=sha512-delay-attributes
 call %~d0%~p0..\..\single-test-build.bat
+@if ERRORLEVEL 1 goto Error
+call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
@@ -171,6 +207,8 @@ set extra_defines=--define:SHA1024
 set test_outfile=sha1024-full-attributes
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 rem ===================================================
 rem Test SHA 1024 bit key delay signed  Attributes
@@ -181,6 +219,8 @@ set extra_defines=--define:SHA1024 --define:DELAY
 set test_outfile=sha1024-delay-attributes
 call %~d0%~p0..\..\single-test-build.bat
 @if ERRORLEVEL 1 goto Error
+call :Verify
+@if ERRORLEVEL 1 goto Error
 
 endlocal
 exit /b 0
@@ -188,3 +228,17 @@ exit /b 0
 :Error
 endlocal
 exit /b %ERRORLEVEL%
+
+:Verify
+if exist %sn% (
+    pushd %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\
+ 
+    echo sn -q stops all output except error messages               > %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\test-%test_outfile%.out
+    echo if the output is a valid file no output is produced.       >> %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\test-%test_outfile%.out
+    echo delay-signed and unsigned produce error messages.          >> %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\test-%test_outfile%.out
+    %sn% -q -vf test-%test_outfile%.exe                             >> %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\test-%test_outfile%.out
+    rem verify against baseline
+    popd
+    fc %~d0%~p0..\..\..\testbin\%flavor%\coreclr\fsharp\core\signedtests\output\test-%test_outfile%.out %~d0%~p0test-%test_outfile%.bsl
+    if ERRORLEVEL 1 goto :Error
+)

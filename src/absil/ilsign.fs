@@ -35,6 +35,8 @@ open System.Runtime.InteropServices
     let RSA_PUB_MAGIC = int(0x31415352)
     let RSA_PRIV_MAGIC = int(0x32415352)
 
+    let GetResourceString (_, str) = str
+
     [<StructLayout(LayoutKind.Explicit)>]
     type ByteArrayUnion = 
         struct 
@@ -60,7 +62,7 @@ open System.Runtime.InteropServices
             match peHeaders.PEHeader.Magic with
             | PEMagic.PE32 ->       peHeaderOffset + 0x80, 0xE0             // offsetof(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER32)
             | PEMagic.PE32Plus ->   peHeaderOffset + 0x90,0xF0              // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
-            | _ -> raise (BadImageFormatException("Invalid Magic value in CLR Header"))
+            | _ -> raise (BadImageFormatException(GetResourceString(FSComp.SR.ilSignInvalidMagicValue())))
 
         let allHeadersSize = peHeaderOffset + peHeaderSize + int(peHeaders.CoffHeader.NumberOfSections) * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
         let allHeaders = 
@@ -78,7 +80,7 @@ open System.Runtime.InteropServices
         let signatureStart =
             match peHeaders.TryGetDirectoryOffset(signatureDirectory) with 
             | true, value -> value
-            | _           -> raise (BadImageFormatException("Assembly is not signed" ))
+            | _           -> raise (BadImageFormatException(GetResourceString(FSComp.SR.ilSignBadImageFormat())))
         let signatureEnd = signatureStart + signatureDirectory.Size
         let buffer = GetUnderlyingArray (peReader.GetEntireImage().GetContent())
         let sectionHeaders = peHeaders.SectionHeaders
@@ -120,14 +122,14 @@ open System.Runtime.InteropServices
 
     let RSAParamatersFromBlob (blob:byte[]) keyType =
         let mutable reader = BlobReader(blob)
-        if reader.ReadInt32 <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException("Private key expected"))
-        reader.ReadInt32 |>ignore                                                                       // ALG_ID
-        if reader.ReadInt32 <> RSA_PRIV_MAGIC then raise (CryptographicException("RSA key expected"))   // 'RSA2'
+        if reader.ReadInt32 <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(GetResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
+        reader.ReadInt32 |>ignore                                                                                                       // ALG_ID
+        if reader.ReadInt32 <> RSA_PRIV_MAGIC then raise (CryptographicException(GetResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
         let byteLen, halfLen = 
             let bitLen = reader.ReadInt32
             match bitLen % 16 with
             | 0 -> (bitLen / 8, bitLen / 16)
-            | _ -> raise (CryptographicException("Invalid bitLen"))
+            | _ -> raise (CryptographicException(GetResourceString(FSComp.SR.ilSignInvalidBitLen())))
         let mutable key = RSAParameters()
         key.Exponent <- reader.ReadBigInteger(4)
         key.Modulus <- reader.ReadBigInteger(byteLen)
@@ -140,15 +142,16 @@ open System.Runtime.InteropServices
         key
 
     let toCLRKeyBlob (rsaParameters:RSAParameters) (algId:int) : byte[] = 
-        let validateRSAField (field:byte[]) expected name =
-            if field <> null && field.Length <> expected then raise (CryptographicException(sprintf "Invalid RSAParameters structure - '%s' expected" name))
+        let validateRSAField (field:byte[]) expected (name:string) =
+            if field <> null && field.Length <> expected then 
+                raise (CryptographicException(String.Format(GetResourceString(FSComp.SR.ilSignInvalidRSAParams()), name)))
 
         // The original FCall this helper emulates supports other algId's - however, the only algid we need to support is CALG_RSA_KEYX. We will not port the codepaths dealing with other algid's. 
-        if algId <> CALG_RSA_KEYX then raise (CryptographicException("Invalid algId - 'Exponent' expected"))
+        if algId <> CALG_RSA_KEYX then raise (CryptographicException(GetResourceString(FSComp.SR.ilSignInvalidAlgId())))
 
         // Validate the RSA structure first. 
-        if rsaParameters.Modulus = null then raise (CryptographicException("Invalid RSAParameters structure - 'Modulus' expected"))
-        if rsaParameters.Exponent = null || rsaParameters.Exponent.Length > 4 then raise (CryptographicException("Invalid RSAParameters structure - 'Exponent' expected"))
+        if rsaParameters.Modulus = null then raise (CryptographicException(String.Format(GetResourceString(FSComp.SR.ilSignInvalidRSAParams()), "Modulus")))
+        if rsaParameters.Exponent = null || rsaParameters.Exponent.Length > 4 then raise (CryptographicException(String.Format(GetResourceString(FSComp.SR.ilSignInvalidRSAParams()), "Exponent")))
 
         let modulusLength = rsaParameters.Modulus.Length
         let halfModulusLength = (modulusLength + 1) / 2
@@ -212,9 +215,9 @@ open System.Runtime.InteropServices
         let peHeaders = peReader.PEHeaders
         let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
         let signatureOffset =
-            if signatureDirectory.Size > signature.Length then raise (BadImageFormatException("Invalid signature size"))
+            if signatureDirectory.Size > signature.Length then raise (BadImageFormatException(GetResourceString(FSComp.SR.ilSignInvalidSignatureSize())))
             match peHeaders.TryGetDirectoryOffset(signatureDirectory) with
-            | false, _              -> raise (BadImageFormatException("No signature directory"))
+            | false, _              -> raise (BadImageFormatException(GetResourceString(FSComp.SR.ilSignNoSignatureDirectory())))
             | true, signatureOffset -> int64(signatureOffset)
         stream.Seek(signatureOffset, SeekOrigin.Begin) |>ignore
         stream.Write(signature, 0, signature.Length)
@@ -237,13 +240,13 @@ open System.Runtime.InteropServices
         signStream fs keyBlob
 
     let SignatureSize (pk:byte[]) =
-        if pk.Length < 25 then raise (CryptographicException("Invalid Public Key blob"))
+        if pk.Length < 25 then raise (CryptographicException(GetResourceString(FSComp.SR.ilSignInvalidPKBlob())))
         let mutable reader = BlobReader(pk)
-        reader.ReadBigInteger(12) |> ignore                                             // Skip CLRHeader
-        reader.ReadBigInteger(8)  |> ignore                                             // Skip BlobHeader
-        let magic = reader.ReadInt32                                                    // Read magic
-        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then                   // RSAPubKey.magic 
-            raise (CryptographicException("Invalid Public Key blob"))
+        reader.ReadBigInteger(12) |> ignore                                                     // Skip CLRHeader
+        reader.ReadBigInteger(8)  |> ignore                                                     // Skip BlobHeader
+        let magic = reader.ReadInt32                                                            // Read magic
+        if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then                           // RSAPubKey.magic 
+            raise (CryptographicException(GetResourceString(FSComp.SR.ilSignInvalidPKBlob())))
         let x = reader.ReadInt32 / 8
         x
 
