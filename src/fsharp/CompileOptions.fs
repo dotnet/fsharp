@@ -188,7 +188,7 @@ module ResponseFile =
 
         try
             use stream = FileSystem.FileStreamReadShim path
-            use reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8)
+            use reader = new System.IO.StreamReader(stream, true)
             let data =
                 seq { while not reader.EndOfStream do yield reader.ReadLine () }
                 |> Seq.choose parseLine
