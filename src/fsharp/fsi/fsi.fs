@@ -821,7 +821,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError();
             
         let fragName = textOfLid prefixPath 
-        let providedTypes, staticLinker = Driver.StaticLinker.StaticLink(tcConfig, tcImports, ilGlobals)
+        let providedTypes, _staticLinker = Driver.StaticLinker.StaticLink(tcConfig, tcImports, ilGlobals)
         let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator, providedTypes)
         errorLogger.AbortOnError();
 
