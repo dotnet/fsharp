@@ -405,7 +405,7 @@ module internal ExtensionTyping =
                             let namedArgs = 
                                 a.NamedArguments 
                                 |> Seq.toList 
-                                |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
+                                |> List.map (fun arg -> arg.MemberInfo.Name, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
                             ctorArgs, namedArgs)
 
                   member __.GetHasTypeProviderEditorHideMethodsAttribute provider = 
@@ -569,6 +569,8 @@ module internal ExtensionTyping =
         member __.IsFamilyAndAssembly = x.IsFamilyAndAssembly
         override __.Equals y = assert false; match y with :? ProvidedFieldInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
+        static member TaintedEquals (pt1:Tainted<ProvidedFieldInfo>, pt2:Tainted<ProvidedFieldInfo>) = 
+           Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 
 
