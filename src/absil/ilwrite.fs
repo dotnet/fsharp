@@ -487,10 +487,11 @@ let DumpDebugInfo (outfile:string) (info:PdbData) =
 
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
+    | PublicKeyOptionsSigner of Support.pubkeyOptions
     | KeyPair of Support.keyPair
     | KeyContainer of Support.keyContainerName
 
-    static member OpenPublicKeyFile s = PublicKeySigner(Support.signerOpenPublicKeyFile s)
+    static member OpenPublicKeyOptions s p = PublicKeyOptionsSigner((Support.signerOpenPublicKeyFile s), p)
 
     static member OpenPublicKey pubkey = PublicKeySigner(pubkey)
 
@@ -501,29 +502,42 @@ type ILStrongNameSigner =
     member s.Close() = 
         match s with 
         | PublicKeySigner _
+        | PublicKeyOptionsSigner _
         | KeyPair _ -> ()
         | KeyContainer containerName -> Support.signerCloseKeyContainer(containerName)
       
     member s.IsFullySigned =
         match s with 
         | PublicKeySigner _ -> false
+        | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
+                                        usePublicSign
         | KeyPair _ | KeyContainer _ -> true
 
     member s.PublicKey = 
         match s with 
-        | PublicKeySigner p -> p
+        | PublicKeySigner pk -> pk
+        | PublicKeyOptionsSigner pko -> let pk, _ = pko
+                                        pk
         | KeyPair kp -> Support.signerGetPublicKeyForKeyPair kp
         | KeyContainer kn -> Support.signerGetPublicKeyForKeyContainer kn
 
     member s.SignatureSize = 
-        try Support.signerSignatureSize(s.PublicKey)
-        with e -> 
-          failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-          0x80 
+        let pkSignatureSize pk =
+            try Support.signerSignatureSize(pk)
+            with e -> 
+              failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
+              0x80 
+        match s with 
+        | PublicKeySigner pk -> pkSignatureSize pk
+        | PublicKeyOptionsSigner pko -> let pk, _ = pko
+                                        pkSignatureSize pk
+        | KeyPair kp -> pkSignatureSize (Support.signerGetPublicKeyForKeyPair kp)
+        | KeyContainer kn -> pkSignatureSize (Support.signerGetPublicKeyForKeyContainer kn)
 
     member s.SignFile file = 
         match s with 
         | PublicKeySigner _ -> ()
+        | PublicKeyOptionsSigner _ -> ()
         | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
         | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
 

@@ -260,6 +260,7 @@ type TcConfigBuilder =
       mutable signer : string option
       mutable container : string option
       mutable delaysign : bool
+      mutable publicsign : bool
       mutable version : VersionFlag 
       mutable metadataVersion : string option
       mutable standalone : bool
@@ -410,6 +411,7 @@ type TcConfig =
     member signer : string option
     member container : string option
     member delaysign : bool
+    member publicsign : bool
     member version : VersionFlag 
     member metadataVersion : string option
     member standalone : bool
