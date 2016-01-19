@@ -4803,6 +4803,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match args with
             | SynConstructorArgs.Pats [] -> warnOnUpper
             | _ -> AllIdsOK
+
+        let checkNoArgsForLiteral() = 
+            let nargs =
+                match args with
+                | SynConstructorArgs.Pats args -> args.Length
+                | SynConstructorArgs.NamePatPairs (pairs, _) -> pairs.Length
+            if nargs <> 0 then error(Error(FSComp.SR.tcLiteralDoesNotTakeArguments(),m)) 
+
         begin match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
             match args with 
@@ -4950,6 +4958,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match finfo.LiteralValue with 
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), m))
             | Some lit -> 
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty (finfo.FieldType(cenv.amap,m))
                 let c' = TcFieldInit m lit
                 (fun _ -> TPat_const (c',m)),(tpenv,names,takenNames)             
@@ -4962,6 +4971,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match rfinfo.LiteralValue with 
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), m))
             | Some lit -> 
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty rfinfo.FieldType
                 (fun _ -> TPat_const (lit,m)),(tpenv,names,takenNames)             
 
@@ -4972,6 +4982,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                 let (_, _, vexpty, _, _) = TcVal true cenv env tpenv vref None m
                 CheckValAccessible m env.eAccessRights vref
                 CheckFSharpAttributes cenv.g vref.Attribs m |> CommitOperationResult
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty vexpty
                 (fun _ -> TPat_const (lit,m)),(tpenv,names,takenNames)             
 
