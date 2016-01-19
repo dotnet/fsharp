@@ -528,7 +528,7 @@ let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) =
 
 // OptionBlock: Output files
 //--------------------------
-          
+
 let outputFileFlagsFsi (_tcConfigB : TcConfigBuilder) = []
 let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
     [
@@ -537,7 +537,7 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
 
         CompilerOption("target",  tagExe, OptionString (SetTarget tcConfigB), None,
                             Some (FSComp.SR.optsBuildConsole()));
-                           
+
         CompilerOption("target", tagWinExe, OptionString (SetTarget tcConfigB), None,
                             Some (FSComp.SR.optsBuildWindows()));
 
@@ -549,6 +549,9 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
 
         CompilerOption("delaysign", tagNone, OptionSwitch (fun s -> tcConfigB.delaysign <- (s = OptionSwitch.On)), None,
                             Some (FSComp.SR.optsDelaySign()));
+
+        CompilerOption("publicsign", tagNone, OptionSwitch (fun s -> tcConfigB.publicsign <- (s = OptionSwitch.On)), None,
+                            Some (FSComp.SR.optsPublicSign()));
 
         CompilerOption("doc", tagFile, OptionString (fun s -> tcConfigB.xmlDocOutputFile <- Some s), None,
                             Some (FSComp.SR.optsWriteXml()));
@@ -598,12 +601,12 @@ let resourcesFlagsFsc (tcConfigB : TcConfigBuilder) =
 
 // OptionBlock: Code generation
 //-----------------------------
-      
+
 let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
     [
         CompilerOption("debug", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None,
                            Some (FSComp.SR.optsDebugPM()));
-        
+
         CompilerOption("debug", tagFullPDBOnly, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
                            Some (FSComp.SR.optsDebug()));
 
@@ -615,9 +618,9 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
                            
         CompilerOption("crossoptimize", tagNone, OptionSwitch (crossOptimizeSwitch tcConfigB), None,
                            Some (FSComp.SR.optsCrossoptimize()));
-        
+
     ]
- 
+
 
 // OptionBlock: Language
 //----------------------
@@ -647,7 +650,7 @@ let libFlag (tcConfigB : TcConfigBuilder) =
 let libFlagAbbrev (tcConfigB : TcConfigBuilder) = 
         CompilerOption("I", tagDirList, OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup,s,tcConfigB.implicitIncludeDir)), None,
                            Some (FSComp.SR.optsShortFormOf("--lib")))
-      
+
 let codePageFlag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("codepage", tagInt, OptionInt (fun n -> 
                      try 
@@ -674,7 +677,7 @@ let fullPathsFlag  (tcConfigB : TcConfigBuilder)  =
 let cliRootFlag (_tcConfigB : TcConfigBuilder) = 
         CompilerOption("cliroot", tagString, OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
                            Some(FSComp.SR.optsClirootDescription()))
-          
+
 let advancedFlagsBoth tcConfigB =
     [
         codePageFlag tcConfigB;

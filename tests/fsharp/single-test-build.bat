@@ -142,6 +142,9 @@ if not "%test_keyfile%" == "" (
 if not "%test_delaysign%" == "" (
     set command_line_args=%command_line_args% --delaysign:yes
 )
+if not "%test_publicsign%" == "" (
+    set command_line_args=%command_line_args% --publicsign:yes
+)
 if not "%extra_defines%" == "" (
     set command_line_args=%command_line_args% %extra_defines%
 )

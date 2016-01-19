@@ -1808,7 +1808,7 @@ type ISystemRuntimeCcuInitializer =
     abstract EndLoadingSystemRuntime : state : obj * resolver : (CcuLoadFailureAction -> AssemblyReference -> ImportedAssembly option) -> ImportedAssembly
 
 type NetCoreSystemRuntimeTraits(primaryAssembly) = 
-    
+
     let valueOf name hole = 
         match hole with
         | Some assembly -> assembly
@@ -1964,6 +1964,7 @@ type TcConfigBuilder =
       mutable container : string option
 
       mutable delaysign : bool
+      mutable publicsign : bool
       mutable version : VersionFlag 
       mutable metadataVersion : string option
       mutable standalone : bool
@@ -2050,7 +2051,6 @@ type TcConfigBuilder =
 #endif
       }
 
-
     static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =  
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
@@ -2132,6 +2132,7 @@ type TcConfigBuilder =
           baseAddress = None
 
           delaysign = false
+          publicsign = false
           version = VersionNone
           metadataVersion = None
           standalone = false
@@ -2605,6 +2606,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.signer  = data.signer
     member x.container = data.container
     member x.delaysign  = data.delaysign
+    member x.publicsign  = data.publicsign
     member x.version  = data.version
     member x.metadataVersion = data.metadataVersion
     member x.standalone  = data.standalone

@@ -1281,12 +1281,13 @@ let pdbVariableGetAddressAttributes (variable:PdbVariable) :  (int32 * int32) =
 type keyContainerName = string
 type keyPair = byte[]
 type pubkey = byte[]
+type pubkeyOptions = byte[] * bool
 
 #if FX_NO_CORHOST_SIGNER
 
 let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
-let signerOpenKeyPairFile   filePath = FileSystem.ReadAllBytesShim(filePath)
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
 let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
     let reply = (StrongNameSign.GetPublicKeyForKeyPair kp)
@@ -1444,7 +1445,6 @@ let getICLRStrongName () =
     | Some(sn) -> sn
 
 let signerGetPublicKeyForKeyPair kp =
-    printfn "Enter signerGetPublicKeyForKeyPair %A " kp
     let mutable pSize = 0u
     let mutable pBuffer : nativeint = (nativeint)0
     let iclrSN = getICLRStrongName()
@@ -1454,9 +1454,7 @@ let signerGetPublicKeyForKeyPair kp =
     // Copy the marshalled data over - we'll have to free this ourselves
     Marshal.Copy(pBuffer, keybuffer, 0, (int)pSize)
     iclrSN.StrongNameFreeBuffer(pBuffer) |> ignore
-    let reply = keybuffer
-    printfn "Leave signerGetPublicKeyForKeyPair %A" reply
-    reply
+    keybuffer
 
 let signerGetPublicKeyForKeyContainer kc =
     let mutable pSize = 0u
@@ -1477,11 +1475,9 @@ let signerSignatureSize pk =
     let mutable pSize =  0u
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
-    printfn "leave signerSignatureSize %A" pSize
     int pSize
 
 let signerSignFileWithKeyPair fileName kp = 
-    printfn "leave signerSignFileWithKeyPair:kp %A" kp
     let mutable pcb = 0u
     let mutable ppb = (nativeint)0
     let mutable ok = false

@@ -1693,10 +1693,10 @@ module StaticLinker =
 // EMIT IL
 //----------------------------------------------------------------------------
 
-type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
+type SigningInfo = SigningInfo of (* delaysign:*) bool * (* publicsign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 let GetSigner signingInfo = 
-        let (SigningInfo(delaysign,signer,container)) = signingInfo
+        let (SigningInfo(delaysign,publicsign,signer,container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
         if isSome container then
             Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
@@ -1704,9 +1704,9 @@ let GetSigner signingInfo =
             match signer with 
             | None -> None
             | Some(s) ->
-                try 
-                if delaysign then
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+                try
+                if publicsign || delaysign then
+                    Some((ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign))
                 else
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
                 with e -> 
@@ -1740,9 +1740,9 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
     let delaySignAttrib = AttributeHelpers.TryFindBoolAttribute tcGlobals "System.Reflection.AssemblyDelaySignAttribute" topAttrs.assemblyAttrs
     let signerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyFileAttribute" topAttrs.assemblyAttrs
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
-    
+
     // REVIEW: C# throws a warning when these attributes are used - should we?
-    
+
     // if delaySign is set via an attribute, validate that it wasn't set via an option
     let delaysign = 
         match delaySignAttrib with 
@@ -1777,8 +1777,8 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
             else
               Some container
         | None -> tcConfig.container
-    
-    SigningInfo (delaysign,signer,container)
+
+    SigningInfo (delaysign,tcConfig.publicsign,signer,container)
  
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the

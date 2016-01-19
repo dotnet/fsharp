@@ -140,6 +140,7 @@ val pdbGetDebugInfo: PdbWriter -> idd
 type keyContainerName = string
 type keyPair = byte[]
 type pubkey = byte[]
+type pubkeyOptions = byte[] * bool
 
 val signerOpenPublicKeyFile: string -> pubkey 
 val signerOpenKeyPairFile: string -> keyPair 
