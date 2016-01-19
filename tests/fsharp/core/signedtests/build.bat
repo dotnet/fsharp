@@ -127,7 +127,7 @@ call :Verify
 @if ERRORLEVEL 1 goto Error
 
 rem ===================================================
-rem Test SHA 1024 bit key delay signed  Command Line
+rem Test dumpbin with SHA 1024 bit key public signed CL
 rem ===================================================
 set test_keyfile=sha1024delay.snk
 set test_delaysign=true
