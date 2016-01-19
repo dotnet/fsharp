@@ -29,7 +29,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         No = 0
     }
 
-    // The interface between SourceImpl+FSharpSourceImpl and the rest of the language service.
+    // The interface between FSharpSourceBase+FSharpSource and the rest of the language service.
     interface ISource : IDisposable
     {
         void Open();
@@ -79,9 +79,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         void HandleUntypedParseOrFullTypeCheckResponse(BackgroundRequest req);
         IVsHiddenTextSession GetHiddenTextSession();
         string GetExpressionAtPosition(int line, int column);
-#if DEBUG
-        string OriginalFilename { get; }
-#endif
         DateTime OpenedTime { get; }
     }
 

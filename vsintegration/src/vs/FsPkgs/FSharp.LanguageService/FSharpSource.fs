@@ -4,86 +4,112 @@
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
-open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.Text
-open System.IO
 open System.Collections.Generic
-open System.Collections
-open System.Configuration
 open System.Diagnostics
-open System.Globalization
 open System.Threading
-open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop 
+open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.Lib
-open Internal.Utilities.Debug
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
-module internal Source =
-    type DelegatingSource(  recolorizeWholeFile:unit->unit,
-                            recolorizeLine:int->unit,
-                            currentFileName:unit -> string,
-                            isClosed:unit->bool,
-                            fileChangeEx:IVsFileChangeEx) =         
+type internal IDependencyFileChangeNotify = 
+
+     /// Invoked when a dependency file gets created or deleted 
+     abstract DependencyFileCreated : IProjectSite -> unit
+
+     /// Invoked when a dependency file changes
+     abstract DependencyFileChanged : string -> unit
+
+/// An interface implemented by both the unit-testable FSharpSourceTestable
+/// and the actual FSharpSource.
+type internal IFSharpSource =
+    /// Request colorization of the whole source file
+    abstract RecolorizeWholeFile : unit -> unit
+    abstract RecolorizeLine : line:int -> unit
+    // Called to notify the source that the user has changed the source text in the editor.
+    abstract RecordChangeToView: unit -> unit
+    // Called to notify the source the file has been redisplayed.
+    abstract RecordViewRefreshed: unit -> unit
+    // If true, the file displayed has changed and needs to be redisplayed to some extent.
+    abstract NeedsVisualRefresh : bool with get
+    /// Number of most recent change to this file.
+    abstract ChangeCount : int with get,set
+    /// Timestamp of the last change
+    abstract DirtyTime : int with get,set
+    /// Whether or not this source is closed.
+    abstract IsClosed: unit -> bool with get
+    /// Store a ProjectSite for obtaining a task provider
+    abstract ProjectSite : IProjectSite option with get,set
+    /// Specify the files that should trigger a rebuild for the project behind this source
+    abstract SetDependencyFiles : string list -> bool
+    
+    
+
+/// The core implementation of IFSharpSource and IVsFileChangeEvents, delegating to the given 
+/// functions to allow some unit testing. This implements IFSharpSource (used during unit-testing).
+type internal FSharpSourceTestable
+                    (recolorizeWholeFile:unit->unit, 
+                     recolorizeLine:int->unit, 
+                     currentFileName:unit -> string, 
+                     isClosed:unit->bool, 
+                     vsFileWatch:IVsFileChangeEx, 
+                     depFileChange: IDependencyFileChangeNotify) =         
             
-        let projectSite : IProjectSite option ref = ref None
-        let dependencyFileChangeCallback : (ProjectSiteRebuildCallbackSignature*DependencyFileChangeCallbackSignature) option ref = ref None
+        let mutable projectSite : IProjectSite option = None
 
         let mutable isDisposed = false
-        let mutable hasCalledSetDependencyFilesAtLeastOnce = false            
         let lastDependencies = new Dictionary<string,uint32>()  // filename, cookie
-        let fileChangeFlags = _VSFILECHANGEFLAGS.VSFILECHG_Add ||| 
-                              // _VSFILECHANGEFLAGS.VSFILECHG_Del ||| // don't listen for deletes - if a file (such as a 'Clean'ed project reference) is deleted, just keep using stale info
-                              _VSFILECHANGEFLAGS.VSFILECHG_Time
-        let fileChangeFlags : uint32 = uint32 fileChangeFlags
+        let fileChangeFlags = 
+            uint32 (_VSFILECHANGEFLAGS.VSFILECHG_Add ||| 
+                    // _VSFILECHANGEFLAGS.VSFILECHG_Del ||| // don't listen for deletes - if a file (such as a 'Clean'ed project reference) is deleted, just keep using stale info
+                    _VSFILECHANGEFLAGS.VSFILECHG_Time)
         
-        let mutable isDirty = true
+        let mutable needsVisualRefresh = true
         let mutable changeCount = 0
         let mutable dirtyTime = 0
         
         let IncrementWithWrap(v:int) =
             if v = Int32.MaxValue then 0 else v + 1    
         
-        interface IdealSource with 
+        interface IFSharpSource with 
             member source.RecolorizeWholeFile() = recolorizeWholeFile() 
             member source.RecolorizeLine line = recolorizeLine line
             
             member source.ChangeCount
                 with get() = changeCount
                 and set(value) = changeCount <- value
+
             member source.DirtyTime
                 with get() = dirtyTime
                 and set(value) = dirtyTime <- value   
+
             member source.RecordChangeToView() = 
-                isDirty <- true
+                needsVisualRefresh <- true
                 dirtyTime <- System.Environment.TickCount; // NOTE: If called fast enough, it is possible for dirtyTime to have the same value as it had before.
                 changeCount <- IncrementWithWrap(changeCount)
+
             member source.RecordViewRefreshed() = 
-                isDirty <- false
-            member source.NeedsVisualRefresh 
-                with get() = isDirty
-            member source.IsClosed 
-                with get() = isClosed()
+                needsVisualRefresh <- false
+
+            member source.NeedsVisualRefresh = needsVisualRefresh
+
+            member source.IsClosed = isClosed()
+
             member source.ProjectSite
-                with get() = !projectSite // REVIEW: Could get this from IVsTextBuffer->IVsHierarchy->IProjectSite
-                and set(value) = projectSite := value
+                with get() = projectSite // REVIEW: Could get this from IVsTextBuffer->IVsHierarchy->IProjectSite
+                and set(value) = projectSite <- value
+
             /// returns true if the set of dependency files we're watching changes, false otherwise (except that it always returns false on the first call to this method on this object)
             member source.SetDependencyFiles(files) = 
                 let changeEvents = source :> IVsFileChangeEvents
@@ -91,101 +117,72 @@ module internal Source =
                 // As a result, we compute the diffs, and only act on the diff.
                 
                 // figure out dependencies that are no longer needed
-                let cookiesToRemove = ref []
-                let filesToRemove = ref []
+                let mutable cookiesToRemove = []
+                let mutable filesToRemove = []
                 let newFilesSet = new System.Collections.Generic.HashSet<string>(files)  // may do lots of .Contains() calls, so do this to avoid O(N^2)
                 for key in lastDependencies.Keys do
                     if not( newFilesSet.Contains(key) ) then
-                        filesToRemove := key :: !filesToRemove
-                        cookiesToRemove := lastDependencies.[key] :: !cookiesToRemove
+                        filesToRemove <- key :: filesToRemove
+                        cookiesToRemove <- lastDependencies.[key] :: cookiesToRemove
                 // remove from local dictionary
-                Trace.PrintLine("ChangeEvents", (fun () -> sprintf "IdealSource() will stop watching %A" filesToRemove))
-                for key in !filesToRemove do
+                for key in filesToRemove do
                     lastDependencies.Remove(key) |> ignore
                     
                 // figure out new dependencies that must be added
-                let filesToAdd = ref []
+                let mutable filesToAdd = []
                 for file in files do
                     if not( lastDependencies.ContainsKey(file) ) then
-                        filesToAdd := file :: !filesToAdd
-                Trace.PrintLine("ChangeEvents", (fun () -> sprintf "IdealSource() will start watching %A" filesToAdd))
+                        filesToAdd <- file :: filesToAdd
 
-                let r = hasCalledSetDependencyFilesAtLeastOnce
-                hasCalledSetDependencyFilesAtLeastOnce <- true
-                
-                match !filesToAdd, !cookiesToRemove with
+                match filesToAdd, cookiesToRemove with
                 | [], [] -> false // nothing changed
-                | _ ->
+                | filesToAdd, cookiesToRemove ->
                     // talk to IVsFileChangeEx to update set of notifications we want
-                    match fileChangeEx with
-                    |   null -> ()
+                    match vsFileWatch with
+                    |   null -> false
                     |   _ ->
                             UIThread.RunSync(fun () ->
                                 if not isDisposed then
-                                    for file in !filesToAdd do
+                                    for file in filesToAdd do
                                         if not (lastDependencies.ContainsKey file) then 
                                             try
-                                                let cookie = Com.ThrowOnFailure1(fileChangeEx.AdviseFileChange(file, fileChangeFlags, changeEvents))
+                                                let cookie = Com.ThrowOnFailure1(vsFileWatch.AdviseFileChange(file, fileChangeFlags, changeEvents))
                                                 lastDependencies.Add(file, cookie)
                                             with _ -> ()  // can throw, e.g. when file/directory to watch does not exist; this is safe to ignore
-                                    for cookie in !cookiesToRemove do
-                                        Com.ThrowOnFailure0(fileChangeEx.UnadviseFileChange(cookie))
+                                    for cookie in cookiesToRemove do
+                                        Com.ThrowOnFailure0(vsFileWatch.UnadviseFileChange(cookie))
                             )
-                    r
+                            true
                         
-            member source.SetDependencyFileChangeCallback(projectSiteCallback,sourceFileCallback) = 
-                dependencyFileChangeCallback := Some(projectSiteCallback,sourceFileCallback)
-                           
-        // Hook file change events                
+        // Hook file change events in dependency files.
         interface IVsFileChangeEvents with 
-            member changes.FilesChanged(_count : uint32, files: string [], changeFlags : uint32 []) = 
-                match !dependencyFileChangeCallback with
-                | None -> failwith "expected a dependencyFileChangeCallback"
-                | Some(projectRetypecheckCallback, fileChangeCallback) ->
-                    let changeFlags : DependencyChangeCode seq = changeFlags |> Seq.map int |> Seq.map enum
-                    let zip : (string*DependencyChangeCode) seq = Seq.zip files changeFlags
-                    let zip : (string * DependencyChangeCode) list = Seq.toList zip
-                    let LogChangeEvent msg (file,flag) = 
-                        Trace.PrintLine("ChangeEvents", (fun () -> sprintf " IdealSource saw change (%A) in file %s %s " flag file msg))
-                    let source = changes :> IdealSource
-                    let dcc = DependencyChangeCode.FileChanged ||| DependencyChangeCode.TimeChanged
-                    match source.ProjectSite with
-                    | Some(projectSite) -> 
-                        if Trace.ShouldLog("ChangeEvents") then 
-                            zip |> List.iter (LogChangeEvent "and is sending to callback")
-                        if Seq.forall (fun cf -> cf &&& (~~~ dcc) = DependencyChangeCode.NoChange) changeFlags then
-                            fileChangeCallback(currentFileName())
-                        else
-                            projectRetypecheckCallback(projectSite)                               
-                    | None ->
-                        if Trace.ShouldLog("ChangeEvents") then 
-                            zip |> List.iter (LogChangeEvent "and is NOT sending to callback because there is no project site")
-                    0
+            member changes.FilesChanged(_count : uint32, _files: string [], changeFlags : uint32 []) = 
+                let changeFlags = changeFlags |> Array.map int |> Array.map enum<_VSFILECHANGEFLAGS>
+        
+                match projectSite with
+                | Some projectSite -> 
+                    depFileChange.DependencyFileChanged(currentFileName())
+                    if changeFlags |> Array.exists (fun cf -> cf &&& (_VSFILECHANGEFLAGS.VSFILECHG_Add ||| _VSFILECHANGEFLAGS.VSFILECHG_Del) <> enum 0) then
+                        depFileChange.DependencyFileCreated(projectSite)                               
+                | None -> ()
+                0
+
             member changes.DirectoryChanged(_directory: string) = 0
             
         interface IDisposable with
             member disp.Dispose() =         
                 UIThread.MustBeCalledFromUIThread()
                 isDisposed <- true
-                Trace.PrintLine("ChangeEvents", (fun () -> sprintf "An IdealSource() is being disposed, and thus removing its file watchers"))
-                match fileChangeEx with
+                match vsFileWatch with
                 |   null -> ()
                 |   _ ->
                     for KeyValue(_,cookie) in lastDependencies do
-                        fileChangeEx.UnadviseFileChange(cookie) |> ignore
+                        vsFileWatch.UnadviseFileChange(cookie) |> ignore
                 lastDependencies.Clear()
 
-    /// This is the ideal implementation of the Source concept abstracted from MLS.  
-    let internal CreateDelegatingSource
-                   (recolorizeWholeFile:unit->unit, 
-                    recolorizeLine:int->unit, 
-                    filename:string,
-                    isClosed:unit->bool,
-                    fileChangeEx:IVsFileChangeEx
-                    ) = new DelegatingSource(recolorizeWholeFile,recolorizeLine,(fun () -> filename), isClosed,fileChangeEx) :> IdealSource
 
-    [<AllowNullLiteralAttribute>]
-    type VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush) =
+[<AllowNullLiteralAttribute>]
+type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush) =
         static let Compute(site:System.IServiceProvider) =
             UIThread.MustBeCalledFromUIThread()
             let mutable guidStatementCompletionFC = new Guid("C1614BB1-734F-4a31-BD42-5AE6275E16D2") // GUID_StatementCompletionFC
@@ -194,25 +191,15 @@ module internal Source =
             vsFontAndColorStorage.OpenCategory(&guidTextEditorFontCategory, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
             let itemInfo : ColorableItemInfo[] = Array.zeroCreate 1  
             vsFontAndColorStorage.GetItem("Excluded Code", itemInfo) |> ignore
-#if FX_ATLEAST_45
             let fgColorInfo = itemInfo.[0].crForeground 
             let winFormColor = System.Drawing.ColorTranslator.FromOle(int fgColorInfo)
             let color = System.Windows.Media.Color.FromArgb(winFormColor.A, winFormColor.R, winFormColor.G, winFormColor.B)
             let excludedCodeForegroundColorBrush = new System.Windows.Media.SolidColorBrush(color)
-#else
-            let color = System.Windows.Media.Colors.Blue
-            let excludedCodeForegroundColorBrush = new System.Windows.Media.SolidColorBrush(color)
-#endif
             vsFontAndColorStorage.GetItem("Plain Text", itemInfo) |> ignore
-#if FX_ATLEAST_45
             let bgColorInfo = itemInfo.[0].crBackground
             let winFormColor = System.Drawing.ColorTranslator.FromOle(int bgColorInfo)
             let color = System.Windows.Media.Color.FromArgb(winFormColor.A, winFormColor.R, winFormColor.G, winFormColor.B)
             let backgroundBrush = new System.Windows.Media.SolidColorBrush(color)
-#else
-            let color = System.Windows.Media.Colors.White
-            let backgroundBrush = new System.Windows.Media.SolidColorBrush(color)
-#endif
             vsFontAndColorStorage.CloseCategory() |> ignore
             vsFontAndColorStorage.OpenCategory(&guidStatementCompletionFC, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
             let fontInfo : FontInfo[] = Array.zeroCreate 1
@@ -221,12 +208,14 @@ module internal Source =
             let pointSize = fontInfo.[0].wPointSize 
             vsFontAndColorStorage.CloseCategory() |> ignore
             fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush
+
         static let mutable theInstance = null  // only ever updated on UI thread
         static let WM_SYSCOLORCHANGE : uint32 = 0x0015u
         static let WM_THEMECHANGED : uint32 = 0x031Au
-        member private this.getFontFamilyAndPointSizeAndExcludedCodeForegroundColorBrushAndBackgroundBrush() =
-            fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush
-        static member GetFontFamilyAndPointSizeAndExcludedCodeForegroundColorBrushAndBackgroundBrush(site:System.IServiceProvider) =
+
+        member private this.Contents = fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush
+
+        static member GetContents(site:System.IServiceProvider) =
             if theInstance=null then
                 theInstance <- new VSFontsAndColorsHelper(Compute(site))
                 let vsShell = site.GetService(typeof<SVsShell>) :?> IVsShell
@@ -237,10 +226,10 @@ module internal Source =
                                                             theInstance <- new VSFontsAndColorsHelper(Compute(site))
                                                         NativeMethods.S_OK
                                                  }, &k) |> ignore
-            theInstance.getFontFamilyAndPointSizeAndExcludedCodeForegroundColorBrushAndBackgroundBrush()
+            theInstance.Contents
            
-    type FSharpIntelliSenseToAppearAdornment(view : IWpfTextView, cursorPoint : SnapshotPoint, site : System.IServiceProvider) as this =
-        let fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush = VSFontsAndColorsHelper.GetFontFamilyAndPointSizeAndExcludedCodeForegroundColorBrushAndBackgroundBrush(site)
+type internal FSharpIntelliSenseToAppearAdornment(view: IWpfTextView, cursorPoint: SnapshotPoint, site: System.IServiceProvider) as this =
+        let fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush = VSFontsAndColorsHelper.GetContents(site)
         // TODO: We should really create our own adornment layer.  It is possible (unlikely) that pre-existing layers may be re-ordered, or that
         // code 'owning' the layer will choose to clear all adornments, for example.  But creating a new adornment layer can only be done via MEF-export, and
         // as of yet, we have not done any MEF-exporting in the language service.  So for now, use the existing VisibleWhitespace layer, and incur some risk, just to 
@@ -291,40 +280,41 @@ module internal Source =
         member this.RemoveSelf() =
             layer.RemoveAdornmentsByTag(tag)
 
-    // Can't untangle from MLS Source. The purpose of this class is to 
-    // satisfy the requirement of inheriting from Source. 
-#if DEBUG
-    [<System.Diagnostics.DebuggerDisplay("SourceOverIdealSource({OriginalFilename})")>]
-#endif
-    type internal SourceOverIdealSource(service:LanguageService, textLines, colorizer, filechange:IVsFileChangeEx) = 
-        inherit SourceImpl(service, textLines, colorizer)
+/// Implements ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents etc. via FSharpSourceBase by filling in the remaining functionality 
+type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFileWatch:IVsFileChangeEx, depFileChange: IDependencyFileChangeNotify, getInteractiveChecker) as source = 
+        inherit FSharpSourceBase(service, textLines, colorizer)
         
         let mutable lastCommentSpan = new TextSpan()
-        let mutable idealSource : IdealSource option = None
-        let mutable filechange = filechange
+        let mutable vsFileWatch = vsFileWatch
         let mutable textLines = textLines
 
-#if DEBUG        
-        let originalFilename = VsTextLines.GetFilename textLines
-#endif
         let mutable fileName = VsTextLines.GetFilename textLines
 
+        let recolorizeWholeFile() = 
+            if source.ColorState<>null && textLines<>null then      // textlines is used by GetLineCount()
+                    source.ColorState.ReColorizeLines(0, source.GetLineCount() - 1) |> ignore
 
-        override source.NormalizeErrorString(message) = Microsoft.FSharp.Compiler.ErrorLogger.NormalizeErrorString message
-        override source.NewlineifyErrorString(message) = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString message
+        let recolorizeLine(line:int) = 
+            if source.ColorState<>null && textLines<>null && line >= 0 && line < source.GetLineCount() then      // textlines is used by GetLineCount()
+                    source.ColorState.ReColorizeLines(line, line) |> ignore
+
+        let iSource = new FSharpSourceTestable(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource
+
+        override source.NormalizeErrorString(message) = ErrorLogger.NormalizeErrorString message
+        override source.NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString message
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match Microsoft.FSharp.Compiler.SourceCodeServices.UntypedParseInfoImpl.TryFindExpressionIslandInPosition(line, col, upi.ParseTree) with
+            match UntypedParseImpl.TryFindExpressionIslandInPosition(Range.Pos.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
-        member source.GetParseTree() : UntypedParseInfo =
-            // get our hands on lss.Parser (InteractiveChecker)
-            let ic = service.GetInteractiveChecker() :?> Microsoft.FSharp.Compiler.SourceCodeServices.InteractiveChecker 
+        member source.GetParseTree() : FSharpParseFileResults =
+            // get our hands on lss.Parser (FSharpChecker)
+            let ic : FSharpChecker = getInteractiveChecker() 
             let flags = 
                 [|
-                    match (source :> IdealSource).ProjectSite with
+                    match iSource.ProjectSite with
                     | Some pi -> 
                         yield! pi.CompilerFlags () |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
@@ -335,31 +325,15 @@ module internal Source =
             let co = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
                   ProjectFileNames = [| fileName |]
-                  ProjectOptions = flags
+                  OtherOptions = flags
+                  ReferencedProjects = [| |]
                   IsIncompleteTypeCheckEnvironment = true
                   UseScriptResolutionRules = false
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
                   UnresolvedReferences = None }
 
-            ic.UntypedParse(fileName, source.GetText(), co)
+            ic.ParseFileInProject(fileName, source.GetText(), co) |> Async.RunSynchronously
 
-        member source.IdealSource =
-            match idealSource with
-            | Some(x) -> x
-            | None -> 
-                let recolorizeWholeFile() = 
-                    if source.ColorState<>null && textLines<>null then      // textlines is used by GetLineCount()
-                            source.ColorState.ReColorizeLines(0, source.GetLineCount() - 1) |> ignore
-
-                let recolorizeLine(line:int) = 
-                    if source.ColorState<>null && textLines<>null && line >= 0 && line < source.GetLineCount() then      // textlines is used by GetLineCount()
-                            source.ColorState.ReColorizeLines(line, line) |> ignore
-
-                let isClosed() = source.IsClosed
-                let currentFileName() = VsTextLines.GetFilename textLines
-                idealSource <- Some(new DelegatingSource(recolorizeWholeFile,recolorizeLine,currentFileName,isClosed,filechange) :> IdealSource)
-                source.IdealSource
-        
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()
             info.BlockEnd<-"(*"
@@ -369,7 +343,7 @@ module internal Source =
             info
             
         override source.GetTaskProvider() =
-            match source.IdealSource.ProjectSite with
+            match iSource.ProjectSite with
             | Some ps ->
                 match ps.ErrorListTaskProvider() with
                 | Some etp -> etp
@@ -377,7 +351,7 @@ module internal Source =
             | _ -> base.GetTaskProvider()
             
         override source.GetTaskReporter() =
-            match source.IdealSource.ProjectSite with
+            match iSource.ProjectSite with
             | Some(ps) ->
                 match ps.ErrorListTaskReporter() with
                 | Some(etr) -> etr
@@ -433,7 +407,7 @@ module internal Source =
             NativeMethods.ThrowOnFailure(textView.GetCaretPos(line, idx)) |> ignore
             if requireFreshResults <> RequireFreshResults.Yes then
                 // if it was Yes, then we are in second-chance intellisense and we already started the task for the first-chance
-                let wpfTextView = SourceImpl.GetWpfTextViewFromVsTextView(textView)
+                let wpfTextView = FSharpSourceBase.GetWpfTextViewFromVsTextView(textView)
                 let ss = wpfTextView.TextSnapshot
                 let tsLine = ss.GetLineFromLineNumber(!line)
                 let lineLen = tsLine.End.Position - tsLine.Start.Position 
@@ -448,7 +422,7 @@ module internal Source =
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match Microsoft.FSharp.Compiler.SourceCodeServices.UntypedParseInfoImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(!line, !idx, upi.ParseTree) with
+                        match Microsoft.FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Range.Pos.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then
@@ -464,7 +438,7 @@ module internal Source =
         member source.HandleCompletionResponse(req) =
             match req with
             | null -> source.ResetFSharpIntelliSenseToAppearAdornment()
-            | _ when req.View = null || req.ResultScope = null -> source.ResetFSharpIntelliSenseToAppearAdornment()
+            | _ when req.View = null || req.ResultIntellisenseInfo = null -> source.ResetFSharpIntelliSenseToAppearAdornment()
             | _ when (req.Timestamp <> source.ChangeCount) -> source.ResetFSharpIntelliSenseToAppearAdornment()
             | _ ->
                   source.HandleResponseHelper(req)
@@ -472,7 +446,7 @@ module internal Source =
                   if reason = BackgroundRequestReason.MemberSelectAndHighlightBraces then
                       source.HandleMatchBracesResponse(req)
                   async {
-                      let! decls = req.ResultScope.GetDeclarations(req.Snapshot, req.Line, req.Col, reason)
+                      let! decls = req.ResultIntellisenseInfo.GetDeclarations(req.Snapshot, req.Line, req.Col, reason)
                       do! Async.SwitchToContext UIThread.TheSynchronizationContext
                       if (decls = null || decls.IsEmpty()) && req.Timestamp <> req.ResultTimestamp then
                           // Second chance intellisense: we didn't get any result and the basis typecheck was stale. We need to retrigger the completion.
@@ -539,76 +513,57 @@ module internal Source =
             base.CommentSpan(span) |> ignore
             lastCommentSpan
             
-        override source.RecordChangeToView() = source.IdealSource.RecordChangeToView()
-        override source.RecordViewRefreshed() = source.IdealSource.RecordViewRefreshed()
-        override source.NeedsVisualRefresh 
-            with get() = source.IdealSource.NeedsVisualRefresh
+        override source.RecordChangeToView() = iSource.RecordChangeToView()
+        override source.RecordViewRefreshed() = iSource.RecordViewRefreshed()
+        override source.NeedsVisualRefresh = iSource.NeedsVisualRefresh
             
         override source.ChangeCount
-            with get() = source.IdealSource.ChangeCount
-            and set(value) = source.IdealSource.ChangeCount <- value                
+            with get() = iSource.ChangeCount
+            and set(value) = iSource.ChangeCount <- value                
             
         override source.DirtyTime
-            with get() = source.IdealSource.DirtyTime
-            and set(value) = source.IdealSource.DirtyTime <- value                
+            with get() = iSource.DirtyTime
+            and set(value) = iSource.DirtyTime <- value                
                             
         override source.Dispose() =
             try 
                 base.Dispose()       
             finally
-                match idealSource with
-                | None -> ()
-                | Some(is) -> 
-                    ((box is):?>IDisposable).Dispose()       
-                    filechange<-null
-                    idealSource<-None
-                    textLines<-null
+                ((box iSource):?>IDisposable).Dispose()       
+                vsFileWatch<-null
+                textLines<-null
 
         override source.OnUserDataChange(riidKey, _vtNewValue) =
             let newfileName = VsTextLines.GetFilename textLines
             if not (String.Equals(fileName, newfileName, StringComparison.InvariantCultureIgnoreCase)) then
                 // the filename of the text buffer is changing, could be changing e.g. .fsx to .fs or vice versa
                 fileName <- newfileName
-                (source :> IdealSource).RecolorizeWholeFile()
+                iSource.RecolorizeWholeFile()
 
-#if DEBUG        
-        override source.OriginalFilename = originalFilename
-#endif
-
-        // Just forward to IdealSource  
-        interface IdealSource with
-            member source.RecolorizeWholeFile() = source.IdealSource.RecolorizeWholeFile() 
-            member source.RecolorizeLine line = source.IdealSource.RecolorizeLine line
-            member source.RecordChangeToView() = source.IdealSource.RecordChangeToView()
-            member source.RecordViewRefreshed() = source.IdealSource.RecordViewRefreshed()
-            member source.NeedsVisualRefresh 
-                with get() = source.IdealSource.NeedsVisualRefresh
-            member source.IsClosed 
-                with get() = source.IdealSource.IsClosed
-            member source.ProjectSite
-                with get() = source.IdealSource.ProjectSite
-                and set(value) = source.IdealSource.ProjectSite <- value
-            member source.ChangeCount
-                with get() = source.IdealSource.ChangeCount
-                and set(value) = source.IdealSource.ChangeCount <- value                
-            member source.DirtyTime
-                with get() = source.IdealSource.DirtyTime
-                and set(value) = source.IdealSource.DirtyTime <- value                
-            member source.SetDependencyFiles(files) = 
-                source.IdealSource.SetDependencyFiles(files)
-            member source.SetDependencyFileChangeCallback(projectCallback,fileCallback) = 
-                source.IdealSource.SetDependencyFileChangeCallback(projectCallback,fileCallback)
+        // Just forward to IFSharpSource  
+        interface IFSharpSource with
+            member source.RecolorizeWholeFile() = iSource.RecolorizeWholeFile() 
+            member source.RecolorizeLine line = iSource.RecolorizeLine line
+            member source.RecordChangeToView() = iSource.RecordChangeToView()
+            member source.RecordViewRefreshed() = iSource.RecordViewRefreshed()
+            member source.NeedsVisualRefresh = iSource.NeedsVisualRefresh
+            member source.IsClosed = iSource.IsClosed
+            member source.ProjectSite with get() = iSource.ProjectSite and set(value) = iSource.ProjectSite <- value
+            member source.ChangeCount with get() = iSource.ChangeCount and set(value) = iSource.ChangeCount <- value                
+            member source.DirtyTime with get() = iSource.DirtyTime and set(value) = iSource.DirtyTime <- value                
+            member source.SetDependencyFiles(files) = iSource.SetDependencyFiles(files)
                 
-        // Hook file change events                
+        /// Hook file change events.  It's not clear that this implementation is ever utilized, since
+        /// the implementation on FSharpSourceTestable is used instead.
         interface IVsFileChangeEvents with 
             member changes.FilesChanged(_count : uint32, _files: string [], _changeFlags : uint32 []) = 0
             member changes.DirectoryChanged(_directory: string) = 0
-
-
                 
-    let internal CreateSource(service:LanguageService,
-                              textLines:IVsTextLines,
-                              colorizer:Colorizer,
-                              filechange:IVsFileChangeEx) : IdealSource =
-        new SourceOverIdealSource(service,textLines,colorizer,filechange) :> IdealSource    
+module internal Source = 
+        /// This is the ideal implementation of the Source concept abstracted from MLS.  
+        let CreateSourceTestable (recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) = 
+            new FSharpSourceTestable(recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource
+
+        let CreateSource(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) =
+            new FSharpSource(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) :> IFSharpSource
                 
