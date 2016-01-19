@@ -12,24 +12,22 @@
 #nowarn "40" // let rec for recursive values
 namespace Salsa
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Internal.Utilities.Debug
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.FSharp.ProjectSystem
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.TextManager.Interop
 open System
 open System.IO
 open System.Text
 open System.Collections.Generic 
 open System.Runtime.InteropServices
 open System.Threading
-open Implementation
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open Internal.Utilities.Debug
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.FSharp.ProjectSystem
+open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.Build.Evaluation
 
@@ -267,26 +265,26 @@ module internal Salsa =
 
     type MSBuildProjectSite(projectfile,configurationFunc,platformFunc) = 
         let projectPath = Path.GetDirectoryName(projectfile)
-        let timestamp = ref (new DateTime())
-        let flags = ref None
-        let prevConfig = ref ""
-        let prevPlatform = ref ""
+        let mutable timestamp = new DateTime()
+        let mutable flags = None
+        let mutable prevConfig = ""
+        let mutable prevPlatform = ""
         let GetFlags() = 
             let newtimestamp = File.GetLastWriteTime(projectfile)
             let curConfig = configurationFunc()
             let curPlatform = platformFunc()
-            if (!timestamp)<>newtimestamp 
-                   || (!flags) = None 
-                   || (!prevConfig)<>curConfig
-                   || (!prevPlatform)<>curPlatform then
-                Trace.PrintLine("ProjectSite", fun _ -> sprintf "Timestamp of %s changed. New timestamp=%A, old timestamp=%A" projectfile newtimestamp !timestamp) 
-                timestamp := newtimestamp
-                prevConfig := curConfig
-                prevPlatform := curPlatform
-                flags := Some(MSBuild.CrackProject(projectfile, !prevConfig, !prevPlatform))
-            match (!flags) with
-                Some(flags) -> flags
-                | _ -> raise Error.Bug
+            if timestamp <> newtimestamp 
+                   || flags = None 
+                   || prevConfig <> curConfig
+                   || prevPlatform <> curPlatform then
+                Trace.PrintLine("ProjectSite", fun _ -> sprintf "Timestamp of %s changed. New timestamp=%A, old timestamp=%A" projectfile newtimestamp timestamp) 
+                timestamp <- newtimestamp
+                prevConfig <- curConfig
+                prevPlatform <- curPlatform
+                flags <- Some(MSBuild.CrackProject(projectfile, prevConfig, prevPlatform))
+            match flags with
+            | Some flags -> flags
+            | _ -> raise Error.Bug
         let changeHandlers =  new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges>()
         member x.TriggerChanges() = 
             for handler in changeHandlers do 
@@ -314,9 +312,9 @@ module internal Salsa =
           member this.ErrorListTaskReporter() = None
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
-          member this.IsTypeResolutionValid = true
+          member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
-          member this.LoadTime = new System.DateTime(2000,1,1)
+          member this.LoadTime = System.DateTime(2000,1,1)
         
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 
@@ -379,36 +377,34 @@ module internal Salsa =
     type ChangeCallBack = IVsHierarchy * string -> unit
     
     /// Hooks for controlling behaviors
-    [<NoEquality; NoComparison>]
-    type ProjectBehaviorHooks = {
-        CreateProjectHook:(*projectFilename:*)string->(*files:*)(string*BuildAction*string option) list->(*references:*)(string*bool) list->(*projReferences:*)string list->
-                  (*disabledWarnings:*)string list->(*defines*)string list->(*versionFile:*)string->(*otherFlags:*)string->(*preImportXml:*)string->(*targetFrameworkVersion*)string->unit
-        InitializeProjectHook : OpenProject -> unit
-        MakeHierarchyHook : string->string->string->ChangeCallBack->OleServiceProvider->IVsHierarchy
-        AddFileToHierarchyHook : string -> IVsHierarchy -> unit
-        BuildHook : (*basename:*)string -> (*target:*)string -> IVsOutputWindowPane -> BuildResult
-        GetMainOutputAssemblyHook : string -> string
-        SaveHook : unit -> unit
-        DestroyHook : unit->unit
-        ModifyConfigurationAndPlatformHook : string->unit
-    }    
+    type ProjectBehaviorHooks = 
+        /// Create an MSBuild project at the given location with the given files and options.
+        abstract CreateProjectHook:  projectFilename:string * files:(string*BuildAction*string option) list * references:(string*bool) list * projReferences: string list * disabledWarnings:string list * defines: string list * versionFile: string * otherFlags:string * preImportXml:string  * targetFrameworkVersion: string->unit
+        abstract InitializeProjectHook : OpenProject -> unit
+        abstract MakeHierarchyHook : string * string * string * ChangeCallBack  * OleServiceProvider->IVsHierarchy
+        abstract AddFileToHierarchyHook : string * IVsHierarchy -> unit
+        abstract BuildHook : basename:string * target:string * IVsOutputWindowPane -> BuildResult
+        abstract GetMainOutputAssemblyHook : string -> string
+        abstract SaveHook : unit -> unit
+        abstract DestroyHook : unit->unit
+        abstract ModifyConfigurationAndPlatformHook : string->unit
     
     /// A file open in VS.
-    and OpenFile = interface
+    and OpenFile = 
         // host VS
         abstract VS : VisualStudio
-        end
+
     /// A project open in VS.
-    and OpenProject = interface
+    and OpenProject = 
         // host VS
         abstract VS : VisualStudio
-        end
+
     /// Private part of OpenProject
     and IOpenProject = 
         /// Add a file to this project.
-        abstract AddFileFromText : string*string*BuildAction*string list->File
+        abstract AddFileFromText : string * string * BuildAction * string list -> File
         /// Add a file to this project as a linked file.
-        abstract AddLinkedFileFromText : string*string*string*BuildAction*string list->File
+        abstract AddLinkedFileFromText : string * string * string * BuildAction * string list -> File
         /// Open a file that is a member of this project.
         abstract OpenFile : string->OpenFile
         /// Errors (task list) associated with this project
@@ -446,10 +442,9 @@ module internal Salsa =
         abstract ConfigurationAndPlatform : string with set
 
     /// A solution open in VS.
-    and OpenSolution = interface
+    and OpenSolution = 
         // host VS
         abstract VS : VisualStudio
-        end
     
     // Private half of the OpenSolution interface
     and IOpenSolution = 
@@ -461,9 +456,8 @@ module internal Salsa =
 
 
     /// General purpose methods. Loosely represents running instance of VS.
-    and VisualStudio = interface
+    and VisualStudio = 
         abstract VsOps : VsOps
-        end
      
     /// Private half of the Visual Studio interface   
     and IVisualStudio =
@@ -476,7 +470,7 @@ module internal Salsa =
         abstract CleanUp : unit->unit
         abstract ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients : unit -> unit
         /// Open a previously-created project
-        abstract OpenExistingProject : ProjectBehaviorHooks->(*dir:*)string->(*projName:*)string->OpenProject*OpenSolution
+        abstract OpenExistingProject : ProjectBehaviorHooks * dir:string * projName:string -> OpenProject*OpenSolution
         abstract CleanInvisibleProject : unit -> unit
         
     and TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
@@ -494,83 +488,79 @@ module internal Salsa =
         SelectedMember : int }
         
     /// Methods for simulating VisualStudio    
-    and [<NoEquality; NoComparison>] VsOps = {
-        CreateVisualStudio                    : unit -> VisualStudio
-        CreateSolution                        : VisualStudio -> OpenSolution
-        GetOutputWindowPaneLines : VisualStudio -> string list
-        CloseSolution                         : OpenSolution ->unit
-        CreateProject                         : OpenSolution * string -> OpenProject
-        CreateProjectWithHooks                : OpenSolution * ProjectBehaviorHooks * string -> OpenProject
-        NewFile                               : VisualStudio * string * BuildAction * string list -> File
-        DeleteFileFromDisk : File -> unit
-        AddFileFromText                       : OpenProject * string * string * BuildAction * string list -> File
-        AddLinkedFileFromText                 : OpenProject*string*string*string*BuildAction*string list->File
-        AddAssemblyReference                  : OpenProject * string * bool -> unit 
-        AddProjectReference                   : OpenProject * OpenProject -> unit 
-        ProjectDirectory                      : OpenProject -> string
-        ProjectFile                           : OpenProject -> string
-        SetVersionFile                        : OpenProject * string -> unit
-        SetOtherFlags                         : OpenProject * string -> unit
-        SetConfigurationAndPlatform           : OpenProject * string -> unit
-        AddDisabledWarning                    : OpenProject * string -> unit
-        GetErrors                             : OpenProject -> Error list 
-        BuildProject                          : OpenProject * string -> BuildResult
-        GetMainOutputAssembly                 : OpenProject -> string
-        SaveProject                           : OpenProject -> unit        
-        OpenFileViaOpenFile                   : VisualStudio * string -> OpenFile
-        OpenFile                              : OpenProject * string -> OpenFile 
-        GetOpenFiles                          : OpenProject -> OpenFile list
-        SetProjectDefines                     : OpenProject * string list -> unit
-        PlaceIntoProjectFileBeforeImport      : OpenProject * string -> unit
-        OpenExistingProject                   : VisualStudio * string * string -> OpenProject * OpenSolution
-        MoveCursorTo                          : OpenFile * int * int -> unit
-        GetCursorLocation                     : OpenFile -> int * int
-        GetLineNumber                         : OpenFile -> int -> string
-        GetAllLines                           : OpenFile -> string list
-        SwitchToFile                          : VisualStudio * OpenFile -> unit
-        OnIdle                                : VisualStudio -> unit
-        ShiftKeyDown                          : VisualStudio -> unit
-        ShiftKeyUp                            : VisualStudio -> unit
-        TakeCoffeeBreak                       : VisualStudio -> unit 
-        ReplaceFileInMemory                   : OpenFile * string list * bool -> unit
-        SaveFileToDisk                        : OpenFile -> unit
-        CleanUp                               : VisualStudio -> unit 
-        CleanInvisibleProject                 : VisualStudio -> unit
-        ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients : VisualStudio -> unit        
-        GetSquiggleAtCursor                   : OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) option
-        GetSquigglesAtCursor                  : OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) list
-        AutoCompleteAtCursor                  : OpenFile -> CompletionItem array
-        CompleteAtCursorForReason             : OpenFile * Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason -> CompletionItem array
-        CompletionBestMatchAtCursorFor        : OpenFile * string * string option -> (string * bool * bool) option
-        MoveCursorToEndOfMarker               : OpenFile * string -> unit
-        MoveCursorToStartOfMarker             : OpenFile * string -> unit
-        GetQuickInfoAtCursor                  : OpenFile -> string   
-        GetQuickInfoAndSpanAtCursor           : OpenFile -> string * TextSpan   
-        GetMatchingBracesForPositionAtCursor  : OpenFile -> (TextSpan * TextSpan) array
-        GetNameOfOpenFile                     : OpenFile -> string
-        GetCheckOptionsOfScript               : OpenFile -> Microsoft.FSharp.Compiler.SourceCodeServices.CheckOptions
-        GetParameterInfoAtCursor              : OpenFile -> MethodListForAMethodTip
-        GetParameterInfoAtCursorNoFallback    : OpenFile -> MethodListForAMethodTip
-        GetTokenTypeAtCursor                  : OpenFile -> TokenType
-        GetIdentifierAtCursor                 : OpenFile -> (string * int) option
-        GetF1KeywordAtCursor                  : OpenFile -> string option
-        GotoDefinitionAtCursor                : OpenFile -> bool -> GotoDefnResult
-        GetNavigationContentAtCursor          : OpenFile -> NavigationBarResult
-        GetHiddenRegionCommands               : OpenFile -> list<NewHiddenRegion> * Map<uint32, TextSpan>
-        CreatePhysicalProjectFileInMemory     : ((*files:*)(string*BuildAction*string option) list) ->
-                                                ((*references:*)(string*bool) list) ->
-                                                ((*projectReferences:*)string list) ->
-                                                ((*disabledWarnings:*)string list) ->
-                                                ((*defines:*)string list) ->
-                                                (*versionFile*) string ->
-                                                ((*otherFlags:*)string) ->
-                                                ((*otherProjMisc:*)string) -> 
-                                                ((*targetFrameworkVersion*)string) -> string
+    and [<NoEquality; NoComparison>] VsOps = 
+        abstract BehaviourHooks: ProjectBehaviorHooks
+        abstract CreateVisualStudio: unit -> VisualStudio
+        abstract CreateSolution: VisualStudio -> OpenSolution
+        abstract GetOutputWindowPaneLines: VisualStudio -> string list
+        abstract CloseSolution: OpenSolution ->unit
+        abstract CreateProject: OpenSolution * string -> OpenProject
+        abstract CreateProjectWithHooks: OpenSolution * ProjectBehaviorHooks * string -> OpenProject
+        abstract NewFile: VisualStudio * string * BuildAction * string list -> File
+        abstract DeleteFileFromDisk: File -> unit
+        abstract AddFileFromText: OpenProject * string * string * BuildAction * string list -> File
+        abstract AddLinkedFileFromText: OpenProject * string * string * string * BuildAction * string list -> File
+        abstract AddAssemblyReference: OpenProject * string * bool -> unit 
+        abstract AddProjectReference: OpenProject * OpenProject -> unit 
+        abstract ProjectDirectory: OpenProject -> string
+        abstract ProjectFile: OpenProject -> string
+        abstract SetVersionFile: OpenProject * string -> unit
+        abstract SetOtherFlags: OpenProject * string -> unit
+        abstract SetConfigurationAndPlatform: OpenProject * string -> unit
+        abstract AddDisabledWarning: OpenProject * string -> unit
+        abstract GetErrors: OpenProject -> Error list 
+        abstract BuildProject: OpenProject * string -> BuildResult 
+        abstract GetMainOutputAssembly: OpenProject -> string
+        abstract SaveProject: OpenProject -> unit        
+        abstract OpenFileViaOpenFile: VisualStudio * string -> OpenFile
+        abstract OpenFile: OpenProject * string -> OpenFile 
+        abstract GetOpenFiles: OpenProject -> OpenFile list
+        abstract SetProjectDefines: OpenProject * string list -> unit
+        abstract PlaceIntoProjectFileBeforeImport: OpenProject * string -> unit
+        abstract OpenExistingProject: VisualStudio * string * string -> OpenProject * OpenSolution
+        abstract MoveCursorTo: OpenFile * int * int -> unit
+        abstract GetCursorLocation: OpenFile -> int * int
+        abstract GetLineNumber: OpenFile * int -> string
+        abstract GetAllLines: OpenFile -> string list
+        abstract SwitchToFile: VisualStudio * OpenFile -> unit
+        abstract OnIdle: VisualStudio -> unit
+        abstract ShiftKeyDown: VisualStudio -> unit
+        abstract ShiftKeyUp: VisualStudio -> unit
+        abstract TakeCoffeeBreak: VisualStudio -> unit 
+        abstract ReplaceFileInMemory: OpenFile * string list * bool -> unit
+        abstract SaveFileToDisk: OpenFile -> unit
+        abstract CleanUp: VisualStudio -> unit
+        abstract CleanInvisibleProject: VisualStudio -> unit
+        abstract ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: VisualStudio -> unit
+        abstract GetSquiggleAtCursor: OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) option
+        abstract GetSquigglesAtCursor: OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) list
+        /// does a BackgroundRequestReason.MemberSelect at the cursor
+        abstract AutoCompleteAtCursor: OpenFile -> CompletionItem[]
+        /// like AutoCompleteAtCursor, but can pass e.g. BackgroundRequestReason.CompleteWord to do Ctrl-space rather than auto-dot-popup-completion
+        abstract CompleteAtCursorForReason: OpenFile * Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason -> CompletionItem[]
+        abstract CompletionBestMatchAtCursorFor: OpenFile * string * string option -> (string * bool * bool) option
+        abstract MoveCursorToEndOfMarker: OpenFile * string -> unit
+        abstract MoveCursorToStartOfMarker: OpenFile * string -> unit
+        abstract GetQuickInfoAtCursor: OpenFile -> string  
+        abstract GetQuickInfoAndSpanAtCursor: OpenFile -> string*TextSpan
+        abstract GetMatchingBracesForPositionAtCursor: OpenFile -> (TextSpan * TextSpan)[]
+        abstract GetNameOfOpenFile: OpenFile -> string
+        abstract GetProjectOptionsOfScript: OpenFile -> FSharpProjectOptions
+        abstract GetParameterInfoAtCursor: OpenFile -> MethodListForAMethodTip option
+        abstract GetTokenTypeAtCursor: OpenFile -> TokenType
+        abstract GetIdentifierAtCursor: OpenFile -> (string * int) option
+        abstract GetF1KeywordAtCursor: OpenFile -> string option
+        abstract GotoDefinitionAtCursor: OpenFile * bool -> GotoDefnResult
+        abstract GetNavigationContentAtCursor: OpenFile -> NavigationBarResult
+        abstract GetHiddenRegionCommands: OpenFile -> list<NewHiddenRegion> * Map<uint32, TextSpan>
+        abstract CreatePhysicalProjectFileInMemory : files:(string*BuildAction*string option) list * references:(string*bool) list * projectReferences:string list * disabledWarnings:string list * defines:string list * versionFile: string * otherFlags:string * otherProjMisc:string * targetFrameworkVersion:string -> string
+                
         /// True if files outside of the project cone are added as links.
-        AutoCompleteMemberDataTipsThrowsScope : string -> System.IDisposable
-        OutOfConeFilesAreAddedAsLinks         : bool
-        SupportsOutputWindowPane : bool
-    }      
+        abstract AutoCompleteMemberDataTipsThrowsScope : string -> System.IDisposable
+        
+        // VsOps capabilities.
+        abstract OutOfConeFilesAreAddedAsLinks : bool
+        abstract SupportsOutputWindowPane : bool   
 
     [<AutoOpen>]
     module GotoDefnResultExtensions = 
@@ -589,24 +579,12 @@ module internal Salsa =
         let private nextItemId() = 
             cookie<-cookie+1u
             cookie
-        let private addFileToHier filename hier =
-            let itemid = nextItemId()
-            VsMocks.addRootChild hier itemid filename
             
-        /// Patch keyboard
-        let private PatchKeyboard shiftKeyDown = 
-            let pressed flag = if flag then -1s else 0s
-            let getKeyState key =
-                match key with 
-                | Keyboard.Keys.Shift-> pressed shiftKeyDown 
-                | _ -> pressed false
-            Keyboard.HookGetKeyState getKeyState
-
-        type (*private*) UndoAction =
-              DeleteFile of string
+        type UndoAction =
+            | DeleteFile of string
             | RemoveFolder of string
             
-        type (*private*) Point = {line:int; col:int}
+        type Point = {line:int; col:int}
             
 
         /// Find the given marker and return the line and column.
@@ -614,7 +592,7 @@ module internal Salsa =
             let _, linecount = tl.GetLineCount()
             let mutable returnLine = -1
             let mutable returnCol = -1
-            let mutable i = 1
+            let mutable i = 1   
             while i <= linecount do
                 let _, len = tl.GetLengthOfLine(i-1)
                 let _, text = tl.GetLineText(i-1,0,i-1,len)
@@ -654,15 +632,15 @@ module internal Salsa =
         /// Create text of an MSBuild project with the given files and options.
         let CreateMsBuildProjectText 
                 (useInstalledTargets : bool)
-                (files:(string*BuildAction*string option) list) 
-                (references:(string*bool) list) 
-                (projectReferences:string list) 
-                (disabledWarnings:string list) 
-                (defines:string list) 
-                versionFile 
-                (otherFlags:string) 
-                (otherProjMisc:string)
-                (targetFrameworkVersion:string) =        
+                (files:(string*BuildAction*string option) list, 
+                 references:(string*bool) list,
+                 projectReferences:string list,
+                 disabledWarnings:string list,
+                 defines:string list,
+                 versionFile,
+                 otherFlags:string,
+                 otherProjMisc:string,
+                 targetFrameworkVersion:string) =        
 
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
@@ -745,33 +723,10 @@ module internal Salsa =
             
             sb.ToString()
 
-        /// Create an MSBuild project at the given location with the given files and options.
-        let CreateMsBuildProject 
-                (useInstalledTargets : bool)
-                projectName 
-                (files:(string*BuildAction*string option) list) 
-                (references:(string*bool) list) 
-                (projectReferences:string list) 
-                (disabledWarnings:string list) 
-                (defines:string list) 
-                versionFile 
-                (otherFlags:string)
-                (preImportXml : string)
-                (targetFrameworkVersion : string) =
-            use t = Trace.Call("Salsa", "CreateMsBuildProject", fun _ -> sprintf " projectName=%s" projectName)
-            if File.Exists(projectName) then File.Delete(projectName)
-
-            let text = CreateMsBuildProjectText useInstalledTargets files references projectReferences disabledWarnings defines versionFile otherFlags preImportXml targetFrameworkVersion
-            Trace.PrintLine("Salsa", fun _ -> text)
-            File.AppendAllText(projectName,text+"\r\n")
-            
-            
-
-        let MakeMSBuildBehavior() = 
-            let openProject : IOpenProject option ref= ref None
+        type MSBuildBehaviorHooks(useInstalledTargets) = 
+            let mutable openProject : IOpenProject option = None
             let ConfPlat() = 
-                let s = (!openProject).Value.ConfigurationAndPlatform
-                dprintf "%s" s
+                let s = openProject.Value.ConfigurationAndPlatform
                 let i = s.IndexOf('|')
                 if i = -1 then
                     s,""
@@ -779,31 +734,39 @@ module internal Salsa =
                     s.Substring(0,i), s.Substring(i+1)
             let Conf() = let c,_ = ConfPlat() in c
             let Plat() = let _,p = ConfPlat() in p
-            {
-            CreateProjectHook       = CreateMsBuildProject false    // Don't use installed FSharp.targets file
-            InitializeProjectHook   = fun op -> openProject := Some(op:?>IOpenProject)
-            MakeHierarchyHook       = (fun projdir fullname projectname configChangeNotifier serviceProvider->
-                let projectSite = NewMSBuildProjectSite(Conf, Plat, fullname)
-                let projectSiteFactory = { new IProvideProjectSite with member x.GetProjectSite() = (projectSite :> IProjectSite) }
-                let hier = VsMocks.createHier(projectSiteFactory)
-                VsMocks.setHierRoot hier projdir projectname
-                hier)
-            AddFileToHierarchyHook  = addFileToHier
-            BuildHook               = fun baseName target outputWindowPane -> MSBuild.Build(baseName, (if target = null then "Build" else target), Conf(), Plat())
-            GetMainOutputAssemblyHook = fun baseName -> MSBuild.GetMainOutputAssembly(baseName, Conf(), Plat())
-            SaveHook                = fun () -> ()
-            DestroyHook             = fun()->()
-            ModifyConfigurationAndPlatformHook = fun _ -> ()
-            }     
+            interface ProjectBehaviorHooks with 
+                member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion : string) =
+                    use t = Trace.Call("Salsa", "CreateMsBuildProject", fun _ -> sprintf " projectName=%s" projectName)
+                    if File.Exists(projectName) then File.Delete(projectName)
+
+                    let text = CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion)
+                    Trace.PrintLine("Salsa", fun _ -> text)
+                    File.AppendAllText(projectName,text+"\r\n")
+            
+                member x.InitializeProjectHook op = openProject <- Some(op:?>IOpenProject)
+                member x.MakeHierarchyHook (projdir, fullname, projectname, configChangeNotifier, serviceProvider) = 
+                    let projectSite = NewMSBuildProjectSite(Conf, Plat, fullname)
+                    let projectSiteFactory = { new IProvideProjectSite with member x.GetProjectSite() = (projectSite :> IProjectSite) }
+                    let hier = VsMocks.createHier(projectSiteFactory)
+                    VsMocks.setHierRoot hier projdir projectname
+                    hier
+                member x.AddFileToHierarchyHook(filename, hier)  = 
+                    let itemid = nextItemId()
+                    VsMocks.addRootChild hier itemid filename
+                member x.BuildHook (baseName, target, outputWindowPane) = MSBuild.Build(baseName, (if target = null then "Build" else target), Conf(), Plat())
+                member x.GetMainOutputAssemblyHook baseName = MSBuild.GetMainOutputAssembly(baseName, Conf(), Plat())
+                member x.SaveHook() = ()
+                member x.DestroyHook() = ()
+                member x.ModifyConfigurationAndPlatformHook (_) = ()
 
         type SimpleVisualStudio(configChangeNotifier,serviceProvider, ops : VsOps) =                 
             let mutable shiftKeyDown = false
-            let mutable languageService : LanguageServiceState option = None
+            let mutable languageService : FSharpLanguageServiceTestable option = None
             let mutable undoStack:UndoAction list = []
             let mutable focusFile : SimpleOpenFile option = None
             let mutable solution : SimpleOpenSolution option = None
             let mutable prevSolutions : Map<string,SimpleOpenSolution> = Map.empty
-            let mutable bufferToSource = new Dictionary<IVsTextBuffer,IdealSource>()
+            let mutable bufferToSource = new Dictionary<IVsTextBuffer,IFSharpSource>()
             let mutable invisibleSolution : SimpleOpenSolution option = None
             let mutable invisibleProjectFolder : string = null
             let mutable invisibleProject : SimpleOpenProject option = None
@@ -812,7 +775,7 @@ module internal Salsa =
             let currentOutputWindowLines = ref []
             let outputWindowPane = VsMocks.vsOutputWindowPane(currentOutputWindowLines)
             
-            let fileChangeEx = VsMocks.VsFileChangeEx()
+            let vsFileWatch = VsMocks.VsFileChangeEx()
             
             let ReopenSolution fullname =
                 match prevSolutions.TryFind fullname with
@@ -820,7 +783,7 @@ module internal Salsa =
                              s
                 | None -> failwith "solution with that project does not exist"
                 
-            member vs.FileChangeEx = fileChangeEx     
+            member vs.FileChangeEx = vsFileWatch     
             
             member vs.ConfigChangeNotifier = configChangeNotifier           
             member vs.ServiceProvider = serviceProvider    
@@ -878,10 +841,10 @@ module internal Salsa =
                     solution <- None
                 | None -> failwith "there is no open solution"
             
-            member vs.AddSourceForBuffer(buffer:IVsTextBuffer,source:IdealSource) =
+            member vs.AddSourceForBuffer(buffer:IVsTextBuffer,source:IFSharpSource) =
                 bufferToSource.Add(buffer,source)
 
-            member vs.SourceFactory(buffer:IVsTextBuffer) =
+            member vs.GetSourceForBuffer(buffer:IVsTextBuffer) =
                 bufferToSource.[buffer]
                 
             member vs.GetOutputWindowPaneLines() = 
@@ -906,7 +869,7 @@ module internal Salsa =
                     let s = SimpleOpenSolution(vs) 
                     solution <- Some(s)
                     s :> OpenSolution
-                member solution.OpenExistingProject behaviorHooks projdir projectname =
+                member solution.OpenExistingProject (behaviorHooks, projdir, projectname) =
                     let fullname = Path.Combine(projdir,projectname+".fsproj")
                     let soln = ReopenSolution fullname
                     let proj = soln.OpenExistingProject behaviorHooks projdir projectname
@@ -958,26 +921,16 @@ module internal Salsa =
         and internal SimpleOpenSolution(vs:SimpleVisualStudio) as this = 
             let mutable curProjects : (string*SimpleOpenProject) list = []
             let mutable prevProjects : Map<string,SimpleOpenProject> = Map.empty
-            let MakeProject behaviorHooks projdir fullname projectname =
-                // Create the hierarchy to go with this project.
-                let hier = behaviorHooks.MakeHierarchyHook projdir fullname projectname vs.ConfigChangeNotifier vs.ServiceProvider
-
-                // The rest.
-                let p = new SimpleOpenProject(this,hier,projdir,fullname,behaviorHooks)
-                curProjects <- (fullname,p) :: curProjects
-                p :> OpenProject
-            let ReopenProject fullname =
-                match prevProjects.TryFind fullname with
-                | Some(p) -> prevProjects <- prevProjects.Remove fullname
-                             p
-                | None -> failwith "project does not exist"
             member solution.Vs = vs
             member solution.CleanUp() = 
                 curProjects |> List.iter (fun (_,p) -> p.CleanUp())
                 prevProjects |> Map.toList |> List.iter (fun (_,p) -> p.CleanUp())
             member solution.OpenExistingProject behaviorHooks projdir projectname =
                 let fullname = Path.Combine(projdir,projectname+".fsproj")
-                ReopenProject fullname :> OpenProject
+                match prevProjects.TryFind fullname with
+                | Some(p) -> prevProjects <- prevProjects.Remove fullname
+                             p
+                | None -> failwith "project does not exist"
             
             interface OpenSolution with
                 member solution.VS = vs :> _
@@ -997,14 +950,20 @@ module internal Salsa =
                     
                     // Put project in there.
                     let fullname = Path.Combine(projdir, projectname+".fsproj")
-                    behaviorHooks.CreateProjectHook fullname [] [] [] [] [] null null "" null
+                    behaviorHooks.CreateProjectHook(fullname, [], [], [], [], [], null, null, "", null)
                     vs.PushUndo(DeleteFile(fullname))
                     
                     // Schedule obj\Debug and bin\Debug to be removed.
                     vs.PushUndo(RemoveFolder(Path.Combine(projdir, "obj")))
                     vs.PushUndo(RemoveFolder(Path.Combine(projdir, "bin")))
                     
-                    MakeProject behaviorHooks projdir fullname projectname
+                    // Create the hierarchy to go with this project.
+                    let hier = behaviorHooks.MakeHierarchyHook(projdir, fullname, projectname, vs.ConfigChangeNotifier, vs.ServiceProvider)
+
+                    // The rest.
+                    let p = new SimpleOpenProject(this,hier,projdir,fullname,behaviorHooks)
+                    curProjects <- (fullname,p) :: curProjects
+                    p :> OpenProject
                     
         and internal SimpleOpenProject(solution:SimpleOpenSolution,hier:IVsHierarchy,directory:string,projectName:string,behaviorHooks:ProjectBehaviorHooks) as this = 
             let mutable configuration = ""
@@ -1019,17 +978,8 @@ module internal Salsa =
             let mutable versionFile : string = null
             let mutable otherFlags : string = null
             let CreateProjectFile() = 
-                behaviorHooks.CreateProjectHook 
-                                        projectName 
-                                        (List.rev filenames) 
-                                        (List.rev references) 
-                                        (List.rev projectReferences) 
-                                        (List.rev disabledWarnings) 
-                                        (List.rev defines)
-                                        versionFile
-                                        otherFlags
-                                        preImportXml
-                                        null
+                behaviorHooks.CreateProjectHook(projectName , List.rev filenames, List.rev references, List.rev projectReferences, List.rev disabledWarnings, List.rev defines, versionFile, otherFlags, preImportXml, null)
+
                 // Trigger the AdviseProjectSiteChanges callbacks on our project sites
                 match hier with 
                 | :? IProvideProjectSite as f -> 
@@ -1081,7 +1031,7 @@ module internal Salsa =
                 member project.Build(target) = 
                     let outputWindowPane = solution.Vs.OutputWindowPane
                     outputWindowPane.Clear() |> ignore
-                    let buildResult = behaviorHooks.BuildHook projectName target outputWindowPane
+                    let buildResult = behaviorHooks.BuildHook(projectName, target, outputWindowPane)
                     let executableOutput = Path.Combine(directory,buildResult.ExecutableOutput)
                     if target = "Clean" then
                         project.Solution.Vs.FileChangeEx.DeletedFile(executableOutput) // Notify clients of IVsFileChangeEx
@@ -1133,7 +1083,7 @@ module internal Salsa =
                         // The invisible project does not have a hiearchy.
                         if hier <> null then 
                             // Put the file in the hierarchy
-                            behaviorHooks.AddFileToHierarchyHook filename hier
+                            behaviorHooks.AddFileToHierarchyHook(filename, hier)
                         
                         // Put the file in the text manager
                         VsMocks.setActiveView (solution.Vs.LanguageService.ServiceProvider.TextManager) view                    
@@ -1141,17 +1091,14 @@ module internal Salsa =
                         // We no longer need the RDT, but keeping it compiling in Salsa/VsMocks in case we ever need it again
                         // Put the document in the RDT
                         let rdtId = nextRdtID()
-                        VsMocks.openDocumentInRdt (solution.Vs.LanguageService.ServiceProvider.Rdt) rdtId filename view hier
+                        VsMocks.openDocumentInRdt (solution.Vs.LanguageService.ServiceProvider.RunningDocumentTable) rdtId filename view hier
                         // product no longer uses RDT
                         // solution.Vs.LanguageService.OnAfterFirstDocumentLock rdtId 1u 1u
 
                         // Create the 'Source'
                         let file = SimpleOpenFile(project,filename,lines,view,linestarts,rdtId) 
-                        let source = Source.CreateDelegatingSource(file.RecolorizeWholeFile,
-                                                                   file.RecolorizeLine,
-                                                                   filename,
-                                                                   file.IsClosed,
-                                                                   project.Solution.Vs.FileChangeEx)
+
+                        let source = Source.CreateSourceTestable(file.RecolorizeWholeFile,file.RecolorizeLine,(fun () -> filename),file.IsClosed,project.Solution.Vs.FileChangeEx, solution.Vs.LanguageService :> IDependencyFileChangeNotify)
                         let _,buf = view.GetBuffer()
                         solution.Vs.AddSourceForBuffer(buf,source)                 
                         let source = solution.Vs.LanguageService.CreateSource(buf)
@@ -1187,8 +1134,8 @@ module internal Salsa =
             let mutable combinedLines:string = null
             
             member file.GetFileName() = filename
-            member file.GetCheckOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.InteractiveChecker.GetCheckOptionsFromScriptRoot(filename, file.CombinedLines, System.DateTime(2000,1,1))
+            member file.GetProjectOptionsOfScript() = 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) |> Async.RunSynchronously
                  
             member file.RecolorizeWholeFile() = ()
             member file.RecolorizeLine (_line:int) = ()
@@ -1202,9 +1149,9 @@ module internal Salsa =
                 if combinedLines = null then 
                     combinedLines<-String.Join("\n",lines)
                 combinedLines   
-            member file.Source : IdealSource = 
+            member file.Source : IFSharpSource = 
                 let _,buf = view.GetBuffer()
-                project.Solution.Vs.SourceFactory(buf)                                       
+                project.Solution.Vs.GetSourceForBuffer(buf)                                       
             
             /// When a file is opened, focus it as the topmost file in VS.
             member file.EnsureInitiallyFocusedInVs() =
@@ -1212,10 +1159,10 @@ module internal Salsa =
                                      
             member file.TryExecuteBackgroundRequest(pr) = 
                 let ls = project.Solution.Vs.LanguageService
-                ls.ExecuteBackgroundRequest(pr, file.Source) 
+                ls.BackgroundRequests.ExecuteBackgroundRequest(pr, file.Source) 
                 if pr.ResultClearsDirtinessOfFile then 
                     file.Source.RecordViewRefreshed()
-                pr.ResultScope 
+                pr.ResultIntellisenseInfo 
 
             member file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting) = 
                 match file.TryExecuteBackgroundRequest(pr) with 
@@ -1236,7 +1183,7 @@ module internal Salsa =
                 // Full check.                    
                 let sink = new AuthoringSink(BackgroundRequestReason.FullTypeCheck, 0, 0, maxErrors) 
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
+                let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
                 pr.ResultSink.add_OnErrorAdded(
                     OnErrorAddedHandler(fun path subcategory msg context severity -> 
                                 project.Errors <- new Error(path, subcategory, msg, context, severity) :: project.Errors))
@@ -1259,12 +1206,11 @@ module internal Salsa =
                             //System.Diagnostics.Debug.Assert(false, "unit test is doing an AutoComplete MemberSelect at a non-dot location")
                             failwith "unit test is probably doing an AutoComplete MemberSelect at a non-dot location, maybe should be CtrlSpaceComplete instead?"
                 file.EnsureInitiallyFocusedInVs()
-                let origKeyStateAccessor = PatchKeyboard project.Solution.Vs.IsShiftKeyDown
                 let currentAuthoringScope =
                     let ti = new TokenInfo()
                     let sink = new AuthoringSink(parseReason, cursor.line-1, cursor.col-1, maxErrors)
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
+                    let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
                                                     cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
                                                     System.IO.Path.GetFullPath(file.Filename),
                                                     parseReason, view, sink, null, file.Source.ChangeCount, false)
@@ -1276,7 +1222,7 @@ module internal Salsa =
                     System.Diagnostics.Debug.Assert(false, "No Authoring Scope was returned by ExecuteBackgroundRequest, even after waiting")
                     failwith "No Authoring Scope" 
                 | _ -> 
-                    currentAuthoringScope, origKeyStateAccessor              
+                    currentAuthoringScope
 
 
             member file.GetCursorLocation() =
@@ -1302,18 +1248,15 @@ module internal Salsa =
                 result
 
             member file.GetQuickInfoAndSpanAtCursor () = 
-                let (currentAuthoringScope, origKeyStateAccessor) = file.DoIntellisenseRequest BackgroundRequestReason.QuickInfo
-                try 
-                    let textspan = new TextSpan ()
-                    let result,textspan = currentAuthoringScope.GetDataTipText (cursor.line - 1, cursor.col - 1)
-                    let currentLineLength = lines.[cursor.line-1].Length
-                    // The new editor is less tolerant of values out of range. Enforce rigor in unittests here.
-                    if textspan.iEndIndex<0 || textspan.iEndIndex>currentLineLength then failwith (sprintf "GetDataTipText returned iEndIndex out of range. iEndIndex=%d, Line length=%d" textspan.iEndIndex currentLineLength)
-                    if textspan.iStartIndex<0 || textspan.iStartIndex>currentLineLength then failwith (sprintf "GetDataTipText returned iStartIndex out of range. iStartIndex=%d, Line length=%d" textspan.iStartIndex currentLineLength)
-                    if textspan.iStartIndex > textspan.iEndIndex then failwith (sprintf "GetDataTipText returned iStartIndex (%d) greater than iEndIndex (%d)" textspan.iStartIndex textspan.iEndIndex)
-                    result, textspan
-                finally 
-                    Keyboard.HookGetKeyState origKeyStateAccessor |> ignore
+                let currentAuthoringScope = file.DoIntellisenseRequest BackgroundRequestReason.QuickInfo
+                let textspan = new TextSpan ()
+                let result,textspan = currentAuthoringScope.GetDataTipText (cursor.line - 1, cursor.col - 1)
+                let currentLineLength = lines.[cursor.line-1].Length
+                // The new editor is less tolerant of values out of range. Enforce rigor in unittests here.
+                if textspan.iEndIndex<0 || textspan.iEndIndex>currentLineLength then failwith (sprintf "GetDataTipText returned iEndIndex out of range. iEndIndex=%d, Line length=%d" textspan.iEndIndex currentLineLength)
+                if textspan.iStartIndex<0 || textspan.iStartIndex>currentLineLength then failwith (sprintf "GetDataTipText returned iStartIndex out of range. iStartIndex=%d, Line length=%d" textspan.iStartIndex currentLineLength)
+                if textspan.iStartIndex > textspan.iEndIndex then failwith (sprintf "GetDataTipText returned iStartIndex (%d) greater than iEndIndex (%d)" textspan.iStartIndex textspan.iEndIndex)
+                result, textspan
 
             member file.GetMatchingBracesForPositionAtCursor() = 
                 file.EnsureInitiallyFocusedInVs()
@@ -1321,7 +1264,7 @@ module internal Salsa =
                     let ti = new TokenInfo()
                     let sink = new AuthoringSink(BackgroundRequestReason.MatchBraces, cursor.line-1, cursor.col-1, maxErrors)
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
+                    let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
                                                     cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
                                                     System.IO.Path.GetFullPath(file.Filename),
                                                     BackgroundRequestReason.MatchBraces, view, sink, null, file.Source.ChangeCount, false)
@@ -1340,15 +1283,14 @@ module internal Salsa =
                 
 
 
-            member file.GetParameterInfoAtCursor(useNameResolutionFallback) = 
-                let currentAuthoringScope, origKeyStateAccessor = 
+            member file.GetParameterInfoAtCursor() = 
+                let currentAuthoringScope = 
                     file.EnsureInitiallyFocusedInVs()
-                    let origKeyStateAccessor = PatchKeyboard project.Solution.Vs.IsShiftKeyDown
                     let currentAuthoringScope =
                         let ti = new TokenInfo()
                         let sink = new AuthoringSink(BackgroundRequestReason.MethodTip, cursor.line-1, cursor.col-1, maxErrors)
                         let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                        let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
+                        let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
                                                         cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.ExplicitlyInvokedViaCtrlShiftSpace,
                                                         System.IO.Path.GetFullPath(file.Filename),
                                                         BackgroundRequestReason.MethodTip, view, sink, null, file.Source.ChangeCount, false)
@@ -1360,13 +1302,11 @@ module internal Salsa =
                         System.Diagnostics.Debug.Assert(false, "No Authoring Scope was returned by ExecuteBackgroundRequest, even after waiting")
                         failwith "No Authoring Scope" 
                     | _ -> 
-                        currentAuthoringScope, origKeyStateAccessor              
+                        currentAuthoringScope
 
-                try
-                    let methods = currentAuthoringScope.GetMethodListForAMethodTip(useNameResolutionFallback)
-                    methods 
-                finally
-                    Keyboard.HookGetKeyState origKeyStateAccessor |> ignore
+                let methods = currentAuthoringScope.GetMethodListForAMethodTip()
+                methods 
+
             member file.GetTokenTypeAtCursor() = 
                 file.EnsureInitiallyFocusedInVs()
                 let line = cursor.line-1 // Cursor is 1-relative
@@ -1404,40 +1344,35 @@ module internal Salsa =
                 | h::t -> Some h  // arbitrarily pick one
             member file.AutoCompleteAtCursorImpl(reason, ?filterText) =
                 let filterText = defaultArg filterText ""
-                let currentAuthoringScope, origKeyStateAccessor = file.DoIntellisenseRequest(reason)
+                let currentAuthoringScope = file.DoIntellisenseRequest(reason)
                 
-                try                        
-                    let declarations = 
-                        let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                        currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunSynchronously
-                    match declarations with 
-                    | null -> [||]
-                    | declarations ->
-                        let count = declarations.GetCount(filterText)
-                        let result = Array.zeroCreate count
-                        for i in 0..count-1 do 
-                            let glyph = enum<DeclarationType> (declarations.GetGlyph(filterText,i))
-                            result.[i] <- (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
-                        result
-                finally
-                    Keyboard.HookGetKeyState origKeyStateAccessor |> ignore
+                let declarations = 
+                    let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunSynchronously
+                match declarations with 
+                | null -> [||]
+                | declarations ->
+                    let count = declarations.GetCount(filterText)
+                    let result = Array.zeroCreate count
+                    for i in 0..count-1 do 
+                        let glyph = enum<DeclarationType> (declarations.GetGlyph(filterText,i))
+                        result.[i] <- (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
+                    result
+
             member file.AutoCompleteAtCursor(?filterText) = file.AutoCompleteAtCursorImpl(BackgroundRequestReason.MemberSelect, ?filterText=filterText)
             member file.CompleteAtCursorForReason(reason) = file.AutoCompleteAtCursorImpl(reason)
             
             member file.CompletionBestMatchAtCursorFor(text, ?filterText) = 
                 let filterText = defaultArg filterText ""
-                let currentAuthoringScope, origKeyStateAccessor = file.DoIntellisenseRequest(BackgroundRequestReason.MemberSelect)
-                try                        
-                    let declarations = 
-                        let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                        currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunSynchronously
-                    match declarations with 
-                    | null -> None
-                    | declarations -> 
-                        let (index, uniqueMatch, prefixMatch) = declarations.GetBestMatch(filterText, text)
-                        Some (declarations.GetName(filterText,index), uniqueMatch, prefixMatch)
-                finally
-                    Keyboard.HookGetKeyState origKeyStateAccessor |> ignore
+                let currentAuthoringScope = file.DoIntellisenseRequest(BackgroundRequestReason.MemberSelect)
+                let declarations = 
+                    let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunSynchronously
+                match declarations with 
+                | null -> None
+                | declarations -> 
+                    let (index, uniqueMatch, prefixMatch) = declarations.GetBestMatch(filterText, text)
+                    Some (declarations.GetName(filterText,index), uniqueMatch, prefixMatch)
             
             member file.GotoDefinitionAtCursor (forceGen : bool) =
               file.EnsureInitiallyFocusedInVs ()
@@ -1447,9 +1382,9 @@ module internal Salsa =
                   let ti   = new TokenInfo ()
                   let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                   let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                  let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
+                  let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
                   file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
-              (currentAuthoringScope :?> FSharpScope).GotoDefinition (view, row, col)
+              (currentAuthoringScope :?> FSharpIntellisenseInfo).GotoDefinition (view, row, col)
                  
             member file.GetF1KeywordAtCursor() =
               file.EnsureInitiallyFocusedInVs()
@@ -1459,7 +1394,7 @@ module internal Salsa =
                 let ti   = new TokenInfo ()
                 let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
+                let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
                 file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
               let keyword = ref None
               let span = new Microsoft.VisualStudio.TextManager.Interop.TextSpan(iStartIndex=col,iStartLine=row,iEndIndex=col,iEndLine=row)
@@ -1475,9 +1410,9 @@ module internal Salsa =
               let ti   = new TokenInfo ()
               let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
               let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
-              project.Solution.Vs.LanguageService.ExecuteBackgroundRequest(pr, file.Source) 
-              match project.Solution.Vs.LanguageService.UntypedParseScope with
+              let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
+              project.Solution.Vs.LanguageService.BackgroundRequests.ExecuteBackgroundRequest(pr, file.Source) 
+              match project.Solution.Vs.LanguageService.BackgroundRequests.NavigationBarAndRegionInfo with
               | Some(scope) ->
                   let typesList = new Collections.ArrayList()
                   let membersList = new Collections.ArrayList()
@@ -1498,9 +1433,9 @@ module internal Salsa =
               let ti   = new TokenInfo ()
               let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
               let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
-              project.Solution.Vs.LanguageService.ExecuteBackgroundRequest(pr, file.Source) 
-              match project.Solution.Vs.LanguageService.UntypedParseScope with
+              let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
+              project.Solution.Vs.LanguageService.BackgroundRequests.ExecuteBackgroundRequest(pr, file.Source) 
+              match project.Solution.Vs.LanguageService.BackgroundRequests.NavigationBarAndRegionInfo with
               | Some(scope) ->
                   scope.GetHiddenRegions(file.Filename)
               | _ -> 
@@ -1529,7 +1464,7 @@ module internal Salsa =
                 // Update Scanlines. One extra to save the state at the end of the file.
                 scanlines <- Array.create (lines.Length + 1) 0
                 let _, priorbuf = view.GetBuffer()
-                let source = project.Solution.Vs.SourceFactory(priorbuf)
+                let source = project.Solution.Vs.GetSourceForBuffer(priorbuf)
                 // Update View.
                 let projSolution = project.Solution
                 VsMocks.setFileText file.Filename view lines (RecolorizeLines view projSolution.Vs.GetColorizer lines scanlines) (fun line->scanlines.[line])
@@ -1564,8 +1499,6 @@ module internal Salsa =
                 member file.VS = project.Solution.Vs :> _
 
                     
-    let MakeMSBuildBehavior = Privates.MakeMSBuildBehavior
-    
     /// Create a simple Salsa API.
     let CreateSimple(ops) = 
         try 
@@ -1575,16 +1508,11 @@ module internal Salsa =
         
             let sp,configChangeNotifier = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
         
-            let ls = LanguageServiceState.Create()
+            let ls = FSharpLanguageServiceTestable()
             let rdt = box (VsMocks.createRdt())
             let tm = box (VsMocks.createTextManager())
-            let getService (serviceType:Type) : obj = 
-                if serviceType = typeof<SVsRunningDocumentTable> then rdt
-                else if serviceType = typeof<SVsTextManager> then tm
-                else raise (new Exception(sprintf "Salsa did not create service %A"  serviceType))
-                
             let documentationProvider = 
-                { new IdealDocumentationProvider with
+                { new IDocumentationBuilder with
                     override doc.AppendDocumentationFromProcessedXML(appendTo:StringBuilder,processedXml:string,showExceptions, showReturns, paramName) = 
                         appendTo.AppendLine(processedXml)|> ignore 
                     override doc.AppendDocumentation(appendTo:StringBuilder,filename:string,signature:string, showExceptions, showReturns, paramName) = 
@@ -1593,9 +1521,15 @@ module internal Salsa =
                 } 
  
 
+            let sp2 = 
+               { new System.IServiceProvider with 
+                   member __.GetService(serviceType:Type) : obj = 
+                        if serviceType = typeof<SVsRunningDocumentTable> then rdt
+                        else if serviceType = typeof<SVsTextManager> then tm
+                        else raise (new Exception(sprintf "Salsa did not create service %A"  serviceType)) }
+                
             let vs = Privates.SimpleVisualStudio(configChangeNotifier,sp, ops)
-            Microsoft.FSharp.Compiler.SourceCodeServices.Flags.init()
-            ls.Initialize (ServiceProvider(getService),documentationProvider,VsMocks.createLanguagePreferences(),true,vs.SourceFactory)
+            ls.Initialize (sp2,documentationProvider,VsMocks.createLanguagePreferences(),vs.GetSourceForBuffer)
             vs.LanguageService <- ls
             vs :> VisualStudio
         with e -> 
@@ -1605,110 +1539,91 @@ module internal Salsa =
     
     // ------------------------------------------------------------------------------
     
-    /// The different variations of of Salsa tests    
-    module Models = 
-        let VsSimpl(vs:VisualStudio) = vs :?> Privates.SimpleVisualStudio
-        let VsImpl(vs:VisualStudio)         = vs :?> IVisualStudio
-        let SolutionImpl(sol:OpenSolution)  = sol :?> IOpenSolution
-        let ProjectImpl(proj:OpenProject)   = proj :?> IOpenProject
-        let OpenFileSimpl(openfile:OpenFile)   = openfile :?> Privates.SimpleOpenFile
-        let FileSimpl(file:File) = file :?> Privates.SimpleFile
+    let VsSimpl(vs:VisualStudio) = vs :?> Privates.SimpleVisualStudio
+    let VsImpl(vs:VisualStudio)         = vs :?> IVisualStudio
+    let SolutionImpl(sol:OpenSolution)  = sol :?> IOpenSolution
+    let ProjectImpl(proj:OpenProject)   = proj :?> IOpenProject
+    let OpenFileSimpl(openfile:OpenFile)   = openfile :?> Privates.SimpleOpenFile
+    let FileSimpl(file:File) = file :?> Privates.SimpleFile
 
-        /// Salsa tests which create .fsproj files for projects.
-        let MSBuildWithFlavor(behaviorHooks) = 
-            let rec ops = 
-                { CreateVisualStudio                    = fun() -> CreateSimple(ops)
-                  CreateSolution                        = fun vs -> VsImpl(vs).CreateSolution()
-                  GetOutputWindowPaneLines              = fun vs -> VsSimpl(vs).GetOutputWindowPaneLines()
-                  CloseSolution                         = fun (solution) -> SolutionImpl(solution).Close()
-                  CreateProject                         = fun (solution,projectBaseName) -> SolutionImpl(solution).CreateProjectFlavor behaviorHooks projectBaseName
-                  CreateProjectWithHooks                = fun (solution,hooks,projectBaseName) -> SolutionImpl(solution).CreateProjectFlavor hooks projectBaseName
-                  NewFile                               = fun (vs,filename,buildAction,lines) -> VsSimpl(vs).NewFile(filename,buildAction,lines,behaviorHooks)
-                  DeleteFileFromDisk = fun (file:File) -> FileSimpl(file).DeleteFileFromDisk()
-                  AddFileFromText                       = fun (project:OpenProject,filenameOnDisk,filenameInProject,buildAction,lines) -> ProjectImpl(project).AddFileFromText(filenameOnDisk,filenameInProject,buildAction,lines)
-                  AddLinkedFileFromText                 = fun (project:OpenProject,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)->ProjectImpl(project).AddLinkedFileFromText(filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)
-                  AddAssemblyReference                  = fun (project,reference,specificVersion) -> ProjectImpl(project).AddAssemblyReference(reference,specificVersion)
-                  AddProjectReference                   = fun (project1,project2) -> ProjectImpl(project1).AddProjectReference(project2)
-                  ProjectDirectory                      = fun project -> ProjectImpl(project).Directory            
-                  ProjectFile                           = fun project -> ProjectImpl(project).ProjectFile
-                  SetVersionFile                        = fun (project,file) -> ProjectImpl(project).SetVersionFile(file)
-                  SetOtherFlags                         = fun (project,flags) -> ProjectImpl(project).SetOtherFlags(flags)
-                  SetConfigurationAndPlatform           = fun (project,configAndPlatform) -> ProjectImpl(project).ConfigurationAndPlatform <- configAndPlatform
-                  AddDisabledWarning                    = fun (project,code) -> ProjectImpl(project).AddDisabledWarning(code)
-                  GetErrors                             = fun project -> ProjectImpl(project).Errors
-                  BuildProject                          = fun (project,target) -> ProjectImpl(project).Build(target)
-                  GetMainOutputAssembly                 = fun project -> ProjectImpl(project).GetMainOutputAssembly()
-                  SaveProject                           = fun project->ProjectImpl(project).Save()                
-                  OpenFileViaOpenFile                   = fun (vs,filename) -> VsSimpl(vs).OpenFileViaOpenFile(filename,behaviorHooks)
-                  OpenFile                              = fun (project,filename) -> ProjectImpl(project).OpenFile(filename)
-                  SetProjectDefines                     = fun (project,defines) -> ProjectImpl(project).SetProjectDefines(defines)
-                  PlaceIntoProjectFileBeforeImport      = fun (project,xml) -> ProjectImpl(project).PlaceIntoProjectFileBeforeImport(xml)
-                  GetOpenFiles                          = fun project -> ProjectImpl(project).GetOpenFiles()
-                  MoveCursorTo                          = fun (file,line,col) -> OpenFileSimpl(file).MoveCursorTo(line,col)
-                  GetCursorLocation                     = fun (file) -> OpenFileSimpl(file).GetCursorLocation()
-                  OpenExistingProject                   = fun (vs,dir,projname) -> VsImpl(vs).OpenExistingProject behaviorHooks dir projname
-                  MoveCursorToEndOfMarker               = fun (file,marker) -> OpenFileSimpl(file).MoveCursorToEndOfMarker(marker)
-                  MoveCursorToStartOfMarker             = fun (file,marker) -> OpenFileSimpl(file).MoveCursorToStartOfMarker(marker)
-                  GetNameOfOpenFile                     = fun (file) -> OpenFileSimpl(file).GetFileName()
-                  GetCheckOptionsOfScript               = fun (file) -> OpenFileSimpl(file).GetCheckOptionsOfScript()
-                  GetQuickInfoAtCursor                  = fun file -> OpenFileSimpl(file).GetQuickInfoAtCursor()
-                  GetQuickInfoAndSpanAtCursor           = fun file -> OpenFileSimpl(file).GetQuickInfoAndSpanAtCursor()
-                  GetMatchingBracesForPositionAtCursor  = fun file -> OpenFileSimpl(file).GetMatchingBracesForPositionAtCursor()
-                  GetParameterInfoAtCursor              = fun file -> OpenFileSimpl(file).GetParameterInfoAtCursor(true)
-                  GetParameterInfoAtCursorNoFallback    = fun file -> OpenFileSimpl(file).GetParameterInfoAtCursor(false)
-                  GetTokenTypeAtCursor                  = fun file -> OpenFileSimpl(file).GetTokenTypeAtCursor()
-                  GetSquiggleAtCursor                   = fun file -> OpenFileSimpl(file).GetSquiggleAtCursor()
-                  GetSquigglesAtCursor                  = fun file -> OpenFileSimpl(file).GetSquigglesAtCursor()
-                  AutoCompleteAtCursor                  = fun file -> OpenFileSimpl(file).AutoCompleteAtCursor()
-                  CompleteAtCursorForReason             = fun (file,reason) -> OpenFileSimpl(file).CompleteAtCursorForReason(reason)
-                  CompletionBestMatchAtCursorFor        = fun (file, value, filterText) -> (OpenFileSimpl(file)).CompletionBestMatchAtCursorFor(value, ?filterText=filterText)
-                  GotoDefinitionAtCursor                = fun file forceGen -> (OpenFileSimpl file).GotoDefinitionAtCursor forceGen
-                  GetNavigationContentAtCursor          = fun file -> OpenFileSimpl(file).GetNavigationContentAtCursor()
-                  GetHiddenRegionCommands               = fun file -> OpenFileSimpl(file).GetHiddenRegionCommands()
-                  GetIdentifierAtCursor                 = fun file -> OpenFileSimpl(file).GetIdentifierAtCursor ()
-                  GetF1KeywordAtCursor                  = fun file -> OpenFileSimpl(file).GetF1KeywordAtCursor ()
-                  GetLineNumber                         = fun file n -> OpenFileSimpl(file).GetLineNumber n
-                  GetAllLines                           = fun file -> (OpenFileSimpl file).GetAllLines ()
-                  SwitchToFile                          = fun (vs,file) -> VsSimpl(vs).FocusOpenFile(OpenFileSimpl(file))
-                  OnIdle                                = fun vs -> VsImpl(vs).OnIdle()
-                  ShiftKeyDown                          = fun vs -> VsImpl(vs).ShiftKeyDown()
-                  ShiftKeyUp                            = fun vs -> VsImpl(vs).ShiftKeyUp()
-                  TakeCoffeeBreak                       = fun vs -> VsImpl(vs).TakeCoffeeBreak() 
-                  ReplaceFileInMemory                   = fun (file,contents,takeCoffeeBreak) -> OpenFileSimpl(file).ReplaceAllText(contents, takeCoffeeBreak)
-                  SaveFileToDisk                        = fun file -> OpenFileSimpl(file).SaveFileToDisk()
-                  CreatePhysicalProjectFileInMemory     = Privates.CreateMsBuildProjectText false
-                  CleanUp                               = fun vs -> VsImpl(vs).CleanUp()
-                  ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients                   = fun vs -> VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-                  AutoCompleteMemberDataTipsThrowsScope = fun (message) -> 
-                                                              let Hook(callback) : Microsoft.FSharp.Compiler.SourceCodeServices.DataTipElement =                                                               
-                                                                  let exn = Microsoft.FSharp.Compiler.ErrorLogger.Error((0,message),range.Zero)
-                                                                  let ph = Microsoft.FSharp.Compiler.ErrorLogger.PhasedError.Create(exn, 
-                                                                                        Microsoft.FSharp.Compiler.ErrorLogger.BuildPhase.TypeCheck)
-                                                                  Microsoft.FSharp.Compiler.ErrorLogger.phasedError (ph)
-                                                              Microsoft.FSharp.Compiler.SourceCodeServices.TestHooks.FormatOverloadsToListScope(Hook)
-                  OutOfConeFilesAreAddedAsLinks         = false                
-                  SupportsOutputWindowPane = false
-                  CleanInvisibleProject                 = fun vs -> VsImpl(vs).CleanInvisibleProject()
-                }
-            ops, behaviorHooks
-            
-        /// Salsa tests which create .fsproj files for projects.
-        let MSBuild() = 
-            let behaviorHooks = MakeMSBuildBehavior()
-            MSBuildWithFlavor(behaviorHooks)
-            
-        /// Salsa tests which create .fsproj files using the installed version of
-        /// FSharp.targets.
-        let InstalledMSBuild() = 
-            // Overwrite the default MSBuildBehavior hooks to use the installed
-            // FSharp.targets file.
-            let behaviorHooks = 
-                { MakeMSBuildBehavior() with
-                    CreateProjectHook = Privates.CreateMsBuildProject true }
 
-            // Same here - use installed version of FSharp.targets            
-            let ops, flavor = MSBuildWithFlavor(behaviorHooks)
-            let updatedOps = 
-                { ops with 
-                    CreatePhysicalProjectFileInMemory = Privates.CreateMsBuildProjectText true }
-            (updatedOps, flavor)
+    /// Salsa tests which create .fsproj files for projects.
+    type MSBuildTestFlavor(useInstalledTargets) = 
+        let behaviorHooks = Privates.MSBuildBehaviorHooks(useInstalledTargets) :> ProjectBehaviorHooks
+        interface VsOps with
+            member ops.BehaviourHooks = behaviorHooks
+            member ops.CreateVisualStudio () = CreateSimple(ops)
+            member ops.CreateSolution vs = VsImpl(vs).CreateSolution()
+            member ops.GetOutputWindowPaneLines vs = VsSimpl(vs).GetOutputWindowPaneLines()
+            member ops.CloseSolution (solution) = SolutionImpl(solution).Close()
+            member ops.CreateProject (solution,projectBaseName) = SolutionImpl(solution).CreateProjectFlavor behaviorHooks projectBaseName
+            member ops.CreateProjectWithHooks (solution,hooks,projectBaseName) = SolutionImpl(solution).CreateProjectFlavor hooks projectBaseName
+            member ops.NewFile (vs,filename,buildAction,lines) = VsSimpl(vs).NewFile(filename,buildAction,lines,behaviorHooks)
+            member ops.DeleteFileFromDisk (file:File) = FileSimpl(file).DeleteFileFromDisk()
+            member ops.AddFileFromText (project:OpenProject,filenameOnDisk,filenameInProject,buildAction,lines) = ProjectImpl(project).AddFileFromText(filenameOnDisk,filenameInProject,buildAction,lines)
+            member ops.AddLinkedFileFromText (project:OpenProject,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)=ProjectImpl(project).AddLinkedFileFromText(filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)
+            member ops.AddAssemblyReference (project,reference,specificVersion) = ProjectImpl(project).AddAssemblyReference(reference,specificVersion)
+            member ops.AddProjectReference (project1,project2) = ProjectImpl(project1).AddProjectReference(project2)
+            member ops.ProjectDirectory project = ProjectImpl(project).Directory            
+            member ops.ProjectFile project = ProjectImpl(project).ProjectFile
+            member ops.SetVersionFile (project,file) = ProjectImpl(project).SetVersionFile(file)
+            member ops.SetOtherFlags (project,flags) = ProjectImpl(project).SetOtherFlags(flags)
+            member ops.SetConfigurationAndPlatform (project,configAndPlatform) = ProjectImpl(project).ConfigurationAndPlatform <- configAndPlatform
+            member ops.AddDisabledWarning (project,code) = ProjectImpl(project).AddDisabledWarning(code)
+            member ops.GetErrors project = ProjectImpl(project).Errors
+            member ops.BuildProject (project,target) = ProjectImpl(project).Build(target)
+            member ops.GetMainOutputAssembly project = ProjectImpl(project).GetMainOutputAssembly()
+            member ops.SaveProject project = ProjectImpl(project).Save()                
+            member ops.OpenFileViaOpenFile (vs,filename) = VsSimpl(vs).OpenFileViaOpenFile(filename,behaviorHooks)
+            member ops.OpenFile (project,filename) = ProjectImpl(project).OpenFile(filename)
+            member ops.SetProjectDefines (project,defines) = ProjectImpl(project).SetProjectDefines(defines)
+            member ops.PlaceIntoProjectFileBeforeImport (project,xml) = ProjectImpl(project).PlaceIntoProjectFileBeforeImport(xml)
+            member ops.GetOpenFiles project = ProjectImpl(project).GetOpenFiles()
+            member ops.MoveCursorTo (file,line,col) = OpenFileSimpl(file).MoveCursorTo(line,col)
+            member ops.GetCursorLocation (file) = OpenFileSimpl(file).GetCursorLocation()
+            member ops.OpenExistingProject (vs,dir,projname) = VsImpl(vs).OpenExistingProject(behaviorHooks, dir, projname)
+            member ops.MoveCursorToEndOfMarker (file,marker) = OpenFileSimpl(file).MoveCursorToEndOfMarker(marker)
+            member ops.MoveCursorToStartOfMarker (file,marker) = OpenFileSimpl(file).MoveCursorToStartOfMarker(marker)
+            member ops.GetNameOfOpenFile (file) = OpenFileSimpl(file).GetFileName()
+            member ops.GetProjectOptionsOfScript (file) = OpenFileSimpl(file).GetProjectOptionsOfScript()
+            member ops.GetQuickInfoAtCursor file = OpenFileSimpl(file).GetQuickInfoAtCursor()
+            member ops.GetQuickInfoAndSpanAtCursor file = OpenFileSimpl(file).GetQuickInfoAndSpanAtCursor()
+            member ops.GetMatchingBracesForPositionAtCursor file = OpenFileSimpl(file).GetMatchingBracesForPositionAtCursor()
+            member ops.GetParameterInfoAtCursor file = OpenFileSimpl(file).GetParameterInfoAtCursor()
+            member ops.GetTokenTypeAtCursor file = OpenFileSimpl(file).GetTokenTypeAtCursor()
+            member ops.GetSquiggleAtCursor file = OpenFileSimpl(file).GetSquiggleAtCursor()
+            member ops.GetSquigglesAtCursor file = OpenFileSimpl(file).GetSquigglesAtCursor()
+            member ops.AutoCompleteAtCursor file = OpenFileSimpl(file).AutoCompleteAtCursor()
+            member ops.CompleteAtCursorForReason (file,reason) = OpenFileSimpl(file).CompleteAtCursorForReason(reason)
+            member ops.CompletionBestMatchAtCursorFor (file, value, filterText) = (OpenFileSimpl(file)).CompletionBestMatchAtCursorFor(value, ?filterText=filterText)
+            member ops.GotoDefinitionAtCursor (file, forceGen) = (OpenFileSimpl file).GotoDefinitionAtCursor forceGen
+            member ops.GetNavigationContentAtCursor file = OpenFileSimpl(file).GetNavigationContentAtCursor()
+            member ops.GetHiddenRegionCommands file = OpenFileSimpl(file).GetHiddenRegionCommands()
+            member ops.GetIdentifierAtCursor file = OpenFileSimpl(file).GetIdentifierAtCursor ()
+            member ops.GetF1KeywordAtCursor file = OpenFileSimpl(file).GetF1KeywordAtCursor ()
+            member ops.GetLineNumber (file, n) = OpenFileSimpl(file).GetLineNumber n
+            member ops.GetAllLines file = (OpenFileSimpl file).GetAllLines ()
+            member ops.SwitchToFile (vs,file) = VsSimpl(vs).FocusOpenFile(OpenFileSimpl(file))
+            member ops.OnIdle vs = VsImpl(vs).OnIdle()
+            member ops.ShiftKeyDown vs = VsImpl(vs).ShiftKeyDown()
+            member ops.ShiftKeyUp vs = VsImpl(vs).ShiftKeyUp()
+            member ops.TakeCoffeeBreak vs = VsImpl(vs).TakeCoffeeBreak() 
+            member ops.ReplaceFileInMemory (file,contents,takeCoffeeBreak) = OpenFileSimpl(file).ReplaceAllText(contents, takeCoffeeBreak)
+            member ops.SaveFileToDisk file = OpenFileSimpl(file).SaveFileToDisk()
+            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = Privates.CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion)
+            member ops.CleanUp vs = VsImpl(vs).CleanUp()
+            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            member ops.AutoCompleteMemberDataTipsThrowsScope message = 
+                ItemDescriptionsImpl.ToolTipFault <- Some message
+                { new System.IDisposable with member x.Dispose() = ItemDescriptionsImpl.ToolTipFault <- None }
+            member ops.OutOfConeFilesAreAddedAsLinks = false                
+            member ops.SupportsOutputWindowPane = false
+            member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()
+
+    let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks(false) :> ProjectBehaviorHooks
+            
+    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.targets and FSharp.Build
+    let BuiltMSBuildTestFlavour() = MSBuildTestFlavor(false) :> VsOps
+
+    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.targets.
+    let InstalledMSBuildTestFlavour() = MSBuildTestFlavor(true) :> VsOps

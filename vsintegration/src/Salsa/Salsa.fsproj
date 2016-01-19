@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -18,15 +18,15 @@
     <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
+      <Link>CompilerLocationUtils.fs</Link>
+    </Compile>
     <Compile Include="..\unittests\TestLib.Utils.fs">
       <Link>UnitTests.TestLib.Utils.fs</Link>
     </Compile>
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="VsMocks.fs" />
-    <Compile Include="Salsa.fsi" />
     <Compile Include="Salsa.fs" />
-    <Compile Include="SalsaUtils.fsi" />
     <Compile Include="SalsaUtils.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -35,7 +35,6 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Windows.Forms" />
-
     <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
@@ -61,8 +60,8 @@
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="nunit.framework">
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
