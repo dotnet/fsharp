@@ -1693,34 +1693,28 @@ module StaticLinker =
 // EMIT IL
 //----------------------------------------------------------------------------
 
-type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
+type SigningInfo = SigningInfo of (* delaysign:*) bool * (* publicsign:*) bool * (*signer:*)  string option * (*container:*) string option
 
-#if FX_NO_KEY_SIGNING
-#else
-let GetSigner(signingInfo) = 
-        let (SigningInfo(delaysign,signer,container)) = signingInfo
+let GetSigner signingInfo = 
+        let (SigningInfo(delaysign,publicsign,signer,container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
         if isSome container then
-          Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
+            Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
         else
             match signer with 
             | None -> None
             | Some(s) ->
-                try 
-                if delaysign then
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+                try
+                if publicsign || delaysign then
+                    Some((ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign))
                 else
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
                 with e -> 
                     // Note:: don't use errorR here since we really want to fail and not produce a binary
                     error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
-#endif
 
 module FileWriter = 
     let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
-#if FX_NO_KEY_SIGNING
-        ignore signingInfo
-#endif
         try
             if !progress then dprintn "Writing assembly...";
             try 
@@ -1730,10 +1724,7 @@ module FileWriter =
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     showTimes = tcConfig.showTimes
-#if FX_NO_KEY_SIGNING
-#else
                     signer = GetSigner signingInfo
-#endif
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },
                   ilxMainModule,
@@ -1749,9 +1740,9 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
     let delaySignAttrib = AttributeHelpers.TryFindBoolAttribute tcGlobals "System.Reflection.AssemblyDelaySignAttribute" topAttrs.assemblyAttrs
     let signerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyFileAttribute" topAttrs.assemblyAttrs
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
-    
+
     // REVIEW: C# throws a warning when these attributes are used - should we?
-    
+
     // if delaySign is set via an attribute, validate that it wasn't set via an option
     let delaysign = 
         match delaySignAttrib with 
@@ -1786,8 +1777,8 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
             else
               Some container
         | None -> tcConfig.container
-    
-    SigningInfo (delaysign,signer,container)
+
+    SigningInfo (delaysign,tcConfig.publicsign,signer,container)
  
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the

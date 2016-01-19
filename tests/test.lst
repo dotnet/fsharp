@@ -74,6 +74,7 @@ Core06		fsharp\core\quotesInMultipleModules
 Core07,coreclr		fsharp\core\reflect
 Core07		fsharp\core\resources
 Core07,coreclr		fsharp\core\seq
+coreclr		fsharp\core\signedtests
 Core07,coreclr		fsharp\core\subtype
 Core07		fsharp\core\syntax
 Core07,coreclr		fsharp\core\tlr

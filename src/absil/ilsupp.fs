@@ -6,18 +6,20 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (System.DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Bytes
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-
+#if FX_NO_CORHOST_SIGNER
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
 open System
 open System.IO
 open System.Text
 open System.Reflection
+
 #if FX_NO_SYMBOLSTORE
 #else
 open System.Diagnostics.SymbolStore
@@ -1279,8 +1281,33 @@ let pdbVariableGetAddressAttributes (variable:PdbVariable) :  (int32 * int32) =
 type keyContainerName = string
 type keyPair = byte[]
 type pubkey = byte[]
+type pubkeyOptions = byte[] * bool
 
-#if FX_NO_KEY_SIGNING
+#if FX_NO_CORHOST_SIGNER
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
+    let reply = (StrongNameSign.GetPublicKeyForKeyPair kp)
+    reply
+
+let signerGetPublicKeyForKeyContainer (_kcName:keyContainerName) : pubkey = 
+    raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
+ 
+let signerCloseKeyContainer (_kc:keyContainerName) :unit = 
+    raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
+
+let signerSignatureSize (pk:pubkey) : int = 
+    (StrongNameSign.SignatureSize pk)
+
+let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
+    (StrongNameSign.SignFile fileName kp)
+
+let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  
+    raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
+
 #else
 // new mscoree functionality
 // This type represents methods that we don't currently need, so I'm leaving unimplemented
@@ -1389,13 +1416,11 @@ let CreateInterface (
                     ([<MarshalAs(UnmanagedType.LPStruct)>] _guid : System.Guid),
                     ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                         ICLRMetaHost byref)) : unit = failwith "CreateInterface"
-    
-let signerOpenPublicKeyFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
-let signerOpenKeyPairFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
 let mutable iclrsn : ICLRStrongName option = None
 let getICLRStrongName () =
     match iclrsn with

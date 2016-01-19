@@ -20,6 +20,7 @@
                 <dependency id="System.AppContext" version="4.0.1-rc2-23616" />
                 <dependency id="System.Collections" version="4.0.11-rc2-23616" />
                 <dependency id="System.Collections.Concurrent" version="4.0.11-rc2-23616" />
+                <dependency id="System.Collections.Immutable" version="1.2.0-rc2-23616" />
                 <dependency id="System.Console" version="4.0.0-rc2-23616" />
                 <dependency id="System.Diagnostics.Debug" version="4.0.11-rc2-23616" />
                 <dependency id="System.Diagnostics.Process" version="4.0.0-rc2-23616" />
@@ -38,6 +39,7 @@
                 <dependency id="System.Reflection.Emit" version="4.0.1-rc2-23616" />
                 <dependency id="System.Reflection.Emit.ILGeneration" version="4.0.1-rc2-23616" />
                 <dependency id="System.Reflection.Extensions" version="4.0.1-rc2-23616" />
+                <dependency id="System.Reflection.Metadata" version="1.2.0-rc2-23616" />
                 <dependency id="System.Reflection.Primitives" version="4.0.1-rc2-23616" />
                 <dependency id="System.Reflection.TypeExtensions" version="4.0.1-rc2-23616" />
                 <dependency id="System.Resources.ResourceManager" version="4.0.1-rc2-23616" />

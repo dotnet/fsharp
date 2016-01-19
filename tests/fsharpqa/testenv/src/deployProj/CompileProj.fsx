@@ -1,5 +1,6 @@
 ﻿#r @"..\..\..\..\..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll"
 
+open System
 open System.Diagnostics
 open System.IO
 open FSharp.Data
@@ -33,6 +34,14 @@ let FSharpCore = GetArgumentFromCommandLine         "--fsharpCore:"         @"Re
 let Output = GetArgumentFromCommandLine             "--output:"             @"."
 let Verbosity = GetArgumentFromCommandLine          "--v:"                  @"quiet"
 let CompilerPath = GetArgumentFromCommandLine       "--compilerPath:"       @"."
+let TestKeyFile =  GetArgumentFromCommandLine       "--keyfile:"            @""
+let TestDelaySign =  GetArgumentFromCommandLine     "--delaysign:"          @""
+let TestPublicSign =  GetArgumentFromCommandLine    "--publicsign:"          @""
+let ExtraDefines =  GetArgumentFromCommandLine      "--ExtraDefines:"       @""
+
+let GetKeyFileOption = if String.IsNullOrEmpty(TestKeyFile) then "" else (sprintf "--keyfile:%s" TestKeyFile)
+let GetDelaySignOption = if String.IsNullOrEmpty(TestDelaySign) then "" else "--delaysign"
+let GetPublicSignOption = if String.IsNullOrEmpty(TestPublicSign) then "" else "--publicsign"
 
 let FSharpCoreDir = Path.GetDirectoryName(FSharpCore)
 let Win32Manifest = Path.Combine(FSharpCoreDir, "default.win32manifest")
@@ -83,7 +92,20 @@ let executeCompiler sources references =
     let listToPrefixedSpaceSeperatedString prefix list = list |> Seq.fold(fun a t -> sprintf "%s %s%s" a prefix t) ""
     let listToSpaceSeperatedString list = list |> Seq.fold(fun a t -> sprintf "%s %s" a t) ""
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "--reference:%s" i)
-    let arguments = sprintf @"%s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s" (System.IO.Path.Combine(CompilerPath, "fsc.exe")) (Output) (Win32Manifest) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
+    printfn ">%s<" (GetKeyFileOption)
+    printfn ">%s<" (GetDelaySignOption)
+    let arguments = sprintf @"%s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s %s %s %s %s"
+                            (System.IO.Path.Combine(CompilerPath, "fsc.exe")) 
+                            (Output) 
+                            (Win32Manifest) 
+                            (listToSpaceSeperatedString (addReferenceSwitch references)) 
+                            (FSharpCore) 
+                            (listToPrefixedSpaceSeperatedString "--define:" Defines) 
+                            (GetKeyFileOption) 
+                            (GetDelaySignOption) 
+                            (GetPublicSignOption) 
+                            (ExtraDefines) 
+                            (listToSpaceSeperatedString sources)
     executeProcess (CompilerPath + @"\CoreRun.exe") arguments
 
 let setPathSeperators (path:string) = path.Replace('/', '\\')
