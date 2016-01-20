@@ -910,11 +910,11 @@ type ILAttribute =
     { Method: ILMethodSpec;
       Data: byte[] }
 
-[<NoEquality; NoComparison>]
-type ILAttributes = 
-   | CustomAttrsLazy of Lazy<ILAttribute list>
-   | CustomAttrs of ILAttribute list
-   member x.AsList = match x with | CustomAttrsLazy l -> l.Force() | CustomAttrs l -> l
+[<NoEquality; NoComparison; Sealed>]
+type ILAttributes(f: unit -> ILAttribute[]) = 
+   let mutable array = InlineDelayInit<_>(f)
+   member x.AsArray = array.Value
+   member x.AsList = x.AsArray |> Array.toList
 
 type ILCodeLabel = int
 
@@ -1523,25 +1523,32 @@ type ILMethodDef =
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
 
-[<NoEquality; NoComparison>]
-type ILMethodDefs = 
-    | Methods of Lazy<ILMethodDef list * MethodDefMap>
+[<Sealed>]
+type ILMethodDefs(f : (unit -> ILMethodDef[])) = 
+
+    let mutable array = InlineDelayInit<_>(f)
+    let mutable dict = InlineDelayInit<_>(fun () -> 
+            let arr = array.Value
+            let t = Dictionary<_,_>()
+            for i = arr.Length - 1 downto 0 do 
+                let y = arr.[i]
+                let key = y.Name
+                if t.ContainsKey key then 
+                    t.[key] <- y :: t.[key]
+                else
+                    t.[key] <- [ y ]
+            t)
+
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILMethodDef>).GetEnumerator() :> IEnumerator)
+
     interface IEnumerable<ILMethodDef> with 
-        member x.GetEnumerator() = 
-            let (Methods(lms)) = x
-            let ms,_ = lms.Force()
-            (ms :> IEnumerable<ILMethodDef>).GetEnumerator()
-    member x.AsList = Seq.toList x
+        member x.GetEnumerator() = (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
 
-    member x.FindByName nm  = 
-        let (Methods lpmap) = x 
-        let t = snd (Lazy.force lpmap)
-        Map.tryFindMulti nm t 
-
-    member x.FindByNameAndArity (nm,arity) = 
-        x.FindByName nm |> List.filter (fun x -> x.Parameters.Length = arity) 
+    member x.AsArray = array.Value
+    member x.AsList = x.AsArray |> Array.toList
+    member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
+    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> x.Parameters.Length = arity) 
 
 
 [<NoComparison; NoEquality>]
@@ -1694,28 +1701,32 @@ type ILTypeDef =
         | _ -> false
 
 
-and ILTypeDefs = 
-    | TypeDefTable of Lazy<(string list * string * ILAttributes * Lazy<ILTypeDef>) array> * Lazy<ILTypeDefsMap>
+and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
+
+    let mutable array = InlineDelayInit<_>(f)
+    let mutable dict = InlineDelayInit<_>(fun () -> 
+            let arr = array.Value
+            let t = Dictionary<_,_>(HashIdentity.Structural)
+            for (nsp, nm, _attr, ltd) in arr do 
+                let key = nsp, nm
+                t.[key] <- ltd
+            t)
+
+    member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
+    member x.AsList = x.AsArray |> Array.toList
+
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
+
     interface IEnumerable<ILTypeDef> with 
         member x.GetEnumerator() = 
-            let (TypeDefTable (larr,_tab)) = x
-            let tds = seq { for (_,_,_,td) in larr.Force() -> td.Force() }
-            tds.GetEnumerator()
-    member x.AsList = Seq.toList x
+            (seq { for (_,_,_,ltd) in array.Value -> ltd.Force() }).GetEnumerator()
     
-    member x.AsListOfLazyTypeDefs = let (TypeDefTable (larr,_tab)) = x in larr.Force() |> Array.toList
+    member x.AsArrayOfLazyTypeDefs = array.Value
 
     member x.FindByName nm  = 
-        let (TypeDefTable (_,m)) = x 
         let ns,n = splitILTypeName nm
-        m.Force().[ns].[n].Force()
-
-        
-/// keyed first on namespace then on type name.  The namespace is often a unique key for a given type map.
-and ILTypeDefsMap = 
-     Map<string list,Dictionary<string,Lazy<ILTypeDef>>>
+        dict.Value.[(ns,n)].Force()
 
 type ILNestedExportedType =
     { Name: string;
@@ -2018,10 +2029,11 @@ let mkILFieldSpec (tref,ty) = { FieldRef= tref; EnclosingType=ty }
 let mkILFieldSpecInTy (typ:ILType,nm,fty) = 
   mkILFieldSpec (mkILFieldRef (typ.TypeRef,nm,fty), typ)
     
-let emptyILCustomAttrs = CustomAttrs []
+let emptyILCustomAttrs = ILAttributes (fun () -> [| |])
 
-let mkILCustomAttrs l = match l with [] -> emptyILCustomAttrs | _ -> CustomAttrs l
-let mkILComputedCustomAttrs l = CustomAttrsLazy (Lazy.Create l)
+let mkILCustomAttrsFromArray (l: ILAttribute[]) = if l.Length = 0 then emptyILCustomAttrs else ILAttributes (fun () -> l)
+let mkILCustomAttrs l = l |> List.toArray |> mkILCustomAttrsFromArray
+let mkILComputedCustomAttrs f = ILAttributes f
 
 let andTailness x y = 
   match x with Tailcall when y -> Tailcall | _ -> Normalcall
@@ -2317,28 +2329,11 @@ let getName (ltd: Lazy<ILTypeDef>) =
     let ns,n = splitILTypeName td.Name
     (ns,n,td.CustomAttrs,ltd)
 
-let addILTypeDefToTable (ns,n,_cas,ltd) tab = 
-    let prev = 
-       (match Map.tryFind ns tab with 
-        | None -> Dictionary<_,_>(1, HashIdentity.Structural) 
-        | Some prev -> prev)
-    if prev.ContainsKey n then  
-        let msg = sprintf "not unique type %s" (unsplitTypeName (ns,n));
-        System.Diagnostics.Debug.Assert(false,msg)
-        failwith msg
-    prev.[n] <- ltd;
-    Map.add ns prev tab
-
-let addLazyTypeDefToTable ltd larr = lazyMap (fun arr -> Array.ofList (getName ltd :: Array.toList arr)) larr
-
-let buildTable larr = lazyMap (fun arr -> Array.foldBack addILTypeDefToTable arr Map.empty) larr
-let buildTypes larr = TypeDefTable (larr, buildTable larr)
-
-(* this is not performance critical *)
-let addILTypeDef td (TypeDefTable (larr,_ltab)) = buildTypes (addLazyTypeDefToTable (notlazy td) larr)       
-let mkILTypeDefs l =  buildTypes (List.map (notlazy >> getName) l |> Array.ofList |> notlazy )
-let mkILTypeDefsLazy llist = buildTypes (lazyMap Array.ofList llist)
-let emptyILTypeDefs = mkILTypeDefs []
+let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield getName (notlazy td); yield! tdefs.AsArrayOfLazyTypeDefs |])
+let mkILTypeDefsFromArray l =  ILTypeDefs (fun () -> Array.map (notlazy >> getName) l)
+let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
+let mkILTypeDefsComputed f = ILTypeDefs f
+let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
 // -------------------------------------------------------------------- 
 // Operations on method tables.
@@ -2346,22 +2341,13 @@ let emptyILTypeDefs = mkILTypeDefs []
 // REVIEW: this data structure looks substandard
 // -------------------------------------------------------------------- 
 
-let addILMethodToTable (y: ILMethodDef) tab =
-  let key = y.Name
-  let prev = Map.tryFindMulti key tab
-  Map.add key (y::prev) tab
+let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
+let mkILMethods xs =  xs |> Array.ofList |> mkILMethodsFromArray
+let mkILMethodsComputed f =  ILMethodDefs f
+let emptyILMethods = mkILMethodsFromArray [| |]
 
-let addILMethod_to_pmap y (mds,tab) = y::mds,addILMethodToTable y tab
-let addILMethod y (Methods lpmap) = Methods (lazyMap (addILMethod_to_pmap y) lpmap)
-
-let mkILMethods l =  Methods (notlazy (List.foldBack addILMethod_to_pmap l ([],Map.empty)))
-let mkILMethodsLazy l =  Methods (lazy (List.foldBack addILMethod_to_pmap (Lazy.force l) ([],Map.empty)))
-let emptyILMethods = mkILMethods []
-
-let filterILMethodDefs f (Methods lpmap) = 
-    Methods (lazyMap (fun (fs,_) -> 
-        let l = List.filter f fs
-        (l, List.foldBack addILMethodToTable l Map.empty)) lpmap)
+let filterILMethodDefs f (mdefs: ILMethodDefs) = 
+    ILMethodDefs (fun () -> mdefs.AsArray |> Array.filter f)
 
 
 // -------------------------------------------------------------------- 
@@ -3253,16 +3239,17 @@ let prependInstrsToCode c1 c2 =
 let prependInstrsToMethod new_code md  = 
     mdef_code2code (prependInstrsToCode new_code) md
 
-(* Creates cctor if needed *)
+// Creates cctor if needed 
 let cdef_cctorCode2CodeOrCreate tag f cd = 
     let mdefs = cd.Methods
-    let md,mdefs = 
+    let cctor = 
         match mdefs.FindByName ".cctor" with 
-        | [mdef] -> mdef,filterILMethodDefs (fun md -> md.Name <> ".cctor") mdefs
-        | [] -> mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode [ ],tag)), mdefs
+        | [mdef] -> mdef
+        | [] -> mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode [ ],tag))
         | _ -> failwith "bad method table: more than one .cctor found"
-    let md' = f md
-    {cd with Methods = addILMethod md' mdefs}
+        
+    let methods = ILMethodDefs (fun () -> [| yield f cctor; for md in mdefs do if md.Name <> ".cctor" then yield md |])
+    {cd with Methods = methods}
 
 
 let code_of_mdef (md:ILMethodDef) = 
@@ -3454,7 +3441,7 @@ let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (ty
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
-  let top2 = if isNil top then [mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields)] else top
+  let top2 = if top.Length = 0 then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
@@ -5095,11 +5082,9 @@ let resolveILMethodRef td (mref:ILMethodRef) =
           (md.Parameters,mref.ArgTypes) ||>  ILList.lengthsEqAndForall2 (fun p1 p2 -> p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
           md.Return.Type = mref.ReturnType)  with 
-    | [] -> 
-        failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name);
+    | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name);
     | [mdef] ->  mdef
-    | _ -> 
-        failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)
+    | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)
         
 let mkRefToILModule m =
   ILModuleRef.Create(m.Name, true, None)
@@ -5120,17 +5105,15 @@ let ungenericizeTypeName n =
       String.sub n 0 pos
   else n
 
-type ILEventRef = 
+
+type ILEventRef =
     { erA: ILTypeRef; erB: string }
     static member Create(a,b) = {erA=a;erB=b}
     member x.EnclosingTypeRef = x.erA
     member x.Name = x.erB
 
-type ILPropertyRef = 
+type ILPropertyRef =
     { prA: ILTypeRef; prB: string }
     static member Create (a,b) = {prA=a;prB=b}
     member x.EnclosingTypeRef = x.prA
     member x.Name = x.prB
-
-
-

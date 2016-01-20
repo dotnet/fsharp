@@ -368,10 +368,10 @@ let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)
-let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefs (List.map f m.AsList)
+let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
 
 let morphExpandILTypeDefs f (m:ILTypeDefs) = 
-  mkILTypeDefs (List.foldBack (fun x y -> f x @ y) m.AsList [])
+  mkILTypeDefs (List.collect f m.AsList)
 
 let morphILTypeDefsInILModule typesf m = 
     {m with TypeDefs=typesf m.TypeDefs}
