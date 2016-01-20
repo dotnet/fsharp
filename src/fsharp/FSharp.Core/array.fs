@@ -969,9 +969,13 @@ namespace Microsoft.FSharp.Collections
             accv
 
         [<CompiledName("Average")>]
-        let inline average      (array:_[]) = 
+        let inline average      (array:'T[]) = 
             checkNonNull "array" array
-            Seq.average array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            for i = 0 to array.Length - 1 do
+                acc <- Checked.(+) acc array.[i]
+            LanguagePrimitives.DivideByInt< (^T) > acc array.Length
 
         [<CompiledName("AverageBy")>]
         let inline averageBy f (array:_[]) = 
