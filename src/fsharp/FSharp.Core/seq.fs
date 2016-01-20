@@ -1587,57 +1587,56 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< (^a) >) : ^a = 
-            use e = source.GetEnumerator() 
             let mutable acc = LanguagePrimitives.GenericZero< (^a) >
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
+            for item in source do
+                acc <- Checked.(+) acc item
             acc
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U = 
-            use e = source.GetEnumerator() 
             let mutable acc = LanguagePrimitives.GenericZero< (^U) >
-            while e.MoveNext() do
-                acc <- Checked.(+) acc (f e.Current)
+            for item in source do
+                acc <- Checked.(+) acc (f item)
             acc
 
         [<CompiledName("Average")>]
         let inline average (source: seq< (^a) >) : ^a = 
             checkNonNull "source" source
-            use e = source.GetEnumerator()     
             let mutable acc = LanguagePrimitives.GenericZero< (^a) >
             let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
+            for item in source do
+                acc <- Checked.(+) acc item
                 count <- count + 1
-            if count = 0 then 
+            if count = 0 then
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             LanguagePrimitives.DivideByInt< (^a) > acc count
 
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U = 
             checkNonNull "source" source
-            use e = source.GetEnumerator() 
             let mutable acc = LanguagePrimitives.GenericZero< (^U) >
             let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc (f e.Current)
+            for item in source do
+                acc <- Checked.(+) acc (f item)
                 count <- count + 1
             if count = 0 then 
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             LanguagePrimitives.DivideByInt< (^U) > acc count
             
         [<CompiledName("Min")>]
-        let inline min (source: seq<_>) = 
+        let inline min (source: seq<'T>) = 
             checkNonNull "source" source
-            use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then 
+            let mutable hasValue = false
+            let mutable acc = Unchecked.defaultof<_>
+            for item in source do
+              let curr = item
+              if hasValue then
+                if curr < acc then acc <- curr
+              else
+                acc <- curr
+                hasValue <- true
+            if not (hasValue) then 
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            let mutable acc = e.Current
-            while e.MoveNext() do
-                let curr = e.Current 
-                if curr < acc then 
-                    acc <- curr
             acc
 
         [<CompiledName("MinBy")>]
@@ -1675,16 +1674,19 @@ namespace Microsoft.FSharp.Collections
 
 *)
         [<CompiledName("Max")>]
-        let inline max (source: seq<_>) = 
+        let inline max (source: seq<'T>) = 
             checkNonNull "source" source
-            use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then 
+            let mutable hasValue = false
+            let mutable acc = Unchecked.defaultof<_>
+            for item in source do
+                let curr = item
+                if hasValue then
+                  if curr > acc then acc <- curr
+                else
+                  acc <- curr
+                  hasValue <- true
+            if not hasValue then 
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            let mutable acc = e.Current
-            while e.MoveNext() do
-                let curr = e.Current 
-                if curr > acc then 
-                    acc <- curr
             acc
 
         [<CompiledName("MaxBy")>]
@@ -1804,7 +1806,7 @@ namespace Microsoft.FSharp.Collections
         let last (source : seq<_>) =
             checkNonNull "source" source
             use e = source.GetEnumerator() 
-            if e.MoveNext() then 
+            if e.MoveNext() then
                 let mutable res = e.Current
                 while (e.MoveNext()) do res <- e.Current
                 res
