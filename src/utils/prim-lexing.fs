@@ -75,15 +75,15 @@ namespace Internal.Utilities.Text.Lexing
         internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>) = 
         let context = new Dictionary<string,obj>(1) 
         let mutable buffer=[||];
-        /// number of valid characters beyond bufferScanStart 
+        /// number of valid characters beyond bufferScanStart.
         let mutable bufferMaxScanLength=0;
-        /// count into the buffer when scanning 
+        /// count into the buffer when scanning.
         let mutable bufferScanStart=0;
-        /// number of characters scanned so far 
+        /// number of characters scanned so far.
         let mutable bufferScanLength=0;
-        /// length of the scan at the last accepting state 
+        /// length of the scan at the last accepting state.
         let mutable lexemeLength=0;
-        /// action related to the last accepting state 
+        /// action related to the last accepting state.
         let mutable bufferAcceptAction=0;
         let mutable eof = false;
         let mutable startPos = Position.Empty ;
@@ -100,12 +100,12 @@ namespace Internal.Utilities.Text.Lexing
                  
               
         member lexbuf.EndOfScan () : int =
-            // Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
+            //Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
             if bufferAcceptAction < 0 then 
                 failwith "unrecognized input"
 
-            //  printf "endOfScan %d state %d on unconsumed input '%c' (%d)\n" a s (Char.chr inp) inp;
-            //   Printf.eprintf "accept, lexeme = %s\n" (lexeme lexBuffer); 
+            //printf "endOfScan %d state %d on unconsumed input '%c' (%d)\n" a s (Char.chr inp) inp;
+            //Printf.eprintf "accept, lexeme = %s\n" (lexeme lexBuffer); 
             lexbuf.StartPos <- endPos;
             lexbuf.EndPos <- endPos.EndOfToken(lexbuf.LexemeLength);
             bufferAcceptAction
@@ -183,7 +183,7 @@ namespace Internal.Utilities.Text.Lexing
                 else 
                     if lexBuffer.IsPastEndOfStream then failwith "End of file on lexing stream";
                     lexBuffer.IsPastEndOfStream <- true;
-                    // printf "state %d --> %d on eof\n" state snew;
+                    //printf "state %d --> %d on eof\n" state snew;
                     scanUntilSentinel(lexBuffer,snew)
             else 
                 scanUntilSentinel(lexBuffer, state)
@@ -252,7 +252,7 @@ namespace Internal.Utilities.Text.Lexing
                     lexBuffer.EndOfScan()
                 else 
                     lexBuffer.BufferScanLength <- lexBuffer.BufferScanLength + 1;
-                    // printf "state %d --> %d on '%c' (%d)\n" s snew (char inp) inp;
+                    //printf "state %d --> %d on '%c' (%d)\n" s snew (char inp) inp;
                     scanUntilSentinel(lexBuffer,snew)
                           
         // Each row for the Unicode table has format 

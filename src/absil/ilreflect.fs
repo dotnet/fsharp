@@ -310,13 +310,13 @@ let convAssemblyRef (aref:ILAssemblyRef) =
     asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture;
     asmName
 
-/// The global environment
+/// The global environment.
 type cenv = 
     { ilg: ILGlobals; 
       generatePdb: bool;
       resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
-/// Convert an Abstract IL type reference to Reflection.Emit System.Type value
+/// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // REVIEW: This ought to be an adequate substitute for this whole function, but it needs 
 // to be thoroughly tested.
 //    Type.GetType(tref.QualifiedName) 
@@ -522,7 +522,7 @@ and convTypeAux cenv emEnv preferCreated typ =
     | ILType.Byref eltType      -> let baseT = convTypeAux cenv emEnv preferCreated eltType |> nonNull "convType: byref eltType"
                                    baseT.MakeByRefType()                               |> nonNull "convType: byref" 
     | ILType.TypeVar tv         -> envGetTyvar emEnv tv                                |> nonNull "convType: tyvar" 
-  // XXX: REVIEW: complete the following cases.                                                        
+    // XXX: REVIEW: complete the following cases.                                                        
     | ILType.Modified (false, _, modifiedTy)  -> convTypeAux cenv emEnv preferCreated modifiedTy
     | ILType.Modified (true, _, _) -> failwith "convType: modreq"
     | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
@@ -544,7 +544,7 @@ and convTypeAux cenv emEnv preferCreated typ =
 // If convCreatedType replaced convType functions like convMethodRef, convConstructorSpec, ... (and more?)
 // will need to be fixed for emitted types to handle both TypeBuilder and later Type proper.
   
-/// Uses TypeBuilder/TypeBuilderInstantiation for emitted types
+/// Uses TypeBuilder/TypeBuilderInstantiation for emitted types.
 let convType cenv emEnv typ = convTypeAux cenv emEnv false typ
 
 // Used for ldtoken
@@ -558,7 +558,7 @@ let convTypes cenv emEnv (typs:ILTypes) = ILList.map (convType cenv emEnv) typs
 
 let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> ILList.toArray 
 
-/// Uses the .CreateType() for emitted type (if available)
+/// Uses the .CreateType() for emitted type (if available).
 let convCreatedType cenv emEnv typ = convTypeAux cenv emEnv true typ 
 let convCreatedTypeRef cenv emEnv typ = convTypeRef cenv emEnv true typ 
   
@@ -789,7 +789,7 @@ let defineLabel (ilG:ILGenerator) emEnv (label:ILCodeLabel) =
 // emitInstr cenv - I_arith
 //----------------------------------------------------------------------------
 
-///Emit comparison instructions
+///Emit comparison instructions.
 let emitInstrCompare emEnv (ilG:ILGenerator) comp targ  = 
     match comp with
     | BI_beq     -> ilG.EmitAndLog(OpCodes.Beq,envGetLabel emEnv targ)
@@ -1388,10 +1388,10 @@ let convMethodImplFlags mdef =
 //----------------------------------------------------------------------------
   
 let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
-   // remaining REVIEW:
-   // SecurityDecls: Permissions;
-   // IsUnmanagedExport: bool; (* -- The method is exported to unmanaged code using COM interop. *)
-   // IsMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
+    // remaining REVIEW:
+    // SecurityDecls: Permissions;
+    // IsUnmanagedExport: bool; (* -- The method is exported to unmanaged code using COM interop. *)
+    // IsMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
     let attrs = convMethodAttributes mdef
     let implflags = convMethodImplFlags mdef
     let cconv = convCallConv mdef.CallingConv
@@ -1453,7 +1453,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
           consB.SetImplementationFlagsAndLog(implflags);
           envBindConsRef emEnv mref consB
       | _name    ->
-          // Note the return/argument types may involve the generic parameters
+          // NOTE: the return/argument types may involve the generic parameters
           let methB = typB.DefineMethodAndLog(mdef.Name,attrs,cconv) 
         
           // Method generic type parameters         
@@ -1549,7 +1549,7 @@ let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
         | Some initial -> 
             if not fieldT.IsEnum 
 #if FX_ATLEAST_45
-                || not fieldT.Assembly.IsDynamic // it is ok to init fields with type = enum  that are defined in other assemblies 
+                || not fieldT.Assembly.IsDynamic // it is ok to init fields with type = enum that are defined in other assemblies 
 #endif
             then 
                 fieldB.SetConstant(convFieldInit initial)

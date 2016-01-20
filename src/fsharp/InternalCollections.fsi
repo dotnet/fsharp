@@ -19,7 +19,7 @@ namespace Internal.Utilities.Collections
     /// Returns the original key value because the areSame function
     /// may have unified two different keys.
     member TryGetKeyValue : key:'TKey -> ('TKey*'TValue) option    
-    /// Lookup a value and make it the most recent. Return None if it wasn't there.
+    /// Lookup a value and make it the most recent. Return <c>None</c> if it wasn't there.
     member TryGet : key:'TKey -> 'TValue option        
     /// Add an element to the collection. Make it the most recent.
     member Put : 'TKey*'TValue -> unit
@@ -28,7 +28,7 @@ namespace Internal.Utilities.Collections
     /// Remove all elements.
     member Clear : unit -> unit
     
-  /// Simple priority caching for a small number of key\value associations.
+  /// Simple priority caching for a small number of key/value associations.
   /// This cache may age-out results that have been Set by the caller.
   /// Because of this, the caller must be able to tolerate values 
   /// that aren't what was originally passed to the Set function.         
@@ -47,7 +47,7 @@ namespace Internal.Utilities.Collections
     member Clear : unit -> unit
     /// Get the value for the given key. Compute if necessary.
     member Get : key:'TKey -> 'TValue
-    /// Get the value for the given key or None if not already available
+    /// Get the value for the given key or <c>None</c> if not already available.
     member GetAvailable : key:'TKey -> 'TValue option
     /// Remove the given value from the mru cache.
     member Remove : key:'TKey -> unit
@@ -58,7 +58,8 @@ namespace Internal.Utilities.Collections
 
   [<Sealed>]
   type internal List = 
-    /// Return a new list with one element for each unique 'TKey. Multiple 'TValues are flattened. The original order of the first instance of 'TKey is preserved.
+    /// Return a new list with one element for each unique 'TKey. Multiple 'TValues are flattened. 
+    /// The original order of the first instance of 'TKey is preserved.
     static member groupByFirst : l:('TKey * 'TValue) list -> ('TKey * 'TValue list) list when 'TKey : equality
     /// Return each distinct item in the list using reference equality.
     static member referenceDistinct : 'T list -> 'T list when 'T : not struct

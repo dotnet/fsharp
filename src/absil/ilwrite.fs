@@ -68,19 +68,19 @@ let emitBytesViaBuffer f = let bb = ByteBuffer.Create 10 in f bb; bb.Close()
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
 
 //---------------------------------------------------------------------
-// Concrete token representations etc. used in PE files
+// Concrete token representations etc. used in PE files.
 //---------------------------------------------------------------------
 
 
 type ByteBuffer with 
 
-    /// Z32 = compressed unsigned integer 
+    /// Z32 = compressed unsigned integer.
     static member Z32Size n = 
       if n <= 0x7F then 1
       elif n <= 0x3FFF then 2
       else 4
 
-    /// Emit int32 as compressed unsigned integer
+    /// Emit int32 as compressed unsigned integer.
     member buf.EmitZ32 n = 
         if n >= 0 &&  n <= 0x7F then 
             buf.EmitIntAsByte n  
@@ -162,7 +162,7 @@ type PdbDocumentData = ILSourceDocument
 type PdbLocalVar = 
     { Name: string
       Signature: byte[] 
-      /// the local index the name corresponds to
+      /// the local index the name corresponds to.
       Index: int32  }
 
 type PdbMethodScope = 
@@ -382,7 +382,7 @@ let createWriter (f:string) =
 //---------------------------------------------------------------------
 
 let WriteMdbInfo fmdb f info = 
-    // Note, if we can’t delete it code will fail later
+    // NOTE: If we can’t delete it code will fail later
     (try FileSystem.FileDelete fmdb with _ -> ())
 
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically
@@ -601,15 +601,15 @@ type RowElement(tag:int32, idx: int32) =
 let UShort (x:uint16)    = RowElement(RowElementTags.UShort, int32 x)
 let ULong (x:int32)      = RowElement(RowElementTags.ULong, x)
 /// Index into cenv.data or cenv.resources.  Gets fixed up later once we known an overall
-/// location for the data section.  flag indicates if offset is relative to cenv.resources. 
+/// location for the data section. Flag indicates if offset is relative to cenv.resources. 
 let Data (x:int, k:bool) = RowElement((if k then RowElementTags.DataResources else RowElementTags.Data ), x)
-/// pos. in guid array 
+/// pos. in guid array.
 let Guid (x:int)         = RowElement(RowElementTags.Guid, x)
-/// pos. in blob array 
+/// pos. in blob array.
 let Blob (x:int)         = RowElement(RowElementTags.Blob, x)
-/// pos. in string array 
+/// pos. in string array.
 let StringE (x:int)      = RowElement(RowElementTags.String, x)
-/// pos. in some table 
+/// pos. in some table.
 let SimpleIndex         (t, x:int) = RowElement(RowElementTags.SimpleIndex t, x)
 let TypeDefOrRefOrSpec  (t, x:int) = RowElement(RowElementTags.TypeDefOrRefOrSpec t, x)
 let TypeOrMethodDef     (t, x:int) = RowElement(RowElementTags.TypeOrMethodDef t, x)
@@ -654,12 +654,12 @@ type StringIndex = int
 let BlobIndex (x:BlobIndex) : int = x
 let StringIndex (x:StringIndex) : int = x
 
-/// Abstract, general type of metadata table rows
+/// Abstract, general type of metadata table rows.
 type IGenericRow = 
     abstract GetGenericRow : unit -> RowElement[]
 
 /// Shared rows are used for the ILTypeRef, ILMethodRef, ILMethodSpec, etc. tables
-/// where entries can be shared and need to be made unique through hash-cons'ing
+/// where entries can be shared and need to be made unique through hash-cons'ing.
 type ISharedRow = 
     inherit IGenericRow
     
@@ -708,7 +708,7 @@ type UnsharedRow(elems: RowElement[]) =
         | :? UnsharedRow as y -> equalRows elems y.GenericRow
         | _ -> false
              
-/// Special representation for ILAssemblyRef rows with pre-computed hash 
+/// Special representation for ILAssemblyRef rows with pre-computed hash.
 type AssemblyRefRow(s1,s2,s3,s4,l1,b1,nameIdx,str2,b2) = 
     let hashCode = hash nameIdx
     let genericRow = [| UShort s1; UShort s2; UShort s3; UShort s4; ULong l1; Blob b1; StringE nameIdx; StringE str2; Blob b2 |]
@@ -721,7 +721,7 @@ type AssemblyRefRow(s1,s2,s3,s4,l1,b1,nameIdx,str2,b2) =
         | :? AssemblyRefRow as y -> equalRows genericRow y.GenericRow
         | _ -> false
 
-/// Special representation of a very common kind of row with pre-computed hash 
+/// Special representation of a very common kind of row with pre-computed hash.
 type MemberRefRow(mrp:RowElement,nmIdx:StringIndex,blobIdx:BlobIndex) = 
     let hash =   combineHash (hash blobIdx) (combineHash (hash nmIdx) (hash mrp))
     let genericRow = [| mrp; StringE nmIdx; Blob blobIdx |]
@@ -821,7 +821,7 @@ type MetadataTable<'T> =
 // Keys into some of the tables
 //---------------------------------------------------------------------
 
-/// We use this key type to help find ILMethodDefs for MethodRefs 
+/// We use this key type to help find ILMethodDefs for MethodRefs.
 type MethodDefKey(tidx:int,garity:int,nm:string,rty:ILType,argtys:ILTypes,isStatic:bool) =
     // Precompute the hash. The hash doesn't include the return type or 
     // argument types (only argument type count). This is very important, since
@@ -845,13 +845,13 @@ type MethodDefKey(tidx:int,garity:int,nm:string,rty:ILType,argtys:ILTypes,isStat
             tidx = y.TypeIdx && 
             garity = y.GenericArity && 
             nm = y.Name && 
-            // note: these next two use structural equality on AbstractIL ILType values
+            // NOTE: these next two use structural equality on AbstractIL ILType values
             rty = y.ReturnType && 
             ILList.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
-/// We use this key type to help find ILFieldDefs for FieldRefs
+/// We use this key type to help find ILFieldDefs for FieldRefs.
 type FieldDefKey(tidx:int,nm:string,ty:ILType) = 
     // precompute the hash. hash doesn't include the type 
     let hashCode = hash tidx |> combineHash (hash nm) 
@@ -883,7 +883,7 @@ type cenv =
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
       requiredDataFixups: (int32 * (int * bool)) list ref
-      /// References to strings in codestreams: offset of code and a (fixup-location , string token) list) 
+      /// References to strings in codestreams: offset of code and a (fixup-location , string token) list).
       mutable requiredStringFixups: (int32 * (int * int) list) list 
       codeChunks: ByteBuffer 
       mutable nextCodeAddr: int32
@@ -893,16 +893,16 @@ type cenv =
       generatePdb: bool
       pdbinfo: ResizeArray<PdbMethodData>
       documents: MetadataTable<PdbDocumentData>
-      /// Raw data, to go into the data section 
+      /// Raw data, to go into the data section.
       data: ByteBuffer 
-      /// Raw resource data, to go into the data section 
+      /// Raw resource data, to go into the data section. 
       resources: ByteBuffer 
       mutable entrypoint: (bool * int) option 
 
       /// Caches
       trefCache: Dictionary<ILTypeRef,int>
 
-      /// The following are all used to generate unique items in the output 
+      /// The following are all used to generate unique items in the output. 
       tables: array<MetadataTable<IGenericRow>>
       AssemblyRefs: MetadataTable<AssemblyRefRow>
       fieldDefs: MetadataTable<FieldDefKey>
@@ -1868,12 +1868,13 @@ type CodeBuffer =
     //   - the exception table
     // -------------------------------------------------------------------- 
     { code: ByteBuffer 
-      /// (instruction; optional short form); start of instr in code buffer; code loc for the end of the instruction the fixup resides in ; where is the destination of the fixup 
+      /// (instruction; optional short form); start of instr in code buffer; 
+      /// code loc for the end of the instruction the fixup resides in ; where is the destination of the fixup.
       mutable reqdBrFixups: ((int * int option) * int * ILCodeLabel list) list 
       availBrFixups: Dictionary<ILCodeLabel, int> 
-      /// code loc to fixup in code buffer 
+      /// code loc to fixup in code buffer.
       mutable reqdStringFixupsInMethod: (int * int) list 
-      /// data for exception handling clauses 
+      /// data for exception handling clauses.
       mutable seh: ExceptionClauseSpec list 
       seqpoints: ResizeArray<PdbSequencePoint> }
 
@@ -2126,7 +2127,7 @@ module Codebuf = begin
     // Emit instructions
     // -------------------------------------------------------------------- 
 
-    /// Emit the code for an instruction
+    /// Emit the code for an instruction.
     let emitInstrCode (codebuf: CodeBuffer) i = 
         if i > 0xFF then 
             assert (i >>> 8 = 0xFE) 
@@ -3040,7 +3041,7 @@ and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) =
           StringE (GetStringHeapIdx cenv prop.Name) 
           Blob (GetPropertySigAsBlobIdx cenv env prop) |]  
 
-/// ILPropertyDef --> Property Row + MethodSemantics entries
+/// ILPropertyDef --> Property Row + MethodSemantics entries.
 and GenPropertyPass3 cenv env prop = 
     let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
     prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001) 
@@ -3064,7 +3065,7 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
                SimpleIndex (TableNames.Method,addIdx)
                HasSemantics (hs_Event, eidx) |]) |> ignore
 
-/// ILEventDef --> Event Row + MethodSemantics entries
+/// ILEventDef --> Event Row + MethodSemantics entries.
 and GenEventAsEventRow cenv env (md: ILEventDef) = 
     let flags = 
       (if md.IsSpecialName then 0x0200 else 0x0) ||| 
@@ -3128,7 +3129,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
       td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
       td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
       td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx)
-    // ClassLayout entry if needed 
+      // ClassLayout entry if needed 
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
       | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->  
@@ -3153,7 +3154,6 @@ and GenTypeDefsPass3 enc cenv tds =
 
 /// ILTypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
-
 let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) = 
    try
        let env = envForTypeDef td
@@ -4212,7 +4212,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             else flags
           writeInt32AsUInt16 os dllCharacteristics
        // 000000e0 
-          // Note that the defaults differ between x86 and x64
+          // NOTE: The defaults differ between x86 and x64
           if modul.Is64Bit then
             let size = defaultArg modul.StackReserveSize 0x400000 |> int64
             writeInt64 os size // Stack Reserve Size Always 0x400000 (4Mb) (see Section 23.1). 
@@ -4286,7 +4286,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           
        // 000001a0  
           writeBytes os [| 0x2euy; 0x72uy; 0x73uy; 0x72uy; 0x63uy; 0x00uy; 0x00uy; 0x00uy; |] // ".rsrc\000\000\000" 
-    //  writeBytes os [| 0x2e; 0x73; 0x64; 0x61; 0x74; 0x61; 0x00; 0x00; |] // ".sdata\000\000"  
+       // writeBytes os [| 0x2e; 0x73; 0x64; 0x61; 0x74; 0x61; 0x00; 0x00; |] // ".sdata\000\000"  
           writeInt32 os dataSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
           writeInt32 os dataSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
        // 000001b0  
@@ -4495,7 +4495,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
             reportTime showTimes "Generate PDB Info"
             
-          // Now we have the debug data we can go back and fill in the debug directory in the image 
+            // Now we have the debug data we can go back and fill in the debug directory in the image 
             let fs2 = FileSystem.FileStreamWriteExistingShim(outfile)
             let os2 = new BinaryWriter(fs2)
             try 

@@ -38,7 +38,7 @@ type PEFileType = X86 | X64
 val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
 
-/// PDB reader and associated types
+/// PDB reader and associated types.
 type PdbDocument
 type PdbMethod
 type PdbVariable
