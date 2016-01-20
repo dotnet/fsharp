@@ -1475,6 +1475,49 @@ module EnumPatternWithFunkyTypes_FSharp_1_0_13904 =
     // This is allowed - 'a is known to be "bool"
     let s = seq { for i in T true -> i }
 
+
+module SideEffectListMonad =
+    type SideEffectListWithReturnBuilder(onReturn, onZero) =
+        member b.Bind(x:unit,f) :list<'b> = f()
+        member b.Combine(x:list<'a>,y:list<'a>) :list<'a> = List.append x y
+        member b.Delay(f:unit->list<'a>) :list<'a> = f()
+        member b.Return _ :list<'a> = onReturn(); []
+        member b.Zero() :list<'a> = onZero(); []
+        member b.Yield(x:'a) :list<'a> = [x]
+
+    let sideEffectListWithReturn onReturn onZero = SideEffectListWithReturnBuilder(onReturn, onZero)
+
+    type SideEffectListWithZeroBuilder(onZero) =
+        member b.Bind(x:unit,f) :list<'b> = f()
+        member b.Combine(x:list<'a>,y:list<'a>) :list<'a> = List.append x y
+        member b.Delay(f:unit->list<'a>) :list<'a> = f()
+        member b.Zero() :list<'a> = onZero(); []
+        member b.Yield(x:'a) :list<'a> = [x]
+
+    let sideEffectListWithZero onZero = SideEffectListWithZeroBuilder(onZero)
+
+    module SideEffectListTests =
+        #if Portable
+        let printfn s = printfn "%s" s
+        #endif
+
+        let x0a : list<int> * int * int =
+            let calledReturn = ref 0
+            let onReturn () = calledReturn := !calledReturn + 1
+            let calledZero = ref 0
+            let onZero () = calledZero := !calledZero + 1
+            sideEffectListWithReturn onReturn onZero { yield 1
+                                                       do! printfn "hello" }, !calledReturn, !calledZero
+        test "x0a" (x0a = ([1], 1, 0))
+
+        let x0b : list<int> * int =
+            let calledZero = ref 0
+            let onZero () = calledZero := !calledZero + 1
+            sideEffectListWithZero onZero { yield 1
+                                            do! printfn "hello" }, !calledZero
+        test "x0b" (x0b = ([1], 1))
+
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
