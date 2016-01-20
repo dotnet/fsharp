@@ -967,11 +967,10 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 1307,ilSignInvalidSignatureSize,"Invalid signature size"
 1308,ilSignNoSignatureDirectory,"No signature directory"
 1309,ilSignInvalidPKBlob,"Invalid Public Key blob"
-
 # -----------------------------------------------------------------------------
 # lex.fsl errors
 # -----------------------------------------------------------------------------
-1138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"
+138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"
 lexCharNotAllowedInOperatorNames,"'%s' is not permitted as a character in operator names and is reserved for future use"
 lexUnexpectedChar,"Unexpected character '%s'"
 1140,lexByteArrayCannotEncode,"This byte array literal contains characters that do not encode as a single byte"
@@ -1286,6 +1285,7 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3189,checkRaiseFamilyFunctionArgumentCount,"Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments."
 3190,checkLowercaseLiteralBindingInPattern,"Lowercase literal '%s' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns."
 3191,tcLiteralDoesNotTakeArguments,"This literal pattern does not take arguments"
+3192,tcConstructorsIllegalInAugmentation,"Constructors are not permitted as extension members - they must be defined as part of the original definition of the type"
 3193,optsInvalidResponseFile,"Invalid response file '%s' ( '%s' )"
 3194,optsResponseFileNotFound,"Response file '%s' not found in '%s'"
 3195,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"

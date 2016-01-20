@@ -91,7 +91,9 @@ module internal ExtensionTyping =
 
     let StripException (e:exn) =
         match e with
-        |   :? TargetInvocationException as e -> e.InnerException
+#if !FX_REDUCED_EXCEPTIONS
+        |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
+#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
@@ -546,7 +548,7 @@ module internal ExtensionTyping =
                     let paramsAsObj = 
                         try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
                         with err -> raise (StripException (StripException err))
-                    paramsAsObj :?> ParameterInfo[] 
+                    paramsAsObj :?> System.Reflection.ParameterInfo[] 
 
             staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
