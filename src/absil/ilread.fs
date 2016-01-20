@@ -1548,7 +1548,7 @@ let rec seekReadModule ctxt (subsys,subsysversion,useHighEntropyVA, ilOnly,only3
       CustomAttrs = seekReadCustomAttrs ctxt (TaggedIndex(hca_Module,idx));
       Name = ilModuleName;
       NativeResources=nativeResources;
-      TypeDefs = mkILTypeDefsLazy (lazy (seekReadTopTypeDefs ctxt ()));
+      TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt ());
       SubSystemFlags = int32 subsys;
       IsILOnly = ilOnly;
       SubsystemVersion = subsysversion
@@ -1766,19 +1766,18 @@ and seekReadTypeDef ctxt toponly (idx:int) =
      Some (ns,n,cas,rest) 
 
 and seekReadTopTypeDefs ctxt () =
-    [ for i = 1 to ctxt.getNumRows TableNames.TypeDef do
+    [| for i = 1 to ctxt.getNumRows TableNames.TypeDef do
           match seekReadTypeDef ctxt true i  with 
           | None -> ()
-          | Some td -> yield td ]
+          | Some td -> yield td |]
 
 and seekReadNestedTypeDefs ctxt tidx =
-    mkILTypeDefsLazy 
-      (lazy 
+    mkILTypeDefsComputed (fun () -> 
            let nestedIdxs = seekReadIndexedRows (ctxt.getNumRows TableNames.Nested,seekReadNestedRow ctxt,snd,simpleIndexCompare tidx,false,fst)
-           [ for i in nestedIdxs do 
+           [| for i in nestedIdxs do 
                  match seekReadTypeDef ctxt false i with 
                  | None -> ()
-                 | Some td -> yield td ])
+                 | Some td -> yield td |])
 
 and seekReadInterfaceImpls ctxt numtypars tidx =
     seekReadIndexedRows (ctxt.getNumRows TableNames.InterfaceImpl,
@@ -1974,10 +1973,9 @@ and seekReadFields ctxt (numtypars, hasLayout) fidx1 fidx2 =
                yield seekReadField ctxt (numtypars, hasLayout) i ])
 
 and seekReadMethods ctxt numtypars midx1 midx2 =
-    mkILMethodsLazy 
-       (lazy 
-           [ for i = midx1 to midx2 - 1 do
-                 yield seekReadMethod ctxt numtypars i ])
+    mkILMethodsComputed (fun () -> 
+           [| for i = midx1 to midx2 - 1 do
+                 yield seekReadMethod ctxt numtypars i |])
 
 and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr = 
     let n, sigptr = sigptrGetZInt32 bytes sigptr
@@ -2519,7 +2517,8 @@ and seekReadCustomAttrs ctxt idx =
                                   seekReadCustomAttributeRow ctxt,(fun (a,_,_) -> a),
                                   hcaCompare idx,
                                   isSorted ctxt TableNames.CustomAttribute,
-                                  (fun (_,b,c) -> seekReadCustomAttr ctxt (b,c))))
+                                  (fun (_,b,c) -> seekReadCustomAttr ctxt (b,c)))
+          |> List.toArray)
 
 and seekReadCustomAttr ctxt (TaggedIndex(cat,idx),b) = 
     ctxt.seekReadCustomAttr (CustomAttrIdx (cat,idx,b))

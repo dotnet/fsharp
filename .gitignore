@@ -81,10 +81,8 @@ vsintegration/src/vs/FsPkgs/FSharp.Project/FS/ctofiles/
 tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
 tests/fsharp/optimize/stats/stats.txt
-
 *.csproj.user
 *.sln.DotSettings.user
-
 *.ide
 *.log
 *.jrs

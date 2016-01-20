@@ -840,7 +840,7 @@ type MethInfo =
 #if EXTENSIONTYPING
         | ProvidedMeth (_, mb, _, m) -> 
             let staticParams = mb.PApplyWithProvider((fun (mb,provider) -> mb.GetStaticParametersForMethod(provider)), range=m) 
-            let staticParams = staticParams.PApplyArray(id, "GetStaticParameters", m)
+            let staticParams = staticParams.PApplyArray(id, "GetStaticParametersForMethod", m)
             match staticParams with 
             | [| |] -> None
             | _ -> Some (mb,staticParams)

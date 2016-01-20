@@ -91,13 +91,14 @@ type public GoodProviderForNegativeTypeTests1() =
         member this.GetGeneratedAssemblyContents(assembly) = failwith "GetGeneratedAssemblyContents - only erased types were provided!!"
 
 
-type public EvilProviderBase(namespaceName,?GetNestedNamespaces,?get_NamespaceName,?GetTypes,?ResolveTypeName,?GetNamespaces,?GetStaticParameters,?ApplyStaticArguments,?GetInvokerExpression) =
+type public EvilProviderBase(namespaceName,?GetNestedNamespaces,?get_NamespaceName,?GetTypes,?ResolveTypeName,?GetNamespaces,?GetStaticParameters,?GetStaticParametersForMethod,?ApplyStaticArguments,?ApplyStaticArgumentsForMethod,?GetInvokerExpression) =
     let invalidation = new Event<System.EventHandler,_>()
 
     let modul = typeof<EvilProviderBase>.Assembly.GetModules().[0]
     let okType =
         let members (typ:Type) =
             let invoke _ = failwith "Kaboom"
+            let booM = TypeBuilder.CreateMethod(typ, "Boo", typeof<int>, invoke = invoke, isStatic = true)
             let fooP = TypeBuilder.CreateProperty(typ, "Foo", typeof<int>, getInvoke = invoke,isStatic = true)
             fun (_bf:BindingFlags) (mt:MemberTypes) (s:string option) ->
             [|
@@ -105,6 +106,12 @@ type public EvilProviderBase(namespaceName,?GetNestedNamespaces,?get_NamespaceNa
                     match s with
                     |   Some "Foo" -> yield fooP :> MemberInfo
                     |   None -> yield fooP :> MemberInfo
+                    |   _ -> ()
+                if mt &&& MemberTypes.Method = MemberTypes.Method then
+                    match s with
+                    |   Some "Boo" -> yield booM :> MemberInfo
+                    |   None -> 
+                          yield booM :> MemberInfo 
                     |   _ -> ()
             |]
         TypeBuilder.CreateType(TypeContainer.Namespace(modul, namespaceName), "TheType", members = members)       
@@ -176,6 +183,11 @@ type public EvilProviderBase(namespaceName,?GetNestedNamespaces,?get_NamespaceNa
         [<CLIEvent>]
         member this.Invalidate = invalidation.Publish
         member this.GetGeneratedAssemblyContents(assembly) = failwith "GetGeneratedAssemblyContents - only erased types were provided!!"
+      
+    member this.GetStaticParametersForMethod(methWithoutArguments: MethodBase) : ParameterInfo[] = 
+        match GetStaticParametersForMethod with Some f -> f() | None -> [| |]
+    member this.ApplyStaticArgumentsForMethod(methWithoutArguments:MethodBase, methNameWithArguments: string, staticArguments: obj[]) = 
+        match ApplyStaticArgumentsForMethod with Some f -> f() | None -> methWithoutArguments
        
 [<TypeProvider>]
 type public EvilProvider() = 
@@ -216,6 +228,12 @@ type public EvilProviderWhereGetNamespacesRaisesException() =
 [<TypeProvider>]
 type public EvilProviderWhereGetStaticParametersRaisesException() = 
     inherit EvilProviderBase("FSharp.EvilProviderWhereGetStaticParametersRaisesException",GetStaticParameters=(fun _ -> doEvil()))
+#endif
+
+#if EVIL_PROVIDER_GetStaticParametersForMethod_Exception
+[<TypeProvider>]
+type public EvilProviderWhereGetStaticParametersForMethodRaisesException() = 
+    inherit EvilProviderBase("FSharp.EvilProviderWhereGetStaticParametersForMethodRaisesException",GetStaticParametersForMethod=(fun _ -> doEvil()))
 #endif
 
 #if EVIL_PROVIDER_GetInvokerExpression_Exception
@@ -266,6 +284,12 @@ type public EvilProviderWhereGetNamespacesReturnsNull() =
 [<TypeProvider>]
 type public EvilProviderWhereGetStaticParametersReturnsNull() = 
     inherit EvilProviderBase("FSharp.EvilProviderWhereGetStaticParametersReturnsNull",GetStaticParameters=(fun _ -> null))
+#endif
+
+#if EVIL_PROVIDER_GetStaticParametersForMethod_Null
+[<TypeProvider>]
+type public EvilProviderWhereGetStaticParametersForMethodReturnsNull() = 
+    inherit EvilProviderBase("FSharp.EvilProviderWhereGetStaticParametersForMethodReturnsNull",GetStaticParametersForMethod=(fun _ -> null))
 #endif
 
 #if EVIL_PROVIDER_GetInvokerExpression_Null

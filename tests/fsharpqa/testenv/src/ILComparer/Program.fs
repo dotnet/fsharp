@@ -19,10 +19,9 @@ let main (argv : string array) =
     let f1 = File2List fn1
     let f2 = File2List fn2
 
-    let mutable i = 0
-    let compare (f1:string list) (f2:string list) =
-        try
-            List.forall2 (fun (a:string) (b:string) ->
+    let rec compareAux (f1:string list) (f2:string list) i =
+        match f1, f2 with 
+        | a :: resta, b :: restb -> 
                 let aa = Regex.Replace(a, @"(.*\.line[^'$]*)('.+)?", "$1")
                 let bb = Regex.Replace(b, @"(.*\.line[^'$]*)('.+)?", "$1")
 
@@ -47,15 +46,28 @@ let main (argv : string array) =
                 let aa = Regex.Replace(aa, @"^\s+", "")
                 let bb = Regex.Replace(bb, @"^\s+", "")
 
-                i <- i + 1
                 if ((if Regex.IsMatch(aa, @"^[ \t]*//") then "//" else aa) = (if Regex.IsMatch(bb, @"^[ \t]*//") then "//" else bb)) then
-                    true
+                    compareAux resta restb (i+1)
                 else
                     printfn "Files differ at line %d:" i
-                    printfn "\t>> %s" a
-                    printfn "\t<< %s" b
+                    for x in (a::resta) do printfn "\t>> %s" x
+                    for x in (b::restb) do printfn "\t<< %s" x
                     false
-            ) f1 f2
+        | [], b :: restb -> 
+                    printfn "Files differ at line %d:" i
+                    printfn "\t>> %s" "EOF"
+                    for x in (b::restb) do printfn "\t<< %s" x
+                    false
+        | a :: resta, [] -> 
+                    printfn "Files differ at line %d:" i
+                    for x in (a::resta) do printfn "\t>> %s" x
+                    printfn "\t<< %s" "EOF"
+                    false
+        | [], [] -> true
+
+    let compare f1 f2 =
+        try
+           compareAux f1 f2 1
         with
         | e ->
             printfn "%s" (e.ToString())

@@ -1088,7 +1088,7 @@ type TypeDefBuilder(tdef) =
             Fields  = mkILFields      (tdef.Fields.AsList  @ ResizeArray.toList gfields);
             Properties = mkILProperties (tdef.Properties.AsList @ HashRangeSorted gproperties );
             Events     = mkILEvents     (tdef.Events.AsList     @ ResizeArray.toList gevents);
-            NestedTypes     = mkILTypeDefs      (tdef.NestedTypes.AsList     @ gnested.Close()) }
+            NestedTypes     = mkILTypeDefs      (tdef.NestedTypes.AsList @ gnested.Close()) }
 
 
     member b.AddEventDef(edef) = gevents.Add edef

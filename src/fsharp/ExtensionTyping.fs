@@ -89,6 +89,12 @@ module internal ExtensionTyping =
                 raiseError e
         | None -> []
 
+    let StripException (e:exn) =
+        match e with
+        |   :? TargetInvocationException as e -> e.InnerException
+        |   :? TypeInitializationException as e -> e.InnerException
+        |   _ -> e
+
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
     let CreateTypeProvider (typeProviderImplementationType:System.Type, 
@@ -106,12 +112,7 @@ module internal ExtensionTyping =
             try 
                 f ()
             with err ->
-                let strip (e:exn) =
-                    match e with
-                    |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-                    |   :? TypeInitializationException as e -> e.InnerException
-                    |   _ -> e
-                let e = strip (strip err)
+                let e = StripException (StripException err)
                 raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
 
         if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
@@ -542,8 +543,10 @@ module internal ExtensionTyping =
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
                     let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase> |], null)  
                     if isNull meth then [| |] else
-                    let paramsAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
-                    paramsAsObj :?> System.Reflection.ParameterInfo[] 
+                    let paramsAsObj = 
+                        try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                        with err -> raise (StripException (StripException err))
+                    paramsAsObj :?> ParameterInfo[] 
 
             staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
@@ -560,7 +563,10 @@ module internal ExtensionTyping =
                     match meth with 
                     | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
-                    let mbAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                    let mbAsObj = 
+                       try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                       with err -> raise (StripException (StripException err))
+
                     match mbAsObj with 
                     | :? System.Reflection.MethodBase as mb -> mb
                     | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
