@@ -156,7 +156,7 @@ TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
-NO_CI,TypeProviders01		fsharp\typeProviders\negTests
+NO_CI,TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly
 TypeProviders01		fsharp\typeProviders\wedgeAssembly
 
