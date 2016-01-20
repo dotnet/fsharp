@@ -50,4 +50,9 @@ type InProcCompiler =
     member Compile : args : string[] -> bool * CompilationOutput
 
 
+module internal MainModuleBuilder =
+    
+    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: AbstractIL.IL.ILVersionInfo -> AbstractIL.IL.ILVersionInfo
+    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: AbstractIL.IL.ILVersionInfo -> string
+    val productVersionToILVersionInfo: string -> AbstractIL.IL.ILVersionInfo
 #endif
