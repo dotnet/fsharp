@@ -238,6 +238,8 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
+let isTimespanTy g ty = typeEquiv g g.timespan_ty ty
+
 let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty || isFpTy g ty
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
@@ -1077,7 +1079,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
           ResultD TTraitBuiltIn))
 
       | _,_,false,("Abs"),[argty] 
-          when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty ->
+          when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty || isTimespanTy g argty ->
 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
           ResultD TTraitBuiltIn)

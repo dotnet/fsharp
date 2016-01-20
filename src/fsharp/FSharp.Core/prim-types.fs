@@ -6799,6 +6799,10 @@ namespace Microsoft.FSharp.Core
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 
+                 when ^T : TimeSpan    = 
+                    let x : TimeSpan = retype x in
+                    if x >= TimeSpan.Zero then x
+                    else -x
             
             [<NoDynamicInvocation>]
             let inline  acosImpl(x: ^T) : ^T = 
