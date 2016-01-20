@@ -9995,6 +9995,8 @@ and TcLetBindings cenv env containerInfo declKind tpenv (binds,bindsm,scopem) =
 and CheckMemberFlags _g optIntfSlotTy newslotsOK overridesOK memberFlags m = 
     if newslotsOK = NoNewSlots && memberFlags.IsDispatchSlot then 
       errorR(Error(FSComp.SR.tcAbstractMembersIllegalInAugmentation(),m))
+    if overridesOK = ErrorOnOverrides && memberFlags.MemberKind = MemberKind.Constructor then 
+      errorR(Error(FSComp.SR.tcConstructorsIllegalInAugmentation(),m))
     if overridesOK = WarnOnOverrides && memberFlags.IsOverrideOrExplicitImpl && isNone optIntfSlotTy then 
       warning(OverrideInIntrinsicAugmentation(m))
     if overridesOK = ErrorOnOverrides && memberFlags.IsOverrideOrExplicitImpl then 

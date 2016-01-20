@@ -181,5 +181,5 @@ Misc02		fsharp\tools\bundle
 Misc02		fsharp\tools\eval
 Misc02		..\testsprivate\fsharp\tools\queries
 Misc02,TypeChecker		fsharp\typecheck\misc
-Misc02,TypeChecker		fsharp\typecheck\sigs
+Misc02,TypeChecker,TypeCheckerSigs		fsharp\typecheck\sigs
 Misc02,TypeChecker		fsharp\typecheck\full-rank-arrays
