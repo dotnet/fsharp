@@ -155,8 +155,8 @@ if not "%test_outfile%" == "" (
     set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test-%test_outfile%.exe
 )
 
-echo fsi %command_line_args%
-fsi %command_line_args%
+echo %fsi% %command_line_args%
+%fsi% %command_line_args%
 echo Errorlevel: %errorlevel%
 if ERRORLEVEL 1 goto Error
 goto :EOF
