@@ -1226,7 +1226,7 @@ namespace Microsoft.FSharp.Control
 
     module CancellationTokenOps =
         /// Run the asynchronous workflow and wait for its result.
-        let RunSynchronously (token:CancellationToken,computation,timeout) =
+        let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
             let token,innerCTS = 
                 // If timeout is provided, we govern the async by our own CTS, to cancel
                 // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1260,6 +1260,40 @@ namespace Microsoft.FSharp.Control
                 |   Some subSource -> subSource.Dispose()
                 |   None -> ()
                 commit res
+
+        let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
+            use resultCell = new ResultCell<Result<_>>()
+            let trampolineHolder = TrampolineHolder()
+
+            trampolineHolder.Protect
+                (fun () ->
+                    startA
+                        token
+                        trampolineHolder
+                        (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
+                        (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
+                        (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
+                        computation)
+            |> unfake
+
+            commit (resultCell.TryWaitForResultSynchronously() |> Option.get)
+
+        let RunSynchronously (token:CancellationToken,computation,timeout) =
+            // Reuse the current ThreadPool thread if possible. Unfortunately
+            // Thread.IsThreadPoolThread isn't available on all profiles so
+            // we approximate it by testing synchronization context for null.
+            match SynchronizationContext.Current, timeout with
+            | null, None -> RunSynchronouslyInCurrentThread (token, computation)
+            // When the timeout is given we need a dedicated thread
+            // which cancels the computation.
+            // Performing the cancellation in the ThreadPool eg. by using
+            // Timer from System.Threading or CancellationTokenSource.CancelAfter
+            // (which internally uses Timer) won't work properly
+            // when the ThreadPool is busy.
+            //
+            // And so when the timeout is given we always use the current thread
+            // for the cancellation and run the computation in another thread.
+            | _ -> RunSynchronouslyInAnotherThread (token, computation, timeout)
 
         let Start (token:CancellationToken,computation) =
             queueAsync 
