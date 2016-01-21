@@ -1269,5 +1269,6 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3190,checkLowercaseLiteralBindingInPattern,"Lowercase literal '%s' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns."
 3191,tcLiteralDoesNotTakeArguments,"This literal pattern does not take arguments"
 3192,tcConstructorsIllegalInAugmentation,"Constructors are not permitted as extension members - they must be defined as part of the original definition of the type"
-3193,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"
-3194,responseFileNotFound,"Response file '%s' not found in '%s'"
+3193,optsInvalidResponseFile,"Invalid response file '%s' ( '%s' )"
+3194,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"
+3195,optsResponseFileNotFound,"Response file '%s' not found in '%s'"
