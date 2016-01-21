@@ -538,9 +538,7 @@ module XmlDocWriter =
        
         doModuleSig None generatedCcu.Contents;          
 
-    let writeXmlDoc (assemblyName,generatedCcu:CcuThunk,xmlfile) =
-        if not (Filename.hasSuffixCaseInsensitive "xml" xmlfile ) then 
-            error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
+    let writeXmlDoc (assemblyName,generatedCcu:CcuThunk,os) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let members = ref []
         let addMember id xmlDoc = 
@@ -577,8 +575,6 @@ module XmlDocWriter =
        
         doModule generatedCcu.Contents;
 
-        use os = File.CreateText(xmlfile)
-
         fprintfn os ("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         fprintfn os ("<doc>");
         fprintfn os ("<assembly><name>%s</name></assembly>") assemblyName;
@@ -613,7 +609,14 @@ type ILResource with
         | ILResourceLocation.Local b -> b()
         | _-> error(InternalError("Bytes",rangeStartup))
 
-let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu,outfile) = 
+let emitAllBytes emiTo bytes =
+    match emiTo with
+    | ILBinaryWriter.EmitTo.Stream stream ->
+        stream.Write(bytes, 0, bytes.Length)
+    | ILBinaryWriter.EmitTo.File path ->
+        File.WriteAllBytes(path,bytes);
+
+let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu,outfile,sigDataP) = 
       if GenerateInterfaceData(tcConfig) then 
         if verbose then dprintfn "Generating interface data attribute...";
         let resource = WriteSignatureData (tcConfig,tcGlobals,exportRemapping,generatedCcu,outfile)
@@ -622,8 +625,7 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu
         let outFileNoExtension = Filename.chopExtension outfile
         let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
         if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
-            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            File.WriteAllBytes(sigDataFileName,resource.Bytes);
+            resource.Bytes |> emitAllBytes sigDataP
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         // The resource gets written to a file for FSharp.Core
         let resources = 
@@ -984,7 +986,7 @@ module MainModuleBuilder =
 
     let CreateMainModule  
             (tcConfig:TcConfig,tcGlobals,
-             pdbfile,assemblyName,outfile,topAttrs,
+             debuggable,assemblyName,mainModuleName,topAttrs,
              (iattrs,intfDataResources),optDataResources,
              codegenResults,assemVerFromAttrib,metadataVersion,secDecls) =
 
@@ -1039,7 +1041,7 @@ module MainModuleBuilder =
                                   [tcGlobals.ilg.typ_Int32],[ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
-                   if Option.isSome pdbfile then 
+                   if debuggable then 
                        yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
                    yield! reflectedDefinitionAttrs ]
 
@@ -1218,7 +1220,7 @@ module MainModuleBuilder =
         // Add attributes, version number, resources etc. 
         {mainModule with 
               StackReserveSize = tcConfig.stackReserveSize
-              Name = (if tcConfig.target = Module then Filename.fileNameOfPath outfile else mainModule.Name);
+              Name = (if tcConfig.target = Module then mainModuleName else mainModule.Name);
               SubSystemFlags = (if tcConfig.target = WinExe then 2 else 3) ;
               Resources= resources;
               ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b);
@@ -1712,7 +1714,7 @@ let GetSigner(signingInfo) =
                     error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
         try
             if !progress then dprintn "Writing assembly...";
             try 
@@ -1720,14 +1722,19 @@ module FileWriter =
                  (outfile,
                   {    ilg = ilGlobals
                        pdbfile=pdbfile
+                       mdbfile = mdbfile
                        emitTailcalls= tcConfig.emitTailcalls
                        showTimes=tcConfig.showTimes
                        signer = GetSigner signingInfo
                        fixupOverlappingSequencePoints = false
-                       dumpDebugInfo =tcConfig.dumpDebugInfo },
+                       dumpDebugInfo = dumpDebugInfo  }, 
                   ilxMainModule,
                   tcConfig.noDebugData)
             with Failure msg -> 
+                let outfile = 
+                    match outfile with 
+                    | ILBinaryWriter.EmitTo.File path -> path
+                    | ILBinaryWriter.EmitTo.Stream _ -> "to stream"
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
         with e -> 
             errorRecoveryNoRange e
@@ -1824,9 +1831,25 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
              errorLoggerProvider,
              disposables)
 
-    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger,exiter
 
-let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter) =
+    let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+    let sigDataP = ILBinaryWriter.EmitTo.File(sigDataFileName)
+
+    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
+    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
+
+    let mainModuleName = Filename.fileNameOfPath outfile
+
+    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+
+    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+
+    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile |> Option.map ILBinaryWriter.EmitTo.File
+
+    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfileOpt,mdbfileOpt,sigDataP,mainModuleName,fsDataP,xmlDocOutputOpt,assemblyName,errorLogger,exiter
+
+let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, xmlDocOutputOpt, assemblyName, errorLogger, exiter: Exiter) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
@@ -1861,31 +1884,39 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
       if tcConfig.printSignature   then InterfaceFileWriter.WriteInterfaceFile (tcGlobals,tcConfig, InfoReader(tcGlobals,tcImports.GetImportMap()), typedAssembly);
       ReportTime tcConfig ("Write XML document signatures")
-      if tcConfig.xmlDocOutputFile.IsSome then 
+      match xmlDocOutputOpt with
+      | Some(_) ->
           XmlDocWriter.computeXmlDocSigs (tcGlobals,generatedCcu) 
+      | None -> ()
       ReportTime tcConfig ("Write XML docs");
-      tcConfig.xmlDocOutputFile |> Option.iter ( fun xmlFile -> 
+      match xmlDocOutputOpt with
+      | Some(ILBinaryWriter.EmitTo.File(xmlFile)) ->
           let xmlFile = tcConfig.MakePathAbsolute xmlFile
-          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,xmlFile)
-        )
+          if not (Filename.hasSuffixCaseInsensitive "xml" xmlFile ) then 
+            error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
+          use os = File.CreateText(xmlFile)
+          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,os)
+      | Some(ILBinaryWriter.EmitTo.Stream(xmlStream)) ->
+          let os = new StreamWriter(xmlStream)
+          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,os)
+      | None -> ()
       ReportTime tcConfig ("Write HTML docs");
     end;
-
 
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
   
-let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
+let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     ReportTime tcConfig ("Encode Interface Data");
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
     
     let sigDataAttributes,sigDataResources = 
       try
-        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
+        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, sigDataP)
       with e -> 
         errorRecoveryNoRange e
         SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
@@ -1922,18 +1953,29 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
                                    yield! bytes
                                | _ -> 
                                    failwith "unreachable: expected a local resource" |]
-            let sigDataFileName = (Filename.chopExtension outfile)+".fsdata"
-            File.WriteAllBytes(sigDataFileName,bytes)
+            //TODO instead of bytes array we can directly write to stream, less memory pressure
+            bytes |> emitAllBytes fsDataP
             [], []
         else
             sigDataResources, optDataResources
+
+
+    let outfilePath = tcConfig.MakePathAbsolute outfile
+
+    let dumpDebugInfoOpt =
+        if tcConfig.dumpDebugInfo then 
+            Some(ILBinaryWriter.EmitTo.File(outfilePath + ".debuginfo")) 
+        else 
+            None
+
+    let outfileP = ILBinaryWriter.EmitTo.File(outfilePath)
     
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
+    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfileP,optimizedImpls,topAttrs,pdbfile,mdbfile,dumpDebugInfoOpt,mainModuleName,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
 
-let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
+let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, mdbfile, dumpDebugInfo, mainModuleName, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
   
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
@@ -1957,14 +1999,15 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
+    let debuggable = (Option.isSome pdbfile) || (Option.isSome mdbfile)
 
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,debuggable,assemblyName,mainModuleName,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
     
-    Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxMainModule,signingInfo,exiter)
+    Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,mdbfile,dumpDebugInfo,ilxMainModule,signingInfo,exiter)
 
-let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) = 
+let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo, exiter: Exiter)) = 
       
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
     
@@ -1974,10 +2017,10 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile
     let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
     AbortOnError(errorLogger,tcConfig,exiter)
-    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
+    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,mdbfile,dumpDebugInfo,signingInfo,exiter)
   
 
-let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter:Exiter)) = 
+let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfile, pdbfile, mdbfile, dumpDebugInfo, signingInfo, exiter:Exiter)) = 
         
     let ilxMainModule =  
         try  staticLinker ilxMainModule
@@ -1988,15 +2031,13 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxM
 
     AbortOnError(errorLogger,tcConfig,exiter)
         
-    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
+    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,mdbfile,dumpDebugInfo,signingInfo,exiter)
 
-let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)) = 
+let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, mdbfile, dumpDebugInfo, signingInfo, exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
-    let outfile = tcConfig.MakePathAbsolute outfile
 
-    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
-    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
     if tcConfig.showLoadedAssemblies then

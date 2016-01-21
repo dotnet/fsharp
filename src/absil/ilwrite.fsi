@@ -15,17 +15,21 @@ type ILStrongNameSigner =
     static member OpenKeyPairFile: string -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
 
+[<RequireQualifiedAccess>]
+type EmitTo =
+    | File of string
+    | Stream of System.IO.Stream
+
 type options =
     { ilg: ILGlobals
-      pdbfile: string option
+      pdbfile: EmitTo option
+      mdbfile: EmitTo option
       signer : ILStrongNameSigner option
       fixupOverlappingSequencePoints : bool
       emitTailcalls: bool
       showTimes : bool
-      dumpDebugInfo : bool }
+      dumpDebugInfo : EmitTo option }
 
-/// Write a binary to the file system. Extra configuration parameters can also be specified. 
-val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit
-
-
+/// Write a binary. Extra configuration parameters can also be specified. 
+val WriteILBinary: outfile: EmitTo * options:  options * input: ILModuleDef * noDebugData: bool -> unit
 
