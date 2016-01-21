@@ -172,32 +172,6 @@ let DumpCompilerOptionBlocks blocks = List.iter dumpCompilerOptionBlock blocks
 let isSlashOpt (opt:string) = 
     opt.[0] = '/' && (opt.Length = 1 || not (opt.[1..].Contains "/"))
 
-module ResponseFile =
-
-    type ResponseFileData = ResponseFileLine list
-    and ResponseFileLine =
-        | CompilerOptionSpec of string
-        | Comment of string
-
-    let parseFile path : Choice<ResponseFileData,Exception> =
-        let parseLine (l: string) =
-            match l with
-            | s when String.IsNullOrWhiteSpace(s) -> None
-            | s when l.StartsWith("#") -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
-            | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
-
-        try
-            use stream = FileSystem.FileStreamReadShim path
-            use reader = new System.IO.StreamReader(stream, true)
-            let data =
-                seq { while not reader.EndOfStream do yield reader.ReadLine () }
-                |> Seq.choose parseLine
-                |> List.ofSeq
-            Choice1Of2 data
-        with e ->
-            Choice2Of2 e
-
-
 let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: CompilerOptionBlock list, args) =
   use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
   
@@ -254,35 +228,6 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
   let rec processArg args =    
     match args with 
     | [] -> ()
-    | ((rsp: string) :: t) when rsp.StartsWith("@") ->
-        let responseFileOptions =
-            let fullpath =
-                try
-                    Some (rsp.TrimStart('@') |> FileSystem.GetFullPathShim)
-                with _ ->
-                    None
-
-            match fullpath with
-            | None ->
-                errorR(Error(FSComp.SR.optsResponseFileNameInvalid(rsp),rangeCmdArgs))
-                []
-            | Some(path) when not (FileSystem.SafeExists path) ->
-                errorR(Error(FSComp.SR.optsResponseFileNotFound(rsp, path),rangeCmdArgs))
-                []
-            | Some path ->
-                match ResponseFile.parseFile path with
-                | Choice2Of2 _ ->
-                    errorR(Error(FSComp.SR.optsInvalidResponseFile(rsp, path),rangeCmdArgs))
-                    []
-                | Choice1Of2 rspData ->
-                    let onlyOptions l =
-                        match l with
-                        | ResponseFile.ResponseFileLine.Comment _ -> None
-                        | ResponseFile.ResponseFileLine.CompilerOptionSpec opt -> Some opt
-                    rspData |> List.choose onlyOptions
-
-        processArg (responseFileOptions @ t)
-
     | opt :: t ->  
 
         let optToken, argString = parseOption opt
@@ -928,8 +873,7 @@ let miscFlagsBoth tcConfigB =
       
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB @
-    [   CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some (FSComp.SR.optsHelp()));
-        CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some (FSComp.SR.optsResponseFile()))
+    [   CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some (FSComp.SR.optsHelp()))
     ]
 let miscFlagsFsi tcConfigB = miscFlagsBoth tcConfigB
 

@@ -11,7 +11,7 @@
     <AssemblyName>$safeprojectname$</AssemblyName>
     <TargetFrameworkVersion>v$targetframeworkversion$</TargetFrameworkVersion>
     $if$ ($targetframeworkversion$ >= 4.0)
-    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     $else$
     <TargetFSharpCoreVersion>2.3.0.0</TargetFSharpCoreVersion>
     $endif$

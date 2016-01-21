@@ -102,7 +102,7 @@ let authorSource, consumerSource, exclusions =
 
 // failsafe to make sure that excluded scenarios are revisited on new versions
 // i.e. exclusions valid for vN/vN-1 will probably no longer be needed for vN+1/vN
-if not ((Helpers.getVer Test.vCurrentRuntime).StartsWith("4.4.1")) then
+if not ((Helpers.getVer Test.vCurrentRuntime).StartsWith("4.4.0")) then
     eprintfn "Runtime version has changed, review exclusions lists for these tests"
     exit 1
 

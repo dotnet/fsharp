@@ -19,7 +19,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='' or '$(TestProfile)'=='Profile7'">
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.7.41.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.7.4.0</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCOREPATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='Profile78'">

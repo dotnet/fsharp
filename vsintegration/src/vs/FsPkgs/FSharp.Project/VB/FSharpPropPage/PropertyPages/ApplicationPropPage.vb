@@ -74,8 +74,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_OutputTypeStringKeys(INDEX_COMMANDLINEAPP) = SR.GetString(SR.PPG_CommandLineApp)
             m_OutputTypeStringKeys(INDEX_WINDOWSCLASSLIB) = SR.GetString(SR.PPG_WindowsClassLib)
 
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v4.0"
+            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
+            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
 
             m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
             m_v40FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v40FSharpRedistKey, Nothing, Nothing)))
