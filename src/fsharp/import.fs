@@ -469,8 +469,9 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
 ///
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
     // We be very careful not to force a read of the type defs here
-    tdefs.AsListOfLazyTypeDefs
-    |> List.map (fun (ns,n,attrs,lazyTypeDef) -> (ns,(n,notlazy(scoref,attrs,lazyTypeDef))))
+    tdefs.AsArrayOfLazyTypeDefs
+    |> Array.map (fun (ns,n,attrs,lazyTypeDef) -> (ns,(n,notlazy(scoref,attrs,lazyTypeDef))))
+    |> Array.toList
     |> ImportILTypeDefList amap m cpath enc
 
 /// Import the main type definitions in an IL assembly.

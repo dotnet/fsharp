@@ -29,6 +29,24 @@ let (===) x y = LanguagePrimitives.PhysicalEquality x y
 // Library: projections
 //------------------------------------------------------------------------
 
+[<Struct>]
+/// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+type InlineDelayInit<'T when 'T : not struct> = 
+    new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = System.Func<_>(f) } 
+    val mutable store : 'T
+    val mutable func : System.Func<'T>
+    member x.Value = 
+        match x.func with 
+        | null -> x.store 
+        | _ -> 
+        let res = System.Threading.LazyInitializer.EnsureInitialized(&x.store, x.func) 
+        x.func <- Unchecked.defaultof<_>
+        res
+
+//-------------------------------------------------------------------------
+// Library: projections
+//------------------------------------------------------------------------
+
 let foldOn p f z x = f z (p x)
 
 let notFound() = raise (KeyNotFoundException())

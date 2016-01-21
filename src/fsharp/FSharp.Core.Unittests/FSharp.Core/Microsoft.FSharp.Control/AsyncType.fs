@@ -80,6 +80,21 @@ type AsyncType() =
         ()
 
     [<Test>]
+    member this.AsyncRunSynchronouslyReusesThreadPoolThread() =
+        let action = async { async { () } |> Async.RunSynchronously }
+        let computation =
+            [| for i in 1 .. 1000 -> action |]
+            |> Async.Parallel
+        // This test needs approximately 1000 ThreadPool threads
+        // if Async.RunSynchronously doesn't reuse them.
+        // In such case TimeoutException is raised
+        // since ThreadPool cannot provide 1000 threads in 1 second
+        // (the number of threads in ThreadPool is adjusted slowly).
+        Assert.DoesNotThrow(fun () ->
+            Async.RunSynchronously(computation, timeout = 1000)
+            |> ignore)
+
+    [<Test>]
     member this.AsyncSleepCancellation1() =
         ignoreSynchCtx (fun () ->
             let computation = Async.Sleep(10000000)

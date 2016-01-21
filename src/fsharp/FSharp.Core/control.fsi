@@ -264,9 +264,24 @@ namespace Microsoft.FSharp.Control
         /// The overall computation will respond to cancellation while executing the child computations.
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
         /// for the other child computations to complete.</remarks>
-        /// <param name="computationList">A sequence of distinct computations to be parallelized.</param>
+        /// <param name="computations">A sequence of distinct computations to be parallelized.</param>
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
         static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
+        /// returning the result of the first succeeding computation (one whose result is 'Some x').
+        /// If all child computations complete with None, the parent computation also returns None.</summary>
+        ///
+        /// <remarks>
+        /// If any child computation raises an exception, then the overall computation will trigger an 
+        /// exception, and cancel the others. 
+        ///
+        /// The overall computation will respond to cancellation while executing the child computations.
+        /// If cancelled, the computation will cancel any remaining child computations but will still wait
+        /// for the other child computations to complete.</remarks>
+        /// <param name="computations">A sequence of computations to be parallelized.</param>
+        /// <returns>A computation that returns the first succeeding computation.</returns>
+        static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
 
         //---------- Thread Control
         

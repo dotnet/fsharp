@@ -4825,6 +4825,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match args with
             | SynConstructorArgs.Pats [] -> warnOnUpper
             | _ -> AllIdsOK
+
+        let checkNoArgsForLiteral() = 
+            let nargs =
+                match args with
+                | SynConstructorArgs.Pats args -> args.Length
+                | SynConstructorArgs.NamePatPairs (pairs, _) -> pairs.Length
+            if nargs <> 0 then error(Error(FSComp.SR.tcLiteralDoesNotTakeArguments(),m)) 
+
         begin match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
             match args with 
@@ -4972,6 +4980,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match finfo.LiteralValue with 
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), m))
             | Some lit -> 
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty (finfo.FieldType(cenv.amap,m))
                 let c' = TcFieldInit m lit
                 (fun _ -> TPat_const (c',m)),(tpenv,names,takenNames)             
@@ -4984,6 +4993,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match rfinfo.LiteralValue with 
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), m))
             | Some lit -> 
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty rfinfo.FieldType
                 let item = Item.RecdField(rfinfo)
                 CallNameResolutionSink cenv.tcSink (m,env.NameEnv,item,item,ItemOccurence.Pattern,env.DisplayEnv,env.AccessRights)
@@ -4996,6 +5006,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                 let (_, _, vexpty, _, _) = TcVal true cenv env tpenv vref None m
                 CheckValAccessible m env.eAccessRights vref
                 CheckFSharpAttributes cenv.g vref.Attribs m |> CommitOperationResult
+                checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty vexpty
                 (fun _ -> TPat_const (lit,m)),(tpenv,names,takenNames)             
 
@@ -7551,12 +7562,17 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | None -> 
             // This only occurs in final position in a sequence
             match comp with 
-            // "do! expr;" in final position is treated as { let! () = expr in return () }
+            // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(rhsExpr,m) -> 
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(),m))
-                trans true q varSpace (SynExpr.LetOrUseBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, SynExpr.YieldOrReturn((false,true), SynExpr.Const(SynConst.Unit,m), m),m)) translatedCtxt
+                let bodyExpr =
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "Return" builderTy) then
+                        SynExpr.ImplicitZero m
+                    else
+                        SynExpr.YieldOrReturn((false,true), SynExpr.Const(SynConst.Unit, m), m)
+                trans true q varSpace (SynExpr.LetOrUseBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, bodyExpr, m)) translatedCtxt
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ -> 
@@ -10038,6 +10054,8 @@ and TcLetBindings cenv env containerInfo declKind tpenv (binds,bindsm,scopem) =
 and CheckMemberFlags _g optIntfSlotTy newslotsOK overridesOK memberFlags m = 
     if newslotsOK = NoNewSlots && memberFlags.IsDispatchSlot then 
       errorR(Error(FSComp.SR.tcAbstractMembersIllegalInAugmentation(),m))
+    if overridesOK = ErrorOnOverrides && memberFlags.MemberKind = MemberKind.Constructor then 
+      errorR(Error(FSComp.SR.tcConstructorsIllegalInAugmentation(),m))
     if overridesOK = WarnOnOverrides && memberFlags.IsOverrideOrExplicitImpl && isNone optIntfSlotTy then 
       warning(OverrideInIntrinsicAugmentation(m))
     if overridesOK = ErrorOnOverrides && memberFlags.IsOverrideOrExplicitImpl then 
