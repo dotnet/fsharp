@@ -1626,7 +1626,7 @@ module StaticLinker =
               Morphs.disablemorphCustomAttributeData()
 #else
               let providerGeneratedILModules = []
-            let generatedILTypeDefs = []
+            let generatedILTypeDefs = [] : (ILTypeRef * ILTypeDef) list
 #endif
             generatedILTypeDefs, (fun ilxMainModule  ->
               ReportTime tcConfig "Find assembly references";
