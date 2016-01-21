@@ -1779,7 +1779,22 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
         | None -> tcConfig.container
     
     SigningInfo (delaysign,signer,container)
- 
+
+let copyFSharpCore(outFile) =
+    let outDir = Path.GetDirectoryName(outFile)
+    let fsharpCoreAssemblyName = "FSharp.Core.dll"
+    let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
+    
+    if not (File.Exists(fsharpCoreDestinationPath)) then
+        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+        | None -> errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+        | Some compilerPath ->
+            let fsharpCoreSourcePath = Path.Combine(compilerPath, fsharpCoreAssemblyName)
+            if File.Exists(fsharpCoreSourcePath) then
+                File.Copy(fsharpCoreSourcePath, fsharpCoreDestinationPath)
+            else
+                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
 // dead data at the end of each phase.  We explicitly communicate arguments
@@ -1999,9 +2014,13 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
+
     if tcConfig.showLoadedAssemblies then
         for a in System.AppDomain.CurrentDomain.GetAssemblies() do
             dprintfn "%s" a.FullName
+
+    if tcConfig.copyFSharpCore then
+        copyFSharpCore(outfile)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 
