@@ -232,8 +232,10 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
     let AppendClosureInformation(filename) =
         if IsScript filename then 
             let closure = LoadClosure.ComputeClosureOfSourceFiles(tcConfig,[filename,rangeStartup],CodeContext.Compilation,lexResourceManager=lexResourceManager,useDefaultScriptingReferences=false)
-            let references = closure.References |> List.map snd |> List.concat |> List.map (fun r->r.originalReference) |> List.filter (fun r->r.Range<>range0)
-            references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.Range,r.Text))
+            // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
+            // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
+            let references = closure.References |> List.map snd |> List.concat |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range,r.resolvedPath))
             closure.NoWarns |> List.map(fun (n,ms)->ms|>List.map(fun m->m,n)) |> List.concat |> List.iter tcConfigB.TurnWarningOff
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.RootWarnings |> List.iter warnSink
@@ -245,6 +247,38 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
     commandLineSourceFiles |> List.iter AppendClosureInformation
 
     List.rev !allSources
+
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals, lcidFromCodePage, argv) =
+    let inputFilesRef   = ref ([] : string list)
+    let collect name = 
+        let lower = String.lowercase name
+        if List.exists (Filename.checkSuffix lower) [".resx"]  then
+            warning(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
+            tcConfigB.AddEmbeddedResource name
+        else
+            inputFilesRef := name :: !inputFilesRef
+    let abbrevArgs = GetAbbrevFlagSet tcConfigB true
+    
+    // This is where flags are interpreted by the command line fsc.exe.
+    ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    let inputFiles = List.rev !inputFilesRef
+
+    // Check if we have a codepage from the console
+    match tcConfigB.lcid with
+    | Some _ -> ()
+    | None -> tcConfigB.lcid <- lcidFromCodePage
+
+    setProcessThreadLocals(tcConfigB)
+
+    (* step - get dll references *)
+    let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
+    match dllFiles with
+    | [] -> ()
+    | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h),rangeStartup))
+
+    dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup,f))
+    sourceFiles
+          
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This code has logic for a prefix of the compile that is also used by the project system to do the front-end
@@ -286,36 +320,10 @@ let GetTcImportsFromCommandLine
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them. 
         try 
-            let inputFilesRef   = ref ([] : string list)
-            let collect name = 
-                let lower = String.lowercase name
-                if List.exists (Filename.checkSuffix lower) [".resx"]  then
-                    warning(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
-                    tcConfigB.AddEmbeddedResource name
-                else
-                    inputFilesRef := name :: !inputFilesRef
-            let abbrevArgs = GetAbbrevFlagSet tcConfigB true
-    
-            // This is where flags are interpreted by the command line fsc.exe.
-            ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
-            let inputFiles = List.rev !inputFilesRef
+            let sourceFiles = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
 
-            // Check if we have a codepage from the console
-            match tcConfigB.lcid with
-            | Some _ -> ()
-            | None -> tcConfigB.lcid <- lcidFromCodePage
-
-            setProcessThreadLocals(tcConfigB)
-
-            // Get DLL references 
-            let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
-            match dllFiles with
-            | [] -> ()
-            | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h),rangeStartup))
-
-            dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup,f))
-          
             let sourceFiles = AdjustForScriptCompile(tcConfigB,sourceFiles,lexResourceManager)                     
+
             sourceFiles
 
         with e -> 
@@ -365,87 +373,70 @@ let GetTcImportsFromCommandLine
     if not tcConfigB.continueAfterParseFailure then 
         AbortOnError(errorLogger, tcConfig, exiter)
 
-    let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig = 
-    
-        ReportTime tcConfig "Import mscorlib"
+    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
+    let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
+    let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
 
-        if tcConfig.useIncrementalBuilder then 
-            ReportTime tcConfig "Incremental Parse and Typecheck"
-            let builder = 
-                new IncrementalFSharpBuild.IncrementalBuilder(tcConfig, directoryBuildingFrom, assemblyName, NiceNameGenerator(), lexResourceManager, sourceFiles,
-                                                                ensureReactive=false, 
-                                                                errorLogger=errorLogger,
-                                                                keepGeneratedTypedAssembly=true)
-            let tcState,topAttribs,typedAssembly,_tcEnv,tcImports,tcGlobals,tcConfig = builder.TypeCheck()
-            tcGlobals,tcImports,tcImports,tcState.Ccu,typedAssembly,topAttribs,tcConfig
-        else
-        
-            ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
-            let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
-            let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-            let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
+    // register framework tcImports to be disposed in future
+    disposables.Register frameworkTcImports
 
-            // register framework tcImports to be disposed in future
-            disposables.Register frameworkTcImports
+    // step - parse sourceFiles 
+    ReportTime tcConfig "Parse inputs"
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
+    let inputs =
+        try  
+            sourceFiles 
+            |> tcConfig.ComputeCanContainEntryPoint 
+            |> List.zip sourceFiles
+            // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
+            |> List.choose (fun (filename:string,isLastCompiland:bool) -> 
+                let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
+                match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,isLastCompiland,errorLogger,(*retryLocked*)false) with
+                | Some(input)->Some(input,pathOfMetaCommandSource)
+                | None -> None
+                ) 
+        with e -> 
+            errorRecoveryNoRange e
+            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
+            exiter.Exit 1
 
-            // step - parse sourceFiles 
-            ReportTime tcConfig "Parse inputs"
-            use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
-            let inputs =
-                try  
-                    sourceFiles 
-                    |> tcConfig.ComputeCanContainEntryPoint 
-                    |> List.zip sourceFiles
-                    // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-                    |> List.choose (fun (filename:string,isLastCompiland:bool) -> 
-                        let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                        match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,isLastCompiland,errorLogger,(*retryLocked*)false) with
-                        | Some(input)->Some(input,pathOfMetaCommandSource)
-                        | None -> None
-                        ) 
-                with e -> 
-                    errorRecoveryNoRange e
-                    SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
-                    exiter.Exit 1
+    if tcConfig.parseOnly then exiter.Exit 0 
+    if not tcConfig.continueAfterParseFailure then 
+        AbortOnError(errorLogger, tcConfig, exiter)
 
-            if tcConfig.parseOnly then exiter.Exit 0 
-            if not tcConfig.continueAfterParseFailure then 
-                AbortOnError(errorLogger, tcConfig, exiter)
+    if tcConfig.printAst then                
+        inputs |> List.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-            if tcConfig.printAst then                
-                inputs |> List.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+    let tcConfig = (tcConfig,inputs) ||> List.fold ApplyMetaCommandsFromInputToTcConfig 
+    let tcConfigP = TcConfigProvider.Constant(tcConfig)
 
-            let tcConfig = (tcConfig,inputs) ||> List.fold ApplyMetaCommandsFromInputToTcConfig 
-            let tcConfigP = TcConfigProvider.Constant(tcConfig)
+    ReportTime tcConfig "Import non-system references"
+    let tcGlobals,tcImports =  
+        let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
+        tcGlobals,tcImports
 
-            ReportTime tcConfig "Import non-system references"
-            let tcGlobals,tcImports =  
-                let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
-                tcGlobals,tcImports
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
 
-            // register tcImports to be disposed in future
-            disposables.Register tcImports
+    if not tcConfig.continueAfterParseFailure then 
+        AbortOnError(errorLogger, tcConfig, exiter)
 
-            if not tcConfig.continueAfterParseFailure then 
-                AbortOnError(errorLogger, tcConfig, exiter)
+    if tcConfig.importAllReferencesOnly then exiter.Exit 0 
 
-            if tcConfig.importAllReferencesOnly then exiter.Exit 0 
+    ReportTime tcConfig "Typecheck"
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
+    let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
-            ReportTime tcConfig "Typecheck"
-            use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
-            let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    // typecheck 
+    let inputs = inputs |> List.map fst
+    let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
+        TypeCheck(tcConfig,tcImports,tcGlobals,errorLogger,assemblyName,NiceNameGenerator(),tcEnv0,inputs,exiter)
 
-            // typecheck 
-            let inputs : ParsedInput list = inputs |> List.map fst
-            let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
-                TypeCheck(tcConfig,tcImports,tcGlobals,errorLogger,assemblyName,NiceNameGenerator(),tcEnv0,inputs,exiter)
+    let generatedCcu = tcState.Ccu
+    AbortOnError(errorLogger, tcConfig, exiter)
+    ReportTime tcConfig "Typechecked"
 
-            let generatedCcu = tcState.Ccu
-            AbortOnError(errorLogger, tcConfig, exiter)
-            ReportTime tcConfig "Typechecked"
-
-            (tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig)
-                    
     tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
 
 #if NO_COMPILER_BACKEND
@@ -624,8 +615,7 @@ type ILResource with
         | ILResourceLocation.Local b -> b()
         | _-> error(InternalError("Bytes",rangeStartup))
 
-let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,_errorLogger:ErrorLogger,generatedCcu,outfile,exiter:Exiter) = 
-    try 
+let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu,outfile,isIncrementalBuild) = 
       if GenerateInterfaceData(tcConfig) then 
         if verbose then dprintfn "Generating interface data attribute...";
         let resource = WriteSignatureData (tcConfig,tcGlobals,exportRemapping,generatedCcu,outfile)
@@ -633,7 +623,7 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,_errorLogger
         // REVIEW: need a better test for this
         let outFileNoExtension = Filename.chopExtension outfile
         let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
-        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
+        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll) && not isIncrementalBuild then 
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
             File.WriteAllBytes(sigDataFileName,resource.Bytes);
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
@@ -644,10 +634,6 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,_errorLogger
         [sigAttr], resources
       else 
         [],[]
-    with e -> 
-        errorRecoveryNoRange e
-        SqmLoggerWithConfig tcConfig _errorLogger.ErrorNumbers _errorLogger.WarningNumbers
-        exiter.Exit 1
 
 
 //----------------------------------------------------------------------------
@@ -896,6 +882,11 @@ module AttributeHelpers =
         | Some (Attrib(_,_,[ AttribBoolArg(p) ],_,_,_,_)) -> Some (p)
         | _ -> None
 
+    let (|ILVersion|_|) (versionString: string) =
+        try Some(IL.parseILVersion versionString)
+        with e -> 
+            None
+
     // Try to find an AssemblyVersion attribute 
     let TryFindVersionAttribute tcGlobals attrib attribName attribs =
         match TryFindStringAttribute tcGlobals attrib attribs with
@@ -960,6 +951,39 @@ let createSystemNumericsExportList tcGlobals =
         Seq.toList
             
 module MainModuleBuilder = 
+
+    let fileVersion warn findStringAttr (assemblyVersion: ILVersionInfo) =
+        let attrName = "System.Reflection.AssemblyFileVersionAttribute"
+        match findStringAttr attrName with
+        | None -> assemblyVersion
+        | Some (AttributeHelpers.ILVersion(v)) -> v
+        | Some v -> 
+            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v),Range.rangeStartup))
+            //TODO compile error like c# compiler?
+            assemblyVersion
+
+    let productVersion warn findStringAttr (fileVersion: ILVersionInfo) =
+        let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
+        let toDotted (v1,v2,v3,v4) = sprintf "%d.%d.%d.%d" v1 v2 v3 v4
+        match findStringAttr attrName with
+        | None | Some "" -> fileVersion |> toDotted
+        | Some (AttributeHelpers.ILVersion(v)) -> v |> toDotted
+        | Some v -> 
+            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v),Range.rangeStartup))
+            v
+
+    let productVersionToILVersionInfo (version: string) : ILVersionInfo =
+        let parseOrZero v = match System.UInt16.TryParse v with (true, i) -> i | (false, _) -> 0us
+        let validParts =
+            version.Split('.')
+            |> Seq.map parseOrZero
+            |> Seq.takeWhile ((<>) 0us) 
+            |> Seq.toList
+        match validParts @ [0us; 0us; 0us; 0us] with
+        | major :: minor :: build :: rev :: _ -> (major, minor, build, rev)
+        | x -> failwithf "error converting product version '%s' to binary, tried '%A' " version x
+
+
     let CreateMainModule  
             (tcConfig:TcConfig,tcGlobals,
              pdbfile,assemblyName,outfile,topAttrs,
@@ -971,8 +995,6 @@ module MainModuleBuilder =
         let ilTypeDefs = 
             //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
             mkILTypeDefs codegenResults.ilTypeDefs
-            
-
 
         let mainModule = 
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
@@ -996,14 +1018,20 @@ module MainModuleBuilder =
             codegenResults.quotationResourceInfo 
             |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
                 let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
-                let reflectedDefinitionAttr = mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs)
+                let reflectedDefinitionAttrs = 
+                    match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals with
+                    | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
+                        [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
+                    | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
+                        [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName;
                     Location = ILResourceLocation.Local (fun () -> reflectedDefinitionBytes);
                     Access= ILResourceAccess.Public;
                     CustomAttrs = emptyILCustomAttrs }
-                reflectedDefinitionAttr, reflectedDefinitionResource) 
+                reflectedDefinitionAttrs, reflectedDefinitionResource) 
             |> List.unzip
+            |> (fun (attrs, resource) -> List.concat attrs, resource)
 
         let manifestAttrs = 
             mkILCustomAttrs
@@ -1076,30 +1104,29 @@ module MainModuleBuilder =
                          Access=pub; 
                          CustomAttrs=emptyILCustomAttrs } ]
 
+        let assemblyVersion = 
+            match tcConfig.version with
+            | VersionNone -> assemVerFromAttrib
+            | _ -> Some(tcVersion)
+
+        let findAttribute name =
+            AttributeHelpers.TryFindStringAttribute tcGlobals name topAttrs.assemblyAttrs 
+
+
         //NOTE: the culture string can be turned into a number using this:
         //    sprintf "%04x" (CultureInfo.GetCultureInfo("en").KeyboardLayoutId )
-        let assemblyVersionResources =
-            let assemblyVersion = 
-                match tcConfig.version with
-                | VersionNone ->assemVerFromAttrib
-                | _ -> Some(tcVersion)
+        let assemblyVersionResources findAttr assemblyVersion =
             match assemblyVersion with 
             | None -> []
             | Some(assemblyVersion) ->
                 let FindAttribute key attrib = 
-                    match AttributeHelpers.TryFindStringAttribute tcGlobals attrib topAttrs.assemblyAttrs with
+                    match findAttr attrib with
                     | Some text  -> [(key,text)]
                     | _ -> []
 
-                let fileVersion = 
-                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyFileVersionAttribute" "AssemblyFileVersionAttribute" topAttrs.assemblyAttrs with
-                    | Some v -> v
-                    | None -> assemblyVersion
+                let fileVersionInfo = fileVersion warning findAttr assemblyVersion
 
-                let productVersion = 
-                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyInformationalVersionAttribute" "AssemblyInformationalVersionAttribute" topAttrs.assemblyAttrs with
-                    | Some v -> v
-                    | None -> assemblyVersion
+                let productVersionString = productVersion warning findAttr fileVersionInfo
 
                 let stringFileInfo = 
                      // 000004b0:
@@ -1107,8 +1134,8 @@ module MainModuleBuilder =
                      // Each Microsoft Standard Language identifier contains two parts: the low-order 10 bits specify the major language, and the high-order 6 bits specify the sublanguage. For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
                       [ ("000004b0", [ yield ("Assembly Version", (let v1,v2,v3,v4 = assemblyVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
-                                       yield ("FileVersion", (let v1,v2,v3,v4 = fileVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
-                                       yield ("ProductVersion", (let v1,v2,v3,v4 = productVersion in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
+                                       yield ("FileVersion", (let v1,v2,v3,v4 = fileVersionInfo in sprintf "%d.%d.%d.%d" v1 v2 v3 v4))
+                                       yield ("ProductVersion", productVersionString)
                                        yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute" 
                                        yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute" 
                                        yield! FindAttribute "ProductName" "System.Reflection.AssemblyProductAttribute" 
@@ -1144,7 +1171,7 @@ module MainModuleBuilder =
                     let dwFileType = 0x01 // REVIEW: HARDWIRED
                     let dwFileSubtype = 0x00 // REVIEW: HARDWIRED
                     let lwFileDate = 0x00L // REVIEW: HARDWIRED
-                    (fileVersion,productVersion,dwFileFlagsMask,dwFileFlags,dwFileOS,dwFileType,dwFileSubtype,lwFileDate)
+                    (fileVersionInfo,productVersionString |> productVersionToILVersionInfo,dwFileFlagsMask,dwFileFlags,dwFileOS,dwFileType,dwFileSubtype,lwFileDate)
 
                 let vsVersionInfoResource = 
                     VersionResourceFormat.VS_VERSION_INFO_RESOURCE(fixedFileInfo,stringFileInfo,varFileInfo)
@@ -1181,7 +1208,7 @@ module MainModuleBuilder =
                System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() + @"default.win32manifest"
         
         let nativeResources = 
-            [ for av in assemblyVersionResources do
+            [ for av in assemblyVersionResources findAttribute assemblyVersion do
                   yield Lazy.CreateFromValue av
               if not(tcConfig.win32res = "") then
                   yield Lazy.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
@@ -1355,14 +1382,14 @@ module StaticLinker =
                 TypeDefs = 
                   mkILTypeDefs 
                       ([ for td in fakeModule.TypeDefs do 
-                              yield {td with 
+                            yield {td with 
                                       Methods =
-                                        mkILMethods (List.map (fun (md:ILMethodDef) ->
-                                                            {md with                                                            
-                                                              CustomAttrs = 
-                                                                mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                   ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
-                                                          (td.Methods.AsList))}])}
+                                        td.Methods.AsList
+                                        |> List.map (fun md ->
+                                            {md with CustomAttrs = 
+                                                        mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                        |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
 
@@ -1412,7 +1439,7 @@ module StaticLinker =
                                     | ResolvedCcu ccu -> Some ccu
                                     | UnresolvedCcu(_ccuName) -> None
 
-                                let modul = dllInfo.RawMetadata
+                                let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
 
                                 let refs = 
                                     if ilAssemRef.Name = GetFSharpCoreLibraryName() then 
@@ -1481,7 +1508,7 @@ module StaticLinker =
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 
-                  let modul = dllInfo.RawMetadata
+                  let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
               | None -> () ]
 
@@ -1631,8 +1658,8 @@ module StaticLinker =
                               let rec rw enc (tdefs: ILTypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
-                                      let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
-                                      if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
+                                        let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
+                                        if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
                                           yield { tdef with NestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes  } ]
                               rw [] ilModule.TypeDefs
@@ -1668,43 +1695,45 @@ module StaticLinker =
 
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
+let GetSigner(signingInfo) = 
+        let (SigningInfo(delaysign,signer,container)) = signingInfo
+        // REVIEW: favor the container over the key file - C# appears to do this
+        if isSome container then
+          Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
+        else
+            match signer with 
+            | None -> None
+            | Some(s) ->
+                try 
+                if delaysign then
+                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+                else
+                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+                with e -> 
+                    // Note:: don't use errorR here since we really want to fail and not produce a binary
+                    error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
+
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
-        let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
+    let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
         try
             if !progress then dprintn "Writing assembly...";
             try 
-                let signer = 
-                    // Favor the container over the key file - C# appears to do this
-                    if isSome container then
-                        Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
-                    else
-                        match signerOpt with 
-                        | None -> None
-                        | Some s ->
-                            try 
-                                if delaysign then
-                                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
-                                else
-                                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
-                            with e -> 
-                                // Note:: don't use errorR here since we really want to fail and not produce a binary
-                                error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
-                let options : ILBinaryWriter.options = 
-                    { ilg = ilGlobals
-                      pdbfile = pdbfile
-                      emitTailcalls = tcConfig.emitTailcalls
-                      showTimes = tcConfig.showTimes
-                      signer = signer
-                      fixupOverlappingSequencePoints = false
-                      dumpDebugInfo = tcConfig.dumpDebugInfo } 
-                ILBinaryWriter.WriteILBinary (outfile, options, ilxMainModule, tcConfig.noDebugData)
-
+                ILBinaryWriter.WriteILBinary 
+                 (outfile,
+                  {    ilg = ilGlobals
+                       pdbfile=pdbfile
+                       emitTailcalls= tcConfig.emitTailcalls
+                       showTimes=tcConfig.showTimes
+                       signer = GetSigner signingInfo
+                       fixupOverlappingSequencePoints = false
+                       dumpDebugInfo =tcConfig.dumpDebugInfo },
+                  ilxMainModule,
+                  tcConfig.noDebugData)
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
         with e -> 
             errorRecoveryNoRange e
-            SqmLoggerWithConfig tcConfig _errorLogger.ErrorNumbers _errorLogger.WarningNumbers
+            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
             exiter.Exit 1 
 
 
@@ -1851,13 +1880,18 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
     Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
   
-let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
+let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     ReportTime tcConfig ("Encode Interface Data");
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
     
     let sigDataAttributes,sigDataResources = 
-        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, errorLogger, generatedCcu, outfile, exiter)
+      try
+        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+      with e -> 
+        errorRecoveryNoRange e
+        SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
+        exiter.Exit 1
         
     if !progress && tcConfig.optSettings.jitOptUser = Some false then 
         dprintf "Note, optimizations are off.\n";
@@ -1870,7 +1904,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     let metadataVersion = 
         match tcConfig.metadataVersion with
         | Some(v) -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.MetadataVersion | _ -> ""
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
     let optimizedImpls,optimizationData,_ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedAssembly)
 
     AbortOnError(errorLogger,tcConfig,exiter)
@@ -1986,9 +2020,6 @@ let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProv
     |> main4
 
 let mainCompile (argv, bannerAlreadyPrinted, exiter:Exiter) = 
-    // Enabling batch latency mode currently overrides app config <gcConcurrent>.
-    // If batch mode is ever removed or changed, revisit use of <gcConcurrent>.
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(argv, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
 
 [<RequireQualifiedAccess>]
@@ -2029,4 +2060,4 @@ type InProcCompiler() =
         !exitCode = 0, output
 
 
-#endif
+#endif // NO_COMPILER_BACKEND

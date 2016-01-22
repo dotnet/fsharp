@@ -11,7 +11,11 @@
     <ProjectGuid>{33E0FB8C-93DC-4AD7-9DCD-9FBDA6C2F061}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler-proto</AssemblyName>
-    <DefineConstants>BUILDING_PROTO;BUILDING_WITH_LKG;COMPILER;INCLUDE_METADATA_READER;INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_PROTO;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
     <BuildWith>LKG</BuildWith>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -243,12 +247,6 @@
     <Compile Include="..\..\ilx\EraseUnions.fs">
       <Link>EraseUnions.fs</Link>
     </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fsi">
-      <Link>InternalFileSystemUtils.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fs">
-      <Link>InternalFileSystemUtils.fs</Link>
-    </Compile>
     <Compile Include="..\UnicodeLexing.fsi">
       <Link>UnicodeLexing.fsi</Link>
     </Compile>
@@ -417,12 +415,6 @@
     </Compile>
     <Compile Include="..\CompileOptions.fs">
       <Link>CompileOptions.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fsi">
-      <Link>IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fs">
-      <Link>IncrementalBuild.fs</Link>
     </Compile>
     <Compile Include="..\fsc.fsi">
       <Link>fsc.fsi</Link>

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.ProjectSystem
+namespace Tests.ProjectSystem
 
 // System namespaces
 open System
@@ -329,25 +329,32 @@ type Miscellaneous() =
             let errors = List.filter (fun (s:string) -> s.Contains(expectedError)) !outputWindowPaneErrors    
             AssertEqual 1 (List.length errors)
         )        
-                
-        
-    [<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
-    member public this.``DebuggingDLLFails``() =
+
+    member public this.``DebuggingDLLFailsFunc``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-            this.MSBuildProjectBoilerplate "Library",  
-            (fun project ccn projFileName ->
-                ccn((project :> IVsHierarchy), "Debug|Any CPU")
-                let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                File.AppendAllText(fooPath, "#light")                
-                let mutable configurationInterface : IVsCfg = null
-                let hr = project.ConfigProvider.GetCfgOfName("Debug", "Any CPU", &configurationInterface)
-                AssertEqual VSConstants.S_OK hr                
-                let config = configurationInterface :?> ProjectConfig
-                config.DebugLaunch(0ul) |> ignore
-                ()
-        ))
-    
-    [<Test>]    
+               this.MSBuildProjectBoilerplate "Library",  
+               (fun project ccn projFileName ->
+                   ccn((project :> IVsHierarchy), "Debug|Any CPU")
+                   let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
+                   File.AppendAllText(fooPath, "#light")                
+                   let mutable configurationInterface : IVsCfg = null
+                   let hr = project.ConfigProvider.GetCfgOfName("Debug", "Any CPU", &configurationInterface)
+                   AssertEqual VSConstants.S_OK hr                
+                   let config = configurationInterface :?> ProjectConfig
+                   config.DebugLaunch(0ul) |> ignore
+                   ()
+               ))
+
+#if NUNIT_V2
+    [<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
+    member public this.``DebuggingDLLFails``() = this.``DebuggingDLLFailsFunc``()
+#else
+    [<Test>]
+    member public this.``DebuggingDLLFails``() =
+        Assert.That((fun () -> this.``DebuggingDLLFailsFunc``()), NUnit.Framework.Throws.TypeOf(typeof<ClassLibraryCannotBeStartedDirectlyException>))
+#endif
+
+    [<Test>]
     member public this.``DebuggingEXESucceeds``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectBoilerplate "Exe",  
@@ -635,16 +642,6 @@ type Miscellaneous() =
             finally
                 project.Close() |> ignore
         )
-
-
-
-
-
-
-
-
-
-
 
 
 module Regression5312 = 

@@ -25,11 +25,11 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> = 
           { new IEnumerator<'T> with 
-                member x.Current = unbox e.Current
+                member x.Current = unbox<'T> e.Current
             interface IEnumerator with 
-                member x.Current = unbox  e.Current
+                member x.Current = unbox<'T> e.Current :> obj
                 member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset();
+                member x.Reset() = noReset()
             interface System.IDisposable with 
                 member x.Dispose() = 
                     match e with 
@@ -802,6 +802,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract CheckClose: bool
         abstract LastGenerated : 'T
         
+        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member x.MoveNextImpl() = 
              let active = 
                  if redirect then redirectTo
@@ -836,6 +837,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
+
+            //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl() 
                
             member x.Reset() = raise <| new System.NotSupportedException();

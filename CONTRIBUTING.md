@@ -3,14 +3,15 @@
 The Visual F# team is proud to be a contributor to F#, and urge you to join in too. F# users and the F# community are grateful for all contributions to F#.
 
 Besides this overview, we recommend ["Becoming a contributor"](http://mrange.wordpress.com/2014/12/11/becoming-an-fsharp-contributor/), a community blog post by Mårten Rånge. 
+For those contributing to the core of the F# compiler, we recommend ["The F# Compiler Technical Overview"](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
 
 ###Getting Started
 
 - Install required software
 - Clone the repo
  - `git clone https://github.com/microsoft/visualfsharp.git`
-- How to build
-- How to run tests
+- How to build ([DEVGUIDE](DEVGUIDE.md))
+- How to run tests ([TESTGUIDE](TESTGUIDE.md))
 
 ###What to Contribute?
 
@@ -90,6 +91,8 @@ Performance improvement checkins have the following minimum requirements (in add
 
 - The PR must show a reliable, substantive performance improvement that justifies the complexity introduced.  For the compiler, performance improvements of ~1% are of interest.  For the core library, it will depend on the routine in question. For the Visual F# tools, reactivity of the user interface will be of more interest than raw CPU performance.
 
+- Performance improvements should not cause performance degradation in existing code.
+
 #### Mimimum Bar for Bug Fix Pull Requests
 
 Bug fix PRs have the following minimum requirements
@@ -99,6 +102,8 @@ Bug fix PRs have the following minimum requirements
 - The code changes must be reasonably minimal and as low-churn, non-intrusive as possible. Unrelated cleanup should be done in separate PRs (see above), and fixes should be as small as possible. Code cleanup that is part of making a clear and accurate fix is acceptable as part of a bug fix, but care should be taken that it doesn't obscure the fix itself. For example, renaming identifiers to be clearer in a way that would have avoided the original bug is acceptable, but care must still be taken that the actual fix is still apparent and reviewable in the overall diff for the fix.
 
 - Thorough test cases must be included in the PR (unless tests already exist for a failing case). PRs without matching tests will be closed with a polite request to please add the tests.  However, if you need help adding tests, please note this in the description of the change and people will guide you through where to add the tests.
+
+- Bug fix PRs should not cause performance degradation in existing code.
 
 #### Mimimum Bar for Feature Pull Requests
 
@@ -111,6 +116,12 @@ Feature PRs have the following minimum requirements:
 - For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
 
 - For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/FSharpLangDesign/) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
+
+- Language feature implementations must take into account the expectations of typical users about the performance 
+  impact of using the feature.  For example, we should avoid the situation where using an optional language feature 
+  which appears benign to a typical user has a large negative performance impact on code.
+
+- Language feature implementations should not cause performance degradation in existing code.
 
 ###Language Evolution
 

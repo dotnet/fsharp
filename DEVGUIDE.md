@@ -1,10 +1,17 @@
 # F# Compiler, Core Library and Visual F# Tools Open Contribution Repository
 
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
+To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org).
+**Compiler Technical Documentation**
 
-To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
+The primary technical documents for the F# compiler code are
+
+* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
+
+* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
+  maintained by contributors to this repository.  Please read
+  and contribute to that guide.
 
 **License**
 > Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.
@@ -15,7 +22,7 @@ To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 ## 0.  A Shortcut to Build and Smoke Test
 
 You can build a subset of functionality (including bootstrapped compiler and library) and run a very 
-small number of 'smoke' tests using the script used by continuous integration:
+small number of 'smoke' tests using the script used by continuous integration on Windows:
 
     .\appveyor-build.cmd
 
@@ -94,12 +101,12 @@ Prior to a **Release** test run, you need to do **all** of these:
     msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
     msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
 
-## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# 4.0 SDK on the machine
+## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# SDK on the machine
 
-**Note:** Step #3 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+**Note:** Step #2 below will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
 components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
 
-**Note:** Step #4 will clobber the machine-wide installed F# 4.0 SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
+**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
 by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the 
 only way to revert this step.  
 
@@ -111,13 +118,13 @@ For **Debug**:
 
 1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
 1. Run ``debug\net40\bin\EnableOpenSource.vsix``
-1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# 4.0 SDK)
+1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# SDK)
 
 For **Release**:
 
 1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
 1. Run ``release\net40\bin\EnableOpenSource.vsix``
-1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# 4.0 SDK)
+1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
 
@@ -132,3 +139,8 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
  - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+### Further technical resources
+
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
+

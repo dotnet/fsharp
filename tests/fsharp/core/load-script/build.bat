@@ -12,7 +12,7 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
   goto Skip
 )
 
-script > out.txt 2>&1
+call script > out.txt 2>&1
 
 if NOT EXIST out.bsl COPY out.txt
 

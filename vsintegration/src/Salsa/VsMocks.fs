@@ -1051,7 +1051,7 @@ module internal VsMocks =
             member this.SetCursor(  hNewCursor,    phOldCursor) = err(__LINE__)
             member this.GetCurrentSelection(  ppHier,    pitemid,    ppMIS) = err(__LINE__)
             }
-    
+
     let vsWindowFrame =
         { new IVsWindowFrame with
             member this.Show() = err(__LINE__)
@@ -1619,7 +1619,11 @@ module internal VsActual =
 
         // copy this private assembly next to unit tests, otherwise assembly loader cannot find it
         let neededLocalAssem = vsInstallDir + @"\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll"
+#if NUNIT_2
         let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").EscapedCodeBase)).LocalPath)
+#else
+        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.framework").EscapedCodeBase)).LocalPath)
+#endif
         let localCopy = System.IO.Path.Combine(curDir, System.IO.Path.GetFileName(neededLocalAssem))
         System.IO.File.Copy(neededLocalAssem, localCopy, true)
         

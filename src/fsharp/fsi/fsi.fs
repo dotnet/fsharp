@@ -54,7 +54,6 @@ open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
-open Internal.Utilities.FileSystem
 
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
@@ -427,6 +426,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
 
     let executableFileName = 
         lazy 
+            match tcConfigB.exename with
+            | Some s -> s
+            | None -> 
             let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
             Path.GetFileName(currentProcess.MainModule.FileName)
 
@@ -772,7 +774,7 @@ type internal FsiDynamicCompiler
 
     let valuePrinter = FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWriter)
 
-    let assemblyBuilder,moduleBuilder = ILRuntimeWriter.mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.localOpt(), generateDebugInfo)
+    let assemblyBuilder,moduleBuilder = ILRuntimeWriter.mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.localOpt(), generateDebugInfo, false)
 
     let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
@@ -1004,10 +1006,10 @@ type internal FsiDynamicCompiler
         SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference istate m path = 
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
         // Check the file can be resolved before calling requireDLLReference 
-        let resolutions = tcImports.ResolveAssemblyReference(AssemblyReference(m,path),ResolveAssemblyReferenceMode.ReportErrors)
+        let resolutions = tcImports.ResolveAssemblyReference(AssemblyReference(m,path,None),ResolveAssemblyReferenceMode.ReportErrors)
         tcConfigB.AddReferencedAssemblyByPath(m,path)
         let tcState = istate.tcState 
         let tcEnv,(_dllinfos,ccuinfos) = 
@@ -1118,7 +1120,7 @@ type internal FsiIntellisenseProvider(tcGlobals, tcImports: TcImports) =
         // Note: for the accessor domain we should use (AccessRightsOfEnv tcState.TcEnvFromImpls)
         let ad = Infos.AccessibleFromSomeFSharpCode
         let nItems = NameResolution.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
-        let names  = nItems |> List.map (fun d -> d.DisplayName tcGlobals) 
+        let names  = nItems |> List.map (fun d -> d.DisplayName) 
         let names  = names |> List.filter (fun (name:string) -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
 
@@ -1381,14 +1383,14 @@ module internal MagicAssemblyResolution =
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
                let overallSearchResult =           
                    // OK, try to resolve as a .dll
-                   let searchResult = tcImports.TryResolveAssemblyReference (AssemblyReference(rangeStdin,assemblyReferenceTextDll),ResolveAssemblyReferenceMode.Speculative)
+                   let searchResult = tcImports.TryResolveAssemblyReference (AssemblyReference(rangeStdin,assemblyReferenceTextDll,None),ResolveAssemblyReferenceMode.Speculative)
 
                    match searchResult with
                    | OkResult (warns,[r]) -> OkResult (warns, Choice1Of2 r.resolvedPath)
                    | _ -> 
 
                    // OK, try to resolve as a .exe
-                   let searchResult = tcImports.TryResolveAssemblyReference (AssemblyReference(rangeStdin,assemblyReferenceTextExe),ResolveAssemblyReferenceMode.Speculative)
+                   let searchResult = tcImports.TryResolveAssemblyReference (AssemblyReference(rangeStdin,assemblyReferenceTextExe,None),ResolveAssemblyReferenceMode.Speculative)
 
                    match searchResult with
                    | OkResult (warns, [r]) -> OkResult (warns, Choice1Of2 r.resolvedPath)

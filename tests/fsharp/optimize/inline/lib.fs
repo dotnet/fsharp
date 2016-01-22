@@ -1,4 +1,4 @@
-module Test.Lib
+namespace ThisNamespaceHasToBeTheSame
 
 #nowarn "9"
 
@@ -69,6 +69,23 @@ module Vector3GenericInt =
 module Vector3GenericObj =
     let inline test (v1: Vector3Generic<obj>) (v2: Vector3Generic<obj>) =
         v1.x
+
+type HiddenRecord = 
+    private { x : int } 
+    member this.X = this.x
+
+type HiddenUnion = 
+    private A of int | B of string
+    member this.X = match this with A x -> x | B s -> s.Length
+
+type internal Foo private () = 
+    static member FooMethod() = ()
+
+[<System.Runtime.CompilerServices.InternalsVisibleToAttribute("lib3")>]
+do()
+
+[<System.Runtime.CompilerServices.InternalsVisibleToAttribute("lib3--optimize")>]
+do()
 
 [<Struct>]
 [<StructLayout (LayoutKind.Sequential)>]

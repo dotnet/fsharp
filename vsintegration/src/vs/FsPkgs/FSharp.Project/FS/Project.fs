@@ -108,7 +108,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ErrorListTaskProvider() = inner.ErrorListTaskProvider()
             member ips.ErrorListTaskReporter() = inner.ErrorListTaskReporter()
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
-            member ips.IsTypeResolutionValid = true
+            member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
 
 
@@ -116,6 +116,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
         | Opened=2   // The project is open, has some (possibly stale) sources/flags info
         | Closed=3   // The project closed, has stale sources/flags info
+
     type internal ProjectSiteOptionLifetime() =
         let mutable state = ProjectSiteOptionLifetimeState.Opening
         let mutable projectSite : DynamicProjectSite option = None
@@ -209,7 +210,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             Height = 120,
                             Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
         [<Guid(GuidList.guidFSharpProjectPkgString)>]
-        internal FSharpProjectPackage() as this = class
+        internal FSharpProjectPackage() as this = 
             inherit ProjectPackage() 
 
             let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
@@ -242,10 +243,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 // read list of available FSharp.Core versions
                 do
                     let nullService = 
-                            { 
-                                new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService 
-                                    with member this.ListAvailableFSharpCoreVersions(_) = Array.empty 
-                            }
+                        { new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with 
+                            member this.ListAvailableFSharpCoreVersions(_) = Array.empty }
 
                     let service = 
                         match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
@@ -361,13 +360,13 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             /// <param name="pbstrProductDetails">Out parameter to which to assign the description of the package</param>
             /// <returns>HRESULT, indicating success or failure</returns>
             member this.getProductDetails(pbstrProductDetails:byref<string>) =
-                pbstrProductDetails <- this.GetResourceString("@ProductDetails10") ;
+                pbstrProductDetails <- this.GetResourceString("@ProductDetails10")
                 VSConstants.S_OK
 
             /// <param name="pIdIco">The resource id corresponding to the icon to display on the Help About dialog</param>
             /// <returns>HRESULT, indicating success or failure</returns>
             member this.getIdIcoLogoForAboutbox(pIdIco:byref<uint32>) =
-                pIdIco <- 400u ;
+                pIdIco <- 400u
                 VSConstants.S_OK
 
             interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
@@ -375,15 +374,9 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     GetToolWindowAsITestVFSI().SendTextInteraction(s)
                 member this.GetMostRecentLines(n:int) : string[] =
                     GetToolWindowAsITestVFSI().GetMostRecentLines(n)
-        end // class FSharpProjectPackage
 
-    /// <summary>
-    /// Factory for creating our editor
-    /// </summary>
 
-    and (* type *) 
-    
-        /// Creates FSharp Projects
+    and /// Factory for creating our editor, creates FSharp Projects
         [<Guid(GuidList.guidFSharpProjectFactoryString)>]
         internal FSharpProjectFactory(package:FSharpProjectPackage ) =  
             inherit ProjectFactory(package)
@@ -396,18 +389,13 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 (project :> ProjectNode)
 
 
-    and (* type *) 
-
-        /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
+    and /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
         /// FSharp projects.
         [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
-        internal WAFSharpProjectFactory() = class
-        end
+        internal WAFSharpProjectFactory() = class end
 
 #if DESIGNER
-    and (* type *) 
-
-        [<ComVisible(true)>]
+    and [<ComVisible(true)>]
         [<ClassInterface(ClassInterfaceType.None)>]
         [<Guid("47C65732-87AE-4C8A-8AA5-234E00E9D9AB")>]
         public FSharpWPFFlavor(site:IServiceProvider) =
@@ -422,9 +410,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.GetProperty(itemId:uint32, propId:int, property:byref<obj>) =
                 base.GetProperty(itemId, propId, &property)
 
-    and (* type *) 
-
-        [<Guid("117B3E77-35E9-4f6d-4237-E6D103EA4D4A")>]
+    and [<Guid("117B3E77-35E9-4f6d-4237-E6D103EA4D4A")>]
         internal FSharpWPFProjectFactory(site:IServiceProvider) =
             inherit FlavoredProjectFactoryBase()
         
@@ -436,10 +422,10 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.PreCreateForOuter(outerProjectIUnknown:IntPtr) = box (new FSharpWPFFlavor(site))
 
 #endif
-    and (* type *) 
+    and 
 
         [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
-        internal FSharpProjectNode(package:FSharpProjectPackage) as this = class
+        internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
             inherit ProjectNode() 
 
 #if FX_ATLEAST_45  
@@ -464,6 +450,10 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             
             let mutable inMidstOfReloading = false
             
+            // WARNING: Please avoid renaming this field or the containing type. The Visual F# Power Tools currently
+            // use reflection to access this field to extract project sources and flags accurately from F# projects.  
+            // See https://github.com/fsprojects/VisualFSharpPowerTools/blob/58b8e409ee6836a39b22284740706d2cf488aabe/src/FSharpVSPowerTools.Logic/ProjectProvider.fs#L42
+            // for example. If necessary, this can be changed - but please just try to avoid doing a gratuitous rename.
             let mutable sourcesAndFlags : option<(array<string> * array<string>)> = None
 #if DEBUG
             let mutable shouldLog = false // can poke this in the debugger to turn on logging
@@ -559,19 +549,19 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     if not (currentVersion.Equals newVersion) then
                         let hasSwitchedToLatestOnlyVersionFromLegacy = 
                             let legacyVersions =
-                                ["2.3.0.0"             // .NET 2 desktop
-                                 "4.3.0.0"; "4.3.1.0"  // .NET 4 desktop
-                                 "2.3.5.0"; "2.3.5.1"  // portable 47
-                                 "3.3.1.0"             // portable 7
-                                 "3.78.3.1"            // portable 78
-                                 "3.259.3.1"]          // portable 259
+                                ["2.3.0.0"                        // .NET 2 desktop
+                                 "4.3.0.0"; "4.3.1.0"; "4.4.0.0"  // .NET 4 desktop
+                                 "2.3.5.0"; "2.3.5.1"; "3.47.4.0" // portable 47
+                                 "3.3.1.0"; "3.7.4.0"             // portable 7
+                                 "3.78.3.1"; "3.78.4.0"           // portable 78
+                                 "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.0.0"             // .NET 4 desktop
-                                 "3.47.4.0"            // portable 47
-                                 "3.7.4.0"             // portable 7
-                                 "3.78.4.0"            // portable 78
-                                 "3.259.4.0"]          // portable 259
+                                ["4.4.1.0"                        // .NET 4 desktop
+                                 "3.47.41.0"                       // portable 47
+                                 "3.7.41.0"                        // portable 7
+                                 "3.78.41.0"                       // portable 78
+                                 "3.259.41.0"]                     // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             
                             (legacyVersions |> List.exists ((=) currentVersion)) && (latestOnlyVersions |> List.exists ((=) newVersion))                                
@@ -758,7 +748,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.GetGuidProperty(propid:int, guid:byref<Guid> ) =
                 if (enum propid = __VSHPROPID.VSHPROPID_PreferredLanguageSID) then 
-                    guid <- new Guid(Microsoft.VisualStudio.FSharp.Shared.FSharpCommonConstants.languageServiceGuidString)
+                    guid <- new Guid(FSharpCommonConstants.languageServiceGuidString)
                     VSConstants.S_OK
                 // below is how VS decide 'which templates' to associate with an 'add new item' call in this project
                 elif (enum propid = __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 
@@ -901,7 +891,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             /// <param name="source">Full path to template file</param>
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
-                if not (Internal.Utilities.FileSystem.File.SafeExists(source)) then
+                if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
                     raise <| new FileNotFoundException(String.Format(FSharpSR.GetString(FSharpSR.TemplateNotFound), source))
 
                 // We assume that there is no token inside the file because the only
@@ -1621,7 +1611,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
                     member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) =
                         cleanNotifier.Advise(callbackOwnerKey,callback)
-                    member this.IsTypeResolutionValid = true
+                    member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.LoadTime = creationTime
                 }
@@ -1650,7 +1640,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     member ips.ErrorListTaskReporter() = taskReporter
                     member this.AdviseProjectSiteChanges(_,_) = ()
                     member this.AdviseProjectSiteCleaned(_,_) = ()
-                    member this.IsTypeResolutionValid = true
+                    member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.LoadTime = creationTime
                 }
@@ -1790,9 +1780,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 member x.SetSpecificEditorProperty(_mkDocument:string, _propid:int, _value:obj ) =
                     VSConstants.E_NOTIMPL
             end
-        end // class FSharpProjectNode
 
-    and (* type *) 
+    and 
 
         // Why is this a separate class, rather than an interface implemented on
         // FSharpProjectNode?  Because, at the time of initial registration of this
@@ -1918,7 +1907,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                      0
                 
 
-    and (* type *)   
+    and   
 
       [<ComVisible(true)>] 
       [<CLSCompliant(false)>]
@@ -2072,9 +2061,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidRunPostBuildEvent), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RunPostBuildEvent, runPostBuildEventInteger)
         
-    and (* type *) 
-
-        internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
+    and internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
             inherit FolderNode(root, relativePath, projectElement)
 
             override x.QueryStatusOnNode(guidCmdGroup:Guid, cmd:uint32, pCmdText:IntPtr, result:byref<QueryStatusResult>) =
@@ -2105,9 +2092,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 else
                         base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
             
-    and (* type *) 
-
-       internal FSharpBuildAction =
+    and internal FSharpBuildAction =
        | None = 0
        | Compile = 1
        | Content = 2
@@ -2143,7 +2128,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
         
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
-    and (* type *) 
+    and 
 
       [<ComVisible(true)>] 
       [<CLSCompliant(false)>]
@@ -2172,10 +2157,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             else base.CreateDesignPropertyDescriptor(propertyDescriptor)
 
 
-    and (* type *)
-     
-        // represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
-        internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = class
+    and // Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
+        internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
             inherit LinkedFileNode(root,e, hierarchyId)
 
             static let protectVisualState (root : FSharpProjectNode) (node : HierarchyNode) f = 
@@ -2699,15 +2682,9 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #endif                    
                 else 
                     null
-        end // class FSharpFileNode
 
-    and (* type *)
-
-        /// <summary>
-        /// Knows about special requirements for project to project references
-        /// </summary>
+    and /// Knows about special requirements for project to project references
         internal FSharpProjectReferenceNode = 
-            class
                 inherit ProjectReferenceNode 
                 new(root:ProjectNode, element:ProjectElement) =
                     { inherit ProjectReferenceNode(root, element) }
@@ -2754,13 +2731,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     ErrorHandler.ThrowOnFailure(hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, int32 __VSHPROPID.VSHPROPID_TypeName, &projectType)) |> ignore
                     projectType :?> string
             
-            end // class FSharpProjectReferenceNode 
 
-    and (* type  *)
-        
-        /// <summary>
-        /// Reference container node for FSharp references.
-        /// </summary>
+    and /// Reference container node for FSharp references.
         internal FSharpReferenceContainerNode(project:FSharpProjectNode) = 
             inherit ReferenceContainerNode(project :> ProjectNode)
             
@@ -2775,9 +2747,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.CreateProjectReferenceNode(selectorData:VSCOMPONENTSELECTORDATA) =
                 (new FSharpProjectReferenceNode(x.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef) :> ProjectReferenceNode)
 
-    and (* type *)
-
-        internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider, projMgr:ProjectNode ) =
+    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider, projMgr:ProjectNode ) =
             inherit SelectionListener(serviceProvider)
 
             override x.OnElementValueChanged(elementid:uint32, varValueOld:obj, _varValueNew:obj) =
@@ -2800,9 +2770,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 hr
 
 #if DESIGNER
-    and (* type *) 
-
-        [<Guid(GuidList.guidEditorFactoryString)>]
+    and [<Guid(GuidList.guidEditorFactoryString)>]
         internal EditorFactory(package :FSharpProjectPackage) = class  
           
             let mutable serviceProvider : ServiceProvider = null
@@ -3007,16 +2975,14 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             end
         end // class EditorFactory
 
-    and (* type *)
+    and 
 
-    /// <summary>
     /// This class provides the event handler generation for the 
     /// WPF designer. Note that this object is NOT required for languages
     /// where the CodeDom is used for event handler generation. This is needed
     /// in the case of FSharp due to limitations in the static compiler 
     /// support.
-    /// </summary>
-      FSharpEventBindingProvider(fsFile:FSharpFileNode ) = class
+      FSharpEventBindingProvider(fsFile:FSharpFileNode ) = 
         inherit EventBindingProvider()
         let project = fsFile.ProjectMgr
 
@@ -3166,13 +3132,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
         override x.ValidateMethodName(eventDescription:EventDescription, methodName:string) =
             ()
 
-        /// This method will get the CodeTypeDeclaration corresponding to the active XAML file in
-        /// the designer.
-      end // class FSharpEventBindingProvider
 
-    and (* type *)
-      
-        FSharpRuntimeNameProvider() = 
+    and FSharpRuntimeNameProvider() = 
             inherit RuntimeNameProvider()
             override x.CreateValidName(proposal:string ) = proposal
             override x.IsExistingName(name:string ) = 
@@ -3183,7 +3144,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.NameFactory = (new FSharpRuntimeNameFactory() :> RuntimeNameFactory)
 
-    and (* type *)
+    and 
 
       [<Serializable>]
       FSharpRuntimeNameFactory() = 
@@ -3226,11 +3187,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     isUnique <- not (provider.IsExistingName(name))
             name
 
-    and (* type *)
-
-        /// <summary>
-        /// Add support for automation on py files.
-        /// </summary>
+    and /// Add support for automation on py files.
         [<ComVisible(true)>]
         [<Guid("F88F0B48-A3BA-4069-B465-AA4C8F92ECD7")>]
         public OAFSharpFileItem(project:OAProject, node:FileNode) = 
@@ -3258,9 +3215,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                   base.Open(EnvDTE.Constants.vsViewKindDesigner)
               else
                   base.Open(viewKind)
-    and (* type *)
 
-        [<ComVisible(true)>]
+    and [<ComVisible(true)>]
         public OAFSharpProject(fsharpProject:FSharpProjectNode) =
             inherit OAProject(fsharpProject)
 
