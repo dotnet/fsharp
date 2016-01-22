@@ -13788,7 +13788,6 @@ module EstablishTypeDefinitionCores = begin
             if isForcedSuppressRelocate && canAccessFromEverywhere tycon.Accessibility && not cenv.isScript then 
                 errorR(Error(FSComp.SR.tcGeneratedTypesShouldBeInternalOrPrivate(),tcref.Range))
 
-            let isSuppressRelocate = cenv.g.isInteractive || isForcedSuppressRelocate
     
             // Adjust the representation of the container type
             let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment,theRootTypeWithRemapping,
