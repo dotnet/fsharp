@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.TimeStamp
 
 open System
 open System.IO
@@ -11,7 +11,8 @@ open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 
-type TimeStampTests()  = 
+[<TestFixture>]
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     (* Timings ----------------------------------------------------------------------------- *)
@@ -186,6 +187,7 @@ type TimeStampTests()  =
         // Add a new reference project2->project1. There should be no completions because Mary doesn't exist yet.
         this.AddAssemblyReference(project2,project1Dll.ExecutableOutput)
         TakeCoffeeBreak(this.VS) // Dependencies between projects get registered for file-watching during OnIdle processing
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreEqual(0, completions.Length)
@@ -198,6 +200,7 @@ type TimeStampTests()  =
         SaveFileToDisk file1      
         time1 Build project1 "Time to build project1 second time" |> ignore                       
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
         let completions = AutoCompleteAtCursor(file2)
@@ -238,6 +241,7 @@ type TimeStampTests()  =
         // Add a new reference project2->project1. There should be no completions because Mary doesn't exist yet.
         this.AddAssemblyReference(project2,project1DllRelative)
         TakeCoffeeBreak(this.VS) // Dependencies between projects get registered for file-watching during OnIdle processing
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreEqual(0, completions.Length)
@@ -250,6 +254,7 @@ type TimeStampTests()  =
         SaveFileToDisk file1      
         time1 Build project1 "Time to build project1 second time" |> ignore                       
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
         let completions = AutoCompleteAtCursor(file2)
@@ -290,6 +295,7 @@ type TimeStampTests()  =
         TakeCoffeeBreak(this.VS) // Dependencies between projects get registered for file-watching during OnIdle processing
         SetConfigurationAndPlatform(project1, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
         SetConfigurationAndPlatform(project2, "Debug|AnyCPU")  // maybe due to msbuild bug on dev10, we must set config/platform when building with ProjectReferences
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreEqual(0, completions.Length)
@@ -302,6 +308,7 @@ type TimeStampTests()  =
         SaveFileToDisk file1   
         time1 Build project1 "Time to build project1 second time" |> ignore                       
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
         let completions = AutoCompleteAtCursor(file2)
@@ -310,23 +317,14 @@ type TimeStampTests()  =
 
 
 //Allow the TimeStampTests run under different context
-namespace UnitTests.Tests.LanguageService.TimeStamp
-open UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.TimeStamp
+open Tests.LanguageService
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 open NUnit.Framework
 open Salsa.Salsa
 
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit TimeStampTests
-   new() = { inherit TimeStampTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit TimeStampTests
-    new() = { inherit TimeStampTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

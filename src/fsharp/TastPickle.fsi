@@ -145,7 +145,7 @@ val internal u_typ : unpickler<TType>
 val internal unpickleCcuInfo : ReaderState -> PickledCcuInfo
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
-val internal unpickleObjWithDanglingCcus : string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef -> ('T  unpickler) -> byte[] ->  PickledDataWithReferences<'T>
+val internal unpickleObjWithDanglingCcus : string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> ('T  unpickler) -> byte[] ->  PickledDataWithReferences<'T>
 
 
 

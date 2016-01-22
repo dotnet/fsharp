@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.AutoCompletion
 
 open System
+open Salsa.Salsa
 open Salsa.VsMocks
 open Salsa.VsOpsUtils
 open NUnit.Framework
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open Salsa.Salsa
-
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module StandardSettings = 
@@ -24,7 +24,8 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-type AutoCompletionListTests() as this  = 
+[<TestFixture>] 
+type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
     let createFile (code : list<string>) fileKind refs = 
@@ -230,6 +231,28 @@ type AutoCompletionListTests() as this  =
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)      
 
+   /////Helper Functios 
+        //DotCompList ContainAll At End Of Marker Helper Function
+    member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
+        let (solution, project, file) = this.CreateSingleFileProject(fileContents)
+        let completions = DotCompletionAtEndOfMarker file marker
+        AssertCompListContainsAll(completions, list)
+    
+        //DoesNotContainAny At Start Of Marker Helper Function 
+    member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : list<string>) =
+        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
+
+        let completions = DotCompletionAtStartOfMarker file marker
+        AssertCompListDoesNotContainAny(completions, list)
+  
+        //DotCompList Is Empty At Start Of Marker Helper Function
+    member private this.VerifyDotCompListIsEmptyAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
+        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
+
+        let completions = DotCompletionAtStartOfMarker file marker
+        AssertCompListIsEmpty(completions)  
+               
+
     [<Test>]
     member this.``AutoCompletion.ObjectMethods``() = 
         let code =
@@ -312,7 +335,7 @@ type AutoCompletionListTests() as this  =
     [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
-        let extraRefs = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let extraRefs = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
         let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect
 
         let code = 
@@ -2102,7 +2125,7 @@ let x = new MyClass2(0)
                                 t.I"""],
             marker = "t.I",
             expected = "IM1",    
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2115,7 +2138,7 @@ let x = new MyClass2(0)
                                 t.Eve"""],
             marker = "t.Eve", 
             expected = "Event1",          
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2127,7 +2150,7 @@ let x = new MyClass2(0)
                                 type boo = N1.T<in"""],
             marker = "T<in",  
             expected = "int",  
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
         
     // In this bug, pressing dot after this was producing an invalid member list.       
@@ -4176,6 +4199,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file2,"x.")
         AutoCompleteAtCursor file2 |> ignore
 
+        TakeCoffeeBreak(this.VS)
+
         // Start the key instrumentation
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         
@@ -5158,38 +5183,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           marker = "gro",
           contained = [ "groupBy"; "groupJoin"; "groupValBy";])
 
-//****************************************//
-type DotCompletionListTests()  = 
-    inherit LanguageServiceBaseTests()
-
-   /////Helper Functios 
-        //DotCompList ContainAll At End Of Marker Helper Function
-    member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents)
-        let completions = DotCompletionAtEndOfMarker file marker
-        AssertCompListContainsAll(completions, list)
-    
-        //DotCompList ContainAll methods and properties At Start Of Marker Helper Function
-    member private this.VerifyDotCompListContainAllAtStartOfMarker(fileContents : string, marker : string, list :string list, ?addtlRefAssy : list<string>, ?coffeeBreak:bool) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
-        if defaultArg coffeeBreak false then TakeCoffeeBreak(this.VS)
-        let completions = DotCompletionAtStartOfMarker file marker
-        AssertCompListContainsAll(completions, list)
-
-        //DoesNotContainAny At Start Of Marker Helper Function 
-    member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : list<string>) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
-
-        let completions = DotCompletionAtStartOfMarker file marker
-        AssertCompListDoesNotContainAny(completions, list)
-  
-        //DotCompList Is Empty At Start Of Marker Helper Function
-    member private this.VerifyDotCompListIsEmptyAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
-
-        let completions = DotCompletionAtStartOfMarker file marker
-        AssertCompListIsEmpty(completions)  
-               
     [<Test>]
     member this.``Namespace.System``() =
         this.VerifyDotCompListContainAllAtEndOfMarker(
@@ -5386,7 +5379,7 @@ type DotCompletionListTests()  =
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Equals";"GetHashCode"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5399,7 +5392,7 @@ type DotCompletionListTests()  =
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Event1"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5412,7 +5405,7 @@ type DotCompletionListTests()  =
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["IM1"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5424,7 +5417,7 @@ type DotCompletionListTests()  =
                                 type XXX = N1.T1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         // should _not_ have it here
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5432,7 +5425,7 @@ type DotCompletionListTests()  =
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5445,7 +5438,7 @@ type DotCompletionListTests()  =
                                 t.Event1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["AddHandler";"RemoveHandler"],            
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5457,7 +5450,7 @@ type DotCompletionListTests()  =
             fileContents = """ 
                                 let t = N.T.M(*Marker*)()""",
             marker = "(*Marker*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5471,7 +5464,7 @@ type DotCompletionListTests()  =
                                 let t = N.T.StaticProp(*Marker*)""",
             marker = "(*Marker*)",
             list = ["GetType"; "Equals"],   // just a couple of System.Object methods: we expect them to be there!
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
                                           
     [<Test>]
     member this.CompListInDiffFileTypes() =
@@ -7710,41 +7703,11 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
-// Allow the CompletionListTests run under different context
-namespace UnitTests.Tests.LanguageService.CompletionList
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>]
-[<Category("LanguageService.MSBuild")>] 
-type ``AutoCompletionMSBuild`` = 
-   inherit AutoCompletionListTests
-   new() = { inherit AutoCompletionListTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``AutoCompletionProjectSystem`` = 
-    inherit AutoCompletionListTests
-    new() = { inherit AutoCompletionListTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``DotCompletionMSBuild`` = 
-   inherit DotCompletionListTests
-   new() = { inherit DotCompletionListTests(VsOpts = fst (Models.MSBuild())); }
-
-// Context project system
-[<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``DotCompletionProjectSystem`` = 
-    inherit DotCompletionListTests
-    new() = { inherit DotCompletionListTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 
 
                
