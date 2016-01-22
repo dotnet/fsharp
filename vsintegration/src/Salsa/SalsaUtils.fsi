@@ -81,9 +81,8 @@ module internal VsOpsUtils =
     val GetQuickInfoAtCursor              : OpenFile -> string   
     val GetQuickInfoAndSpanAtCursor       : OpenFile -> string*TextSpan
     val GetNameOfOpenFile                 : OpenFile -> string
-    val GetCheckOptionsOfScript           : OpenFile -> CheckOptions
-    val GetParameterInfoAtCursor          : OpenFile -> MethodListForAMethodTip
-    val GetParameterInfoAtCursorNoFallback: OpenFile -> MethodListForAMethodTip
+    val GetProjectOptionsOfScript           : OpenFile -> FSharpProjectOptions
+    val GetParameterInfoAtCursor          : OpenFile -> MethodListForAMethodTip option
     val GetTokenTypeAtCursor              : OpenFile -> Salsa.Salsa.TokenType
     val GetIdentifierAtCursor             : OpenFile -> (string * int) option
     val GetF1KeywordAtCursor              : OpenFile -> string option

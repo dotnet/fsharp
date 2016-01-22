@@ -6,7 +6,6 @@ open System
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.FSharp.Shared
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
