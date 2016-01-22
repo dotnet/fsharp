@@ -2,25 +2,17 @@
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 open System.Collections.Generic
-open System.Collections
 open System.Diagnostics
-open System.Globalization
-open System.ComponentModel.Design
-open System.Runtime.InteropServices
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop 
 open Microsoft.VisualStudio.TextManager.Interop 
-open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
-open Internal.Utilities.Debug
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
     
@@ -33,9 +25,7 @@ module internal OperatorToken =
 
 module internal GotoDefinition =
     
-    module Parser = Microsoft.FSharp.Compiler.Parser  
-
-    let GotoDefinition (colourizer: FSharpColorizer, typedResults : TypeCheckResults, textView : IVsTextView, line : int, col : int) : GotoDefinitionResult =
+    let GotoDefinition (colourizer: FSharpColorizer, typedResults : FSharpCheckFileResults, textView : IVsTextView, line : int, col : int) : GotoDefinitionResult =
         
         let ls = textView.GetBuffer() |> Com.ThrowOnFailure1
         let len = ls.GetLengthOfLine line |> Com.ThrowOnFailure1
@@ -73,20 +63,20 @@ module internal GotoDefinition =
                         Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
                         |> GotoDefinitionResult.MakeError
                     else
-                      match typedResults.GetDeclarationLocation ((line, colIdent), lineStr, qualId, tag, false) with
-                      | DeclFound ((r, c), file) -> 
-                          let span = TextSpan (iStartLine = r, iEndLine = r, iStartIndex = c, iEndIndex = c) 
-                          GotoDefinitionResult.MakeSuccess(file, span)
-                      | FindDeclResult.DeclNotFound(reason) ->
+                      match typedResults.GetDeclarationLocationAlternate (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
+                      | FSharpFindDeclResult.DeclFound m -> 
+                          let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
+                          GotoDefinitionResult.MakeSuccess(m.FileName, span)
+                      | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else
                           Trace.Write("LanguageService", sprintf "Goto definition failed: Reason %+A" reason)
                           let text = 
                               match reason with                    
-                              | FindDeclFailureReason.Unknown -> Strings.Errors.GotoDefinitionFailed()
-                              | FindDeclFailureReason.NoSourceCode -> Strings.Errors.GotoDefinitionFailed_NoSourceCode()
-                              | FindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
-                              | FindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
+                              | FSharpFindDeclFailureReason.Unknown -> Strings.Errors.GotoDefinitionFailed()
+                              | FSharpFindDeclFailureReason.NoSourceCode -> Strings.Errors.GotoDefinitionFailed_NoSourceCode()
+                              | FSharpFindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
+                              | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
                           GotoDefinitionResult.MakeError text
                 else 
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")

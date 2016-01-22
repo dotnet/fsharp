@@ -19,6 +19,8 @@ let tracking = ref false // intended to be a general hook to control diagnostic 
 let condition _s = 
     try (System.Environment.GetEnvironmentVariable(_s) <> null) with _ -> false
 
+let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
+
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 
 //-------------------------------------------------------------------------

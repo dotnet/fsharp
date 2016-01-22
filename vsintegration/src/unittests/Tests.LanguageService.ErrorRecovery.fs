@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.ErrorRecovery
 
 open System
 open System.IO
@@ -10,8 +10,10 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type ErrorRecoveryTests()  = 
+[<TestFixture>] 
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     //Verify the error list containd the expected string
@@ -263,24 +265,8 @@ type ErrorRecoveryTests()  =
              ]
             )
 
-//Allow the TimeStampTests run under different context
-namespace UnitTests.Tests.LanguageService.ErrorRecovery
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ErrorRecoveryTests
-   new() = { inherit ErrorRecoveryTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ErrorRecoveryTests
-    new() = { inherit ErrorRecoveryTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

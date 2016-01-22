@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests
+namespace Tests.DataTypeProviders
 
 open System.IO
 open NUnit.Framework
@@ -10,7 +10,7 @@ module CF = Microsoft.FSharp.Data.TypeProviders.DesignTime.ConfigFiles
 module Util = Microsoft.FSharp.Data.TypeProviders.Utility.Util
 
 [<TestFixture>]
-type TypeProviderImplTests() = 
+type ImplDetails() = 
     
     [<Test>]
     member public this.``SanitizeFileName``() = 

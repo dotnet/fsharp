@@ -115,6 +115,14 @@ let ActivePatternElemsOfModuleOrNamespace (modref:ModuleOrNamespaceRef) : NameMa
 // Name Resolution Items
 //------------------------------------------------------------------------- 
 
+/// Detect a use of a nominal type, including type abbreviations.
+///
+/// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
+let (|AbbrevOrAppTy|_|) (typ: TType) = 
+    match stripTyparEqns typ with 
+    | TType_app (tcref,_) -> Some tcref
+    | _ -> None
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
 type ArgumentContainer =
@@ -173,7 +181,7 @@ type Item =
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
     /// Represents the resolution of a name to a type variable
-    | TypeVar of string 
+    | TypeVar of string * Typar
     /// Represents the resolution of a name to a module or namespace
     | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
     /// Represents the resolution of a name to an operator
@@ -193,7 +201,7 @@ type Item =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
         Item.CtorGroup (nm,minfos)
 
-    member d.DisplayName g = 
+    member d.DisplayName = 
         match d with
         | Item.Value v -> v.DisplayName
         | Item.ActivePatternCase apref -> apref.Name
@@ -206,10 +214,11 @@ type Item =
         | Item.Property(nm,_) -> nm
         | Item.MethodGroup(nm,_) -> nm
         | Item.CtorGroup(nm,_) -> DemangleGenericTypeName nm
-        | Item.FakeInterfaceCtor typ 
-        | Item.DelegateCtor typ -> DemangleGenericTypeName (tcrefOfAppTy g typ).LogicalName
+        | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
+        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
         | Item.Types(nm,_) -> DemangleGenericTypeName nm
-        | Item.TypeVar nm -> nm
+        | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
+        | Item.TypeVar (nm,_) -> nm
         | Item.ModuleOrNamespaces(modref :: _) ->  modref.DemangledModuleOrNamespaceName
         | Item.ArgName (id, _, _)  -> id.idText
         | Item.SetterArg (id, _) -> id.idText
@@ -1088,12 +1097,283 @@ type ItemOccurence =
     | UseInAttribute 
     /// Inside pattern matching
     | Pattern 
+    /// Abstract slot gets implemented
+    | Implemented
+    /// Result gets suppressed over this text range
+    | RelatedText
   
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType : pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyFormatSpecifierLocation : range -> unit
+    abstract CurrentSource : string option
+
+let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
+let (|ValRefOfMeth|_|) (mi : MethInfo) = mi.ArbitraryValRef
+let (|ValRefOfEvent|_|) (evt : EventInfo) = evt.ArbitraryValRef
+
+let rec (|RecordFieldUse|_|) (item : Item) = 
+    match item with
+    | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, name))) -> Some (name, tcref)
+    | Item.SetterArg(_, RecordFieldUse(f)) -> Some(f)
+    | _ -> None
+
+let rec (|ILFieldUse|_|) (item : Item) = 
+    match item with
+    | Item.ILField(finfo) -> Some(finfo)
+    | Item.SetterArg(_, ILFieldUse(f)) -> Some(f)
+    | _ -> None
+
+let rec (|PropertyUse|_|) (item : Item) = 
+    match item with
+    | Item.Property(_, pinfo::_) -> Some(pinfo)
+    | Item.SetterArg(_, PropertyUse(pinfo)) -> Some(pinfo)
+    | _ -> None
+
+let rec (|FSharpPropertyUse|_|) (item : Item) = 
+    match item with
+    | Item.Property(_, [ValRefOfProp vref]) -> Some(vref)
+    | Item.SetterArg(_, FSharpPropertyUse(propDef)) -> Some(propDef)
+    | _ -> None
+
+let (|MethodUse|_|) (item : Item) = 
+    match item with
+    | Item.MethodGroup(_, [minfo]) -> Some(minfo)
+    | _ -> None
+
+let (|FSharpMethodUse|_|) (item : Item) = 
+    match item with
+    | Item.MethodGroup(_, [ValRefOfMeth vref]) -> Some(vref)
+    | Item.Value(vref) when vref.IsMember -> Some(vref)
+    | _ -> None
+
+let (|EntityUse|_|) (item: Item) = 
+    match item with 
+    | Item.UnqualifiedType (tcref:: _) -> Some tcref
+    | Item.ExnCase(tcref) -> Some tcref
+    | Item.Types(_, [AbbrevOrAppTy tcref]) 
+    | Item.DelegateCtor(AbbrevOrAppTy tcref) 
+    | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
+    | Item.CtorGroup(_, ctor::_) -> 
+        match ctor.EnclosingType with 
+        | AbbrevOrAppTy tcref -> Some tcref
+        | _ -> None
+    | _ -> None
+
+let (|EventUse|_|) (item : Item) = 
+    match item with
+    | Item.Event(einfo) -> Some einfo
+    | _ -> None
+
+let (|FSharpEventUse|_|) (item : Item) = 
+    match item with
+    | Item.Event(ValRefOfEvent vref) -> Some vref
+    | _ -> None
+
+let (|UnionCaseUse|_|) (item : Item) = 
+    match item with
+    | Item.UnionCase(UnionCaseInfo(_, u1),_) -> Some u1
+    | _ -> None
+
+let (|ValUse|_|) (item:Item) = 
+    match item with 
+    | Item.Value vref 
+    | FSharpPropertyUse vref
+    | FSharpMethodUse vref
+    | FSharpEventUse vref
+    | Item.CustomBuilder(_, vref) -> Some vref
+    | _ -> None
+
+let (|ActivePatternCaseUse|_|) (item:Item) = 
+    match item with 
+    | Item.ActivePatternCase(APElemRef(_, vref, idx)) -> Some (vref.SigRange, vref.DefinitionRange, idx)
+    | Item.ActivePatternResult(ap, _, idx,_) -> Some (ap.Range, ap.Range, idx)
+    | _ -> None
+
+let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
+    tyconRefEq g eref1 eref2 
+    // Signature items considered equal to implementation items
+    || ((eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
+        (eref1.LogicalName = eref2.LogicalName))
+
+let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
+    valRefEq g vref1 vref2 
+    // Signature items considered equal to implementation items
+    || ((vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange)) && 
+        (vref1.LogicalName = vref2.LogicalName)
+
+let unionCaseRefDefnEq g (uc1:UnionCaseRef) (uc2: UnionCaseRef) =
+    uc1.CaseName = uc2.CaseName && tyconRefDefnEq g uc1.TyconRef uc2.TyconRef
+
+/// Given the Item 'orig' - returns function 'other : Item -> bool', that will yield true if other and orig represents the same item and false - otherwise
+let ItemsAreEffectivelyEqual g orig other = 
+    match orig, other  with
+    | EntityUse ty1, EntityUse ty2 -> 
+        tyconRefDefnEq g ty1 ty2
+
+    | Item.TypeVar (nm1,tp1), Item.TypeVar (nm2,tp2) -> 
+        nm1 = nm2 && 
+        (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) || 
+         match stripTyparEqns (mkTyparTy tp1), stripTyparEqns (mkTyparTy tp2) with 
+         | TType_var tp1, TType_var tp2 -> 
+            not tp1.IsCompilerGenerated && not tp1.IsFromError && 
+            not tp2.IsCompilerGenerated && not tp2.IsFromError && 
+            tp1.Range = tp2.Range
+         | AbbrevOrAppTy tcref1, AbbrevOrAppTy tcref2 -> 
+            tyconRefDefnEq g tcref1 tcref2
+         | _ -> false)
+
+    | ValUse vref1, ValUse vref2 -> 
+        valRefDefnEq g vref1 vref2 
+
+    | ActivePatternCaseUse (range1, range1i, idx1), ActivePatternCaseUse (range2, range2i, idx2) -> 
+        (idx1 = idx2) && (range1 = range2 || range1i = range2i)
+
+    | MethodUse minfo1, MethodUse minfo2 -> 
+        MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2 ||
+        // Allow for equality up to signature matching
+        match minfo1.ArbitraryValRef, minfo2.ArbitraryValRef with 
+        | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2 
+        | _ -> false
+
+    | PropertyUse(pinfo1), PropertyUse(pinfo2) -> 
+        PropInfo.PropInfosUseIdenticalDefinitions pinfo1 pinfo2 ||
+        // Allow for equality up to signature matching
+        match pinfo1.ArbitraryValRef, pinfo2.ArbitraryValRef with 
+        | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2 
+        | _ -> false
+
+    | Item.ArgName (id1,_, _), Item.ArgName (id2,_, _) -> 
+        (id1.idText = id2.idText && id1.idRange = id2.idRange)
+
+    | (Item.ArgName (id,_, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) -> 
+        (id.idText = vref.DisplayName && 
+         (id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange))
+
+    | ILFieldUse f1, ILFieldUse f2 -> 
+        ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2 
+
+    | UnionCaseUse u1, UnionCaseUse u2 ->  
+        unionCaseRefDefnEq g u1 u2
+
+    | RecordFieldUse(name1, tcref1), RecordFieldUse(name2, tcref2) -> 
+        name1 = name2 && tyconRefDefnEq g tcref1 tcref2
+
+    | EventUse evt1, EventUse evt2 -> 
+        EventInfo.EventInfosUseIdenticalDefintions evt1 evt2  ||
+        // Allow for equality up to signature matching
+        match evt1.ArbitraryValRef, evt2.ArbitraryValRef with 
+        | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2 
+        | _ -> false
+
+    | Item.ModuleOrNamespaces modrefs1, Item.ModuleOrNamespaces modrefs2 ->
+        modrefs1 |> List.exists (fun modref1 -> modrefs2 |> List.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
+
+    | _ -> false
+
+[<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
+type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =
+    member this.Pos = p
+    member this.Item = i
+    member this.ItemOccurence = io
+    member this.DisplayEnv = de
+    member this.NameResolutionEnv = nre
+    member this.AccessorDomain = ad
+    member this.Range = m
+    member this.DebugToString() = 
+        sprintf "%A: %+A" (p.Line, p.Column) i
+
+/// Represents container for all name resolutions that were met so far when typechecking some particular file
+type TcResolutions
+    (capturedEnvs : ResizeArray<range * NameResolutionEnv * AccessorDomain>,
+     capturedExprTypes : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
+     capturedNameResolutions : ResizeArray<CapturedNameResolution>,
+     capturedMethodGroupResolutions : ResizeArray<CapturedNameResolution>) = 
+
+    static let empty = TcResolutions(ResizeArray(0),ResizeArray(0),ResizeArray(0),ResizeArray(0))
+    
+    member this.CapturedEnvs = capturedEnvs
+    member this.CapturedExpressionTypings = capturedExprTypes
+    member this.CapturedNameResolutions = capturedNameResolutions
+    member this.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
+
+    static member Empty = empty
+
+
+/// Represents container for all name resolutions that were met so far when typechecking some particular file
+type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
+
+    member this.GetUsesOfSymbol(item) = 
+        [| for cnr in capturedNameResolutions do
+               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnr.Item) then
+                  yield cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range |]
+
+    member this.GetAllUsesOfSymbols() = 
+        [| for cnr in capturedNameResolutions do
+              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+
+    member this.GetFormatSpecifierLocations() =  formatSpecifierLocations
+
+
+/// An accumulator for the results being emitted into the tcSink.
+type TcResultsSinkImpl(g, ?source: string) =
+    let capturedEnvs = ResizeArray<_>()
+    let capturedExprTypings = ResizeArray<_>()
+    let capturedNameResolutions = ResizeArray<_>()
+    let capturedFormatSpecifierLocations = ResizeArray<_>()
+    let capturedNameResolutionIdentifiers = 
+        new System.Collections.Generic.Dictionary<pos * string, unit>
+            ( { new IEqualityComparer<_> with 
+                    member __.GetHashCode((p:pos,i)) = p.Line + 101 * p.Column + hash i
+                    member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
+    let capturedMethodGroupResolutions = ResizeArray<_>()
+    let allowedRange (m:range) = not m.IsSynthetic       
+
+    member this.GetResolutions() = 
+        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
+
+    member this.GetSymbolUses() = 
+        TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
+
+    interface ITypecheckResultsSink with
+        member sink.NotifyEnvWithScope(m,nenv,ad) = 
+            if allowedRange m then 
+                capturedEnvs.Add((m,nenv,ad)) 
+
+        member sink.NotifyExprHasType(endPos,ty,denv,nenv,ad,m) = 
+            if allowedRange m then 
+                capturedExprTypings.Add((endPos,ty,denv,nenv,ad,m))
+
+        member sink.NotifyNameResolution(endPos,item,itemMethodGroup,occurenceType,denv,nenv,ad,m) = 
+            // Desugaring some F# constructs (notably computation expressions with custom operators)
+            // results in duplication of textual variables. So we ensure we never record two name resolutions 
+            // for the same identifier at the same location.
+            if allowedRange m then 
+                let keyOpt = 
+                    match item with
+                    | Item.Value vref -> Some (endPos, vref.DisplayName)
+                    | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
+                    | _ -> None
+
+                let alreadyDone = 
+                    match keyOpt with
+                    | Some key ->
+                        let res = capturedNameResolutionIdentifiers.ContainsKey key
+                        if not res then capturedNameResolutionIdentifiers.Add (key, ()) |> ignore
+                        res
+                    | _ -> false
+                
+                if not alreadyDone then 
+                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,occurenceType,denv,nenv,ad,m)) 
+                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,occurenceType,denv,nenv,ad,m)) 
+
+        member sink.NotifyFormatSpecifierLocation(m) = 
+            capturedFormatSpecifierLocations.Add(m)
+
+        member sink.CurrentSource = source
+
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
@@ -1609,11 +1889,14 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     | ResolveTypeNamesToTypeRefs -> 
                         OneSuccess (resInfo,Item.Types (nm,nestedTypes),rest)
             else 
-                ResolveLongIdentInTypes ncenv nenv lookupKind resInfo (depth+1) m ad rest findFlag typeNameResInfo nestedTypes
+                ResolveLongIdentInNestedTypes ncenv nenv lookupKind resInfo (depth+1) id m ad rest findFlag typeNameResInfo nestedTypes
         (OneResult contentsSearchAccessible +++ nestedSearchAccessible)
         
-and ResolveLongIdentInTypes (ncenv:NameResolver) nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typs = 
-    typs |> CollectResults (ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo >> AtMostOneResult m) 
+and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad lid findFlag typeNameResInfo typs = 
+    typs |> CollectResults (fun typ -> 
+        let resInfo = if isAppTy ncenv.g typ then resInfo.AddEntity(id.idRange,tcrefOfAppTy ncenv.g typ) else resInfo
+        ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typ 
+        |> AtMostOneResult m) 
 
 /// Resolve a long identifier using type-qualified name resolution.
 let ResolveLongIdentInType sink ncenv nenv lookupKind m ad lid findFlag typeNameResInfo typ =
@@ -2025,6 +2308,8 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
 let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInfo ad m tcref (lid: Ident list) =
     let resInfo,tcref = ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref lid)
     ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true));
+    let item = Item.Types(tcref.DisplayName,[FreshenTycon ncenv m tcref])
+    CallNameResolutionSink sink (rangeOfLid lid,nenv,item,item,ItemOccurence.UseInType,nenv.eDisplayEnv,ad)
     tcref
 
 
@@ -2219,8 +2504,12 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
         if nonNil rest then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange));
         [(resInfo,item)]
 
-let ResolveField (_sink: TcResultsSink) ncenv nenv ad typ (mp,id) =
+let ResolveField sink ncenv nenv ad typ (mp,id) =
     let res = ResolveFieldPrim ncenv nenv ad typ (mp,id)
+    // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
+    // info is only non-empty if there was a unique resolution of the field)
+    for (resInfo,_rfref) in res do
+        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.UseInType, ad,resInfo,ResultTyparChecker(fun () -> true));
     res  |> List.map snd
 
 /// Generate a new reference to a record field with a fresh type instantiation
@@ -2320,8 +2609,16 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
     
     // Record the precise resolution of the field for intellisense
     let item = FilterMethodGroups ncenv itemRange item true
+    // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part
+    let isFakeIdents =
+        match lid with
+        | [] | [_] -> false
+        | head :: ids ->
+            ids |> List.forall (fun id -> id.idRange = head.idRange)
+
     let callSink refinedItem =
-        CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, ItemOccurence.Use, nenv.DisplayEnv, ad);
+        if not isFakeIdents then
+            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, ItemOccurence.Use, nenv.DisplayEnv, ad)
     let afterOverloadResolution =
         match sink.CurrentSink with
         |   None -> AfterOverloadResolution.DoNothing

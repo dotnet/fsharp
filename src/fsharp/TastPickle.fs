@@ -154,7 +154,7 @@ type ReaderState =
     inlerefs: InputTable<NonLocalEntityRef>; 
     isimpletyps: InputTable<TType>;
     ifile: string;
-    iILModule : ILModuleDef // the Abstract IL metadata for the DLL being read
+    iILModule : ILModuleDef option // the Abstract IL metadata for the DLL being read
   }
 
 let ufailwith st str = ffailwith st.ifile str
@@ -731,7 +731,7 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
         // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef) u (phase2bytes:byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) =
     let st2 = 
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length); 
          iilscope= ilscope;
@@ -1840,7 +1840,7 @@ and p_ValData x st =
       ( x.val_logical_name,
         x.val_compiled_name,
         // only keep range information on published values, not on optimization data
-        (if x.val_repr_info.IsSome then Some(x.val_range, x.val_defn_range) else None),
+        (if x.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None),
         x.val_type,
         x.val_flags.PickledBits,
         x.val_member_info,
@@ -1887,13 +1887,16 @@ and u_tycon_repr st =
             (fun flagBit -> 
                 if flagBit then 
                     let iltref = v.TypeRef
+                    match st.iILModule with 
+                    | None -> TNoRepr
+                    | Some iILModule -> 
                     try 
                         let rec find acc enclosingTypeNames (tdefs:ILTypeDefs) = 
                             match enclosingTypeNames with 
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
                             | h::t -> let nestedTypeDef = tdefs.FindByName h
                                       find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
-                        let nestedILTypeDefs,ilTypeDef = find [] iltref.Enclosing st.iILModule.TypeDefs
+                        let nestedILTypeDefs,ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
                         TILObjModelRepr(st.iilscope,nestedILTypeDefs,ilTypeDef)
                     with _ -> 
                         System.Diagnostics.Debug.Assert(false, sprintf "failed to find IL backing metadata for cross-assembly generated type %s" iltref.FullName)
@@ -1915,7 +1918,14 @@ and u_tycon_objmodel_data st =
   
 and u_unioncase_spec st = 
     let a,b,c,d,e,f,i = u_tup7 u_rfield_table u_typ u_string u_ident u_attribs u_string u_access st
-    {FieldTable=a; ReturnType=b; CompiledName=c; Id=d; Attribs=e;XmlDoc=XmlDoc.Empty;XmlDocSig=f;Accessibility=i }
+    {FieldTable=a; 
+     ReturnType=b; 
+     CompiledName=c; 
+     Id=d; 
+     Attribs=e;
+     XmlDoc=XmlDoc.Empty;
+     XmlDocSig=f;Accessibility=i; 
+     OtherRangeOpt=None }
     
 and u_exnc_spec_data st = u_entity_spec_data st 
 
@@ -1961,7 +1971,8 @@ and u_recdfield_spec st =
       rfield_fattribs=e2;
       rfield_xmldoc=XmlDoc.Empty;
       rfield_xmldocsig=f; 
-      rfield_access=g }
+      rfield_access=g
+      rfield_other_range = None }
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
@@ -1995,6 +2006,7 @@ and u_entity_spec_data st : EntityData =
       entity_logical_name=x2a;
       entity_compiled_name=x2b;
       entity_range=x2c;
+      entity_other_range=None;
       entity_pubpath=x3;
       entity_accessiblity=x4a;
       entity_tycon_repr_accessibility=x4b;
@@ -2129,7 +2141,7 @@ and u_ValData st =
     { val_logical_name=x1;
       val_compiled_name=x1z;
       val_range=(match x1a with None -> range0 | Some(a,_) -> a);
-      val_defn_range=(match x1a with None -> range0 | Some(_,b) -> b);
+      val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true));
       val_type=x2;
       val_stamp=newStamp();
       val_flags=ValFlags(x4);
