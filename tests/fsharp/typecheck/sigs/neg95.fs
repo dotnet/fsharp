@@ -1,11 +1,9 @@
 
 module Test
 
-[<Struct;CLIMutable>]
+[<Struct>]
 type StructRecord =
     {
         X: float
-        Y: float
+        Y: StructRecord
     }
-
-let x = StructRecord ()

@@ -5,7 +5,10 @@ module Test
 type StructRecord =
     {
         X: float
-        Y: float
+        mutable Y: float
     }
 
-let x = StructRecord ()
+let x = { X = 1.; Y = 1. }
+
+x.Y <- 5.
+
