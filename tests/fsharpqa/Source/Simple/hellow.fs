@@ -1,4 +1,4 @@
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 
 //<<Output
 //Hello, world.

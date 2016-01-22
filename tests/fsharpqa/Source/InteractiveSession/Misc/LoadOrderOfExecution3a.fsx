@@ -1,6 +1,6 @@
 // #Regression #NoMT #FSI 
 // Regression test for FSHARP1.0:5427
-//<Expects Status="success"></Expects>
+//<Expects status="success"></Expects>
 
 //<<Output
 //let f x = x \+ 1
