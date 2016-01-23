@@ -1795,14 +1795,12 @@ let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
         match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
         | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
         | None ->
-            match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
-            | None -> errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
-            | Some compilerPath ->
-                let fsharpCoreSourcePath = Path.Combine(compilerPath, fsharpCoreAssemblyName)
-                if File.Exists(fsharpCoreSourcePath) then
-                    File.Copy(fsharpCoreSourcePath, fsharpCoreDestinationPath)
-                else
-                    errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+            let compilerLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
+            if File.Exists(compilerFsharpCoreDllPath) then
+                File.Copy(compilerFsharpCoreDllPath, fsharpCoreDestinationPath)
+            else
+                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
