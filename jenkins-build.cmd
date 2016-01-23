@@ -118,6 +118,8 @@ REM Actually run the tests
 call src\update.cmd %BUILD_PROFILE% -ngen
 call vsintegration\update-vsintegration.cmd %BUILD_PROFILE%
 
+cd tests
+
 call RunTests.cmd %BUILD_PROFILE% fsharp Smoke
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
 
