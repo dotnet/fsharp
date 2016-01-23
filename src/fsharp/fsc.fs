@@ -1782,20 +1782,27 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     
     SigningInfo (delaysign,signer,container)
 
-let copyFSharpCore(outFile) =
+// If the --nocopyfsharpcore switch is not specified, this will:
+// 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
+// 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
+// 3) If not, it will produce an error.
+let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
     let outDir = Path.GetDirectoryName(outFile)
-    let fsharpCoreAssemblyName = "FSharp.Core.dll"
+    let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
-    
+
     if not (File.Exists(fsharpCoreDestinationPath)) then
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
-        | None -> errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
-        | Some compilerPath ->
-            let fsharpCoreSourcePath = Path.Combine(compilerPath, fsharpCoreAssemblyName)
-            if File.Exists(fsharpCoreSourcePath) then
-                File.Copy(fsharpCoreSourcePath, fsharpCoreDestinationPath)
-            else
-                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+        match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+        | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
+        | None ->
+            match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+            | None -> errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+            | Some compilerPath ->
+                let fsharpCoreSourcePath = Path.Combine(compilerPath, fsharpCoreAssemblyName)
+                if File.Exists(fsharpCoreSourcePath) then
+                    File.Copy(fsharpCoreSourcePath, fsharpCoreDestinationPath)
+                else
+                    errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
@@ -2022,7 +2029,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
             dprintfn "%s" a.FullName
 
     if tcConfig.copyFSharpCore then
-        copyFSharpCore(outfile)
+        copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 
