@@ -97,7 +97,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fsi", "..\..\src\fsharp\fsi
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests", "..\..\tests\fsharp\FSharp.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualTools.Unittests Support", "VisualTools.Unittests Support", "{3F044931-FB83-4433-B934-AE66AB27B278}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp.Unittests Support", "VisualFSharp.Unittests Support", "{3F044931-FB83-4433-B934-AE66AB27B278}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Unittests", "..\..\src\fsharp\FSharp.Compiler.Unittests\FSharp.Compiler.Unittests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject
