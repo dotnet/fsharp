@@ -231,14 +231,29 @@ let trimRangeToLine (r:range) =
 let stringOfPos   (pos:pos) = sprintf "(%d,%d)" pos.Line pos.Column
 let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
+#if CHECK_LINE0_TYPES // turn on to check that we correctly transform zero-based line counts to one-based line counts
+// Visual Studio uses line counts starting at 0, F# uses them starting at 1 
+[<Measure>] type ZeroBasedLineAnnotation
+
+type Line0 = int<ZeroBasedLineAnnotation>
+#else
+type Line0 = int
+#endif
+type Pos01 = Line0 * int
+type Range01 = Pos01 * Pos01
+
+module Line =
+    // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
+    let fromZ (line:Line0) = int line+1
+    let toZ (line:int) : Line0 = LanguagePrimitives.Int32WithMeasure(line - 1)
 
 module Pos =
-    // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
-    let fromVS line idx = mkPos (line+1) idx 
-    let toVS (p:pos) = (p.Line - 1, p.Column)
+    let fromZ (line:Line0) idx = mkPos (Line.fromZ line) idx 
+    let toZ (p:pos) = (Line.toZ p.Line, p.Column)
 
 
 module Range =
-    let toVS (m:range) = Pos.toVS m.Start, Pos.toVS m.End
+    let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
+    let toFileZ (m:range) = m.FileName, toZ m
 
 

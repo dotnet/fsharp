@@ -103,10 +103,10 @@ Prior to a **Release** test run, you need to do **all** of these:
 
 ## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# SDK on the machine
 
-**Note:** Step #3 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+**Note:** Step #2 below will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
 components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
 
-**Note:** Step #4 will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
+**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
 by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the 
 only way to revert this step.  
 
@@ -131,7 +131,7 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
 
 ### Notes on the build
 
-1. The `update.cmd` script adds the built `FSharp.Core` to the GAC, adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
+1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows

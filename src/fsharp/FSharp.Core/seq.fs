@@ -802,6 +802,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract CheckClose: bool
         abstract LastGenerated : 'T
         
+        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member x.MoveNextImpl() = 
              let active = 
                  if redirect then redirectTo
@@ -836,6 +837,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
+
+            //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl() 
                
             member x.Reset() = raise <| new System.NotSupportedException();

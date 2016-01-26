@@ -214,10 +214,13 @@ module internal FSharpEnvironment =
                 // Property pages (ApplicationPropPage.vb)
 
                 let key20 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
-#if FX_ATLEAST_45
-                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
+#if VS_VERSION_DEV12
+                let key40 = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
+#endif
+#if VS_VERSION_DEV14
+                let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
 #else
-                let key40 = @"Software\Microsoft\FSharp\2.0\Runtime\v4.0"
+                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #endif
                 let key1,key2 = 
                     match FSharpCoreLibRunningVersion with 

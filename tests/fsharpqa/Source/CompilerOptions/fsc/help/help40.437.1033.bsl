@@ -26,6 +26,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                containing F#-specific metadata
 --sig:<file>                   Print the inferred interface of the assembly to
                                a file
+--nocopyfsharpcore             Don't copy FSharp.Core.dll along the produced
+                               binaries
 
 
 		- INPUT FILES -
