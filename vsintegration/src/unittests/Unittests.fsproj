@@ -33,7 +33,6 @@
     <Compile Include="TestLib.ProjectSystem.fs" />
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
-    <Compile Include="Tests.TypeProvidersImpl.fs" />
     <Compile Include="Tests.BaseLine.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
@@ -132,11 +131,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
       <Name>FSharp.Build</Name>
       <Project>{702a7979-bcf9-4c41-853e-3adfc9897890}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSharp.Data.TypeProviders.fsproj">
-      <Project>{cb7d20c4-6506-406d-9144-5342c3595f03}</Project>
-      <Name>FSharp.Data.TypeProviders</Name>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">

@@ -73,17 +73,6 @@ MT402020					Optimizations\AssemblyBoundary (InlineWithPrivateValuesStruct) --Ha
 !CURRENTUICULTURE1033		Printing (LazyValues02NetFx4.fsx) -- Testcase not fully loc
 !CURRENTUICULTURE1033		Printing (LazyValues03NetFx4.fsx) -- Testcase not fully loc
 CHK							Stress (2766.fs) -- failed
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile (E_StaticParamBlank.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_AssemblyIsNotAWebService.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_BackslashBackslash.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_Dot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_EmptyString.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_FsharpFile.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_HttpSite.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\Diagnostics (E_LocWarningAndErrorsFromEdmGen.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Diagnostics (E_UriFormatNotSupported.fsx) -- Testcase not fully loc
 !CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq01.fs) -- Testcase not fully loc
 !CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq02.fs) -- Testcase not fully loc
 !CURRENTUICULTURE1033		TypeProviders\Misc (E_ManyErrors01.fsx) -- DevDiv:311454

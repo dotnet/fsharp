@@ -96,11 +96,6 @@ let private GetFSLibPaths env osArch fscBinPath =
     | Some d when fileExists (d/"FSharp.Core.dll") -> FSCOREDLLNETCORE259PATH <- d
     | Some _ | None -> ()
 
-    // IF EXIST "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
-    match fscBinPath with
-    | Some d when fileExists (d/"FSharp.Data.TypeProviders.dll") -> FSDATATPPATH <- d
-    | Some _ | None -> ()
-
     // set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
     FSCOREDLLPATH <- FSCOREDLLPATH/"FSharp.Core.dll"
     // set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
@@ -113,8 +108,6 @@ let private GetFSLibPaths env osArch fscBinPath =
     FSCOREDLLNETCORE78PATH <- FSCOREDLLNETCORE78PATH/"FSharp.Core.dll"
     // set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
     FSCOREDLLNETCORE259PATH <- FSCOREDLLNETCORE259PATH/"FSharp.Core.dll"
-    // set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
-    FSDATATPPATH <- FSDATATPPATH/"FSharp.Data.TypeProviders.dll"
     // set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
     FSCOREDLLVPREVPATH <- FSCOREDLLVPREVPATH/"FSharp.Core.dll"
 

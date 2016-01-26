@@ -78,24 +78,8 @@
       <OutputSubPath>Code</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
-    <VSTemplate Include="ItemTemplates\ODataServiceConnection\ODataServiceConnection.vstemplate">
-      <OutputSubPath>Data</OutputSubPath>
-      <SubType>Designer</SubType>
-    </VSTemplate>
     <VSTemplate Include="ItemTemplates\SignatureFile\SignatureFile.vstemplate">
       <OutputSubPath>Code</OutputSubPath>
-      <SubType>Designer</SubType>
-    </VSTemplate>
-    <VSTemplate Include="ItemTemplates\SqlDataConnection\SqlDataConnection.vstemplate">
-      <OutputSubPath>Data</OutputSubPath>
-      <SubType>Designer</SubType>
-    </VSTemplate>
-    <VSTemplate Include="ItemTemplates\SqlEntityConnection\SqlEntityConnection.vstemplate">
-      <OutputSubPath>Data</OutputSubPath>
-      <SubType>Designer</SubType>
-    </VSTemplate>
-    <VSTemplate Include="ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.vstemplate">
-      <OutputSubPath>Data</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\AppConfig\AppConfig.vstemplate">
@@ -114,13 +98,9 @@
   <ItemGroup>
     <None Include="ItemTemplates\AppConfig\App.config" />
     <None Include="ItemTemplates\CodeFile\File.fs" />
-    <None Include="ItemTemplates\ODataServiceConnection\ODataServiceConnection.fs" />
     <None Include="ItemTemplates\ScriptFile\File.fsx" />
     <None Include="ItemTemplates\SignatureFile\File.fsi" />
-    <None Include="ItemTemplates\SqlDataConnection\SqlDataConnection.fs" />
-    <None Include="ItemTemplates\SqlEntityConnection\SqlEntityConnection.fs" />
     <None Include="ItemTemplates\TextFile\TextFile.txt" />
-    <None Include="ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.fs" />
     <None Include="ItemTemplates\XMLFile\XMLFile.xml" />
   </ItemGroup>
   <ItemGroup>
