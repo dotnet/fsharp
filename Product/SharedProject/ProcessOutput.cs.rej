@@ -1,0 +1,10 @@
+diff a/Product/SharedProject/ProcessOutput.cs b/Product/SharedProject/ProcessOutput.cs	(rejected hunks)
+@@ -633,7 +633,7 @@ namespace Microsoft.VisualStudioTools.Project {
+         /// Immediately stops the process.
+         /// </summary>
+         public void Kill() {
+-            if (_process != null) {
++            if (_process != null && !_process.HasExited) {
+                 _process.Kill();
+                 FlushAndCloseOutput();
+             }

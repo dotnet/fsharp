@@ -1,0 +1,9 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), build.root))</BuildRoot>
+    <OutputPathSuffix>Tests\</OutputPathSuffix>
+    <IntermediateOutputPathSuffix>obj\Test_$(MSBuildProjectName)\</IntermediateOutputPathSuffix>
+    <CopyLocalReferenceVsixItems>True</CopyLocalReferenceVsixItems>
+  </PropertyGroup>
+  <Import Project="$(BuildRoot)\Build\Common.Build.settings" />
+</Project>
