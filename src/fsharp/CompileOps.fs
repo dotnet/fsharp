@@ -2034,7 +2034,7 @@ type TcConfigBuilder =
 
       mutable exename : string option
       
-      // If trye - the compiler will copy FSharp.Core.dll along the produced binaries
+      // If true - the compiler will copy FSharp.Core.dll along the produced binaries
       mutable copyFSharpCore : bool
 
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
