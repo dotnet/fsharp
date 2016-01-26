@@ -31,7 +31,6 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 
-set GACUTIL="%WINSDKNETFXTOOLS%gacutil.exe"
 set SN32="%WINSDKNETFXTOOLS%sn.exe"
 set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
@@ -140,8 +139,14 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr Salsa,b03f5f7f11d50a3a
 )
 
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Interactive.Settings.dll
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Server.Shared.dll
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
+if exist "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 

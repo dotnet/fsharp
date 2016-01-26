@@ -277,8 +277,8 @@ module internal MSBuildResolver =
                     // These are search paths for runtime-like or scripting resolution. GAC searching is present.
                     yield! rawFileNamePath    // Quick-resolve straight to filename first 
                     yield! explicitIncludeDirs     // From -I, #I
-                    yield implicitIncludeDir   // Usually the project directory
                     yield fsharpCoreExplicitDirOrFSharpBinariesDir    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
+                    yield implicitIncludeDir   // Usually the project directory
                     yield "{TargetFrameworkDirectory}"
                     yield registry
                     yield "{AssemblyFolders}"
@@ -290,8 +290,8 @@ module internal MSBuildResolver =
                     yield "{TargetFrameworkDirectory}"
                     yield! rawFileNamePath        // Quick-resolve straight to filename first
                     yield! explicitIncludeDirs     // From -I, #I
-                    yield implicitIncludeDir   // Usually the project directory
                     yield fsharpCoreExplicitDirOrFSharpBinariesDir    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
+                    yield implicitIncludeDir   // Usually the project directory
                     yield registry
                     yield "{AssemblyFolders}"
                     yield outputDirectory
