@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.GotoDefinition
 
 open System
 open System.IO
@@ -12,8 +12,10 @@ open UnitTests.TestLib.Utils
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type GotoDefinitionTests()  = 
+[<TestFixture>]
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     //GoToDefinitionSuccess Helper Function
@@ -213,7 +215,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "T(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
 
         // This test case checks the type with space in between like N.``T T`` for GotoDefinition
@@ -225,7 +227,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "T``",
             "// A0(*ColumnMarker*)1234567890",
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType.dll"),
             "(*ColumnMarker*)") 
         
         // Basic scenario on a provided Constructor
@@ -238,7 +240,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "T(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
           
         // Basic scenario on a provided Method
@@ -250,7 +252,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "M(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Basic scenario on a provided Property
@@ -262,7 +264,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "StaticProp(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Basic scenario on a provided Event
@@ -275,7 +277,7 @@ type GotoDefinitionTests()  =
                 // C01234567890 """,
             "Event1(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Actually execute all the scenarios...      
@@ -331,7 +333,7 @@ type GotoDefinitionTests()  =
                     Assert.IsFalse(result.Success)
                     Assert.IsTrue(result.ErrorDescription.Contains("provided type 'T'"))
                     ),
-                addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
             )
         
     [<Test>]
@@ -359,7 +361,7 @@ type GotoDefinitionTests()  =
                         let expectedText = sprintf "provided member '%s'" name
                         Assert.IsTrue(result.ErrorDescription.Contains(expectedText))
                         ),
-                    addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
                 )
     [<Test>]
     [<Category("TypeProvider")>]
@@ -373,7 +375,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -388,7 +390,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -402,7 +404,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
 
          
@@ -418,7 +420,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890  """,
             marker = "M(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -432,7 +434,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "StaticProp(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -447,7 +449,7 @@ type GotoDefinitionTests()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "Event1(*GotoValDef*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     member public this.``ModuleDefintion``() =
@@ -558,12 +560,12 @@ type GotoDefinitionTests()  =
     [<Test>]
     member this.``GotoDefinition.OverloadResolutionForProperties``() =
         let lines = [ "type D() ="
-                      "  member this.Foo"
-                      "    with #1##2#get(i:int) = 1"
+                      "  member this.#1##2#Foo"
+                      "    with get(i:int) = 1"
                       "    and set (i:int) v = ()"
                       ""
-                      "  member this.Foo"
-                      "    with #3##4#get (s:string) = 1"
+                      "  member this.#3##4#Foo"
+                      "    with get (s:string) = 1"
                       "    and  set (s:string) v = ()"
                       ""
                       "D().$1$Foo 1"
@@ -1060,12 +1062,12 @@ type GotoDefinitionTests()  =
     /// let a = () in let id (x : '$a) : 'a = x
     [<Test>]
     member public this.``GotoDefinition.Simple.Polymorph.Leftmost`` () =
-      this.GotoDefinitionTestWithSimpleFile "a) (*loc-33*)" None
+      this.GotoDefinitionTestWithSimpleFile "a) (*loc-33*)" (Some("let id (x : 'a) (*loc-33*)", "'a"))
 
     /// let a = () in let id (x : 'a) : '$a = x
     [<Test>]
     member public this.``GotoDefinition.Simple.Polymorph.NotLeftmost`` () =
-      this.GotoDefinitionTestWithSimpleFile "a = x (*loc-34*)" None
+      this.GotoDefinitionTestWithSimpleFile "a = x (*loc-34*)" (Some("let id (x : 'a) (*loc-33*)", "'a"))
 
     /// let foo = () in let f (_ as $foo) = foo in ()
     [<Test>]
@@ -1448,24 +1450,7 @@ type GotoDefinitionTests()  =
         this.VerifyGoToDefnNoErrorDialogAtStartOfMarker(fileContents,"A(*Marker*)", "type A = ampere")
 
 
-// Allow languageService tests to run under different contextes
-namespace UnitTests.Tests.LanguageService.GotoDefinition
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit GotoDefinitionTests
-   new() = { inherit GotoDefinitionTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>]
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit GotoDefinitionTests
-    new() = { inherit GotoDefinitionTests(VsOpts = LanguageServiceExtension.ProjectSystem); }  
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

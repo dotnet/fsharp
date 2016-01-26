@@ -325,6 +325,7 @@ type public TcGlobals =
       attrib_StructAttribute                        : BuiltinAttribInfo 
       attrib_ReflectedDefinitionAttribute           : BuiltinAttribInfo 
       attrib_AutoOpenAttribute                      : BuiltinAttribInfo 
+      attrib_InternalsVisibleToAttribute            : BuiltinAttribInfo 
       attrib_CompilationRepresentationAttribute     : BuiltinAttribInfo 
       attrib_CompilationArgumentCountsAttribute     : BuiltinAttribInfo 
       attrib_CompilationMappingAttribute            : BuiltinAttribInfo 
@@ -1223,6 +1224,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
     attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
     attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
+    attrib_InternalsVisibleToAttribute            = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
     attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
     attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
     attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"

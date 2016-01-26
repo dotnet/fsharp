@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests
+namespace Tests
 open NUnit.Framework
 open System
 open System.IO
@@ -8,11 +8,10 @@ open System.Diagnostics
 open UnitTests.TestLib.Utils
 open Microsoft.BuildSettings
 
+#if OPEN_BUILD
+#else
 [<TestFixture>]
 type Script() = 
-#if OPEN_BUILD
-    class end
-#else
     let replaceIfNotNull (search:string) (replace:string) (s:string) =
         match s with
         | null -> s

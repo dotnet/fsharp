@@ -16,3 +16,5 @@ neg91.fs(63,11,63,27): typecheck error FS3191: This literal pattern does not tak
 neg91.fs(72,11,72,27): typecheck error FS3191: This literal pattern does not take arguments
 
 neg91.fs(80,11,80,38): typecheck error FS3191: This literal pattern does not take arguments
+
+neg91.fs(64,29,64,32): typecheck error FS3192: Constructors are not permitted as extension members - they must be defined as part of the original definition of the type

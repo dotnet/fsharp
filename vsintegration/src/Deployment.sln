@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.22512.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnableOpenSource", "deployment\EnableOpenSource\EnableOpenSource.csproj", "{4D7BE558-E6BF-44DA-8CE2-46AA6E0DC2E7}"
 EndProject
@@ -27,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WDExpressDeployTemplates", 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler", "..\..\src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSHarp.VS.FSI", "vs\FsPkgs\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj", "{991DCF75-C2EB-42B6-9A0D-AA1D2409D519}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSHarp.VS.FSI", "vs\FsPkgs\FSharp.VS.FSI\FSharp.VS.FSI.fsproj", "{991DCF75-C2EB-42B6-9A0D-AA1D2409D519}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Server.Shared", "..\..\src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
 EndProject
