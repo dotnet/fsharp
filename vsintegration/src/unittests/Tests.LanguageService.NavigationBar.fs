@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.NavigationBar
 
 open System
 open NUnit.Framework
@@ -9,64 +9,15 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type NavigationBarTests() =
+[<TestFixture>]
+type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
-
-    (* Unit tests for collapse region & navigation bar ------------------------------------- *)
-    
-    member private this.TestNavigationBar (file : string list) findDecl expectedMembers =
-        
-        let (_, _, file) = this.CreateSingleFileProject(file)
-
-        // Verify that the types&modules list contains 'findDecl'
-        let navigation = GetNavigationContentAtCursor(file)
-        AssertNavigationContains(navigation.TypesAndModules, findDecl)
-        let idxDecl = navigation.TypesAndModules |> Array.findIndex (fun nav -> nav.Label = findDecl)
-        let decl = navigation.TypesAndModules.[idxDecl]
-        
-        // Navigate to the definition and get the contents again
-        MoveCursorTo(file, decl.Span.iStartLine + 1, decl.Span.iStartIndex) // line index is in the 0-based form
-        let navigation = GetNavigationContentAtCursor(file)
-        // Ensure that the right thing is selected in the dropdown
-        AssertEqual(idxDecl, navigation.SelectedType)
-        // Ensure that member list contains expected members
-        AssertNavigationContainsAll(navigation.Members, expectedMembers)
-        
-        // Find member declaration, go to the location & test the identifier island
-        for memb in expectedMembers do
-            let decl = navigation.Members |> Array.find (fun nav -> nav.Label = memb)
-            MoveCursorTo(file, decl.Span.iStartLine + 1, decl.Span.iStartIndex + 1)
-            match GetIdentifierAtCursor file with
-            | None -> 
-                Assert.Fail("No identifier at cursor!")
-            | Some (id, _) -> 
-                if not (id.Contains(memb)) then Assert.Fail(sprintf "Found '%s' which isn't substring of the expected '%s'." id memb)
-               
-    member private this.TestHiddenRegions (file : list<string>) regionMarkers =        
-        let (_, _, file) = this.CreateSingleFileProject(file)
-
-        // Find locations of the regions based on markers provided
-        let expectedLocations = 
-          [ for ms, me in regionMarkers do
-              MoveCursorToEndOfMarker(file, ms)
-              let sl, sc = GetCursorLocation(file)
-              MoveCursorToStartOfMarker(file, me)
-              let el, ec = GetCursorLocation(file)
-              // -1 to adjust line to VS format
-              // -1 to adjust columns (not quite sure why..)
-              yield (sl-1, sc-1), (el-1, ec-1) ]
-              
-        // Test whether the regions are same and that no 'update' commands are created (no regions exist prior to this call)
-        let toCreate, toUpdate = GetHiddenRegionCommands(file)
-        if (toUpdate <> Map.empty<_,_>) then 
-            Assert.Fail("Hidden regions, first call. Didn't expect any regions to update.")
-        AssertEqualWithMessage(expectedLocations.Length, toCreate.Length, "Different number of regions!")
-        AssertRegionListContains(expectedLocations, toCreate)
 
         (* Files for testing and tests --------------------------------------------------------- *)
                 
-    static member NavigationFile1 = 
+    let NavigationFile1 = 
       [ "#light"
         "module Example.Module"
         ""
@@ -88,38 +39,7 @@ type NavigationBarTests() =
         ""
         "    type EnumOneLine = (*5s*)| OUAaa = 0 | OUBbb = 3(*5e*)" ]
 
-    [<Test>]
-    member public this.``Regions.NavigationFile1``() =        
-        this.TestHiddenRegions NavigationBarTests.NavigationFile1
-          [ "(*1s*)", "(*1e*)"
-            "(*2s*)", "(*2e*)" 
-            "(*3s*)", "(*3e*)"
-            "(*4s*)", "(*4e*)"
-            "(*5s*)", "(*5e*)"
-            "SomeModule", "(*5e*)" (* entire module *) ]
-                          
-    [<Test>]
-    [<Category("PerfCheck")>]
-    member public this.``Record1``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Rec" ["RFirst"; "RSecond"]
-        
-    [<Test>]
-    member public this.``Record2``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Rec2" ["R2First"; "R2Second"]
-          
-    [<Test>]
-    member public this.``Abbreviation``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Abbrev" []
-
-    [<Test>]
-    member public this.``Enum``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.Enum" [ "Aaa"; "Bbb" ]
-
-    [<Test>]
-    member public this.``Enum.OneLine``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile1 "SomeModule.EnumOneLine" [ "OUAaa"; "OUBbb" ]
-
-    static member NavigationFile2 = 
+    let NavigationFile2 = 
       [ "#light"
         "module A =   "
         ""
@@ -176,64 +96,131 @@ type NavigationBarTests() =
         "        let aa () ="
         "          1(*15e*)        " ]
     
+
+    (* Unit tests for collapse region & navigation bar ------------------------------------- *)
+    
+    member private this.TestNavigationBar (file : string list) findDecl expectedMembers =
+        
+        let (_, _, file) = this.CreateSingleFileProject(file)
+
+        // Verify that the types&modules list contains 'findDecl'
+        let navigation = GetNavigationContentAtCursor(file)
+        AssertNavigationContains(navigation.TypesAndModules, findDecl)
+        let idxDecl = navigation.TypesAndModules |> Array.findIndex (fun nav -> nav.Label = findDecl)
+        let decl = navigation.TypesAndModules.[idxDecl]
+        
+        // Navigate to the definition and get the contents again
+        MoveCursorTo(file, decl.Span.iStartLine + 1, decl.Span.iStartIndex) // line index is in the 0-based form
+        let navigation = GetNavigationContentAtCursor(file)
+        // Ensure that the right thing is selected in the dropdown
+        AssertEqual(idxDecl, navigation.SelectedType)
+        // Ensure that member list contains expected members
+        AssertNavigationContainsAll(navigation.Members, expectedMembers)
+        
+        // Find member declaration, go to the location & test the identifier island
+        for memb in expectedMembers do
+            let decl = navigation.Members |> Array.find (fun nav -> nav.Label = memb)
+            MoveCursorTo(file, decl.Span.iStartLine + 1, decl.Span.iStartIndex + 1)
+            match GetIdentifierAtCursor file with
+            | None -> 
+                Assert.Fail("No identifier at cursor!")
+            | Some (id, _) -> 
+                if not (id.Contains(memb)) then Assert.Fail(sprintf "Found '%s' which isn't substring of the expected '%s'." id memb)
+               
+    member private this.TestHiddenRegions (file : list<string>) regionMarkers =        
+        let (_, _, file) = this.CreateSingleFileProject(file)
+
+        // Find locations of the regions based on markers provided
+        let expectedLocations = 
+          [ for ms, me in regionMarkers do
+              MoveCursorToEndOfMarker(file, ms)
+              let sl, sc = GetCursorLocation(file)
+              MoveCursorToStartOfMarker(file, me)
+              let el, ec = GetCursorLocation(file)
+              // -1 to adjust line to VS format
+              // -1 to adjust columns (not quite sure why..)
+              yield (sl-1, sc-1), (el-1, ec-1) ]
+              
+        // Test whether the regions are same and that no 'update' commands are created (no regions exist prior to this call)
+        let toCreate, toUpdate = GetHiddenRegionCommands(file)
+        if (toUpdate <> Map.empty<_,_>) then 
+            Assert.Fail("Hidden regions, first call. Didn't expect any regions to update.")
+        AssertEqualWithMessage(expectedLocations.Length, toCreate.Length, "Different number of regions!")
+        AssertRegionListContains(expectedLocations, toCreate)
+
+    [<Test>]
+    member public this.``Regions.NavigationFile1``() =        
+        this.TestHiddenRegions NavigationFile1
+          [ "(*1s*)", "(*1e*)"
+            "(*2s*)", "(*2e*)" 
+            "(*3s*)", "(*3e*)"
+            "(*4s*)", "(*4e*)"
+            "(*5s*)", "(*5e*)"
+            "SomeModule", "(*5e*)" (* entire module *) ]
+                          
+    [<Test>]
+    [<Category("PerfCheck")>]
+    member public this.``Record1``() =        
+        this.TestNavigationBar NavigationFile1 "SomeModule.Rec" ["RFirst"; "RSecond"]
+        
+    [<Test>]
+    member public this.``Record2``() =        
+        this.TestNavigationBar NavigationFile1 "SomeModule.Rec2" ["R2First"; "R2Second"]
+          
+    [<Test>]
+    member public this.``Abbreviation``() =        
+        this.TestNavigationBar NavigationFile1 "SomeModule.Abbrev" []
+
+    [<Test>]
+    member public this.``Enum``() =        
+        this.TestNavigationBar NavigationFile1 "SomeModule.Enum" [ "Aaa"; "Bbb" ]
+
+    [<Test>]
+    member public this.``Enum.OneLine``() =        
+        this.TestNavigationBar NavigationFile1 "SomeModule.EnumOneLine" [ "OUAaa"; "OUBbb" ]
+
     [<Test>]
     member public this.``Record.WithMembers``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "A.RecWith" ["WRFirst"; "WRSecond"; "RecMember" ]
+        this.TestNavigationBar NavigationFile2 "A.RecWith" ["WRFirst"; "WRSecond"; "RecMember" ]
         
     [<Test>]
     member public this.``Union.WithMembers``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.Union" ["UFirst"; "USecond"; "A"]
+        this.TestNavigationBar NavigationFile2 "B.Union" ["UFirst"; "USecond"; "A"]
           
     [<Test>]
     member public this.``Class``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.A" ["Prop"; "Func"; "Dispose"] // perhaps IDisposable.Dispose
+        this.TestNavigationBar NavigationFile2 "B.A" ["Prop"; "Func"; "Dispose"] // perhaps IDisposable.Dispose
 
     [<Test>]
     member public this.``Exception``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.SomeCrash" [ ]
+        this.TestNavigationBar NavigationFile2 "B.SomeCrash" [ ]
         
     [<Test>]
     member public this.``Module.Alias``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.MyList" [ ]
+        this.TestNavigationBar NavigationFile2 "B.MyList" [ ]
 
     [<Test>]
     member public this.``NestedEnum``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.MoreNested.MyEnum" [ "One"; "Two"; "Three" ]
+        this.TestNavigationBar NavigationFile2 "B.MoreNested.MyEnum" [ "One"; "Two"; "Three" ]
 
     [<Test>]
     member public this.``Extension``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.AExt" [ "Extension1"; "Extension2" ]
+        this.TestNavigationBar NavigationFile2 "B.AExt" [ "Extension1"; "Extension2" ]
         
     [<Test>]
     member public this.``Type.EndingWithProperty.WithTypeAnnotation``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.Z" [ "Z" ]   
+        this.TestNavigationBar NavigationFile2 "B.Z" [ "Z" ]   
              
     [<Test>]
     member public this.``Module.Nested``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.FooBaz" [ "toplevel" ]
+        this.TestNavigationBar NavigationFile2 "B.FooBaz" [ "toplevel" ]
 
     [<Test>]
     member public this.``Module.Nested.More``() =        
-        this.TestNavigationBar NavigationBarTests.NavigationFile2 "B.FooBaz.NestedModule" [ "nestedThing" ]   
+        this.TestNavigationBar NavigationFile2 "B.FooBaz.NestedModule" [ "nestedThing" ]   
 
-// Allow the NavigationBarTests run under different context
-namespace UnitTests.Tests.LanguageService.NavigationBar
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit NavigationBarTests
-   new() = { inherit NavigationBarTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit NavigationBarTests
-    new() = { inherit NavigationBarTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

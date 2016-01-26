@@ -73,6 +73,8 @@ src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
 vsintegration/src/unittests/Unittests.fsi
+tests/*FSharp_Failures.env
+tests/*FSharp_Failures.lst
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
 tests/XFSharpQA_Failures.log.*
@@ -80,10 +82,10 @@ vsintegration/src/vs/FsPkgs/FSharp.Project/FS/FSharp.ProjectSystem.FSharp.fsi
 vsintegration/src/vs/FsPkgs/FSharp.Project/FS/ctofiles/
 tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
-
+tests/fsharpqa/Source/*FSharpQA_Failures.env
+tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.csproj.user
 *.sln.DotSettings.user
-
 *.ide
 *.log
 *.jrs

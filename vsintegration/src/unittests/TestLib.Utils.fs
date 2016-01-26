@@ -250,6 +250,10 @@ module Spawn =
                 printfn "%s" line
             eprintfn "tf submit returned error code %d" errorCode
 
+[<AutoOpen>]
+module Helpers = 
+    type DummyType = A | B
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<DummyType>.Assembly.CodeBase).LocalPath), p)
 
 namespace TestLibrary
   module LambdaCalculus =

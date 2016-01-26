@@ -2282,8 +2282,9 @@ module PrettyTypes = begin
     let PrettifyTypes1   g x = PrettifyTypes g (fun f -> f) (fun f -> f) x
     let PrettifyTypes2   g x = PrettifyTypes g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
     let PrettifyTypesN   g x = PrettifyTypes g List.fold List.map   x
+    let PrettifyTypesNN   g x = PrettifyTypes g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
     let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
-    let PrettifyTypesNN1 g x = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (fold1Of2 f),f)) (fun f -> mapTriple (List.map f, List.map (map1Of2  f), f)) x
     let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
 
 end
@@ -4454,7 +4455,7 @@ and remapValData g tmenv d =
         val_type    = ty';
         val_actual_parent = d.val_actual_parent |> remapParentRef tmenv;
         val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
-        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_defn_range topValInfo ty ty' tmenv);
+        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
         val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
 
 and remapParentRef tyenv p =

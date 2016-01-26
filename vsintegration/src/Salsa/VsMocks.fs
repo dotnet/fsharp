@@ -1051,7 +1051,7 @@ module internal VsMocks =
             member this.SetCursor(  hNewCursor,    phOldCursor) = err(__LINE__)
             member this.GetCurrentSelection(  ppHier,    pitemid,    ppMIS) = err(__LINE__)
             }
-    
+
     let vsWindowFrame =
         { new IVsWindowFrame with
             member this.Show() = err(__LINE__)

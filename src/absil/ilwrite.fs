@@ -1012,7 +1012,6 @@ let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) =
 
 and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
 
-
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
 //=====================================================================

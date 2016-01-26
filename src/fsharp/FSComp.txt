@@ -1,4 +1,6 @@
-# Old-style error strings getting moved over
+# -----------------------------------------------------------------------------
+# use a completely new error number and add new messages at the end of the file
+# -----------------------------------------------------------------------------
 undefinedNameNamespace,"The namespace '%s' is not defined"
 undefinedNameNamespaceOrModule,"The namespace or module '%s' is not defined"
 undefinedNameFieldConstructorOrMember,"The field, constructor or member '%s' is not defined"
@@ -11,9 +13,6 @@ undefinedNameRecordLabelOrNamespace,"The record label or namespace '%s' is not d
 undefinedNameRecordLabel,"The record label '%s' is not defined"
 undefinedNameTypeParameter,"The type parameter '%s' is not defined"
 undefinedNamePatternDiscriminator,"The pattern discriminator '%s' is not defined"
-# -----------------------------------------------------------------------------
-# CompileOps.fs
-# -----------------------------------------------------------------------------
 buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type arguments, but here is given %d type argument(s)"
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"
 204,buildInvalidVersionString,"Invalid version string '%s'"
@@ -58,22 +57,13 @@ buildCouldNotReadVersionInfoFromMscorlib,"Could not read version from mscorlib.d
 242,buildArgInvalidFloat,"'%s' is not a valid floating point argument"
 243,buildUnrecognizedOption,"Unrecognized option: '%s'"
 244,buildInvalidModuleOrNamespaceName,"Invalid module or namespace name"
-# -----------------------------------------------------------------------------
-# pickle.fs
-# -----------------------------------------------------------------------------
 pickleErrorReadingWritingMetadata,"Error reading/writing metadata for the F# compiled DLL '%s'. Was the DLL compiled with an earlier version of the F# compiler? (error: '%s')."
-# -----------------------------------------------------------------------------
-# tast.fs
-# -----------------------------------------------------------------------------
 245,tastTypeOrModuleNotConcrete,"The type/module '%s' is not a concrete module or type"
 tastTypeHasAssemblyCodeRepresentation,"The type '%s' has an inline assembly code representation"
 247,tastNamespaceAndModuleWithSameNameInAssembly,"A namespace and a module named '%s' both occur in two parts of this assembly"
 248,tastTwoModulesWithSameNameInAssembly,"Two modules named '%s' occur in two parts of this assembly"
 249,tastDuplicateTypeDefinitionInAssembly,"Two type definitions named '%s' occur in namespace '%s' in two parts of this assembly"
 250,tastConflictingModuleAndTypeDefinitionInAssembly,"A module and a type definition named '%s' occur in namespace '%s' in two parts of this assembly"
-# -----------------------------------------------------------------------------
-# tastops.fs
-# -----------------------------------------------------------------------------
 251,tastInvalidMemberSignature,"Invalid member signature encountered because of an earlier error"
 252,tastValueDoesNotHaveSetterType,"This value does not have a valid property setter type"
 253,tastInvalidFormForPropertyGetter,"Invalid form for a property getter. At least one '()' argument is required when using the explicit syntax."
@@ -90,9 +80,6 @@ tastUnexpectedDecodeOfInternalsVisibleToAttribute,"Unexpected decode of Internal
 tastUnexpectedDecodeOfInterfaceDataVersionAttribute,"Unexpected decode of InterfaceDataVersionAttribute"
 265,tastActivePatternsLimitedToSeven,"Active patterns cannot return more than 7 possibilities"
 267,tastNotAConstantExpression,"This is not a valid constant expression or custom attribute value"
-# -----------------------------------------------------------------------------
-# typrelns.fs
-# -----------------------------------------------------------------------------
 ValueNotContainedMutabilityAttributesDiffer,"Module '%s' contains\n    %s    \nbut its signature specifies\n    %s    \nThe mutability attributes differ"
 ValueNotContainedMutabilityNamesDiffer,"Module '%s' contains\n    %s    \nbut its signature specifies\n    %s    \nThe names differ"
 ValueNotContainedMutabilityCompiledNamesDiffer,"Module '%s' contains\n    %s    \nbut its signature specifies\n    %s    \nThe compiled names differ"
@@ -198,16 +185,10 @@ ExceptionDefsNotCompatibleFieldOrderDiffers,"The exception definitions are not c
 368,typrelMemberDoesNotHaveCorrectNumberOfTypeParameters,"The member '%s' does not have the correct number of method type parameters. The required signature is '%s'."
 369,typrelMemberDoesNotHaveCorrectKindsOfGenericParameters,"The member '%s' does not have the correct kinds of generic parameters. The required signature is '%s'."
 370,typrelMemberCannotImplement,"The member '%s' cannot be used to implement '%s'. The required signature is '%s'."
-# -----------------------------------------------------------------------------
-# ast.fs errors
-# -----------------------------------------------------------------------------
 371,astParseEmbeddedILError,"Error while parsing embedded IL"
 372,astParseEmbeddedILTypeError,"Error while parsing embedded IL type"
 astDeprecatedIndexerNotation,"This indexer notation has been removed from the F# language"
 374,astInvalidExprLeftHandOfAssignment,"Invalid expression on left of assignment"
-# -----------------------------------------------------------------------------
-# augment.fs errors
-# -----------------------------------------------------------------------------
 376,augNoRefEqualsOnStruct,"The 'ReferenceEquality' attribute cannot be used on structs. Consider using the 'StructuralEquality' attribute instead, or implement an override for 'System.Object.Equals(obj)'."
 377,augInvalidAttrs,"This type uses an invalid mix of the attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison'"
 378,augNoEqualityNeedsNoComparison,"The 'NoEquality' attribute must be used in conjunction with the 'NoComparison' attribute"
@@ -221,9 +202,6 @@ astDeprecatedIndexerNotation,"This indexer notation has been removed from the F#
 386,augNoEqNeedsNoObjEquals,"A type with attribute 'NoEquality' should not usually have an explicit implementation of 'Object.Equals(obj)'. Disable this warning if this is intentional for interoperability purposes"
 386,augNoCompCantImpIComp,"A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable<_>' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes"
 387,augCustomEqNeedsNoCompOrCustomComp,"The 'CustomEquality' attribute must be used in conjunction with the 'NoComparison' or 'CustomComparison' attributes"
-# -----------------------------------------------------------------------------
-# formats.fs errors
-# -----------------------------------------------------------------------------
 forPositionalSpecifiersNotPermitted,"Positional specifiers are not permitted in format strings"
 forMissingFormatSpecifier,"Missing format specifier"
 forFlagSetTwice,"'%s' flag set twice"
@@ -239,14 +217,8 @@ forLIsUnnecessary,"The 'l' or 'L' in this format specifier is unnecessary. In F#
 forHIsUnnecessary,"The 'h' or 'H' in this format specifier is unnecessary. You can use %%d, %%x, %%o or %%u instead, which are overloaded to work with all basic integer types.."
 forDoesNotSupportPrefixFlag,"'%s' does not support prefix '%s' flag"
 forBadFormatSpecifierGeneral,"Bad format specifier: '%s'"
-# -----------------------------------------------------------------------------
-# ErrorLogger.fs errors
-# -----------------------------------------------------------------------------
 elSysEnvExitDidntExit,"System.Environment.Exit did not exit"
 elDeprecatedOperator,"The treatment of this operator is now handled directly by the F# compiler and its meaning cannot be redefined"
-# -----------------------------------------------------------------------------
-# check.fs errors
-# -----------------------------------------------------------------------------
 405,chkProtectedOrBaseCalled,"A protected member is called or 'base' is being used. This is only allowed in the direct implementation of members since they could escape their object scope."
 406,chkByrefUsedInInvalidWay,"The byref-typed variable '%s' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions."
 408,chkBaseUsedInInvalidWay,"The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls."
@@ -292,9 +264,6 @@ chkUnionCaseDefaultAugmentation,"default augmentation of the union case"
 443,chkMultipleGenericInterfaceInstantiations,"This type implements the same interface at different generic instantiations '%s' and '%s'. This is not permitted in this version of F#."
 444,chkValueWithDefaultValueMustHaveDefaultValue,"The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check"
 445,chkNoByrefInTypeAbbrev,"The type abbreviation contains byrefs. This is not permitted by F#."
-# -----------------------------------------------------------------------------
-# creflect.fs errors
-# -----------------------------------------------------------------------------
 446,crefBoundVarUsedInSplice,"The variable '%s' is bound in a quotation but is used as part of a spliced expression. This is not permitted since it may escape its scope."
 447,crefQuotationsCantContainGenericExprs,"Quotations cannot contain uses of generic expressions"
 448,crefQuotationsCantContainGenericFunctions,"Quotations cannot contain function definitions that are inferred or declared to be generic. Consider adding some type constraints to make this a valid quoted expression."
@@ -312,9 +281,6 @@ chkUnionCaseDefaultAugmentation,"default augmentation of the union case"
 460,crefQuotationsCantContainThisPatternMatch,"Quotations cannot contain this kind of pattern match"
 461,crefQuotationsCantContainArrayPatternMatching,"Quotations cannot contain array pattern matching"
 462,crefQuotationsCantContainThisType,"Quotations cannot contain this kind of type"
-# -----------------------------------------------------------------------------
-# csolve.fs errors
-# -----------------------------------------------------------------------------
 csTypeCannotBeResolvedAtCompileTime,"The declared type parameter '%s' cannot be used here since the type parameter cannot be resolved at compile time"
 464,csCodeLessGeneric,"This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'."
 465,csTypeInferenceMaxDepth,"Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations."
@@ -379,9 +345,6 @@ csNoOverloadsFound,"No overloads match for method '%s'."
 csMethodIsOverloaded,"A unique overload for method '%s' could not be determined based on type information prior to this program point. A type annotation may be needed."
 csCandidates,"Candidates: %s"
 csSeeAvailableOverloads,"The available overloads are shown below (or in the Error List window)."
-# -----------------------------------------------------------------------------
-# pars.fsy errors
-# -----------------------------------------------------------------------------
 512,parsDoCannotHaveVisibilityDeclarations,"Accessibility modifiers are not permitted on 'do' bindings"
 513,parsEofInHashIf,"End of file in #if section begun at or after here"
 514,parsEofInString,"End of file in string begun at or before here"
@@ -478,9 +441,6 @@ parsMultiArgumentGenericTypeFormDeprecated,"The syntax '(typ,...,typ) ident' is 
 parsNoEqualShouldFollowNamespace,"No '=' symbol should follow a 'namespace' declaration"
 parsSyntaxModuleStructEndDeprecated,"The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'"
 parsSyntaxModuleSigEndDeprecated,"The syntax 'module ... : sig .. end' is not used in F# code. Consider using 'module ... = begin .. end'"
-# -----------------------------------------------------------------------------
-# tc.fs errors
-# -----------------------------------------------------------------------------
 627,tcStaticFieldUsedWhenInstanceFieldExpected,"A static field was used where an instance field is expected"
 629,tcMethodNotAccessible,"Method '%s' is not accessible from this code location"
 #630,tcTypeFunctionFieldsCannotBeMutated,"Fields which are type functions cannot be mutated"
@@ -823,9 +783,6 @@ tcReservedSyntaxForAugmentation,"The syntax 'type X with ...' is reserved for au
 #968,tcExplicitSignaturesInImplementationFileCannotBeUsed,"Explicit signatures within implementation files are not permitted"
 #969,tcModulesCannotUseNamedModuleSignatures,"Modules cannot use named module signature definitions"
 970,tcAttributeAutoOpenWasIgnored,"The attribute 'AutoOpen(\"%s\")' in the assembly '%s' did not refer to a valid module or namespace in that assembly and has been ignored"
-# -----------------------------------------------------------------------------
-# ilxgen errors
-# -----------------------------------------------------------------------------
 971,ilUndefinedValue,"Undefined value '%s'"
 972,ilLabelNotFound,"Label %s not found"
 973,ilIncorrectNumberOfTypeArguments,"Incorrect number of type arguments to local call"
@@ -847,9 +804,6 @@ ilDynamicInvocationNotSupported,"Dynamic invocation of %s is not supported"
 992,ilStructLayoutAttributeCouldNotBeDecoded,"The StructLayout attribute could not be decoded"
 993,ilDefaultAugmentationAttributeCouldNotBeDecoded,"The DefaultAugmentation attribute could not be decoded"
 994,ilReflectedDefinitionsCannotUseSliceOperator,"Reflected definitions cannot contain uses of the prefix splice operator '%%'"
-# -----------------------------------------------------------------------------
-# fscopts text
-# -----------------------------------------------------------------------------
 1000,optsProblemWithCodepage,"Problem with codepage '%d': %s"
 optsCopyright,"Copyright (c) Microsoft Corporation. All Rights Reserved."
 optsNameOfOutputFile,"Name of the output file (Short form: -o)"
@@ -886,6 +840,7 @@ optsDefine,"Define conditional compilation symbols (Short form: -d)"
 optsMlcompatibility,"Ignore ML compatibility warnings"
 optsNologo,"Suppress compiler copyright message"
 optsHelp,"Display this usage message (Short form: -?)"
+optsResponseFile,"Read response file for more options"
 optsCodepage,"Specify the codepage used to read source files"
 optsUtf8output,"Output messages in UTF-8 encoding"
 optsFullpaths,"Output messages with fully qualified paths"
@@ -922,11 +877,9 @@ optsUseHighEntropyVA,"Enable high-entropy ASLR"
 optsSubSystemVersion,"Specify subsystem version of this assembly"
 optsTargetProfile,"Specify target framework profile of this assembly. Valid values are mscorlib or netcore. Default - mscorlib"
 optsEmitDebugInfoInQuotations,"Emit debug information in quotations"
+optsNoCopyFsharpCore,"Don't copy FSharp.Core.dll along the produced binaries"
 1051,optsInvalidSubSystemVersion,"Invalid version '%s' for '--subsystemversion'. The version must be 4.00 or greater."
 1052,optsInvalidTargetProfile,"Invalid value '%s' for '--targetprofile', valid values are 'mscorlib' or 'netcore'."
-# -----------------------------------------------------------------------------
-# service.fs strings
-# -----------------------------------------------------------------------------
 typeInfoFullName,"Full name"
 # typeInfoType,"type"
 # typeInfoInherits,"inherits"
@@ -953,9 +906,6 @@ assemblyResolutionFoundByAssemblyFoldersKey,"Found by AssemblyFolders registry k
 assemblyResolutionFoundByAssemblyFoldersExKey,"Found by AssemblyFoldersEx registry key"
 assemblyResolutionNetFramework,".NET Framework"
 assemblyResolutionGAC,"Global Assembly Cache"
-# -----------------------------------------------------------------------------
-# infos.fs errors
-# -----------------------------------------------------------------------------
 1089,recursiveClassHierarchy,"Recursive class hierarchy in type '%s'"
 1090,InvalidRecursiveReferenceToAbstractSlot,"Invalid recursive reference to an abstract slot"
 1091,eventHasNonStandardType,"The event '%s' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit %s and %s methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent<_>' or 'IEvent<_,_>'."
@@ -969,32 +919,17 @@ experimentalConstruct,"This construct is experimental"
 1099,noInvokeMethodsFound,"No Invoke methods found for delegate type"
 moreThanOneInvokeMethodFound,"More than one Invoke method found for delegate type"
 1101,delegatesNotAllowedToHaveCurriedSignatures,"Delegates are not allowed to have curried signatures"
-# -----------------------------------------------------------------------------
-# tlr.fs errors
-# -----------------------------------------------------------------------------
 1102,tlrUnexpectedTExpr,"Unexpected Expr.TyChoose"
 1103,tlrLambdaLiftingOptimizationsNotApplied,"Note: Lambda-lifting optimizations have not been applied because of the use of this local constrained generic function as a first class value. Adding type constraints may resolve this condition."
-# -----------------------------------------------------------------------------
-# lexhelp.fs errors
-# -----------------------------------------------------------------------------
 1104,lexhlpIdentifiersContainingAtSymbolReserved,"Identifiers containing '@' are reserved for use in F# code generation"
 lexhlpIdentifierReserved,"The identifier '%s' is reserved for future use by F#"
-# -----------------------------------------------------------------------------
-# patcompile.fs errors
-# -----------------------------------------------------------------------------
 1106,patcMissingVariable,"Missing variable '%s'"
 1107,patcPartialActivePatternsGenerateOneResult,"Partial active patterns may only generate one result"
-# -----------------------------------------------------------------------------
-# import.fs errors
-# -----------------------------------------------------------------------------
 1108,impTypeRequiredUnavailable,"The type '%s' is required here and is unavailable. You must add a reference to assembly '%s'."
 1109,impReferencedTypeCouldNotBeFoundInAssembly,"A reference to the type '%s' in assembly '%s' was found, but the type could not be found in that assembly"
 1110,impNotEnoughTypeParamsInScopeWhileImporting,"Internal error or badly formed metadata: not enough type parameters were in scope while importing"
 1111,impReferenceToDllRequiredByAssembly,"A reference to the DLL %s is required by assembly %s. The imported type %s is located in the first assembly and could not be resolved."
 1112,impImportedAssemblyUsesNotPublicType,"An imported assembly uses the type '%s' but that type is not public"
-# -----------------------------------------------------------------------------
-# opt.fs errors
-# -----------------------------------------------------------------------------
 1113,optValueMarkedInlineButIncomplete,"The value '%s' was marked inline but its implementation makes use of an internal or private function which is not sufficiently accessible"
 1114,optValueMarkedInlineButWasNotBoundInTheOptEnv,"The value '%s' was marked inline but was not bound in the optimization environment"
 1115,optLocalValueNotFoundDuringOptimization,"Local value %s not found during optimization"
@@ -1002,15 +937,9 @@ lexhlpIdentifierReserved,"The identifier '%s' is reserved for future use by F#"
 1117,optValueMarkedInlineCouldNotBeInlined,"A value marked as 'inline' could not be inlined"
 1118,optFailedToInlineValue,"Failed to inline the value '%s' marked 'inline', perhaps because a recursive value was marked 'inline'"
 1119,optRecursiveValValue,"Recursive ValValue %s"
-# -----------------------------------------------------------------------------
-# lexfilter.fs errors
-# -----------------------------------------------------------------------------
 lexfltIncorrentIndentationOfIn,"The indentation of this 'in' token is incorrect with respect to the corresponding 'let'"
 lexfltTokenIsOffsideOfContextStartedEarlier,"Possible incorrect indentation: this token is offside of context started at position %s. Try indenting this token further or using standard formatting conventions."
 lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules of this pattern match are misaligned by one column. Consider realigning your code or using further indentation."
-# -----------------------------------------------------------------------------
-# nameres.fs errors
-# -----------------------------------------------------------------------------
 1123,nrInvalidModuleExprType,"Invalid module/expression/type"
 1124,nrTypeInstantiationNeededToDisambiguateTypesWithSameName,"Multiple types exist called '%s', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. '%s'."
 1125,nrTypeInstantiationIsMissingAndCouldNotBeInferred,"The instantiation of the generic type '%s' is missing and can't be inferred from the arguments or return type of this member. Consider providing a type instantiation when accessing this type, e.g. '%s'."
@@ -1023,13 +952,7 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 1133,nrNoConstructorsAvailableForType,"No constructors are available for the type '%s'"
 1134,nrUnionTypeNeedsQualifiedAccess,"The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using."
 1135,nrRecordTypeNeedsQualifiedAccess,"The record type for the record field '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the record type ('%s') in the name you are using."
-# -----------------------------------------------------------------------------
-# ilwrite.fs errors
-# -----------------------------------------------------------------------------
 1135,ilwriteErrorCreatingPdb,"Unexpected error creating debug information file '%s'"
-# -----------------------------------------------------------------------------
-# lex.fsl errors
-# -----------------------------------------------------------------------------
 1138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"
 lexCharNotAllowedInOperatorNames,"'%s' is not permitted as a character in operator names and is reserved for future use"
 lexUnexpectedChar,"Unexpected character '%s'"
@@ -1165,9 +1088,6 @@ fscTooManyErrors,"Exiting - too many errors"
 2022,pathIsInvalid,"Problem with filename '%s': Illegal characters in path."
 2023,fscResxSourceFileDeprecated,"Passing a .resx file (%s) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an <EmbeddedResource> item in the .fsproj project file."
 2024,fscStaticLinkingNoProfileMismatches,"Static linking may not use assembly that targets different profile."
-# -----------------------------------------------------------------------------
-# Extension typing errors
-# -----------------------------------------------------------------------------
 3000,etIllegalCharactersInNamespaceName,"Character '%s' is not allowed in provided namespace name '%s'"
 3001,etNullOrEmptyMemberName,"The provided type '%s' returned a member with a null or empty member name"
 3002,etNullMember,"The provided type '%s' returned a null member"
@@ -1346,3 +1266,8 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3189,checkRaiseFamilyFunctionArgumentCount,"Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments."
 3190,checkLowercaseLiteralBindingInPattern,"Lowercase literal '%s' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns."
 3191,tcLiteralDoesNotTakeArguments,"This literal pattern does not take arguments"
+3192,tcConstructorsIllegalInAugmentation,"Constructors are not permitted as extension members - they must be defined as part of the original definition of the type"
+3193,optsInvalidResponseFile,"Invalid response file '%s' ( '%s' )"
+3194,optsResponseFileNotFound,"Response file '%s' not found in '%s'"
+3195,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"
+3196,fsharpCoreNotFoundToBeCopied,"Cannot find FSharp.Core.dll in compiler's directory"
