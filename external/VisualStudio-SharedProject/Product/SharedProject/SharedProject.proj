@@ -1,0 +1,716 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+      <_ProjectSystemFilesLocation Condition="$(_ProjectSystemFilesLocation) == ''">$(BuildRoot)\Common\Product\SharedProject</_ProjectSystemFilesLocation>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\SourceLocation.cs">
+      <Link>SharedProject\Navigation\SourceLocation.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\AllFilesProjectElement.cs">
+      <Link>SharedProject\AllFilesProjectElement.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\HierarchyNodeFlags.cs">
+      <Link>SharedProject\HierarchyNodeFlags.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\OutputWindowRedirector.cs">
+      <Link>SharedProject\OutputWindowRedirector.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProcessOutput.cs">
+      <Link>SharedProject\ProcessOutput.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\TaskDialog.cs">
+      <Link>SharedProject\TaskDialog.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\OverwriteFileDialog.xaml.cs">
+      <DependentUpon>OverwriteFileDialog.xaml</DependentUpon>
+      <Link>SharedProject\OverwriteFileDialog.xaml.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Page Include="$(_ProjectSystemFilesLocation)\OverwriteFileDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <Link>SharedProject\OverwriteFileDialog.xaml</Link>
+      <Visible>true</Visible>
+    </Page>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\IScopeNode.cs">
+      <Link>SharedProject\Navigation\IScopeNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonConstants.cs">
+      <Link>SharedProject\CommonConstants.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonPackage.cs">
+      <Link>SharedProject\CommonPackage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonUtils.cs">
+      <Link>SharedProject\CommonUtils.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DebugTimer.cs">
+      <Link>SharedProject\DebugTimer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DeveloperActivityAttribute.cs">
+      <Link>SharedProject\DeveloperActivityAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DialogWindowVersioningWorkaround.cs">
+      <Link>SharedProject\DialogWindowVersioningWorkaround.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\CommonLibraryNode.cs">
+      <Link>SharedProject\CommonLibraryNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\ProjectLibraryNode.cs">
+      <Link>SharedProject\Navigation\ProjectLibraryNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\HierarchyListener.cs">
+      <Link>SharedProject\Navigation\HierarchyListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\ICustomSearchListProvider.cs">
+      <Link>SharedProject\Navigation\ICustomSearchListProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\ILibraryManager.cs">
+      <Link>SharedProject\Navigation\ILibraryManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\ISimpleObject.cs">
+      <Link>SharedProject\Navigation\ISimpleObject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\Library.cs">
+      <Link>SharedProject\Navigation\Library.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\LibraryManager.cs">
+      <Link>SharedProject\Navigation\LibraryManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\LibraryNode.cs">
+      <Link>SharedProject\Navigation\LibraryNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\LibraryTask.cs">
+      <Link>SharedProject\Navigation\LibraryTask.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\ModuleId.cs">
+      <Link>SharedProject\Navigation\ModuleId.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\SimpleObject.cs">
+      <Link>SharedProject\Navigation\SimpleObject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\SimpleObjectList.cs">
+      <Link>SharedProject\Navigation\SimpleObjectList.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Navigation\TextLineEventListener.cs">
+      <Link>SharedProject\Navigation\TextLineEventListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\AssemblyReferenceNode.cs">
+      <Link>SharedProject\AssemblyReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Attributes.cs">
+      <Link>SharedProject\Attributes.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\AutomationScope.cs">
+      <Link>SharedProject\Automation\AutomationScope.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProjectConfigurationProperties.cs">
+      <Link>SharedProject\Automation\OAProjectConfigurationProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAFileItem.cs">
+      <Link>SharedProject\Automation\OAFileItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAFolderItem.cs">
+      <Link>SharedProject\Automation\OAFolderItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OANavigableProjectItems.cs">
+      <Link>SharedProject\Automation\OANavigableProjectItems.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OANullProperty.cs">
+      <Link>SharedProject\Automation\OANullProperty.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProject.cs">
+      <Link>SharedProject\Automation\OAProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProjectItem.cs">
+      <Link>SharedProject\Automation\OAProjectItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProjectItems.cs">
+      <Link>SharedProject\Automation\OAProjectItems.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProperties.cs">
+      <Link>SharedProject\Automation\OAProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAProperty.cs">
+      <Link>SharedProject\Automation\OAProperty.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAReferenceFolderItem.cs">
+      <Link>SharedProject\Automation\OAReferenceFolderItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\OAReferenceItem.cs">
+      <Link>SharedProject\Automation\OAReferenceItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAAssemblyReference.cs">
+      <Link>SharedProject\Automation\OAAssemblyReference.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAProjectReference.cs">
+      <Link>SharedProject\Automation\VSProject\OAProjectReference.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAReferenceBase.cs">
+      <Link>SharedProject\Automation\VSProject\OAReferenceBase.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAReferences.cs">
+      <Link>SharedProject\Automation\VSProject\OAReferences.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAVSProject.cs">
+      <Link>SharedProject\Automation\VSProject\OAVSProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Automation\VSProject\OAVSProjectItem.cs">
+      <Link>SharedProject\Automation\VSProject\OAVSProjectItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\BuildDependency.cs">
+      <Link>SharedProject\BuildDependency.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\BuildPropertyPage.cs">
+      <Link>SharedProject\BuildPropertyPage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonConfigProvider.cs">
+      <Link>SharedProject\CommonConfigProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonEditorFactory.cs">
+      <Link>SharedProject\CommonEditorFactory.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonFileNode.cs">
+      <Link>SharedProject\CommonFileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonFolderNode.cs">
+      <Link>SharedProject\CommonFolderNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonNonCodeFileNode.cs">
+      <Link>SharedProject\CommonNonCodeFileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonProjectConfig.cs">
+      <Link>SharedProject\CommonProjectConfig.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonProjectNode.cs">
+      <Link>SharedProject\CommonProjectNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonProjectNodeProperties.cs">
+      <Link>SharedProject\CommonProjectNodeProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonProjectPackage.cs">
+      <Link>SharedProject\CommonProjectPackage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonPropertyPage.cs">
+      <Link>SharedProject\CommonPropertyPage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\CommonReferenceContainerNode.cs">
+      <Link>SharedProject\CommonReferenceContainerNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ConfigProvider.cs">
+      <Link>SharedProject\ConfigProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FileWatcher.cs">
+      <Link>SharedProject\FileWatcher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FlavoredProjectFactoryBase.cs">
+      <Link>SharedProject\FlavoredProjectFactoryBase.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DataObject.cs">
+      <Link>SharedProject\DataObject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DependentFileNode.cs">
+      <Link>SharedProject\DependentFileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DesignPropertyDescriptor.cs">
+      <Link>SharedProject\DesignPropertyDescriptor.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DirtyChangedEventArgs.cs">
+      <Link>SharedProject\DirtyChangedEventArgs.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\DocumentManager.cs">
+      <Link>SharedProject\DocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\EnumBSTR.cs">
+      <Link>SharedProject\EnumBSTR.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\EnumDependencies.cs">
+      <Link>SharedProject\EnumDependencies.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ExtensibilityEventsDispatcher.cs">
+      <Link>SharedProject\ExtensibilityEventsDispatcher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FileChangeManager.cs">
+      <Link>SharedProject\FileChangeManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FileDocumentManager.cs">
+      <Link>SharedProject\FileDocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FileNode.cs">
+      <Link>SharedProject\FileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\FolderNode.cs">
+      <Link>SharedProject\FolderNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\HierarchyNode.cs">
+      <Link>SharedProject\HierarchyNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\HierarchyIdMap.cs">
+      <Link>SharedProject\HierarchyIdMap.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IDEBuildLogger.cs">
+      <Link>SharedProject\IDEBuildLogger.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IdleManager.cs">
+      <Link>SharedProject\IdleManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IClipboardService.cs">
+      <Link>SharedProject\IClipboardService.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ClipboardService.cs">
+      <Link>SharedProject\ClipboardService.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ImageHandler.cs">
+      <Link>SharedProject\ImageHandler.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Interfaces.cs">
+      <Link>SharedProject\Interfaces.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IProjectLauncher.cs">
+      <Link>SharedProject\IProjectLauncher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IProjectLaunchProperties.cs">
+      <Link>SharedProject\IProjectLaunchProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IProjectPublisher.cs">
+      <Link>SharedProject\IProjectPublisher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IPublishFile.cs">
+      <Link>SharedProject\IPublishFile.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IPublishProject.cs">
+      <Link>SharedProject\IPublishProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\LocalizableProperties.cs">
+      <Link>SharedProject\LocalizableProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Misc\ConnectionPointContainer.cs">
+      <Link>SharedProject\Misc\ConnectionPointContainer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Misc\ExternDll.cs">
+      <Link>SharedProject\ExternDll.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Misc\NativeMethods.cs">
+      <Link>SharedProject\NativeMethods.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Misc\UnsafeNativeMethods.cs">
+      <Link>SharedProject\UnsafeNativeMethods.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\MsBuildProjectElement.cs">
+      <Link>SharedProject\MsBuildProjectElement.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\NodeProperties.cs">
+      <Link>SharedProject\NodeProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ObservableCollectionExtensions.cs">
+      <Link>SharedProject\ObservableCollectionExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\OleServiceProvider.cs">
+      <Link>SharedProject\OleServiceProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Output.cs">
+      <Link>SharedProject\Output.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\OutputGroup.cs">
+      <Link>SharedProject\OutputGroup.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectConfig.cs">
+      <Link>SharedProject\ProjectConfig.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectDesignerDocumentManager.cs">
+      <Link>SharedProject\ProjectDesignerDocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectDocumentsListener.cs">
+      <Link>SharedProject\ProjectDocumentsListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectDocumentsListenerForStartupFileUpdates.cs">
+      <Link>SharedProject\ProjectDocumentsListenerForStartupFileUpdates.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectElement.cs">
+      <Link>SharedProject\ProjectElement.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectFactory.cs">
+      <Link>SharedProject\ProjectFactory.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectFileConstants.cs">
+      <Link>SharedProject\ProjectFileConstants.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectNode.CopyPaste.cs">
+      <Link>SharedProject\ProjectNode.CopyPaste.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectNode.IOleCommandTarget.cs">
+      <Link>SharedProject\ProjectNode.IOleCommandTarget.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectNode.cs">
+      <Link>SharedProject\ProjectNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectNode.Events.cs">
+      <Link>SharedProject\ProjectNode.Events.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectPackage.cs">
+      <Link>SharedProject\ProjectPackage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectReferenceNode.cs">
+      <Link>SharedProject\ProjectReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProjectResources.cs">
+      <Link>SharedProject\ProjectResources.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\PropertiesEditorLauncher.cs">
+      <Link>SharedProject\PropertiesEditorLauncher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\PublishFailedException.cs">
+      <Link>SharedProject\PublishFailedException.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\PublishFile.cs">
+      <Link>SharedProject\PublishFile.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\PublishProject.cs">
+      <Link>SharedProject\PublishProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\PublishProjectOptions.cs">
+      <Link>SharedProject\PublishProjectOptions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ReferenceContainerNode.cs">
+      <Link>SharedProject\ReferenceContainerNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ReferenceNode.cs">
+      <Link>SharedProject\ReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SolutionListener.cs">
+      <Link>SharedProject\SolutionListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SolutionListenerForBuildDependencyUpdate.cs">
+      <Link>SharedProject\SolutionListenerForBuildDependencyUpdate.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SolutionListenerForProjectOpen.cs">
+      <Link>SharedProject\SolutionListenerForProjectOpen.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\StructuresEnums.cs">
+      <Link>SharedProject\StructuresEnums.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SuspendFileChanges.cs">
+      <Link>SharedProject\SuspendFileChanges.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\TaskProgressBar.xaml.cs">
+      <Link>SharedProject\TaskProgressBar.xaml.cs</Link>
+      <DependentUpon>TaskProgressBar.xaml</DependentUpon>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\IDiskBasedNode.cs">
+      <Link>SharedProject\IDiskBasedNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Command.cs">
+      <Link>SharedProject\Command.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SharedCommands.cs">
+      <Link>SharedProject\SharedCommands.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Page Include="$(_ProjectSystemFilesLocation)\TaskProgressBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Link>SharedProject\TaskProgressBar.xaml</Link>
+      <Visible>true</Visible>
+    </Page>
+    <Compile Include="$(_ProjectSystemFilesLocation)\TrackDocumentsHelper.cs">
+      <Link>SharedProject\TrackDocumentsHelper.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\UIThread.cs">
+      <Link>SharedProject\UIThread.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\UIThreadBase.cs">
+      <Link>SharedProject\UIThreadBase.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\UIThreadSynchronizer.cs">
+      <Link>SharedProject\UIThreadSynchronizer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\UpdateSolutionEventsListener.cs">
+      <Link>SharedProject\UpdateSolutionEventsListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Utilities.cs">
+      <Link>SharedProject\Utilities.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\VirtualProjectElement.cs">
+      <Link>SharedProject\VirtualProjectElement.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\VsCommands.cs">
+      <Link>SharedProject\VsCommands.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\VSShellUtilities.cs">
+      <Link>SharedProject\VSShellUtilities.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\WaitDialog.cs">
+      <Link>SharedProject\WaitDialog.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\WebPiComponentPickerControl.cs">
+      <Link>SharedProject\WebPiComponentPickerControl.cs</Link>
+      <SubType>UserControl</SubType>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\WebPiComponentPickerControl.Designer.cs">
+      <DependentUpon>WebPiComponentPickerControl.cs</DependentUpon>
+      <Link>SharedProject\WebPiComponentPickerControl.Designer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideDebugEngineAttribute.cs">
+      <Link>SharedProject\Debugger\ProvideDebugEngineAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideDebugExceptionAttribute.cs">
+      <Link>SharedProject\Debugger\ProvideDebugExceptionAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\WebSocketStream.cs">
+      <Link>SharedProject\Debugger\WebSocketStream.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideCodeExpansionsAttribute.cs">
+      <Link>SharedProject\ProvideCodeExpansionsAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideCodeExpansionPathAttribute.cs">
+      <Link>SharedProject\ProvideCodeExpansionPathAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideDebugLanguageAttribute.cs">
+      <Link>SharedProject\ProvideDebugLanguageAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideDebugPortSupplierAttribute.cs">
+      <Link>SharedProject\ProvideDebugPortSupplierAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideDebugPortPickerAttribute.cs">
+      <Link>SharedProject\ProvideDebugPortPickerAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ProvideTextEditorAutomationAttribute.cs">
+      <Link>SharedProject\ProvideTextEditorAutomationAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\VsExtensions.cs">
+      <Link>SharedProject\VsExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\SolutionEventsListener.cs">
+      <Link>SharedProject\SolutionEventsListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\ExceptionExtensions.cs">
+      <Link>SharedProject\ExceptionExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\TaskExtensions.cs">
+      <Link>SharedProject\TaskExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\VsTaskExtensions.cs">
+      <Link>SharedProject\VsTaskExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\Commands.cs">
+      <Link>SharedProject\Wpf\Commands.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\ConfigurationControl.cs">
+      <Link>SharedProject\Wpf\ConfigurationControl.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LabelledButton.cs">
+      <Link>SharedProject\Wpf\LabelledButton.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LabelledControl.cs">
+      <Link>SharedProject\Wpf\LabelledControl.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\Controls.cs">
+      <Link>SharedProject\Wpf\Controls.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\NativeMethods.cs">
+      <Link>SharedProject\Wpf\NativeMethods.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\Dialogs.cs">
+      <Link>SharedProject\Wpf\Dialogs.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Page Include="$(_ProjectSystemFilesLocation)\Wpf\Controls.xaml">
+      <Link>SharedProject\Wpf\Controls.xaml</Link>
+      <Visible>true</Visible>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LambdaConverter\ILambdaConverterProvider.cs">
+      <Link>SharedProject\Wpf\ILambdaConverterProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LambdaConverter\LambdaConverter.cs">
+      <Link>SharedProject\Wpf\LambdaConverter.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LambdaConverter\LambdaExtension.cs">
+      <Link>SharedProject\Wpf\LambdaExtension.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ProjectSystemFilesLocation)\Wpf\LambdaConverter\LambdaProperties.cs">
+      <Link>SharedProject\Wpf\LambdaProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(_ProjectSystemFilesLocation)\ProjectResources.resx">
+      <Link>SharedProject\ProjectResources.resx</Link>
+      <ManifestResourceName>Microsoft.VisualStudio.Project</ManifestResourceName>
+      <Visible>true</Visible>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(_ProjectSystemFilesLocation)\WebPiComponentPickerControl.resx">
+      <DependentUpon>WebPiComponentPickerControl.cs</DependentUpon>
+      <Link>SharedProject\WebPiComponentPickerControl.resx</Link>
+      <SubType>Designer</SubType>
+      <Visible>true</Visible>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

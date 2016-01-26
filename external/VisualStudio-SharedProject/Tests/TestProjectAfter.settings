@@ -1,0 +1,71 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Choose>
+    <When Condition="'$(Language)' == 'C#'">
+      <PropertyGroup>
+        <TrackFileAccess>false</TrackFileAccess>            <!-- CHECK RELEVANCE -->
+      </PropertyGroup>
+      <ItemGroup>
+        <Compile Include="$(BuildRoot)\Common\Tests\AssemblyInfoCommon.cs">
+          <Link>AssemblyInfoCommon.cs</Link>
+        </Compile>
+      </ItemGroup>
+      <PropertyGroup>
+        <TrackFileAccess>true</TrackFileAccess>             <!-- CHECK RELEVANCE -->
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Import Project="$(BuildRoot)\Build\Common.Build.targets" />
+
+  <Target Name="_GetTestBinaryDeployDirectories" Condition="Exists('$(BuildOutputRoot)Binaries')">
+    <ItemGroup>
+      <TestBinaryDeployDirectories Include="$([System.IO.Directory]::GetDirectories(`$(BuildOutputRoot)Binaries`))" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="_GetTestBinaryDeployFiles" Condition="'@(TestBinaryDeployDirectories)' != ''">
+    <ItemGroup>
+      <_TestBinaryDeployFiles Include="%(TestBinaryDeployDirectories.FullPath)\**\*" />
+
+      <UnfilteredTestBinaryDeployFiles Include="@(_TestBinaryDeployFiles)">
+        <TargetPath>$(BuildOutputRoot)Tests\%(_TestBinaryDeployFiles.RecursiveDir)%(_TestBinaryDeployFiles.Filename)%(_TestBinaryDeployFiles.Extension)</TargetPath>
+      </UnfilteredTestBinaryDeployFiles>
+
+      <_TestBinaryDeployFiles Remove="@(_TestBinaryDeployFiles)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GetTestBinaryDeployFiles" DependsOnTargets="_GetTestBinaryDeployDirectories;_GetTestBinaryDeployFiles" Returns="@(TestBinaryDeployFiles)">
+    <RemoveDuplicates Inputs="@(UnfilteredTestBinaryDeployFiles)">
+      <Output TaskParameter="Filtered" ItemName="FilteredTestBinaryDeployFiles"/>
+    </RemoveDuplicates>
+
+    <ItemGroup>
+      <TestBinaryDeployFiles Include="@(FilteredTestBinaryDeployFiles)"
+                             Condition="'%(FilteredTestBinaryDeployFiles.Filename)%(FilteredTestBinaryDeployFiles.Extension)' != 'extension.vsixmanifest'" />
+    </ItemGroup>
+  </Target>
+  
+  <!--
+  When we build this project, we copy all binaries and test binaries into the
+  one location. After that, we touch all the files, to ensure that subsequent
+  builds will not do anything unless the file has actually changed. Otherwise,
+  we may copy from different outputs due to random ordering in directory
+  processing.
+  -->
+  <Target Name="DeployTestFiles"
+          DependsOnTargets="GetTestBinaryDeployFiles"
+          Inputs="@(TestBinaryDeployFiles)"
+          Outputs="@(TestBinaryDeployFiles->'%(TargetPath)')"
+          AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(TestBinaryDeployFiles)"
+          DestinationFiles="@(TestBinaryDeployFiles->'%(TargetPath)')"
+          SkipUnchangedFiles="true"
+          OverwriteReadOnlyFiles="true"
+          Retries="3"
+          RetryDelayMilliseconds="1000">
+      <Output TaskParameter="CopiedFiles" ItemName="_CopiedTestBinaryFiles"/>
+    </Copy>
+    
+    <Touch Files="@(_CopiedTestBinaryFiles)" ContinueOnError="true" />
+  </Target>
+</Project>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Extern href="VSDbgCmd.h"/>
+  <Extern href="VsDebugGuids.h"/>
+
+  <!--The Commands section is where we the commands, menus and menu groups are defined.
+      This section uses a Guid to identify the package that provides the command defined inside it. -->
+  <Commands package="guidSccPackagePkg">
+    <!-- Inside this section we have different sub-sections: one for the menus, another  
+    for the menu groups, one for the buttons (the actual commands), one for the combos 
+    and the last one for the bitmaps used. Each element is identified by a command id that  
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+    called "command set" and is used to group different command inside a logically related  
+    group; your package should define its own command set in order to avoid collisions  
+    with command ids defined by other packages. -->
+
+    <!-- In this section you can define new menu groups. A menu group is a container for 
+         other menus or buttons (commands); from a visual point of view you can see the 
+         group as the part of a menu contained between two lines. The parent of a group 
+         must be a menu. -->
+    <Groups>
+    </Groups>
+
+    <Menus>
+    </Menus>
+
+    <!--Buttons section: buttons include both buttons on toolbars as well as individual menu items -->
+    <Buttons>
+      <Button guid="guidSccPackageCmdSetString" id="cmdidShowDocEvents" priority="0x7f00" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_OTHER2"/>
+        <Strings>
+          <CommandName>cmdidShowDocEvents</CommandName>
+          <ButtonText>Show Scc Track Document Events...</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidSccPackageCmdSetString" id="cmdidClearDocEvents" priority="0x7f01" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLS_OTHER2"/>
+        <Strings>
+          <CommandName>cmdidOpenRemoteDebugProxyFolder</CommandName>
+          <ButtonText>Clear Scc Track Document Events</ButtonText>
+        </Strings>
+      </Button>
+
+    </Buttons>
+
+
+    <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
+    <Bitmaps>
+    </Bitmaps>
+  </Commands>
+
+  <CommandPlacements>
+  </CommandPlacements>
+
+  <Symbols>
+    <!-- This is the package guid. -->
+    <GuidSymbol name="guidSccPackagePkg" value="{394d1b85-f4a7-4af2-9078-e4aab7673b22}" />
+
+    <!-- This is our command set GUID and associated commands -->
+    <GuidSymbol name="guidSccPackageCmdSetString" value="{045cf08e-e640-42c4-af80-0251d6f553a1}">
+      <IDSymbol name="cmdidShowDocEvents" value="0x0201" />
+      <IDSymbol name="cmdidClearDocEvents" value="0x0202" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>
