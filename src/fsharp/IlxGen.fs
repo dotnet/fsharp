@@ -1113,10 +1113,16 @@ and TypeDefsBuilder(nestedProvidedTypes:(string list * (ILTypeRef * ILTypeDef)) 
 
     // Add the provided types at this level and defer the rest
     //  for when those nested type defs are defined
-    let deferredProvidedTypes = nestedProvidedTypes |> List.filter (fun (encl, _) -> not encl.IsEmpty)
+    let deferredProvidedTypes = Dictionary<string,(string list * (ILTypeRef * ILTypeDef)) list>()
+    let providedTypesIn encl =
+        match deferredProvidedTypes.TryGetValue(encl) with
+        | true, lst -> lst
+        | _, _ -> []
     do
-        for (encl, (_, tdef)) in nestedProvidedTypes do
-            if encl.IsEmpty then this.AddTypeDef(tdef, false, false)
+        for el in nestedProvidedTypes do
+            match el with
+            | ([], (_, tdef)) -> this.AddTypeDef(tdef, false, false)
+            | (nm :: tl, tup) -> deferredProvidedTypes.[nm] <- (tl, tup) :: (providedTypesIn nm)
 
     member b.Close() = 
         //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order. 
@@ -1146,12 +1152,7 @@ and TypeDefsBuilder(nestedProvidedTypes:(string list * (ILTypeRef * ILTypeDef)) 
 
     member b.AddTypeDef(tdef:ILTypeDef, eliminateIfEmpty, addAtEnd) = 
         let idx = if addAtEnd then (countDown <- countDown - 1; countDown) else tdefs.Count
-        let pt =
-            deferredProvidedTypes
-            |> List.choose (fun (encl, pt) ->
-                match encl with
-                | nm :: tl when nm = tdef.Name -> Some (tl, pt)
-                | _ -> None)
+        let pt = providedTypesIn tdef.Name
         tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef, pt), eliminateIfEmpty)))
 
 /// Assembly generation buffers 
