@@ -1781,7 +1781,27 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
         | None -> tcConfig.container
     
     SigningInfo (delaysign,signer,container)
- 
+
+// If the --nocopyfsharpcore switch is not specified, this will:
+// 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
+// 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
+// 3) If not, it will produce an error.
+let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
+    let outDir = Path.GetDirectoryName(outFile)
+    let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
+    let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
+
+    if not (File.Exists(fsharpCoreDestinationPath)) then
+        match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+        | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
+        | None ->
+            let compilerLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
+            if File.Exists(compilerFsharpCoreDllPath) then
+                File.Copy(compilerFsharpCoreDllPath, fsharpCoreDestinationPath)
+            else
+                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
 // dead data at the end of each phase.  We explicitly communicate arguments
@@ -2001,9 +2021,13 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
+
     if tcConfig.showLoadedAssemblies then
         for a in System.AppDomain.CurrentDomain.GetAssemblies() do
             dprintfn "%s" a.FullName
+
+    if tcConfig.copyFSharpCore then
+        copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 

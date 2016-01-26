@@ -351,6 +351,7 @@ type TcConfigBuilder =
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
+      mutable copyFSharpCore : bool
       mutable shadowCopyReferences : bool }
 
 
@@ -508,6 +509,7 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
+    member copyFSharpCore : bool
     member shadowCopyReferences : bool
  
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
