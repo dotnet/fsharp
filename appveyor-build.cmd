@@ -283,7 +283,7 @@ if '%TEST_PORTABLE259%' == '1' (
 )
 
 if '%DO_VS%' == '1' (
-%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+%_msbuildexe% VisualFSharp.sln /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 )
 

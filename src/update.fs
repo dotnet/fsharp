@@ -126,8 +126,8 @@ let updateCmd envVars args = processor {
             "FSharp.LanguageService";"FSharp.LanguageService.Base";"FSharp.LanguageService.Compiler";
             "FSharp.ProjectSystem.Base";"FSharp.ProjectSystem.FSharp";"FSharp.ProjectSystem.PropertyPages";
             "FSharp.VS.FSI";
-            "Unittests";
-            "Salsa" ]
+            "VisualFSharp.Unittests";
+            "VisualFSharp.Salsa" ]
         for a in all do
             do! snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a) 
         }

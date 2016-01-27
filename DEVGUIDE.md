@@ -73,7 +73,7 @@ Prior to a **Debug** test run, you need to complete **all** of these steps:
 
 [Optional] If testing the Visual Studio bits (see below) you will also need:
 
-    msbuild vsintegration\fsharp-vsintegration-build.proj
+    msbuild VisualFSharp.sln 
     msbuild vsintegration\fsharp-vsintegration-unittests-build.proj
 
 Prior to a **Release** test run, you need to do **all** of these:
@@ -98,7 +98,7 @@ Prior to a **Release** test run, you need to do **all** of these:
 
 [Optional] If testing **Release** build of the Visual F# IDE Tools (see below) you will also need:
 
-    msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+    msbuild VisualFSharp.sln /p:Configuration=Release
     msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
 
 ## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# SDK on the machine
