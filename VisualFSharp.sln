@@ -87,8 +87,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Build", "src\fsharp\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fsc", "src\fsharp\Fsc\Fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Interactive.Settings", "..\..\src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Interactive.Settings", "src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiAnyCPU", "src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
