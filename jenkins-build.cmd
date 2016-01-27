@@ -22,7 +22,7 @@ goto :USAGE
 
 echo Usage:
 echo Builds the source tree using a specific configuration
-echo appveyor-build.cmd ^<debug^|release^>
+echo jenkins-build.cmd ^<debug^|release^>
 exit /b 1
 
 :ARGUMENTS_OK
