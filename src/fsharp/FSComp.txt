@@ -954,23 +954,10 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 1134,nrUnionTypeNeedsQualifiedAccess,"The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using."
 1135,nrRecordTypeNeedsQualifiedAccess,"The record type for the record field '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the record type ('%s') in the name you are using."
 1136,ilwriteErrorCreatingPdb,"Unexpected error creating debug information file '%s'"
-# -----------------------------------------------------------------------------
-# ilsign errors
-# -----------------------------------------------------------------------------
-1300,ilSignInvalidMagicValue,"Invalid Magic value in CLR Header"
-1301,ilSignBadImageFormat,"Bad image format"
-1302,ilSignPrivateKeyExpected,"Private key expected"
-1303,ilSignRsaKeyExpected,"RSA key expected"
-1304,ilSignInvalidBitLen,"Invalid bitLen"
-1305,ilSignInvalidRSAParams,"Invalid RSAParameters structure - '{{0}}' expected"
-1306,ilSignInvalidAlgId,"Invalid algId - 'Exponent' expected"
-1307,ilSignInvalidSignatureSize,"Invalid signature size"
-1308,ilSignNoSignatureDirectory,"No signature directory"
-1309,ilSignInvalidPKBlob,"Invalid Public Key blob"
+1138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"
 # -----------------------------------------------------------------------------
 # lex.fsl errors
 # -----------------------------------------------------------------------------
-138,lexOutsideIntegerRange,"This number is outside the allowable range for this integer type"
 lexCharNotAllowedInOperatorNames,"'%s' is not permitted as a character in operator names and is reserved for future use"
 lexUnexpectedChar,"Unexpected character '%s'"
 1140,lexByteArrayCannotEncode,"This byte array literal contains characters that do not encode as a single byte"
@@ -1082,6 +1069,19 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1245,lexInvalidUnicodeLiteral,"\U%s is not a valid Unicode character escape sequence"
 # reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version "%s" is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
+# -----------------------------------------------------------------------------
+# ilsign errors
+# -----------------------------------------------------------------------------
+1301,ilSignInvalidMagicValue,"Invalid Magic value in CLR Header"
+1302,ilSignBadImageFormat,"Bad image format"
+1303,ilSignPrivateKeyExpected,"Private key expected"
+1304,ilSignRsaKeyExpected,"RSA key expected"
+1305,ilSignInvalidBitLen,"Invalid bitLen"
+1306,ilSignInvalidRSAParams,"Invalid RSAParameters structure - '{{0}}' expected"
+1307,ilSignInvalidAlgId,"Invalid algId - 'Exponent' expected"
+1308,ilSignInvalidSignatureSize,"Invalid signature size"
+1309,ilSignNoSignatureDirectory,"No signature directory"
+1310,ilSignInvalidPKBlob,"Invalid Public Key blob"
 # Fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"
 2001,docfileNoXmlSuffix,"The documentation file has no .xml suffix"

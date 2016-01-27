@@ -2003,7 +2003,6 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
 //----------------------------------------------------------------------------
 // test hook
 //----------------------------------------------------------------------------
-
 let defineDynamicAssemblyAndLog(asmName,flags,asmDir:string) =
 #if FX_NO_APP_DOMAINS
     let asmB = AssemblyBuilder.DefineDynamicAssembly(asmName,flags)
@@ -2018,18 +2017,19 @@ let defineDynamicAssemblyAndLog(asmName,flags,asmDir:string) =
         printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"),enum %d,%A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) asmDir
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo) =
+let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
     let filename = assemblyName ^ ".dll"
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;
-    let assemblyBuilderAccess = 
+    let asmAccess = 
+        if collectible then AssemblyBuilderAccess.RunAndCollect 
 #if FX_RESHAPED_REFEMIT
-        AssemblyBuilderAccess.Run
+        else AssemblyBuilderAccess.Run
 #else
-        AssemblyBuilderAccess.RunAndSave
+        else AssemblyBuilderAccess.RunAndSave
 #endif
-    let asmB = defineDynamicAssemblyAndLog(asmName,assemblyBuilderAccess,asmDir) 
+    let asmB = defineDynamicAssemblyAndLog(asmName,asmAccess,asmDir) 
     if not optimize then 
         let daType = typeof<System.Diagnostics.DebuggableAttribute>;
         let daCtor = daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]

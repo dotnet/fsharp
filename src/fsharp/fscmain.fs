@@ -315,7 +315,7 @@ do ()
 
 [<EntryPoint>]
 let main(argv) =
-
+    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
 #if NO_HEAPTERMINATION

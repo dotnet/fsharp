@@ -12,6 +12,10 @@
     <AssemblyName>FSharp.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;COMPILER;INCLUDE_METADATA_READER;INCLUDE_METADATA_WRITER;EXTENSIBLE_DUMPER;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -452,17 +456,17 @@
     <Compile Include="..\CompileOptions.fs">
       <Link>Driver\CompileOptions.fs</Link>
     </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fsi">
-      <Link>Driver\IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fs">
-      <Link>Driver\IncrementalBuild.fs</Link>
-    </Compile>
     <Compile Include="..\fsc.fsi">
       <Link>Driver\fsc.fsi</Link>
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fsi">
+      <Link>Driver\IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fs">
+      <Link>Driver\IncrementalBuild.fs</Link>
     </Compile>
     <Compile Include="..\vs\Reactor.fsi">
       <Link>Service\Reactor.fsi</Link>
@@ -505,6 +509,12 @@
     </Compile>
     <Compile Include="..\vs\ServiceDeclarations.fs">
       <Link>Service\ServiceDeclarations.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\symbols.fsi">
+      <Link>Service\symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\symbols.fs">
+      <Link>Service\symbols.fs</Link>
     </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service\service.fsi</Link>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -13,7 +13,6 @@
     <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>Unittests</AssemblyName>
-    <GenerateInterfaceFile>Unittests.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
@@ -62,8 +61,26 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
+    <Compile Include="..\..\..\tests\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\Common.fs">
+      <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\EditorTests.fs">
+      <Link>EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\FileSystemTests.fs">
+      <Link>FileSystemTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
+      <Link>ProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
+      <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
     <CustomCopyLocal Include="Unittests.dll.config">
-        <TargetFilename>Unittests.dll.config</TargetFilename>
+      <TargetFilename>Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>
   </ItemGroup>
   <ItemGroup>
@@ -105,14 +122,9 @@
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="nunit.framework">
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Fsc\Fsc.fsproj">
-      <Project>{ffde9e47-9675-4498-b540-69b2583dd600}</Project>
-      <Name>Fsc</Name>
       <Private>True</Private>
-    </ProjectReference>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
@@ -120,11 +132,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
       <Name>FSharp.Build</Name>
       <Project>{702a7979-bcf9-4c41-853e-3adfc9897890}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
-      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler</Name>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSharp.Data.TypeProviders.fsproj">

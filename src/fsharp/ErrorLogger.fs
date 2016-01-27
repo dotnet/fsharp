@@ -38,8 +38,9 @@ let rec findOriginalException err =
 
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
-exception StopProcessing
-
+exception StopProcessingExn of exn option
+let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _ -> None
+let StopProcessing<'T> = StopProcessingExn None
 
 (* common error kinds *)
 exception NumberedError of (int * string) * range with   // int is e.g. 191 in FS0191
@@ -73,6 +74,13 @@ let inline protectAssemblyExploration dflt f =
         | UnresolvedPathReferenceNoRange _ -> dflt
         | _ -> reraise()
 
+let inline protectAssemblyExplorationF dflt f = 
+    try 
+       f()
+     with 
+        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName,path)
+        | _ -> reraise()
+
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  = 
     try 
        f()
@@ -98,6 +106,16 @@ let rec AttachRange m (exn:exn) =
 
 type Exiter = 
     abstract Exit : int -> 'T 
+
+
+let QuitProcessExiter =  
+    { new Exiter with  
+        member x.Exit(n) =                     
+            try  
+                System.Environment.Exit(n) 
+            with _ ->  
+                ()             
+            failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() } 
 
 /// Closed enumeration of build phases.
 type BuildPhase =
@@ -380,7 +398,7 @@ let report f =
 
 let deprecatedWithError s m = errorR(Deprecated(s,m))
 
-// Note: global state, but only for compiling FSHarp.Core.dll
+// Note: global state, but only for compiling FSharp.Core.dll
 let mutable reportLibraryOnlyFeatures = true
 let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly(m))
 let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly(m))

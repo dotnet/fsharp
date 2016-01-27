@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.InternalCollections
+namespace Tests.Compiler.InternalCollections
 
 open System
 open System.IO
@@ -22,9 +22,10 @@ type MruCache =
         
     member private rb.NumToStringBox n = box (rb.NumToString n)
 
+#if DISABLED_OLD_UNITTESTS
     [<Test>]
     member public rb.Basic() = 
-        let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
+        let m = new MruCache<int,string>(3, (fun (x,y) -> x = y))
         let s = m.Get(5)
         Assert.IsTrue("Five"=s)
         let s = m.Get(6)
@@ -110,6 +111,7 @@ type MruCache =
         let s = m.Get (("w",6)) // forces discard of y
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
+#endif
             
 [<TestFixture>] 
 type AgedLookup() = 

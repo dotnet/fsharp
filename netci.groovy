@@ -2,29 +2,55 @@ import jobs.generation.Utilities;
 
 def project = GithubProject
 
-def testProfiles = [
-	'UnitTests': 'net40,portable7,portable47,portable78,portable259,vs',
-	'CambridgeTests': 'cambridge_suite,smoke_only',
-	'QASuite': 'qa_suite,smoke_only'
-]
+def osList = ['Windows_NT'] //'Ubuntu', 'OSX', 'CentOS7.1'
 
-// TODO: run both debug/release builds
-	
-testProfiles.each { profileName, testSuite ->
-	[true, false].each { isPullRequest ->
+def machineLabelMap = ['Ubuntu':'ubuntu-doc',
+                       'OSX':'mac',
+                       'Windows_NT':'windows-elevated',
+                       'CentOS7.1' : 'centos-71']
+
+def static getBuildJobName(def configuration, def os) {
+    return configuration.toLowerCase() + '_' + os.toLowerCase()
+}
+
+[true, false].each { isPullRequest ->
+    ['Debug', 'Release'].each { configuration ->
+        osList.each { os ->
+
+            def lowerConfiguration = configuration.toLowerCase()
 	        
-        def newJobName = Utilities.getFullJobName(project, profileName, isPullRequest)
-        def buildString = """call appveyor-build.cmd ${testSuite}"""
+            // Calculate job name
+            def jobName = getBuildJobName(configuration, os)
 
-        def newJob = job(newJobName) {
-            label('windows')
-            steps {
-                batchFile(buildString)
+            def buildCommand = '';
+            if (os == 'Windows_NT') {
+                buildCommand = ".\\jenkins-build.cmd ${lowerConfiguration}"
             }
+            else {
+                buildCommand = "./jenkins-build.sh ${lowerConfiguration}"
+            }
+
+            def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
+            def newJob = job(newJobName) {
+                label(machineLabelMap[os])
+                steps {
+                    if (os == 'Windows_NT') {
+                        // Batch
+                        batchFile(buildCommand)
+                    }
+                    else {
+                        // Shell
+                        shell(buildCommand)
+                    }
+                }
+            }
+
+            // TODO: set to false after tests are fully enabled
+            def skipIfNoTestFiles = 'true'
+            
+            Utilities.simpleInnerLoopJobSetup(newJob, project, isPullRequest, "Jenkins ${os} ${configuration}")
+            Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
+            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
         }
-        
-        Utilities.simpleInnerLoopJobSetup(newJob, project, isPullRequest, "Jenkins ${profileName}")
-        Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml')
-        Utilities.addArchival(newJob, "Release/**")
     }
 }

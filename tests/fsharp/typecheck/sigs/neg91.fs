@@ -54,6 +54,32 @@ module TestExperimentalSet =
             A.x <- 1     
 
 
+module Bug528_Ex1 = 
+    module Color =
+        let [<Literal>] Yellow = "Yellow"
+
+    let isRed inp = 
+        match inp with
+        | Color.Yellow arg ->   // should get an error here
+            failwith "Don't know this color"
+        | _ -> ""
+
+module Bug528_Ex2 = 
+    type Color = | Yellow = 1 | Red = 2
+
+    let isRed inp = 
+        match inp with
+        | Color.Yellow arg ->   // should get an error here
+            failwith "Don't know this color"
+        | _ -> ""            
+
+module Bug528_Ex3 = 
+
+    let isRed inp = 
+        match inp with
+        | System.DayOfWeek.Monday arg ->   // should get an error here
+            failwith "Don't know this day"
+        | _ -> ""
 
 module TestExtrinsicExtensionConstructor = 
     // See https://github.com/Microsoft/visualfsharp/issues/659

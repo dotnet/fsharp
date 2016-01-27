@@ -169,6 +169,11 @@ module Option =
         | None -> dflt 
         | Some x -> x
 
+    let orElse dflt opt = 
+        match opt with 
+        | None -> dflt()
+        | res -> res
+
     // REVIEW: systematically eliminate foldMap/mapFold duplication
     let foldMap f z l = 
         match l with 
@@ -990,6 +995,7 @@ module Shim =
         abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
         abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
 
+
     type DefaultFileSystem() =
         interface IFileSystem with
             member __.AssemblyLoadFrom(fileName:string) = 
@@ -1030,7 +1036,7 @@ module Shim =
             member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 
     type System.Text.Encoding with 
-        static member GetEncodingShim(n:int) =             
-                System.Text.Encoding.GetEncoding(n)           
+        static member GetEncodingShim(n:int) = 
+                System.Text.Encoding.GetEncoding(n)
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 

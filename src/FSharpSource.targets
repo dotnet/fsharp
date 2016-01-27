@@ -209,6 +209,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_CONSOLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_DEBUG_LOG</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_WIN_REGISTRY</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_SERVERCODEPAGES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_REDUCED_CONSOLE</DefineConstants>

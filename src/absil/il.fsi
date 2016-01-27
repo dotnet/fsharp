@@ -1624,6 +1624,7 @@ type ILModuleDef =
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
 val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
+val resolveILMethodRefWithRescope: (ILType -> ILType) -> ILTypeDef -> ILMethodRef -> ILMethodDef
 
 // ------------------------------------------------------------------ 
 // Type Names

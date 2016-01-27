@@ -6,8 +6,128 @@
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 
 open System
+open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+open FsCheck
+#endif
+
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+[<AutoOpen>]
+module ChoiceUtils =
+
+    // FsCheck driven Async.Choice specification test
+
+    exception ChoiceExn of index:int
+
+    /// represents a child computation of a choice workflow
+    type ChoiceOp =
+        | NoneResultAfter of timeout:int
+        | SomeResultAfter of timeout:int
+        | ExceptionAfter of timeout:int
+
+        member c.Timeout =
+            match c with
+            | NoneResultAfter t -> t
+            | SomeResultAfter t -> t
+            | ExceptionAfter t -> t
+
+    /// represent a choice worfklow
+    type ChoiceWorkflow = ChoiceWorkflow of children:ChoiceOp list * cancelAfter:int option
+
+    /// normalizes random timeout arguments
+    let normalize (ChoiceWorkflow(ops, cancelAfter)) =
+        let ms t = 2000 * (abs t % 15) // timeouts only positive multiples of 2 seconds, up to 30 seconds
+        let mkOp op =
+            match op with
+            | NoneResultAfter t -> NoneResultAfter (ms t)
+            | SomeResultAfter t -> SomeResultAfter (ms t)
+            | ExceptionAfter t -> ExceptionAfter (ms t)
+
+        let ops = ops |> List.map mkOp
+        let cancelAfter = cancelAfter |> Option.map ms
+        ChoiceWorkflow(ops, cancelAfter)
+
+    /// runs specified choice workflow and checks that
+    /// Async.Choice spec is satisfied
+    let runChoice (ChoiceWorkflow(ops, cancelAfter)) =
+        // Step 1. build a choice workflow from the abstract representation
+        let completed = ref 0
+        let returnAfter time f = async {
+            do! Async.Sleep time
+            let _ = Interlocked.Increment completed
+            return f ()
+        }
+
+        let mkOp (index : int) = function
+            | NoneResultAfter t -> returnAfter t (fun () ->  None)
+            | SomeResultAfter t -> returnAfter t (fun () -> Some index)
+            | ExceptionAfter t -> returnAfter t (fun () -> raise (ChoiceExn index))
+
+        let choiceWorkflow = ops |> List.mapi mkOp |> Async.Choice
+
+        // Step 2. run the choice workflow and keep the results
+        let result =
+            let cancellationToken =
+                match cancelAfter with
+                | Some ca -> 
+                    let cts = new CancellationTokenSource()
+                    cts.CancelAfter(ca)
+                    Some cts.Token
+                | None -> None
+
+            try Async.RunSynchronously(choiceWorkflow, ?cancellationToken = cancellationToken) |> Choice1Of2 
+            with e -> Choice2Of2 e
+
+        // Step 3. check that results are up to spec
+        let getMinTime() =
+            seq {
+                yield Int32.MaxValue // "infinity": avoid exceptions if list is empty
+
+                for op in ops do 
+                    match op with
+                    | NoneResultAfter _ -> ()
+                    | op -> yield op.Timeout
+
+                match cancelAfter with Some t -> yield t | None -> ()
+            } |> Seq.min
+
+        let verifyIndex index =
+            if index < 0 || index >= ops.Length then
+                Assert.Fail "Returned choice index is out of bounds."
+        
+        // Step 3a. check that output is up to spec
+        match result with
+        | Choice1Of2 (Some index) ->
+            verifyIndex index
+            match ops.[index] with
+            | SomeResultAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
+            | op -> Assert.Fail <| sprintf "Should be 'Some' but got %A" op
+
+        | Choice1Of2 None ->
+            Assert.True(ops |> List.forall (function NoneResultAfter _ -> true | _ -> false))
+
+        | Choice2Of2 (:? OperationCanceledException) ->
+            match cancelAfter with
+            | None -> Assert.Fail "Got unexpected cancellation exception."
+            | Some ca -> Assert.AreEqual(getMinTime(), ca)
+
+        | Choice2Of2 (ChoiceExn index) ->
+            verifyIndex index
+            match ops.[index] with
+            | ExceptionAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
+            | op -> Assert.Fail <| sprintf "Should be 'Exception' but got %A" op
+
+        | Choice2Of2 e -> Assert.Fail(sprintf "Unexpected exception %O" e)
+
+        // Step 3b. check that nested cancellation happens as expected
+        if not <| List.isEmpty ops then
+            let minTimeout = getMinTime()
+            let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
+            Assert.LessOrEqual(!completed, minTimeoutOps)
+
+#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -294,6 +414,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+    [<Test; Category("CHOICE")>]
+    member this.``Async.Choice specification test``() =
+        Check.QuickThrowOnFailure (normalize >> runChoice)
+#endif
 
     [<Test>]
     member this.``error on one workflow should cancel all others``() =

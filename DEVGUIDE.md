@@ -103,7 +103,7 @@ Prior to a **Release** test run, you need to do **all** of these:
 
 ## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# SDK on the machine
 
-**Note:** Step #3 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+**Note:** Step #2 below will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
 components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
 
 **Note:** Step #4 will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 

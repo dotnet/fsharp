@@ -1,11 +1,27 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open System.Globalization
-open System
 
-/// Methods for cheaply and innacurately parsing F#
+open System
+open System.Globalization
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
+/// Methods for cheaply and innacurately parsing F#.
+///
+/// These methods are very old and are mostly to do with extracting "long identifier islands" 
+///     A.B.C
+/// from F# source code, an approach taken from pre-F# VS samples for implementing intelliense.
+///
+/// This code should really no longer be needed since the language service has access to 
+/// parsed F# source code ASTs.  However, the long identifiers are still passed back to GetDeclarations and friends in the 
+/// F# Compiler Service and it's annoyingly hard to remove their use completely.
+///
+/// In general it is unlikely much progress will be made by fixing this code - it will be better to 
+/// extract more information from the F# ASTs.
+///
+/// It's also surprising how hard even the job of getting long identifier islands can be. For example the code 
+/// below is inaccurate for long identifier chains involving ``...`` identifiers.  And there are special cases
+/// for active pattern names and so on.
 module internal QuickParse =
     open Microsoft.FSharp.Compiler.SourceCodeServices.PrettyNaming
   
@@ -17,15 +33,16 @@ module internal QuickParse =
         if (s.EndsWith("|")) then (Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT s)) 
         else tokenTag
 
+    let rec isValidStrippedName (name:string) idx = 
+        if (idx = name.Length) then false
+        elif (IsIdentifierPartCharacter name.[idx]) then true
+        else isValidStrippedName name (idx + 1)
+
     // Utility function that recognizes whether a name is valid active pattern name
     // Extracts the 'core' part without surrounding bars and checks whether it contains some identifier
     // (Note, this doesn't have to be precise, because this is checked by backround compiler,
     // but it has to be good enough to distinguish operators and active pattern names)
     let private isValidActivePatternName (name:string) = 
-      let rec isValidStrippedName (name:string) idx = 
-        if (idx = name.Length) then false
-        elif (IsIdentifierPartCharacter name.[idx]) then true
-        else isValidStrippedName name (idx + 1)
 
       // Strip the surrounding bars (e.g. from "|xyz|_|") to get "xyz"
       match name.StartsWith("|", System.StringComparison.Ordinal), 
@@ -157,6 +174,7 @@ module internal QuickParse =
                 elif IsIdentifierPartCharacter(pos) then InLeadingIdentifier(pos-1,right,(prior,residue))
                 elif IsDot(pos) then InLeadingIdentifier(pos-1,pos,PushName())
                 else PushName()
+
             let rec InName(pos,startResidue,right) =
                 let NameAndResidue() = 
                     [line.Substring(pos+1,startResidue-pos-1)],(line.Substring(startResidue+1,right-startResidue))
@@ -164,6 +182,7 @@ module internal QuickParse =
                 elif IsIdentifierPartCharacter(pos) then InName(pos-1,startResidue,right) 
                 elif IsDot(pos) then InLeadingIdentifier(pos-1,pos,NameAndResidue())
                 else NameAndResidue()
+
             let rec InResidue(pos,right) =
                 if pos < 0 then [],(line.Substring(pos+1,right-pos))
                 elif IsDot(pos) then InName(pos-1,pos,right)
@@ -197,6 +216,7 @@ module internal QuickParse =
                 elif IsDot(pos) then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext)
                 elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext))
                 else AtStartOfIdentifier(pos,[],false) // Throw away what we have and start over.
+
             and EatComment (nesting, pos, callContext) = 
                 if pos > index then [], ""
                 else
@@ -218,6 +238,7 @@ module internal QuickParse =
                 else
                     // eat next char
                     EatComment(nesting, pos + 1, callContext)
+
             and InUnquotedIdentifier(left:int,pos:int,current,throwAwayNext) =
                 if pos > index then 
                     if throwAwayNext then [],"" else current,(line.Substring(left,pos-left))
@@ -230,6 +251,7 @@ module internal QuickParse =
                         let ident = line.Substring(left,pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos, ident, current,throwAwayNext)
                     else AtStartOfIdentifier(pos,[],false) // Throw away what we have and start over.
+
             and InQuotedIdentifier(left:int,pos:int, current,throwAwayNext) =
                 if pos > index then 
                     if throwAwayNext then [],"" else current,(line.Substring(left,pos-left))
@@ -239,6 +261,7 @@ module internal QuickParse =
                         let ident = line.Substring(left, pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos+2,ident,current,throwAwayNext) 
                     else InQuotedIdentifier(left,pos+1,current,throwAwayNext)                    
+
             and AtStartOfIdentifier(pos:int, current, throwAwayNext) =
                 if pos > index then 
                     if throwAwayNext then [],"" else current,""
@@ -273,15 +296,15 @@ module internal QuickParse =
             | _ -> plid, residue
 
 
-    open Microsoft.FSharp.Compiler.SourceCodeServices
     
-    let TokenNameEquals (tokenInfo : TokenInformation) token2 = 
-        String.Compare(tokenInfo.TokenName, token2, StringComparison.OrdinalIgnoreCase)=0  
+    let TokenNameEquals (tokenInfo : FSharpTokenInfo) token2 = 
+        String.Compare(tokenInfo .TokenName, token2, StringComparison.OrdinalIgnoreCase)=0  
     
     // The prefix of the sequence of token names to look for in TestMemberOrOverrideDeclaration, in reverse order
     let private expected = [ [|"dot"|]; [|"ident"|]; [|"member"; "override"|] ]
+
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
-    let internal TestMemberOrOverrideDeclaration (tokens:TokenInformation[]) =
+    let internal TestMemberOrOverrideDeclaration (tokens:FSharpTokenInfo[]) =
         let filteredReversed = 
             tokens 
             |> Array.filter (fun tok ->

@@ -13,8 +13,9 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open System.Collections.Generic
 open System.Collections
+open System.Collections.Generic
+open System.Collections.Concurrent
  
 let logging = false 
 
@@ -79,10 +80,10 @@ let rec splitNamespaceAux (nm:string) =
 
 /// Global State. All namespace splits ever seen
 // ++GLOBAL MUTABLE STATE
-let memoizeNamespaceTable = new Dictionary<string,string list>(10)
+let memoizeNamespaceTable = new ConcurrentDictionary<string,string list>()
 
 //  ++GLOBAL MUTABLE STATE
-let memoizeNamespaceRightTable = new Dictionary<string,string option * string>(100)
+let memoizeNamespaceRightTable = new ConcurrentDictionary<string,string option * string>()
 
 
 let splitNamespace nm =
@@ -96,7 +97,7 @@ let splitNamespaceMemoized nm = splitNamespace nm
 
 // ++GLOBAL MUTABLE STATE
 let memoizeNamespaceArrayTable = 
-    Dictionary<string,string[]>(10)
+    Concurrent.ConcurrentDictionary<string,string[]>()
 
 let splitNamespaceToArray nm =
     let mutable res = Unchecked.defaultof<_>
@@ -5101,7 +5102,7 @@ let compareILVersions (a1,a2,a3,a4) ((b1,b2,b3,b4) : ILVersionInfo) =
     0
 
 
-let resolveILMethodRef td (mref:ILMethodRef) = 
+let resolveILMethodRefWithRescope r td (mref:ILMethodRef) = 
     let args = mref.ArgTypes
     let nargs = args.Length
     let nm = mref.Name
@@ -5111,13 +5112,15 @@ let resolveILMethodRef td (mref:ILMethodRef) =
       possibles |> List.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
-          (md.Parameters,mref.ArgTypes) ||>  ILList.lengthsEqAndForall2 (fun p1 p2 -> p1.Type = p2) &&
+          (md.Parameters,mref.ArgTypes) ||>  ILList.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
-          md.Return.Type = mref.ReturnType)  with 
-    | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name);
+          r md.Return.Type = mref.ReturnType)  with 
+    | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)
     | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)
         
+let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
+
 let mkRefToILModule m =
   ILModuleRef.Create(m.Name, true, None)
 
