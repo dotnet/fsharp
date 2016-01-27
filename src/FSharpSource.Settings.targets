@@ -77,6 +77,8 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV15=True</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV15</DefineConstants>
   </PropertyGroup>
   
   <PropertyGroup>
