@@ -957,6 +957,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence.</param>
         /// <returns>The reversed sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <remarks>Consume the whole input sequence before yielding the first element.</remarks>
         [<CompiledName("Reverse")>]
         val rev: source:seq<'T> -> seq<'T>
 
