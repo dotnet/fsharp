@@ -1,0 +1,95 @@
+# FSharp.Data resource strings
+#
+################################################################################
+# Util.fs
+################################################################################
+################################################################################
+unsupportedFramework,"The .NET SDK 4.0 or 4.5 tools could not be found"
+#
+################################################################################
+# TypeProviderEmit.fs
+################################################################################
+################################################################################
+invalidOperationOnProvidedType,"The operation '%s' on item '%s' should not be called on provided type, member or parameter"
+constructorFor,"constructor for %s"
+notYetKnownType,"<not yet known type>"
+declaringTypeAlreadySet,"ProvidedConstructor: declaringType already set on '%s'"
+pcNoInvoker,"ProvidedConstructor: no invoker for '%s'"
+pcCodeAlreadyGiven,"ProvidedConstructor: code already given for '%s'"
+pmNoInvokerName,"ProvidedMethod: no invoker for %s on type %s"
+pcNoInvokerName,"ProvidedConstructor: code already given for %s on type %s"
+ppGetterAlreadyCreated,"ProvidedProperty: getter MethodInfo has already been created"
+ppSetterAlreadyCreated,"ProvidedProperty: setter MethodInfo has already been created"
+unreachable,"unreachable"
+nonArrayType,"non-array type"
+nonGenericType,"non-generic type"
+notAnArrayPointerOrByref,"not an array, pointer or byref type"
+unitNotFound,"Unit '%s' not found in FSharp.Core SI module"
+useNullForGlobalNamespace,"Use 'null' for global namespace"
+typeNotAddedAsAMember,"type '%s' was not added as a member to a declaring type"
+pdErrorExpectingStaticParameters,"ProvidedTypeDefinition: expecting %d static parameters but given %d for type %s"
+pdDefineStaticParametersNotCalled,"ProvidedTypeDefinition: DefineStaticParameters was not called"
+ptdStaticParametersSuppliedButNotExpected,"ProvidedTypeDefinition: static parameters supplied but not expected for %s"
+containerTypeAlreadySet,"container type for '%s' was already set to '%s'"
+getMethodImplDoesNotSupportOverloads,"GetMethodImpl does not support overloads"
+gpiNeedToHandleSpecifiedReturnType,"Need to handle specified return type in GetPropertyImpl"
+gpiNeedToHandleSpecifiedParameterTypes,"Need to handle specified parameter types in GetPropertyImpl"
+gpiNeedToHandleSpecifiedModifiers,"Need to handle specified modifiers in GetPropertyImpl"
+gpiNeedToHandleBinder,"Need to handle binder in GetPropertyImpl"
+moreThanOneNestedType,"There is more than one nested type called '%s' in type '%s'"
+#
+################################################################################
+# TypeProvidersImpl.fs
+#################################################################################
+################################################################################
+errorWritingLocalSchemaFile,"Error writing to local schema file. %s"
+errorReadingSchema,"Error reading schema. %s"
+errorInvalidExtensionSchema,"The extension of the given LocalSchema file '%s' is not valid. The required extension is '%s'."
+fileDoesNotContainXMLElement,"The file '%s' doesn't contain XML element '%s'"
+failedToLoadFileAsXML,"Failed to load the file '%s' as XML"
+#
+################################################################################
+# TypeProviders.fs
+################################################################################
+################################################################################
+xmlDocContainsTheSimplifiedContextTypes,"Contains the simplified context types for the %s"
+xmlDocFullServiceTypesAPI,"<summary><para>The full API to the %s.</para><para>To use the service via the full API, create an instance of one of the types %s.</para><para>You may need to set the Credentials property on the instance.</para></summary>"
+xmlDocFullServiceTypesAPINoCredentials,"<summary><para>The full API to the %s.</para><para>To use the service via the full API, create an instance of one of the types %s.</para></summary>"
+xmlDocSimplifiedDataContext,"A simplified data context for the %s. The full data context object is available via the DataContext property."
+xmlDocExecuteProcedure,"Execute the '%s' procedure"
+xmlDocGetEntities,"Gets the '%s' entities from the %s. This property may be used as the source in a query expression."
+xmlDocGetFullContext,"Gets the full data context object for this %s"
+xmlDocGetSimplifiedContext,"Get a simplified data context for this %s. By default, no credentials are set"
+xmlDocConstructSimplifiedContext,"Construct a simplified data context for this %s. By default, no credentials are set"
+dbmlFileTypeHelp,"<summary>Provides the types to access a database with the schema in a DBML file, using a LINQ-to-SQL mapping</summary><param name='File'>The DBML file containing the schema description</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param><param name='ContextTypeName'>The name of data context class (default: derived from database name)</param><param name='Serializable'>Generate uni-directional serializable classes (default: false, which means no serialization)</param>"
+sqlDataConnection,"SQL connection"
+sqlDataConnectionInfo,"Gets the connection used by the framework"
+sqlDataConnectionTypeHelp,"<summary>Provides the types to access a database, using a LINQ-to-SQL mapping</summary><param name='ConnectionString'>The connection string for the database connection. If using Visual Studio, a connection string can be found in database properties in the Server Explorer window.</param><param name='ConnectionStringName'>The name of the connection string for the database connection in the configuration file.</param><param name='LocalSchemaFile'>The local .dbml file for the database schema (default: no local schema file)</param><param name='ForceUpdate'>Require that a direct connection to the database be available at design-time and force the refresh of the local schema file (default: true)</param><param name='Pluralize'>Automatically pluralize or singularize class and member names using English language rules (default: false)</param><param name='Views'>Extract database views (default: true)</param><param name='Functions'>Extract database functions (default: true)</param><param name='ConfigFile'>The name of the configuration file used for connection strings (default: app.config or web.config is used)</param><param name='DataDirectory'>The name of the data directory, used to replace |DataDirectory| in connection strings (default: the project or script directory)</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param><param name='StoredProcedures'>Extract stored procedures (default: true)</param><param name='Timeout'>Timeout value in seconds to use when SqlMetal accesses the database (default: 0, which means infinite)</param><param name='ContextTypeName'>The name of data context class (default: derived from database name)</param><param name='Serializable'>Generate uni-directional serializable classes (default: false, which means no serialization)</param>"
+edmxFileTypeHelp,"<summary>Provides the types to access a database with the schema in an EDMX file, using a LINQ-to-Entities mapping</summary><param name='File'>The EDMX file containing the conceptual, storage and mapping schema descriptions</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param>"
+sqlEntityConnection,"SQL Entity connection"
+sqlEntityConnectionTypeHelp,"<summary>Provides the types to access a database, using a LINQ-to-Entities mapping</summary><param name='ConnectionString'>The connection string for the database connection</param><param name='ConnectionStringName'>The name of the connection string for the database connection in the configuration file.</param><param name='LocalSchemaFile'>The local file for the database schema</param><param name='Provider'>The name of the ADO.NET data provider to be used for ssdl generation (default: System.Data.SqlClient)</param><param name='EntityContainer'>The name to use for the EntityContainer in the conceptual model</param><param name='ConfigFile'>The name of the configuration file used for connection strings (default: app.config or web.config is used)</param><param name='DataDirectory'>The name of the data directory, used to replace |DataDirectory| in connection strings (default: the project or script directory)</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param><param name='ForceUpdate'>Require that a direct connection to the database be available at design-time and force the refresh of the local schema file (default: true)</param><param name='Pluralize'>Automatically pluralize or singularize class and member names using English language rules (default: false)</param><param name='SuppressForeignKeyProperties'>Exclude foreign key properties in entity type definitions (default: false)</param>"
+connectionInfo,"Gets the connection used by the object context"
+odataServiceCredentialsInfo,"Gets or sets the authentication information used by each query for this data context object"
+odataServiceTypeHelp,"<summary>Provides the types to access an OData service</summary><param name="ServiceUri">The Uri for the OData service</param><param name='LocalSchemaFile'>The local .csdl file for the service schema</param><param name='ForceUpdate'>Require that a direct connection to the service be available at design-time and force the refresh of the local schema file (default: true)</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param><param name='DataServiceCollection'>Generate collections derived from DataServiceCollection (default: false)</param>"
+wsdlServiceTypeHelp,"<summary>Provides the types to access a WSDL web service</summary><param name='ServiceUri'>The Uri for the WSDL service</param><param name='LocalSchemaFile'>The .wsdlschema file to store locally cached service schema</param><param name='ForceUpdate'>Require that a direct connection to the service be available at design-time and force the refresh of the local schema file (default: true)</param><param name='ResolutionFolder'>The folder used to resolve relative file paths at compile-time (default: folder containing the project or script)</param><param name='MessageContract'>Generate Message Contract types (default: false)</param><param name='EnableDataBinding'>Implement the System.ComponentModel.INotifyPropertyChanged interface on all DataContract types to enable data binding (default: false)</param><param name='Serializable'>Generate classes marked with the Serializable Attribute (default: false)</param><param name='Async'>Generate both synchronous and asynchronous method signatures (default: false, which means generate only synchronous method signatures)</param><param name='CollectionType'>A fully-qualified or assembly-qualified name of the type to use as a collection data type when code is generated from schemas</param>"
+staticParameterNotFoundForType,"static parameter '%s' not found for type '%s'"
+unexpectedMethodBase,"unexpected MethodBase"
+xmlDocDisposeSimplifiedContext,"Disposes the given context"
+invalidDataContextClassName,"%s is not valid name for data context class"
+fixedQueriesNotSupported,"The provided ServiceUri is for a data service that supports fixed queries. The OData type provider does not support such services."
+dqsServicesNotSupported,"Services that implement the Data Quality Services API are not supported."
+invalidConnectionString,"The supplied connection string should be either a valid provider-specific connection string or a valid connection string accepted by the EntityClient."
+nonEquivalentConnectionString,"Connection string presented in EntityClient format can differ only in provider-specific part."
+noConfigFileFound1,"A configuration string name was specified but no configuration file was found. Neither app.config nor web.config found in project or script directory."
+noConfigFileFound2,"A configuration string name was specified but the configuration file '%s' was not found"
+noConnectionStringOrConnectionStringName,"When using this provider you must specify either a connection string or a connection string name. To specify a connection string, use %s<\"...connection string...\">."
+notBothConnectionStringOrConnectionStringName,"When using this provider you must specify either a connection string or a connection string name, but not both. To specify a connection string, use SqlDataConnection<\"...connection string...\">."
+invalidProviderInConfigFile,"Invalid provider '%s' in connection string entry '%s' in config file '%s'. SqlDataConnection can only be used with provider 'System.Data.SqlClient'."
+invalidConnectionStringInConfigFile,"Invalid empty connection string '%s' for the connection string name '%s' in config file '%s'"
+errorWhileReadingConnectionStringInConfigFile,"An error occured while reading connection string '%s' from the config file '%s': '%s'"
+serviceMetadataFileElementIsEmpty,"ServiceMetadataFile element cannot be empty"
+invalidWsdlUri,"The parameter 'ServiceUri' cannot be an empty string."
+requiredToolNotFound,"The required tool '%s' could not be found."
+dataDirectoryNotFound,"The data directory '%s' did not exist."
+edmxFileRequiresDotNet45,"File '%s' requires .NET 4.5. To use this file please change project target framework to .NET 4.5."
+connectionStringNotFound,"Connection string '%s' not found in configuration file."
