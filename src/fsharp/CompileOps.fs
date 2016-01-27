@@ -1646,6 +1646,7 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Resources.ResourceManager"
       yield "System.Runtime.Extensions"
       yield "System.Runtime.InteropServices"
+      yield "System.Runtime.InteropServices.PInvoke"
       yield "System.Runtime.Numerics"
       yield "System.Text.Encoding"
       yield "System.Text.Encoding.Extensions"
@@ -2951,10 +2952,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         errorR(MSBuildReferenceResolutionError(code,message,errorAndWarningRange)))
 
             let targetFrameworkMajorMinor = tcConfig.targetFrameworkVersionMajorMinor
-
-#if DEBUG
-            assert(MSBuildResolver.SupportedNetFrameworkVersions.Contains targetFrameworkMajorMinor) // Resolve is flexible, but pinning down targetFrameworkMajorMinor.
-#endif
 
             let targetProcessorArchitecture = 
                     match tcConfig.platform with
@@ -4440,7 +4437,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     // If this ever changes then callers may need to begin disposing the TcImports (though remember, not before all derived 
     // non-frameworkk TcImports built related to this framework TcImports are disposed).
     static member BuildFrameworkTcImports (tcConfigP:TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-        
+
         let tcConfig = tcConfigP.Get()
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig,frameworkDLLs,[])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig,nonFrameworkDLLs,[])
