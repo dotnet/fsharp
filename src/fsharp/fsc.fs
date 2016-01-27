@@ -232,8 +232,10 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
     let AppendClosureInformation(filename) =
         if IsScript filename then 
             let closure = LoadClosure.ComputeClosureOfSourceFiles(tcConfig,[filename,rangeStartup],CodeContext.Compilation,lexResourceManager=lexResourceManager,useDefaultScriptingReferences=false)
-            let references = closure.References |> List.map snd |> List.concat |> List.map (fun r->r.originalReference) |> List.filter (fun r->r.Range<>range0)
-            references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.Range,r.Text))
+            // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
+            // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
+            let references = closure.References |> List.map snd |> List.concat |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
+            references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range,r.resolvedPath))
             closure.NoWarns |> List.map(fun (n,ms)->ms|>List.map(fun m->m,n)) |> List.concat |> List.iter tcConfigB.TurnWarningOff
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.RootWarnings |> List.iter warnSink
@@ -613,7 +615,7 @@ type ILResource with
         | ILResourceLocation.Local b -> b()
         | _-> error(InternalError("Bytes",rangeStartup))
 
-let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu,outfile) = 
+let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu,outfile,isIncrementalBuild) = 
       if GenerateInterfaceData(tcConfig) then 
         if verbose then dprintfn "Generating interface data attribute...";
         let resource = WriteSignatureData (tcConfig,tcGlobals,exportRemapping,generatedCcu,outfile)
@@ -621,7 +623,7 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu
         // REVIEW: need a better test for this
         let outFileNoExtension = Filename.chopExtension outfile
         let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
-        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
+        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll) && not isIncrementalBuild then 
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
             File.WriteAllBytes(sigDataFileName,resource.Bytes);
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
@@ -993,8 +995,6 @@ module MainModuleBuilder =
         let ilTypeDefs = 
             //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
             mkILTypeDefs codegenResults.ilTypeDefs
-            
-
 
         let mainModule = 
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
@@ -1382,14 +1382,14 @@ module StaticLinker =
                 TypeDefs = 
                   mkILTypeDefs 
                       ([ for td in fakeModule.TypeDefs do 
-                              yield {td with 
+                            yield {td with 
                                       Methods =
-                                        mkILMethods (List.map (fun (md:ILMethodDef) ->
-                                                            {md with                                                            
-                                                              CustomAttrs = 
-                                                                mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                   ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
-                                                          (td.Methods.AsList))}])}
+                                        td.Methods.AsList
+                                        |> List.map (fun md ->
+                                            {md with CustomAttrs = 
+                                                        mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                        |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
 
@@ -1439,7 +1439,7 @@ module StaticLinker =
                                     | ResolvedCcu ccu -> Some ccu
                                     | UnresolvedCcu(_ccuName) -> None
 
-                                let modul = dllInfo.RawMetadata
+                                let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
 
                                 let refs = 
                                     if ilAssemRef.Name = GetFSharpCoreLibraryName() then 
@@ -1508,7 +1508,7 @@ module StaticLinker =
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 
-                  let modul = dllInfo.RawMetadata
+                  let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
               | None -> () ]
 
@@ -1658,8 +1658,8 @@ module StaticLinker =
                               let rec rw enc (tdefs: ILTypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
-                                      let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
-                                      if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
+                                        let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
+                                        if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
                                           yield { tdef with NestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes  } ]
                               rw [] ilModule.TypeDefs
@@ -1781,7 +1781,27 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
         | None -> tcConfig.container
     
     SigningInfo (delaysign,signer,container)
- 
+
+// If the --nocopyfsharpcore switch is not specified, this will:
+// 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
+// 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
+// 3) If not, it will produce an error.
+let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
+    let outDir = Path.GetDirectoryName(outFile)
+    let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
+    let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
+
+    if not (File.Exists(fsharpCoreDestinationPath)) then
+        match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+        | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
+        | None ->
+            let compilerLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
+            if File.Exists(compilerFsharpCoreDllPath) then
+                File.Copy(compilerFsharpCoreDllPath, fsharpCoreDestinationPath)
+            else
+                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
 // dead data at the end of each phase.  We explicitly communicate arguments
@@ -1887,7 +1907,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     
     let sigDataAttributes,sigDataResources = 
       try
-        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
+        EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
       with e -> 
         errorRecoveryNoRange e
         SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
@@ -1904,7 +1924,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     let metadataVersion = 
         match tcConfig.metadataVersion with
         | Some(v) -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.MetadataVersion | _ -> ""
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
     let optimizedImpls,optimizationData,_ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedAssembly)
 
     AbortOnError(errorLogger,tcConfig,exiter)
@@ -2001,9 +2021,13 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
+
     if tcConfig.showLoadedAssemblies then
         for a in System.AppDomain.CurrentDomain.GetAssemblies() do
             dprintfn "%s" a.FullName
+
+    if tcConfig.copyFSharpCore then
+        copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 
@@ -2020,9 +2044,6 @@ let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProv
     |> main4
 
 let mainCompile (argv, bannerAlreadyPrinted, exiter:Exiter) = 
-    // Enabling batch latency mode currently overrides app config <gcConcurrent>.
-    // If batch mode is ever removed or changed, revisit use of <gcConcurrent>.
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(argv, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
 
 [<RequireQualifiedAccess>]

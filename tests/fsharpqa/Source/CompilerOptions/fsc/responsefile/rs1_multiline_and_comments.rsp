@@ -1,0 +1,10 @@
+
+# some comments
+
+--define:FROM_RESPONSE_FILE_1
+
+#other comments
+
+--define:FROM_RESPONSE_FILE_2
+
+# end of comments

@@ -155,12 +155,12 @@ type TheTests() =
         // ensure that vs-style encoding is off
         p
         
-    static member internal CreateProjectWithUTF8Output(filename : string) =
+    static member internal CreateProjectWithUTF8Output(filename: string) =
         let sp, configChangeNotifier = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
         let p = TheTests.CreateProject(filename, "true", configChangeNotifier, sp)
         p
       
-    static member internal FindNodeWithCaption(project : UnitTestingFSharpProjectNode, caption) =
+    static member internal FindNodeWithCaption(project: UnitTestingFSharpProjectNode, caption) =
         let node = project.FirstChild
         let rec TryFind (n : HierarchyNode) =
             if n = null then None 
@@ -172,7 +172,7 @@ type TheTests() =
         | Some(x) -> x
         | None -> failwithf "did not find node with caption %s" caption
        
-    static member MoveDown(node : HierarchyNode) =
+    static member MoveDown(node: HierarchyNode) =
         match node with
         | :? FSharpFileNode 
         | :? FSharpFolderNode -> 
@@ -183,7 +183,7 @@ type TheTests() =
         | _ -> failwith "unexpected node type"
         ()
 
-    static member MoveUp(node : HierarchyNode) =
+    static member MoveUp(node: HierarchyNode) =
         match node with
         | :? FSharpFileNode 
         | :? FSharpFolderNode ->
@@ -229,16 +229,18 @@ type TheTests() =
         TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], otherflags, other)
     
     static member public FsprojTextWithProjectReferences(compileItems : string list, references : string list, projectReferences : string list, other : string) = 
-        let vsops = fst (Salsa.Salsa.Models.MSBuild())
+        let vsops = Salsa.Salsa.BuiltMSBuildTestFlavour()
         let references = references |> List.map (fun r->r,false)
-        let text = vsops.CreatePhysicalProjectFileInMemory [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)] references projectReferences [] [] null null other null
+        let items = [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)]
+        let text = vsops.CreatePhysicalProjectFileInMemory(items, references, projectReferences, [], [], null, null, other, null)
         printfn "%s" text
         text
         
     static member public FsprojTextWithProjectReferencesAndOtherFlags(compileItems : string list, references : string list, projectReferences : string list, otherflags : string, other : string, targetFramework : string) = 
-        let vsops = fst (Salsa.Salsa.Models.MSBuild())
+        let vsops = Salsa.Salsa.BuiltMSBuildTestFlavour()
         let references = references |> List.map (fun r->r,false)
-        let text = vsops.CreatePhysicalProjectFileInMemory [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)] references projectReferences [] [] null otherflags other targetFramework
+        let items = [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)]
+        let text = vsops.CreatePhysicalProjectFileInMemory(items, references, projectReferences, [], [], null, otherflags, other, targetFramework)
         printfn "%s" text
         text
 
@@ -565,50 +567,6 @@ and (*type*) MSBuildItems =
         match this with
         | MSBuildItems(l) -> l
         
-(*
-when first click to start drag
-        public override int GetDropInfo(out uint pdwOKEffects, out IOleDataObject ppDataObject, out IDropSource ppDropSource)
-ensure pdwOKEffects are right and return S_OK
-
-when drag onto new entity
-        public override int DragEnter(IOleDataObject pDataObject, uint grfKeyState, uint itemid, ref uint pdwEffect)
-ensure is same thing(pDataObj, itemid) being dragged, pdwEffect is properly updated
-
-not sure how differs from DragEnter...
-        public override int DragOver(uint grfKeyState, uint itemid, ref uint pdwEffect)
-ensure right pdwEffect
-
-at end of drag...
-        public override int OnBeforeDropNotify(IOleDataObject o, uint dwEffect, out int fCancelDrop)
-can prompt to save dirty dragged items... nothing to verify?
-
-        public override int OnDropNotify(int fDropped, uint dwEffects)
-unsure...
-
-        public override int Drop(IOleDataObject pDataObject, uint grfKeyState, uint itemid, ref uint pdwEffect)
-unsure...
-
-        /*internal, but public for FSharp.Project.dll*/ public DropDataType ProcessSelectionDataObject(IOleDataObject dataObject, HierarchyNode targetNode)
-called by Drop, does the actual action of adding dropped files to new location        
-
-        public override int DragLeave()
-nothing to ensure, but call if leave hierarchy or drag is canceled or finishes
-
-
-called at various times:
-                public /*protected, but public for FSharp.Project.dll*/ override HierarchyNode GetDragTargetHandlerNode()
-ensure FSharpFileNode does right thing, whatever that may be, same for folder, project
-
-        /*internal, but public for FSharp.Project.dll*/ public static DropDataType QueryDropDataType(IOleDataObject pDataObject)
-maybe ref (shortcut) versus value (real file/dir on disk)?
-
-        /*internal, but public for FSharp.Project.dll*/ public DropEffect QueryDropEffect(DropDataType dropDataType, uint grfKeyState)
-given keyboard and object type, return right effect
-
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual bool CanTargetNodeAcceptDrop(uint itemId)
-can't drop onto 'references'
-*)        
-
 module LanguageServiceExtension =
     open UnitTests.TestLib.LanguageService
     open Salsa.Salsa
@@ -619,13 +577,20 @@ module LanguageServiceExtension =
         member this.Project with get() = proj and set(x) = proj <- x
         member this.CreateProjectHookIsEnabled with get() = createProjectHookIsEnabled and set(x) = createProjectHookIsEnabled <- x
 
-    let internal ProjectSystem = 
-        let msbuild,hooks = Models.MSBuild()
+    /// A test flavour - this layers additional behaviour over the BuiltMSBuildTestFlavour
+    /// to exercise the unit-testable versions of the classes in FSharp.ProjectSystem.FSharp.  
+    /// For example, when a CreateProject call is made, a UnitTestingFSharpProjectNode is 
+    /// created (in addition to the actions performed via the MSBuild layer).
+    //
+    // NOTE: The "BehaviourHooks" way of injecting functionality seems awkward.
+    type internal ProjectSystemTestFlavour() = 
+        let msbuild = BuiltMSBuildTestFlavour()
+        let hooks = msbuild.BehaviourHooks
         let projectDict = new Dictionary<OpenProject,ProjInfo>()
-        { msbuild with 
-                OutOfConeFilesAreAddedAsLinks=true;
-                SupportsOutputWindowPane=true;
-                AddAssemblyReference=(fun (project, assem, specificVersion) -> 
+        interface VsOps with
+            member ops.OutOfConeFilesAreAddedAsLinks=true
+            member ops.SupportsOutputWindowPane=true
+            member ops.AddAssemblyReference(project, assem, specificVersion) =
                     let projInfo = projectDict.[project]
                     let referencesFolder = projInfo.Project.FindChild(ReferenceContainerNode.ReferencesNodeVirtualName) :?> ReferenceContainerNode
                     let assem = 
@@ -652,66 +617,134 @@ module LanguageServiceExtension =
                             projInfo.CreateProjectHookIsEnabled <- false
                             msbuild.AddAssemblyReference(project, node.Url, specificVersion)
                             projInfo.CreateProjectHookIsEnabled <- true
-                            ());
-                CreateProject=(fun (solution,projectBaseName)->
+
+            member ops.CreateProject (solution,projectBaseName) =
                     let configChangeNotifier = ref None
                     let projInfo = new ProjInfo()
                     let NULL = Unchecked.defaultof<UnitTestingFSharpProjectNode>
-                    let newHooks = { 
+                    let newHooks = 
+                     { new ProjectBehaviorHooks with 
+
                         // Note: CreateProjectHook will callback MakeHierarcyHook and then InitializeProjectHook
-                        CreateProjectHook = 
-                            fun (projectFilename:string) (files:(string*BuildAction*string option) list) (references:(string*bool) list) (projReferences:string list)
-                                (disabledWarnings:string list) (defines:string list) (versionFile:string) (otherFlags:string) (otherMSBuildStuff:string) (targetFrameworkVersion : string) ->
-                                    if projInfo.CreateProjectHookIsEnabled then
-                                        hooks.CreateProjectHook projectFilename files references projReferences disabledWarnings defines versionFile otherFlags otherMSBuildStuff targetFrameworkVersion
-                                        if projInfo.Project = NULL then
-                                            ()
-                                        else
-                                            // REVIEW: this is a workaround to get everything working for now; ideally we want to implement the VS gestures below
-                                            // so that they really happen in the project system, rather than just poking the .fsproj file and then doing 
-                                            // a 'reload' each time.  But for now, this is good.
-                                            projInfo.Project.Reload()
-                        InitializeProjectHook = (fun(openProject) ->
+                        member x.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion: string) =
+                            if projInfo.CreateProjectHookIsEnabled then
+                                hooks.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion)
+                                if projInfo.Project = NULL then
+                                    ()
+                                else
+                                    // REVIEW: this is a workaround to get everything working for now; ideally we want to implement the VS gestures below
+                                    // so that they really happen in the project system, rather than just poking the .fsproj file and then doing 
+                                    // a 'reload' each time.  But for now, this is good.
+                                    projInfo.Project.Reload()
+
+                        member x.InitializeProjectHook (openProject) = 
                             hooks.InitializeProjectHook(openProject)
-                            projectDict.Add(openProject, projInfo))
-                        MakeHierarchyHook = 
-                                        fun projdir fullname projectname ccn serviceProvider -> 
-                                            if projInfo.Project = NULL then
-                                                let p = TheTests.CreateProject(fullname, "false", ccn, serviceProvider)
-                                                projInfo.Project <- p
-                                                configChangeNotifier := Some(fun s -> ccn((p :> IVsHierarchy),s))
-                                            else
-                                                failwith "oops, did not expect MakeHierarchy to be called more than once"
-                                            projInfo.Project :> IVsHierarchy
-                        AddFileToHierarchyHook = fun filename hier -> ()
-                        BuildHook = fun projFileName target vsOutputWindowPane -> 
-                                        if projInfo.Project = NULL then
-                                            failwith "tried to build not-yet-created project"
-                                        else
-                                            let target = if target <> null then target else "Build"
-                                            projInfo.Project.BuildToOutput(target,vsOutputWindowPane) |> ignore   // force build through project system for code coverage
-                                            hooks.BuildHook projFileName target vsOutputWindowPane      // use MSBuild to build and also return MainAssembly value
-                        GetMainOutputAssemblyHook = hooks.GetMainOutputAssemblyHook                                            
-                        SaveHook = fun() -> if projInfo.Project = NULL then () else projInfo.Project.Save(null, 1, 0u) |> ignore
-                        DestroyHook = fun () ->
-                                            if projInfo.Project = NULL
-                                               then ()
-                                               else projInfo.Project.Close () |> ignore
-                                                    match projectDict |> Seq.tryFind(fun (KeyValue(k,v)) -> obj.ReferenceEquals(v, projInfo)) with
-                                                    | Some(KeyValue(k,v)) -> projectDict.Remove(k) |> ignore
-                                                    | None -> failwith "uh-oh, where was it in the dict?"
-                                                    projInfo.Project <- NULL
-                        ModifyConfigurationAndPlatformHook = fun s ->
+                            projectDict.Add(openProject, projInfo)
+
+                        member x.MakeHierarchyHook (projdir, fullname, projectname, ccn, serviceProvider) = 
+                            if projInfo.Project = NULL then
+                                let p = TheTests.CreateProject(fullname, "false", ccn, serviceProvider)
+                                projInfo.Project <- p
+                                configChangeNotifier := Some(fun s -> ccn((p :> IVsHierarchy),s))
+                            else
+                                failwith "oops, did not expect MakeHierarchy to be called more than once"
+                            projInfo.Project :> IVsHierarchy
+
+                        member x.AddFileToHierarchyHook (filename, hier) = ()
+
+                        member x.BuildHook (projFileName, target, vsOutputWindowPane) = 
+                            if projInfo.Project = NULL then
+                                failwith "tried to build not-yet-created project"
+                            else
+                                let target = if target <> null then target else "Build"
+                                projInfo.Project.BuildToOutput(target,vsOutputWindowPane) |> ignore   // force build through project system for code coverage
+                                hooks.BuildHook(projFileName, target, vsOutputWindowPane)      // use MSBuild to build and also return MainAssembly value
+
+                        member x.GetMainOutputAssemblyHook baseName = hooks.GetMainOutputAssemblyHook baseName 
+
+                        member x.SaveHook () = if projInfo.Project = NULL then () else projInfo.Project.Save(null, 1, 0u) |> ignore
+
+                        member x.DestroyHook () =
+                            if projInfo.Project = NULL then () else 
+                            projInfo.Project.Close () |> ignore
+                            match projectDict |> Seq.tryFind(fun (KeyValue(k,v)) -> obj.ReferenceEquals(v, projInfo)) with
+                            | Some(KeyValue(k,v)) -> projectDict.Remove(k) |> ignore
+                            | None -> failwith "uh-oh, where was it in the dict?"
+                            projInfo.Project <- NULL
+
+                        member x.ModifyConfigurationAndPlatformHook s =
                             match !configChangeNotifier with
                             | Some(ccn) -> ccn(s)
                             | None -> ()
                     }
 
-                    msbuild.CreateProjectWithHooks(solution,newHooks,projectBaseName));
-        }
+                    msbuild.CreateProjectWithHooks(solution,newHooks,projectBaseName)
 
+            // The rest of the members delegate to 'msbuid'
+            member ops.BehaviourHooks = hooks
+            member ops.CreateVisualStudio () = msbuild.CreateVisualStudio ()
+            member ops.CreateSolution vs = msbuild.CreateSolution vs
+            member ops.GetOutputWindowPaneLines vs = msbuild.GetOutputWindowPaneLines vs 
+            member ops.CloseSolution solution = msbuild.CloseSolution solution 
+            member ops.CreateProjectWithHooks (solution,hooks,projectBaseName) = msbuild.CreateProjectWithHooks (solution,hooks,projectBaseName)
+            member ops.NewFile (vs,filename,buildAction, lines) = msbuild.NewFile (vs,filename,buildAction, lines)
+            member ops.DeleteFileFromDisk file = msbuild.DeleteFileFromDisk file 
+            member ops.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines) = msbuild.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines) 
+            member ops.AddLinkedFileFromText (project,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines) = msbuild.AddLinkedFileFromText (project,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)
+            member ops.AddProjectReference (project1, project2) = msbuild.AddProjectReference (project1, project2)
+            member ops.ProjectDirectory project = msbuild.ProjectDirectory project 
+            member ops.ProjectFile project = msbuild.ProjectFile project 
+            member ops.SetVersionFile (project,file) = msbuild.SetVersionFile (project,file) 
+            member ops.SetOtherFlags (project,flags) = msbuild.SetOtherFlags (project,flags) 
+            member ops.SetConfigurationAndPlatform (project, configAndPlatform) = msbuild.SetConfigurationAndPlatform (project, configAndPlatform) 
+            member ops.AddDisabledWarning (project, code) = msbuild.AddDisabledWarning (project, code) 
+            member ops.GetErrors project = msbuild.GetErrors project 
+            member ops.BuildProject (project,target) = msbuild.BuildProject (project,target) 
+            member ops.GetMainOutputAssembly project = msbuild.GetMainOutputAssembly project 
+            member ops.SaveProject project = msbuild.SaveProject project 
+            member ops.OpenFileViaOpenFile (vs,filename) = msbuild.OpenFileViaOpenFile (vs,filename) 
+            member ops.OpenFile (project,filename) = msbuild.OpenFile (project,filename) 
+            member ops.SetProjectDefines (project, defines) = msbuild.SetProjectDefines (project, defines) 
+            member ops.PlaceIntoProjectFileBeforeImport (project,xml) = msbuild.PlaceIntoProjectFileBeforeImport (project,xml)
+            member ops.GetOpenFiles project = msbuild.GetOpenFiles project 
+            member ops.MoveCursorTo (file,line,col) = msbuild.MoveCursorTo (file,line,col) 
+            member ops.GetCursorLocation file = msbuild.GetCursorLocation file 
+            member ops.OpenExistingProject (vs,dir,projname) = msbuild.OpenExistingProject (vs,dir,projname) 
+            member ops.MoveCursorToEndOfMarker (file,marker) = msbuild.MoveCursorToEndOfMarker (file,marker) 
+            member ops.MoveCursorToStartOfMarker (file,marker) = msbuild.MoveCursorToStartOfMarker (file,marker) 
+            member ops.GetNameOfOpenFile file = msbuild.GetNameOfOpenFile file 
+            member ops.GetProjectOptionsOfScript file = msbuild.GetProjectOptionsOfScript file 
+            member ops.GetQuickInfoAtCursor file = msbuild.GetQuickInfoAtCursor file 
+            member ops.GetQuickInfoAndSpanAtCursor file = msbuild.GetQuickInfoAndSpanAtCursor file 
+            member ops.GetMatchingBracesForPositionAtCursor file = msbuild.GetMatchingBracesForPositionAtCursor file 
+            member ops.GetParameterInfoAtCursor file = msbuild.GetParameterInfoAtCursor file 
+            member ops.GetTokenTypeAtCursor file = msbuild.GetTokenTypeAtCursor file 
+            member ops.GetSquiggleAtCursor file = msbuild.GetSquiggleAtCursor file 
+            member ops.GetSquigglesAtCursor file = msbuild.GetSquigglesAtCursor file 
+            member ops.AutoCompleteAtCursor file = msbuild.AutoCompleteAtCursor file 
+            member ops.CompleteAtCursorForReason (file,reason) = msbuild.CompleteAtCursorForReason (file,reason) 
+            member ops.CompletionBestMatchAtCursorFor (file, value, filterText) = msbuild.CompletionBestMatchAtCursorFor (file, value, filterText) 
+            member ops.GotoDefinitionAtCursor (file, forceGen) = msbuild.GotoDefinitionAtCursor (file, forceGen) 
+            member ops.GetNavigationContentAtCursor file = msbuild.GetNavigationContentAtCursor file 
+            member ops.GetHiddenRegionCommands file = msbuild.GetHiddenRegionCommands file 
+            member ops.GetIdentifierAtCursor file = msbuild.GetIdentifierAtCursor file 
+            member ops.GetF1KeywordAtCursor file = msbuild.GetF1KeywordAtCursor file 
+            member ops.GetLineNumber (file, n) = msbuild.GetLineNumber (file, n) 
+            member ops.GetAllLines file = msbuild.GetAllLines file 
+            member ops.SwitchToFile (vs,file) = msbuild.SwitchToFile (vs,file) 
+            member ops.OnIdle vs = msbuild.OnIdle vs 
+            member ops.ShiftKeyDown vs = msbuild.ShiftKeyDown vs 
+            member ops.ShiftKeyUp vs = msbuild.ShiftKeyUp vs 
+            member ops.TakeCoffeeBreak vs = msbuild.TakeCoffeeBreak vs 
+            member ops.ReplaceFileInMemory (file,contents,takeCoffeeBreak) = msbuild.ReplaceFileInMemory (file,contents,takeCoffeeBreak) 
+            member ops.SaveFileToDisk file = msbuild.SaveFileToDisk file 
+            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = msbuild.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) 
+            member ops.CleanUp vs = msbuild.CleanUp vs 
+            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = msbuild.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs 
+            member ops.AutoCompleteMemberDataTipsThrowsScope message = msbuild.AutoCompleteMemberDataTipsThrowsScope message 
+            member ops.CleanInvisibleProject vs = msbuild.CleanInvisibleProject vs 
     
-
+    let internal ProjectSystemTestFlavour = ProjectSystemTestFlavour()
 
       
 

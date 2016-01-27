@@ -15,7 +15,7 @@ open System.Runtime.InteropServices
 
 #if PORTABLE
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
-[<assembly:AssemblyFlags(System.Reflection.AssemblyNameFlags.Retargetable)>] // ensure we replace any 4.0.30319.* or 4.0.31105.* versions in the GAC. These are the FileVersions for RTM VS2010 and SP1 VS2010
+[<assembly:AssemblyFlags(System.Reflection.AssemblyNameFlags.Retargetable)>]
 #endif
 
 do()

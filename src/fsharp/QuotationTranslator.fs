@@ -71,7 +71,7 @@ type QuotationGenerationScope =
 
     static member ComputeQuotationFormat g = 
         let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info 
-        if deserializeExValRef.TryDeref.IsSome  then 
+        if deserializeExValRef.TryDeref.IsSome then 
             QuotationSerializationFormat.FSharp_40_Plus
         else 
             QuotationSerializationFormat.FSharp_20_Plus
@@ -125,7 +125,7 @@ exception IgnoringPartOfQuotedTermWarning of string * Range.range
 
 let wfail e = raise (InvalidQuotedTerm(e))
 
-let (|ModuleValueOrMemberUse|_|) cenv expr = 
+let (|ModuleValueOrMemberUse|_|) g expr = 
     let rec loop expr args = 
         match stripExpr expr with 
         | Expr.App((InnerExprPat(Expr.Val(vref,vFlags,_) as f)),fty,tyargs,actualArgs,_m)  when vref.IsMemberOrModuleBinding ->
@@ -133,7 +133,7 @@ let (|ModuleValueOrMemberUse|_|) cenv expr =
         | Expr.App(f,_fty,[],actualArgs,_)  ->
             loop f (actualArgs @ args)
         | (Expr.Val(vref,vFlags,_m) as f) when (match vref.ActualParent with ParentNone -> false | _ -> true) -> 
-            let fty = tyOfExpr cenv.g f
+            let fty = tyOfExpr g f
             Some(vref,vFlags,f,fty,[],args)
         | _ -> 
             None
@@ -228,7 +228,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let hole = QP.mkHole(ConvType cenv env m ty,idx)
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
 
-    | ModuleValueOrMemberUse cenv (vref,vFlags,_f,_fty,tyargs,curriedArgs) 
+    | ModuleValueOrMemberUse cenv.g (vref,vFlags,_f,_fty,tyargs,curriedArgs) 
         when not (isSplice cenv.g vref) ->
         let m = expr.Range 
 
