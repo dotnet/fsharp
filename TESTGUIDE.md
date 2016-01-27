@@ -113,9 +113,9 @@ To build the unit test binary, call
 msbuild fsharp-vsintegration-unittests-build.proj
 ```
 
-from the `src` directory.  Tests are contained in the binary `Unittests.dll`. 
+from the `src` directory.  Tests are contained in the binary `VisualFSharp.Unittests.dll`. 
 
-The IDE unit tests rely on the "Salsa" library, which is a set of Visual Studio mocks. The code for Salsa resides at `vsintegration\src\Salsa`.
+The IDE unit tests rely on the "VisualFSharp.Salsa" library, which is a set of Visual Studio mocks. The code for Salsa resides at `vsintegration\src\Salsa`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, either `nunit-console-x86.exe` or `nunit-x86.exe`.
 

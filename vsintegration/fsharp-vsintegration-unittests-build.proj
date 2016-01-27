@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="src\salsa\Salsa.fsproj"/>
-    <ProjectFiles Include="src\unittests\unittests.fsproj"/>
+    <ProjectFiles Include="src\salsa\VisualFSharp.Salsa.fsproj"/>
+    <ProjectFiles Include="src\unittests\VisualFSharp.Unittests.fsproj"/>
     <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
     <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
     <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />

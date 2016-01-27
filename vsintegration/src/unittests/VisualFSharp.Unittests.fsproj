@@ -5,6 +5,7 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <Name>VisualFSharp.Unittests</Name>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
@@ -12,7 +13,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>Unittests</AssemblyName>
+    <AssemblyName>VisualFSharp.Unittests</AssemblyName>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
@@ -144,6 +145,11 @@
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
+      <Name>VisualFSharp.Salsa</Name>
+      <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\vs\FsPkgs\FSharp.LanguageService\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
@@ -162,11 +168,6 @@
     <ProjectReference Include="..\vs\FsPkgs\FSharp.Project\FS\ProjectSystem.fsproj">
       <Name>FSharp.ProjectSystem.FSharp</Name>
       <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Salsa\Salsa.fsproj">
-      <Name>Salsa</Name>
-      <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

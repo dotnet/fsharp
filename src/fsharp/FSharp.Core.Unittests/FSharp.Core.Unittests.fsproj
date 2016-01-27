@@ -15,7 +15,6 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core.Unittests</AssemblyName>
     <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
-    <Name>SystematicUnitTests</Name>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>

@@ -5,6 +5,7 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <Name>VisualFSharp.Salsa</Name>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
@@ -13,7 +14,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>Salsa</AssemblyName>
+    <AssemblyName>VisualFSharp.Salsa</AssemblyName>
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
