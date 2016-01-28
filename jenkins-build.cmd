@@ -22,7 +22,7 @@ goto :USAGE
 
 echo Usage:
 echo Builds the source tree using a specific configuration
-echo appveyor-build.cmd ^<debug^|release^>
+echo jenkins-build.cmd ^<debug^|release^>
 exit /b 1
 
 :ARGUMENTS_OK
@@ -121,28 +121,28 @@ call vsintegration\update-vsintegration.cmd %BUILD_PROFILE%
 cd tests
 
 call RunTests.cmd %BUILD_PROFILE% fsharp Smoke
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_PROFILE% fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% fsharpqa Smoke
-REM @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
+REM @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_PROFILE% fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% compilerunit
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% compilerunit' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% coreunit
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunit' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% coreunitportable47
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable47' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable47' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% coreunitportable7
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable7' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable7' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% coreunitportable78
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable78' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable78' failed && goto :failure
 
 REM call RunTests.cmd %BUILD_PROFILE% coreunitportable259
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitportable259' failed && goto :failure
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable259' failed && goto :failure
 
 goto :eof
 
