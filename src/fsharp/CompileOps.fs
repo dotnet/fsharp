@@ -3601,7 +3601,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
          member __.ShortAssemblyName = GetNameOfILModule ilModule 
          member __.ILScopeRef = MakeScopeRefForIlModule ilModule
          member __.ILAssemblyRefs = ilAssemblyRefs
-         member __.HasAnyFSharpSignatureDataAttribute = 
+         member __.HasAnyFSharpSignatureDataAttribute =
             let attrs = GetCustomAttributesOfIlModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
          member __.HasMatchingFSharpSignatureDataAttribute(ilg) = 
@@ -4288,7 +4288,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let ilModule,ilAssemblyRefs = tcImports.OpenILBinaryModule(filename,m)
                 RawFSharpAssemblyDataBackedByFileOnDisk (ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
 
-
         let ilShortAssemName = assemblyData.ShortAssemblyName 
         let ilScopeRef = assemblyData.ILScopeRef
 
@@ -4309,7 +4308,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             tcImports.RegisterDll(dllinfo)
             let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
             let phase2 = 
-                if assemblyData.HasAnyFSharpSignatureDataAttribute  then 
+                if assemblyData.HasAnyFSharpSignatureDataAttribute  then
                     if not (assemblyData.HasMatchingFSharpSignatureDataAttribute(ilg)) then 
                       errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile(filename),m))
                       tcImports.PrepareToImportReferencedIlDll m filename dllinfo
@@ -4335,7 +4334,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                |> List.unzip
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         dllinfos,ccuinfos
-      
+
     member tcImports.DoRegisterAndImportReferencedAssemblies(nms) = 
         CheckDisposed()
         tcImports.RegisterAndImportReferencedAssemblies(nms) |> ignore

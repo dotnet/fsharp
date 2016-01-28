@@ -17,6 +17,7 @@ namespace Microsoft.FSharp.Core
     open System.Collections.Generic
     open System.Diagnostics
     open System.Globalization
+    open System.Reflection
     open System.Text
     
 
@@ -1895,7 +1896,7 @@ namespace Microsoft.FSharp.Core
                         let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
                         let interfaceMap = 
 #if FX_RESHAPED_REFLECTION
-                            System.Reflection.InterfaceMapping(InterfaceType = interfaceType, TargetType = objectType)
+                            RuntimeReflectionExtensions.GetRuntimeInterfaceMap(objectType.GetTypeInfo(), interfaceType)
 #else
                             objectType.GetInterfaceMap interfaceType
 #endif

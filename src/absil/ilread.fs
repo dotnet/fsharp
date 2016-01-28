@@ -1542,7 +1542,7 @@ let rec seekReadModule ctxt (subsys,subsysversion,useHighEntropyVA, ilOnly,only3
     let ilModuleName = readStringHeap ctxt nameIdx
     let nativeResources = readNativeResources ctxt
 
-    { Manifest =      
+    { Manifest =
          if ctxt.getNumRows (TableNames.Assembly) > 0 then Some (seekReadAssemblyManifest ctxt 1) 
          else None;
       CustomAttrs = seekReadCustomAttrs ctxt (TaggedIndex(hca_Module,idx));

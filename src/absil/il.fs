@@ -1480,16 +1480,16 @@ let typesOfILParamsRaw (ps:ILParameters) : ILTypes = ps |> ILList.map (fun p -> 
 let typesOfILParamsList (ps:ILParameter list) = ps |> List.map (fun p -> p.Type) 
 
 [<StructuralEquality; StructuralComparison>]
-type ILGenericVariance = 
-    | NonVariant            
-    | CoVariant             
-    | ContraVariant         
+type ILGenericVariance =
+    | NonVariant
+    | CoVariant
+    | ContraVariant
 
 type ILGenericParameterDef =
     { Name: string;
       Constraints: ILTypes;
       Variance: ILGenericVariance; 
-      HasReferenceTypeConstraint: bool;     
+      HasReferenceTypeConstraint: bool;
       CustomAttrs : ILAttributes;
       HasNotNullableValueTypeConstraint: bool;
       HasDefaultConstructorConstraint: bool; }
