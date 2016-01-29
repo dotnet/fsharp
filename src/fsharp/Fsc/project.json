@@ -1,16 +1,100 @@
 {
-  "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1-rc3-23805",
-    "NETStandard.Library": "1.0.0-rc3-23805",
-    "System.Linq.Expressions": "4.0.11-rc3-23805",
-  },
-  "runtimes": {
-    "win7-x86": { },
-    "win7-x64": { },
-    "osx.10.10-x64": { },
-    "ubuntu.14.04-x64": { }
-  },
-  "frameworks": {
-    "dnxcore50": { }
-  }
+    "compilerName": "fsc",
+
+    "version": "4.4.1.9055",
+
+    "compilationOptions": {
+        "define": [
+            "STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY",
+            "EXTENSIONTYPING",
+            "COMPILER",
+            "TRACE",
+            "VS_VERSION_DEV14",
+            "PREFERRED_UI_LANG",
+            "OPEN_BUILD",
+            "FSHARP_CORE_4_5",
+            "FX_NO_BEGINEND_READWRITE",
+            "FX_ATLEAST_45",
+            "FX_ATLEAST_40",
+            "FX_ATLEAST_35",
+            "FX_ATLEAST_PORTABLE",
+            "QUERIES_IN_FSLIB",
+            "PUT_TYPE_PROVIDERS_IN_FSCORE",
+            "FX_ATLEAST_LINQ",
+            "FX_RESHAPED_GLOBALIZATION",
+            "FX_RESHAPED_REFLECTION",
+            "FX_RESHAPED_REFLECTION_CORECLR",
+            "RESHAPED_MSBUILD",
+            "FX_NO_CONVERTER",
+            "FX_NO_ARRAY_LONG_LENGTH",
+            "FX_NO_DEFAULT_DEPENDENCY_TYPE",
+            "FX_NO_BINARY_SERIALIZATION",
+            "FX_NO_CUSTOMATTRIBUTEDATA",
+            "FX_NO_REFLECTION_MODULE_HANDLES",
+            "FX_NO_WEB_CLIENT",
+            "FX_EVENTWAITHANDLE_NO_IDISPOSABLE",
+            "FX_NO_EXIT_CONTEXT_FLAGS",
+            "FX_NO_WAITONE_MILLISECONDS",
+            "FX_NO_PARAMETERIZED_THREAD_START",
+            "FX_NO_THREAD",
+            "FX_NO_SECURITY_PERMISSIONS",
+            "NO_HEAPTERMINATION",
+            "FX_REDUCED_EXCEPTIONS",
+            "FX_NO_PDB_READER",
+            "FX_NO_PDB_WRITER",
+            "FX_NO_SYMBOLSTORE",
+            "FX_NO_LINKEDRESOURCES",
+            "FX_NO_CORHOST_SIGNER",
+            "FX_RESHAPED_REFEMIT",
+            "FX_NO_APP_DOMAINS",
+            "FX_NO_SYSTEM_CONFIGURATION",
+            "FX_RESHAPED_CONSOLE",
+            "FX_NO_RUNTIMEENVIRONMENT",
+            "NO_LOGGING_GUI",
+            "NO_DEBUG_LOG",
+            "NO_WIN_REGISTRY",
+            "NO_SERVERCODEPAGES",
+            "FX_REDUCED_CONSOLE",
+            "FX_NO_WINFORMS",
+            "FX_NO_THREADABORT",
+            "TODO_REWORK_ASSEMBLY_LOAD",
+            "TODO_REWORK_SERVER",
+            "NO_LOADER_OPTIMIZATION",
+            "SILVERLIGHT_COMPILER_FSHARP_CORE",
+            "I_DONT_KNOW_HOW_TO_DO_THIS_YET",
+            "SIGNED"
+        ],
+        "nowarn": [ "69", "65", "54", "61", "75", "62" ],
+        "xmlDoc": true,
+        "keyFile": "../msft.pubkey",
+        "delaySign": true,
+        "warningsAsErrors": true,
+        "additionalArguments": [ 
+            "--warn:3",
+            "--fullpaths",
+            "--flaterrors",
+            "--highentropyva-",
+            "--times",
+            "--warnon:1182",
+            "--nocopyfsharpcore",
+            "--platform:anycpu"
+        ],
+        "emitEntryPoint": true
+    },
+
+    "compileFiles": [
+        "InternalsVisibleTo.fs",
+        "../../assemblyinfo/assemblyinfo.fsc.exe.fs",
+        "../fscmain.fs"
+    ],
+
+    "frameworks": {
+        "dnxcore50": {
+            "dependencies": {
+                "FSharp.Core": { "target": "project", "type": "build", "version": "*" },
+                "FSharp.Compiler": { "target": "project", "type": "build", "version": "*" },
+                "NETStandard.Library": "1.0.0-rc2-23805"
+            }
+        }
+    }
 }
