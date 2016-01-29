@@ -236,6 +236,7 @@ Conformance08			Conformance\UnitsOfMeasure\Parenthesis
 Conformance08			Conformance\UnitsOfMeasure\Parsing
 Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
+Conformance08			Conformance\Expressions\DataExpressions\NameOf
 
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration

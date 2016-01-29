@@ -2438,8 +2438,10 @@ Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
 #endif
                                                                 @"
+Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
+Microsoft.FSharp.Core.Operators: System.String TypeNameOf[T]()
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
 Microsoft.FSharp.Core.Operators: System.Tuple`2[TKey,TValue] KeyValuePattern[TKey,TValue](System.Collections.Generic.KeyValuePair`2[TKey,TValue])
 Microsoft.FSharp.Core.Operators: System.Type GetType()

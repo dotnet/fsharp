@@ -1219,7 +1219,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     info
 
 //-------------------------------------------------------------------------
-// Misc helerps
+// Misc helpers
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
@@ -2542,6 +2542,37 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
                 MightMakeCriticalTailcall = false;
                 Info=UnknownValue})
 
+    // Analyze the name of the given symbol and rewrite AST to constant string expression with the name
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.nameof_vref ->
+        PostTypeCheckSemanticChecks.tryExtractNameOf args
+        |> Option.map (fun name ->
+            Expr.Const(Const.String name, m, cenv.g.string_ty),
+                { TotalSize = 1
+                  FunctionSize = 1
+                  HasEffect = false
+                  MightMakeCriticalTailcall = false
+                  Info = UnknownValue })
+    // Analyze the name of the given type and rewrite AST to constant string expression with the name
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.typenameof_vref ->
+        match tyargs with
+        | (typeName:TType):: _ ->
+            let name =
+                match typeName with 
+                | TType_forall (_tps,ty) -> ty.ToString()
+                | TType_app (tcref, _) -> tcref.CompiledRepresentationForNamedType.FullName
+                | TType_tuple tinst -> "(" + String.concat "," (List.map string tinst) + ")"
+                | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
+                | TType_ucase (uc,_) ->  uc.CaseName
+                | TType_var tp -> tp.DisplayName
+                | TType_measure ms -> sprintf "%A" ms
+
+            Some(Expr.Const(Const.String name, m, cenv.g.string_ty),
+                    { TotalSize = 1
+                      FunctionSize = 1
+                      HasEffect = false
+                      MightMakeCriticalTailcall = false
+                      Info = UnknownValue })
+        | _ -> None
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites
