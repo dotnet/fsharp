@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
@@ -24,6 +24,24 @@ let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
 let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
 let nonNull msg x = if isNonNull x then x else failwith ("null: " ^ msg) 
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
+
+//-------------------------------------------------------------------------
+// Library: projections
+//------------------------------------------------------------------------
+
+[<Struct>]
+/// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+type InlineDelayInit<'T when 'T : not struct> = 
+    new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = System.Func<_>(f) } 
+    val mutable store : 'T
+    val mutable func : System.Func<'T>
+    member x.Value = 
+        match x.func with 
+        | null -> x.store 
+        | _ -> 
+        let res = System.Threading.LazyInitializer.EnsureInitialized(&x.store, x.func) 
+        x.func <- Unchecked.defaultof<_>
+        res
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -150,6 +168,11 @@ module Option =
         match opt with 
         | None -> dflt 
         | Some x -> x
+
+    let orElse dflt opt = 
+        match opt with 
+        | None -> dflt()
+        | res -> res
 
     // REVIEW: systematically eliminate foldMap/mapFold duplication
     let foldMap f z l = 
@@ -961,6 +984,7 @@ module Shim =
         abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
         abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
 
+
     type DefaultFileSystem() =
         interface IFileSystem with
             member __.AssemblyLoadFrom(fileName:string) = 
@@ -1001,7 +1025,7 @@ module Shim =
             member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 
     type System.Text.Encoding with 
-        static member GetEncodingShim(n:int) =             
-                System.Text.Encoding.GetEncoding(n)           
+        static member GetEncodingShim(n:int) = 
+                System.Text.Encoding.GetEncoding(n)
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace UnitTests.TestLib.LanguageService
 
@@ -151,18 +151,18 @@ type internal Helper =
 type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, initialTypeCheckCount:int, initialEventNum:int, vs) =
     static member StartNew(vs) =
         TakeCoffeeBreak(vs)
-        let n = IncrementalFSharpBuild.GetCurrentIncrementalBuildEventNum()
-        new GlobalParseAndTypeCheckCounter(InteractiveChecker.GlobalForegroundParseCountStatistic, InteractiveChecker.GlobalForegroundTypeCheckCountStatistic, n, vs)
+        let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
+        new GlobalParseAndTypeCheckCounter(FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic, n, vs)
     member private this.GetEvents() = 
         TakeCoffeeBreak(vs)
-        let n = IncrementalFSharpBuild.GetCurrentIncrementalBuildEventNum()
-        IncrementalFSharpBuild.GetMostRecentIncrementalBuildEvents(n-initialEventNum)
-    member private this.SawIBDeleted() = 
-        this.GetEvents() |> List.exists (function | IncrementalFSharpBuild.IBEDeleted -> true | _ -> false)
+        let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
+        IncrementalBuilderEventTesting.GetMostRecentIncrementalBuildEvents(n-initialEventNum)
+    member private this.SawIBCreated() = 
+        this.GetEvents() |> List.exists (function | IncrementalBuilderEventTesting.IBECreated -> true | _ -> false)
     member private this.GetParsedFilesSet() = 
-        this.GetEvents() |> List.choose (function | IncrementalFSharpBuild.IBEParsed(file) -> Some(file) | _ -> None) |> set
+        this.GetEvents() |> List.choose (function | IncrementalBuilderEventTesting.IBEParsed(file) -> Some(file) | _ -> None) |> set
     member private this.GetTypeCheckedFilesSet() = 
-        this.GetEvents() |> List.choose (function | IncrementalFSharpBuild.IBETypechecked(file) -> Some(file) | _ -> None) |> set
+        this.GetEvents() |> List.choose (function | IncrementalBuilderEventTesting.IBETypechecked(file) -> Some(file) | _ -> None) |> set
     member this.AssertExactly(expectedParses, expectedTypeChecks) =
         let actualParses = this.GetParsedFilesSet().Count 
         let actualTypeChecks = this.GetTypeCheckedFilesSet().Count
@@ -176,19 +176,19 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
                            false)
     member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>) =
         this.AssertExactly((aap,expectedParsedFiles), (aat,expectedTypeCheckedFiles), false)
-    member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>, expectDelete : bool) =
+    member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>, expectCreate : bool) =
         let p = match aap with 
                 | Some(aap) -> aap :: (expectedParsedFiles |> List.map GetNameOfOpenFile)
                 | _ -> (expectedParsedFiles |> List.map GetNameOfOpenFile)
         let t = match aat with
                 | Some(aat) -> aat :: (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
                 | _ -> (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
-        this.AssertExactly(p.Length, t.Length, p, t, expectDelete)
-    member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : list<string>, expectedTypeCheckedFiles : list<string>, expectDelete : bool) =
-        let note,ok = if expectDelete then
-                        if this.SawIBDeleted() then ("The incremental builder was deleted, as expected",true) else ("The incremental builder was NOT deleted, even though we expected it to be",false)
+        this.AssertExactly(p.Length, t.Length, p, t, expectCreate)
+    member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : list<string>, expectedTypeCheckedFiles : list<string>, expectCreate : bool) =
+        let note,ok = if expectCreate then
+                        if this.SawIBCreated() then ("The incremental builder was created, as expected",true) else ("The incremental builder was NOT deleted and recreated, even though we expected it to be",false)
                       else
-                        if this.SawIBDeleted() then ("The incremental builder was UNEXPECTEDLY deleted",false) else ("",true)
+                        if this.SawIBCreated() then ("The incremental builder was UNEXPECTEDLY deleted",false) else ("",true)
         let actualParsedFiles = this.GetParsedFilesSet()
         let actualTypeCheckedFiles = this.GetTypeCheckedFilesSet()
         let actualParses = actualParsedFiles.Count 
@@ -242,7 +242,7 @@ type LanguageServiceBaseTests() =
     let mutable defaultVS : VisualStudio = Unchecked.defaultof<_>
     let mutable currentVS : VisualStudio = Unchecked.defaultof<_>
     (* VsOps is internal, but this type needs to be public *)
-    let mutable ops : VsOps = fst (Models.MSBuild())
+    let mutable ops = BuiltMSBuildTestFlavour()
     let testStopwatch = new Stopwatch()
 
     (* Timings ----------------------------------------------------------------------------- *)

@@ -103,7 +103,7 @@ let singleTestBuild cfg testDir =
     let type_append_tofile = Commands.type_append_tofile testDir
     let fsc = Printf.ksprintf (fun flags -> Commands.fsc exec cfg.FSC flags)
     let fsc_flags = cfg.fsc_flags
-    let peverify = Commands.peverify exec cfg.PEVERIFY
+    let peverify = Commands.peverify exec cfg.PEVERIFY ""
     let ``echo._tofile`` = Commands.``echo._tofile`` testDir
 
     //:Ok

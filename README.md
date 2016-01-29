@@ -1,8 +1,15 @@
-[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master)
 
 [![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 #Visual F# Tools
+
+## Windows build
+
+|            |Debug (Build only)|Release (Build only)|Release (Build and tests)|
+|:----------:|:----------------:|:------------------:|:-----------------------:|
+|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/release_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/release_windows_nt/)| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master) |
+|**vs2015**  ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/vs2015.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/vs2015) |
+|**coreclr** ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/coreclr.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/coreclr) |
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -59,7 +66,10 @@ Guidelines for contributions to the Visual F# compiler, library, and tools can b
 
 How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
 
-If you would like to contribute to the F# ecosystem more generally, please see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
+
+If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 ###Code Flow to Other Platforms
 

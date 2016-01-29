@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -49,12 +49,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// update the untyped AST information (e.g. when a different file is opened). After updating
         /// the untyped scope (in F# LS), a 'null' can be returned as the result of 'ExecuteBackgroundRequest'.
         /// </summary>
-        UntypedParse
+        ParseFile
     };
 
     [CLSCompliant(false), ComVisible(true)]
-    public abstract class LanguageService : IDisposable, IVsLanguageInfo, IVsLanguageDebugInfo,
-        IVsProvideColorableItems, IVsLanguageContextProvider, IOleServiceProvider,
+    public abstract class LanguageService : IDisposable, 
+        IVsLanguageContextProvider, IOleServiceProvider,
         IObjectWithSite, IVsDebuggerEvents,
         IVsFormatFilterProvider,
         ILanguageServiceTestHelper
@@ -63,7 +63,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private IServiceProvider site;
         private ArrayList codeWindowManagers;
         private LanguagePreferences preferences;
-        private ArrayList sources;
+        internal ArrayList sources;
         private bool disposed;
         private IVsDebugger debugger;
         private uint cookie;
@@ -151,32 +151,16 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract void ExecuteBackgroundRequest(BackgroundRequest req);
 
-        /// If this returns true we can reuse a recent AuthoringScope if its available
+        /// If this returns true we can reuse a recent IntellisenseInfo if its available
         internal abstract bool IsRecentScopeSufficientForBackgroundRequest(BackgroundRequestReason req);
-
-        /// <summary>Return the name of the language, such as "HTML" or "C++", and so on.</summary>
-        internal abstract string Name { get; }
-
-        internal abstract object GetInteractiveChecker();
 
         internal Guid GetLanguageServiceGuid()
         {
             return this.GetType().GUID;
         }
 
-        public virtual int GetItemCount(out int count)
-        {
-            count = 0;
-            return NativeMethods.E_NOTIMPL;
-        }
-
-        public virtual int GetColorableItem(int index, out IVsColorableItem item)
-        {
-            item = null;
-            return NativeMethods.E_NOTIMPL;
-        }
-
-        int IVsLanguageContextProvider.UpdateLanguageContext(uint dwHint, IVsTextLines buffer, TextSpan[] ptsSelection, object ptr)
+		// Provides context from the language service to the Visual Studio core editor.
+		int IVsLanguageContextProvider.UpdateLanguageContext(uint dwHint, IVsTextLines buffer, TextSpan[] ptsSelection, object ptr)
         {
             if (ptr != null && ptr is IVsUserContext && buffer is IVsTextBuffer)
                 return UpdateLanguageContext((LanguageContextHint)dwHint, buffer, ptsSelection, (IVsUserContext)ptr);
@@ -223,7 +207,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             ISource source = GetSource(buffer);
             if (source == null) return NativeMethods.E_FAIL;
 
-            var req = source.BeginBackgroundRequest(span.iStartLine, span.iStartIndex, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, lastActiveView, RequireFreshResults.No, new BackgroundRequestResultHandler(this.HandleUpdateLanguageContextResponse));
+            var req = source.BeginBackgroundRequest(span.iStartLine, span.iStartIndex, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, lastActiveView, RequireFreshResults.Yes, new BackgroundRequestResultHandler(this.HandleUpdateLanguageContextResponse));
 
             if (req == null || req.Result == null) return NativeMethods.E_FAIL;
 
@@ -231,9 +215,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     ((req.Result != null) && req.Result.TryWaitForBackgroundRequestCompletion(1000))))
             {
                 if (req.IsAborted) return NativeMethods.E_FAIL;
-                if (req.ResultScope != null)
+                if (req.ResultIntellisenseInfo != null)
                 {
-                    req.ResultScope.GetF1KeywordString(span, context);
+                    req.ResultIntellisenseInfo.GetF1KeywordString(span, context);
                     return NativeMethods.S_OK;
                 }
             }
@@ -314,7 +298,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         internal string lastFileName;
         internal IVsTextView lastActiveView;
         // STATIC ROOT INTO PROJECT BUILD
-        internal AuthoringScope recentFullTypeCheckResults = null;
+        internal IntellisenseInfo recentFullTypeCheckResults = null;
         internal string recentFullTypeCheckFile = null;
 
         /// <devdoc>
@@ -325,11 +309,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             get { return this.lastActiveView; }
         }
 
-        /// Returns the last active successful fetch of an AuthoringScope that is managed by this language service.
+        /// Returns the last active successful fetch of an IntellisenseInfo that is managed by this language service.
         /// This is only relevant to the active text view and is cleared each time the text view is switched. If it
         /// is null we must make a background request to the language service to get the recent full typecheck results.
         /// If a file is dirty, an OnIdle call will kick in to refresh the recent results.
-        internal AuthoringScope RecentFullTypeCheckResults
+        internal IntellisenseInfo RecentFullTypeCheckResults
         {
             get { return this.recentFullTypeCheckResults; }
             set { this.recentFullTypeCheckResults = value; }
@@ -353,18 +337,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 if (this.lastActiveView == null) return false;
                 return this.GetSource(this.lastActiveView) != null;
             }
-        }
-
-        /// <summary>
-        /// Trigger the quick-parse to update the untyped AST information in the F# language service.
-        /// </summary>
-        internal virtual BackgroundRequest TriggerUntypedParse()
-        {
-            IVsTextView view = this.lastActiveView;
-            if (view == null) return null;
-            ISource s = this.GetSource(view);
-            if (s == null) return null;
-            return s.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.UntypedParse, this.LastActiveTextView, RequireFreshResults.No, new BackgroundRequestResultHandler(s.HandleUntypedParseOrFullTypeCheckResponse));
         }
 
         internal virtual int OnIdle(bool periodic, IOleComponentManager mgr)
@@ -430,7 +402,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
         internal virtual void OnActiveViewLostFocus(IVsTextView textView)
         {
-            SourceImpl s = (SourceImpl)this.GetSource(textView);
+            FSharpSourceBase s = (FSharpSourceBase)this.GetSource(textView);
             if (s != null) s.HandleLostFocus();
         }
         internal virtual void OnCaretMoved(CodeWindowManager mgr, IVsTextView textView, int line, int col)
@@ -464,14 +436,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         internal abstract Colorizer GetColorizer(IVsTextLines buffer);
-
-        internal abstract ISource CreateSource(IVsTextLines buffer);
-
-        /// <summary>For enumerating all the known 'Source' objects.</summary>
-        internal IEnumerable GetSources()
-        {
-            return this.sources;
-        }
 
         // We have to make sure we return the same colorizer for each text buffer,
         // so we keep a hashtable of IVsTextLines -> Source objects, the Source
@@ -561,134 +525,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return new ExpansionProvider(src);
         }
 
-        // GetCodeWindowManager -- this gives us the VsCodeWindow which is what we need to
-        // add adornments and so forth.
-        public int GetCodeWindowManager(IVsCodeWindow codeWindow, out IVsCodeWindowManager mgr)
-        {
-            Initialize();
-            IVsTextLines buffer = null;
-            NativeMethods.ThrowOnFailure(codeWindow.GetBuffer(out buffer));
-            mgr = CreateCodeWindowManager(codeWindow, GetOrCreateSource(buffer));
-            return NativeMethods.S_OK;
-        }
-
-        private ISource GetOrCreateSource(IVsTextLines buffer)
-        {
-            // see if we already have a Source object.
-            ISource s = GetSource(buffer);
-            if (s == null)
-            {
-                // Ok, then create one.
-                s = CreateSource(buffer);
-                this.sources.Add(s);
-            }
-            return s;
-        }
-
         internal virtual CodeWindowManager CreateCodeWindowManager(IVsCodeWindow codeWindow, ISource source)
         {
             return new CodeWindowManager(this, codeWindow, source);
         }
 
-        public int GetColorizer(IVsTextLines buffer, out IVsColorizer result)
-        {
-            // Do NOT create source object yet - this might be an invisible editor in which
-            // case Source object will create shutdown problems.
-            result = this.GetColorizer(buffer);
-            return NativeMethods.S_OK;
-        }
 
-        public virtual int GetLanguageName(out string name)
-        {
-            name = this.Name;
-            return NativeMethods.S_OK;
-        }
-
-        public virtual int GetFileExtensions(out string extensions)
-        {
-            extensions = "";
-            return NativeMethods.S_OK;
-        }
-
-        public abstract int GetLanguageID(IVsTextBuffer buffer, int line, int col, out Guid langId);
-
-        public virtual int GetLocationOfName(string name, out string pbstrMkDoc, TextSpan[] spans)
-        {
-            pbstrMkDoc = null;
-            return NativeMethods.E_NOTIMPL;
-        }
-
-        public virtual int GetNameOfLocation(IVsTextBuffer buffer, int line, int col, out string name, out int lineOffset)
-        {
-            name = null;
-            lineOffset = 0;
-            /*
-         TRACE1( "LanguageService(%S)::GetNameOfLocation", m_languageName );
-        OUTARG(lineOffset);
-        OUTARG(name);
-        INARG(textBuffer);
-
-        HRESULT hr;
-        IScope* scope = NULL;
-        hr = GetScopeFromBuffer( textBuffer, &scope );
-        if (FAILED(hr)) return hr;
-  
-        long realLine = line;
-        hr = scope->Narrow( line, idx, name, &realLine );
-        RELEASE(scope);
-        if (hr != S_OK) return hr;
-
-        *lineOffset = line - realLine;
-        return S_OK;
-      */
-            return NativeMethods.S_OK;
-        }
-
-        public virtual int GetProximityExpressions(IVsTextBuffer buffer, int line, int col, int cLines, out IVsEnumBSTR ppEnum)
-        {
-            ppEnum = null;
-            /*
-        TRACE2( "LanguageService(%S)::GetProximityExpressions: line %i", m_languageName, line );
-        OUTARG(exprs);
-        INARG(textBuffer);
-
-        //check the linecount
-        if (lineCount <= 0) lineCount = 1;
-
-        //get the source 
-        //TODO: this only works for sources that are opened in the environment
-        HRESULT hr;
-        Source* source = NULL;
-        hr = GetSource( textBuffer, &source );
-        if (FAILED(hr)) return hr;
-
-        //parse and find the proximity expressions
-        StringList* strings = NULL;
-        hr = source->GetAutos( line, line + lineCount, &strings );
-        RELEASE(source);
-        if (FAILED(hr)) return hr;
-
-        hr = strings->QueryInterface( IID_IVsEnumBSTR, reinterpret_cast<void**>(exprs) );
-        RELEASE(strings);
-        if (FAILED(hr)) return hr;
-  
-        return S_OK;
-      */
-            return NativeMethods.S_FALSE;
-        }
-
-        public virtual int IsMappedLocation(IVsTextBuffer buffer, int line, int col)
-        {
-            return NativeMethods.S_FALSE;
-        }
-
-        public virtual int ResolveName(string name, uint flags, out IVsEnumDebugName ppNames)
-        {
-            ppNames = null;
-            return NativeMethods.E_NOTIMPL;
-        }
-
-        public abstract int ValidateBreakpointLocation(IVsTextBuffer buffer, int line, int col, TextSpan[] pCodeSpan);
 
         internal object GetService(Type serviceType)
         {
@@ -822,8 +664,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
 
-        internal BackgroundRequest CreateBackgroundRequest(SourceImpl s, int line, int idx, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany,
-                                                           string fname, BackgroundRequestReason reason, IVsTextView view)
+        internal BackgroundRequest CreateBackgroundRequest(FSharpSourceBase s, int line, int idx, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view)
         {
             // We set this to "false" because we are effectively abandoning any currently executing background request, e.g. an OnIdle request
             this.isServingBackgroundRequest = false;
@@ -835,28 +676,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return CreateBackgroundRequest(line, idx, info, sourceText, snapshot, methodTipMiscellany, fname, reason, view, s.CreateAuthoringSink(reason, line, idx), s, s.ChangeCount, sync);
         }
 
-        // Implemented in servicem.fs
-        internal abstract BackgroundRequest CreateBackgroundRequest(int line, int col, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname,
-                                 BackgroundRequestReason reason, IVsTextView view,
-                                 AuthoringSink sink, ISource source, int timestamp, bool synchronous);
+        // Implemented in FSharpLanguageService.fs
+        internal abstract BackgroundRequest CreateBackgroundRequest(int line, int col, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view,AuthoringSink sink, ISource source, int timestamp, bool synchronous);
 
-        /// <summary>Override this method if you need to do any post-parse work on the main UI thread.
-        /// Be sure to call this base method in order to get the dynamic help context updated.</summary>
-        internal virtual void OnUntypedParseOrFullTypeCheckComplete(BackgroundRequest req)
-        {
-            if (req == null || req.Source == null || req.Source.IsClosed) return;
-            SetUserContextDirty(req.FileName);
-            RefreshUI();
-        }
-
-        internal void RefreshUI()
-        {
-            IVsUIShell uiShell = this.GetService(typeof(SVsUIShell)) as IVsUIShell;
-            if (uiShell != null)
-            {
-                uiShell.UpdateCommandUI(0);
-            }
-        }
+		// Implemented in FSharpLanguageService.fs
+		internal abstract void OnParseFileOrCheckFileComplete(BackgroundRequest req);
 
         internal void EnsureBackgroundThreadStarted()
         {
@@ -1039,53 +863,14 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return false;
         }
 
-        // Provides the list of available extensions for Save As.
-        // The following default filter string is automatically added
-        // by Visual Studio:
-        // "All Files (*.*)\n*.*\nText Files (*.txt)\n*.txt\n"
-        internal virtual string GetFormatFilterList()
-        {
-            return "";
-        }
+		// Provides the list of available extensions for Save As.
+		// The following default filter string is automatically added
+		// by Visual Studio:
+		// "All Files (*.*)\n*.*\nText Files (*.txt)\n*.txt\n"
+		internal abstract string GetFormatFilterList();
 
-        // Provides the index to the filter matching the extension of the file passed in.
-        // The default behavior for this method is to look for the matching extension 
-        // in the list returned from GetFormatFilterList and return the index to that extension.
-        // It expects GetFormatFilterList to return newline separated or '|' separated 
-        // list of label/extension pairs. It expects the extensions to be in the format "*.x"
-        // where x is the extension you want to match.  Returns -1 if there is no match.
-        internal virtual int CurFileExtensionFormat(string fileName)
-        {
-
-            string filter = GetFormatFilterList();
-            if (string.IsNullOrEmpty(filter)) return -1;
-
-            string fileext = FilePathUtilities.GetFileExtension(fileName);
-
-            string[] sa = null;
-            if (filter.Contains("\n"))
-            {
-                sa = filter.Split('\n');
-            }
-            else if (filter.Contains("|"))
-            {
-                sa = filter.Split('|');
-            }
-            else
-            {
-                throw new ArgumentException(SR.GetString(SR.UnrecognizedFilterFormat), "GetFormatFilterList");
-            }
-
-            for (int i = 0, n = sa.Length - 1; i < n; i += 2)
-            {
-                string ext = sa[i + 1].Trim();
-                if (ext.Length > 1 && string.Compare(ext.Substring(1), fileext, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    return i / 2;
-                }
-            }
-            return -1;
-        }
+		// Provides the index to the filter matching the extension of the file passed in.
+		internal abstract int CurFileExtensionFormat(string fileName);
 
         int IVsFormatFilterProvider.QueryInvalidEncoding(uint format, out string pbstrMessage)
         {
@@ -1184,7 +969,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         bool terminate;
         BackgroundRequestResultHandler callback;
         AuthoringSink sink;
-        AuthoringScope scope;
+        IntellisenseInfo scope;
         bool isFreshFullTypeCheck;
         int startTimeForOnIdleRequest;
         string quickInfoText;
@@ -1281,7 +1066,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             set { this.sink = value; }
         }
 
-        internal AuthoringScope ResultScope
+        internal IntellisenseInfo ResultIntellisenseInfo
         {
             get { return this.scope; }
             set { this.scope = value; }
@@ -1366,7 +1151,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.TokenInfo = info;
             this.isSynchronous = synchronous;
 
-            this.ResultScope = null;
+            this.ResultIntellisenseInfo = null;
             this.ResultClearsDirtinessOfFile = false;
         }
     }
@@ -1576,7 +1361,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         {
             switch (r.Reason)
             {
-                case BackgroundRequestReason.UntypedParse:
+                case BackgroundRequestReason.ParseFile:
                 case BackgroundRequestReason.FullTypeCheck:
                     return RequestType.NonUi;
                 default:
@@ -1585,13 +1370,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
     }
 
-    internal abstract class AuthoringScope
+    internal abstract class IntellisenseInfo
     {
         internal abstract System.Tuple<string,TextSpan> GetDataTipText(int line, int col);
 
         internal abstract Microsoft.FSharp.Control.FSharpAsync<Declarations> GetDeclarations(ITextSnapshot textSnapshot, int line, int col, BackgroundRequestReason reason);
 
-        internal abstract MethodListForAMethodTip GetMethodListForAMethodTip(bool useNameResolutionFallback);
+        internal abstract Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip> GetMethodListForAMethodTip();
 
         internal abstract GotoDefinitionResult Goto(IVsTextView textView, int line, int col);
 
@@ -1653,7 +1438,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract bool IsThereACloseParen();  // false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
 
-        internal abstract Tuple<int, int>[] GetNoteworthyParamInfoLocations(); // 1-based: longId start, longId end, open paren, <tuple ends> (see below) - relative to the ITextSnapshot this was created against
+        internal abstract Tuple<int, int>[] GetNoteworthyParamInfoLocations(); // 0-based: longId start, longId end, open paren, <tuple ends> (see below) - relative to the ITextSnapshot this was created against
         //          let resultVal = some.functionOrMethod.call   (   arg1 ,  arg2 )
         //                          ^                        ^   ^        ^       ^
         // start of call identifier ^                        ^   ^        ^       ^

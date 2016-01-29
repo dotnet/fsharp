@@ -175,8 +175,8 @@ type AttemptBuilder() =
             this.While(enum.MoveNext, 
                 this.Delay(fun () -> body enum.Current)))
 
-let processor = new AttemptBuilder()
-
+let attempt = new AttemptBuilder()
+let processor = attempt //TODO deprecated
 
 let log format = Printf.ksprintf (printfn "%s") format
 
@@ -201,4 +201,13 @@ let redirectTo (writer: TextWriter) =
 
 let redirectToLog () = redirectTo System.Console.Out
 
-let inline (/) a (b: string) = System.IO.Path.Combine(a,b)
+let inline (++) a (b: string) = System.IO.Path.Combine(a,b)
+let inline (/) a b = a ++ b  //TODO deprecated
+
+let splitAtFirst (c: char -> bool) (s: string) =
+    let rec helper x (rest: string) =
+        match x with
+        | [] -> rest, None
+        | x :: xs when c(x) -> rest, Some (xs |> Array.ofList |> System.String)
+        | x :: xs -> helper xs (rest + x.ToString())
+    helper (s.ToCharArray() |> List.ofArray) ""

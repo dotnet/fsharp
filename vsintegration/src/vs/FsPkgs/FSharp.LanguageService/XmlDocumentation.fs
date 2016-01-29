@@ -1,19 +1,28 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.FSharp.LanguageService
+
 open System
 open System.Text
-open System.Collections.Generic
 open Internal.Utilities.Collections
-open Microsoft.VisualStudio
 open EnvDTE
 open EnvDTE80
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+/// XmlDocumentation builder, using the VS interfaces to build documentation.  An interface is used
+/// to allow unit testing to give an alternative implementation which captures the documentation.
+type internal IDocumentationBuilder =
+
+    /// Append the given raw XML formatted into the string builder
+    abstract AppendDocumentationFromProcessedXML : appendTo:StringBuilder * processedXml:string * showExceptions:bool * showParameters:bool * paramName:string option-> unit
+
+    /// Appends text for the given filename and signature into the StringBuilder
+    abstract AppendDocumentation : appendTo: StringBuilder * filename: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
+
 /// Documentation helpers.
 module internal XmlDocumentation =
+
     /// If the XML comment starts with '<' not counting whitespace then treat it as a literal XML comment.
     /// Otherwise, escape it and surround it with <summary></summary>
     let ProcessXml(xml:string) =
@@ -147,7 +156,7 @@ module internal XmlDocumentation =
             if (showExceptions) then AppendExceptions appendTo memberData
 //          AppendRemarks appendTo memberData
 
-        interface IdealDocumentationProvider with 
+        interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
             override this.AppendDocumentationFromProcessedXML
                             ( /// StringBuilder to append to
@@ -191,20 +200,20 @@ module internal XmlDocumentation =
                             let ok,xml = index.GetMemberXML(idx)
                             let processedXml = ProcessXml(xml)
                             if Com.Succeeded(ok) then 
-                                (this:>IdealDocumentationProvider).AppendDocumentationFromProcessedXML(appendTo,processedXml,showExceptions,showParameters, paramName)
+                                (this:>IDocumentationBuilder).AppendDocumentationFromProcessedXML(appendTo,processedXml,showExceptions,showParameters, paramName)
                     | None -> ()
                 with e-> 
                     Assert.Exception(e)
                     reraise()    
  
     /// Append an XmlCommnet to the segment.
-    let AppendXmlComment(documentationProvider:IdealDocumentationProvider, segment:StringBuilder, xml, showExceptions, showParameters, paramName) =
+    let AppendXmlComment(documentationProvider:IDocumentationBuilder, segment:StringBuilder, xml, showExceptions, showParameters, paramName) =
         match xml with
-        | XmlCommentNone -> ()
-        | XmlCommentSignature(filename,signature) -> 
+        | FSharpXmlDoc.None -> ()
+        | FSharpXmlDoc.XmlDocFileSignature(filename,signature) -> 
             segment.Append("\n") |> ignore
             documentationProvider.AppendDocumentation(segment,filename,signature,showExceptions,showParameters, paramName)
-        | XmlCommentText(rawXml) ->
+        | FSharpXmlDoc.Text(rawXml) ->
             let processedXml = ProcessXml(rawXml)
             segment.Append("\n") |> ignore
             documentationProvider.AppendDocumentationFromProcessedXML(segment,processedXml,showExceptions,showParameters, paramName)
@@ -218,27 +227,27 @@ module internal XmlDocumentation =
           .Trim([|'\n'|])
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText(documentationProvider:IdealDocumentationProvider, dataTipText:DataTipElement list, showText, showExceptions, showParameters, showOverloadText) = 
+    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText:FSharpToolTipElement list, showText, showExceptions, showParameters, showOverloadText) = 
         let maxLinesInText = 45
-        let Format(dataTipElement:DataTipElement) =
+        let Format(dataTipElement:FSharpToolTipElement) =
             let segment = 
                 match dataTipElement with 
-                | DataTipElementNone->StringBuilder()
-                | DataTipElement(text,xml) -> 
+                | FSharpToolTipElement.None ->StringBuilder()
+                | FSharpToolTipElement.Single (text,xml) -> 
                     let segment = StringBuilder()
                     if showText then 
                         segment.Append(text) |> ignore
 
                     AppendXmlComment(documentationProvider, segment, xml, showExceptions, showParameters, None)
                     segment
-                | DataTipElementParameter(text, xml, paramName) ->
+                | FSharpToolTipElement.SingleParameter(text, xml, paramName) ->
                     let segment = StringBuilder()
                     if showText then 
                         segment.Append(text) |> ignore
 
                     AppendXmlComment(documentationProvider, segment, xml, showExceptions, showParameters, Some paramName)
                     segment
-                | DataTipElementGroup(overloads) -> 
+                | FSharpToolTipElement.Group (overloads) -> 
                     let segment = StringBuilder()
                     let overloads = Array.ofList overloads
                     let len = Array.length overloads
@@ -258,7 +267,7 @@ module internal XmlDocumentation =
                         let _,xml = overloads.[0]
                         AppendXmlComment(documentationProvider, segment, xml, showExceptions, showParameters, None)
                     segment
-                | DataTipElementCompositionError(errText) -> StringBuilder(errText)
+                | FSharpToolTipElement.CompositionError(errText) -> StringBuilder(errText)
             CleanDataTipSegment(segment) 
 
         let segments = dataTipText |> List.map Format |> List.filter (fun d->d<>null) |> Array.ofList
@@ -273,8 +282,10 @@ module internal XmlDocumentation =
 
         join
 
-    let BuildDataTipText(documentationProvider:IdealDocumentationProvider, DataTipText(dataTipText)) = 
+    let BuildDataTipText(documentationProvider, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider,dataTipText,true, true, false, true) 
 
-    let BuildMethodOverloadTipText(documentationProvider:IdealDocumentationProvider, DataTipText(dataTipText)) = 
+    let BuildMethodOverloadTipText(documentationProvider, FSharpToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider,dataTipText,false, false, true, false) 
+
+    let CreateDocumentationBuilder(xmlIndexService, dte) = Provider(xmlIndexService, dte) :> IDocumentationBuilder

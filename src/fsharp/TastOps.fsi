@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
 module internal Microsoft.FSharp.Compiler.Tastops 
@@ -582,6 +582,8 @@ module PrettyTypes =
     val PrettifyTypes1 : TcGlobals -> TType -> TyparInst * TType * TyparConstraintsWithTypars
     val PrettifyTypes2 : TcGlobals -> TType * TType -> TyparInst * (TType * TType) * TyparConstraintsWithTypars
     val PrettifyTypesN : TcGlobals -> TType list -> TyparInst * TType list * TyparConstraintsWithTypars
+    val PrettifyTypesNN : TcGlobals -> TType list list -> TyparInst * TType list list * TyparConstraintsWithTypars
+    val PrettifyTypesNN1 : TcGlobals -> TType list list * TType -> TyparInst * (TType list list * TType) * TyparConstraintsWithTypars
     val PrettifyTypesN1 : TcGlobals -> UncurriedArgInfos * TType -> TyparInst * (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
     val PrettifyTypesNM1 : TcGlobals -> TType list * CurriedArgInfos * TType -> TyparInst * (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 

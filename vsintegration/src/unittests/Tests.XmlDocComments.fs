@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests
+namespace Tests.LanguageService
 
 open System
 open NUnit.Framework
@@ -11,7 +11,7 @@ open UnitTests.TestLib.Utils
 
 [<TestFixture>]
 type XmlDocComments() = 
-    inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = fst (Models.InstalledMSBuild()))
+    inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = InstalledMSBuildTestFlavour())
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 
     // should have a "\r\n" just have a "\r"
     let trimnewlines (str : string) = 

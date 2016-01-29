@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -228,7 +228,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary>
         /// If Preferences.EnableQuickInfo is true then this method kicks of a parse with the 
         /// reason BackgroundRequestReason.QuickInfo to find information about the current token.  If the
-        /// parse finds something (returned via the AuthoringScope.GetDataTipText) then it is
+        /// parse finds something (returned via the IntellisenseInfo.GetDataTipText) then it is
         /// displayed using the TextTipData object.  When the asynchronous parse is finished
         /// GetFullDataTipText is called to pop up the tip.
         /// </summary>
@@ -830,7 +830,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             NativeMethods.ThrowOnFailure(this.textView.GetCaretPos(out line, out col));
 
             string text = null;
-            if (req.ResultScope != null) {
+            if (req.ResultIntellisenseInfo != null) {
                 text = req.ResultQuickInfoText;
                 if (text == null || !TextSpanHelper.ContainsInclusive(req.ResultQuickInfoSpan, line, col))
                 {
@@ -954,7 +954,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
             string url = null;
             TextSpan span;
-            AuthoringScope scope = req.ResultScope;
+            IntellisenseInfo scope = req.ResultIntellisenseInfo;
             if (scope != null && gotoCmd == VSConstants.VSStd97CmdID.GotoDefn)
             {
                 var gotoResult = scope.Goto(textView, line, col);

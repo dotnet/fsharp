@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Lib
 
@@ -18,6 +18,8 @@ let tracking = ref false // intended to be a general hook to control diagnostic 
 
 let condition _s = 
     try (System.Environment.GetEnvironmentVariable(_s) <> null) with _ -> false
+
+let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections;
@@ -135,9 +135,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
       
         /// <summary>Install the optional TypeAndMemberDropdownBars, and primary and secondary view filters</summary>
         public virtual int AddAdornments() {
-#if	LANGTRACE
-            Trace.WriteLine("CodeWindowManager::AddAdornments");
-#endif
             int hr = 0;
             this.service.AddCodeWindowManager(this);
 
@@ -173,9 +170,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary>Remove drop down combos, view filters, and notify the LanguageService that the Source and
         /// CodeWindowManager is now closed</summary>
         public virtual int RemoveAdornments() {
-#if	LANGTRACE
-            Trace.WriteLine("CodeWindowManager::RemoveAdornments");
-#endif
             try {
                 if (this.dropDownHelper != null) {
                     IVsDropdownBarManager dbm = (IVsDropdownBarManager)this.codeWindow;
@@ -202,9 +196,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary>Install a new view filter for the given view. This method calls your
         /// CreateViewFilter method.</summary>
         public virtual int OnNewView(IVsTextView newView) {
-#if	LANGTRACE
-            Trace.WriteLine("CodeWindowManager::OnNewView");
-#endif
             ViewFilter filter = this.service.CreateViewFilter(this, newView);
             if (filter != null) this.viewFilters.Add(filter);
             return NativeMethods.S_OK;

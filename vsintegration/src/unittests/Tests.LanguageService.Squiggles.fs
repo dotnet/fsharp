@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.Squiggles
 
 open System
 open System.IO
@@ -10,8 +10,10 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type SquiggleTests() as this= 
+[<TestFixture>] 
+type UsingMSBuild() as this= 
     inherit LanguageServiceBaseTests()
 
     #if FX_ATLEAST_45
@@ -297,7 +299,7 @@ type X() =
     [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.Error.VerbatimStringAccident.GoodErrorMessage``() = 
-        let r = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let r = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
         let (sln, proj, file) = this.CreateSingleFileProject("""type foo = N1.T<@"foo">""", references = r)
         TakeCoffeeBreak(this.VS)// Wait for the background compiler to catch up.
         MoveCursorToStartOfMarker(file, "1")
@@ -313,14 +315,14 @@ type X() =
     [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.WarningAboutEmptyAssembly`` () =
-        let emptyLoc = System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\EmptyAssembly.dll")
+        let emptyLoc = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EmptyAssembly.dll")
         this.VerifySquiggleAtStartOfMarker(
             fileContents = "type foo = N1.T<\"foo\"",
             marker = "t",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning,
                                 "Referenced assembly '"+emptyLoc+"' has assembly level attribute 'Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute' but no public type provider classes were found"),
             // ensure that if you referenced two TP assemblies, one of which contained TPs, and the other did not, then you get the warning about a TP assembly with no TPs
-            addtlRefAssy = [emptyLoc; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")],
+            addtlRefAssy = [emptyLoc; PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")],
             thereShouldBeNoOtherSquigglesHere=true)      
 
     [<Test>]
@@ -332,7 +334,7 @@ type X() =
             marker = "N1",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "The static parameter 'Param1' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<Param1=...>'."),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -343,7 +345,7 @@ type X() =
             marker = "N1",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -356,7 +358,7 @@ type X() =
             marker = "let",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "Expected type argument or static argument"),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -369,7 +371,7 @@ type X() =
             marker = "let",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                               "Incomplete structured construct at or before this point in type arguments. Expected ',', '>' or other token."),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -386,7 +388,7 @@ type X() =
                                "    string    \n"+
                                "but here has type\n"+
                                "    int    "),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])   
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])   
 
     
     [<Test>]
@@ -399,7 +401,7 @@ type X() =
             fileContents = """
                            type foo = N1(*Marker*).T< const "Hello World",2>""",
             marker = "(*Marker*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
     
    
     [<Test>]
@@ -418,7 +420,7 @@ type X() =
                                 "offside of context started at position (2:39). "+
                                 "Try indenting this token further or using "+
                                 "standard formatting conventions."),
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])     
 
 
     [<Test>]
@@ -866,25 +868,15 @@ type X() =
                                 ["#light"
                                  "module Module2"]
                                  
-        // Assertion below is very subtle.  Here's what happened.  After opening file1, we opened file2.  This changed the contents 
-        // of the project file, and focused file2 (and unfocused file1).  Since then, we have never done anything to file1, not even
-        // OnIdle (which salsa only does for currently-focused-file), and thus when we touch file1 again, it falls into the logic
-        // in servicem.fs here:
-        // Furthermore, if we know our project is out-of-date, this may mean that dependent DLLs may have changed on disk without us knowing, 
-        // since we only just started listening for those changes a moment ago in the SetDependencyFiles() call.  So behave just as if we were 
-        // just notified that those dependency files changed.  (In the future, it would be good to partition a source file's dependencies into
-        // 'project' dependencies (that only depend on the IProjectSite, e.g. project/asseembly references) and 'source' dependencies (e.g. #r's).)
-        //if outOfDateProjectFileNames.Contains(projectFileName) then
-        //    this.Parser.InvalidateConfiguration(checkOptions)
-        // which assumes 'the worst' and calls InvalidateConfiguration (which calls InvalidateBuildCacheEntry, which deletes the IncrementalBuilder).
-        // I am happy to have this under test.
-        // The next test below (Case B) simulates behavior more like VS, which would be idling all the open files.
-        gpatcc.AssertExactly(AA[file1;file2], AA[file1;file2], true)
+        gpatcc.AssertExactly(notAA[], notAA[])
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         printfn "Fixing file1 on disk"
         SaveFileToDisk file1      
         gpatcc.AssertExactly(notAA[file1],notAA[file1;file2])
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
+        SwitchToFile this.VS file2
+        TakeCoffeeBreak(this.VS)
+
         MoveCursorToEndOfMarker(file2,"open Modu") // This switches focus back to file2
         TakeCoffeeBreak(this.VS)
         let ans = GetSquiggleAtCursor(file2)
@@ -960,24 +952,8 @@ type X() =
         | _ -> Assert.Fail("No squiggle seen")  
 
 
-//Allow the SquiggleTests run under different context
-namespace UnitTests.Tests.LanguageService.Squiggle
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit SquiggleTests
-   new() = { inherit SquiggleTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit SquiggleTests
-    new() = { inherit SquiggleTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

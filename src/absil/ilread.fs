@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 //---------------------------------------------------------------------
 // The big binary reader
@@ -219,9 +219,6 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
 
 type ByteFile(bytes:byte[]) = 
     inherit BinaryFile()
-
-    static member OpenIn f = ByteFile(FileSystem.ReadAllBytesShim f)
-    static member OpenBytes bytes = ByteFile(bytes)
 
     override mc.ReadByte addr = bytes.[addr]
     override mc.ReadBytes addr len = Array.sub bytes addr len
@@ -905,6 +902,8 @@ type ILModuleReader =
       dispose: unit -> unit }
     member x.ILModuleDef = x.modul
     member x.ILAssemblyRefs = x.ilAssemblyRefs.Force()
+    interface IDisposable with
+        member x.Dispose() = x.dispose()
     
  
 type MethodData = MethodData of ILType * ILCallingConv * string * ILTypes * ILType * ILTypes
@@ -1545,7 +1544,7 @@ let rec seekReadModule ctxt (subsys,subsysversion,useHighEntropyVA, ilOnly,only3
       CustomAttrs = seekReadCustomAttrs ctxt (TaggedIndex(hca_Module,idx));
       Name = ilModuleName;
       NativeResources=nativeResources;
-      TypeDefs = mkILTypeDefsLazy (lazy (seekReadTopTypeDefs ctxt ()));
+      TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt ());
       SubSystemFlags = int32 subsys;
       IsILOnly = ilOnly;
       SubsystemVersion = subsysversion
@@ -1763,19 +1762,18 @@ and seekReadTypeDef ctxt toponly (idx:int) =
      Some (ns,n,cas,rest) 
 
 and seekReadTopTypeDefs ctxt () =
-    [ for i = 1 to ctxt.getNumRows TableNames.TypeDef do
+    [| for i = 1 to ctxt.getNumRows TableNames.TypeDef do
           match seekReadTypeDef ctxt true i  with 
           | None -> ()
-          | Some td -> yield td ]
+          | Some td -> yield td |]
 
 and seekReadNestedTypeDefs ctxt tidx =
-    mkILTypeDefsLazy 
-      (lazy 
+    mkILTypeDefsComputed (fun () -> 
            let nestedIdxs = seekReadIndexedRows (ctxt.getNumRows TableNames.Nested,seekReadNestedRow ctxt,snd,simpleIndexCompare tidx,false,fst)
-           [ for i in nestedIdxs do 
+           [| for i in nestedIdxs do 
                  match seekReadTypeDef ctxt false i with 
                  | None -> ()
-                 | Some td -> yield td ])
+                 | Some td -> yield td |])
 
 and seekReadInterfaceImpls ctxt numtypars tidx =
     seekReadIndexedRows (ctxt.getNumRows TableNames.InterfaceImpl,
@@ -1971,10 +1969,9 @@ and seekReadFields ctxt (numtypars, hasLayout) fidx1 fidx2 =
                yield seekReadField ctxt (numtypars, hasLayout) i ])
 
 and seekReadMethods ctxt numtypars midx1 midx2 =
-    mkILMethodsLazy 
-       (lazy 
-           [ for i = midx1 to midx2 - 1 do
-                 yield seekReadMethod ctxt numtypars i ])
+    mkILMethodsComputed (fun () -> 
+           [| for i = midx1 to midx2 - 1 do
+                 yield seekReadMethod ctxt numtypars i |])
 
 and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr = 
     let n, sigptr = sigptrGetZInt32 bytes sigptr
@@ -2516,7 +2513,8 @@ and seekReadCustomAttrs ctxt idx =
                                   seekReadCustomAttributeRow ctxt,(fun (a,_,_) -> a),
                                   hcaCompare idx,
                                   isSorted ctxt TableNames.CustomAttribute,
-                                  (fun (_,b,c) -> seekReadCustomAttr ctxt (b,c))))
+                                  (fun (_,b,c) -> seekReadCustomAttr ctxt (b,c)))
+          |> List.toArray)
 
 and seekReadCustomAttr ctxt (TaggedIndex(cat,idx),b) = 
     ctxt.seekReadCustomAttr (CustomAttrIdx (cat,idx,b))
@@ -3946,8 +3944,6 @@ let rec genOpenBinaryReader infile is opts =
 
     ilModule,ilAssemblyRefs,pdb
   
-let CloseILModuleReader x = x.dispose()
-
 let mkDefault ilg = 
     { optimizeForMemory=false; 
       pdbPath= None; 
@@ -3973,7 +3969,7 @@ let OpenILModuleReader infile opts =
             mmap.Close();
             ClosePdbReader pdb) }
     with _ ->
-        let mc = ByteFile.OpenIn infile
+        let mc = ByteFile(infile |> FileSystem.ReadAllBytesShim)
         let modul,ilAssemblyRefs,pdb = genOpenBinaryReader infile mc opts
         { modul = modul; 
           ilAssemblyRefs = ilAssemblyRefs;
@@ -3999,7 +3995,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
     match cacheResult with 
     | Some(ilModuleReader) -> ilModuleReader
     | None -> 
-        let mc = ByteFile.OpenIn infile
+        let mc = ByteFile(infile |> FileSystem.ReadAllBytesShim)
         let modul,ilAssemblyRefs,pdb = genOpenBinaryReader infile mc opts
         let ilModuleReader = 
             { modul = modul; 
@@ -4011,7 +4007,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
 
 let OpenILModuleReaderFromBytes fileNameForDebugOutput bytes opts = 
         assert opts.pdbPath.IsNone
-        let mc = ByteFile.OpenBytes bytes
+        let mc = ByteFile(bytes)
         let modul,ilAssemblyRefs,pdb = genOpenBinaryReader fileNameForDebugOutput mc opts
         let ilModuleReader = 
             { modul = modul; 

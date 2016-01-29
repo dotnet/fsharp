@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 %{
 
@@ -30,7 +30,8 @@ let debugPrint(s) = ignore s
 let exprFromParseError (e:SynExpr) = SynExpr.FromParseError(e,e.Range)
 let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
 
-let mkSynOptionalExpr m xopt = 
+let mkSynOptionalExpr (m: range) xopt = 
+    let m = m.MakeSynthetic()
     match xopt with 
     | None -> mkSynLidGet m Ast.FSharpLib.CorePath "None"
     | Some x  -> SynExpr.App(ExprAtomicFlag.NonAtomic, false, mkSynLidGet m Ast.FSharpLib.CorePath "Some",x,m)
@@ -258,12 +259,13 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <Ast.LexerWhitespaceContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
 %token <range * string * Ast.LexerWhitespaceContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
-%start signatureFile implementationFile interaction 
+%start signatureFile implementationFile interaction typedSeqExprEOF typEOF
+%type <Ast.SynExpr> typedSeqExprEOF
 %type <Ast.ParsedImplFile> implementationFile
 %type <Ast.ParsedSigFile> signatureFile
 %type <Ast.ParsedFsiInteraction> interaction
 %type <Ast.Ident> ident
-%type <Ast.SynType> typ
+%type <Ast.SynType> typ typEOF
 %type <Ast.SynTypeDefnSig list> tyconSpfns
 %type <Ast.SynExpr> patternResult
 %type <Ast.SynExpr> declExpr
@@ -495,10 +497,9 @@ interaction:
      { IDefns ([],lhs parseState) }
 
 
-/* The terminator of an interaction in F# Interactive */
 interactiveTerminator: 
   | SEMICOLON_SEMICOLON {}
-  | EOF     {}
+  | EOF     { checkEndOfFileError $1 }
 
 
 /* An group of items considered to be one interaction, plus a terminator */
@@ -2939,6 +2940,9 @@ typedSeqExpr:
   | seqExpr COLON               typeWithTypeConstraints { SynExpr.Typed ($1,$3, unionRanges $1.Range $3.Range) }
   | seqExpr { $1 }
 
+typedSeqExprEOF:
+  | typedSeqExpr EOF { checkEndOfFileError $2; $1 }
+
 seqExpr:
   | declExpr seps seqExpr
       { SynExpr.Sequential(SequencePointsAtSeq,true,$1,$3,unionRanges $1.Range $3.Range) } 
@@ -4219,6 +4223,9 @@ typ:
   | tupleType %prec prec_typ_prefix 
      { $1 }
 
+typEOF:
+  | typ EOF { checkEndOfFileError $2; $1 }
+
 
 tupleType:
   | appType STAR tupleOrQuotTypeElements 
@@ -4581,7 +4588,8 @@ typar:
 staticallyKnownHeadTypar: 
   | INFIX_AT_HAT_OP ident 
     {  if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedTypeParameter());
-       Typar($2,HeadTypeStaticReq,false) }
+       let id = mkSynId (lhs parseState) ($2).idText
+       Typar(id,HeadTypeStaticReq,false) }
 
   
 

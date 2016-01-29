@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if FX_NO_CANCELLATIONTOKEN_CLASSES
 namespace System
@@ -1226,7 +1226,7 @@ namespace Microsoft.FSharp.Control
 
     module CancellationTokenOps =
         /// Run the asynchronous workflow and wait for its result.
-        let RunSynchronously (token:CancellationToken,computation,timeout) =
+        let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
             let token,innerCTS = 
                 // If timeout is provided, we govern the async by our own CTS, to cancel
                 // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1260,6 +1260,40 @@ namespace Microsoft.FSharp.Control
                 |   Some subSource -> subSource.Dispose()
                 |   None -> ()
                 commit res
+
+        let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
+            use resultCell = new ResultCell<Result<_>>()
+            let trampolineHolder = TrampolineHolder()
+
+            trampolineHolder.Protect
+                (fun () ->
+                    startA
+                        token
+                        trampolineHolder
+                        (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
+                        (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
+                        (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
+                        computation)
+            |> unfake
+
+            commit (resultCell.TryWaitForResultSynchronously() |> Option.get)
+
+        let RunSynchronously (token:CancellationToken,computation,timeout) =
+            // Reuse the current ThreadPool thread if possible. Unfortunately
+            // Thread.IsThreadPoolThread isn't available on all profiles so
+            // we approximate it by testing synchronization context for null.
+            match SynchronizationContext.Current, timeout with
+            | null, None -> RunSynchronouslyInCurrentThread (token, computation)
+            // When the timeout is given we need a dedicated thread
+            // which cancels the computation.
+            // Performing the cancellation in the ThreadPool eg. by using
+            // Timer from System.Threading or CancellationTokenSource.CancelAfter
+            // (which internally uses Timer) won't work properly
+            // when the ThreadPool is busy.
+            //
+            // And so when the timeout is given we always use the current thread
+            // for the cancellation and run the computation in another thread.
+            | _ -> RunSynchronouslyInAnotherThread (token, computation, timeout)
 
         let Start (token:CancellationToken,computation) =
             queueAsync 
@@ -1461,6 +1495,54 @@ namespace Microsoft.FSharp.Control
                                 p
                             |> unfake);
                     FakeUnit))
+
+        static member Choice(computations : Async<'T option> seq) : Async<'T option> =
+            unprotectedPrimitive(fun args ->
+                let result =
+                    try Seq.toArray computations |> Choice1Of2
+                    with exn -> ExceptionDispatchInfo.RestoreOrCapture exn |> Choice2Of2
+
+                match result with
+                | Choice2Of2 edi -> args.aux.econt edi
+                | Choice1Of2 [||] -> args.cont None
+                | Choice1Of2 computations ->
+                    protectedPrimitiveCore args (fun args ->
+                        let ({ aux = aux } as args) = delimitSyncContext args
+                        let noneCount = ref 0
+                        let exnCount = ref 0
+                        let innerCts = new LinkedSubSource(aux.token)
+                        let trampolineHolder = aux.trampolineHolder
+
+                        let scont (result : 'T option) =
+                            match result with
+                            | Some _ -> 
+                                if Interlocked.Increment exnCount = 1 then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont result)
+                                else
+                                    FakeUnit
+
+                            | None ->
+                                if Interlocked.Increment noneCount = computations.Length then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont None)
+                                else
+                                    FakeUnit
+ 
+                        let econt (exn : ExceptionDispatchInfo) =
+                            if Interlocked.Increment exnCount = 1 then 
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.econt exn)
+                            else
+                                FakeUnit
+ 
+                        let ccont (exn : OperationCanceledException) =
+                            if Interlocked.Increment exnCount = 1 then
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.ccont exn)
+                            else
+                                FakeUnit
+
+                        for c in computations do
+                            queueAsync innerCts.Token scont econt ccont c |> unfake
+
+                        FakeUnit))
 
 #if FX_NO_TASK
 #else

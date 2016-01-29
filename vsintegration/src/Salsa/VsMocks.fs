@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 (*
     Mocks of major Visual Studio interfaces.
@@ -1051,7 +1051,7 @@ module internal VsMocks =
             member this.SetCursor(  hNewCursor,    phOldCursor) = err(__LINE__)
             member this.GetCurrentSelection(  ppHier,    pitemid,    ppMIS) = err(__LINE__)
             }
-    
+
     let vsWindowFrame =
         { new IVsWindowFrame with
             member this.Show() = err(__LINE__)

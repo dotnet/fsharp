@@ -109,8 +109,8 @@ let internal quotepath (p: FilePath) =
 let ildasm exec ildasmExe flags assembly =
     exec ildasmExe (sprintf "%s %s" flags (quotepath assembly))
 
-let peverify exec peverifyExe path =
-    exec peverifyExe path
+let peverify exec peverifyExe flags path =
+    exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
 let createTempDir () =
     let path = Path.GetTempFileName ()
@@ -142,9 +142,9 @@ let where envVars cmd =
     | ErrorLevel _ -> None
     | CmdResult.Success -> !result    
 
-let fsdiff exec fsdiffExe ignoreWhiteSpaceChanges file1 file2 =
+let fsdiff exec fsdiffExe file1 file2 =
     // %FSDIFF% %testname%.err %testname%.bsl
-    exec fsdiffExe (sprintf "%s%s %s" (if ignoreWhiteSpaceChanges then "-dew " else "") file1 file2)
+    exec fsdiffExe (sprintf "%s %s" file1 file2)
 
 let ``for /f`` path = 
     // FOR /F processing of a text file consists of reading the file, one line of text at a time and then breaking the line up into individual

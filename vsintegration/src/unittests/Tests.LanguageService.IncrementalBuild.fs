@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService
 
 open System
 open System.IO
@@ -12,10 +12,11 @@ open NUnit.Framework.Constraints
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.IncrementalBuild
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open IncrementalBuild
-    
-/// Useful methods that someday might go into IncrementalBuild
+
+// Useful methods that someday might go into IncrementalBuild
 module internal Vector = 
     /// Convert from vector to a scalar
     let ToScalar<'I> (taskname:string) (input:Vector<'I>) : Scalar<'I array> =
@@ -61,32 +62,33 @@ type IncrementalBuild() =
         let Map filename = 
             "map:"+filename
 
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let stamped = Vector.Stamp "Stamp" StampFile input
         let mapped = Vector.Map "Map" Map stamped
-        build.DeclareVectorOutput("Mapped", mapped)
-        let build = build.GetInitialPartialBuild(["InputVector",1,[box path]],[])
+        buildDesc.DeclareVectorOutput mapped
+        let inputs = [ BuildInput.VectorInput(input, [path]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let DoCertainStep build = 
-            match IncrementalBuild.Step "Mapped" build with
-            | Some(build) -> build
+        let DoCertainStep bound = 
+            match IncrementalBuild.Step (Target(mapped,None)) bound with
+            | Some bound -> bound
             | None -> failwith "Expected to be able to step"
 
         // While updateStamp is true we should be able to step as continuously
-        // because there will always be more to build.
-        let mutable build = build
+        // because there will always be more to bound.
+        let mutable bound = bound
         for i in 0..5 do 
             printfn "Iteration %d" i
-            build <- DoCertainStep build
+            bound <- DoCertainStep bound
             System.Threading.Thread.Sleep 2000
 
         // Now, turn off updateStamp and the build should just finish.
         updateStamp:=false
-        build <- DoCertainStep build
-        build <- DoCertainStep build
-        match IncrementalBuild.Step "Mapped" build with
-        | Some(build) -> failwith "Build should have stopped"
+        bound <- DoCertainStep bound
+        bound <- DoCertainStep bound
+        match IncrementalBuild.Step (Target (mapped, None)) bound with
+        | Some bound -> failwith "Build should have stopped"
         | None -> () 
 
             
@@ -102,33 +104,36 @@ type IncrementalBuild() =
         let StampFile(filename) = 
             !stampAs
                             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let acc = InputScalar<string> "Accumulator"
         let stamped = Vector.Stamp "Stamp" StampFile input
         let scanned = Vector.ScanLeft "Scan" Scan acc stamped
-        build.DeclareVectorOutput("Scanned", scanned)
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],["Accumulator",box "AccVal"])
+        buildDesc.DeclareVectorOutput scanned
+        let inputs = 
+            [ BuildInput.VectorInput(input, ["File1.fs"; "File2.fs"; "File3.fs"]) 
+              BuildInput.ScalarInput(acc, "AccVal") ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let build = Eval "Scanned" build
-        let r = GetVectorResult<string>("Scanned",build)
+        let bound = Eval scanned bound
+        let r = GetVectorResult (scanned, bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let build = Eval "Scanned" build
-        let r = GetVectorResult<string>("Scanned",build)
+        let bound = Eval scanned bound
+        let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix1-File2.fs-Suffix1",r.[1])
 
         printf "-[Step3]----------------------------------------------------------------------------------------\n"
         // Evaluate a third time with timestamps updated. Should cause a rebuild
         System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let build = Eval "Scanned" build
-        let r = GetVectorResult<string>("Scanned",build)
+        let bound = Eval scanned bound
+        let r = GetVectorResult (scanned,bound)
         Assert.AreEqual("AccVal-File1.fs-Suffix2-File2.fs-Suffix2",r.[1])
              
             
@@ -136,35 +141,36 @@ type IncrementalBuild() =
     [<Test>]
     member public rb.aaZeroElementVector() = // Starts with 'aa' to put it at the front.
         let stamp = ref DateTime.Now
-        let Mult(i:int) : string array = Array.create i ""
         let Stamp(s:string) = !stamp
         let Map(s:string) = s
         let Demult(a:string array) : int = a.Length
             
-        let build = new BuildDescriptionScope()
-        let input = InputScalar<int> "InputScalar"
-        let multiplexed = Scalar.Multiplex "Mult" Mult input
-        let stamped = Vector.Stamp "Stamp" Stamp multiplexed
+        let buildDesc = new BuildDescriptionScope()
+        let inputVector = InputVector<string> "InputVector"
+        let stamped = Vector.Stamp "Stamp" Stamp inputVector
         let mapped = Vector.Map "Map" Map stamped
-        let demultiplexed = Vector.Demultiplex "Demult" Demult mapped
-        build.DeclareVectorOutput("Multiplexed", multiplexed)
-        build.DeclareVectorOutput("Stamped", stamped)
-        build.DeclareVectorOutput("Mapped", mapped)
-        build.DeclareScalarOutput("Result", demultiplexed)
+        let result = Vector.Demultiplex "Demult" Demult mapped
+        buildDesc.DeclareVectorOutput stamped
+        buildDesc.DeclareVectorOutput mapped
+        buildDesc.DeclareScalarOutput result
             
         // Try first with one input
-        let build1 = build.GetInitialPartialBuild([],["InputScalar", box 1])    
-        let build1Evaled = Eval "Result" build1
-        let r1 = GetScalarResult<int>("Result",build1Evaled)
+        let inputs1 = [ BuildInput.VectorInput(inputVector, [""]) ]
+        let build1 = buildDesc.GetInitialPartialBuild inputs1
+
+        let build1Evaled = Eval result build1
+        let r1 = GetScalarResult (result, build1Evaled)
         match r1 with
         | Some(v,dt) -> Assert.AreEqual(1,v) 
         | None -> failwith "Expected the value 1 to be returned."
             
         // Now with zero. This was the original bug.
         stamp := DateTime.Now
-        let build0 = build.GetInitialPartialBuild([],["InputScalar", box 0])            
-        let build0Evaled = Eval "Result" build0
-        let r0 = GetScalarResult<int>("Result",build0Evaled)
+        let inputs0 = [ BuildInput.VectorInput(inputVector, []) ]
+        let build0 = buildDesc.GetInitialPartialBuild inputs0
+
+        let build0Evaled = Eval result build0
+        let r0 = GetScalarResult (result, build0Evaled)
         match r0 with
         | Some(v,dt) -> Assert.AreEqual(0,v) 
         | None -> failwith "Expected the value 0 to be returned."  
@@ -176,31 +182,31 @@ type IncrementalBuild() =
     member public rb.MultiplexTransitionUp() =
         let elements = ref 1
         let timestamp = ref System.DateTime.Now
-        let Mult(s:string) : string array =  [| for i in 1..!elements -> sprintf "Element %d" i |]
+        let Input() : string array =  [| for i in 1..!elements -> sprintf "Element %d" i |]
         let Stamp(s) = !timestamp
         let Map(s:string) = sprintf "Mapped %s " s
-        let Demult(a:string array) : string = "Demult"
-        let Result(a:string array) : string = String.Join(",", a)
+        let Result(a:string[]) : string = String.Join(",", a)
         let now = System.DateTime.Now
         let FixedTimestamp _  =  now
             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let stampedInput = Vector.Stamp "StampInput" Stamp input
-        let demultiplexedInput = Vector.Demultiplex "DemultInput" Demult stampedInput
-        let multiplexed = Scalar.Multiplex "Mult" Mult demultiplexedInput
-        let mapped = Vector.Map "Map" Map multiplexed
+        //let demultiplexedInput = Vector.Demultiplex "DemultInput" Demult stampedInput
+        //let multiplexed = Scalar.Multiplex "Mult" Mult demultiplexedInput
+        let mapped = Vector.Map "Map" Map stampedInput
         let mapped = Vector.Stamp "FixedTime" FixedTimestamp mapped // Change in vector size should x-ray through even if timestamps haven't changed in remaining items.
-        let demultiplexed = Vector.Demultiplex "DemultResult" Result mapped
-        build.DeclareScalarOutput("Result", demultiplexed)
+        let result = Vector.Demultiplex "DemultResult" Result mapped
+        buildDesc.DeclareScalarOutput result
             
         // Create the build.
-        let build = build.GetInitialPartialBuild(["InputVector",1,[box "Input 0"]],[])         
+        let inputs = [ BuildInput.VectorInput(input, ["Input 0"]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
             
         // Evaluate it with value 1
         elements := 1
-        let build = Eval "Result" build
-        let r1 = GetScalarResult<string>("Result", build)
+        let bound = Eval result bound
+        let r1 = GetScalarResult<string>(result, bound)
         match r1 with
         | Some(s,dt) -> printfn "%s" s
         | None -> failwith ""
@@ -210,14 +216,13 @@ type IncrementalBuild() =
         System.Threading.Thread.Sleep(100)
         timestamp := System.DateTime.Now
             
-            
-            
-        let build = Eval "Result" build
-        let r2 = GetScalarResult<string>("Result", build)
+        let bound = Eval result bound
+        let r2 = GetScalarResult (result, bound)
         match r2 with
-        | Some(s,dt) -> Assert.AreEqual("Mapped Element 1 ,Mapped Element 2 ",s)
+        | Some(s,dt) -> Assert.AreEqual("Mapped Input 0 ",s)
         | None -> failwith ""
             
+    (*
     /// Here, we want a multiplex to decrease the number of items processed.
     [<Test>]
     member public rb.MultiplexTransitionDown() =
@@ -240,27 +245,27 @@ type IncrementalBuild() =
             printfn "Fixing timestamp"
             now               
             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let stampedInput = Vector.Stamp "StampInput" Stamp input
         let demultiplexedInput = Vector.Demultiplex "DemultInput" Demult stampedInput
         let multiplexed = Scalar.Multiplex "Mult" Mult demultiplexedInput
         let mapped = Vector.Map "Map" Map multiplexed
         let fixedmapped = Vector.Stamp "FixedTime" FixedTimestamp mapped // Change in vector size should x-ray through even if timestamps haven't changed in remaining items.
-        let demultiplexed = Vector.Demultiplex "DemultResult" Result fixedmapped
+        let result = Vector.Demultiplex "DemultResult" Result fixedmapped
             
-        build.DeclareScalarOutput("DemultiplexedInput", demultiplexedInput)
-        build.DeclareVectorOutput("Mapped", mapped)
-        build.DeclareVectorOutput("FixedMapped", fixedmapped)            
-        build.DeclareScalarOutput("Result", demultiplexed)
+        buildDesc.DeclareScalarOutput demultiplexedInput
+        buildDesc.DeclareVectorOutput mapped
+        buildDesc.DeclareVectorOutput fixedmapped
+        buildDesc.DeclareScalarOutput result
             
         // Create the build.
-        let build = build.GetInitialPartialBuild(["InputVector",1,[box "Input 0"]],[])         
+        let bound = buildDesc.GetInitialPartialBuild(["InputVector",1,[box "Input 0"]],[])         
             
         // Evaluate it with value 2
         elements := 2
-        let build = Eval "Result" build
-        let r1 = GetScalarResult<string>("Result", build)
+        let bound = Eval result bound
+        let r1 = GetScalarResult<string>(result, bound)
         match r1 with
         | Some(s,dt) -> printfn "%s" s
         | None -> failwith ""
@@ -270,29 +275,30 @@ type IncrementalBuild() =
         System.Threading.Thread.Sleep(100)
         timestamp := System.DateTime.Now
             
-        let buildDemuxed = Eval "DemultiplexedInput" build
-        let rdm = GetScalarResult<string>("DemultiplexedInput",buildDemuxed)
+        let buildDemuxed = Eval demultiplexedInput bound
+        let rdm = GetScalarResult (demultiplexedInput,buildDemuxed)
         match rdm with
         | Some(s,dt)->Assert.AreEqual("Demult Input 0", s)
         | None -> failwith "unexpected"
             
-        let buildMapped = Eval "Mapped" build
-        let mp = GetVectorResult<string>("Mapped",buildMapped)
+        let buildMapped = Eval mapped bound
+        let mp = GetVectorResult (mapped,buildMapped)
         Assert.AreEqual(1,mp.Length)
         let melem = mp.[0]
         Assert.AreEqual("Mapped Element 1 ", melem)
             
-        let buildFixedMapped = Eval "FixedMapped" buildMapped
-        let mp = GetVectorResult<string>("FixedMapped",buildFixedMapped)
+        let buildFixedMapped = Eval fixedmapped buildMapped
+        let mp = GetVectorResult (fixedmapped,buildFixedMapped)
         Assert.AreEqual(1,mp.Length)
         let melem = mp.[0]
         Assert.AreEqual("Mapped Element 1 ", melem)            
             
-        let build = Eval "Result" build
-        let r2 = GetScalarResult<string>("Result", build)
+        let bound = Eval result bound
+        let r2 = GetScalarResult<string>(result, bound)
         match r2 with
         | Some(s,dt) -> Assert.AreEqual("Mapped Element 1 ",s)
         | None -> failwith "unexpected"
+         *)
             
     /// Test that stamp works
     [<Test>]
@@ -306,24 +312,25 @@ type IncrementalBuild() =
         let StampFile(filename) =  
             !stampAs
                             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let stamped = Vector.Stamp "Stamp" StampFile input
         let mapped = Vector.Map "Map" MapIt stamped
-        build.DeclareVectorOutput("Mapped", mapped)
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],[])
+        buildDesc.DeclareVectorOutput mapped
+        let inputs = [ BuildInput.VectorInput(input, ["File1.fs";"File2.fs";"File3.fs"]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let build = Eval "Mapped" build
-        let r = GetVectorResult<string>("Mapped",build)
+        let bound = Eval mapped bound
+        let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         mapSuffix:="Suffix2"
-        let build = Eval "Mapped" build
-        let r = GetVectorResult<string>("Mapped",build)
+        let bound = Eval mapped bound
+        let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix1",r.[1])
 
         printf "-[Step3]----------------------------------------------------------------------------------------\n"
@@ -331,8 +338,8 @@ type IncrementalBuild() =
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let build = Eval "Mapped" build
-        let r = GetVectorResult<string>("Mapped",build)
+        let bound = Eval mapped bound
+        let r = GetVectorResult (mapped,bound)
         Assert.AreEqual("File2.fs.Suffix2",r.[1])
             
     /// Test that stamp works
@@ -347,24 +354,25 @@ type IncrementalBuild() =
         let StampFile(filename) = 
             !stampAs
                             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let input = InputVector<string> "InputVector"
         let stamped = Vector.Stamp "Stamp" StampFile input
         let joined = Vector.Demultiplex "Demultiplex" Join stamped
-        build.DeclareScalarOutput("Joined", joined)
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],[])
+        buildDesc.DeclareScalarOutput joined
+        let inputs = [ BuildInput.VectorInput(input, ["File1.fs";"File2.fs";"File3.fs"]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
             
         printf "-[Step1]----------------------------------------------------------------------------------------\n"
         // Evaluate the first time.
-        let build = Eval "Joined" build
-        let (r,_) = Option.get (GetScalarResult<string>("Joined",build))
+        let bound = Eval joined bound
+        let (r,_) = Option.get (GetScalarResult<string>(joined,bound))
         Assert.AreEqual("Join1",r)
             
         printf "-[Step2]----------------------------------------------------------------------------------------\n"
         // Evaluate the second time. No change should be seen.
         joinedResult:="Join2"
-        let build = Eval "Joined" build
-        let (r,_) = Option.get (GetScalarResult<string>("Joined",build))
+        let bound = Eval joined bound
+        let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join1",r)
 
         printf "-[Step3]----------------------------------------------------------------------------------------\n"
@@ -372,8 +380,8 @@ type IncrementalBuild() =
         while !stampAs = DateTime.Now do 
             System.Threading.Thread.Sleep 10 // Sleep a little to avoid grabbing the same 'Now'
         stampAs:=DateTime.Now
-        let build = Eval "Joined" build
-        let (r,_) = Option.get (GetScalarResult<string>("Joined",build))
+        let bound = Eval joined bound
+        let (r,_) = Option.get (GetScalarResult (joined,bound))
         Assert.AreEqual("Join2",r)
             
 
@@ -382,62 +390,71 @@ type IncrementalBuild() =
     member public rb.DemultiplexScanLeft() =
         let Size(ar:_[]) = ar.Length
         let Scan acc (file :string) = eventually { return acc + file.Length }
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inVector = InputVector<string> "InputVector"
         let vectorSize = Vector.Demultiplex "Demultiplex" Size inVector
         let scanned = Vector.ScanLeft "Scan" Scan vectorSize inVector
-        build.DeclareScalarOutput("Size", vectorSize)
-        build.DeclareVectorOutput("Scanned", scanned)
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],[])
+        buildDesc.DeclareScalarOutput vectorSize
+        buildDesc.DeclareVectorOutput scanned
+        let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
             
-        let e = Eval "Scanned" build   
-        let r = GetScalarResult<int>("Size",e)  
+        let e = Eval scanned bound   
+        let r = GetScalarResult (vectorSize,e)  
         match r with 
-        | Some(r,_)->Assert.AreEqual(3,r)
+        | Some(r,_) -> Assert.AreEqual(3,r)
         | None -> Assert.Fail("No size was returned")       
             
             
+    (*
     /// Test that Scalar.Multiplex works.
     [<Test>] 
     member public rb.ScalarMultiplex() =
         let MultiplexScalar inp = [|inp+":1";inp+":2";inp+":3"|]
         
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inScalar = InputScalar<string> "Scalar"
-        let multiplexed = Scalar.Multiplex "MultiplexScalar" MultiplexScalar inScalar
-        build.DeclareVectorOutput("Output", multiplexed)
+        let result = Scalar.Multiplex "MultiplexScalar" MultiplexScalar inScalar
+        buildDesc.DeclareVectorOutput result 
             
-        let b = build.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
-        let e = Eval "Output" b
-        let r = GetVectorResult("Output",e)
+        let b = buildDesc.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
+        let e = Eval result  b
+        let r = GetVectorResult(result,e)
         Assert.AreEqual("A Scalar Value:2", r.[1])
+    
             
     /// Test that Scalar.Map works.
     [<Test>] 
     member public rb.ScalarMap() =
         let MapScalar inp = "out:"+inp
         
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inScalar = InputScalar<string> "Scalar"
-        let mappedScalar = Scalar.Map "MapScalar" MapScalar inScalar
-        build.DeclareScalarOutput("Output", mappedScalar)
+        let result  = Scalar.Map "MapScalar" MapScalar inScalar
+        buildDesc.DeclareScalarOutput  result 
             
-        let b = build.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
-        let e = Eval "Output" b
-        let r = GetScalarResult("Output",e)
+        let inputs = [ BuildInput.ScalarInput(inScalar, "A Scalar Value") ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
+
+        let b = buildDesc.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
+        let e = Eval result bound
+        let r = GetScalarResult(result,e)
         match r with 
             | Some(r,_) -> Assert.AreEqual("out:A Scalar Value", r)
             | None -> Assert.Fail()                 
-    
+    *)
+
     /// Test that a simple scalar action works.
     [<Test>] 
     member public rb.Scalar() =
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inScalar = InputScalar<string> "Scalar"
-        build.DeclareScalarOutput("Output", inScalar)
-        let b = build.GetInitialPartialBuild([],["Scalar",box "A Scalar Value"])
-        let e = Eval "Output" b
-        let r = GetScalarResult("Output",e)
+        buildDesc.DeclareScalarOutput  inScalar
+        let inputs = [ BuildInput.ScalarInput(inScalar, "A Scalar Value") ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
+
+        let e = Eval inScalar bound
+        let r = GetScalarResult(inScalar,e)
         match r with 
             | Some(r,_) -> Assert.AreEqual("A Scalar Value", r)
             | None -> Assert.Fail()
@@ -448,15 +465,19 @@ type IncrementalBuild() =
         let DoIt (a:int*string) (b:string) =
             eventually { return ((fst a)+1,b) }
             
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inScalar = InputScalar<int*string> "InputScalar"
         let inVector = InputVector<string> "InputVector"
-        let scanned = Vector.ScanLeft "DoIt" DoIt inScalar inVector
-        build.DeclareVectorOutput("Output", scanned)
+        let result = Vector.ScanLeft "DoIt" DoIt inScalar inVector
+        buildDesc.DeclareVectorOutput result
             
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],["InputScalar",box (5,"")])
-        let e = Eval "Output" build
-        let r = GetVectorResult("Output",e)
+        let inputs = 
+            [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]);
+              BuildInput.ScalarInput(inScalar, (5,"")) ]
+
+        let bound = buildDesc.GetInitialPartialBuild(inputs)
+        let e = Eval result bound
+        let r = GetVectorResult(result,e)
         if [| (6,"File1.fs"); (7,"File2.fs"); (8, "File3.fs") |] <> r then 
             printfn "Got %A" r
             Assert.Fail()
@@ -465,13 +486,15 @@ type IncrementalBuild() =
     /// Convert a vector to a scalar
     [<Test>]
     member public rb.ToScalar() =
-        let build = new BuildDescriptionScope()
+        let buildDesc = new BuildDescriptionScope()
         let inVector = InputVector<string> "InputVector"
-        let asScalar = Vector.ToScalar "ToScalar" inVector
-        build.DeclareScalarOutput("Output", asScalar)
-        let build = build.GetInitialPartialBuild(["InputVector",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],[])
-        let e = Eval "Output" build
-        let r = GetScalarResult<string array>("Output",e)
+        let result = Vector.ToScalar "ToScalar" inVector
+        buildDesc.DeclareScalarOutput result 
+        let inputs = [ BuildInput.VectorInput(inVector, ["File1.fs";"File2.fs";"File3.fs"]) ]
+        let bound = buildDesc.GetInitialPartialBuild(inputs)
+
+        let e = Eval result bound
+        let r = GetScalarResult (result, e)
         match r with 
         | Some(r,ts)->
             if "File3.fs"<>(r.[2]) then
@@ -485,65 +508,66 @@ type IncrementalBuild() =
     /// that were new at the time: Scalars, Invalidation, Disposal
     [<Test>]
     member public rb.AssemblyReferenceModel() =
-        let Parse(filename) = sprintf "Parse(%s)" filename
+        let ParseTask(filename) = sprintf "Parse(%s)" filename
+        let now = System.DateTime.Now
+        let StampFileNameTask filename = now 
+        let TimestampReferencedAssemblyTask reference = now
         let ApplyMetaCommands(parseResults:string[]) = "tcConfig-of("+String.Join(",",parseResults)+")"
         let GetReferencedAssemblyNames(tcConfig) = [|"Assembly1.dll";"Assembly2.dll";"Assembly3.dll"|]
         let ReadAssembly(assemblyName) = sprintf "tcImport-of(%s)" assemblyName
-        let CombineImports(imports) = "tcAcc"
-        let TypeCheck tcAcc parseResults = eventually { return tcAcc }
+        let CombineImportedAssembliesTask(imports) = "tcAcc"
+        let TypeCheckTask tcAcc parseResults = eventually { return tcAcc }
+        let FinalizeTypeCheckTask results = "finalized"
 
         // Build rules.
-        let build = new BuildDescriptionScope()
-        let filenames = InputVector<string> "Filenames"
-        let parseTrees = Vector.Map "Parse" Parse filenames
-        let parseTreesAsScalar = Vector.ToScalar<string> "ScalarizeParseTrees" parseTrees
-        let tcConfig = Scalar.Map "ApplyMetaCommands" ApplyMetaCommands parseTreesAsScalar
-        let referencedAssemblyNames = Scalar.Multiplex "GetReferencedAssemblyNames" GetReferencedAssemblyNames tcConfig
-        let readAssemblies = Vector.Map "ReadAssembly" ReadAssembly referencedAssemblyNames
-        let tcAcc = Vector.Demultiplex "CombineImports" CombineImports readAssemblies
-        let tcResults = Vector.ScanLeft "TypeCheck" TypeCheck tcAcc parseTrees
-        build.DeclareVectorOutput("TypeCheckingStates",tcResults)
-            
-        let build = build.GetInitialPartialBuild(["Filenames",3,[box "File1.fs";box "File2.fs";box "File3.fs"]],[])
-        let e = Eval "TypeCheckingStates" build
-        let r = GetVectorResult("TypeCheckingStates",e)
+        let buildDesc = new BuildDescriptionScope()
+        
+        // Inputs
+        let fileNamesNode = InputVector<string> "Filenames"
+        let referencedAssembliesNode = InputVector<string * DateTime> "ReferencedAssemblies"
+        
+        //Build
+        let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
+        let parseTreesNode              = Vector.Map "ParseTrees" ParseTask stampedFileNamesNode
+        let stampedReferencedAssembliesNode = Vector.Stamp "TimestampReferencedAssembly" TimestampReferencedAssemblyTask referencedAssembliesNode
+
+        let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
+
+        let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" TypeCheckTask initialTcAccNode parseTreesNode
+
+        let finalizedTypeCheckNode      = Vector.Demultiplex "FinalizeTypeCheck" FinalizeTypeCheckTask tcStatesNode
+        let buildDesc            = new BuildDescriptionScope ()
+
+        do buildDesc.DeclareVectorOutput stampedFileNamesNode
+        do buildDesc.DeclareVectorOutput stampedReferencedAssembliesNode
+        do buildDesc.DeclareVectorOutput parseTreesNode
+        do buildDesc.DeclareVectorOutput tcStatesNode
+        do buildDesc.DeclareScalarOutput initialTcAccNode
+        do buildDesc.DeclareScalarOutput finalizedTypeCheckNode
+
+        let inputs = 
+            [ BuildInput.VectorInput(fileNamesNode, ["File1.fs";"File2.fs";"File3.fs"]);
+              BuildInput.VectorInput(referencedAssembliesNode, [("lib1.dll", now);("lib2.dll", now)]) ]
+        let bound = buildDesc.GetInitialPartialBuild(inputs)
+        let e = Eval finalizedTypeCheckNode bound
+        let r = GetScalarResult(finalizedTypeCheckNode,e)
             
         ()
-
-#if NUNIT_V2
-    [<Test;ExpectedException(typeof<Exception>)>]
-    member public rb.DuplicateExpressionNamesNotAllowed() =
-            let DoIt s = s
-            ()
-#else
-    [<Test>]
-    member public rb.DuplicateExpressionNamesNotAllowed() =
-            Assert.That((fun () -> let DoIt s = s
-                                   let b = 
-                                       let build = new BuildDescriptionScope()
-                                       let i = InputVector<string> "Input"
-                                       let r = Vector.Map "Input" DoIt i
-                                       build.DeclareVectorOutput("Output",r)
-                                       build.GetInitialPartialBuild(["Input",1,[box ""]],[])
-
-                                   let e = Eval "Output" b
-                                   ()), NUnit.Framework.Throws.TypeOf(typeof<Exception>))
-#endif
 
     [<Test>]
     member public rb.OneToOneWorks() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input
 
-        let bound = 
-            let build = new BuildDescriptionScope()
-            let inputs = InputVector<int> "Inputs"
-            let outputs = Vector.Map "Modify" VectorModify inputs
-            build.DeclareVectorOutput("Outputs",outputs)
-            build.GetInitialPartialBuild(["Inputs",4,[box 1;box 2;box 3;box 4]],[])
+        let buildDesc = new BuildDescriptionScope()
+        let inputs = InputVector<int> "Inputs"
+        let outputs = Vector.Map "Modify" VectorModify inputs
+        buildDesc.DeclareVectorOutput outputs
+        let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = bound |> Eval "Outputs" 
-        let outputs = GetVectorResult("Outputs",evaled)
+        let evaled = Eval outputs bound
+        let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()   
             
@@ -554,21 +578,21 @@ type IncrementalBuild() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input
 
-        let bound = 
-            let build = new BuildDescriptionScope()
-            let inputs = InputVector<int> "Inputs"
-            let outputs = Vector.Map "Modify" VectorModify inputs
-            build.DeclareVectorOutput("Inputs1", inputs)
-            build.DeclareVectorOutput("Inputs2", inputs)
-            build.DeclareVectorOutput("Inputs3", inputs)
-            build.DeclareVectorOutput("Outputs", outputs)
-            build.DeclareVectorOutput("Inputs4", inputs)
-            build.DeclareVectorOutput("Inputs5", inputs)
-            build.DeclareVectorOutput("Inputs6", inputs)
-            build.GetInitialPartialBuild(["Inputs",4,[box 1;box 2;box 3;box 4]],[])
+        let buildDesc = new BuildDescriptionScope()
+        let inputs = InputVector<int> "Inputs"
+        let outputs = Vector.Map "Modify" VectorModify inputs
+        buildDesc.DeclareVectorOutput inputs
+        buildDesc.DeclareVectorOutput inputs
+        buildDesc.DeclareVectorOutput inputs
+        buildDesc.DeclareVectorOutput outputs
+        buildDesc.DeclareVectorOutput inputs
+        buildDesc.DeclareVectorOutput inputs
+        buildDesc.DeclareVectorOutput inputs
+        let inputs = [ BuildInput.VectorInput(inputs, [1;2;3;4]) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = bound |> Eval "Outputs" 
-        let outputs = GetVectorResult("Outputs",evaled)
+        let evaled = Eval outputs bound
+        let outputs = GetVectorResult(outputs,evaled)
         Assert.AreEqual("Transformation of 4", outputs.[3])
         ()               
             
@@ -578,14 +602,14 @@ type IncrementalBuild() =
         let VectorModify (input:int) : string =
             sprintf "Transformation of %d" input
 
-        let bound = 
-            let build = new BuildDescriptionScope()
-            let inputs = InputVector<int> "Inputs"
-            let outputs = Vector.Map "Modify" VectorModify inputs
-            build.DeclareVectorOutput("Outputs", outputs)
-            build.GetInitialPartialBuild(["Inputs",0,[]],[])
+        let buildDesc = new BuildDescriptionScope()
+        let inputs = InputVector<int> "Inputs"
+        let outputs = Vector.Map "Modify" VectorModify inputs
+        buildDesc.DeclareVectorOutput outputs
+        let inputs = [ BuildInput.VectorInput(inputs, []) ]
+        let bound = buildDesc.GetInitialPartialBuild inputs
 
-        let evaled = bound |> Eval "Outputs" 
-        let outputs = GetVectorResult("Outputs",evaled)
+        let evaled = Eval outputs  bound
+        let outputs = GetVectorResult(outputs,evaled)
         ()               
               

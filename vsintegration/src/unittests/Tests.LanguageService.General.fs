@@ -1,24 +1,36 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.General
 
 open NUnit.Framework
 open System
+open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa
+open Salsa.VsOpsUtils
+open UnitTests.TestLib.Salsa
+open UnitTests.TestLib.Utils
+open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
 [<TestFixture>] 
-type IdealSource() = 
+module IFSharpSource = 
+
     [<Test>]
-    member public rb.MultipleSourceIsDirtyCallsChangeTimestamps() = 
+    let MultipleSourceIsDirtyCallsChangeTimestamps() = 
         let recolorizeWholeFile() = ()
         let recolorizeLine (_line:int) = ()
         let isClosed() = false
-        let source =Source.CreateDelegatingSource(recolorizeWholeFile, recolorizeLine, "dummy.fs", isClosed, VsMocks.VsFileChangeEx())
+        let depFileChangeNotify = 
+            { new IDependencyFileChangeNotify with
+                member this.DependencyFileCreated _projectSite = ()
+                member this.DependencyFileChanged _filename = () }
+        let source = Source.CreateSourceTestable(recolorizeWholeFile, recolorizeLine, (fun () -> "dummy.fs"), isClosed, VsMocks.VsFileChangeEx(),depFileChangeNotify)
         let originalChangeCount = source.ChangeCount
         let originalDirtyTime = source.DirtyTime
 
@@ -43,16 +55,8 @@ type IdealSource() =
 
 
 
-open System
-open System.IO
-open NUnit.Framework
-open Salsa.Salsa
-open Salsa.VsOpsUtils
-open UnitTests.TestLib.Salsa
-open UnitTests.TestLib.Utils
-open Microsoft.FSharp.Compiler
-open UnitTests.TestLib.LanguageService
-type GeneralTests() =
+[<TestFixture>] 
+type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
     let stopWatch = new System.Diagnostics.Stopwatch()
@@ -123,28 +127,28 @@ type GeneralTests() =
 
         // n-Ui1 + n-Ui2 = n-Ui2
         requests.Enqueue(makeRequest BackgroundRequestReason.FullTypeCheck)
-        requests.Enqueue(makeRequest BackgroundRequestReason.UntypedParse)
-        verify BackgroundRequestReason.UntypedParse
+        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
+        verify BackgroundRequestReason.ParseFile
         Assert.AreEqual(0, requests.Count)
 
         // Ui1 + n-Ui2 = Ui1 + n-Ui2
         requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.UntypedParse)
+        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
         verify BackgroundRequestReason.MemberSelect
         Assert.AreEqual(1, requests.Count)
-        verify BackgroundRequestReason.UntypedParse
+        verify BackgroundRequestReason.ParseFile
         Assert.AreEqual(0, requests.Count)
 
         // (Ui1 + n-Ui2) + Ui3 = Ui3
         requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.UntypedParse)
+        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
         requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
         verify BackgroundRequestReason.MemberSelect
         Assert.AreEqual(0, requests.Count)
 
         // (Ui1 + n-Ui2) + n-Ui3 = Ui1 + n-Ui3
         requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.UntypedParse)
+        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
         requests.Enqueue(makeRequest BackgroundRequestReason.FullTypeCheck)
         verify BackgroundRequestReason.MemberSelect
         Assert.AreEqual(1, requests.Count)
@@ -260,7 +264,7 @@ EdmxFile
     ResolutionFolder:String
 """
         File.WriteAllText(Path.Combine(curDir, "tmp.fsx"), script)
-        let psi = System.Diagnostics.ProcessStartInfo("fsi.exe", "-r:FSharp.Data.TypeProviders.dll tmp.fsx")
+        let psi = System.Diagnostics.ProcessStartInfo(Path.Combine(curDir, "fsi.exe"), "-r:FSharp.Data.TypeProviders.dll tmp.fsx")
         psi.WorkingDirectory <- curDir
         psi.RedirectStandardOutput <- true
         psi.UseShellExecute <- false
@@ -302,7 +306,7 @@ EdmxFile
                         let filename = "test.fs"
                         let defines = [ "COMPILED"; "EDITING" ]
             
-                        SourceTokenizer(defines,filename).CreateLineTokenizer(source))
+                        FSharpSourceTokenizer(defines,filename).CreateLineTokenizer(source))
         
         let cm = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Comment
         let kw = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Keyword
@@ -498,16 +502,16 @@ EdmxFile
     member public this.``TokenInfo.TriggerClasses``() =      
       let important = 
         [ // Member select for dot completions
-          Parser.DOT, (TokenColorKind.Operator,TokenCharKind.Delimiter,TriggerClass.MemberSelect)
+          Parser.DOT, (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
           // for parameter info
-          Parser.LPAREN, (TokenColorKind.Text,TokenCharKind.Delimiter, TriggerClass.ParamStart ||| TriggerClass.MatchBraces)
-          Parser.COMMA,  (TokenColorKind.Text,TokenCharKind.Delimiter, TriggerClass.ParamNext)
-          Parser.RPAREN, (TokenColorKind.Text,TokenCharKind.Delimiter, TriggerClass.ParamEnd ||| TriggerClass.MatchBraces) ]
+          Parser.LPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
+          Parser.COMMA,  (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
+          Parser.RPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
       let matching =           
         [ // Other cases where we expect MatchBraces
           Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE; Parser.LBRACK_BAR;
           Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE; Parser.BAR_RBRACK ]
-        |> List.map (fun n -> n, (TokenColorKind.Text,TokenCharKind.Delimiter, TriggerClass.MatchBraces))
+        |> List.map (fun n -> n, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
       for tok, expected in List.concat [ important; matching ] do
         let info = TestExpose.TokenInfo tok
         AssertEqual(expected, info)
@@ -582,24 +586,9 @@ EdmxFile
         checkBraces "['x'" "](* E_L*)" 1
         checkBraces "[<" ">]" 2
 
-//Allow the TimeStampTests run under different context
-namespace UnitTests.Tests.LanguageService.General
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>]
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit GeneralTests
-   new() = { inherit GeneralTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>]
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit GeneralTests
-    new() = { inherit GeneralTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
+

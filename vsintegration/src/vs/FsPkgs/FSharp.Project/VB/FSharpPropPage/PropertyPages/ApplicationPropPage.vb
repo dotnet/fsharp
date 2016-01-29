@@ -1,4 +1,4 @@
-' Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+' Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 Imports Microsoft.VisualBasic
 Imports Microsoft.VisualStudio.Shell.Interop
@@ -51,7 +51,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Public Const Const_TargetFrameworkMoniker As String = "TargetFrameworkMoniker"
         Private m_v20FSharpRedistInstalled As Boolean = False
         Private m_v40FSharpRedistInstalled As Boolean = False
-        Private m_v41FSharpRedistInstalled As Boolean = False
 
         Friend WithEvents TargetFramework As System.Windows.Forms.ComboBox
         Friend WithEvents TargetFrameworkLabel As System.Windows.Forms.Label
@@ -75,13 +74,16 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_OutputTypeStringKeys(INDEX_COMMANDLINEAPP) = SR.GetString(SR.PPG_CommandLineApp)
             m_OutputTypeStringKeys(INDEX_WINDOWSCLASSLIB) = SR.GetString(SR.PPG_WindowsClassLib)
 
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-            Dim v41FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.1"
+#If VS_VERSION_DEV14 Then
+			Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
+			Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+#Else
+			Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v2.0"
+			Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v4.0"
+#End If
 
-            m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
+			m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
             m_v40FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v40FSharpRedistKey, Nothing, Nothing)))
-            m_v41FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v41FSharpRedistKey, Nothing, Nothing)))
 
             'Add any initialization after the InitializeComponent() call
             AddChangeHandlers()
@@ -581,9 +583,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             '' Is this cheating?
             If moniker.Contains("v4") Then
                 Return Me.m_v40FSharpRedistInstalled
-            End If
-            If moniker.Contains("v4.1") Then
-                Return Me.m_v41FSharpRedistInstalled
             End If
             Return False
         End Function

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Extension typing, validation of extension types, etc.
 
@@ -210,6 +210,7 @@ module internal ExtensionTyping =
         member IsFamilyAndAssembly : bool
         member IsFamilyOrAssembly : bool
         member IsPrivate : bool
+        static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
 
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedPropertyInfo = 

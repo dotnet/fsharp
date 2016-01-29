@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 //--------------------------------------------------------------------------
 // The ILX generator. 
@@ -1088,7 +1088,7 @@ type TypeDefBuilder(tdef) =
             Fields  = mkILFields      (tdef.Fields.AsList  @ ResizeArray.toList gfields);
             Properties = mkILProperties (tdef.Properties.AsList @ HashRangeSorted gproperties );
             Events     = mkILEvents     (tdef.Events.AsList     @ ResizeArray.toList gevents);
-            NestedTypes     = mkILTypeDefs      (tdef.NestedTypes.AsList     @ gnested.Close()) }
+            NestedTypes     = mkILTypeDefs      (tdef.NestedTypes.AsList @ gnested.Close()) }
 
 
     member b.AddEventDef(edef) = gevents.Add edef

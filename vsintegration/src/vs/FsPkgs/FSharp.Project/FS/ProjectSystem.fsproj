@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\src</FSharpSourcesRoot>
@@ -15,12 +15,11 @@
     <ProjectGuid>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
-    <GenerateInterfaceFile>FSharp.ProjectSystem.FSharp.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>$(NoWarn);52;75;62</NoWarn>
     <UseVsVersion>true</UseVsVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-    <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions> 
+    <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <RCResourceFile>ProjectResources.rc</RCResourceFile>
@@ -29,13 +28,12 @@
   <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
-        <MergeWithCTO>true</MergeWithCTO>
+      <MergeWithCTO>true</MergeWithCTO>
     </EmbeddedResource>
     <None Include="..\..\FSharp.VS.FSI\fsiCommands.vsct">
       <Link>fsiCommands.vsct</Link>
     </None>
     <Compile Include="InternalsVisibleTo.fs" />
-    <Compile Include="..\..\Common.fs" />
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="MSBuildUtilities.fs" />
     <Compile Include="AppConfigHelper.fs" />
@@ -92,8 +90,8 @@
       <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
-      <Name>FSharp.VS.FSI</Name>
+    <ProjectReference Include="..\..\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj">
+      <Name>FSHarp.VS.FSI</Name>
       <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Private>True</Private>
     </ProjectReference>
@@ -124,15 +122,12 @@
     <BuildDependsOn>VSCTCompile;CopyCtoFile;$(BuildDependsOn)</BuildDependsOn>
   </PropertyGroup>
   <Target Name="CopyCtoFile">
-      <Copy
-          SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')"
-          DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" 
-      />
+    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
   </Target>
   <PropertyGroup>
     <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
   </PropertyGroup>
   <Target Name="BeforeBuild">
-      <Exec Command='"$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe" /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)' />
+    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" />
   </Target>
 </Project>

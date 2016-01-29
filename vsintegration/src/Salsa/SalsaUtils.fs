@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Salsa
 
@@ -100,12 +100,10 @@ module internal VsOpsUtils =
         (opsOfFile file).GetQuickInfoAndSpanAtCursor(file)
     let GetNameOfOpenFile(file) = 
         (opsOfFile file).GetNameOfOpenFile(file)
-    let GetCheckOptionsOfScript(file) = 
-        (opsOfFile file).GetCheckOptionsOfScript(file)
+    let GetProjectOptionsOfScript(file) = 
+        (opsOfFile file).GetProjectOptionsOfScript(file)
     let GetParameterInfoAtCursor(file) = 
         (opsOfFile file).GetParameterInfoAtCursor(file)
-    let GetParameterInfoAtCursorNoFallback(file) = 
-        (opsOfFile file).GetParameterInfoAtCursorNoFallback(file)
     let GetTokenTypeAtCursor(file) = 
         (opsOfFile file).GetTokenTypeAtCursor(file)
     let GetSquiggleAtCursor(file) = 
@@ -121,9 +119,9 @@ module internal VsOpsUtils =
     let CompletionBestMatchAtCursorFor(file, value, filterText) = 
         (opsOfFile file).CompletionBestMatchAtCursorFor(file, value, filterText)
     let GotoDefinitionAtCursor file  = 
-        (opsOfFile file).GotoDefinitionAtCursor file false
+        (opsOfFile file).GotoDefinitionAtCursor (file, false)
     let GotoDefinitionAtCursorForceGeneration file = 
-        (opsOfFile file).GotoDefinitionAtCursor file true
+        (opsOfFile file).GotoDefinitionAtCursor (file, true)
     let GetNavigationContentAtCursor(file) = 
         (opsOfFile file).GetNavigationContentAtCursor(file)
     let GetHiddenRegionCommands(file) = 
@@ -133,7 +131,7 @@ module internal VsOpsUtils =
     let GetF1KeywordAtCursor file = 
         (opsOfFile file).GetF1KeywordAtCursor file
     let GetLineNumber file n = 
-        (opsOfFile file).GetLineNumber file n
+        (opsOfFile file).GetLineNumber (file, n)
     let GetAllLines file= 
         (opsOfFile file).GetAllLines file
     let SwitchToFile (vs : VisualStudio) file = 

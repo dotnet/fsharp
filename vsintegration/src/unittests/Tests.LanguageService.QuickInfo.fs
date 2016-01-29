@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.QuickInfo
 
 open System
 open NUnit.Framework
@@ -9,12 +9,15 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
 module QuickInfoStandardSettings = 
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
-type QuickInfoTests() = 
+
+[<TestFixture>] 
+type UsingMSBuild() = 
     inherit LanguageServiceBaseTests()
 
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 
@@ -213,7 +216,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "MembersTP(*Marker*)",
             expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
@@ -266,7 +269,7 @@ type QuickInfoTests() =
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
-        let tpReference = System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let tpReference = PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = code,
             marker = "(*M*)",
@@ -320,7 +323,7 @@ type QuickInfoTests() =
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic type created by me!",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -333,7 +336,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type created by me!. Which is used to test the tool tip of the typeprovider type to check if it shows the right message or not.",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -346,7 +349,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T", 
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -359,7 +362,7 @@ type QuickInfoTests() =
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
          
 
     [<Test>]
@@ -373,7 +376,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type Localized!  ኤፍ ሻርፕ",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -385,7 +388,7 @@ type QuickInfoTests() =
                                 let foo = new N.T(*Marker*)() """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic .ctor created by me for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -398,7 +401,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor created by me for N.T. Which is used to test the tool tip of the typeprovider Constructor to check if it shows the right message or not.",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -411,7 +414,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T", 
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -424,7 +427,7 @@ type QuickInfoTests() =
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -437,7 +440,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor Localized!  ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
         
 
     [<Test>]
@@ -452,7 +455,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -466,7 +469,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)", 
          "This is a synthetic *event* Localized!  ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("QuickInfo.ParamsAttribute")>]
@@ -490,7 +493,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T. Which is used to test the tool tip of the typeprovider Event to check if it shows the right message or not.!",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -504,7 +507,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -518,7 +521,7 @@ type QuickInfoTests() =
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -532,7 +535,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -545,7 +548,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)", 
          "This is a synthetic *method* Localized!  ኤፍ ሻርፕ",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -558,7 +561,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!. Which is used to test the tool tip of the typeprovider Method to check if it shows the right message or not.!",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -571,7 +574,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []", 
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -584,7 +587,7 @@ type QuickInfoTests() =
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -598,7 +601,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -611,7 +614,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)", 
          "This is a synthetic *property* Localized!  ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -624,7 +627,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T. Which is used to test the tool tip of the typeprovider Property to check if it shows the right message or not.!",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -637,7 +640,7 @@ type QuickInfoTests() =
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal", 
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -650,7 +653,7 @@ type QuickInfoTests() =
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal",
-         addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTestsResources\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -667,7 +670,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo = N1.T",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -684,7 +687,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -701,7 +704,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "foo(*Marker*)",
             expected = "XMLComment",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -712,7 +715,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "TTT",
             expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\n\nFull name: File1.TTT",
-            addtlRefAssy = ["System"; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -727,7 +730,7 @@ type QuickInfoTests() =
             fileContents,
             marker = "reaCode.Val",
             expected = """property Samples.FSharp.RegexTypeProvider.RegexTyped<...>.MatchType.AreaCode: System.Text.RegularExpressions.Group""",
-            addtlRefAssy = ["System"; System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     // Regression for 2948
     [<Test>]
@@ -2962,9 +2965,9 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker6*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker7*)", "Param1 of string",
-                                                     addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker8*)", "Ignored",
-                                                     addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     member private this.VerifyUsingFsTestLib fileContent queries crossProject =
         use _guard = this.UsingNewVS()
@@ -3679,26 +3682,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark2*)", "Calls EventBuilder.ScanSumBy")
 
 
-(*------------------------------------------IDE automation ends here ---------------------------------------------------*)
-
-// Allow the QuickInfoTests run under different context
-namespace UnitTests.Tests.LanguageService.QuickInfo
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit QuickInfoTests
-   new() = { inherit QuickInfoTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit QuickInfoTests
-    new() = { inherit QuickInfoTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

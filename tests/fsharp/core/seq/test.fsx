@@ -487,6 +487,31 @@ check "hfhdfsjkfur34"
         Failure "ss!!!" -> results := "caught"::!results
     !results)
     ["caught";"ssDispose";"eDispose"]
+
+// Check https://github.com/Microsoft/visualfsharp/pull/742
+
+module Repro1 = 
+
+    let configure () =
+     let aSequence = seq { yield "" } 
+     let aString = new string('a',3)
+     for _ in aSequence do
+       System.Console.WriteLine(aString)
+
+    do configure ()
+    /// The check is that the above code compiles OK
+
+module Repro2 = 
+
+    let configure () =
+     let aSequence = Microsoft.FSharp.Core.Operators.(..) 3 4
+     let aString = new string('a',3)
+     for _ in aSequence do
+       System.Console.WriteLine(aString)
+
+    do configure ()
+    /// The check is that the above code compiles OK
+
     
 (*---------------------------------------------------------------------------
 !* wrap up
