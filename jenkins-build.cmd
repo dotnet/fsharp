@@ -107,6 +107,8 @@ echo Building the test tree using configuration: %BUILD_PROFILE%
 @if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 
 echo Running update scripts
+call src\update.cmd %BUILD_PROFILE% -ngen
+call vsintegration\update-vsintegration.cmd %BUILD_PROFILE%
 
 REM Build the tools that are used for testing
 @echo on
@@ -114,9 +116,6 @@ call tests/BuildTestTools.cmd %BUILD_PROFILE%
 @if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_PROFILE%' failed && goto :failure
 
 REM Actually run the tests
-
-call src\update.cmd %BUILD_PROFILE% -ngen
-call vsintegration\update-vsintegration.cmd %BUILD_PROFILE%
 
 cd tests
 
