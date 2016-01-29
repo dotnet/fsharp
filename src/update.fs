@@ -36,7 +36,7 @@ let updateCmd envVars args = processor {
     // if /i "%1" == "release" goto :ok
     ignore "already validated input"
 
-    // echo GACs built binaries, adds required strong name verification skipping, and optionally NGens built binaries
+    // echo adding required strong name verification skipping, and NGening built binaries
     // echo Usage:
     // echo    update.cmd debug [-ngen]
     // echo    update.cmd release [-ngen]
@@ -82,8 +82,6 @@ let updateCmd envVars args = processor {
 
     let WINSDKNETFXTOOLS = match allWINSDKNETFXTOOLS |> Seq.tryPick id with Some sdk -> sdk | None -> ""
 
-    // set GACUTIL="%WINSDKNETFXTOOLS%gacutil.exe"
-    let GACUTIL = WINSDKNETFXTOOLS/"gacutil.exe"
     // set SN32="%WINSDKNETFXTOOLS%sn.exe"
     let SN32 = WINSDKNETFXTOOLS/"sn.exe"
     // set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
@@ -95,7 +93,6 @@ let updateCmd envVars args = processor {
 
     let checkResult = function CmdResult.ErrorLevel err -> Failure (sprintf "ERRORLEVEL %d" err) | CmdResult.Success -> Success ()
 
-    let gacutil flags = Commands.gacutil exec GACUTIL flags >> checkResult
     let ngen32 = Commands.ngen exec NGEN32 >> checkResult
     let ngen64 = Commands.ngen exec NGEN64 >> checkResult
     let sn32 = exec SN32 >> checkResult
@@ -129,8 +126,8 @@ let updateCmd envVars args = processor {
             "FSharp.LanguageService";"FSharp.LanguageService.Base";"FSharp.LanguageService.Compiler";
             "FSharp.ProjectSystem.Base";"FSharp.ProjectSystem.FSharp";"FSharp.ProjectSystem.PropertyPages";
             "FSharp.VS.FSI";
-            "Unittests";
-            "Salsa" ]
+            "VisualFSharp.Unittests";
+            "VisualFSharp.Salsa" ]
         for a in all do
             do! snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a) 
         }
@@ -159,10 +156,6 @@ let updateCmd envVars args = processor {
         else 
             (fun () -> Success ())
     //)
-
-    // rem Only GACing FSharp.Core for now
-    // %GACUTIL% /if %BINDIR%\FSharp.Core.dll
-    do! gacutil "/if" (binDir/"FSharp.Core.dll")
 
     // rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
     // if /i not "%2"=="-ngen" goto :donengen

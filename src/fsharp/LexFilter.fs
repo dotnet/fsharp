@@ -983,6 +983,45 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         setLexbufState(tokenLexbufState)
         prevWasAtomicEnd <- isAtomicExprEndToken(tok)
         tok
+    
+    let rec suffixExists p l = match l with [] -> false | _::t -> p t || suffixExists p t
+
+    let tokenBalancesHeadContext token stack = 
+        match token,stack with 
+        | END, (CtxtWithAsAugment(_)  :: _)
+        | (ELSE | ELIF), (CtxtIf _ :: _)
+        | DONE         , (CtxtDo _ :: _)
+        // WITH balances except in the following contexts.... Phew - an overused keyword! 
+        | WITH         , (  ((CtxtMatch _ | CtxtException _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtTry _ | CtxtTypeDefns _ | CtxtMemberBody _)  :: _)
+                                // This is the nasty record/object-expression case 
+                                | (CtxtSeqBlock _ :: CtxtParen(LBRACE,_)  :: _) )
+        | FINALLY      , (CtxtTry _  :: _) -> 
+            true
+
+        // for x in ienum ... 
+        // let x = ... in
+        | IN           , ((CtxtFor _ | CtxtLetDecl _) :: _) ->
+            true
+        // 'query { join x in ys ... }'
+        // 'query { ... 
+        //          join x in ys ... }'
+        // 'query { for ... do
+        //          join x in ys ... }'
+        | IN           , stack when detectJoinInCtxt stack ->
+            true
+
+        // NOTE: ;; does not terminate a 'namespace' body. 
+        | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtNamespaceBody _ :: _) -> 
+            true
+
+        | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtModuleBody (_,true) :: _) -> 
+            true
+
+        | t2           , (CtxtParen(t1,_) :: _) -> 
+            parenTokensBalance t1  t2
+
+        | _ -> 
+            false
               
     //----------------------------------------------------------------------------
     // Parse and transform the stream of tokens coming from popNextTokenTup, pushing
@@ -1108,46 +1147,6 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 
             | _ -> 
                 None
-
-
-        let tokenBalancesHeadContext token stack = 
-            match token,stack with 
-            | END, (CtxtWithAsAugment(_)  :: _)
-            | (ELSE | ELIF), (CtxtIf _ :: _)
-            | DONE         , (CtxtDo _ :: _)
-            // WITH balances except in the following contexts.... Phew - an overused keyword! 
-            | WITH         , (  ((CtxtMatch _ | CtxtException _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtTry _ | CtxtTypeDefns _ | CtxtMemberBody _)  :: _)
-                                    // This is the nasty record/object-expression case 
-                                    | (CtxtSeqBlock _ :: CtxtParen(LBRACE,_)  :: _) )
-            | FINALLY      , (CtxtTry _  :: _) -> 
-                true
-
-            // for x in ienum ... 
-            // let x = ... in
-            | IN           , ((CtxtFor _ | CtxtLetDecl _) :: _) ->
-                true
-            // 'query { join x in ys ... }'
-            // 'query { ... 
-            //          join x in ys ... }'
-            // 'query { for ... do
-            //          join x in ys ... }'
-            | IN           , stack when detectJoinInCtxt stack ->
-                true
-
-            // NOTE: ;; does not terminate a 'namespace' body. 
-            | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtNamespaceBody _ :: _) -> 
-                true
-
-            | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtModuleBody (_,true) :: _) -> 
-                true
-
-            | t2           , (CtxtParen(t1,_) :: _) -> 
-                parenTokensBalance t1  t2
-
-            | _ -> 
-                false
-
-        let rec suffixExists p l = match l with [] -> false | _::t -> p t || suffixExists p t
 
         // Balancing rule. Every 'in' terminates all surrounding blocks up to a CtxtLetDecl, and will be swallowed by 
         // terminating the corresponding CtxtLetDecl in the rule below. 
@@ -2279,3 +2278,4 @@ type LexFilter (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, lexb
             | _ -> token
         loop()
 
+let token lexargs skip = Lexer.token lexargs skip

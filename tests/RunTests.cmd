@@ -182,8 +182,6 @@ set PATH=%PATH%;%WINSDKNETFXTOOLS%
 
 IF NOT DEFINED SNEXE32 IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
 IF NOT DEFINED SNEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
-IF NOT DEFINED GACUTILEXE32 IF EXIST "%WINSDKNETFXTOOLS%gacutil.exe"     set GACUTILEXE32=%WINSDKNETFXTOOLS%gacutil.exe
-IF NOT DEFINED GACUTILEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\gacutil.exe" set GACUTILEXE64=%WINSDKNETFXTOOLS%x64\gacutil.exe
 
 set FSC=%FSCBINPATH%\fsc.exe
 set PATH=%FSCBINPATH%;%PATH%
@@ -292,8 +290,8 @@ set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
 set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
-echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\Unittests.dll"
-     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\Unittests.dll"
+echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
 call :UPLOAD_XML "%XMLFILE%"
 

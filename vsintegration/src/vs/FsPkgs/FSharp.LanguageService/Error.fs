@@ -48,9 +48,7 @@ module internal Strings =
         let GotoDefinitionFailed_NoSourceCode () = GetString "GotoDefinitionFailed_NotSourceCode"
 
 /// Assert helpers
-[<Sealed>]
-[<AbstractClass>]
-type internal Assert private() = 
+type internal Assert() = 
     /// Display a good exception for this error message and then rethrow.
     static member Exception(e:Exception) =  
         System.Diagnostics.Debug.Assert(false, "Unexpected exception seen in language service", e.ToString())

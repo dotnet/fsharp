@@ -41,3 +41,9 @@ val ConvExprPublic : QuotationGenerationScope -> QuotationTranslationEnv -> Expr
 val ConvMethodBase  : QuotationGenerationScope -> QuotationTranslationEnv ->  string * Val  -> QuotationPickler.MethodBaseData
 
 
+val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option
+val (|SimpleArrayLoopUpperBound|_|) : Expr -> unit option
+val (|SimpleArrayLoopBody|_|) : TcGlobals -> Expr -> (Expr * TType * Expr) option
+val (|ObjectInitializationCheck|_|) : TcGlobals -> Expr -> unit option
+val isSplice : TcGlobals -> ValRef -> bool
+

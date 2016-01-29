@@ -210,6 +210,7 @@ module internal ExtensionTyping =
         member IsFamilyAndAssembly : bool
         member IsFamilyOrAssembly : bool
         member IsPrivate : bool
+        static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
 
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedPropertyInfo = 

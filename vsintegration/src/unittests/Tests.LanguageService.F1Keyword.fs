@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.F1Keyword
 
 open System
 open NUnit.Framework
@@ -9,8 +9,10 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type F1KeywordTests() =
+[<TestFixture>] 
+type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
     member private this.TestF1Keywords(expectedKeywords, testLines, ?addtlRefAssy : list<string>) =
@@ -204,7 +206,7 @@ type F1KeywordTests() =
                 Some "N1"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -222,7 +224,7 @@ type F1KeywordTests() =
                 Some "N1.T"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
 
     [<Test>]
@@ -369,24 +371,8 @@ type F1KeywordTests() =
             ]
         this.TestF1Keywords(keywords, file)
 
-// Allow the F1KeywordTests run under different context
-namespace UnitTests.Tests.LanguageService.F1Keyword
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit F1KeywordTests
-   new() = { inherit F1KeywordTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit F1KeywordTests
-    new() = { inherit F1KeywordTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
