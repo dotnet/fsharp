@@ -1,4 +1,4 @@
-﻿# Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 [$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{11605AD3-9E1C-4DAE-AA39-C17470D15752}]
 "name"="FSharp.Compiler"
 "publicKeyToken"="b03f5f7f11d50a3a"
