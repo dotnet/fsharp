@@ -199,10 +199,8 @@ if not exist %_dotnetexe% (
     @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
 )
 
-pushd .\lkg & ..\%_dotnetexe% restore project.json &popd
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-pushd .\lkg & ..\%_dotnetexe% publish project.json -f dnxcore50 -r win7-x64 -o ..\packages\lkg &popd
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+copy /y .\packages\dotnet\bin\* .\packages\lkg
+@if ERRORLEVEL 1 echo Error: copy of dotnet bin to lkg failed && goto :failure
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
 pushd .\packages\lkg & ren fsc.exe fsc.dll & popd
