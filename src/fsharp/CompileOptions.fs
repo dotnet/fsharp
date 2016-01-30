@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // # FSComp.SR.opts
 
@@ -527,6 +527,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
+    printfn "  copyFSharpCore . . . . : %+A" tcConfigB.copyFSharpCore
     tcConfigB.includes |> List.sort
                        |> List.iter (printfn "  include  . . . . . . . : %A")
   
@@ -628,6 +629,8 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
 
         CompilerOption("sig", tagFile, OptionString (setSignatureFile tcConfigB), None,
                            Some (FSComp.SR.optsSig()));    
+                           
+        CompilerOption("nocopyfsharpcore", tagNone, OptionUnit (fun () -> tcConfigB.copyFSharpCore <- false), None, Some (FSComp.SR.optsNoCopyFsharpCore()));
     ]
 
 

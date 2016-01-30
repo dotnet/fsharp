@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 (*
     Simplified abstraction over visual studio.
@@ -652,7 +652,7 @@ module internal Salsa =
             
             let sb = new System.Text.StringBuilder()
             let Append (text:string) = 
-                Trace.PrintLine("Salsa", fun _ -> text)
+                Trace.PrintLine("VisualFSharp.Salsa", fun _ -> text)
                 sb.Append(text+"\r\n") |> ignore
             Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
@@ -719,7 +719,7 @@ module internal Salsa =
             
             Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" targetsFileFolder)
             Append "</Project>"
-            Trace.PrintLine("Salsa", fun _ -> sprintf "Project text:\n%s" (sb.ToString()) )
+            Trace.PrintLine("VisualFSharp.Salsa", fun _ -> sprintf "Project text:\n%s" (sb.ToString()) )
             
             sb.ToString()
 
@@ -736,11 +736,11 @@ module internal Salsa =
             let Plat() = let _,p = ConfPlat() in p
             interface ProjectBehaviorHooks with 
                 member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion : string) =
-                    use t = Trace.Call("Salsa", "CreateMsBuildProject", fun _ -> sprintf " projectName=%s" projectName)
+                    use t = Trace.Call("VisualFSharp.Salsa", "CreateMsBuildProject", fun _ -> sprintf " projectName=%s" projectName)
                     if File.Exists(projectName) then File.Delete(projectName)
 
                     let text = CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion)
-                    Trace.PrintLine("Salsa", fun _ -> text)
+                    Trace.PrintLine("VisualFSharp.Salsa", fun _ -> text)
                     File.AppendAllText(projectName,text+"\r\n")
             
                 member x.InitializeProjectHook op = openProject <- Some(op:?>IOpenProject)

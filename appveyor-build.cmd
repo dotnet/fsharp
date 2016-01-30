@@ -233,57 +233,58 @@ copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsi.exe
 
 if '%DO_PORTABLE%' == '1' (
     
-    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
+
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
+
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
+
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
-    %_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
+
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
     
 if '%TEST_PORTABLE%' == '1' (
-    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
-    
-    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
+
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
+
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
+
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 )
 
 if '%DO_VS%' == '1' (
-    %_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+%_msbuildexe% VisualFSharp.sln /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 )
 
 if '%TEST_VS%' == '1' (
-    %_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
+%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 )
 
 @echo on
 call src\update.cmd release -ngen
-call vsintegration\update-vsintegration.cmd release
+REM This clobbers the installed F# SDK on the machine
+REM call vsintegration\update-vsintegration.cmd release
 pushd tests
 
 @echo on
@@ -293,37 +294,37 @@ call BuildTestTools.cmd release
 @echo on
 
 if '%TEST_CAMBRIDGE_SUITE%' == '1' (
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
-    
-    %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
-    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
-    
-    call RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%
-    @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
+
+%_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
+
+call RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_QA_SUITE%' == '1' (
-    call RunTests.cmd release fsharpqa %CONF_QA_SUITE%
-    @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
+call RunTests.cmd release fsharpqa %CONF_QA_SUITE%
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
-    call RunTests.cmd release compilerunit
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+call RunTests.cmd release compilerunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
 
     if '%TEST_PORTABLE%' == '1' (
         call RunTests.cmd release coreunitall
         @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitall' failed && goto :failure
     )
     if not '%TEST_PORTABLE%' == '1' (
-        call RunTests.cmd release coreunit
+call RunTests.cmd release coreunit
     )
 )
 if '%TEST_NET40%' == '0' (
     if '%TEST_PORTABLE%' == '1' (
         call RunTests.cmd release coreunitportable
-    )
+)
 )
 
 rem tests for TEST_VS are not executed

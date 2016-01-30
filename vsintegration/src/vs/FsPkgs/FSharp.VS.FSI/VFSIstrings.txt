@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 # VFSI resource strings
 cannotCreateToolWindow,"Cannot create window F# Interactive ToolWindow"
 exceptionRaisedWhenCreatingRemotingClient,"Exception raised when creating remoting client for launched fsi.exe\n%s"

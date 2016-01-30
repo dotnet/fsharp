@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal Microsoft.FSharp.Compiler.CompileOps
@@ -1845,7 +1845,7 @@ type ISystemRuntimeCcuInitializer =
     abstract EndLoadingSystemRuntime : state : obj * resolver : (CcuLoadFailureAction -> AssemblyReference -> ImportedAssembly option) -> ImportedAssembly
 
 type NetCoreSystemRuntimeTraits(primaryAssembly) = 
-
+    
     let valueOf name hole = 
         match hole with
         | Some assembly -> assembly
@@ -2083,13 +2083,17 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations : bool
 
       mutable exename : string option
+      
+      // If true - the compiler will copy FSharp.Core.dll along the produced binaries
+      mutable copyFSharpCore : bool
+
 #if SHADOW_COPY_REFERENCES
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences : bool
 #endif
       }
 
-    static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =  
+    static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
@@ -2232,6 +2236,7 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
+          copyFSharpCore = true
 #if SHADOW_COPY_REFERENCES
           shadowCopyReferences = false
 #endif
@@ -2542,7 +2547,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // so here we minimally validate if .Net version >= 4 or not.
     do if data.prefer32Bit && mscorlibMajorVersion < 4 then 
         error(Error(FSComp.SR.invalidPlatformTargetForOldFramework(),rangeCmdArgs))        
-
+    
     let systemAssemblies = SystemAssemblies data.primaryAssembly.Name
 
     // Check that the referenced version of FSharp.Core.dll matches the referenced version of mscorlib.dll 
@@ -2718,6 +2723,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.sqmSessionGuid = data.sqmSessionGuid
     member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
     member x.sqmSessionStartedTime = data.sqmSessionStartedTime
+    member x.copyFSharpCore = data.copyFSharpCore
 #if SHADOW_COPY_REFERENCES
     member x.shadowCopyReferences = data.shadowCopyReferences
 #endif
@@ -3601,7 +3607,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
          member __.ShortAssemblyName = GetNameOfILModule ilModule 
          member __.ILScopeRef = MakeScopeRefForIlModule ilModule
          member __.ILAssemblyRefs = ilAssemblyRefs
-         member __.HasAnyFSharpSignatureDataAttribute =
+         member __.HasAnyFSharpSignatureDataAttribute = 
             let attrs = GetCustomAttributesOfIlModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
          member __.HasMatchingFSharpSignatureDataAttribute(ilg) = 
@@ -3884,7 +3890,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     Some pdbDir
                 else 
                     None 
-            else
+            else   
                 None
 #if SHADOW_COPY_REFERENCES
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
@@ -4308,7 +4314,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             tcImports.RegisterDll(dllinfo)
             let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
             let phase2 = 
-                if assemblyData.HasAnyFSharpSignatureDataAttribute  then
+                if assemblyData.HasAnyFSharpSignatureDataAttribute  then 
                     if not (assemblyData.HasMatchingFSharpSignatureDataAttribute(ilg)) then 
                       errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile(filename),m))
                       tcImports.PrepareToImportReferencedIlDll m filename dllinfo
@@ -4334,7 +4340,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                |> List.unzip
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         dllinfos,ccuinfos
-
+      
     member tcImports.DoRegisterAndImportReferencedAssemblies(nms) = 
         CheckDisposed()
         tcImports.RegisterAndImportReferencedAssemblies(nms) |> ignore
@@ -4477,7 +4483,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
-
+                    
                     let resolvedAssemblyRef = 
                         match tcResolutions.TryFindByOriginalReference coreLibraryReference with
                         | Some resolution -> Some resolution
@@ -4486,7 +4492,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
                             | _ -> tcResolutions.TryFindByOriginalReferenceText (GetFSharpCoreLibraryName())  // was the ".dll" elided?
-
+                    
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
                         match frameworkTcImports.RegisterAndImportReferencedAssemblies([coreLibraryResolution]) with

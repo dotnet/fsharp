@@ -1,5 +1,5 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
+@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
 @rem               Version 2.0.  See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
@@ -11,7 +11,7 @@ if /i "%1" == "release" goto :ok
 if /i "%1" == "vsdebug" goto :ok
 if /i "%1" == "vsrelease" goto :ok
 
-echo GACs built binaries, adds required strong name verification skipping, and optionally NGens built binaries
+echo adding required strong name verification skipping, and NGening built binaries
 echo Usage:
 echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]
@@ -35,7 +35,6 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 
-set GACUTIL="%WINSDKNETFXTOOLS%gacutil.exe"
 set SN32="%WINSDKNETFXTOOLS%sn.exe"
 set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
@@ -79,9 +78,6 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr Unittests,b03f5f7f11d50a3a
     %SN64% -Vr Salsa,b03f5f7f11d50a3a
 )
-
-rem Only GACing FSharp.Core for now
-%GACUTIL% /if %BINDIR%\FSharp.Core.dll
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen

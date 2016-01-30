@@ -40,7 +40,6 @@ if not defined CSC    set CSC=csc.exe %csc_flags%
 
 REM SDK Dependencires.
 if not defined ILDASM   set ILDASM=ildasm.exe
-if not defined GACUTIL   set GACUTIL=gacutil.exe
 if not defined PEVERIFY set PEVERIFY=peverify.exe
 if not defined RESGEN   set RESGEN=resgen.exe
 
@@ -75,7 +74,6 @@ set fsc_flags=%fsc_flags%
 
 set CLR_SUPPORTS_GENERICS=true
 set ILDASM=%ILDASM%
-set GACUTIL=%GACUTIL%
 set CLR_SUPPORTS_WINFORMS=true
 set CLR_SUPPORTS_SYSTEM_WEB=true
 
@@ -149,7 +147,6 @@ REM == The logic here is: pick the latest msbuild
 REM == If we are testing against NDP4.0, then don't try msbuild 3.5
 REM ==
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\ildasm.exe"          SET ILDASM=%CORSDK%\ildasm.exe
-IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\gacutil.exe"         SET GACUTIL=%CORSDK%\gacutil.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORSDK%\peverify.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\resgen.exe"          SET RESGEN=%CORSDK%\resgen.exe
 IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
@@ -220,7 +217,6 @@ echo FSDATATPPATH        =%FSDATATPPATH%
 echo FSDIFF              =%FSDIFF%
 echo FSI                 =%FSI%
 echo fsi_flags           =%fsi_flags%
-echo GACUTIL             =%GACUTIL%
 echo ILDASM              =%ILDASM%
 echo INSTALL_SKU         =%INSTALL_SKU%
 echo MSBUILDTOOLSPATH    =%MSBuildToolsPath%

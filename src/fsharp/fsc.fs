@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Driver for F# compiler. 
 // 
@@ -320,7 +320,7 @@ let GetTcImportsFromCommandLine
          exiter : Exiter,
          errorLoggerProvider : ErrorLoggerProvider,
          disposables : DisposablesTracker) =
-    
+
     let tcConfigB = TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -1221,7 +1221,7 @@ module MainModuleBuilder =
         // a user cannot specify both win32res and win32manifest        
         if not(tcConfig.win32manifest = "") && not(tcConfig.win32res = "") then
             error(Error(FSComp.SR.fscTwoResourceManifests(),rangeCmdArgs));
-
+                      
         let win32Manifest =
             // use custom manifest if provided
             if not(tcConfig.win32manifest = "") then tcConfig.win32manifest
@@ -1736,12 +1736,12 @@ let GetSigner signingInfo =
         let (SigningInfo(delaysign,publicsign,signer,container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
         if isSome container then
-            Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
+          Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
         else
             match signer with 
             | None -> None
             | Some(s) ->
-                try
+                try 
                 if publicsign || delaysign then
                     Some((ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign))
                 else
@@ -1756,7 +1756,7 @@ module FileWriter =
             if !progress then dprintn "Writing assembly...";
             try 
                 ILBinaryWriter.WriteILBinary 
-                 (outfile,
+                 (outfile, 
                   { ilg = ilGlobals
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
@@ -1777,9 +1777,9 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
     let delaySignAttrib = AttributeHelpers.TryFindBoolAttribute tcGlobals "System.Reflection.AssemblyDelaySignAttribute" topAttrs.assemblyAttrs
     let signerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyFileAttribute" topAttrs.assemblyAttrs
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
-
+    
     // REVIEW: C# throws a warning when these attributes are used - should we?
-
+    
     // if delaySign is set via an attribute, validate that it wasn't set via an option
     let delaysign = 
         match delaySignAttrib with 
@@ -1814,9 +1814,40 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
             else
               Some container
         | None -> tcConfig.container
-
+    
     SigningInfo (delaysign,tcConfig.publicsign,signer,container)
- 
+
+
+#if FX_RESHAPED_REFLECTION
+type private TypeInThisAssembly (_dummy:obj) = class end
+#endif
+
+// If the --nocopyfsharpcore switch is not specified, this will:
+// 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
+// 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
+// 3) If not, it will produce an error.
+let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
+    let outDir = Path.GetDirectoryName(outFile)
+    let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
+    let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
+
+    if not (File.Exists(fsharpCoreDestinationPath)) then
+        match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+        | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
+        | None ->
+            let executionLocation =
+#if FX_RESHAPED_REFLECTION
+                TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly.Location
+#else
+                Assembly.GetExecutingAssembly().Location
+#endif
+            let compilerLocation = Path.GetDirectoryName(executionLocation)
+            let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
+            if File.Exists(compilerFsharpCoreDllPath) then
+                File.Copy(compilerFsharpCoreDllPath, fsharpCoreDestinationPath)
+            else
+                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
 // dead data at the end of each phase.  We explicitly communicate arguments
@@ -1848,22 +1879,22 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
 #endif
              (fun tcConfigB ->
 #if PREFERRED_UI_LANG
-                match tcConfigB.preferredUiLang with
-                | Some(s) -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
-                | None -> ()
+                    match tcConfigB.preferredUiLang with
+                    | Some(s) -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+                    | None -> ()
 #else
-                match tcConfigB.lcid with
-                | Some(n) -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
-                | None -> ()
+                    match tcConfigB.lcid with
+                    | Some(n) -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
+                    | None -> ()
 #endif
-                if tcConfigB.utf8output then 
-                    let out = new StreamWriter(System.Console.OpenStandardOutput(), Encoding.UTF8)
-                    System.Console.SetOut(out)
+                    if tcConfigB.utf8output then 
+                        let out = new StreamWriter(System.Console.OpenStandardOutput(), Encoding.UTF8)
+                        System.Console.SetOut(out)
             ),
              (fun tcConfigB -> 
-                // display the banner text, if necessary
-                if not bannerAlreadyPrinted then 
-                    DisplayBannerText tcConfigB
+                    // display the banner text, if necessary
+                    if not bannerAlreadyPrinted then 
+                        DisplayBannerText tcConfigB
             ), 
              false, // optimizeForMemory - fsc.exe can use as much memory as it likes to try to compile as fast as possible
              exiter,
@@ -2043,7 +2074,16 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
-    AbortOnError(errorLogger,tcConfig,exiter)
+    AbortOnError(errorLogger, tcConfig, exiter)
+
+#if !FX_NO_APP_DOMAINS
+    if tcConfig.showLoadedAssemblies then
+        for a in System.AppDomain.CurrentDomain.GetAssemblies() do
+            dprintfn "%s" a.FullName
+#endif
+
+    if tcConfig.copyFSharpCore then
+        copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 
