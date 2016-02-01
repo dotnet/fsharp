@@ -3363,6 +3363,18 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
         errorLogger.CommitDelayedErrorsAndWarnings()
     (* unwindEL, unwindBP dispose *)
 
+let GetExpressionParser (tcConfig: TcConfig, lexResourceManager) =
+    let parseText s = 
+        let errorLogger = CompileThreadStatic.ErrorLogger // TODO
+        let lexbuf = UnicodeLexing.StringAsLexbuf s
+        let lightSyntaxStatus = LightSyntaxStatus(true, true)
+        let lexargs = mkLexargs (null, tcConfig.conditionalCompilationDefines,lightSyntaxStatus,lexResourceManager, ref [], errorLogger)
+        Lexhelp.reusingLexbufForParsing lexbuf (fun () ->
+            let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs true, lexbuf)
+            Parser.declExpr tokenizer.Lexer lexbuf
+        )
+    parseText
+
 //----------------------------------------------------------------------------
 // parsing - ParseOneInputFile
 // Filename is (ml/mli/fs/fsi source). Parse it to AST. 
@@ -5241,7 +5253,7 @@ let TypeCheckOneInputEventually
 
                 // Typecheck the implementation file 
                 let! topAttrs,implFile,tcEnvAtEnd = 
-                    TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
                 let hadSig = isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
