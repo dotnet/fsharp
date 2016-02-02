@@ -6566,25 +6566,31 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
         UnifyTypes cenv env m aty aty'
         UnifyTypes cenv env m ety ety'
         let tpenv, formatString = 
-            let tpenv, stringFragments = 
-                ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
-                    match v with
-                    | CheckFormatStrings.FormatStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s)::l)
-                    | CheckFormatStrings.FormatStringFragment.Expr s -> 
-                        let synExpr = cenv.exprParser s
-                        let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
-                        tpenv1, expr::l
-                        //mkString cenv.g m s // TODO
-                )
-            let stringFragments = List.rev stringFragments
-            match stringFragments with
-            | [s] -> tpenv, s
-            | x ->
-                let coersed = x |> List.map (fun s -> mkCoerceIfNeeded cenv.g cenv.g.obj_ty cenv.g.string_ty s)
+
+            match fragments with
+            | [CheckFormatStrings.FormatStringFragment.Text s] -> tpenv, mkString cenv.g m s
+            | _ ->
+                let tpenv, stringFragments = 
+                    ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
+                        match v with
+                        | CheckFormatStrings.FormatStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s)::l)
+                        | CheckFormatStrings.FormatStringFragment.Expr s -> 
+                            let synExpr = cenv.exprParser s
+                            let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
+                            tpenv1, expr::l
+                            //mkString cenv.g m s // TODO
+                    )
+
+                let coersed = 
+                    stringFragments
+                    |> List.rev
+                    |> List.map (fun s -> mkCoerceIfNeeded cenv.g cenv.g.obj_ty cenv.g.string_ty s)
+
                 let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
                 let expr, _  = 
                     BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.StringConcatMethod NormalValUse [] [] [arr]
                 tpenv, expr
+
         mkCallNewFormat cenv.g m aty bty cty dty ety formatString, tpenv
       else 
         UnifyTypes cenv env m overallTy cenv.g.string_ty
