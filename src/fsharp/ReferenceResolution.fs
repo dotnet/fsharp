@@ -364,8 +364,8 @@ module internal MSBuildResolver =
                 // These are search paths for runtime-like or scripting resolution. GAC searching is present.
                 rawFileNamePath @        // Quick-resolve straight to filename first 
                 explicitIncludeDirs @    // From -I, #I
-                [implicitIncludeDir] @   // Usually the project directory
                 [fsharpCoreExplicitDirOrFSharpBinariesDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
+                [implicitIncludeDir] @   // Usually the project directory
                 ["{TargetFrameworkDirectory}"] @
                 [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @
                 ["{AssemblyFolders}"] @
@@ -376,8 +376,8 @@ module internal MSBuildResolver =
                 ["{TargetFrameworkDirectory}"] @
                 rawFileNamePath @        // Quick-resolve straight to filename first
                 explicitIncludeDirs @    // From -I, #I
-                [implicitIncludeDir] @   // Usually the project directory
                 [fsharpCoreExplicitDirOrFSharpBinariesDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
+                [implicitIncludeDir] @   // Usually the project directory
                 [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @ // Like {Registry:Software\Microsoft\.NETFramework,v2.0,AssemblyFoldersEx}
                 ["{AssemblyFolders}"] @
                 [outputDirectory] @
