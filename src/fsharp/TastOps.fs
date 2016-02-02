@@ -1566,7 +1566,7 @@ let isStructTy g ty =
     (isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon) || isTupleStructTy g ty
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
-// An unmanaged-type is any type that isn’t a reference-type, a type-parameter, or a generic struct-type and
+// An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
 // contains no fields whose type is not an unmanaged-type. In other words, an unmanaged-type is one of the
 // following:
 // - sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool.
@@ -6439,7 +6439,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             let suppliedArgs, droppedSuppliedArgs = 
                 List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
 
-            /// THe relevant range for any expressions and applications includes the arguments 
+            /// The relevant range for any expressions and applications includes the arguments 
             let appm = (m,suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
 
             // See if we have 'enough' suppliedArgs. If not, we have to build some lambdas, and,
@@ -6448,9 +6448,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             // is a classic case. Here we generate
             //   let tmp = (effect;4) in 
             //   (fun v -> Seq.take tmp (v :> seq<_>))
-            let buildingLambdas = (suppliedArgs.Length <> curriedNiceNames.Length)
-            //printfn "buildingLambdas = %A" buildingLambdas
-            //printfn "suppliedArgs.Length = %d" suppliedArgs.Length 
+            let buildingLambdas = suppliedArgs.Length <> curriedNiceNames.Length
 
             /// Given a tuple of argument variables that has a tuple type that satisfies the input argument types,
             /// coerce it to a tuple that satisfies the matching coerced argument type(s).
