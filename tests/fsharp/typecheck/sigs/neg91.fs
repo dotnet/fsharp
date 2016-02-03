@@ -53,3 +53,53 @@ module TestExperimentalSet =
         let test () =
             A.x <- 1     
 
+
+module Bug528_Ex1 = 
+    module Color =
+        let [<Literal>] Yellow = "Yellow"
+
+    let isRed inp = 
+        match inp with
+        | Color.Yellow arg ->   // should get an error here
+            failwith "Don't know this color"
+        | _ -> ""
+
+module Bug528_Ex2 = 
+    type Color = | Yellow = 1 | Red = 2
+
+    let isRed inp = 
+        match inp with
+        | Color.Yellow arg ->   // should get an error here
+            failwith "Don't know this color"
+        | _ -> ""            
+
+module Bug528_Ex3 = 
+
+    let isRed inp = 
+        match inp with
+        | System.DayOfWeek.Monday arg ->   // should get an error here
+            failwith "Don't know this day"
+        | _ -> ""
+
+module TestExtrinsicExtensionConstructor = 
+    // See https://github.com/Microsoft/visualfsharp/issues/659
+
+    type AugmentMe() = class end
+
+    module M = 
+        type AugmentMe with new(i) = AugmentMe()
+
+// don't expect an error here
+module TestIntrinsicExtensionConstructor1 = 
+    type AugmentMe = val _i : int
+    type AugmentMe with member i.I = i._i
+    type AugmentMe with new(i) = { _i = i } // don't expect an error here
+    let v = AugmentMe(42).I
+
+// don't expect an error here
+module TestIntrinsicExtensionConstructor2 = 
+    type AugmentMe() = class end
+    type AugmentMe with member i.I = 1
+    type AugmentMe with new(i) = AugmentMe()  // don't expect an error here
+    let v = AugmentMe(42).I
+

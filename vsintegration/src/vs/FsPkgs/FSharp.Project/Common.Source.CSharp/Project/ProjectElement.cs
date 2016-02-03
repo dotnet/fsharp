@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -42,22 +42,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// This class represent a project item (usualy a file) and allow getting and
     /// setting attribute on it.
-    /// This class allow us to keep the /*internal, but public for FSharp.Project.dll*/ public details of our items hidden from
+    /// This class allow us to keep the public details of our items hidden from
     /// our derived classes.
     /// While the class itself is public so it can be manipulated by derived classes,
-    /// its /*internal, but public for FSharp.Project.dll*/ public constructors make sure it can only be created from within the assembly.
+    /// its public constructors make sure it can only be created from within the assembly.
     /// </summary>
     internal sealed class ProjectElement
     {
-        #region fields
         private Microsoft.Build.Evaluation.ProjectItem item;
         private ProjectNode itemProject;
         private bool deleted = false;
         private bool isVirtual = false;
         private Dictionary<string, string> virtualProperties;
-        #endregion
 
-        #region properties
         public string ItemName
         {
             get
@@ -87,7 +84,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public Microsoft.Build.Evaluation.ProjectItem Item
+        public Microsoft.Build.Evaluation.ProjectItem Item
         {
             get
             {
@@ -95,22 +92,20 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public bool IsVirtual
+        public bool IsVirtual
         {
             get
             {
                 return this.isVirtual;
             }
         }
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Constructor to create a new MSBuild.BuildItem and add it to the project
-        /// Only have /*internal, but public for FSharp.Project.dll*/ public constructors as the only one who should be creating
+        /// Only have public constructors as the only one who should be creating
         /// such object is the project itself (see Project.CreateFileNode()).
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public ProjectElement(ProjectNode project, string itemPath, string itemType)
+        public ProjectElement(ProjectNode project, string itemPath, string itemType)
         {
             if (project == null)
             {
@@ -174,13 +169,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Constructor to Wrap an existing MSBuild.BuildItem
-        /// Only have /*internal, but public for FSharp.Project.dll*/ public constructors as the only one who should be creating
+        /// Only have public constructors as the only one who should be creating
         /// such object is the project itself (see Project.CreateFileNode()).
         /// </summary>
         /// <param name="project">Project that owns this item</param>
         /// <param name="existingItem">an MSBuild.BuildItem; can be null if virtualFolder is true</param>
         /// <param name="virtualFolder">Is this item virtual (such as reference folder)</param>
-        /*internal, but public for FSharp.Project.dll*/ public ProjectElement(ProjectNode project, Microsoft.Build.Evaluation.ProjectItem existingItem, bool virtualFolder)
+        public ProjectElement(ProjectNode project, Microsoft.Build.Evaluation.ProjectItem existingItem, bool virtualFolder)
         {
             if (project == null)
                 throw new ArgumentNullException("project");
@@ -195,9 +190,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (this.isVirtual)
                 this.virtualProperties = new Dictionary<string, string>();
         }
-        #endregion
 
-        #region public methods
         /// <summary>
         /// Calling this method remove this item from the project file.
         /// Once the item is delete, you should not longer be using it.
@@ -392,9 +385,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return path;
         }
 
-        #endregion
-
-#region helper methods
         /// <summary>
         /// Has the item been deleted
         /// </summary>
@@ -402,9 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return (this.deleted || this.item == null);
         }
-        #endregion
 
-#region overridden from System.Object
         public static bool operator ==(ProjectElement element1, ProjectElement element2)
         {
             // Do they reference the same element?
@@ -465,9 +453,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // TODO, this is not in sync with Equals, so don't put these objects in a dictionary
             return base.GetHashCode();
         }
-        #endregion
-
-
 
     }
 }

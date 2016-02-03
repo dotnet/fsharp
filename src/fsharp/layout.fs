@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Layout
 
@@ -18,28 +18,25 @@ let spaces n = new String(' ',n)
 //--------------------------------------------------------------------------
 
 let rec juxtLeft = function
-    Leaf (jl,_text,_jr)            -> jl
+  | Leaf (jl,_text,_jr)            -> jl
   | Node (jl,_l,_jm,_r,_jr,_joint) -> jl
   | Attr (_tag,_attrs,l)           -> juxtLeft l
 
 let rec juxtRight = function
-    Leaf (_jl,_text,jr)            -> jr
+  | Leaf (_jl,_text,jr)            -> jr
   | Node (_jl,_l,_jm,_r,jr,_joint) -> jr
   | Attr (_tag,_attrs,l)           -> juxtRight l
 
-(* NOTE:
- * emptyL might be better represented as a constructor,
- * so then (Sep"") would have true meaning
- *)
+// NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
 let emptyL = Leaf (true,box "",true)
 let isEmptyL = function Leaf(true,tag,true) when unbox tag = "" -> true | _ -> false
       
 let mkNode l r joint =
    if isEmptyL l then r else
    if isEmptyL r then l else
-   let jl = juxtLeft  l in
-   let jm = juxtRight l || juxtLeft r in
-   let jr = juxtRight r in
+   let jl = juxtLeft  l 
+   let jm = juxtRight l || juxtLeft r 
+   let jr = juxtRight r 
    Node(jl,l,jm,r,jr,joint)
 
 
@@ -53,14 +50,8 @@ let rightL (str:string) = Leaf (true ,box str,false)
 let leftL  (str:string) = Leaf (false,box str,true)
 
 let aboveL  l r = mkNode l r (Broken 0)
-let joinN i l r = mkNode l r (Breakable i)                                      
-let join  = joinN 0
-let join1 = joinN 1
-let join2 = joinN 2
-let join3 = joinN 3
 
 let tagAttrL str attrs ly = Attr (str,attrs,ly)
-let linkL str ly = tagAttrL "html:a" [("href",str)] ly
 
 //--------------------------------------------------------------------------
 //INDEX: constructors derived
@@ -96,12 +87,12 @@ let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
 let bracketL l = leftL "(" ^^ l ^^ rightL ")"
 let tupleL xs = bracketL (sepListL (sepL ",") xs)
 let aboveListL = function
-    []    -> emptyL
+  | []    -> emptyL
   | [x]   -> x
   | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
-    None   -> wordL "None"
+  | None   -> wordL "None"
   | Some x -> wordL "Some" -- (xL x)
 
 let listL xL xs = leftL "[" ^^ sepListL (sepL ";") (List.map xL xs) ^^ rightL "]"
@@ -219,20 +210,17 @@ let squashTo maxWidth layout =
    layout
 
 //--------------------------------------------------------------------------
-//INDEX: render
+//INDEX: LayoutRenderer
 //--------------------------------------------------------------------------
 
-type render<'a,'b> =
-    (* exists 'b.
-       -- could use object type to get "exists 'b" on private state,
-    *)
-    abstract Start    : unit -> 'b;
-    abstract AddText  : 'b -> string -> 'b;
-    abstract AddBreak : 'b -> int -> 'b;
-    abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b;
+type LayoutRenderer<'a,'b> =
+    abstract Start    : unit -> 'b
+    abstract AddText  : 'b -> string -> 'b
+    abstract AddBreak : 'b -> int -> 'b
+    abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
     abstract Finish   : 'b -> 'a
       
-let renderL (rr: render<_,_>) layout =
+let renderL (rr: LayoutRenderer<_,_>) layout =
     let rec addL z pos i layout k = 
       match layout with
         (* pos is tab level *)
@@ -262,7 +250,7 @@ let renderL (rr: render<_,_>) layout =
 
 /// string render 
 let stringR =
-  { new render<string,string list> with 
+  { new LayoutRenderer<string,string list> with 
       member x.Start () = []
       member x.AddText rstrs text = text::rstrs
       member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
@@ -272,9 +260,9 @@ let stringR =
 type NoState = NoState
 type NoResult = NoResult
 
-/// channel render
+/// channel LayoutRenderer
 let channelR (chan:TextWriter) =
-  { new render<NoResult,NoState> with 
+  { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
       member r.AddText z s = chan.Write s; z
       member r.AddBreak z n = chan.WriteLine(); chan.Write (spaces n); z
@@ -283,39 +271,12 @@ let channelR (chan:TextWriter) =
 
 /// buffer render
 let bufferR os =
-  { new render<NoResult,NoState> with 
+  { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
       member r.AddText z s = bprintf os "%s" s; z
       member r.AddBreak z n = bprintf os "\n"; bprintf os "%s" (spaces n); z
       member r.AddTag z (tag,attrs,start) = z
       member r.Finish z = NoResult }
-
-/// html render - wraps HTML encoding (REVIEW) and hyperlinks
-let htmlR (baseR : render<'Res,'State>) =
-  { new render<'Res,'State> with 
-      member r.Start () = baseR.Start()
-      member r.AddText z s = baseR.AddText z s;  (* REVIEW: escape HTML chars *)
-      member r.AddBreak z n = baseR.AddBreak z n
-      member r.AddTag z (tag,attrs,start) =
-         match tag,attrs with 
-         | "html:a",[("href",link)] ->
-            if start
-            then baseR.AddText z (sprintf "<a href='%s'>" link)
-            else baseR.AddText z (sprintf "</a>")
-         | _ -> z
-      member r.Finish z = baseR.Finish z }
-
-/// indent render - wraps fixed indentation
-let indentR indent (baseR : render<'Res,'State>) =
-  { new render<'Res,'State> with 
-      member r.Start () = 
-          let z = baseR.Start() 
-          let z = baseR.AddText z (spaces indent) 
-          z
-      member r.AddText z s = baseR.AddText z s;  (* REVIEW: escape HTML chars *)
-      member r.AddBreak z n =  baseR.AddBreak z (n+indent);
-      member r.AddTag z (tag,attrs,start)  = baseR.AddTag z (tag,attrs,start) 
-      member r.Finish z = baseR.Finish z }
 
 //--------------------------------------------------------------------------
 //INDEX: showL, outL are most common

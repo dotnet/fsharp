@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.Colorizer
 
 open System
 open NUnit.Framework
@@ -9,8 +9,11 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type ColorizerTests()  = 
+// context msbuild
+[<TestFixture>]
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     //Marker At The End Helper Functions
@@ -1081,25 +1084,9 @@ let z = __LINE__(*Test3*)
         MoveCursorToEndOfMarker(file,"(*Bob*)typ")
         AssertEqual(TokenType.Keyword,GetTokenTypeAtCursor(file))
 
-
-// Allow languageService tests to run under different contextes
-namespace UnitTests.Tests.LanguageService.Colorizer
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>]
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ColorizerTests
-   new() = { inherit ColorizerTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>]
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ColorizerTests
-    new() = { inherit ColorizerTests(VsOpts = LanguageServiceExtension.ProjectSystem); }  
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
+    
+  

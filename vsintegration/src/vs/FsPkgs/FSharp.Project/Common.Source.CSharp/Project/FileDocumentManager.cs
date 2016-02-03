@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -27,15 +27,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileDocumentManager : DocumentManager
     {
-        #region ctors
-
         public FileDocumentManager(FileNode node)
             : base(node)
         {
         }
-        #endregion
-
-        #region overriden methods
 
         /// <summary>
         /// Open a file using the standard editor
@@ -71,9 +66,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return this.Open(newFile, openWith, editorFlags, ref editorType, physicalView, ref logicalView, docDataExisting, out windowFrame, windowFrameAction);
         }
 
-        #endregion
-
-        #region public methods
         /// <summary>
         /// Open a file in a document window with a std editor
         /// </summary>
@@ -142,9 +134,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnValue;
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Open a file in a document window
         /// </summary>
@@ -161,10 +150,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Guid editorType = Guid.Empty;
             return this.Open(newFile, openWith, 0, ref editorType, null, ref logicalView, docDataExisting, out windowFrame, windowFrameAction);
         }
-
-        #endregion
-
-        #region helper methods
 
         private int Open(bool newFile, bool openWith, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction)
         {
@@ -189,7 +174,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.Node.OnInvalidateItems(this.Node.Parent);
 
                 // Bail since we are not able to open the item
-                // Do not return an error code otherwise an /*internal, but public for FSharp.Project.dll*/ public error message is shown. The scenario for this operation
+                // Do not return an error code otherwise an public error message is shown. The scenario for this operation
                 // normally is already a reaction to a dialog box telling that the item has been removed.
                 return VSConstants.S_FALSE;
             }
@@ -270,8 +255,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return returnValue;
         }
-
-
-        #endregion
     }
 }

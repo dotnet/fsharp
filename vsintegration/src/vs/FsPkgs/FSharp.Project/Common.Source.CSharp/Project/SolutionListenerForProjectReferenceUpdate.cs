@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -25,14 +25,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     internal class SolutionListenerForProjectReferenceUpdate : SolutionListener
     {
-        #region ctor
         public SolutionListenerForProjectReferenceUpdate(IServiceProvider serviceProvider)
             : base(serviceProvider)
         {
         }
-        #endregion
-
-        #region overridden methods
 
         /// <summary>
         /// Notifies listening clients that the project has been opened. 
@@ -188,9 +184,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         }
 
-        #endregion
-
-        #region helper methods
         private List<ProjectReferenceNode> GetProjectReferencesContainingThisProject(IVsHierarchy inputHierarchy)
         {
             List<ProjectReferenceNode> projectReferences = new List<ProjectReferenceNode>();
@@ -268,6 +261,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return null;
 
         }
-        #endregion
     }
 }

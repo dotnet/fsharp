@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -500,9 +500,6 @@
   <data name="AddReferenceDialogTitle" xml:space="preserve">
     <value>Add Reference</value>
   </data>
-  <data name="6004" xml:space="preserve">
-    <value>Type Providers</value>
-  </data>
   <data name="6005" xml:space="preserve">
     <value>Change path and command line arguments passed to the F# Interactive</value>
   </data>
@@ -511,18 +508,6 @@
   </data>
   <data name="6007" xml:space="preserve">
     <value>Visual F# Items</value>
-  </data>
-  <data name="TPTOP_Assembly" xml:space="preserve">
-    <value>Assembly</value>
-    <comment>Tools-Options-F# tools-Type Providers: column header</comment>
-  </data>
-  <data name="TPTOP_Description" xml:space="preserve">
-    <value>Using a Type Provider from a source that is unknown or not trusted can expose your computer to security threats, as it will run under the privileges of the current user.</value>
-    <comment>Tools-Options-F# tools-Type Providers: overall description</comment>
-  </data>
-  <data name="TPTOP_Trusted" xml:space="preserve">
-    <value>Trusted</value>
-    <comment>Tools-Options-F# tools-Type Providers: column header</comment>
   </data>
   <data name="AddReferenceDialogTitle_Dev11" xml:space="preserve">
     <value>Reference Manager - {0}</value>

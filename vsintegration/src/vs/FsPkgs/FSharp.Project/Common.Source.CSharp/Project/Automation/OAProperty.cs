@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -19,21 +19,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [CLSCompliant(false), ComVisible(true)]
     public class OAProperty : EnvDTE.Property
     {
-        #region fields
         private OAProperties parent;
         private PropertyInfo pi;
-        #endregion
-
-        #region ctors
 
         internal OAProperty(OAProperties parent, PropertyInfo pi)
         {
             this.parent = parent;
             this.pi = pi;
         }
-        #endregion
 
-        #region EnvDTE.Property
         /// <summary>
         /// For use by F# tooling only.
         /// </summary>
@@ -202,6 +196,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             }
         }
-        #endregion
     }
 }

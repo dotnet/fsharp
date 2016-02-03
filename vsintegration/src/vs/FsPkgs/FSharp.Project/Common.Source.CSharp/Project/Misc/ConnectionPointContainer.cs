@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -43,7 +43,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             connectionPoints.Add(typeof(SinkType).GUID, new ConnectionPoint<SinkType>(this, source));
         }
 
-        #region IConnectionPointContainer Members
         void IConnectionPointContainer.EnumConnectionPoints(out IEnumConnectionPoints ppEnum)
         {
             throw new NotImplementedException();
@@ -52,7 +51,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             ppCP = connectionPoints[riid];
         }
-        #endregion
     }
 
     internal class ConnectionPoint<SinkType> : IConnectionPoint
@@ -62,7 +60,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private uint nextCookie;
         private ConnectionPointContainer container;
         private IEventSource<SinkType> source;
-        /*internal, but public for FSharp.Project.dll*/ public ConnectionPoint(ConnectionPointContainer container, IEventSource<SinkType> source)
+        public ConnectionPoint(ConnectionPointContainer container, IEventSource<SinkType> source)
         {
             if (null == container)
             {
@@ -77,7 +75,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             sinks = new Dictionary<uint, SinkType>();
             nextCookie = 1;
         }
-        #region IConnectionPoint Members
+
         public void Advise(object pUnkSink, out uint pdwCookie)
         {
             SinkType sink = pUnkSink as SinkType;
@@ -113,6 +111,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             sinks.Remove(dwCookie);
             source.OnSinkRemoved(sink);
         }
-        #endregion
     }
 }

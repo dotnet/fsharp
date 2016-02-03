@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -23,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         private ServiceProvider serviceProvider;
 
-        #region ctor
         public PropertiesEditorLauncher(ServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
@@ -31,8 +30,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.serviceProvider = serviceProvider;
         }
-        #endregion
-        #region overridden methods
+
         /// <summary>
         /// Launch the Project Properties Editor (properties pages)
         /// </summary>
@@ -52,7 +50,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return false;
         }
-        #endregion
 
     }
 }

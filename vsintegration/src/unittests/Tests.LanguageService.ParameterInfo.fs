@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.ParameterInfo
 
 open System
 open NUnit.Framework
@@ -9,14 +9,15 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-exception NoParamInfo
 [<AutoOpen>]
 module ParamInfoStandardSettings = 
     let standard40AssemblyRefs  = [| "System"; "System.Core"; "System.Numerics" |]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-type ParameterInfoTests()  = 
+[<TestFixture>] 
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip) =
@@ -25,8 +26,8 @@ type ParameterInfoTests()  =
                             let (name,display,description) = methods.GetParameterInfo(i,j) 
                             yield display ] ]
       
-    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip) =
-        Assert.AreEqual(null, resultMethodGroup, "Expected an empty method group")              
+    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option) =
+        Assert.IsTrue(resultMethodGroup.IsNone, "Expected an empty method group")              
         
     let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip, expectNotToBeThere) = 
         for i = 0 to methods.GetCount() - 1 do
@@ -35,7 +36,9 @@ type ParameterInfoTests()  =
                 Console.WriteLine("Expected description {0} to not contain {1}", description, expectNotToBeThere)
                 AssertNotContains(description,expectNotToBeThere)
  
-    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip, expectedParamNamesSet:string list list) =
+    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNamesSet:string list list) =
+        Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
+        let resultMethodGroup = resultMethodGroup.Value
         Assert.AreEqual(expectedParamNamesSet.Length, resultMethodGroup.GetCount())           
         Assert.IsTrue(resultMethodGroup 
                          |> GetParamDisplays
@@ -45,7 +48,9 @@ type ParameterInfoTests()  =
                                        (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
                                            paramDisplay.Contains(expectedParamName)))))
     
-    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip, expectedParamNames:string list) = 
+    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNames:string list) = 
+        Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
+        let resultMethodGroup = resultMethodGroup.Value
         Assert.IsTrue(resultMethodGroup
                           |> GetParamDisplays
                           |> Seq.exists (fun paramDisplays ->
@@ -62,59 +67,60 @@ type ParameterInfoTests()  =
 
      //Verify all the overload method parameterInfo 
     member private this.VerifyParameterInfoAtStartOfMarker(fileContents : string, marker : string, expectedParamNamesSet:string list list, ?addtlRefAssy :list<string>) =
-        let methodstr = 
-            match addtlRefAssy with
-            |None -> this.GetMethodListForAMethodTip(fileContents,marker)
-            |Some(x) -> this.GetMethodListForAMethodTip(fileContents,marker,x)
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertMethodGroup(methodstr,expectedParamNamesSet)
 
    //Verify No parameterInfo at the marker     
     member private this.VerifyNoParameterInfoAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
-        let methodstr = 
-            match addtlRefAssy with
-            |None -> this.GetMethodListForAMethodTip(fileContents,marker)
-            |Some(x) -> this.GetMethodListForAMethodTip(fileContents,marker,x)
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertEmptyMethodGroup(methodstr)
 
     //Verify one method parameterInfo if contained in parameterInfo list
     member private this.VerifyParameterInfoContainedAtStartOfMarker(fileContents : string, marker : string, expectedParamNames:string list, ?addtlRefAssy : list<string>) =
-        let methodstr = 
-            match addtlRefAssy with
-            |None -> this.GetMethodListForAMethodTip(fileContents,marker)
-            |Some(x) -> this.GetMethodListForAMethodTip(fileContents,marker,x)
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertMethodGroupContain(methodstr,expectedParamNames)
 
     //Verify the parameterInfo of one of the list order
     member private this.VerifyParameterInfoOverloadMethodIndex(fileContents : string, marker : string, index : int, expectedParams:string list, ?addtlRefAssy : list<string>) = 
-        let methodstr = 
-            match addtlRefAssy with
-            |None -> this.GetMethodListForAMethodTip(fileContents,marker)
-            |Some(x) -> this.GetMethodListForAMethodTip(fileContents,marker,x)
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
 
-        let GetPramDisplaysByIndex(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip) =
-            [ for i = 0 to methods.GetParameterCount(index) - 1 do
-                let (name,display,description) = methods.GetParameterInfo(index,i)
+        let paramDisplays = 
+            [ for i = 0 to methodstr.GetParameterCount(index) - 1 do
+                let (name,display,description) = methodstr.GetParameterInfo(index,i)
                 yield display]
-        let paramDisplays = GetPramDisplaysByIndex methodstr
-        Assert.IsTrue((expectedParams, paramDisplays) ||> List.forall2 (fun expectedParam paramDisplay -> 
-                                        paramDisplay.Contains(expectedParam)))
+        Assert.IsTrue((expectedParams, paramDisplays) ||> List.forall2 (fun expectedParam paramDisplay -> paramDisplay.Contains(expectedParam)))
+
     //Verify there is at least one parameterInfo
     member private this.VerifyHasParameterInfo(fileContents : string, marker : string) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker)
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
+
         Assert.IsTrue (methodstr.GetCount() > 0)
+
     //Verify return content after the colon
     member private this.VerifyFirstParameterInfoColonContent(fileContents : string, marker : string, expectedStr : string, ?addtlRefAssy : list<string>) =
-        let methodstr = 
-            match addtlRefAssy with
-            |None -> this.GetMethodListForAMethodTip(fileContents,marker)
-            |Some(x) -> this.GetMethodListForAMethodTip(fileContents,marker,x)
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
 
         Assert.AreEqual(expectedStr, methodstr.GetType(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
+
+    member private this.VerifyParameterCount(fileContents : string, marker : string, expectedCount: int) =
+        let methodstr = this.GetMethodListForAMethodTip(fileContents,marker)
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
+        Assert.AreEqual(0, methodstr.GetParameterCount(expectedCount))
 
     [<Test>]
     member public this.``Regression.OnConstructor.881644``() =
         let fileContent = """new System.IO.StreamReader((*Mark*)"""
         let methodstr = this.GetMethodListForAMethodTip(fileContent,"(*Mark*)")
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
+
         if not (methodstr.GetDescription(0).Contains("#ctor")) then
             failwith "Expected parameter info to contain #ctor"
 
@@ -127,6 +133,9 @@ type ParameterInfoTests()  =
                         let! buffer = file.AsyncRead((*Mark*)0)
                         return 0 }"""
         let methodstr = this.GetMethodListForAMethodTip(fileContent,"(*Mark*)")
+        Assert.IsTrue(methodstr.IsSome, "Expected a method group")
+        let methodstr = methodstr.Value
+
         if not (methodstr.GetDescription(0).Contains("AsyncRead")) then
             failwith "Expected parameter info to contain AsyncRead"
     
@@ -198,6 +207,9 @@ type ParameterInfoTests()  =
     member public this.``Regression.MethodInfo.Bug808310``() =
         let fileContent = """System.Console.WriteLine((*Mark*)"""
         let methodGroup = this.GetMethodListForAMethodTip(fileContent,"(*Mark*)")   
+        Assert.IsTrue(methodGroup.IsSome, "Expected a method group")
+        let methodGroup = methodGroup.Value
+
         let description = methodGroup.GetDescription(0)
         // Make sure that System.Console.WriteLine is not mentioned anywhere exception in the XML comment signature
         let xmlCommentIndex = description.IndexOf("System.Console.WriteLine]")
@@ -223,10 +235,10 @@ type ParameterInfoTests()  =
             let h((x:unit)) = 42
             let r3 = h((*3*))
             let r4 = g((*4*))"""
-        Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*1*)").GetParameterCount(0))
-        Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*2*)").GetParameterCount(0))
-        Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*3*)").GetParameterCount(0))
-        Assert.AreEqual(0, this.GetMethodListForAMethodTip(fileContents,"(*4*)").GetParameterCount(0))
+        this.VerifyParameterCount(fileContents,"(*1*)", 0)
+        this.VerifyParameterCount(fileContents,"(*2*)", 0)
+        this.VerifyParameterCount(fileContents,"(*3*)", 0)
+        this.VerifyParameterCount(fileContents,"(*4*)", 0)
 
     [<Test>]
     member public this.``Single.Constructor1``() =
@@ -317,7 +329,7 @@ type ParameterInfoTests()  =
             let foo = N1.T1.M1((*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1"]],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
                   
     [<Test>]
     [<Category("TypeProvider")>]
@@ -328,7 +340,7 @@ type ParameterInfoTests()  =
             let foo = N1.T1.M2((*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["arg1";"arg2"]],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -341,7 +353,7 @@ type ParameterInfoTests()  =
             let foo = N1.T1.M2((*Marker*)
             """
         this.VerifyFirstParameterInfoColonContent(fileContent,"(*Marker*)",": int",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
 
     [<Test>]
@@ -353,7 +365,7 @@ type ParameterInfoTests()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",0,[],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
               
     [<Test>]
     [<Category("TypeProvider")>]
@@ -364,7 +376,7 @@ type ParameterInfoTests()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",1,["arg1"],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
          
     [<Test>]
     [<Category("TypeProvider")>]
@@ -375,7 +387,7 @@ type ParameterInfoTests()  =
             let foo = new N1.T1((*Marker*)
             """
         this.VerifyParameterInfoOverloadMethodIndex(fileContent,"(*Marker*)",2,["arg1";"arg2"],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
          
     [<Test>]
     [<Category("TypeProvider")>]
@@ -386,7 +398,7 @@ type ParameterInfoTests()  =
             type foo = N1.T<(*Marker*)
             """
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",[["Param1";"ParamIgnored"]],
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         
     [<Test>]
     [<Category("TypeProvider")>]
@@ -398,7 +410,7 @@ type ParameterInfoTests()  =
             type foo = N1.T< "Hello", 2>(*Marker*)
             """
         this.VerifyNoParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -409,7 +421,7 @@ type ParameterInfoTests()  =
             type foo = N1.T<"Hello",(*Marker*)
             """
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContent,"(*Marker*)",["Param1";"ParamIgnored"],
-             [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+             [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         
               
     [<Test>]
@@ -504,7 +516,7 @@ type ParameterInfoTests()  =
         
         let methodGroup = GetParameterInfoAtCursor file
         if (methReq = []) then
-            AssertEqual(null, methodGroup)
+            Assert.IsTrue(methodGroup.IsNone, "Expected no method group")
         else
             AssertMethodGroup(methodGroup, methReq)
             
@@ -612,7 +624,7 @@ type ParameterInfoTests()  =
         MoveCursorToEndOfMarker(file, testLine)
         let methodGroup = GetParameterInfoAtCursor file
         if (methReq = []) then
-            AssertEqual(null, methodGroup)
+            Assert.IsTrue(methodGroup.IsNone, "expected no method group")
         else
             AssertMethodGroup(methodGroup, methReq)
     
@@ -677,7 +689,7 @@ type ParameterInfoTests()  =
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file, cursorPrefix)
         let info = GetParameterInfoAtCursor file
-        AssertEqual(null, info)
+        Assert.IsTrue(info.IsNone, "expected no parameter info")
         gpatcc.AssertExactly(0,0)
         
     member public this.TestParameterInfoLocation (testLine, expectedPos, ?addtlRefAssy : list<string>) =
@@ -690,6 +702,8 @@ type ParameterInfoTests()  =
         let (_, _, file) = this.CreateSingleFileProject(code, ?references = addtlRefAssy)
         MoveCursorToEndOfMarker(file, cursorPrefix)
         let info = GetParameterInfoAtCursor file
+        Assert.IsTrue(info.IsSome, "expected parameter info")
+        let info = info.Value
         AssertEqual(expectedPos, info.GetColumnOfStartOfLongId())
 
     // Tests the current behavior, we may want to specify it differently in the future
@@ -747,7 +761,7 @@ type ParameterInfoTests()  =
     //This test verifies that ParamInfo location on a provided type with namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithNamespace`` () =
         this.TestParameterInfoLocation("type boo = N1.T<$",11,
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
     [<Test>]
     [<Category("TypeProvider")>]
@@ -757,7 +771,7 @@ type ParameterInfoTests()  =
         this.TestParameterInfoLocation("open N1 \n"+ 
                                        "type boo = T<$",
             expectedPos = 11,
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
     [<Test>]
     [<Category("TypeProvider")>]
@@ -766,7 +780,7 @@ type ParameterInfoTests()  =
      //The intent here to make sure the ParamInfo is not shown when inside a string
     member public this.``TypeProvider.Type.Negative.InString`` () =
         this.TestParameterInfoNegative("type boo = \"N1.T<$\"",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -775,7 +789,7 @@ type ParameterInfoTests()  =
     //The intent here to make sure the ParamInfo is not shown when inside a comment
     member public this.``TypeProvider.Type.Negative.InComment`` () =
         this.TestParameterInfoNegative("// type boo = N1.T<$",
-            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  
 
  // Following are tricky:
@@ -861,20 +875,12 @@ type ParameterInfoTests()  =
                      "let f1 y = y  "
                      "let z = f(f1( " ] )
         MoveCursorToEndOfMarker(file, "f1(")
-        // Note: no TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual(null, info)
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
+        Assert.IsTrue(info.IsSome, "expected parameter info")
+        let info = info.Value
         AssertEqual("f1", info.GetName(0))
-        // note about (6,1): for silly implementation reasons, we always report location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(3,11);(3,13);(3,13);(6,1)|], info.GetNoteworthyParamInfoLocations())
-
-        // after typechecking catches up, then even NoFallback should find it
-        TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual("f1", info.GetName(0))
-        AssertEqual([|(3,11);(3,13);(3,13);(6,1)|], info.GetNoteworthyParamInfoLocations())
-        gpatcc.AssertExactly(0,0)
+        // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
+        AssertEqual([|(2,10);(2,12);(2,12);(5,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
@@ -891,19 +897,13 @@ type ParameterInfoTests()  =
                      "let foo = new Foo(    " ] )
         MoveCursorToEndOfMarker(file, "new Foo(")
         // Note: no TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual(null, info)
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
+        Assert.IsTrue(info.IsSome, "expected parameter info")
+        let info = info.Value
         AssertEqual("Foo", info.GetName(0))
-        // note about (5,1): for silly implementation reasons, we always report location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,15);(2,18);(2,18);(5,1)|], info.GetNoteworthyParamInfoLocations())
+        // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
+        AssertEqual([|(1,14);(1,17);(1,17);(4,0)|], info.GetNoteworthyParamInfoLocations())
 
-        // after typechecking catches up, then even NoFallback should find it
-        TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual("Foo", info.GetName(0))
-        AssertEqual([|(2,15);(2,18);(2,18);(5,1)|], info.GetNoteworthyParamInfoLocations())
-        gpatcc.AssertExactly(0,0)
 
 (*
 This does not currently work, because the 'fallback to name environment' does weird QuickParse-ing and mangled the long id "Bar.Foo".
@@ -926,19 +926,10 @@ We really need to rewrite some code paths here to use the real parse tree rather
                      "let foo = new Bar.Foo(    " ] )
         MoveCursorToEndOfMarker(file, "new Bar.Foo(")
         // Note: no TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual(null, info)
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
         AssertEqual("Foo", info.GetName(0))
-        // note about (5,1): for silly implementation reasons, we always report location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,15);(2,22);(2,22);(5,1)|], info.GetNoteworthyParamInfoLocations())
-
-        // after typechecking catches up, then even NoFallback should find it
-        TakeCoffeeBreak(this.VS)
-        let info = GetParameterInfoAtCursorNoFallback file  // the 'NoFallback' version will not use the name environment, only captured name resolutions at specific locations
-        AssertEqual("Foo", info.GetName(0))
-        AssertEqual([|(2,15);(2,22);(2,22);(5,1)|], info.GetNoteworthyParamInfoLocations())
-        gpatcc.AssertExactly(0,0)
+        // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
+        AssertEqual([|(1,14);(1,21);(1,21);(4,0)|], info.GetNoteworthyParamInfoLocations())
 *)
 
     [<Test>]
@@ -952,6 +943,8 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let (_, _, file) = this.CreateSingleFileProject(testLines)
         MoveCursorToStartOfMarker(file, "0")
         let info = GetParameterInfoAtCursor file
+        Assert.IsTrue(info.IsSome, "expected parameter info")
+        let info = info.Value
         let names = info.GetParameterNames()
         AssertEqual([| null; null; "d"; "e"; "c" |], names)
 
@@ -969,13 +962,13 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 [while r.ToString().IndexOf('^') <> -1 do
                     let c = r.ToString().IndexOf('^')
                     r.Remove(c,1) |> ignore
-                    yield (i+1,c+1)]
+                    yield (i,c)]
             r.ToString(), locs)
         let testLines = testLinesAndLocs |> List.map fst
         let expectedLocs = testLinesAndLocs |> List.map snd |> List.collect id |> List.toArray 
-        // note: for silly implementation reasons, we always report location of 'end of file' as first the char, 3 lines past the last line of the file
+        // note: service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
         let expectedLocs = if defaultArg markAtEOF false then 
-                                Array.append expectedLocs [| testLines.Length+3, 1 |] 
+                                Array.append expectedLocs [| (testLines.Length-1)+3, 0 |] 
                            else 
                                 expectedLocs
         let cursorPrefix = cursorPrefix.Replace("^","")
@@ -984,8 +977,28 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let (_, _, file) = this.CreateSingleFileProject(testLines, references = references)
         MoveCursorToEndOfMarker(file, cursorPrefix)
         let info = GetParameterInfoAtCursor file
-        if info=null then raise NoParamInfo
+        Assert.IsTrue(info.IsSome, "expected parameter info")
+        let info = info.Value
         AssertEqual(expectedLocs, info.GetNoteworthyParamInfoLocations()) 
+
+    // These pin down known failing cases
+    member public this.TestNoParameterInfo (testLine, ?additionalReferenceAssemblies) =
+        let cursorPrefix, testLines = this.ExtractLineInfo testLine
+        let cursorPrefix = cursorPrefix.Replace("^","")
+        let testLinesAndLocs = testLines |> List.mapi (fun i s ->
+            let r = new System.Text.StringBuilder(s)
+            let locs = 
+                [while r.ToString().IndexOf('^') <> -1 do
+                    let c = r.ToString().IndexOf('^')
+                    r.Remove(c,1) |> ignore
+                    yield (i,c)]
+            r.ToString(), locs)
+        let testLines = testLinesAndLocs |> List.map fst
+        let references = "System.Core"::(defaultArg additionalReferenceAssemblies [])
+        let (_, _, file) = this.CreateSingleFileProject(testLines, references = references)
+        MoveCursorToEndOfMarker(file, cursorPrefix)
+        let info = GetParameterInfoAtCursor file
+        Assert.IsTrue(info.IsNone, "expected no parameter info for this particular test, though it would be nice if this has started to work")
 
     [<Test>]
     member public this.``LocationOfParams.Case1``() =        
@@ -1326,8 +1339,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``LocationOfParams.ThisOnceAsserted``() =        
-        try
-            this.TestParameterInfoLocationOfParams("""
+            this.TestNoParameterInfo("""
                 module CSVTypeProvider
 
                 f(fun x ->
@@ -1343,13 +1355,10 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     keyType
 
                 match types |> Array.tryFind (fun ty -> ty.Name = typeName^) with _ -> ()""")
-        with
-            | NoParamInfo -> () // expect there not to be any param info because parser failed
 
     [<Test>]
     member public this.``LocationOfParams.ThisOnceAssertedToo``() =        
-        try
-            this.TestParameterInfoLocationOfParams("""
+            this.TestNoParameterInfo("""
                 let readString() =
                     let x = 42
                     while ('"' = '""' then
@@ -1358,8 +1367,6 @@ We really need to rewrite some code paths here to use the real parse tree rather
                             let sb = new System.Text.StringBuilder()
                             while true do
                                 ($)  """)
-        with
-            | NoParamInfo -> () // expect there not to be any param info because parser failed
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1a``() =        
@@ -1514,13 +1521,13 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.TypeProviders.Basic``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42 ^>""", 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicNamed``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 ^>""", 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
 
     [<Test>]
@@ -1528,92 +1535,72 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< $ """, // missing all params, just have <
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42 """, // missing >
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 """, // missing >
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, """, // missing last param
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored= """, // missing last param after name with equals
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ParamIgnored """, // missing last param after name sans equals
             markAtEnd = true,
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative1``() =       
-        try 
-            this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
+            this.TestNoParameterInfo("""
                 type D = ^System.Collections.Generic.Dictionary^^< in$t, int ^>""")
-            failwith "unexpected param info for generic type"
-        with
-        | :? NoParamInfo -> ()
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative2``() =       
-        try 
-            this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
+            this.TestNoParameterInfo("""
                 type D = ^System.Collections.Generic.List^^< in$t ^>""")
-            failwith "unexpected param info for generic type"
-        with
-        | :? NoParamInfo -> ()
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative3``() =       
-        try 
-            this.TestParameterInfoLocationOfParams("""
+            this.TestNoParameterInfo("""
                 let i = 42
                 let b = ^i^^< 4$2""")
-            failwith "unexpected param info for generic type"
-        with
-        | :? NoParamInfo -> ()
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative4.Bug181000``() =       
-        try 
-            this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
+            this.TestNoParameterInfo("""
                 type U = ^N1.T^^< "foo"^, 42 ^>$  """,   // when the caret is right of the '>', we should not report any param info
-                additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-            failwith "unexpected param info for generic type"
-        with
-        | :? NoParamInfo -> ()
+                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =
-        try
-            this.TestParameterInfoLocationOfParams("""
+            this.TestNoParameterInfo("""
                 let f() =
                     let r = id( ^N1.T^^< "fo$o"^, ParamIgnored=42 ^> )
                     r    """, 
-                additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
-            failwith "unexpected param info for invalid use of constructorless type"
-        with
-        | :? NoParamInfo -> ()
+                additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        
@@ -1621,34 +1608,36 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let f() =
                 let r = ^id^^( N1.$T< "foo", ParamIgnored=42 > ^)
                 r    """, 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, 42^, ^, ^>""", 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< "fo$o"^, ^, ^>""", 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case3``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^^< ^,$ ^>""", 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``TypeProvider.FormatOfNamesOfSystemTypes``() =
         let code = ["""type TTT = N1.T< "foo", ParamIgnored=42 > """]
-        let references = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let references = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
         let (_, _, file) = this.CreateSingleFileProject(code, references = references)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file,"foo")
         let methodGroup = GetParameterInfoAtCursor file
+        Assert.IsTrue(methodGroup.IsSome, "expected parameter info")
+        let methodGroup = methodGroup.Value
         let actualDisplays =
             [ for i = 0 to methodGroup.GetCount() - 1 do
                 yield [ for j = 0 to methodGroup.GetParameterCount(i) - 1 do
@@ -1707,6 +1696,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
             MoveCursorToEndOfMarker(file, marker)
             let methodGroup = GetParameterInfoAtCursor file
             
+            Assert.IsTrue(methodGroup.IsSome, "expected parameter info")
+            let methodGroup = methodGroup.Value
+
             Assert.AreEqual(1, methodGroup.GetCount(), "Only one function expected")            
 
             let expectedParamsCount = List.length expectedParams
@@ -1729,6 +1721,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``ParameterInfo.ArgumentsWithParamsArrayAttribute``() =
         let content = """let _ = System.String.Format("",(*MARK*))"""
         let methodTip = this.GetMethodListForAMethodTip(content, "(*MARK*)")
+        Assert.IsTrue(methodTip.IsSome, "expected parameter info")
+        let methodTip = methodTip.Value
+
         let overloadWithTwoParamsOpt = 
             Seq.init (methodTip.GetCount()) (fun i -> 
                 let count = methodTip.GetParameterCount(i)
@@ -2246,24 +2241,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker*)",["int";"int";"string";"bool"],queryAssemblyRefs)
 
 
-// Allow the ParameterInfoTests run under different context
-namespace UnitTests.Tests.LanguageService.ParameterInfo
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ParameterInfoTests
-   new() = { inherit ParameterInfoTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ParameterInfoTests
-    new() = { inherit ParameterInfoTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

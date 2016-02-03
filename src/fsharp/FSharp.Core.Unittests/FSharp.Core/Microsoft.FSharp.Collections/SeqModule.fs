@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -260,7 +260,19 @@ type SeqModule() =
         let expectedNullSeq = seq [null;null]
         
         VerifySeqsEqual expectedNullSeq NullSeq
+
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>               
+            for o in strings do ()) 
         
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>
+                :> System.Collections.IEnumerable // without this upcast the for loop throws, so it should with this upcast too
+            for o in strings do ()) 
         
         ()
         

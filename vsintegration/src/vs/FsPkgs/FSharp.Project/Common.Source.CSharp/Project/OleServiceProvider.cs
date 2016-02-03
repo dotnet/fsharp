@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -24,11 +24,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     internal class OleServiceProvider : IOleServiceProvider, IDisposable
     {
-        #region Public Types
         public delegate object ServiceCreatorCallback(Type serviceType);
-        #endregion
 
-        #region Private Types
         private class ServiceData : IDisposable
         {
             private Type serviceType;
@@ -82,9 +79,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 creator = null;
             }
         }
-        #endregion
-
-        #region fields
 
         private Dictionary<Guid, ServiceData> services = new Dictionary<Guid, ServiceData>();
         private bool isDisposed;
@@ -92,15 +86,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines an object that will be a mutex for this object for synchronizing thread calls.
         /// </summary>
         private static volatile object Mutex = new object();
-        #endregion
 
-        #region ctors
         public OleServiceProvider()
         {
         }
-        #endregion
-
-        #region IOleServiceProvider Members
 
         public int QueryService(ref Guid guidService, ref Guid riid, out IntPtr ppvObject)
         {
@@ -148,9 +137,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return hr;
         }
 
-        #endregion
-
-        #region Dispose        
 
         /// <summary>
         /// The IDispose interface Dispose method for disposing the object determinastically.
@@ -160,8 +146,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
-        #endregion
 
         /// <summary>
         /// Adds the given service to the service container.
@@ -222,12 +206,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #region helper methods
         /// <summary>
         /// The method that does the cleanup.
         /// </summary>
         /// <param name="disposing"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
             // Everybody can go here.
             if (!this.isDisposed)
@@ -256,7 +239,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
 
     }
 }

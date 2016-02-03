@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Quotations
 
@@ -537,7 +537,7 @@ module Patterns =
         if index < 0 || index >= fields.Length then invalidArg "index" (SR.GetString(SR.QinvalidCaseIndex))
         fields.[index]
  
-    /// Returns type of lambda applciation - something like "(fun a -> ..) b"
+    /// Returns type of lambda application - something like "(fun a -> ..) b"
     let rec typeOfAppliedLambda f =
         let fty = ((typeOf f):Type) 
         match fty.GetGenericArguments() with 
@@ -641,7 +641,7 @@ module Patterns =
         if not (assignableFrom declType (typeOf obj)) then invalidArg "obj" (SR.GetString(SR.QincorrectInstanceType))
 
       
-    // Checks lambda application for correctnes
+    // Checks lambda application for correctness
     let checkAppliedLambda (f, v) =
         let fty = typeOf f
         let ftyG = (if fty.IsGenericType then  fty.GetGenericTypeDefinition()  else fty)
@@ -1717,7 +1717,7 @@ module Patterns =
                         ci
                 let paramTypes = mi.GetParameters() |> getTypesFromParamInfos
                 Key(declaringType, tyArgsCount, methodBase.Name, paramTypes, declaringType)
-            | _ -> failwith "Unexpected MethodBase type, %A" (methodBase.GetType()) // per MSDN ConstructorInfo and MethodInfo are the only derived types from MethodBase
+            | _ -> failwithf "Unexpected MethodBase type, %A" (methodBase.GetType()) // per MSDN ConstructorInfo and MethodInfo are the only derived types from MethodBase
 #else
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey = 

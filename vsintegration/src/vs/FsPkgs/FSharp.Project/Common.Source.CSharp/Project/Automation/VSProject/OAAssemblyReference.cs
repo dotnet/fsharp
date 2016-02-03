@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Reflection;
@@ -20,7 +20,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
         }
 
-        #region Reference override
         public override int BuildNumber
         {
             get
@@ -155,6 +154,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return BaseReferenceNode.ResolvedAssembly.Version.ToString();
             }
         }
-        #endregion
     }
 }

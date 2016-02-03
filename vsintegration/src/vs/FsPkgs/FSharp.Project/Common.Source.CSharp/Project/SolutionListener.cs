@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -25,8 +25,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     internal abstract class SolutionListener : IVsSolutionEvents3, IVsSolutionEvents4, IDisposable
     {
-
-        #region fields
         private uint eventsCookie = (uint)ShellConstants.VSCOOKIE_NIL;
         private IVsSolution solution = null;
         private IServiceProvider serviceProvider = null;
@@ -35,10 +33,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines an object that will be a mutex for this object for synchronizing thread calls.
         /// </summary>
         private static volatile object Mutex = new object();
-        #endregion
 
-        #region ctors
-        public /*protected, but public for FSharp.Project.dll*/ SolutionListener(IServiceProvider serviceProvider)
+        public SolutionListener(IServiceProvider serviceProvider)
         {
 
             this.serviceProvider = serviceProvider;
@@ -51,10 +47,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
         }
-        #endregion
 
-        #region properties
-        public /*protected, but public for FSharp.Project.dll*/ uint EventsCookie
+        public uint EventsCookie
         {
             get
             {
@@ -62,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ IVsSolution Solution
+        public IVsSolution Solution
         {
             get
             {
@@ -70,16 +64,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ IServiceProvider ServiceProvider
+        public IServiceProvider ServiceProvider
         {
             get
             {
                 return this.serviceProvider;
             }
         }
-        #endregion
 
-        #region IVsSolutionEvents3, IVsSolutionEvents2, IVsSolutionEvents methods
         public virtual int OnAfterCloseSolution(object reserved)
         {
             return VSConstants.E_NOTIMPL;
@@ -154,9 +146,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region IVsSolutionEvents4 methods
         public virtual int OnAfterAsynchOpenProject(IVsHierarchy hierarchy, int added)
         {
             return VSConstants.E_NOTIMPL;
@@ -179,22 +169,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region Dispose        
-
-        /// <summary>
-        /// The IDispose interface Dispose method for disposing the object determinastically.
-        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        #endregion
-
-        #region methods
         public void Init()
         {
             if (this.solution != null)
@@ -207,7 +188,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The method that does the cleanup.
         /// </summary>
         /// <param name="disposing"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
             // Everybody can go here.
             if (!this.isDisposed)
@@ -228,6 +209,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
     }
 }

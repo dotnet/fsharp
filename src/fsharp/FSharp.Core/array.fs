@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -6,6 +6,7 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open System.Collections.Generic
     open System.Diagnostics.CodeAnalysis
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Collections
@@ -14,8 +15,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.SR
 #if FX_NO_ICLONEABLE
     open Microsoft.FSharp.Core.ICloneableExtensions            
-#else
-#endif    
+#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -172,23 +172,38 @@ namespace Microsoft.FSharp.Collections
 
             Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
-        [<CompiledName("CountBy")>]
-        let countBy projection (array:'T[]) =
-            checkNonNull "array" array
-            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
+            let dict = Dictionary comparer
 
             // Build the groupings
             for v in array do
-                let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection v)
+                let safeKey = projection v
                 let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
 
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
             let mutable i = 0
             for group in dict do
-                res.[i] <- group.Key.Value, group.Value
+                res.[i] <- getKey group.Key, group.Value
                 i <- i + 1
             res
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let countByValueType (projection:'T->'Key) (array:'T[]) = countByImpl HashIdentity.Structural<'Key> projection id array
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let countByRefType   (projection:'T->'Key) (array:'T[]) = countByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) array
+
+        [<CompiledName("CountBy")>]
+        let countBy (projection:'T->'Key) (array:'T[]) =
+            checkNonNull "array" array
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then countByValueType projection array
+                else countByRefType   projection array
 
         [<CompiledName("Append")>]
         let append (array1:'T[]) (array2:'T[]) = 
@@ -408,31 +423,46 @@ namespace Microsoft.FSharp.Collections
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
 
-        [<CompiledName("GroupBy")>]
-        let groupBy keyf (array: 'T[]) =
-            checkNonNull "array" array
-            let dict = new Dictionary<RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(RuntimeHelpers.StructBox<'Key>.Comparer)
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
+            let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Build the groupings
             for i = 0 to (array.Length - 1) do
                 let v = array.[i]
-                let key = RuntimeHelpers.StructBox (keyf v)
-                let ok, prev = dict.TryGetValue(key)
-                if ok then 
-                    prev.Add(v)
+                let safeKey = keyf v
+                let mutable prev = Unchecked.defaultof<_>
+                if dict.TryGetValue(safeKey, &prev) then
+                    prev.Add v
                 else 
-                    let prev = new ResizeArray<'T>(1)
-                    dict.[key] <- prev
-                    prev.Add(v)
+                    let prev = ResizeArray ()
+                    dict.[safeKey] <- prev
+                    prev.Add v
                      
             // Return the array-of-arrays.
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
             let mutable i = 0
             for group in dict do
-                result.[i] <- group.Key.Value, group.Value.ToArray()
+                result.[i] <- getKey group.Key, group.Value.ToArray()
                 i <- i + 1
 
             result
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let groupByValueType (keyf:'T->'Key) (array:'T[]) = groupByImpl HashIdentity.Structural<'Key> keyf id array
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let groupByRefType   (keyf:'T->'Key) (array:'T[]) = groupByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) array
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (keyf:'T->'Key) (array:'T[]) =
+            checkNonNull "array" array
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then groupByValueType keyf array
+                else groupByRefType   keyf array
 
         [<CompiledName("Pick")>]
         let pick f (array: _[]) = 
@@ -584,7 +614,7 @@ namespace Microsoft.FSharp.Collections
                 let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunkCount : 'T[][]
                 for i = 0 to len / chunkSize - 1 do
                     res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked (i * chunkSize) chunkSize array
-                if len % chunkCount <> 0 then
+                if len % chunkSize <> 0 then
                     res.[chunkCount - 1] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
                 res
 

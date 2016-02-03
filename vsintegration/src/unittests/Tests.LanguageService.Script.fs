@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.Script
 
 open System
 open System.IO
@@ -10,8 +10,10 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type ScriptTests() as this = 
+[<TestFixture>] 
+type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests() 
 
     let notAA l = None,l
@@ -230,7 +232,7 @@ type ScriptTests() as this =
                          "open System.Transactions"
                          ]
         AssertNoErrorsOrWarnings(project)
-        gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectDelete, because dependent DLL set changed *))
+        gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectCreate, because dependent DLL set changed *))
 
     // FEATURE: Adding a #load to a file will cause types from that file to be visible in intellisense
     [<Test>]
@@ -350,7 +352,7 @@ type ScriptTests() as this =
         SaveFileToDisk(file)
         TakeCoffeeBreak(this.VS)
         VerifyErrorListContainedExpetedStr("Transactions",project)
-        gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectDelete, because dependent DLL set changed *))
+        gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectCreate, because dependent DLL set changed *))
     
 
 
@@ -920,13 +922,13 @@ type ScriptTests() as this =
         let (project, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file, "System.ConsoleModifiers.Sh")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IdealDocumentationProvider
+        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IDocumentationBuilder
         AssertContains(tooltip, @"[Filename:") 
         AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from     
         
         MoveCursorToEndOfMarker(file, "(3).ToString().Len")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:P:System.String.Length]") // A message from the mock IdealDocumentationProvider
+        AssertContains(tooltip, @"[Signature:P:System.String.Length]") // A message from the mock IDocumentationBuilder
         AssertContains(tooltip, @"[Filename:") 
         AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from  
 
@@ -1225,11 +1227,11 @@ type ScriptTests() as this =
                                      ]
         let (project, file) = createSingleFileFsxFromLines code
         let projectFolder = ProjectDirectory(project)
-        let fas = GetCheckOptionsOfScript(file)
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "--noframework")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "System.Runtime.Remoting.dll")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "System.Transactions.dll")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "FSharp.Compiler.Interactive.Settings.dll")
+        let fas = GetProjectOptionsOfScript(file)
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "--noframework")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
         Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
         Assert.AreEqual(1, fas.ProjectFileNames.Length)
 
@@ -1376,7 +1378,11 @@ type ScriptTests() as this =
 #if VS_VERSION_DEV12
             "4.3.1.0"
 #else
+#if VS_VERSION_DEV14
             "4.4.0.0"
+#else
+            "4.4.1.0"
+#endif
 #endif
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
@@ -1611,7 +1617,7 @@ type ScriptTests() as this =
                                      ]
         let refs = 
             [
-                System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+                PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
             ]
         let (_, project, file) = this.CreateSingleFileProject(code, references = refs)
         TakeCoffeeBreak(this.VS)
@@ -1619,7 +1625,7 @@ type ScriptTests() as this =
 
     member public this.TypeProviderDisposalSmokeTest(clearing) =
         use _guard = this.UsingNewVS()
-        let providerAssemblyName = System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
         Assert.IsNotNull(providerAssembly, "provider assembly should not be null")
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
@@ -1628,6 +1634,8 @@ type ScriptTests() as this =
         Assert.IsNotNull(totalCreationsMeth, "totalCreationsMeth should not be null")
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
         Assert.IsNotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
+        let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
+        Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
 
         let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
@@ -1638,6 +1646,7 @@ type ScriptTests() as this =
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
+        let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
         let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
         let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
@@ -1656,7 +1665,7 @@ type ScriptTests() as this =
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
-            this.AddAssemblyReference(project, System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
+            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
             let fileName = sprintf "File%d.fs" i
             let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])    
             let file = OpenFile(project,fileName)
@@ -1693,6 +1702,7 @@ type ScriptTests() as this =
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
         Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
         Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        checkConfigsDisposed()
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -1702,25 +1712,9 @@ type ScriptTests() as this =
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
-//Allow the ScriptTests run under different context
-namespace UnitTests.Tests.LanguageService.Script
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ScriptTests
-   new() = { inherit ScriptTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ScriptTests
-    new() = { inherit ScriptTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

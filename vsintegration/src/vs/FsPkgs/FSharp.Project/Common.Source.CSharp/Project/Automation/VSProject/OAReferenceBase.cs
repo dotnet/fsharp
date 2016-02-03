@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -19,25 +19,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     public class OAReferenceBase<RefType> : Reference
         where RefType : ReferenceNode
     {
-        #region fields
         private RefType referenceNode;
-        #endregion
 
-        #region ctors
         internal OAReferenceBase(RefType referenceNode)
         {
             this.referenceNode = referenceNode;
         }
-        #endregion
 
-        #region properties
-        public /*protected, but public for FSharp.Project.dll*/ RefType BaseReferenceNode
+        public RefType BaseReferenceNode
         {
             get { return referenceNode; }
         }
-        #endregion
 
-        #region Reference Members
         public virtual int BuildNumber
         {
             get { return 0; }
@@ -200,6 +193,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return ((ReferenceNodeProperties)referenceNode.NodeProperties).Extender(ExtenderName);
             });
         }
-        #endregion
     }
 }

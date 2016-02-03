@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -24,18 +24,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum | AttributeTargets.Property | AttributeTargets.Field)]
     internal sealed class PropertyPageTypeConverterAttribute : Attribute
     {
-        #region fields
         Type converterType;
-        #endregion
 
-        #region ctors
         public PropertyPageTypeConverterAttribute(Type type)
         {
             this.converterType = type;
         } 
-        #endregion
 
-        #region properties
         public Type ConverterType
         {
             get
@@ -43,24 +38,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.converterType;
             }
         } 
-        #endregion
     }
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     internal sealed class LocDisplayNameAttribute : DisplayNameAttribute
     {
-        #region fields
         string name;
-        #endregion
 
-        #region ctors
         public LocDisplayNameAttribute(string name)
         {
             this.name = name;
         } 
-        #endregion
 
-        #region properties
         public override string DisplayName
         {
             get
@@ -74,6 +63,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return result;
             }
         } 
-        #endregion
     }
 }

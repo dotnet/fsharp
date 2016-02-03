@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.VisualStudio.FSharp.Interactive.Session
 
@@ -290,9 +290,8 @@ let fsiProcess (procInfo:ProcessStartInfo) =
     // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
     let inputWriter = new System.IO.StreamWriter(cmdProcess.StandardInput.BaseStream, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier=false))
     inputWriter.AutoFlush <- false;
-    //System.Windows.Forms.MessageBox.Show (sprintf "sending in encoding %O=%d/%d, code page = %d\n" inputWriter.Encoding inputWriter.Encoding.CodePage  inputWriter.Encoding.WindowsCodePage   cmdProcess.StandardInput.Encoding.CodePage) |> ignore
+
     let send str = 
-        //System.Windows.Forms.MessageBox.Show (sprintf "sending '%s'" str) |> ignore
         inputWriter.WriteLine(str:string); 
         inputWriter.Flush()
     inE.Add(send);

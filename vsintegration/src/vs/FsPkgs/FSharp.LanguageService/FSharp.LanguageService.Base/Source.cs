@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -107,10 +107,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     /// Source represents one source file and manages the parsing and intellisense on this file
     /// and keeping things like the drop down combos in sync with the source and so on.
     /// </summary>
-#if DEBUG
-    [System.Diagnostics.DebuggerDisplay("SourceImpl({OriginalFilename})")]
-#endif
-    abstract internal class SourceImpl : ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents
+    abstract internal class FSharpSourceBase : ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents
     {
         private LanguageService service;
         private IVsTextLines textLines;
@@ -142,7 +139,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return componentModel.GetService<IVsEditorAdaptersFactoryService>();
         }
 
-        internal SourceImpl(LanguageService service, IVsTextLines textLines, Colorizer colorizer)
+        internal FSharpSourceBase(LanguageService service, IVsTextLines textLines, Colorizer colorizer)
         {
 #if LANGTRACE
             Tracing.TraceRef(textLines, "Source.textLines");
@@ -171,7 +168,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.openedTime = System.DateTime.Now;
         }
 
-        ~SourceImpl()
+        ~FSharpSourceBase()
         {
 #if LANGTRACE
             Trace.WriteLine("~Source");
@@ -236,11 +233,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             if (this.taskProvider == null)
             {
                 this.taskProvider = new ErrorListProvider(service.Site); // task list
-                // Due to the fact that the ErrorList is not yet working...the 
-                // following at least results in all tasks from the same language 
-                // service into one list.
                 this.taskProvider.ProviderGuid = service.GetLanguageServiceGuid();
-                this.taskProvider.ProviderName = service.Name;
+				string name;
+				((IVsLanguageInfo)service).GetLanguageName(out name);
+				this.taskProvider.ProviderName = name;
             }
             return this.taskProvider;
         }
@@ -617,13 +613,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.RecordChangeToView();
         }
 
-#if DEBUG
-        // Implemented in Source.fs
-        public abstract string OriginalFilename { get; }
-#endif
-
-        #region Reformatting
-
         /// <summary>
         /// This method formats the given span using the given EditArray. The default behavior does nothing.  
         /// So you need to override this method if you want formatting to work.  
@@ -633,10 +622,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void ReformatSpan(EditArray mgr, TextSpan span)
         {
         }
-
-        #endregion
-
-        #region Commenting
 
         // Implemented in Source.fs
         /// <summary>Implement this method to provide different comment delimiters.</summary>
@@ -774,10 +759,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return result;
         }
 
-
-        #endregion
-
-        #region IVsTextLinesEvents
         public void OnChangeLineText(TextLineChange[] lineChange, int last)
         {
             TextSpan span = new TextSpan();
@@ -794,7 +775,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void OnChangeLineAttributes(int firstLine, int lastLine)
         {
         }
-        #endregion
 
 
         //===================================================================================
@@ -1036,7 +1016,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
                 if (this.NeedsVisualRefresh && !this.service.IsServingBackgroundRequest)
                 {
-                    BackgroundRequest req = this.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, this.service.LastActiveTextView, RequireFreshResults.No, new BackgroundRequestResultHandler(this.HandleUntypedParseOrFullTypeCheckResponse));
+                    BackgroundRequest req = this.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, this.service.LastActiveTextView, RequireFreshResults.Yes, new BackgroundRequestResultHandler(this.HandleUntypedParseOrFullTypeCheckResponse));
                     if (req != null) req.StartTimeForOnIdleRequest = Environment.TickCount;
                 }
             }
@@ -1172,7 +1152,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             // are doing intellisense in which case we want to match the entire value
             // of quoted strings.
             TokenType type = info.Type;
-            if ((flags != SourceImpl.WholeToken || type != TokenType.String) && (type == TokenType.Comment || type == TokenType.LineComment || type == TokenType.Text || type == TokenType.String || type == TokenType.Literal))
+            if ((flags != FSharpSourceBase.WholeToken || type != TokenType.String) && (type == TokenType.Comment || type == TokenType.LineComment || type == TokenType.Text || type == TokenType.String || type == TokenType.Literal))
                 return false;
             //search for a token
             switch (flags & WORDEXTFLAGS.WORDEXT_MOVETYPE_MASK)
@@ -1353,16 +1333,22 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 }
                 else
                 {
-                    MethodListForAMethodTip methods = req.ResultScope.GetMethodListForAMethodTip(true);
-                    if (methods != null)
-                    {
-                        TextSpan spanNotToObscureWithTipPopup = new TextSpan();
-                        spanNotToObscureWithTipPopup.iStartLine = methods.GetNoteworthyParamInfoLocations()[0].Item1 - 1;  // is 1-based, need 0-based
-                        spanNotToObscureWithTipPopup.iStartIndex = methods.GetNoteworthyParamInfoLocations()[0].Item2 - 1; // is 1-based, need 0-based
-                        spanNotToObscureWithTipPopup.iEndLine = req.Line;
-                        spanNotToObscureWithTipPopup.iEndIndex = req.Col;
-                        this.methodData.Refresh(req.View, methods, spanNotToObscureWithTipPopup, req.MethodTipMiscellany);
-                    }
+                    Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip> methodsOpt = req.ResultIntellisenseInfo.GetMethodListForAMethodTip();
+					if (methodsOpt != null)
+					{
+						MethodListForAMethodTip methods = methodsOpt.Value;
+
+						if (methods != null)
+						{
+							TextSpan spanNotToObscureWithTipPopup = new TextSpan();
+							spanNotToObscureWithTipPopup.iStartLine = methods.GetNoteworthyParamInfoLocations()[0].Item1;
+							spanNotToObscureWithTipPopup.iStartIndex = methods.GetNoteworthyParamInfoLocations()[0].Item2;
+							spanNotToObscureWithTipPopup.iEndLine = req.Line;
+							spanNotToObscureWithTipPopup.iEndIndex = req.Col;
+							this.methodData.Refresh(req.View, methods, spanNotToObscureWithTipPopup, req.MethodTipMiscellany);
+
+						}
+					}
                     else if (req.MethodTipMiscellany == MethodTipMiscellany.JustPressedOpenParen && req.Timestamp != req.ResultTimestamp)
                     {
                         // Second-chance param info: we didn't get any result and the basis typecheck was stale. We need to retrigger the completion.
@@ -1388,13 +1374,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         public void MatchBracesAndMethodTip(IVsTextView textView, int line, int index, MethodTipMiscellany misc, TokenInfo info)
         {
-            this.BeginBackgroundRequest(
-                line, 
-                index, 
-                info, 
-                BackgroundRequestReason.MatchBracesAndMethodTip, 
-                textView, 
-                RequireFreshResults.No, 
+            this.BeginBackgroundRequest(line, index, info, BackgroundRequestReason.MatchBracesAndMethodTip, textView, RequireFreshResults.No, 
                 req =>
                     {
                         HandleMatchBracesResponse(req);
@@ -1630,7 +1610,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 requireFreshResults != RequireFreshResults.Yes)
             {
                 BackgroundRequest request = this.service.CreateBackgroundRequest(this, line, idx, info, null, snapshot, methodTipMiscellany, fname, reason, view);
-                request.ResultScope = this.service.RecentFullTypeCheckResults;
+                request.ResultIntellisenseInfo = this.service.RecentFullTypeCheckResults;
                 request.ResultClearsDirtinessOfFile = false;
                 request.Timestamp = this.ChangeCount;
                 request.IsSynchronous = true;
@@ -1674,7 +1654,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 if (req.ResultClearsDirtinessOfFile && req.Timestamp == this.ChangeCount)
                 {
                     this.RecordViewRefreshed();
-                    if (req.ResultScope != null)
+                    if (req.ResultIntellisenseInfo != null)
                     {
 
                         int end = Environment.TickCount;
@@ -1688,12 +1668,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
                         if (req.View == this.service.LastActiveTextView)
                         {
-                            this.service.RecentFullTypeCheckResults = req.ResultScope;
+                            this.service.RecentFullTypeCheckResults = req.ResultIntellisenseInfo;
                             this.service.RecentFullTypeCheckFile = req.FileName;
                         }
                         ReportTasks(req.ResultSink.errors);
                     }
-                    this.service.OnUntypedParseOrFullTypeCheckComplete(req);
+                    this.service.OnParseFileOrCheckFileComplete(req);
                 }
             }
             catch
@@ -1708,7 +1688,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             if (this.service == null) return;
             try
             {
-                Debug.Assert((req.Reason == BackgroundRequestReason.UntypedParse || req.Reason == BackgroundRequestReason.FullTypeCheck), "this callback is being used for the wrong type of parse request");
+                Debug.Assert((req.Reason == BackgroundRequestReason.ParseFile || req.Reason == BackgroundRequestReason.FullTypeCheck), "this callback is being used for the wrong type of parse request");
 #if LANGTRACE
                 Trace.WriteLine("HandleUntypedParseOrFullTypeCheckResponse:" + req.Timestamp);
 #endif
@@ -1974,7 +1954,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        #region IVsHiddenTextClient
         public void OnHiddenRegionChange(IVsHiddenRegion region, HIDDEN_REGION_EVENT evt, int fBufferModifiable)
         {
         }
@@ -2012,14 +1991,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void OnBeforeSessionEnd()
         {
         }
-        #endregion
-
-        #region IVsUserDataEvents Members
 
         public abstract void OnUserDataChange(ref Guid riidKey, object vtNewValue);
-
-        #endregion
-
     }
 
     /// <summary>
@@ -2267,7 +2240,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return '\0';
         }
 
-        #region IVsCompletionSet
         //--------------------------------------------------------------------------
         //IVsCompletionSet methods
         //--------------------------------------------------------------------------
@@ -2341,13 +2313,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         int GetTokenExtent(int line, int idx, out int startIdx, out int endIdx)
         {
             int hr = VSConstants.S_OK;
-            bool rc = this.source.GetWordExtent(line, idx, SourceImpl.WholeToken, out startIdx, out endIdx);
+            bool rc = this.source.GetWordExtent(line, idx, FSharpSourceBase.WholeToken, out startIdx, out endIdx);
             // make sure the span is positive.
             endIdx = Math.Max(startIdx, endIdx);
 
             if (!rc && idx > 0)
             {
-                rc = this.source.GetWordExtent(line, idx - 1, SourceImpl.WholeToken, out startIdx, out endIdx);
+                rc = this.source.GetWordExtent(line, idx - 1, FSharpSourceBase.WholeToken, out startIdx, out endIdx);
                 if (!rc)
                 {
                     // Must stop core text editor from looking at startIdx and endIdx since they are likely
@@ -2451,9 +2423,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.displayed = false;
             this.Close();
         }
-        #endregion
-
-        #region IVsCompletionSetEx Members
 
         public int CompareItems(string bstrSoFar, string bstrOther, int lCharactersToCompare, out int plResult)
         {
@@ -2496,8 +2465,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 
     //-------------------------------------------------------------------------------------
@@ -2609,7 +2576,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
         public void Refresh(MethodTipMiscellany methodTipMiscellany)
         {
-            var wpfTextView = SourceImpl.GetWpfTextViewFromVsTextView(textView);
+            var wpfTextView = FSharpSourceBase.GetWpfTextViewFromVsTextView(textView);
             var ranges = methods.GetParameterRanges();
             Debug.Assert(ranges != null && ranges.Length > 0);
 

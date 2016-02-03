@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- Tail calls on, even in debug -->
@@ -7,7 +7,7 @@
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
     <!-- For .NET 2.0 use a 2.0 proto compiler, otherwise use a 4.0 proto compiler -->
     <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
-    <LkgVersion>4.0.30319.1</LkgVersion>
+    <LkgVersion>14.0.23413.0</LkgVersion>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
@@ -75,6 +75,8 @@
   <PropertyGroup>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
   
   <PropertyGroup>

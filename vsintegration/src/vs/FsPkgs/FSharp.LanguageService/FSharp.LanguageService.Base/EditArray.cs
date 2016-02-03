@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections;
@@ -8,7 +8,6 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
-    /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan"]/*' />
     /// <summary>
     /// This class encapsulates one atomic edit operation.
     /// Add these to an EditArray then when you are ready call ApplyEdits().
@@ -19,7 +18,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         int lineCount;
         int lengthOfLastLine;
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan.EditSpan"]/*' />
         /// <summary>
         /// Construct a new edit span object
         /// </summary>
@@ -34,18 +32,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.lineCount = -1;
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan.Span"]/*' />
         internal TextSpan Span {
             get { return this.span; }
             set { this.span = value; }
         }
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan.Text"]/*' />
         internal string Text {
             get { return this.text; }
             set { this.text = value; this.lineCount = -1; }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan.LineCount"]/*' />
         /// <summary>
         /// Returns the number of lines in the new text being inserted.
         /// </summary>
@@ -57,7 +52,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditSpan.LengthOfLastLine"]/*' />
         /// <summary>
         /// Returns the length of the last line of text being inserted.
         /// </summary>
@@ -89,7 +83,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
     }
 
-    /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray"]/*' />
     /// <summary>
     /// This class encapsulates a batch edit operation.  The reason this class exists is because
     /// performing thousands of tiny edits on a large document can be pretty slow, so the best thing
@@ -111,7 +104,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         CompoundAction ca;
         CompoundViewAction cva;
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.EditArray1"]/*' />
         /// <summary>
         /// This constructor takes a view and will use CompoundViewAction to make the updates
         /// and it will update the current selection accordingly.
@@ -167,7 +159,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             Dispose(true);
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.Count"]/*' />
         /// <summary>
         /// Return the number of edits in the array.
         /// </summary>
@@ -177,21 +168,18 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.TextView"]/*' />
         internal IVsTextView TextView {
             get {
                 return this.view;
             }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.Source"]/*' />
         internal ISource Source {
             get {
                 return this.source;
             }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.ToString"]/*' />
         public override string ToString() {
             StringBuilder s=new StringBuilder();
             for (int i = this.editList.Count - 1; i >= 0; i--) {
@@ -202,7 +190,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return s.ToString();
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.Add"]/*' />
         /// <summary>
         /// Add a new atomic edit to the array.  The edits cannot intersect each other.  
         /// The spans in each edit must be based on the current state of the buffer, 
@@ -472,7 +459,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.ApplyEdits"]/*' />
         internal void ApplyEdits() {
             try {
                 if (this.editList.Count == 0) return;
@@ -528,7 +514,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.editList.Clear(); // done!
         }
 
-        /// <include file='doc\EditArray.uex' path='docs/doc[@for="EditArray.GetEnumerator"]/*' />
         /// <summary>Allows enumeration of EditSpan objects</summary>
         public IEnumerator GetEnumerator() {
             return editList.GetEnumerator();

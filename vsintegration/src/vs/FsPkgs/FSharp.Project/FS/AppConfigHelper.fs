@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
@@ -180,7 +180,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Debug.Assert(document <> null, "Null XmlDocument?")
             document
             
-        // #region IDisposable
         interface IDisposable with
             member x.Dispose() =
                 if rdtCookie <> 0u && rdtFlags <> _VSRDTFLAGS.RDT_NoLock then
@@ -188,7 +187,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     rdt.UnlockDocument((uint32 rdtFlags) ||| (uint32 _VSRDTFLAGS.RDT_Unlock_SaveIfDirty), rdtCookie) |> ignore
                     rdtCookie <- 0u
         
-        // #endregion
 
     // This type provides a wrapper around the app.config file and provides methods to update
     // the config file with framework moniker information.
@@ -352,16 +350,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // The table below represents the appropriate redirections
                         // If the target version is between TagetMin and TargetMax inclusive then the redirects list contains the appropriate redirects
                         //
-                        //TargetMin, targetMax, redirects
-                        "2.3.0.0",  "2.3.0.0",   ["2.0.0.0";   "2.3.0.0"]
-                        "2.3.5.1",  "2.3.5.1",   ["2.3.5.0";   "2.3.5.1"]
-                        "3.7.4.0",  "3.7.4.0",   ["3.3.1.0";   "3.7.4.0"]
-                        "3.47.4.0", "3.47.4.0",  ["2.3.5.0";   "2.3.5.1";   "3.47.4.0"]
-                        "3.78.4.0", "3.78.4.0",  ["3.78.3.1";  "3.78.4.0"]
-                        "3.259.4.0","3.259.4.0", ["3.259.3.1"; "3.259.4.0"]
-                        "4.3.0.0",  "4.4.0.0",   ["2.0.0.0";   "2.3.0.0";   "2.3.5.0";   "4.0.0.0";    "4.3.0.0"]
-                        "4.3.1.0",  "4.4.0.0",   ["3.3.1.0";   "2.3.5.1";   "3.78.3.1";  "3.259.3.1";  "4.3.1.0"]
-                        "4.4.0.0",  "4.4.0.0",   ["3.47.4.0";  "3.78.4.0";  "3.259.4.0"; "4.4.0.0"]
+                        //TargetMin,  targetMax,    redirects
+                        "2.3.0.0",    "2.3.0.0",    ["2.0.0.0";    "2.3.0.0"]
+                        "2.3.5.1",    "2.3.5.1",    ["2.3.5.0";    "2.3.5.1"]
+                        "3.7.4.0",    "3.7.41.0",   ["3.3.1.0";    "3.7.4.0"]
+                        "3.7.41.0",   "3.7.41.0",   ["3.7.41.0"]   
+                        "3.47.4.0",   "3.47.41.0",  ["2.3.5.0";    "2.3.5.1";   "3.47.4.0"]
+                        "3.47.41.0",  "3.47.41.0",  ["3.47.41.0"]  
+                        "3.78.4.0",   "3.78.41.0",  ["3.78.3.1";   "3.78.4.0"]
+                        "3.78.41.0",  "3.78.41.0",  ["3.78.41.0"]  
+                        "3.259.4.0",  "3.259.41.0", ["3.259.3.1";  "3.259.4.0"]
+                        "3.259.41.0", "3.259.41.0", ["3.259.41.0"] 
+                        "4.3.0.0",    "4.4.1.0",    ["2.0.0.0";    "2.3.0.0";   "2.3.5.0";    "4.0.0.0";   "4.3.0.0"]
+                        "4.3.1.0",    "4.4.1.0",    ["3.3.1.0";    "2.3.5.1";   "3.78.3.1";   "3.259.3.1"; "4.3.1.0"]
+                        "4.4.0.0",    "4.4.1.0",    ["3.47.4.0";   "3.78.4.0";  "3.259.4.0";  "4.4.0.0"]
+                        "4.4.1.0",    "4.4.1.0",    ["3.47.41.0";  "3.78.41.0"; "3.259.41.0"; "4.4.0.0";   "4.4.1.0"]
                     ] |> Seq.where(fun (min, max, _) -> targetFSharpCoreVersion >= min && targetFSharpCoreVersion <= max)
 
                 // some helpers to simplify work with XLinq

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace  Internal.Utilities.Text.Parsing
 open Internal.Utilities
@@ -420,7 +420,7 @@ module internal Implementation =
                         // and an EOF token. 
                         if inEofCountDown && eofCountDown < 10 then 
 #if DEBUG
-                            if Flags.debug then printfn "poppin stack, lokking to shift both 'error' and that token, during end-of-file error recovery" ;
+                            if Flags.debug then printfn "popping stack, looking to shift both 'error' and that token, during end-of-file error recovery" ;
 #endif
                             popStackUntilErrorShifted(if haveLookahead then Some(lookaheadToken) else None);
 

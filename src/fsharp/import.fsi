@@ -1,8 +1,10 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+/// Functions to import .NET binary metadata as TAST objects
 module internal Microsoft.FSharp.Compiler.Import
 
 open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 #if EXTENSIONTYPING
@@ -34,16 +36,16 @@ type AssemblyLoader =
 ///
 /// There is normally only one ImportMap for any assembly compilation, though additional instances can be created
 /// using tcImports.GetImportMap() if needed, and it is not harmful if multiple instances are used. The object 
-/// serves as an interface through to the tables stored in the primary TcImports structures defined in build.fs. 
+/// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs. 
 [<SealedAttribute>]
 type ImportMap =
-    new : g:Env.TcGlobals * assemblyLoader:AssemblyLoader -> ImportMap
+    new : g:TcGlobals * assemblyLoader:AssemblyLoader -> ImportMap
     
     /// The AssemblyLoader for the import context
     member assemblyLoader : AssemblyLoader
 
     /// The TcGlobals for the import context
-    member g : Env.TcGlobals
+    member g : TcGlobals
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
 val internal ImportILTypeRef : ImportMap -> range -> ILTypeRef -> TyconRef

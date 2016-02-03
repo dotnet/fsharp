@@ -27,6 +27,7 @@
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionIntListSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warn                           kind=OptionInt</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=nowarn                         kind=OptionStringList</Expects>
+//<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnon                         kind=OptionStringList</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=consolecolors                  kind=OptionSwitch</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=checked                        kind=OptionSwitch</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=define                         kind=OptionString</Expects>
@@ -43,11 +44,14 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=staticlink                     kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=pdb                            kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=simpleresolution               kind=OptionUnit</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=highentropyva                  kind=OptionSwitch</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=subsystemversion               kind=OptionString</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=targetprofile                  kind=OptionString</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=quotations-debug               kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
 //<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=simulateException              kind=OptionString</Expects>
@@ -70,15 +74,14 @@
 //<Expects status="success">section='NoSection                ' ! option=resolutionassemblyfoldersuffix kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=resolutionassemblyfoldersconditions kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=msbuildresolution              kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=indirectcallarraymethods       kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=alwayscallvirt                 kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=nodebugdata                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=test                           kind=OptionString</Expects>
-//<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=vserrors                       kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=validate-type-providers        kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=LCID                           kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=flaterrors                     kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=sqmsessionguid                 kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=jit                            kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=localoptimize                  kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=splitting                      kind=OptionSwitch</Expects>
@@ -117,6 +120,8 @@
 //<Expects status="success">section='NoSection                ' ! option=no-string-interning            kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=statistics                     kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=generate-filter-blocks         kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=gccerrors                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=exename                        kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=max-errors                     kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=debug-file                     kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-debug-file                  kind=OptionUnit</Expects>

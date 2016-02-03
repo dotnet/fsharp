@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
@@ -70,7 +70,6 @@ type internal FsiDeclarations(items : (string*string*string*int)[] ) =
 // Methods
 type internal FsiMethods() =
     inherit Methods()
-    // let items = [|"Alpha";"Beta";"Gamma";"Saturn";"Zune"|] // For testing.
     let items = [| |]
     override this.GetCount() = items.Length
     override this.GetDescription(i) = items.[i]
@@ -175,8 +174,6 @@ module internal Helpers =
     let FsiKeyword =
         { new IVsColorableItem with 
             member x.GetDefaultColors(piForeground, piBackground) =
-                //Check.ArrayArgumentNotNullOrEmpty piForeground "piForeground"
-                //Check.ArrayArgumentNotNullOrEmpty piBackground "piBackground"
                 piForeground.[0] <- COLORINDEX.CI_BLUE
                 piBackground.[0] <- COLORINDEX.CI_USERTEXT_BK
                 VSConstants.S_OK
@@ -205,7 +202,6 @@ type internal FsiLanguageService() =
     member this.Sessions with set x = sessions <- Some x
     
     override this.GetLanguagePreferences() =
-        //System.Windows.Forms.MessageBox.Show("GetLanguagePrefs") |> ignore
         if preferences = null then
             preferences <- new LanguagePreferences(this.Site,
                                                    typeof<FsiLanguageService>.GUID,
@@ -215,13 +211,11 @@ type internal FsiLanguageService() =
         preferences
         
     override this.GetScanner(buffer:IVsTextLines) =
-        //System.Windows.Forms.MessageBox.Show("GetScanner") |> ignore
         if scanner = null then
             scanner <- (new FsiScanner(buffer) :> IScanner)
         scanner
         
     override this.ParseSource(req:ParseRequest) =
-        //System.Windows.Forms.MessageBox.Show("ParseSource") |> ignore
         (new FsiAuthoringScope(sessions,readOnlySpan) :> AuthoringScope)
                 
     override this.Name = "FSharpInteractive" // LINK: see ProvidePackage attribute on the package.

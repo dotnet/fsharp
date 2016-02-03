@@ -40,6 +40,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\debug
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
+CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
 CompilerOptions01,NoMT				CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
@@ -60,11 +61,13 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\times
 CompilerOptions01,NoMT				CompilerOptions\fsc\warn
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnaserror
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnon
+CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT				CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\times
+CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 
 
 Conformance01			Conformance\BasicGrammarElements\Constants
@@ -238,6 +241,7 @@ Conformance08			Conformance\UnitsOfMeasure\WithOOP
 
 
 NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
+NoHostedCompiler,TypeProviders01			TypeProviders\Attributes
 NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile
 NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\Diagnostics
 NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\StaticParam
@@ -315,3 +319,4 @@ Misc02			Stress
 Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
+Diagnostics		Diagnostics\General

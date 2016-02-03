@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -22,14 +22,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false)]
     public abstract class ProjectPackage : Microsoft.VisualStudio.Shell.Package
     {
-        #region fields
         /// <summary>
         /// This is the place to register all the solution listeners.
         /// </summary>
         private List<SolutionListener> solutionListeners = new List<SolutionListener>();
-        #endregion
 
-        #region properties
         /// <summary>
         /// Add your listener to this list. They should be added in the overridden Initialize befaore calling the base.
         /// </summary>
@@ -40,9 +37,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.solutionListeners;
             }
         }
-        #endregion
 
-        #region methods
         protected override void Initialize()
         {
             base.Initialize();
@@ -50,9 +45,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Subscribe to the solution events
             this.solutionListeners.Add(new SolutionListenerForProjectReferenceUpdate(this));
             this.solutionListeners.Add(new SolutionListenerForProjectOpen(this));
-#if UNUSED_NESTED_PROJECTS
-            this.solutionListeners.Add(new SolutionListenerForBuildDependencyUpdate(this));
-#endif
             this.solutionListeners.Add(new SolutionListenerForProjectEvents(this));
 
             foreach (SolutionListener solutionListener in this.solutionListeners)
@@ -80,6 +72,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 base.Dispose(disposing);
             }
         }
-        #endregion
     }
 }
