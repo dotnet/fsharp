@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Lexhelp
 
@@ -56,6 +56,12 @@ type lexargs =
       lightSyntaxStatus : LightSyntaxStatus;
       errorLogger: ErrorLogger }
 
+/// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
+type LongUnicodeLexResult =
+    | SurrogatePair of uint16 * uint16
+    | SingleChar of uint16
+    | Invalid
+
 let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,errorLogger) =
     { defines = defines;
       ifdefStack= ifdefStack;
@@ -96,6 +102,16 @@ let addIntChar (buf: ByteBuffer) c =
 
 let addUnicodeChar buf c = addIntChar buf (int c)
 let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
+
+let stringBufferAsString (buf: byte[]) =
+    if buf.Length % 2 <> 0 then failwith "Expected even number of bytes";
+    let chars : char[] = Array.zeroCreate (buf.Length/2)
+    for i = 0 to (buf.Length/2) - 1 do
+        let hi = buf.[i*2+1]
+        let lo = buf.[i*2]
+        let c = char (((int hi) * 256) + (int lo))
+        chars.[i] <- c
+    System.String(chars)
 
 /// When lexing bytearrays we don't expect to see any unicode stuff. 
 /// Likewise when lexing string constants we shouldn't see any trigraphs > 127 
@@ -143,11 +159,16 @@ let unicodeGraphLong (s:string) =
     if s.Length <> 8 then failwith "unicodeGraphLong";
     let high = hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3] in 
     let low = hexdigit s.[4] * 4096 + hexdigit s.[5] * 256 + hexdigit s.[6] * 16 + hexdigit s.[7] in 
-    if high = 0 then None, uint16 low 
-    else 
-      (* A surrogate pair - see http://www.unicode.org/unicode/uni2book/ch03.pdf, section 3.7 *)
-      Some (uint16 (0xD800 + ((high * 0x10000 + low - 0x10000) / 0x400))),
-      uint16 (0xDC00 + ((high * 0x10000 + low - 0x10000) % 0x400))
+    // not a surrogate pair
+    if high = 0 then SingleChar(uint16 low)
+    // invalid encoding
+    elif high > 0x10 then Invalid
+    // valid surrogate pair - see http://www.unicode.org/unicode/uni2book/ch03.pdf, section 3.7 *)
+    else
+      let codepoint = high * 0x10000 + low
+      let hiSurr = uint16 (0xD800 + ((codepoint - 0x10000) / 0x400))
+      let loSurr = uint16 (0xDC00 + ((codepoint - 0x10000) % 0x400))
+      SurrogatePair(hiSurr, loSurr)
 
 let escape c = 
     match c with
@@ -317,7 +338,7 @@ module Keywords =
                 let dirname  = if filename = stdinMockFilename then
                                    System.IO.Directory.GetCurrentDirectory()
                                else
-                                   filename |> FileSystem.SafeGetFullPath (* asserts that path is already absolute *)
+                                   filename |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                                             |> System.IO.Path.GetDirectoryName
                 KEYWORD_STRING dirname
             | "__SOURCE_FILE__" -> 

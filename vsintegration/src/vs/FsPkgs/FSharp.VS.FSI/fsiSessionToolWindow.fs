@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
@@ -35,6 +35,10 @@ type internal ITestVFSI =
 #nowarn "47"
 module internal Locals = 
     let fsiFontsAndColorsCategory = new Guid("{00CCEE86-3140-4E06-A65A-A92665A40D6F}")
+    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0"
+    let settingsRegistrySubKey = @"General"
+    let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
+
     let fixServerPrompt (str:string) =
         // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
         // In fsi.exe, the newline is needed to get the output send through to VS.
@@ -69,6 +73,16 @@ module internal Locals =
     
 open Util
 open Locals
+
+type internal FsiDebuggerState =
+    | NotRunning
+    | AttachedToFSI
+    | AttachedNotToFSI
+
+type internal FsiEditorSendAction =
+    | ExecuteSelection
+    | ExecuteLine
+    | DebugSelection
 
 [<Guid("dee22b65-9761-4a26-8fb2-759b971d6dfc")>] //REVIEW: double check fresh guid! IIRC it is.
 type internal FsiToolWindow() as this = 
@@ -105,7 +119,6 @@ type internal FsiToolWindow() as this =
 
     // Remove: after next submit (passing through SD)       
     // vsTextManager did not seem to yield current selection...
-    // let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService
@@ -431,6 +444,106 @@ type internal FsiToolWindow() as this =
     let showNoActivate() = 
         let frame = this.Frame :?> IVsWindowFrame
         frame.ShowNoActivate() |> ignore
+    
+    let getDebuggerState () =
+        let fsiProcId = sessions.ProcessID
+        let dte = provider.GetService(typeof<DTE>) :?> DTE
+
+        if dte.Debugger.DebuggedProcesses = null || dte.Debugger.DebuggedProcesses.Count = 0 then
+            FsiDebuggerState.NotRunning, None
+        else
+            let debuggedFsi =
+                dte.Debugger.DebuggedProcesses
+                |> Seq.cast<Process>
+                |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
+            match debuggedFsi with
+            | Some _ -> FsiDebuggerState.AttachedToFSI, debuggedFsi
+            | None -> FsiDebuggerState.AttachedNotToFSI, None
+    
+    let getDebugAttachedFSIProcess () =
+        match getDebuggerState () with
+        | FsiDebuggerState.AttachedToFSI, opt -> opt
+        | _ -> None
+
+    let debuggerIsRunning () =
+        match getDebuggerState () with
+        | FsiDebuggerState.NotRunning, _ -> false
+        | _ -> true
+
+    // noop if debugger isn't attached to FSI
+    let detachDebugger () =
+        try
+            match getDebugAttachedFSIProcess () with
+            | Some(p) -> p.Detach(true)
+            | _ -> ()
+        with _ -> ()
+
+    // noop if debugger is already running
+    let attachDebugger () =
+        if not (debuggerIsRunning ()) then
+            let fsiProcId = sessions.ProcessID
+            let dte = provider.GetService(typeof<DTE>) :?> DTE
+            let fsiProc = 
+                if dte.Debugger.LocalProcesses = null then None else
+                dte.Debugger.LocalProcesses
+                |> Seq.cast<Process>
+                |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
+            try
+                match fsiProc with
+                | Some(p) -> p.Attach()
+                | _ -> ()
+            with _ -> ()
+
+    // checks if current session is configured such that debugging will work well
+    // if not, pops a dialog warning the user
+    let checkDebuggability () =       
+        // debug experience is good when optimizations are off and debug info is produced
+        if ArgParsing.debugInfoEnabled sessions.ProcessArgs && not (ArgParsing.optimizationsEnabled sessions.ProcessArgs) then
+            true
+        else
+            match RegistryHelpers.tryReadHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue with
+            | Some(1) -> true  // warning dialog suppressed
+            | _ ->
+#if VS_VERSION_DEV12
+                let result = 
+                    VsShellUtilities.ShowMessageBox( 
+                        serviceProvider = provider, 
+                        message = VFSIstrings.SR.sessionIsNotDebugFriendly(), 
+                        title = VFSIstrings.SR.fsharpInteractive(), 
+                        icon = OLEMSGICON.OLEMSGICON_WARNING,  
+                        msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO,  
+                        defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST 
+                    ) 
+                
+                // if user picks YES, allow debugging anyways 
+                result = 6 
+
+#else
+                let mutable suppressDiag = false
+                let result =
+                    Microsoft.VisualStudio.PlatformUI.MessageDialog.Show(
+                        VFSIstrings.SR.fsharpInteractive(),
+                        VFSIstrings.SR.sessionIsNotDebugFriendly(),
+                        Microsoft.VisualStudio.PlatformUI.MessageDialogCommandSet.YesNo,
+                        VFSIstrings.SR.doNotShowWarningInFuture(),
+                        &suppressDiag
+                    )
+                
+                if suppressDiag && result <> Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Abort then
+                    RegistryHelpers.writeHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue 1
+
+                // if user picks YES, allow debugging anyways
+                result = Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Yes
+#endif
+
+    let onAttachDebugger (sender:obj) (args:EventArgs) =
+        if checkDebuggability() then
+            attachDebugger()
+            showNoActivate()
+
+    let onDetachDebugger (sender:obj) (args:EventArgs) =
+        detachDebugger()
+        showNoActivate()
 
     let sendTextToFSI text = 
         try
@@ -440,31 +553,40 @@ type internal FsiToolWindow() as this =
             executeTextNoHistory text
         with _ -> ()
 
-    let executeInteraction dir filename topLine text =
+    let executeInteraction dbgBreak dir filename topLine text =
         // Preserving previous functionality, including the #directives...
-        let directiveA  = sprintf "# silentCd @\"%s\" ;; "  dir
-        let directiveB  = sprintf "# %d @\"%s\" "      topLine filename
-        let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
-        let interaction = "\n" + directiveA + "\n" + directiveB + "\n" + text + "\n" + directiveC + "\n;;\n"
+        let interaction =
+            "\n"
+          + (sprintf "# silentCd @\"%s\" ;; " dir) + "\n"
+          + (if dbgBreak then "# dbgbreak\n" else "")
+          + (sprintf "# %d @\"%s\" " topLine filename) + "\n"
+          + text + "\n"
+          + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
+          + ";;" + "\n"
+
         executeTextNoHistory interaction
 
-    let sendSelectionToFSI(selectLine : bool) =
+    let sendSelectionToFSI action =
+        let dbgBreak,selectLine = 
+            match action with
+            | ExecuteSelection -> false, false
+            | ExecuteLine -> false, true
+            | DebugSelection -> true, false
+
         try
-            // REVIEW: See supportWhenFSharpDocument for alternative way of obtaining selection, via IVs APIs.
-            // Change post CTP.            
             let dte = provider.GetService(typeof<DTE>) :?> DTE        
             let activeD = dte.ActiveDocument            
-            match dte.ActiveDocument.Selection with
-            | :? TextSelection as selection ->
-                let origLine = selection.CurrentLine 
-                if selectLine then 
-                    selection.SelectLine()
+            match activeD.Selection with
+            | :? TextSelection as selection when selectLine || selection.Text = "" ->
+                selection.SelectLine()
                 showNoActivate()
-                executeInteraction (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
-                if selectLine then 
-                    // This has the effect of moving the line and de-selecting it.
-                    selection.LineDown(false, 0)
-                    selection.StartOfLine(vsStartOfLineOptions.vsStartOfLineOptionsFirstColumn, false)
+                executeInteraction dbgBreak (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
+                // This has the effect of moving the line and de-selecting it.
+                selection.LineDown(false, 0)
+                selection.StartOfLine(vsStartOfLineOptions.vsStartOfLineOptionsFirstColumn, false)
+            | :? TextSelection as selection ->
+                showNoActivate()
+                executeInteraction dbgBreak (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
             | _ ->
                 ()
         with
@@ -472,26 +594,17 @@ type internal FsiToolWindow() as this =
                  // REVIEW: log error into Trace.
                  // Example errors include no active document.
 
-    let onMLSendLine (sender:obj) (e:EventArgs) =
-        sendSelectionToFSI(true)
+    let onMLSendSelection (sender:obj) (e:EventArgs) =       
+        sendSelectionToFSI ExecuteSelection
 
-    let onMLSend (sender:obj) (e:EventArgs) =       
-        sendSelectionToFSI(false)
-(*
-        // Remove: after next submit (passing through SD)       
-        // The below did not work, so move to use Automatic API via DTE above...        
-        let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
-        let res,view = vsTextManager.GetActiveView(0(*<--fMustHaveFocus=0/1*),null) // 
-        if res = VSConstants.S_OK then
-            let span = Array.zeroCreate<TextSpan> 1
-            view.GetSelectionSpan(span) |> throwOnFailure0
-            let span = span.[0]
-            let text = view.GetTextStream(span.iStartLine,span.iStartIndex,span.iEndLine,span.iEndIndex) |> throwOnFailure1
-            Windows.Forms.MessageBox.Show("EXEC:\n" + text) |> ignore
-        else        
-            Windows.Forms.MessageBox.Show("Could not find the 'active text view', error code = " + sprintf "0x%x" res) |> ignore
-*)
-        
+    let onMLSendLine (sender:obj) (e:EventArgs) =       
+        sendSelectionToFSI ExecuteLine
+
+    let onMLDebugSelection (sender:obj) (e:EventArgs) = 
+        if checkDebuggability () then
+            attachDebugger ()
+        sendSelectionToFSI DebugSelection
+
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =
         let command = sender :?> OleMenuCommand
@@ -528,8 +641,14 @@ type internal FsiToolWindow() as this =
     do  this.BitmapIndex      <- 0  
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
-    member this.MLSend(obj,e) = onMLSend obj e
+    member this.MLSendSelection(obj,e) = onMLSendSelection obj e
     member this.MLSendLine(obj,e) = onMLSendLine obj e
+    member this.MLDebugSelection(obj,e) = onMLDebugSelection obj e
+
+    member this.GetDebuggerState() =
+        let (state, _) = getDebuggerState ()
+        state
+
     member this.AddReferences(references : string[]) = 
         let text = 
             references
@@ -598,9 +717,13 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     None
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
-            addCommand Guids.guidInteractive Guids.cmdIDSendSelection            onMLSend        None
-            addCommand Guids.guidInteractive2 Guids.cmdIDSendLine                onMLSendLine    None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None
+
+            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection  None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            
@@ -620,11 +743,23 @@ type internal FsiToolWindow() as this =
                     context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_LookupF1, "Keyword", "VS.FSharpInteractive") |> ignore
             |   _ -> Debug.Assert(false)
 
+    member __.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
+        match () with
+        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDAttachDebugger ->
+            if debuggerIsRunning () then Some(OLECMDF.OLECMDF_INVISIBLE)
+            else Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+
+        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDDetachDebugger ->
+            if getDebugAttachedFSIProcess () |> Option.isSome then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+            else Some(OLECMDF.OLECMDF_INVISIBLE)
+
+        | _ -> None
+                 
     interface ITestVFSI with
         /// Send a string; the ';;' will be added to the end; does not interact with history
         member this.SendTextInteraction(s:string) =
             let dummyLineNum = 1
-            executeInteraction (System.IO.Path.GetTempPath()) "DummyTestFilename.fs" 1 s
+            executeInteraction false (System.IO.Path.GetTempPath()) "DummyTestFilename.fs" 1 s
         /// Returns the n most recent lines in the view.  After SendTextInteraction, can poll for a prompt to know when interaction finished.
         member this.GetMostRecentLines(n:int) : string[] =
             lock textLines (fun () ->
@@ -672,6 +807,15 @@ type internal FsiToolWindow() as this =
             if not (wpfTextView.HasAggregateFocus) || isFocusedElementInterceptsCommandRouting() then
                 (int Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED)
             else
+                let mutable allHandled = true
+                for i = 0 to ((int cCmds) - 1) do
+                    match this.QueryCommandStatus(guid, prgCmds.[i].cmdID) with
+                    | Some(commandStatus) ->
+                        prgCmds.[i].cmdf <- uint32 commandStatus
+                    | None ->
+                        allHandled <- false
+
+                if allHandled then 0 else
                 let target : IOleCommandTarget = upcast commandService
                 target.QueryStatus(&guid, cCmds, prgCmds, pCmdText)
        

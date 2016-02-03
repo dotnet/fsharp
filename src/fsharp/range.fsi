@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Range
 
@@ -86,11 +86,34 @@ val rangeCmdArgs : range
 val stringOfPos   : pos   -> string
 val stringOfRange : range -> string
 
-module Pos =
-    // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
-    val fromVS : line:int -> column:int -> pos
-    val toVS : pos -> (int * int)
+/// Represents a line number when using zero-based line counting (used by Visual Studio)
+#if CHECK_LINE0_TYPES
+// Visual Studio uses line counts starting at 0, F# uses them starting at 1 
+[<Measure>] type ZeroBasedLineAnnotation
 
+type Line0 = int<ZeroBasedLineAnnotation>
+#else
+type Line0 = int
+#endif
+
+/// Represents a position using zero-based line counting (used by Visual Studio)
+type Pos01 = Line0 * int
+/// Represents a range using zero-based line counting (used by Visual Studio)
+type Range01 = Pos01 * Pos01
+
+module Line =
+    /// Convert a line number from zero-based line counting (used by Visual Studio) to one-based line counting (used internally in the F# compiler and in F# error messages) 
+    val fromZ : Line0 -> int
+    /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
+    val toZ : int -> Line0 
+
+module Pos =
+    /// Convert a position from zero-based line counting (used by Visual Studio) to one-based line counting (used internally in the F# compiler and in F# error messages) 
+    val fromZ : line:Line0 -> column:int -> pos
+    /// Convert a position from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
+    val toZ : pos -> Pos01
 
 module Range =
-    val toVS : range -> (int * int) * (int * int)
+    /// Convert a range from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
+    val toZ : range -> Range01
+    val toFileZ : range -> string * Range01

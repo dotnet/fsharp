@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -288,7 +288,7 @@
     <value>Resources\FSXFile.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="4200" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\FSharpInteractive.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Resources\FSharpInteractive.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="5001" xml:space="preserve">
     <value>F# Script File</value>
@@ -384,10 +384,10 @@
     <value>A blank XML file</value>
   </data>
   <data name="5034" xml:space="preserve">
-    <value>Portable Library (.NET 4.0+, Windows 8, Silverlight 5)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</value>
   </data>
   <data name="5035" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.0+, Windows Store and Silverlight 5.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</value>
   </data>
   <data name="5036" xml:space="preserve">
     <value>Data</value>
@@ -420,22 +420,22 @@
     <value>A project item for consuming a Web Service using WsdlService type provider.</value>
   </data>
   <data name="5047" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Xamarin)</value>
   </data>
   <data name="5048" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5 and Windows Store.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</value>
   </data>
   <data name="5049" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</value>
   </data>
   <data name="5050" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store and Windows Phone 8 Silverlight.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</value>
   </data>
   <data name="5051" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</value>
   </data>
   <data name="5052" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1 and Windows Phone Silverlight 8.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</value>
   </data>
   <data name="6000" xml:space="preserve">
     <value>F# Tools</value>
@@ -500,9 +500,6 @@
   <data name="AddReferenceDialogTitle" xml:space="preserve">
     <value>Add Reference</value>
   </data>
-  <data name="6004" xml:space="preserve">
-    <value>Type Providers</value>
-  </data>
   <data name="6005" xml:space="preserve">
     <value>Change path and command line arguments passed to the F# Interactive</value>
   </data>
@@ -511,18 +508,6 @@
   </data>
   <data name="6007" xml:space="preserve">
     <value>Visual F# Items</value>
-  </data>
-  <data name="TPTOP_Assembly" xml:space="preserve">
-    <value>Assembly</value>
-    <comment>Tools-Options-F# tools-Type Providers: column header</comment>
-  </data>
-  <data name="TPTOP_Description" xml:space="preserve">
-    <value>Using a Type Provider from a source that is unknown or not trusted can expose your computer to security threats, as it will run under the privileges of the current user.</value>
-    <comment>Tools-Options-F# tools-Type Providers: overall description</comment>
-  </data>
-  <data name="TPTOP_Trusted" xml:space="preserve">
-    <value>Trusted</value>
-    <comment>Tools-Options-F# tools-Type Providers: column header</comment>
   </data>
   <data name="AddReferenceDialogTitle_Dev11" xml:space="preserve">
     <value>Reference Manager - {0}</value>
@@ -536,7 +521,7 @@
   <data name="AddReferenceAssemblyPageDialogNoItemsText" xml:space="preserve">
     <value>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</value>
   </data>
-  <data name="FSharpCoreVersionIsNotCompatibleWithDev11" xml:space="preserve">
+  <data name="FSharpCoreVersionIsNotLegacyCompatible" xml:space="preserve">
     <value>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</value>
   </data>
 </root>

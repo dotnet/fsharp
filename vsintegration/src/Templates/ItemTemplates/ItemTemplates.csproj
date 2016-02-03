@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <FileUpgradeFlags>
@@ -69,51 +69,45 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <!-- work around inconsistencies with escaping the # character -->
-  <Target Name="FixHashEscaping" AfterTargets="ZipItems" >
-    <Copy SourceFiles="@(IntermediateZipItem)"
-          DestinationFiles="@(IntermediateZipItem->'%(FullPath)'->Replace(&quot;%2523&quot;,&quot;#&quot;))"
-          SkipUnchangedFiles="true" />
-   </Target>
   <ItemGroup>
     <VSTemplate Include="ItemTemplates\CodeFile\CodeFile.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Code</OutputSubPath>
+      <OutputSubPath>Code</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\ScriptFile\ScriptFile.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Code</OutputSubPath>
+      <OutputSubPath>Code</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\ODataServiceConnection\ODataServiceConnection.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Data</OutputSubPath>
+      <OutputSubPath>Data</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\SignatureFile\SignatureFile.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Code</OutputSubPath>
+      <OutputSubPath>Code</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\SqlDataConnection\SqlDataConnection.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Data</OutputSubPath>
+      <OutputSubPath>Data</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\SqlEntityConnection\SqlEntityConnection.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Data</OutputSubPath>
+      <OutputSubPath>Data</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\Data</OutputSubPath>
+      <OutputSubPath>Data</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\AppConfig\AppConfig.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\General</OutputSubPath>
+      <OutputSubPath>General</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\TextFile\TextFile.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\General</OutputSubPath>
+      <OutputSubPath>General</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
     <VSTemplate Include="ItemTemplates\XMLFile\XMLFile.vstemplate">
-      <OutputSubPath>Visual F%252523 Items\General</OutputSubPath>
+      <OutputSubPath>General</OutputSubPath>
       <SubType>Designer</SubType>
     </VSTemplate>
   </ItemGroup>

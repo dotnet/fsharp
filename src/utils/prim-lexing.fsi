@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // LexBuffers are for use with automatically generated lexical analyzers,
 // in particular those produced by 'fslex'.
@@ -10,21 +10,20 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Control
 
 /// Position information stored for lexing tokens
-[<Sealed>]
+[<Struct>]
 type internal Position = 
-     interface System.IComparable
      /// The file index for the file associated with the input stream, use fileOfFileIndex in range.fs to decode
-     member FileIndex : int
+     val FileIndex : int
      /// The line number in the input stream, assuming fresh positions have been updated 
      /// for the new line by modifying the EndPos property of the LexBuffer.
-     member Line : int
+     val Line : int
      /// The line number for the position in the input stream, assuming fresh positions have been updated 
      /// using for the new line
-     member OriginalLine : int
+     val OriginalLine : int
      /// The character number in the input stream
-     member AbsoluteOffset : int
+     val AbsoluteOffset : int
      /// Return absolute offset of the start of the line marked by the position
-     member StartOfLineAbsoluteOffset : int
+     val StartOfLineAbsoluteOffset : int
      /// Return the column number marked by the position, i.e. the difference between the AbsoluteOffset and the StartOfLineAbsoluteOffset
      member Column : int
      // Given a position just beyond the end of a line, return a position at the start of the next line

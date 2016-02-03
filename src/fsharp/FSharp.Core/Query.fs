@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Linq
 
@@ -148,7 +148,7 @@ type QueryBuilder() =
             acc <- plus acc (selector e.Current)
             count <- count + 1
         if count = 0 then 
-            invalidOp "source" (System.Linq.Enumerable.Average ([| |]: int[])) // raise the same error as LINQ
+            invalidOp "source"
         LanguagePrimitives.DivideByInt< (^U) > acc count
 
     member inline __.SumBy< 'T, 'Q, ^Value 
@@ -994,9 +994,7 @@ module Query =
             | _ -> None)
 
     let (|CallQueryBuilderRunQueryable|_|)   : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run(v)))
-    //  (typeof<QueryBuilder>.Assembly.GetType("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority").GetMethod("RunQueryAsValue").MethodHandle)
     let (|CallQueryBuilderRunValue|_|)       : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<'a>) -> b.Run(v)) : 'a) // type annotations here help overload resolution
-    //  (typeof<QueryBuilder>.Assembly.GetType("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority").GetMethod("RunQueryAsEnumerable").MethodHandle)
     let (|CallQueryBuilderRunEnumerable|_|)  : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<QuerySource<_, IEnumerable>> ) -> b.Run(v))) // type annotations here help overload resolution
     let (|CallQueryBuilderFor|_|)            : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder,source:QuerySource<int,_>,body) -> b.For(source,body)))
     let (|CallQueryBuilderYield|_|)          : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder,value) -> b.Yield value))
@@ -1130,15 +1128,15 @@ module Query =
 
     let (|AnyNestedQuery|_|) e = 
         match e with 
-        | CallQueryBuilderRunValue (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunEnumerable (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunQueryable (Some _, _, [ Quote e ]) -> Some e
+        | CallQueryBuilderRunValue (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunEnumerable (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunQueryable (Some _, _, [ QuoteTyped e ]) -> Some e
         | _ -> None
 
     let (|EnumerableNestedQuery|_|) e = 
         match e with 
-        | CallQueryBuilderRunEnumerable (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunQueryable (Some _, _, [ Quote e ]) -> Some e
+        | CallQueryBuilderRunEnumerable (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunQueryable (Some _, _, [ QuoteTyped e ]) -> Some e
         | _ -> None
 
     /// Represents the result of TransInner - either a normal expression, or something we're about to turn into 

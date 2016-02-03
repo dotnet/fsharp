@@ -1,13 +1,15 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-#light
 namespace Microsoft.FSharp
 open System.Reflection
+open System.Runtime.InteropServices
+
 [<assembly:AssemblyDescription("FSharp.Compiler.Interactive.Settings.dll")>]
 [<assembly:AssemblyCompany("Microsoft Corporation")>]
 [<assembly:AssemblyTitle("FSharp.Compiler.Interactive.Settings.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
+[<assembly:ComVisible(false)>]
 
 #if NO_STRONG_NAMES
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("fsi")>]

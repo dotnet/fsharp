@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace System.Numerics
 #if FX_NO_BIGINT
@@ -83,26 +83,26 @@ namespace Microsoft.FSharp.Core
     type bigint = System.Numerics.BigInteger
 
     [<AutoOpen>]
-    /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+    /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
     module NumericLiterals =
 
-        /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+        /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
         module NumericLiteralI = 
             open System.Numerics
 
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromZero : value:unit -> 'T
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromOne : value:unit -> 'T
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromInt32 : value:int32 -> 'T
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromInt64 : value:int64 -> 'T
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromString : text:string -> 'T
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromInt64Dynamic : value:int64 -> obj
-            /// Provides a default implementations of F# numeric literal syntax  for literals fo the form 'dddI' 
+            /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
             val FromStringDynamic : text:string -> obj
 
         

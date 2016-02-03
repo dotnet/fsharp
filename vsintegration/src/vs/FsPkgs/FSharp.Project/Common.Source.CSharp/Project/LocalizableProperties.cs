@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -27,7 +27,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
         }
 
-        #region ICustomTypeDescriptor
         public virtual AttributeCollection GetAttributes() 
         {
             AttributeCollection col = TypeDescriptor.GetAttributes(this, true);
@@ -107,7 +106,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.GetType().FullName;
         }
-
-        #endregion ICustomTypeDescriptor
     }
 }

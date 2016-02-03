@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async type
@@ -78,6 +78,21 @@ type AsyncType() =
         Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
 
         ()
+
+    [<Test>]
+    member this.AsyncRunSynchronouslyReusesThreadPoolThread() =
+        let action = async { async { () } |> Async.RunSynchronously }
+        let computation =
+            [| for i in 1 .. 1000 -> action |]
+            |> Async.Parallel
+        // This test needs approximately 1000 ThreadPool threads
+        // if Async.RunSynchronously doesn't reuse them.
+        // In such case TimeoutException is raised
+        // since ThreadPool cannot provide 1000 threads in 1 second
+        // (the number of threads in ThreadPool is adjusted slowly).
+        Assert.DoesNotThrow(fun () ->
+            Async.RunSynchronously(computation, timeout = 1000)
+            |> ignore)
 
     [<Test>]
     member this.AsyncSleepCancellation1() =
@@ -269,4 +284,58 @@ type AsyncType() =
         Async.Start a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore        
+
+    [<Test>]
+    member this.NonGenericTaskAsyncValue () =
+        let hasBeenCalled = ref false
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
+        let a = async {
+                do! Async.AwaitTask(t)
+                return true
+            }
+        let result =Async.RunSynchronously(a, 1000)
+        (!hasBeenCalled && result) |> Assert.IsTrue
+        
+    [<Test>]
+    member this.NonGenericTaskAsyncValueException () =
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
+        let a = async {
+                try
+                    let! v = Async.AwaitTask(t)
+                    return false
+                with e -> return true
+              }
+        Async.RunSynchronously(a, 3000) |> Assert.IsTrue  
+        
+    [<Test>]
+    member this.NonGenericTaskAsyncValueCancellation () =
+        use ewh = new ManualResetEvent(false)    
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif   
+            Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
+        let cancelled = ref true
+        let a = async {
+                    use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
+                    let! v = Async.AwaitTask(t)
+                    return v
+            }        
+        Async.Start a
+        cts.Cancel()
+        ewh.WaitOne(10000) |> ignore        
+
 #endif

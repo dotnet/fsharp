@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 open System.Globalization
@@ -38,7 +38,6 @@ module internal QuickParse =
             let hoverChar = line.[index]
             if not (IsLongIdentifierPartCharacter hoverChar) then 
                 // The character is not an identifier character. Return nothing
-                //JAMES: dprintf "GetIdentifierIsland returning None because hoverChar '%c' was not an identifier character: line=%s, index=%d\n" hoverChar line index
                 None
             else
                 let mutable left = index
@@ -47,10 +46,8 @@ module internal QuickParse =
                 while left>=0 && IsLongIdentifierPartCharacter line.[left] do left<-left-1
                 while right<len && IsIdentifierPartCharacter line.[right] do right<-right+1
                 let result = line.Substring(left+1,right-left-1)
-                //JAMES: dprintf "GetIdentifierIsland line=%s, index=%d, result=%s\n" line index result
                 Some(result)
         else
-            //JAMES: dprintf "GetIdentifierIsland returning None because index was out of range: line=%s, index=%d\n" line index
             None
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongName(line:string,index) =

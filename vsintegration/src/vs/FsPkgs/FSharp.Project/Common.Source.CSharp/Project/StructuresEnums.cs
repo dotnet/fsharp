@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Xml;
@@ -17,7 +17,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
-    #region structures
     [StructLayoutAttribute(LayoutKind.Sequential)]
     internal struct _DROPFILES
     {
@@ -27,9 +26,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public Int32 fNC;
         public Int32 fWide;
     }
-    #endregion
 
-    #region enums
     /// <summary>
     /// Defines possible types of output that can produced by a language project
     /// </summary>
@@ -333,66 +330,47 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         VisualStudioStyleErrors,
 
         /// <summary>
-        /// The ValidateTypeProviders property
-        /// </summary>
-        ValidateTypeProviders,
-
-        /// <summary>
         /// The SqmSessionGuid property
         /// </summary>
         SqmSessionGuid
     }
 
-	#endregion
-
     public class AfterProjectFileOpenedEventArgs : EventArgs
     {
-        #region fields
         private bool added;
-        #endregion
 
-        #region properties
         /// <summary>
         /// True if the project is added to the solution after the solution is opened. false if the project is added to the solution while the solution is being opened.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        /*internal, but public for FSharp.Project.dll*/ public bool Added
+        public bool Added
         {
             get { return this.added; }
         }
-        #endregion
 
-        #region ctor
-        /*internal, but public for FSharp.Project.dll*/ public AfterProjectFileOpenedEventArgs(bool added)
+        public AfterProjectFileOpenedEventArgs(bool added)
         {
             this.added = added;
         }
-        #endregion
     }
 
     public class BeforeProjectFileClosedEventArgs : EventArgs
     {
-        #region fields
         private bool removed;
-        #endregion
 
-        #region properties
         /// <summary>
         /// true if the project was removed from the solution before the solution was closed. false if the project was removed from the solution while the solution was being closed.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        /*internal, but public for FSharp.Project.dll*/ public bool Removed
+        public bool Removed
         {
             get { return this.removed; }
         }
-        #endregion
 
-        #region ctor
-        /*internal, but public for FSharp.Project.dll*/ public BeforeProjectFileClosedEventArgs(bool removed)
+        public BeforeProjectFileClosedEventArgs(bool removed)
         {
             this.removed = removed;
         }
-        #endregion
     }
 
     /// <summary>
@@ -402,7 +380,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         private HierarchyNode child;
 
-        /*internal, but public for FSharp.Project.dll*/ public HierarchyNodeEventArgs(HierarchyNode child)
+        public HierarchyNodeEventArgs(HierarchyNode child)
         {
             this.child = child;
         }
@@ -418,7 +396,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileChangedOnDiskEventArgs : EventArgs
     {
-        #region Private fields
         /// <summary>
         /// File name that was changed on disk.
         /// </summary>
@@ -433,14 +410,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The reason the file has changed on disk.
         /// </summary>
         private _VSFILECHANGEFLAGS fileChangeFlag;
-        #endregion
 
         /// <summary>
         /// Constructs a new event args.
         /// </summary>
         /// <param name="fileName">File name that was changed on disk.</param>
         /// <param name="id">The item id of the file that was changed on disk.</param>
-        /*internal, but public for FSharp.Project.dll*/ public FileChangedOnDiskEventArgs(string fileName, uint id, _VSFILECHANGEFLAGS flag)
+        public FileChangedOnDiskEventArgs(string fileName, uint id, _VSFILECHANGEFLAGS flag)
         {
             this.fileName = fileName;
             this.itemID = id;
@@ -451,7 +427,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the file name that was changed on disk.
         /// </summary>
         /// <value>The file that was changed on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public string FileName
+        public string FileName
         {
             get
             {
@@ -463,7 +439,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets item id of the file that has changed
         /// </summary>
         /// <value>The file that was changed on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public uint ItemID
+        public uint ItemID
         {
             get
             {
@@ -475,7 +451,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The reason while the file has chnaged on disk.
         /// </summary>
         /// <value>The reason while the file has chnaged on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public _VSFILECHANGEFLAGS FileChangeFlag
+        public _VSFILECHANGEFLAGS FileChangeFlag
         {
             get
             {
@@ -489,18 +465,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class ActiveConfigurationChangedEventArgs : EventArgs
     {
-        #region Private fields
         /// <summary>
         /// The hierarchy whose configuration has changed 
         /// </summary>
         private IVsHierarchy hierarchy;
-        #endregion
 
         /// <summary>
         /// Constructs a new event args.
         /// </summary>
         /// <param name="hierarchy">The hierarchy that has changed its configuration.</param>
-        /*internal, but public for FSharp.Project.dll*/ public ActiveConfigurationChangedEventArgs(IVsHierarchy hierarchy)
+        public ActiveConfigurationChangedEventArgs(IVsHierarchy hierarchy)
         {
             this.hierarchy = hierarchy;
         }
@@ -508,7 +482,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The hierarchy whose configuration has changed 
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public IVsHierarchy Hierarchy
+        public IVsHierarchy Hierarchy
         {
             get
             {
@@ -527,7 +501,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string oldValue;
         private string newValue;
 
-        /*internal, but public for FSharp.Project.dll*/ public ProjectPropertyChangedArgs(string propertyName, string oldValue, string newValue)
+        public ProjectPropertyChangedArgs(string propertyName, string oldValue, string newValue)
         {
             this.propertyName = propertyName;
             this.oldValue = oldValue;

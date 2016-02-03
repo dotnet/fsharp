@@ -26,8 +26,17 @@ echo TestD
     if NOT EXIST test.ok goto SetError
 
     if exist test.ok (del /f /q test.ok)
+    %CLIX% test-with-debug-data.exe
+    @if ERRORLEVEL 1 goto Error
+    if NOT EXIST test.ok goto SetError
+
+    if exist test.ok (del /f /q test.ok)
     %CLIX% test--optimize.exe
     @if ERRORLEVEL 1 goto Error
+    if NOT EXIST test.ok goto SetError
+
+    if exist test.ok (del /f /q test.ok)
+    %CLIX% test--downtarget\test--downtarget.exe 
     if NOT EXIST test.ok goto SetError
 
 :Ok

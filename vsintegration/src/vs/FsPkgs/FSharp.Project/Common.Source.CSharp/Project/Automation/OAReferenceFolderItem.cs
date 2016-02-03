@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -23,15 +23,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAReferenceFolderItem : OAProjectItem<ReferenceContainerNode>
     {
-        #region ctors
         internal OAReferenceFolderItem(OAProject project, ReferenceContainerNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Returns the project items collection of all the references defined for this project.
         /// </summary>
@@ -43,10 +39,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-
-        #endregion
-
-        #region Helper methods
         private List<EnvDTE.ProjectItem> GetListOfProjectItems()
         {
             List<EnvDTE.ProjectItem> list = new List<EnvDTE.ProjectItem>();
@@ -60,6 +52,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
             return list;
         }
-        #endregion
     }
 }

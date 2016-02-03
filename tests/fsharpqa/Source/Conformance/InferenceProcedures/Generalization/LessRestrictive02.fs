@@ -58,14 +58,14 @@ module Example_Chris =
         member this.For(elements : seq<'a>, forBody : ('a -> StatefulFunc<'state, unit>)) = 
             
             StatefulFunc(fun initialState ->
-                let state = ref initialState
+                let mutable state = initialState
                 
                 for e in elements do
-                    let (), updatedState = Run (forBody e) (!state)
-                    state := updatedState
+                    let (), updatedState = Run (forBody e) (state)
+                    state <- updatedState
             
                 // Return unit * finalState
-                (), !state
+                (), state
             )
             
         member this.Return(x : 'a) = 

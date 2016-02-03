@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Ast
 
@@ -233,10 +233,10 @@ type
     | String of string * range 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
-    /// Also used internally in the typechecker once an array of unit16 contants 
+    /// Also used internally in the typechecker once an array of unit16 constants 
     /// is detected, to allow more efficient processing of large arrays of uint16 constants. 
     | Bytes of byte[] * range 
-    /// Used internally in the typechecker once an array of unit16 contants 
+    /// Used internally in the typechecker once an array of unit16 constants 
     /// is detected, to allow more efficient processing of large arrays of uint16 constants. 
     | UInt16s of uint16[] 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
@@ -248,17 +248,26 @@ type
       
 and  
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
-    /// The unchecked abstract syntax tree of F# unit of measure annotaitons. 
-    /// This should probably be merged with the represenation of SynType.
+    /// The unchecked abstract syntax tree of F# unit of measure annotations. 
+    /// This should probably be merged with the representation of SynType.
     SynMeasure = 
     | Named of LongIdent * range
     | Product of SynMeasure * SynMeasure * range
     | Seq of SynMeasure list * range
     | Divide of SynMeasure * SynMeasure * range
-    | Power of SynMeasure * int * range
+    | Power of SynMeasure * SynRationalConst * range
     | One 
     | Anon of range
     | Var of SynTypar * range
+
+and
+    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    /// The unchecked abstract syntax tree of F# unit of measure exponents. 
+    SynRationalConst = 
+    | Integer of int32
+    | Rational of int32 * int32 * range
+    | Negate of SynRationalConst
+
 
 //------------------------------------------------------------------------
 //  AST: the grammar of types, expressions, declarations etc.
@@ -306,11 +315,11 @@ type SequencePointInfoForWhileLoop =
     
 type SequencePointInfoForBinding = 
     | SequencePointAtBinding of range
-    // Indicates the ommission of a sequence point for a binding for a 'do expr' 
+    // Indicates the omission of a sequence point for a binding for a 'do expr' 
     | NoSequencePointAtDoBinding
-    // Indicates the ommission of a sequence point for a binding for a 'let e = expr' where 'expr' has immediate control flow
+    // Indicates the omission of a sequence point for a binding for a 'let e = expr' where 'expr' has immediate control flow
     | NoSequencePointAtLetBinding
-    // Indicates the ommission of a sequence point for a compiler generated binding
+    // Indicates the omission of a sequence point for a compiler generated binding
     // where we've done a local expansion of some construct into something that involves
     // a 'let'. e.g. we've inlined a function and bound its arguments using 'let'
     // The let bindings are 'sticky' in that the inversion of the inlining would involve
@@ -341,7 +350,7 @@ type RecordFieldName = LongIdentWithDots * bool
 
 type ExprAtomicFlag =
     /// Says that the expression is an atomic expression, i.e. is of a form that has no whitespace unless 
-    /// enclosed in parantheses, e.g. 1, "3", ident, ident.[expr] and (expr). If an atomic expression has
+    /// enclosed in parentheses, e.g. 1, "3", ident, ident.[expr] and (expr). If an atomic expression has
     /// type T, then the largest expression ending at the same range as the atomic expression also has type T.
     | Atomic = 0
     | NonAtomic = 1
@@ -423,8 +432,8 @@ and
     | HashConstraint of SynType * range
     /// F# syntax : for units of measure e.g. m / s 
     | MeasureDivide of SynType * SynType * range       
-    /// F# syntax : for units of measure e.g. m^3 
-    | MeasurePower of SynType * int * range      
+    /// F# syntax : for units of measure e.g. m^3, kg^1/2
+    | MeasurePower of SynType * SynRationalConst * range      
     /// F# syntax : 1, "abc" etc, used in parameters to type providers
     /// For the dimensionless units i.e. 1 , and static parameters to provided types
     | StaticConstant of SynConst * range          
@@ -525,7 +534,7 @@ and
     | Assert of SynExpr * range
 
     /// App(exprAtomicFlag, isInfix, funcExpr, argExpr, m)
-    ///  - exprAtomicFlag: indicates if the applciation is syntactically atomic, e.g. f.[1] is atomic, but 'f x' is not
+    ///  - exprAtomicFlag: indicates if the application is syntactically atomic, e.g. f.[1] is atomic, but 'f x' is not
     ///  - isInfix is true for the first app of an infix operator, e.g. 1+2 becomes App(App(+,1),2), where the inner node is marked isInfix 
     ///      (or more generally, for higher operator fixities, if App(x,y) is such that y comes before x in the source code, then the node is marked isInfix=true)
     ///
@@ -939,7 +948,7 @@ and
     | OptionalVal of Ident * range
     /// ':? type '
     | IsInst of SynType * range
-    /// <@ expr @>, used for active pattern arguments
+    /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of SynExpr * range
 
     /// Deprecated character ranges
@@ -1697,7 +1706,6 @@ let ParseAssemblyCodeType s m =
       IL.EcmaILGlobals.typ_Object
 #endif
 
-
 //------------------------------------------------------------------------
 // AST constructors
 //------------------------------------------------------------------------
@@ -1733,7 +1741,7 @@ let mkSynDotBrackSeqSliceGet  m mDot arr (argslist:list<SynIndexerArg>) =
                        | SynIndexerArg.One x -> yield x
                        | _ -> () ]
     if notsliced.Length = argslist.Length then
-        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (Seq.head notsliced).Range (Seq.last notsliced).Range))],mDot,m)
+        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (List.head notsliced).Range (List.last notsliced).Range))],mDot,m)
     else
         SynExpr.DotIndexedGet(arr,argslist,mDot,m)
 
@@ -2007,7 +2015,19 @@ type LexerEndlineContinuation =
       match x with 
       | LexerEndlineContinuation.Token(ifd) 
       | LexerEndlineContinuation.Skip(ifd, _, _) -> ifd
-          
+
+type LexerIfdefExpression =
+    | IfdefAnd          of LexerIfdefExpression*LexerIfdefExpression
+    | IfdefOr           of LexerIfdefExpression*LexerIfdefExpression
+    | IfdefNot          of LexerIfdefExpression
+    | IfdefId           of string
+
+let rec LexerIfdefEval (lookup : string -> bool) = function
+    | IfdefAnd (l,r)    -> (LexerIfdefEval lookup l) && (LexerIfdefEval lookup r)
+    | IfdefOr (l,r)     -> (LexerIfdefEval lookup l) || (LexerIfdefEval lookup r)
+    | IfdefNot e        -> not (LexerIfdefEval lookup e)
+    | IfdefId id        -> lookup id
+
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
 /// a continuation for the lexer for continued processing after we've dealt with
@@ -2052,7 +2072,7 @@ and LexCont = LexerWhitespaceContinuation
 /// The error raised by the parse_error_rich function, which is called by the parser engine
 /// when a syntax error occurs. The first object is the ParseErrorContext which contains a dump of
 /// information about the grammar at the point where the error occured, e.g. what tokens
-/// are valid to shift next at that point in the grammar. This information is processed in build.fs.
+/// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range
 

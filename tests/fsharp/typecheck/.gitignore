@@ -1,0 +1,8 @@
+sigs/*.err
+sigs/*.vserr
+sigs/pos*.dll
+sigs/pos*.exe
+
+full-rank-arrays/HighRankArrayTests.dll
+
+misc/tmptest*

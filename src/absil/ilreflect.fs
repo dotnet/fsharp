@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Write Abstract IL structures at runtime using Reflection.Emit
@@ -323,26 +323,8 @@ type cenv =
 // []              ,name -> name
 // [ns]            ,name -> ns+name
 // [ns;typeA;typeB],name -> ns+typeA+typeB+name
-let getTRefType (cenv:cenv) (tref:ILTypeRef) = 
-
-    // If an inner nested type's name contains a space, the proper encoding is "\+" on both sides - otherwise,
-    // we use "+"
-    let rec collectPrefixParts (l : string list) (acc : string list) =
-        match l with
-        | h1 :: (h2 :: _ as tl) ->
-            collectPrefixParts tl 
-                (List.append
-                    acc
-                    [   yield h1
-                        if h1.Contains(" ") || h2.Contains(" ") then
-                            yield "\\+"
-                        else
-                            yield "+"])
-        | h :: [] -> List.append acc [h]
-        | _ -> acc
-
-    let prefix = collectPrefixParts tref.Enclosing [] |> List.fold (fun (s1 : string) (s2 : string) -> s1 + s2) ""
-    let qualifiedName = prefix + (if prefix <> "" then (if tref.Name.Contains(" ") then "\\+" else "+") else "") + tref.Name  // e.g. Name.Space.Class+NestedClass
+let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) = 
+    let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
         let assembly = 
@@ -354,12 +336,12 @@ let getTRefType (cenv:cenv) (tref:ILTypeRef) =
             | None ->
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
-        let typT       = assembly.GetType(qualifiedName)
-        typT |> nonNull "GetTRefType" 
+        let typT = assembly.GetType(qualifiedName, throwOnError=true)
+        typT |> nonNull "convTypeRefAux" 
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
-        let typT = Type.GetType(qualifiedName,true) 
-        typT |> nonNull "GetTRefType" 
+        let typT = Type.GetType(qualifiedName, throwOnError=true) 
+        typT |> nonNull "convTypeRefAux" 
 
 
 
@@ -425,11 +407,11 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
 #endif
         emEnv
 
-let envGetTypT cenv emEnv preferCreated (tref:ILTypeRef) = 
+let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) = 
     match Zmap.tryFind tref emEnv.emTypMap with
-    | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp |> nonNull "envGetTypT: null create type table?"
-    | Some (typT,_typB,_typeDef,_)                                  -> typT       |> nonNull "envGetTypT: null type table?"
-    | None                                                        -> getTRefType cenv tref 
+    | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp |> nonNull "convTypeRef: null create type table?"
+    | Some (typT,_typB,_typeDef,_)                                  -> typT       |> nonNull "convTypeRef: null type table?"
+    | None                                                        -> convTypeRefAux cenv tref 
 
 let envBindConsRef emEnv (mref:ILMethodRef) consB = 
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -512,7 +494,7 @@ let convCallConv (Callconv (hasThis,basic)) =
 //----------------------------------------------------------------------------
 
 let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
-    let typT   = envGetTypT cenv emEnv preferCreated tspec.TypeRef 
+    let typT   = convTypeRef cenv emEnv preferCreated tspec.TypeRef 
     let tyargs = ILList.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
     match ILList.isEmpty tyargs,typT.IsGenericType with
     | _   ,true  -> typT.MakeGenericType(ILList.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
@@ -565,12 +547,20 @@ and convTypeAux cenv emEnv preferCreated typ =
 /// Uses TypeBuilder/TypeBuilderInstantiation for emitted types
 let convType cenv emEnv typ = convTypeAux cenv emEnv false typ
 
+// Used for ldtoken
+let convTypeOrTypeDef cenv emEnv typ = 
+    match typ with
+    // represents an uninstantiated "TypeDef" or "TypeRef"
+    | ILType.Boxed tspec when tspec.GenericArgs.IsEmpty -> convTypeRef cenv emEnv false tspec.TypeRef 
+    | _ -> convType cenv emEnv typ
+
 let convTypes cenv emEnv (typs:ILTypes) = ILList.map (convType cenv emEnv) typs
 
 let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> ILList.toArray 
 
 /// Uses the .CreateType() for emitted type (if available)
 let convCreatedType cenv emEnv typ = convTypeAux cenv emEnv true typ 
+let convCreatedTypeRef cenv emEnv typ = convTypeRef cenv emEnv true typ 
   
 
 //----------------------------------------------------------------------------
@@ -601,7 +591,14 @@ let convFieldInit x =
 // This is gross. TypeBuilderInstantiation should really be a public type, since we
 // have to use alternative means for various Method/Field/Constructor lookups.  However since 
 // it isn't we resort to this technique...
-let TypeBuilderInstantiationT = Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation" )
+let TypeBuilderInstantiationT = 
+    let ty = 
+        if runningOnMono then 
+            Type.GetType("System.Reflection.MonoGenericClass")
+        else
+            Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+    assert (not (isNull ty))
+    ty
 
 let typeIsNotQueryable (typ : Type) =
     (typ :? TypeBuilder) || ((typ.GetType()).Equals(TypeBuilderInstantiationT))
@@ -1043,7 +1040,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
     | I_ldstr     s                  -> ilG.EmitAndLog(OpCodes.Ldstr    ,s)
     | I_isinst    typ                -> ilG.EmitAndLog(OpCodes.Isinst   ,convType cenv emEnv  typ)
     | I_castclass typ                -> ilG.EmitAndLog(OpCodes.Castclass,convType cenv emEnv  typ)
-    | I_ldtoken (ILToken.ILType typ)     -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convType cenv emEnv  typ)
+    | I_ldtoken (ILToken.ILType typ)     -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convTypeOrTypeDef cenv emEnv typ)
     | I_ldtoken (ILToken.ILMethod mspec) -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convMethodSpec cenv emEnv mspec)
     | I_ldtoken (ILToken.ILField fspec)  -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convFieldSpec cenv emEnv fspec)
     | I_ldvirtftn mspec              -> ilG.EmitAndLog(OpCodes.Ldvirtftn,convMethodSpec cenv emEnv mspec)
@@ -1237,7 +1234,11 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) code =
 
 let emitLocal cenv emEnv (ilG : ILGenerator) (local: ILLocal) =
     let ty = convType cenv emEnv  local.Type
-    ilG.DeclareLocalAndLog(ty,local.IsPinned)
+    let locBuilder = ilG.DeclareLocalAndLog(ty, local.IsPinned)
+    match local.DebugInfo with
+    | Some(nm, start, finish) -> locBuilder.SetLocalSymInfo(nm, start, finish)
+    | None -> ()
+    locBuilder
 
 let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) ilmbody =
     // XXX - REVIEW:
@@ -1658,20 +1659,20 @@ let typeAttributesOfTypeEncoding x =
 
 
 let typeAttributesOfTypeLayout cenv emEnv x = 
-    let attr p = 
+    let attr x p = 
       if p.Size =None && p.Pack = None then None
       else 
         Some(convCustomAttr cenv emEnv  
                (IL.mkILCustomAttribute cenv.ilg
                   (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.StructLayoutAttribute"), 
                    [mkILNonGenericValueTy (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.LayoutKind")) ],
-                   [ ILAttribElem.Int32 0x02 ],
+                   [ ILAttribElem.Int32 x ],
                    (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_int32, false, ILAttribElem.Int32 (int32 x))))  @
                    (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_int32, false, ILAttribElem.Int32 x)))))) in
     match x with 
     | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout,None
-    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr p)
-    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr p)
+    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr 0x02 p)
+    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr 0x00 p)
 
 
 //----------------------------------------------------------------------------
@@ -1827,7 +1828,7 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
             if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
             tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2));
             if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-            tdef.Methods.AsList |> Seq.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2)));
+            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2)));
             
         // We absolutely need the parent type...
         if priority >= 1 then 
@@ -1842,7 +1843,7 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         // We have to define all struct types in all methods before a class is defined. This only has any effect when there is a struct type
         // being defined simultaneously with this type.
         if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s, #mdefs = %d\n" tdef.Name tdef.Methods.AsList.Length; 
+            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s\n" tdef.Name  
             tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> ILList.iter (fun p -> p.Type |> (traverseType true 1))
                                                   md.Return.Type |> traverseType true 1);
         
@@ -1917,18 +1918,18 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 //----------------------------------------------------------------------------
     
 let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
-    let tdefs = m.TypeDefs.AsList 
+    let tdefs = m.TypeDefs.AsList
 
-    let emEnv = List.fold (buildModuleTypePass1 cenv modB) emEnv tdefs
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass1 cenv modB) 
     tdefs |> List.iter (buildModuleTypePass1b cenv emEnv) 
-    let emEnv = List.fold (buildModuleTypePass2 cenv) emEnv  tdefs
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass2 cenv) 
     
     for delayedFieldInit in emEnv.delayedFieldInits do
         delayedFieldInit()
 
     let emEnv = { emEnv with delayedFieldInits = [] }
 
-    let emEnv = List.fold (buildModuleTypePass3 cenv modB) emEnv  tdefs
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass3 cenv modB) 
     let visited = new Dictionary<_,_>(10) 
     let created = new Dictionary<_,_>(10) 
     tdefs |> List.iter (buildModuleTypePass4  (visited,created) emEnv) 
@@ -1949,13 +1950,14 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
 // test hook
 //----------------------------------------------------------------------------
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo) =
+let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
     let filename = assemblyName ^ ".dll"
     let currentDom  = System.AppDomain.CurrentDomain   
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;
-    let asmB = currentDom.DefineDynamicAssemblyAndLog(asmName,AssemblyBuilderAccess.RunAndSave,asmDir) 
+    let asmAccess = if collectible then AssemblyBuilderAccess.RunAndCollect else AssemblyBuilderAccess.RunAndSave
+    let asmB = currentDom.DefineDynamicAssemblyAndLog(asmName,asmAccess,asmDir) 
     if not optimize then 
         let daType = typeof<System.Diagnostics.DebuggableAttribute>;
         let daCtor = daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
@@ -1999,7 +2001,7 @@ let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder
 // The emEnv stores (typT:Type) for each tref.
 // Once the emitted type is created this typT is updated to ensure it is the Type proper.
 // So Type lookup will return the proper Type not TypeBuilder.
-let LookupTypeRef   emEnv tref = Zmap.tryFind tref emEnv.emTypMap   |> Option.map (function (_typ,_,_,Some createdTyp) -> createdTyp | (typ,_,_,None) -> typ)
+let LookupTypeRef   cenv emEnv tref = convCreatedTypeRef cenv emEnv tref
 let LookupType      cenv emEnv typ  = convCreatedType cenv emEnv typ
 
 // Lookups of ILFieldRef and MethodRef may require a similar non-Builder-fixup post Type-creation.

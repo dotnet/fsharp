@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -44,9 +44,23 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Bind")>]
         let bind f inp = match inp with None -> None | Some x -> f x
 
+        [<CompiledName("Filter")>]
+        let filter f inp = match inp with None -> None | Some x -> if f x then Some x else None
+
         [<CompiledName("ToArray")>]
         let toArray option = match option with  None -> [| |] | Some x -> [| x |]
 
         [<CompiledName("ToList")>]
         let toList option = match option with  None -> [ ] | Some x -> [ x ]
 
+        [<CompiledName("ToNullable")>]
+        let toNullable option = match option with None -> System.Nullable() | Some v -> System.Nullable(v)
+
+        [<CompiledName("OfNullable")>]
+        let ofNullable (value:System.Nullable<'T>) =  if value.HasValue then Some value.Value else None
+
+        [<CompiledName("OfObj")>]
+        let ofObj value = match value with null -> None | _ -> Some value
+
+        [<CompiledName("ToObj")>]
+        let toObj value = match value with None -> null | Some x -> x

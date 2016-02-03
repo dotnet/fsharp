@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -123,66 +123,6 @@
   </data>
   <data name="ExceptionsHeader" xml:space="preserve">
     <value>Exceptions:</value>
-  </data>
-  <data name="TPSEC_AB_Title" xml:space="preserve">
-    <value>Visual F# Type Provider Security</value>
-    <comment>dialog title</comment>
-  </data>
-  <data name="TPSEC_A_DoNotTrustDescription" xml:space="preserve">
-    <value>Choose this option if you do not want to enable this type provider to execute code inside Visual Studio. If you choose this option, you will not be able to use the services or functionality of this type provider on this machine. IntelliSense features will not work properly for code that uses this type provider. This is the safest option.</value>
-    <comment>button explanation</comment>
-  </data>
-  <data name="TPSEC_AB_Explain" xml:space="preserve">
-    <value>Type providers can connect to remote data sources and execute custom code for build and IntelliSense features.  You should only enable type providers from a trusted source.</value>
-    <comment>dialog explanation</comment>
-  </data>
-  <data name="TPSEC_A_Script_Start" xml:space="preserve">
-    <value>You have opened a script file that references a type provider.</value>
-    <comment>dialog start text</comment>
-  </data>
-  <data name="TPSEC_B_Start" xml:space="preserve">
-    <value>You have asked to build an F# project that contains a reference to a type provider.</value>
-    <comment>dialog start text</comment>
-  </data>
-  <data name="TPSEC_Disable" xml:space="preserve">
-    <value>_Disable</value>
-    <comment>button</comment>
-  </data>
-  <data name="TPSEC_File" xml:space="preserve">
-    <value>File using type provider:</value>
-    <comment>dialog label - file causing dialog</comment>
-  </data>
-  <data name="TPSEC_Enable" xml:space="preserve">
-    <value>_Enable</value>
-    <comment>button</comment>
-  </data>
-  <data name="TPSEC_Project" xml:space="preserve">
-    <value>Project using type provider:</value>
-    <comment>dialog label - project causing dialog</comment>
-  </data>
-  <data name="TPSEC_PublisherInfo" xml:space="preserve">
-    <value>Publisher information:</value>
-    <comment>dialog label - publisher info of type provider assembly</comment>
-  </data>
-  <data name="TPSEC_TypeProviderReferenced" xml:space="preserve">
-    <value>Type provider assembly:</value>
-    <comment>dialog label - provider being referenced causing dialog to appear</comment>
-  </data>
-  <data name="TPSEC_A_Project_Start" xml:space="preserve">
-    <value>You have opened a source code file in a project that references a type provider.</value>
-    <comment>dialog start text</comment>
-  </data>
-  <data name="TPSEC_MoreInfoLink" xml:space="preserve">
-    <value>Get more information about F# Type Providers...</value>
-    <comment>text of hyperlink to docs</comment>
-  </data>
-  <data name="TPSEC_UnknownPublisher" xml:space="preserve">
-    <value>Unknown Publisher</value>
-    <comment>if DLL has no signed/verifiable authenticode publisher info</comment>
-  </data>
-  <data name="TPSEC_TopQuestion" xml:space="preserve">
-    <value>Do you want to enable this type provider?</value>
-    <comment>top line of dialog</comment>
   </data>
   <data name="IntelliSenseLoading" xml:space="preserve">
     <value>Loading...</value>

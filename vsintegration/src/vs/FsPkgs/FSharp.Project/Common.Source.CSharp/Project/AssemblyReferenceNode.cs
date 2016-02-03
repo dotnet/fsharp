@@ -1,6 +1,5 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -48,21 +47,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             public bool? WantSpecificVersion;  // null -> nothing in .fsproj, true/false mean serialize that value to .fsproj
         }
 
-        #region fields
         private string myAssemblyPath = String.Empty;
         private FileChangeManager myFileChangeListener;
         private bool myIsDisposed = false;
         private AssemblyResolvedInfo resolvedInfo;
         private AssemblyMSBuildProjectionInfo msbuildProjectionInfo;
         private bool fsprojIncludeHasFilename = false;
-        #endregion
 
-        #region properties
         /// <summary>
         /// The name of the assembly this reference represents.
         /// </summary>
         /// <value></value>
-        /*internal, but public for FSharp.Project.dll*/ public System.Reflection.AssemblyName AssemblyName
+        public System.Reflection.AssemblyName AssemblyName
         {
             get
             {
@@ -75,7 +71,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// machine. It can be different from the AssemblyName property because it can
         /// be more specific.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public System.Reflection.AssemblyName ResolvedAssembly
+        public System.Reflection.AssemblyName ResolvedAssembly
         {
             get { return this.resolvedInfo.ResolvedAssemblyName; }
         }
@@ -120,7 +116,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         private Automation.OAAssemblyReference assemblyRef;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -131,9 +127,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return assemblyRef;
             }
         }
-        #endregion
-
-        #region ctors
 
         internal static AssemblyReferenceNode CreateFromProjectFile(ProjectNode root, ProjectElement element, BuildResult buildResult)
         { return new AssemblyReferenceNode(root, element, buildResult); }
@@ -201,9 +194,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.InitializeFileChangeEvents();
         }
-        #endregion
-
-        #region methods
 
         internal static bool IsFSharpCoreReference(ReferenceNode node)
         {
@@ -283,10 +273,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        /// <summary>
-        /// Closes the node.
-        /// </summary>
-        /// <returns></returns>
+
         public override int Close()
         {
             try
@@ -325,7 +312,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return ProjectMgr.CanUseTargetFSharpCoreReference && IsFSharpCoreReference(this) && ContainsUsagesOfTargetFSharpCoreVersionProperty(this); }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             if (IsSpecialFSharpCoreReference)
             {
@@ -338,7 +325,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Links a reference node to the project and hierarchy.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void BindReferenceData()
+        public override void BindReferenceData()
         {
             // BindReferenceData only happens for newly created AssemblyReferenceNodes (as opposed to loaded from fsproj)
             Debug.Assert(this.resolvedInfo.WasSuccessfullyResolved, "assembly was not resolved, we should not be trying to link a node to put in .fsproj file");
@@ -383,10 +370,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // LBXML_KEY_REFERENCE_EXTENSION       "ExecutableExtension"
         }
 
-        /// <summary>
-        /// Disposes the node
-        /// </summary>
-        /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
         {
             if (this.myIsDisposed)
@@ -440,7 +423,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 	    /// Determines if this is node a valid node for painting the default reference icon.
 	    /// </summary>
 	    /// <returns></returns>
-	    public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+	    public override bool CanShowDefaultIcon()
  	    {
 		    if (String.IsNullOrEmpty(this.myAssemblyPath) || !File.Exists(this.myAssemblyPath))
 		    {
@@ -474,7 +457,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var result = this.ProjectMgr.Build(MsBuildTarget.ResolveAssemblyReferences);
             this.ResolveReference(result);
         }
-        internal /*protected, but public for FSharp.Project.dll*/ override void ResolveReference(BuildResult buildResult)
+        internal override void ResolveReference(BuildResult buildResult)
         {
             Debug.Assert(this.ItemNode != null && this.ItemNode.Item != null, "called ResolveReference before initializing ItemNode");
             this.ResolveFromBuiltProject(MSBuildItem.GetEvaluatedInclude(this.ItemNode.Item), buildResult);
@@ -687,7 +670,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override Guid GetBrowseLibraryGuid()
+        public override Guid GetBrowseLibraryGuid()
         {
             return VSConstants.guidCOMPLUSLibrary;
         }
@@ -706,7 +689,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.GetProperty(propId);
         }
 #endif
-
-        #endregion
     }
 }

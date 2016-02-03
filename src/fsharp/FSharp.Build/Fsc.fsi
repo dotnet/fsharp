@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// This namespace contains FSharp.PowerPack extensions for FSharp.Build.dll. MSBuild tasks for the FsYacc and FsLex tools.
 namespace Microsoft.FSharp.Build
@@ -46,7 +46,6 @@ type Fsc = class
              member TreatWarningsAsErrors : bool with get,set
              member Utf8Output : bool with get,set
              member VisualStudioStyleErrors : bool with get,set
-             member ValidateTypeProviders : bool with get,set
              member LCID : string with get,set
              member WarningLevel : string with get,set
              member WarningsAsErrors : string with get,set

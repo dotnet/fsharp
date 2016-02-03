@@ -55,7 +55,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable nested public beforefieldinit Key
+    .class auto autochar serializable sealed nested public beforefieldinit Key
            extends [mscorlib]System.Object
            implements class [mscorlib]System.IEquatable`1<class Equals04/EqualsMicroPerfAndCodeGenerationTests/Key>,
                       [mscorlib]System.Collections.IStructuralEquatable,

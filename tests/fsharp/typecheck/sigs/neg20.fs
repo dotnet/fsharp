@@ -340,3 +340,106 @@ type ClassWithOneConstructor(x:int) = member x.P = 1
 let ss3 = ClassWithOneConstructor
 
 
+module OverloadedTypeNamesBothHaveConstructors = 
+    type OverloadedClassName<'T>(x:int) = 
+        new (y:string) = OverloadedClassName<'T>(1)
+        member __.P = x
+        static member S() = 3
+
+
+    type OverloadedClassName<'T1,'T2>(x:int) = 
+        new (y:string) = OverloadedClassName<'T1,'T2>(1)
+        member __.P = x
+        static member S() = 3
+
+    let t3 = 3 |> OverloadedClassName // expected error - multiple types exist
+    let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
+
+
+module OverloadedTypeNamesSomeConstructors = 
+    type OverloadedClassName<'T>(x:int) = 
+        new (y:string) = OverloadedClassName<'T>(1)
+        member __.P = x
+        static member S() = 3
+
+
+    type OverloadedClassName<'T1,'T2> = 
+        member __.P = 1
+        static member S() = 3
+
+    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t3 = 3 |> OverloadedClassName // expected error - multiple types exist
+    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
+
+module OverloadedTypeNamesNoConstructors = 
+    type OverloadedClassName<'T> = 
+        static member S(x:int) = 3
+
+    type OverloadedClassName<'T1,'T2> = 
+        static member S(x:int) = 3
+
+    let t3 = 3 |> OverloadedClassName.S // expected error - multiple types exist
+    let t4 = 3 |> OverloadedClassName.S2 // expected error -  The field, constructor or member 'S2' is not defined
+
+
+
+
+
+
+module OverloadedTypeNamesIncludingNonGenericTypeBothHaveConstructors = 
+
+    type OverloadedClassName(x:int) = 
+        new (y:string) = OverloadedClassName(1)
+        member __.P = x
+        static member S() = 3
+
+    type OverloadedClassName<'T>(x:int) = 
+        new (y:string) = OverloadedClassName<'T>(1)
+        member __.P = x
+        static member S() = 3
+
+
+    type OverloadedClassName<'T1,'T2>(x:int) = 
+        new (y:string) = OverloadedClassName<'T1,'T2>(1)
+        member __.P = x
+        static member S() = 3
+
+    let t3 = 3 |> OverloadedClassName // expected error - multiple types exist
+    let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
+
+
+module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors = 
+    type OverloadedClassName(x:int) = 
+        new (y:string) = OverloadedClassName(1)
+        member __.P = x
+        static member S() = 3
+
+    type OverloadedClassName<'T>(x:int) = 
+        new (y:string) = OverloadedClassName<'T>(1)
+        member __.P = x
+        static member S() = 3
+
+
+    type OverloadedClassName<'T1,'T2> = 
+        member __.P = 1
+        static member S() = 3
+
+    let t2 = 3 |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t3 = 3 |> OverloadedClassName // NO ERROR EXPECTED
+    let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "The value or constructor 'OverloadedClassName' is not defined"
+    let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
+
+module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors = 
+    type OverloadedClassName = 
+        static member S(x:int) = 3
+
+    type OverloadedClassName<'T> = 
+        static member S(x:int) = 3
+
+    type OverloadedClassName<'T1,'T2> = 
+        static member S(x:int) = 3
+
+    let t3 = 3 |> OverloadedClassName.S // NO ERROR EXPECTED
+    let t4 = 3 |> OverloadedClassName.S2 // expected error -  The field, constructor or member 'S2' is not defined
+

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 (*
     Mocks of major Visual Studio interfaces.
@@ -64,7 +64,7 @@ module internal VsMocks =
 
     type VsFileChangeEx() = 
         let fileToEvents = new Dictionary<string,IVsFileChangeEvents list>()
-        let Canonicalize (filename:string) = Internal.Utilities.FileSystem.Path.SafeGetFullPath(filename)
+        let Canonicalize (filename:string) = System.IO.Path.GetFullPath(filename)
         
         member c.AddedFile(file) =
 //            printfn "VsMocks.VsFileChangeEx: Added file %s " file
@@ -834,7 +834,7 @@ module internal VsMocks =
     // IVsTextView ---------------------------------------------------------------------------------------------------------        
     let createTextView() : IVsTextView = Vs.DelegateTextView(Vs.MakeTextView())
     let setFileText (filename:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) = 
-        let filename = Internal.Utilities.FileSystem.Path.SafeGetFullPath(filename)
+        let filename = System.IO.Path.GetFullPath(filename)
         let inner = getInner tv
         let lineCount = lines.Length
         let getLineCount() = Some(ok, lines.Length)
@@ -1051,7 +1051,7 @@ module internal VsMocks =
             member this.SetCursor(  hNewCursor,    phOldCursor) = err(__LINE__)
             member this.GetCurrentSelection(  ppHier,    pitemid,    ppMIS) = err(__LINE__)
             }
-    
+
     let vsWindowFrame =
         { new IVsWindowFrame with
             member this.Show() = err(__LINE__)
@@ -1221,39 +1221,6 @@ module internal VsMocks =
             member this.UnadviseDirChange(vscookie) = err(__LINE__)
             member this.UnadviseFileChange(vscookie) = nothing()
         }
-
-#if NOT_YET_NEEDED
-    let vsExtensibility3 =
-        { new IVsExtensibility3 with
-            member this.GetProperties(pParent, pdispPropObj, ppProperties) = err(__LINE__)
-            member this.RunWizardFile(bstrWizFilename,  hwndOwner,  vContextParams,  pResult) = err(__LINE__)
-            member this.EnterAutomationFunction() = err(__LINE__)
-            member this.ExitAutomationFunction() = err(__LINE__)
-            member this.IsInAutomationFunction(pfInAutoFunc) = err(__LINE__)
-            member this.GetUserControl( fUserControl) = err(__LINE__)
-            member this.SetUserControl( fUserControl) = err(__LINE__)
-            member this.SetUserControlUnlatched( fUserControl) = err(__LINE__)
-            member this.LockServer( vb) = err(__LINE__)
-            member this.GetLockCount( pCount) = err(__LINE__)
-            member this.TestForShutdown( fShutdown) = err(__LINE__)
-            member this.GetGlobalsObject( extractFrom,  ppGlobals) = err(__LINE__)
-            member this.GetConfigMgr( pIVsProject,  itemid,  ppCfgMgr) = err(__LINE__)
-            member this.FireMacroReset() = err(__LINE__)
-            member this.GetDocumentFromDocCookie( lDocCookie,  ppDoc) = err(__LINE__)
-            member this.IsMethodDisabled( pGUID,  dispid) = err(__LINE__)
-            member this. SetSuppressUI( In) = err(__LINE__)
-            member this.GetSuppressUI( pOut) = err(__LINE__)
-            member this.FireProjectsEvent_ItemAdded( project) = err(__LINE__)
-            member this.FireProjectsEvent_ItemRemoved( project) = err(__LINE__)
-            member this.FireProjectsEvent_ItemRenamed( project,  oldName) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemAdded( projectItem) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemRemoved( projectItem) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemRenamed( projectItem,  oldName) = err(__LINE__)
-            member this.IsFireCodeModelEventNeeded( vbNeeded) = err(__LINE__)
-            member this.RunWizardFileEx( bstrWizFilename,  hwndOwner,  vContextParams,  vCustomParams,  pResult) = err(__LINE__)
-            member this.FireCodeModelEvent3( dispid,  pParent,  pElement,  changeKind) = err(__LINE__)
-        }
-#endif
 
     let vsSolution =
         { new IVsSolution with
@@ -1566,9 +1533,6 @@ module internal VsMocks =
         sp.AddService(typeof<SVsTaskList>, box(vsTaskList()), false) 
         sp.AddService(typeof<SVsShellMonitorSelection>, box vsMonitorSelection, false) 
         sp.AddService(typeof<SVsFileChangeEx>, box vsFileChangeManager, false)
-#if NOT_YET_NEEDED
-        sp.AddService(typeof<EnvDTE.IVsExtensibility>, box vsExtensibility3, false)
-#endif        
         sp.AddService(typeof<SVsSolution>, box vsSolution, false)
         sp.AddService(typeof<SVsSolutionBuildManager>, box vsSolutionBuildManager, false)
         sp.AddService(typeof<SVsRunningDocumentTable>, box vsRunningDocumentTable, false)
@@ -1635,7 +1599,11 @@ module internal VsActual =
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
+#if VS_VERSION_DEV12
         let key = @"SOFTWARE\Microsoft\VisualStudio\12.0"
+#else
+        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
+#endif
         let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
         let rkey = hklm.OpenSubKey(key)
         rkey.GetValue("InstallDir") :?> string
@@ -1651,10 +1619,10 @@ module internal VsActual =
 
         // copy this private assembly next to unit tests, otherwise assembly loader cannot find it
         let neededLocalAssem = vsInstallDir + @"\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll"
-#if FX_ATLEAST_45
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").CodeBase)).LocalPath)
+#if NUNIT_2
+        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").EscapedCodeBase)).LocalPath)
 #else
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath)
+        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.framework").EscapedCodeBase)).LocalPath)
 #endif
         let localCopy = System.IO.Path.Combine(curDir, System.IO.Path.GetFileName(neededLocalAssem))
         System.IO.File.Copy(neededLocalAssem, localCopy, true)

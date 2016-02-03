@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Internal.Utilities.Collections
 open System
@@ -7,17 +7,22 @@ open System.Collections.Generic
 #nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
 
 [<StructuralEquality; NoComparison>]
-type internal ValueStrength<'T> =
+type internal ValueStrength<'T when 'T : not struct> =
    | Strong of 'T
+#if FX_NO_GENERIC_WEAKREFERENCE
    | Weak of WeakReference
+#else
+   | Weak of WeakReference<'T>
+#endif
 
-type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDiscard : ('TValue -> unit), ?keepMax: int) =
+type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:int, areSame, ?requiredToKeep, ?onStrongDiscard, ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
-    /// The choice of order is somewhat aribtrary. If the other way then adding
+    /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
     let mutable refs:('TKey*ValueStrength<'TValue>) list = [] 
+    let mutable keepStrongly = keepStrongly
 
-    // Only set a strong discard function if keepMax is expliclty set to keepStrongly, i.e. there are no weak entries in this lookup.
+    // Only set a strong discard function if keepMax is explicitly set to keepStrongly, i.e. there are no weak entries in this lookup.
     do assert (onStrongDiscard.IsNone || Some keepStrongly = keepMax)
        
     let strongDiscard x = match onStrongDiscard with None -> () | Some f -> f x
@@ -26,7 +31,8 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
     // references. Some operations are O(N) and we don't want to let things get out of
     // hand.
     let keepMax = defaultArg keepMax 75 
-    let keepMax = max keepStrongly keepMax 
+    let mutable keepMax = max keepStrongly keepMax 
+    let requiredToKeep = defaultArg requiredToKeep (fun _ -> false) 
     
     /// Look up a the given key, return None if not found.
     let TryPeekKeyValueImpl(data,key) = 
@@ -58,9 +64,9 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
         
     let TryGetKeyValueImpl(data,key) = 
         match TryPeekKeyValueImpl(data,key) with 
-        | Some(_, value) as result ->
-            // If the result existed, move it to the top of the list.
-            result,Promote (data,key,value)
+        | Some(key', value) as result ->
+            // If the result existed, move it to the end of the list (more likely to keep it)
+            result,Promote (data,key',value)
         | None -> None,data          
        
     /// Remove weak entries from the list that have been collected
@@ -69,29 +75,38 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
             match value with
             | Strong(value) -> yield (key,value)
             | Weak(weakReference) ->
+#if FX_NO_GENERIC_WEAKREFERENCE
                 match weakReference.Target with 
                 | null -> assert onStrongDiscard.IsNone; ()
                 | value -> yield key,(value:?>'TValue) ]
-
+#else
+                match weakReference.TryGetTarget () with
+                | false, _ -> assert onStrongDiscard.IsNone; ()
+                | true, value -> yield key, value ]
+#endif
         
     let AssignWithStrength(newdata,discard1) = 
         let actualLength = List.length newdata
         let tossThreshold = max 0 (actualLength - keepMax) // Delete everything less than this threshold
-        let weakThreshhold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshhold
+        let weakThreshhold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshold
         
         let newdata = newdata|> List.mapi( fun n kv -> n,kv ) // Place the index.
-        let newdata,discard2 = newdata |> List.partition (fun (n:int,_) -> n >= tossThreshold)
+        let newdata,discard2 = newdata |> List.partition (fun (n:int,v) -> n >= tossThreshold || requiredToKeep (snd v))
         let newdata = 
             newdata 
             |> List.map( fun (n:int,(k,v)) -> 
                 let handle = 
-                    if n<weakThreshhold then 
+                    if n<weakThreshhold && not (requiredToKeep v) then 
                         assert onStrongDiscard.IsNone; // it disappeared, we can't dispose 
+#if FX_NO_GENERIC_WEAKREFERENCE
                         Weak(WeakReference(v)) 
+#else
+                        Weak(WeakReference<_>(v)) 
+#endif
                     else 
                         Strong(v)
                 k,handle )
-        refs<- newdata
+        refs <- newdata
         discard1 |> List.iter (snd >> strongDiscard)
         discard2 |> List.iter (snd >> snd >> strongDiscard)
         
@@ -123,63 +138,48 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
         let newdata,discard = RemoveImpl (data,key)
         AssignWithStrength(newdata,discard)
 
-    member al.MostRecent : ('TKey*'TValue) option=  
-        let data = FilterAndHold()
-        if not data.IsEmpty then 
-           // Non-optimal reverse list to get most recent. Consider an array of option for the data structure.
-           Some(data |> List.rev |> List.head)
-        else None        
-
     member al.Clear() =
        let discards = FilterAndHold()
        AssignWithStrength([], discards)
 
+    member al.Resize(newKeepStrongly, ?newKeepMax) =
+       let newKeepMax = defaultArg newKeepMax 75 
+       keepStrongly <- newKeepStrongly
+       keepMax <- max newKeepStrongly newKeepMax
+       do assert (onStrongDiscard.IsNone || keepStrongly = keepMax)
+       let keep = FilterAndHold()
+       AssignWithStrength(keep, [])
+
         
 
-type internal MruCache<'TKey,'TValue>(keepStrongly,compute, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?logComputedNewValue, ?logUsedCachedValue, ?onStrongDiscard, ?keepMax) =
+type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
         
     /// Default behavior of areSameForSubsumption function is areSame
     let areSameForSubsumption = defaultArg areSameForSubsumption areSame
         
     /// The list of items in the cache. Youngest is at the end of the list.
-    /// The choice of order is somewhat aribtrary. If the other way then adding
+    /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
-    let cache = AgedLookup<'TKey,'TValue>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax)
+    let cache = AgedLookup<'TKey,'TValue>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
         
     /// Whether or not this result value is still valid.
     let isStillValid = defaultArg isStillValid (fun _ -> true)
         
-    /// Log a message when a new value is computed.        
-    let logComputedNewValue = defaultArg logComputedNewValue ignore
-        
-    /// Log a message when an existing value was retrieved from cache.
-    let logUsedCachedValue =  defaultArg logUsedCachedValue ignore
-                
-    member bc.GetAvailable(key) = 
+    member bc.TryGetAny(key) = 
         match cache.TryPeekKeyValue(key) with
         | Some(key', value)->
             if areSame(key',key) then Some(value)
             else None
         | None -> None
        
-    member bc.Get(key) = 
-        let Compute() = 
-            let value = compute key
-            cache.Put(key, value)
-            logComputedNewValue(key)
-            value        
+    member bc.TryGet(key) = 
         match cache.TryGetKeyValue(key) with
         | Some(key', value) -> 
-            if areSame(key', key) && isStillValid(key,value) then
-                logUsedCachedValue(key)
-                value
-            else Compute()
-        | None -> Compute()
+            if areSame(key', key) && isStillValid(key,value) then Some value
+            else None
+        | None -> None
            
-    member bc.MostRecent = 
-        cache.MostRecent
-       
-    member bc.SetAlternate(key:'TKey,value:'TValue) = 
+    member bc.Set(key:'TKey,value:'TValue) = 
         cache.Put(key,value)
        
     member bc.Remove(key) = 
@@ -187,6 +187,9 @@ type internal MruCache<'TKey,'TValue>(keepStrongly,compute, areSame, ?isStillVal
        
     member bc.Clear() =
         cache.Clear()
+        
+    member bc.Resize(newKeepStrongly, ?newKeepMax) =
+        cache.Resize(newKeepStrongly, ?newKeepMax=newKeepMax)
         
 /// List helpers
 [<Sealed>]

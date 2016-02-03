@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if TPEMIT_INTERNAL_AND_MINIMAL_FOR_TYPE_CONTAINERS
 namespace Internal.Utilities.TypeProvider.Emit
@@ -280,4 +280,10 @@ type TypeProviderForNamespaces =
     member Invalidate : unit -> unit
 
     interface ITypeProvider
+
+// Used by unit testing to check that invalidation handlers are being disconnected
+module GlobalCountersForInvalidation = 
+    val GetInvalidationHandlersAdded : unit -> int
+    val GetInvalidationHandlersRemoved : unit -> int
+
 #endif

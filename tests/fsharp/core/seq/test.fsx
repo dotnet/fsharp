@@ -37,37 +37,37 @@ let test s b =
 
   
 check "rwfsjkla"
-   (let results = ref []
+   (let mutable results = []
     let ys =
         seq {
             try
                 try
                     failwith "foo"
                 finally
-                    results := 1::!results
+                    results <- 1::results
                     failwith "bar"
             finally
-                results := 2::!results
+                results <- 2::results
         }        
     try
         for _ in ys do ()
     with
-        Failure "bar" -> results := 3::!results
-    !results)
+        Failure "bar" -> results <- 3::results
+    results)
     [3;2;1]
     
 check "fgyeyrkerkl"
-   (let results = ref []
+   (let mutable results = []
     let xs = 
         seq {
             try
                 try
                     failwith "foo"
                 finally
-                    results := "a"::!results
+                    results <- "a"::results
                     failwith "bar"
             finally
-              results := "c"::!results
+              results <- "c"::results
               failwith "bar1"
         }
 
@@ -79,8 +79,8 @@ check "fgyeyrkerkl"
     try
         for _ in ys do ()
     with
-        Failure "bar1" -> results := "with"::!results
-    !results)
+        Failure "bar1" -> results <- "with"::results
+    results)
     ["with";"c";"a"]
 
 
@@ -106,9 +106,9 @@ check "rwfsfsdgba"
     [3;2;1]
 
 check "fgwehyr1"
-   (let results = ref []
-    let outerFinallyCalled = ref false
-    let innerFinallyCalled = ref false
+   (let mutable results = []
+    let mutable outerFinallyCalled = false
+    let mutable innerFinallyCalled = false
     let ys =
        seq {
           try 
@@ -117,9 +117,9 @@ check "fgwehyr1"
                 failwith "kaboom"
                 yield 2
              finally
-                innerFinallyCalled := true
+                innerFinallyCalled <- true
           finally
-             outerFinallyCalled := true
+             outerFinallyCalled <- true
        }
     // Capturing precisely when what happens
     let yIter = ys.GetEnumerator()
@@ -128,18 +128,18 @@ check "fgwehyr1"
         yIter.MoveNext() |> ignore
     with
         Failure "kaboom" ->
-            results := "kaboom"::!results
+            results <- "kaboom"::results
             
-    match !innerFinallyCalled, !outerFinallyCalled with
+    match innerFinallyCalled, outerFinallyCalled with
     |   false,false -> 
-            results := "beforeFinallyOk"::!results
+            results <- "beforeFinallyOk"::results
     |   _ -> ()            
     yIter.Dispose()
-    match !innerFinallyCalled, !outerFinallyCalled with
+    match innerFinallyCalled, outerFinallyCalled with
     |   true,true -> 
-            results := "afterFinallyOk"::!results
+            results <- "afterFinallyOk"::results
     |   _ -> ()
-    !results)
+    results)
     ["afterFinallyOk";"beforeFinallyOk";"kaboom"]
 
 check "fgwehyr2"
@@ -487,6 +487,31 @@ check "hfhdfsjkfur34"
         Failure "ss!!!" -> results := "caught"::!results
     !results)
     ["caught";"ssDispose";"eDispose"]
+
+// Check https://github.com/Microsoft/visualfsharp/pull/742
+
+module Repro1 = 
+
+    let configure () =
+     let aSequence = seq { yield "" } 
+     let aString = new string('a',3)
+     for _ in aSequence do
+       System.Console.WriteLine(aString)
+
+    do configure ()
+    /// The check is that the above code compiles OK
+
+module Repro2 = 
+
+    let configure () =
+     let aSequence = Microsoft.FSharp.Core.Operators.(..) 3 4
+     let aString = new string('a',3)
+     for _ in aSequence do
+       System.Console.WriteLine(aString)
+
+    do configure ()
+    /// The check is that the above code compiles OK
+
     
 (*---------------------------------------------------------------------------
 !* wrap up

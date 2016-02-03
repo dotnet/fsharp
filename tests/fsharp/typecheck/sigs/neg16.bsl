@@ -88,3 +88,5 @@ neg16.fs(110,16,110,20): typecheck error FS0879: Volatile fields must be marked 
 neg16.fs(113,9,113,11): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 
 neg16.fs(116,9,116,13): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(130,10,130,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal

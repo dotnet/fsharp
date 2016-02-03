@@ -1,6 +1,5 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -32,32 +31,25 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class ReferenceContainerNode : HierarchyNode, IReferenceContainer
     {
-        #region fields
-        /*internal, but public for FSharp.Project.dll*/ public const string ReferencesNodeVirtualName = "References";
+        public const string ReferencesNodeVirtualName = "References";
         private List<ProjectReferenceNode> projectReferencesWithEnabledCaching = new List<ProjectReferenceNode>();
-        #endregion
         
-        #region ctor
         internal ReferenceContainerNode(ProjectNode root) : base(root)
         {
             this.VirtualNodeName = ReferencesNodeVirtualName;
             this.ExcludeNodeFromScc = true;
         }
-        #endregion
 
-        #region Properties
         private static string[] supportedReferenceTypes = new string[] {
             ProjectFileConstants.ProjectReference,
             ProjectFileConstants.Reference,
             ProjectFileConstants.COMReference
         };
-        public /*protected, but public for FSharp.Project.dll*/ virtual string[] SupportedReferenceTypes
+        public virtual string[] SupportedReferenceTypes
         {
             get { return supportedReferenceTypes; }
         }
-        #endregion
 
-        #region overridden properties
         public override int SortPriority
         {
             get 
@@ -93,7 +85,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         private Automation.OAReferences references;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -104,10 +96,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return references;
             }
         }
-
-        #endregion
-
-        #region overridden methods
 
         public override void AddChild(HierarchyNode node)
         {
@@ -141,7 +129,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override object GetIconHandle(bool open)
         {
-            return this.ProjectMgr.ImageHandler.GetIconHandle(open ? (int)ProjectNode.ImageName.OpenReferenceFolder : (int)ProjectNode.ImageName.ReferenceFolder);
+            return this.ProjectMgr.ImageHandler.GetIconHandle((int)ProjectNode.ImageName.ReferenceFolder);
         }
 
         
@@ -149,7 +137,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// References node cannot be dragged.
         /// </summary>
         /// <returns>A stringbuilder.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override StringBuilder PrepareSelectedNodesForClipBoard()
+        public override StringBuilder PrepareSelectedNodesForClipBoard()
         {
             return null;
         }
@@ -157,7 +145,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Not supported.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int ExcludeFromProject()
+        public override int ExcludeFromProject()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -209,7 +197,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
@@ -237,7 +225,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             return false;
         }
@@ -246,7 +234,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines whether this node is valid node for painting the refererences icon.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+        public override bool CanShowDefaultIcon()
         {
             if (!String.IsNullOrEmpty(this.VirtualNodeName))
             {
@@ -254,8 +242,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return false;
         }
-
-        #endregion
 
         public void BeginBatchUpdate()
         {
@@ -274,7 +260,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             projectReferencesWithEnabledCaching.Clear();
         }
 
-        #region IReferenceContainer
         public IList<ReferenceNode> EnumReferences()
         {
             List<ReferenceNode> refs = new List<ReferenceNode>();
@@ -478,7 +463,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return node;
         }
-        #endregion
 
         private void EnableCachingForProjectReferencesInBatchUpdate(HierarchyNode node)
         {
@@ -490,7 +474,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             projectReferencesWithEnabledCaching.Add(projectReference);
         }
 
-        #region virtual methods
         internal virtual ReferenceNode CreateReferenceNode(string referenceType, ProjectElement element, BuildResult buildResult)
         {
             ReferenceNode node = null;
@@ -533,9 +516,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return node;
         }
-        #endregion
 
-        #region Helper functions to add references
         /// <summary>
         /// Creates a project reference node given an existing project element.
         /// </summary>
@@ -546,7 +527,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Create a Project to Project reference given a VSCOMPONENTSELECTORDATA structure
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ProjectReferenceNode CreateProjectReferenceNode(VSCOMPONENTSELECTORDATA selectorData)
+        public virtual ProjectReferenceNode CreateProjectReferenceNode(VSCOMPONENTSELECTORDATA selectorData)
         {
             return new ProjectReferenceNode(this.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef);
         }
@@ -694,12 +675,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Creates a com reference node from a selector data.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ComReferenceNode CreateComReferenceNode(Microsoft.VisualStudio.Shell.Interop.VSCOMPONENTSELECTORDATA selectorData)
+        public virtual ComReferenceNode CreateComReferenceNode(Microsoft.VisualStudio.Shell.Interop.VSCOMPONENTSELECTORDATA selectorData)
         {
             ComReferenceNode node = new ComReferenceNode(this.ProjectMgr, selectorData);
             return node;
         }
-        #endregion
-
     }
 }

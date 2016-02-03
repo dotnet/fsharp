@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -20,29 +20,24 @@ using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
-    /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="DefaultFieldValue"]/*' />
     internal class DefaultFieldValue {
         private string field;
         private string value;
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="DefaultFieldValue.DefaultFieldValue"]/*' />
         internal DefaultFieldValue(string field, string value) {
             this.field = field;
             this.value = value;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="DefaultFieldValue.Field"]/*' />
         internal string Field {
             get { return this.field; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="DefaultFieldValue.Value"]/*' />
         internal string Value {
             get { return this.value; }
         }
     }
 
-    /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider"]/*' />
     [CLSCompliant(false)]
     [System.Runtime.InteropServices.ComVisible(true)]
     public class ExpansionProvider : IDisposable, IVsExpansionClient {
@@ -57,7 +52,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         string titleToInsert;
         string pathToInsert;
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.ExpansionProvider"]/*' />
         internal ExpansionProvider(ISource src) {
             if (src == null){
                 throw new ArgumentNullException("src");
@@ -77,14 +71,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.Finalize"]/*' />
         ~ExpansionProvider() {
 #if LANGTRACE
             Trace.WriteLine("~ExpansionProvider");
 #endif
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.Dispose"]/*' />
         public virtual void Dispose() {
             EndTemplateEditing(true);
             this.source = null;
@@ -93,41 +85,34 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             GC.SuppressFinalize(this);
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.Source"]/*' />
         internal ISource Source {
             get { return this.source; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.TextView"]/*' />
         internal IVsTextView TextView {
             get { return this.view; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.Expansion"]/*' />
         internal IVsExpansion Expansion {
             get { return this.vsExpansion; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.ExpansionSession"]/*' />
         internal IVsExpansionSession ExpansionSession {
             get { return this.expansionSession; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.HandleQueryStatus"]/*' />
         internal virtual bool HandleQueryStatus(ref Guid guidCmdGroup, uint nCmdId, out int hr) {
             // in case there's something to conditinally support later on...
             hr = 0;
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.InTemplateEditingMode"]/*' />
         internal virtual bool InTemplateEditingMode {
             get {
                 return this.expansionActive;
             }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.InTemplateEditingMode"]/*' />
         internal virtual TextSpan GetExpansionSpan() {
             if (this.expansionSession == null){
                 throw new System.InvalidOperationException(SR.GetString(SR.NoExpansionSession));
@@ -141,7 +126,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.HandlePreExec"]/*' />
         internal virtual bool HandlePreExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
             if (!this.expansionActive || this.expansionSession == null) {
 				return false;
@@ -201,7 +185,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.HandlePostExec"]/*' />
         internal virtual bool HandlePostExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, bool commit, IntPtr pvaIn, IntPtr pvaOut) {
             if (guidCmdGroup == typeof(VsCommands2K).GUID) {
                 VsCommands2K cmd = (VsCommands2K)nCmdId;
@@ -222,7 +205,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.DisplayExpansionBrowser"]/*' />
         internal virtual bool DisplayExpansionBrowser(IVsTextView view, string prompt, string[] types, bool includeNullType, string[] kinds, bool includeNullKind) {
             if (this.expansionActive) this.EndTemplateEditing(true);
 
@@ -258,7 +240,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.InsertSpecificExpansion"]/*' />
         internal virtual bool InsertSpecificExpansion(IVsTextView view, XmlElement snippet, TextSpan pos, string relativePath) {
             if (this.expansionActive) this.EndTemplateEditing(true);
 
@@ -295,7 +276,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.InsertNamedExpansion"]/*' />
         internal virtual bool InsertNamedExpansion(IVsTextView view, string title, string path, TextSpan pos, bool showDisambiguationUI) {
 
             if (this.source.IsCompletorActive) {
@@ -319,7 +299,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.FindExpansionByShortcut"]/*' />
         /// <summary>Returns S_OK if match found, S_FALSE if expansion UI is shown, and error otherwise</summary>
         internal virtual int FindExpansionByShortcut(IVsTextView view, string shortcut, TextSpan span, bool showDisambiguationUI, out string title, out string path) {
             if (this.expansionActive) this.EndTemplateEditing(true);
@@ -337,7 +316,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return hr;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.GetExpansionFunction1"]/*' />
         public virtual IVsExpansionFunction GetExpansionFunction(XmlElement xmlFunctionNode, string fieldName) {
             string functionName = null;
             ArrayList rgFuncParams = new ArrayList();
@@ -413,7 +391,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return null;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.PrepareTemplate"]/*' />
         internal virtual void PrepareTemplate(string title, string path) {            
             if (title == null)
                 throw new System.ArgumentNullException("title");
@@ -436,7 +413,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.fieldDefaults.Add(new DefaultFieldValue(field, value));
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.BeginTemplateEditing"]/*' />
         internal virtual void BeginTemplateEditing(int line, int col) {
             if (!this.expansionPrepared) {
                 throw new System.InvalidOperationException(SR.GetString(SR.TemplateNotPrepared));
@@ -463,7 +439,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.titleToInsert = null;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.EndTemplateEditing"]/*' />
         internal virtual void EndTemplateEditing(bool leaveCaret) {
             if (!this.expansionActive || this.expansionSession == null) {
                 this.expansionActive = false;
@@ -475,7 +450,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.expansionActive = false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.GetFieldSpan"]/*' />
         internal virtual bool GetFieldSpan(string field, out TextSpan pts) {
             if (this.expansionSession == null) {
                 throw new System.InvalidOperationException(SR.GetString(SR.NoExpansionSession));
@@ -491,7 +465,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.GetFieldValue"]/*' />
         internal virtual bool GetFieldValue(string field, out string value) {
             if (this.expansionSession == null) {
                 throw new System.InvalidOperationException(SR.GetString(SR.NoExpansionSession));
@@ -504,16 +477,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return value != null;
         }
 
-        #region IVsExpansionClient Members
-
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.EndExpansion"]/*' />
         public int EndExpansion() {
             this.expansionActive = false;
             this.expansionSession = null;
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.FormatSpan"]/*' />
         public virtual int FormatSpan(IVsTextLines buffer, TextSpan[] ts) {
             if (this.source.GetTextLines() != buffer) {
                 throw new System.ArgumentException(SR.GetString(SR.UnknownBuffer), "buffer");
@@ -536,7 +505,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return rc;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.IsValidKind"]/*' />
         public virtual int IsValidKind(IVsTextLines buffer, TextSpan[] ts, string bstrKind, out int /*BOOL*/ fIsValid)
         {
             fIsValid = 0;
@@ -549,7 +517,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.IsValidType"]/*' />
         public virtual int IsValidType(IVsTextLines buffer, TextSpan[] ts, string[] rgTypes, int iCountTypes, out int /*BOOL*/ fIsValid)
         {
             fIsValid = 0;
@@ -561,7 +528,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.OnItemChosen"]/*' />
         public virtual int OnItemChosen(string pszTitle, string pszPath) {
             TextSpan ts;
             view.GetCaretPos(out ts.iStartLine, out ts.iStartIndex);
@@ -587,18 +553,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return hr;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.PositionCaretForEditing"]/*' />
         public virtual int PositionCaretForEditing(IVsTextLines pBuffer, TextSpan[] ts) {
             // NOP
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.OnAfterInsertion"]/*' />
         public virtual int OnAfterInsertion(IVsExpansionSession session) {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.OnBeforeInsertion"]/*' />
         public virtual int OnBeforeInsertion(IVsExpansionSession session) {
             if (session == null)
                 return NativeMethods.E_UNEXPECTED;
@@ -622,21 +585,21 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.GetExpansionFunction"]/*' />
         public virtual int GetExpansionFunction(MSXML.IXMLDOMNode xmlFunctionNode, string fieldName, out IVsExpansionFunction func) {
 
             XmlDocument doc = new XmlDocument();
-            doc.LoadXml(xmlFunctionNode.xml);
-            func = GetExpansionFunction(doc.DocumentElement, fieldName);
+            doc.XmlResolver = null;
+            using(StringReader stream = new StringReader(xmlFunctionNode.xml))
+            using (XmlReader reader = XmlReader.Create(stream, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+            {
+                doc.Load(reader);
+                func = GetExpansionFunction(doc.DocumentElement, fieldName);
+            }
             return NativeMethods.S_OK;
         }
-
-        #endregion
-
     }
 
 
-    /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction"]/*' />
     [CLSCompliant(false)]
     [System.Runtime.InteropServices.ComVisible(true)]
     public abstract class ExpansionFunction : IVsExpansionFunction {
@@ -645,50 +608,41 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         string[] args;
         string[] list;
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.ExpansionFunction"]/*' />
         /// <summary>You must construct this object with an ExpansionProvider</summary>
         private ExpansionFunction() {
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.ExpansionFunction2"]/*' />
         internal ExpansionFunction(ExpansionProvider provider) {
             this.provider = provider;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.ExpansionProvider"]/*' />
         public ExpansionProvider ExpansionProvider {
             get { return this.provider; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.Arguments"]/*' />
         public string[] Arguments {
             get { return this.args; }
             set { this.args = value; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.FieldName"]/*' />
         public string FieldName {
             get { return this.fieldName; }
             set { this.fieldName = value; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetCurrentValue"]/*' />
         public abstract string GetCurrentValue();
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetDefaultValue"]/*' />
         public virtual string GetDefaultValue() {
             // This must call GetCurrentValue sincs during initialization of the snippet
             // VS will call GetDefaultValue and not GetCurrentValue.
             return GetCurrentValue();
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetIntellisenseList"]/*' />
         /// <summary>Override this method if you want intellisense drop support on a list of possible values.</summary>
         public virtual string[] GetIntellisenseList() {
             return null;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetArgument"]/*' />
         /// <summary>
         /// Gets the value of the specified argument, resolving any fields referenced in the argument.
         /// In the substitution, "$$" is replaced with "$" and any floating '$' signs are left unchanged,
@@ -760,7 +714,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return arg;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetFieldValue"]/*' />
         public bool GetFieldValue(string name, out string value) {
             value = null;
             if (this.provider != null && this.provider.ExpansionSession != null) {
@@ -770,7 +723,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="DefaultFieldValue.GetSelection"]/*' />
         public TextSpan GetSelection() {
             TextSpan result = new TextSpan();
             ExpansionProvider provider = this.ExpansionProvider;
@@ -781,9 +733,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return result;
         }
 
-        #region IVsExpansionFunction Members
-
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.FieldChanged"]/*' />
         public virtual int FieldChanged(string bstrField, out int fRequeryValue) {
             // Returns true if we care about this field changing.
             // We care if the field changes if one of the arguments refers to it.
@@ -800,7 +749,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetCurrentValue1"]/*' />
         public int GetCurrentValue(out string bstrValue, out int hasDefaultValue) {
             try {
                 bstrValue = this.GetCurrentValue();
@@ -811,7 +759,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetDefaultValue1"]/*' />
         public int GetDefaultValue(out string bstrValue, out int hasCurrentValue) {
             try {
                 bstrValue = this.GetDefaultValue();
@@ -822,7 +769,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetFunctionType"]/*' />
         public virtual int GetFunctionType(out uint pFuncType) {
             if (this.list == null) {
                 this.list = this.GetIntellisenseList();
@@ -831,7 +777,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetListCount"]/*' />
         public virtual int GetListCount(out int iListCount) {
             if (this.list == null) {
                 this.list = this.GetIntellisenseList();
@@ -844,7 +789,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.GetListText"]/*' />
         public virtual int GetListText(int iIndex, out string ppszText) {
             if (this.list == null) {
                 this.list = this.GetIntellisenseList();
@@ -857,13 +801,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.ReleaseFunction"]/*' />
         public virtual int ReleaseFunction() {
             this.provider = null;
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 
     // todo: for some reason VsExpansionManager is wrong.

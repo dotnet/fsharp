@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 {
 
@@ -124,7 +124,7 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                             BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
                         )
                      else
-                        STRING (System.Text.Encoding.Unicode.GetString(s,0,s.Length)))  
+                        STRING (Lexhelp.stringBufferAsString s))  
     buf,fin,m
              
 // Utility functions for processing XML documentation 
@@ -149,15 +149,17 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
     
-let extractIdentFromHashIf (lexed:string) =
-    // Skip the '#if' token, then trim whitespace, then find the end of the identifier
-    let lexed = lexed.Trim()      
-    let trimIf = lexed.Substring(3).Trim() 
-    let identEnd = trimIf.IndexOfAny([| ' '; '\t'; '/' |]) 
-    let identEnd = (if identEnd = -1 then trimIf.Length else identEnd)
-    trimIf.Substring(0, identEnd)
-} 
+let evalIfDefExpression startPos args (lookup:string->bool) (lexed:string) =
+    let lexbuf          = LexBuffer<char>.FromChars (lexed.ToCharArray ())
+    lexbuf.StartPos     <- startPos
+    lexbuf.EndPos       <- startPos
+    let tokenStream     = Microsoft.FSharp.Compiler.PPLexer.tokenstream args
 
+    let expr            = Microsoft.FSharp.Compiler.PPParser.start tokenStream lexbuf
+
+    LexerIfdefEval lookup expr
+
+}
 let letter = '\Lu' | '\Ll' | '\Lt' | '\Lm' | '\Lo' | '\Nl'
 let surrogateChar = '\Cs'
 let digit = '\Nd'
@@ -165,6 +167,8 @@ let hex = ['0'-'9'] | ['A'-'F'] | ['a'-'f']
 let truewhite = [' ']
 let offwhite = ['\t']
 let anywhite = truewhite | offwhite
+let anychar = [^'\n''\r']
+let anystring = anychar*
 let op_char = '!'|'$'|'%'|'&'|'*'|'+'|'-'|'.'|'/'|'<'|'='|'>'|'?'|'@'|'^'|'|'|'~'|':'
 let ignored_op_char = '.' | '$' | '?'
 let xinteger = 
@@ -406,10 +410,9 @@ rule token args skip = parse
  | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
  | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
  | '\'' unicodeGraphLong '\''  
-     { let hi,lo = unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) 
-       match hi with 
-       | None -> CHAR (char lo)
-       | Some _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char lo)) }
+     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
+       | SingleChar(c) -> CHAR (char c)
+       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
  | "(*IF-FSHARP"    
      { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
  | "(*F#"            
@@ -597,15 +600,16 @@ rule token args skip = parse
      mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange;
      if not skip then (HASH_LIGHT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf } 
    
- | anywhite* "#if" anywhite+ ident anywhite* ("//" [^'\n''\r']*)?
+ | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange   
+     let lookup id = List.mem id args.defines
      let lexed = lexeme lexbuf
-     let id = extractIdentFromHashIf lexed
+     let isTrue = evalIfDefExpression lexbuf.StartPos args lookup lexed
      args.ifdefStack := (IfDefIf,m) :: !(args.ifdefStack);
      
      // Get the token; make sure it starts at zero position & return
      let cont, f = 
-       ( if List.mem id args.defines then (LexCont.EndLine(LexerEndlineContinuation.Token(!args.ifdefStack)), endline (LexerEndlineContinuation.Token !args.ifdefStack) args skip)
+       ( if isTrue then (LexCont.EndLine(LexerEndlineContinuation.Token(!args.ifdefStack)), endline (LexerEndlineContinuation.Token !args.ifdefStack) args skip)
          else (LexCont.EndLine(LexerEndlineContinuation.Skip(!args.ifdefStack,0,m)), endline (LexerEndlineContinuation.Skip(!args.ifdefStack,0,m)) args skip) )         
      let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst()) (HASH_IF(m,lexed,cont))
      if not skip then tok else f lexbuf }
@@ -646,9 +650,8 @@ rule token args skip = parse
 // Skips INACTIVE code until if finds #else / #endif matching with the #if or #else 
 
 and ifdefSkip n m args skip = parse               
- | anywhite* "#if" anywhite+ ident anywhite* ("//" [^'\n''\r']*)?
+ | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange    
-     let _id = extractIdentFromHashIf (lexeme lexbuf) 
      
      // If #if is the first thing on the line then increase depth, otherwise skip, because it is invalid (e.g. "(**) #if ...")
      if (m.StartColumn <> 0) then
@@ -721,7 +724,7 @@ and endline cont args skip = parse
    }
  | [^'\r' '\n']+
  | _
-   { let tok = fail args lexbuf (FSComp.SR.lexExpectedSingleLineComment()) (WHITESPACE (LexCont.Token !args.ifdefStack))
+   { let tok = fail args lexbuf (FSComp.SR.pplexExpectedSingleLineComment()) (WHITESPACE (LexCont.Token !args.ifdefStack))
      if not skip then tok else token args skip lexbuf }     
 
 and string sargs skip = parse
@@ -752,11 +755,19 @@ and string sargs skip = parse
       if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m)))  else string sargs skip lexbuf  }
      
  | unicodeGraphLong
-    { let (buf,_fin,m,args) = sargs 
-      let hi,lo = unicodeGraphLong (lexemeTrimLeft lexbuf 2) 
-      (match hi with | None -> () | Some c -> addUnicodeChar buf (int c));
-      addUnicodeChar buf (int lo);
-      if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf  }
+    { let (buf,_fin,m,args) = sargs
+      let hexChars = lexemeTrimLeft lexbuf 2
+      let result () = if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf
+      match unicodeGraphLong hexChars with
+      | Invalid ->
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result ())
+      | SingleChar(c) ->
+          addUnicodeChar buf (int c)
+          result ()
+      | SurrogatePair(hi, lo) -> 
+          addUnicodeChar buf (int hi)
+          addUnicodeChar buf (int lo)
+          result () }
      
  |  '"' 
     { let (buf,fin,_m,_args) = sargs 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -24,15 +24,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAFolderItem : OAProjectItem<FolderNode>
     {
-        #region ctors
         internal OAFolderItem(OAProject project, FolderNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         public override ProjectItems Collection
         {
             get
@@ -51,6 +47,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.Collection;
             }
         }
-        #endregion
     }
 }

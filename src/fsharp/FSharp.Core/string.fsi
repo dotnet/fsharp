@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -63,6 +63,17 @@ namespace Microsoft.FSharp.Core
         /// <returns>The concatenated string.</returns>
         [<CompiledName("Collect")>]
         val collect: mapping:(char -> string) -> str:string -> string
+
+        /// <summary>Builds a new string containing only the characters of the input string
+        /// for which the given predicate returns "true".</summary>
+        ///
+        /// <remarks>Returns an empty string if the input string is null</remarks>
+        ///
+        /// <param name="predicate">A function to test whether each character in the input sequence should be included in the output string.</param>
+        /// <param name="str">The input string.</param>
+        /// <returns>The resulting string.</returns>
+        [<CompiledName("Filter")>]
+        val filter: predicate:(char -> bool) -> str:string -> string
 
         /// <summary>Builds a new string whose characters are the results of applying the function <c>mapping</c>
         /// to each index from <c>0</c> to <c>count-1</c> and concatenating the resulting

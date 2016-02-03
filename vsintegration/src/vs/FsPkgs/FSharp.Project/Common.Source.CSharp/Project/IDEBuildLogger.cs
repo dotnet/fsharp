@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Threading;
@@ -21,7 +21,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     public static class LoggingConstants
     {
+#if VS_VERSION_DEV12
         public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\12.0";
+#else
+        public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0";
+#endif
         public const string BuildVerbosityRegistrySubKey = @"General";
         public const string BuildVerbosityRegistryValue = "MSBuildLoggerVerbosity";
         public const string UpToDateVerbosityRegistryValue = "U2DCheckVerbosity";
@@ -32,13 +36,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public sealed class IDEBuildLogger : Logger
     {
-        #region fields
         // TODO: Remove these constants when we have a version that supports getting the verbosity using automation.
         private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
         // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
-        //private const string EnvironmentCategory = "Environment";
-        //private const string ProjectsAndSolutionSubCategory = "ProjectsAndSolution";
-        //private const string BuildAndRunPage = "BuildAndRun";
 
 		private int currentIndent;
 		private IVsOutputWindowPane outputWindowPane;
@@ -51,9 +51,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private TaskReporter taskReporter;
         private bool haveCachedRegistry = false;
 
-		#endregion
-
-		#region properties
 		public string WarningString
 		{
 			get { return this.warningString; }
@@ -74,7 +71,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// enable the logger to retrive the verbosity from
 		/// the correct registry hive.
 		/// </summary>
-		/*internal, but public for FSharp.Project.dll*/ public string BuildVerbosityRegistryRoot
+		public string BuildVerbosityRegistryRoot
 		{
 			get { return buildVerbosityRegistryRoot; }
 			set { buildVerbosityRegistryRoot = value; }
@@ -82,7 +79,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// <summary>
 		/// Set to null to avoid writing to the output window
 		/// </summary>
-		/*internal, but public for FSharp.Project.dll*/ public IVsOutputWindowPane OutputWindowPane
+		public IVsOutputWindowPane OutputWindowPane
 		{
 			get { return outputWindowPane; }
 			set { outputWindowPane = value; }
@@ -93,12 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return taskReporter; }
             set { taskReporter = value; }
         }
-		#endregion
 
-		#region ctors
-		/// <summary>
-		/// Constructor.  Inititialize member data.
-		/// </summary>
 		internal IDEBuildLogger(IVsOutputWindowPane output, TaskProvider taskProvider, IVsHierarchy hierarchy)
 		{
 			if (taskProvider == null)
@@ -114,12 +106,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
 			this.serviceProvider = new ServiceProvider(site);
 		}
-		#endregion
 
-		#region overridden methods
-		/// <summary>
-		/// Overridden from the Logger class.
-		/// </summary>
 		public override void Initialize(IEventSource eventSource)
 		{
 			if (null == eventSource)
@@ -141,9 +128,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             eventSource.WarningRaised += new BuildWarningEventHandler(WarningHandler);
             eventSource.MessageRaised += new BuildMessageEventHandler(MessageHandler);
         }
-		#endregion
 
-		#region event delegates
 		/// <summary>
 		/// This is the delegate for error events.
 		/// </summary>
@@ -652,9 +637,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 		}
 
-		#endregion
-
-		#region helpers
 		/// <summary>
 		/// This method takes a MessageImportance and returns true if messages
 		/// at importance i should be loggeed.  Otherwise return false.
@@ -810,7 +792,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             //EnvDTE.DTE dte = this.serviceProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
             //EnvDTE.Properties properties = dte.get_Properties(EnvironmentCategory, ProjectsAndSolutionSubCategory);
         }
-		#endregion
     }
 
     /// <summary>

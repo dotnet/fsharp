@@ -72,7 +72,11 @@ xcopy /y ..\bincompat1\*.dll .
 
 
 REM overwrite provider.dll
-"%FSC%" --define:ADD_AN_OPTIONAL_STATIC_PARAMETER --out:provider.dll -g -a ..\provider.fsx
+"%FSC%" --define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a ..\provider.fsx
+if ERRORLEVEL 1 goto :Error
+
+
+"%FSC%" -g -a -o:test_lib_recompiled.dll -r:provider.dll ..\test.fsx
 if ERRORLEVEL 1 goto :Error
 
 REM This is the important part of the binary compatibility part of the test: the new provider is being used, but 
@@ -85,6 +89,9 @@ if ERRORLEVEL 1 goto :Error
 if ERRORLEVEL 1 goto :Error
 
 "%PEVERIFY%" test_lib.dll
+if ERRORLEVEL 1 goto :Error
+
+"%PEVERIFY%" test_lib_recompiled.dll
 if ERRORLEVEL 1 goto :Error
 
 "%PEVERIFY%" testlib_client.exe

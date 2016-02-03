@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.ProjectSystem
+namespace Tests.ProjectSystem
 
 open System
 open System.Collections.Generic
@@ -29,7 +29,7 @@ type MultiTargeting() =
     member private this.prepTest(projFile) =
         let dirName = Path.GetDirectoryName(projFile)
         let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
-        let codeBase = (new Uri(Assembly.GetExecutingAssembly().CodeBase)).LocalPath |> Path.GetDirectoryName
+        let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
         let refLibPath = Path.Combine(libDirName, "FSharp.Core.Unittests.dll")
         File.Copy(Path.Combine(codeBase, "FSharp.Core.Unittests.dll"), refLibPath)
         File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferencesAndOtherFlags([], [refLibPath], [], null, "", "v2.0"))
@@ -73,7 +73,7 @@ type MultiTargeting() =
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             
             let validate (fn : System.Runtime.Versioning.FrameworkName) eR eS =
-                let (name, runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
+                let (runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
                 Assert.AreEqual(eR, runtime)
                 Assert.AreEqual(eS, sku)
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))) "v4.0" ".NETFramework,Version=v4.0"
@@ -154,7 +154,7 @@ type MultiTargeting() =
             let refLibPath = this.prepTest(projFile)
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             let fn = new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))
-            project.FixupAppConfigOnTargetFXChange(fn.ToString()) |> ignore
+            project.FixupAppConfigOnTargetFXChange(fn.ToString(), "4.3.0.0", false) |> ignore
             let appFile = Path.Combine((Path.GetDirectoryName projFile), "app.config")
             let appText = System.IO.File.ReadAllText(appFile)
             Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=v4.0\" />"))

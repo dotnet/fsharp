@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.Script
 
 open System
 open System.IO
@@ -10,8 +10,10 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type ScriptTests() as this = 
+[<TestFixture>] 
+type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests() 
 
     let notAA l = None,l
@@ -230,7 +232,7 @@ type ScriptTests() as this =
                          "open System.Transactions"
                          ]
         AssertNoErrorsOrWarnings(project)
-        gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectDelete, because dependent DLL set changed *))
+        gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectCreate, because dependent DLL set changed *))
 
     // FEATURE: Adding a #load to a file will cause types from that file to be visible in intellisense
     [<Test>]
@@ -350,7 +352,7 @@ type ScriptTests() as this =
         SaveFileToDisk(file)
         TakeCoffeeBreak(this.VS)
         VerifyErrorListContainedExpetedStr("Transactions",project)
-        gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectDelete, because dependent DLL set changed *))
+        gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectCreate, because dependent DLL set changed *))
     
 
 
@@ -567,11 +569,12 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
+
+    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
     member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
         let fileContent = """
             #light
-            #r "Microsoft.TeamFoundation.Diff"
+            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
             """
         this.VerifyFSXNoErrorList(fileContent)
 
@@ -592,7 +595,81 @@ type ScriptTests() as this =
         let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]
         let (project, _) = createSingleFileFsxFromLines code
         AssertNoErrorsOrWarnings(project)
- 
+
+    [<Test>]
+    [<Category("fsx closure")>]
+    member public this.``Fsx.NoError.HashR.RelativePath1``() = 
+        use _guard = this.UsingNewVS()  
+        let solution = this.CreateSolution()
+        let project = CreateProject(solution,"testproject")    
+        let file1 = AddFileFromText(project,"lib.fs",
+                                    ["module Lib"
+                                     "let X = 42"
+                                     ])
+        
+        let bld = Build(project)
+
+        let script1Dir = Path.Combine(ProjectDirectory(project), "ccc")
+        let script1Path = Path.Combine(script1Dir, "Script1.fsx")
+        let script2Dir = Path.Combine(ProjectDirectory(project), "aaa\\bbb")
+        let script2Path = Path.Combine(script2Dir, "Script2.fsx")
+        
+        Directory.CreateDirectory(script1Dir) |> ignore
+        Directory.CreateDirectory(script2Dir) |> ignore
+        File.Move(bld.ExecutableOutput, Path.Combine(ProjectDirectory(project), "aaa\\lib.exe"))
+
+        let script1 = File.WriteAllLines(script1Path,
+                                      ["#load \"../aaa/bbb/Script2.fsx\""
+                                       "printfn \"%O\" Lib.X"
+                                       ])
+        let script2 = File.WriteAllLines(script2Path,
+                                      ["#r \"../lib.exe\""
+                                       ])
+                                       
+        let script1 = OpenFile(project, script1Path)   
+        TakeCoffeeBreak(this.VS)
+        
+        MoveCursorToEndOfMarker(script1,"#load")
+        let ans = GetSquiggleAtCursor(script1)
+        AssertNoSquiggle(ans)
+
+    [<Test>]
+    [<Category("fsx closure")>]
+    member public this.``Fsx.NoError.HashR.RelativePath2``() = 
+        use _guard = this.UsingNewVS()  
+        let solution = this.CreateSolution()
+        let project = CreateProject(solution,"testproject")    
+        let file1 = AddFileFromText(project,"lib.fs",
+                                    ["module Lib"
+                                     "let X = 42"
+                                     ])
+        
+        let bld = Build(project)
+
+        let script1Dir = Path.Combine(ProjectDirectory(project), "ccc")
+        let script1Path = Path.Combine(script1Dir, "Script1.fsx")
+        let script2Dir = Path.Combine(ProjectDirectory(project), "aaa")
+        let script2Path = Path.Combine(script2Dir, "Script2.fsx")
+        
+        Directory.CreateDirectory(script1Dir) |> ignore
+        Directory.CreateDirectory(script2Dir) |> ignore
+        File.Move(bld.ExecutableOutput, Path.Combine(ProjectDirectory(project), "aaa\\lib.exe"))
+
+        let script1 = File.WriteAllLines(script1Path,
+                                      ["#load \"../aaa/Script2.fsx\""
+                                       "printfn \"%O\" Lib.X"
+                                       ])
+        let script2 = File.WriteAllLines(script2Path,
+                                      ["#r \"lib.exe\""
+                                       ])
+                                       
+        let script1 = OpenFile(project, script1Path)   
+        TakeCoffeeBreak(this.VS)
+        
+        MoveCursorToEndOfMarker(script1,"#load")
+        let ans = GetSquiggleAtCursor(script1)
+        AssertNoSquiggle(ans)
+
      /// FEATURE: #load in an .fsx file will include that file in the 'build' of the .fsx.
     [<Test>]
     member public this.``Fsx.NoError.HashLoad.Simple``() =  
@@ -845,13 +922,13 @@ type ScriptTests() as this =
         let (project, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file, "System.ConsoleModifiers.Sh")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IdealDocumentationProvider
+        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IDocumentationBuilder
         AssertContains(tooltip, @"[Filename:") 
         AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from     
         
         MoveCursorToEndOfMarker(file, "(3).ToString().Len")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:P:System.String.Length]") // A message from the mock IdealDocumentationProvider
+        AssertContains(tooltip, @"[Signature:P:System.String.Length]") // A message from the mock IDocumentationBuilder
         AssertContains(tooltip, @"[Filename:") 
         AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from  
 
@@ -902,11 +979,11 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """#r "Microsoft.TeamFoundation.Diff" """     // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
-        let marker = "#r \"Microsoft.Tea"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFoldersEx registry key"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.TeamFoundation.Diff"
+    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
+        let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
+        let marker = "#r \"Microsoft.Vis"
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -1150,11 +1227,11 @@ type ScriptTests() as this =
                                      ]
         let (project, file) = createSingleFileFsxFromLines code
         let projectFolder = ProjectDirectory(project)
-        let fas = GetCheckOptionsOfScript(file)
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "--noframework")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "System.Runtime.Remoting.dll")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "System.Transactions.dll")
-        AssertArrayContainsPartialMatchOf(fas.ProjectOptions, "FSharp.Compiler.Interactive.Settings.dll")
+        let fas = GetProjectOptionsOfScript(file)
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "--noframework")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
+        AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
         Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
         Assert.AreEqual(1, fas.ProjectFileNames.Length)
 
@@ -1297,31 +1374,28 @@ type ScriptTests() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-#if FX_ATLEAST_45
-        PlaceIntoProjectFileBeforeImport
-            (project, @"
-                <ItemGroup>
-                    <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
-                    </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
-                    </Reference>
-                </ItemGroup>")
+        let fsVersion =
+#if VS_VERSION_DEV12
+            "4.3.1.0"
 #else
+#if VS_VERSION_DEV14
+            "4.4.0.0"
+#else
+            "4.4.1.0"
+#endif
+#endif
         PlaceIntoProjectFileBeforeImport
-            (project, @"
+            (project, sprintf @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
-                </ItemGroup>")
-#endif
+                </ItemGroup>" fsVersion fsVersion)
+
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])
         let build = time1 Build project "Time to build project" 
@@ -1543,7 +1617,7 @@ type ScriptTests() as this =
                                      ]
         let refs = 
             [
-                System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+                PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
             ]
         let (_, project, file) = this.CreateSingleFileProject(code, references = refs)
         TakeCoffeeBreak(this.VS)
@@ -1551,7 +1625,7 @@ type ScriptTests() as this =
 
     member public this.TypeProviderDisposalSmokeTest(clearing) =
         use _guard = this.UsingNewVS()
-        let providerAssemblyName = System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
         Assert.IsNotNull(providerAssembly, "provider assembly should not be null")
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
@@ -1560,21 +1634,38 @@ type ScriptTests() as this =
         Assert.IsNotNull(totalCreationsMeth, "totalCreationsMeth should not be null")
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
         Assert.IsNotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
+        let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
+        Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
+
+        let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
+        Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
+        let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
+        Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
+        let totalInvaldiationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
+        Assert.IsNotNull(totalInvaldiationHandlersRemovedMeth, "totalInvaldiationHandlersRemovedMeth should not be null")
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
+        let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
+        let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
+        let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
          
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
+        let startInvaldiationHandlersAdded = totalInvaldiationHandlersAdded()
+        let startInvaldiationHandlersRemoved =  totalInvaldiationHandlersRemoved()
         let countCreations() = totalCreations() - startCreations
         let countDisposals() = totalDisposals() - startDisposals
+        let countInvaldiationHandlersAdded() = totalInvaldiationHandlersAdded() - startInvaldiationHandlersAdded
+        let countInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemoved() - startInvaldiationHandlersRemoved
 
         Assert.IsTrue(startCreations >= startDisposals, "Check0")
+        Assert.IsTrue(startInvaldiationHandlersAdded >= startInvaldiationHandlersRemoved, "Check0")
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
-            this.AddAssemblyReference(project, System.IO.Path.Combine(System.Environment.CurrentDirectory, @"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
+            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
             let fileName = sprintf "File%d.fs" i
             let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])    
             let file = OpenFile(project,fileName)
@@ -1599,15 +1690,19 @@ type ScriptTests() as this =
                 // there should be some roots to project builds still present
                 if i >= 3 then 
                     Assert.IsTrue(i >= countDisposals() + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
+                    printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
                 ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
                 Assert.IsTrue((i = countDisposals()), "Check4b, countCreations() = countDisposals(), iteration " + string i)
+                Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check4b2, all invlidation handlers removed, iteration " + string i)
         
         Assert.IsTrue(countCreations() = 50, "Check5, at end, countCreations() = 50")
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
-        Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 when clearing")
+        Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
+        Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        checkConfigsDisposed()
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -1617,25 +1712,9 @@ type ScriptTests() as this =
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
-//Allow the ScriptTests run under different context
-namespace UnitTests.Tests.LanguageService.Script
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>] 
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ScriptTests
-   new() = { inherit ScriptTests(VsOpts = fst (Models.MSBuild())); }
 
 // Context project system
 [<TestFixture>] 
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ScriptTests
-    new() = { inherit ScriptTests(VsOpts = LanguageServiceExtension.ProjectSystem); } 
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

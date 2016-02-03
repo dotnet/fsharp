@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-#light
+#light	
 
 let mutable res = true
 let t = new T()
@@ -15,17 +15,28 @@ if (t.Home(0) <> 0) then
   System.Console.WriteLine("t.Home failed")
   res <- false
 
-if ( {new I_003<int> with 
-               member xxx.Home(i) = i
-               member xxx.Me(c:char) = 0
-               member xxx.Me(s:string) = 0
-      }.Home (
-        {new I_002<int> with 
-          member x.Me (s) = s
-        }.Me(0) )  <> 0 ) then
-            System.Console.WriteLine("I_003.Home failed")         
+// Check we can use an object expression inheriting from a C# type implementing multiple instantiations of an interface
+if (({new T() with 
+               member x.ToString() = "a"
+      } :> I_003<int>).Home (4)  <> 0 ) then
+            System.Console.WriteLine("T.Home obj expr failed")         
             res <- false
   
+// Check we can create an object of a C# type implementing multiple instantiations of an interface
+if T().Home(4) <> 0 then
+            System.Console.WriteLine("T.Home failed")         
+            res <- false
+
+
+// Check we can inherit from a C# type implementing multiple instantiations of an interface
+type D() = 
+    inherit T()
+
+if (D() :> I_003<int>).Home(5) <> 0 then
+            System.Console.WriteLine("D.Home failed")         
+            res <- false
+
+
 if (res = true) then
     exit 0
     

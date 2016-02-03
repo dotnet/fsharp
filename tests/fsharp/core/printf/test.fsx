@@ -384,6 +384,171 @@ module CheckDisplayAttributes8 =
        override x.ToString() = "2"
 
     test "cenwoiwe8" (lazy(sprintf "%A" (Foo()))) "[1; 2]"
+
+// Check one returning two strings
+module CheckDisplayAttributes9 =
+
+    [<StructuredFormatDisplay("{Hello} {World}")>]
+    type Foo() = 
+       member internal x.Hello = "Hello"
+       member internal x.World = "World"
+
+    test "cenwoiwe9" (lazy(sprintf "%A" (Foo()))) "Hello World"
+
+// Check one returning an int and a list
+module CheckDisplayAttributes10 =
+
+    [<StructuredFormatDisplay("{Hello}: {StructuredDisplay}")>]
+    type Foo() = 
+       member internal x.StructuredDisplay = [1;2]
+       member internal x.Hello = "Hello"
+       override x.ToString() = "2"
+
+    test "cenwoiwe10" (lazy(sprintf "%A" (Foo()))) "Hello: [1; 2]"
+
+// Check one returning an int and a string with no spaces
+module CheckDisplayAttributes11 =
+
+    [<StructuredFormatDisplay("{Val}{Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+
+    test "cenwoiwe11" (lazy(sprintf "%A" (Foo()))) "42Hello"
+
+// Check one with an unmatched opening bracket
+module CheckDisplayAttributes12 =
+
+    [<StructuredFormatDisplay("{Val{Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    // this should produce an error
+    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "<StructuredFormatDisplay exception: Method 'Test+CheckDisplayAttributes12+Foo.Val{Hello' not found.>"
+
+// Check one with an unmatched closing bracket
+module CheckDisplayAttributes13 =
+
+    [<StructuredFormatDisplay("{Val}Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe13" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with an unmatched trailing open bracket
+module CheckDisplayAttributes14 =
+
+    [<StructuredFormatDisplay("{Val}{Hello")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe14" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with unbounded recursion
+module CheckDisplayAttributes15 =
+
+    [<StructuredFormatDisplay("{X} {X}")>]
+    type Foo() = 
+       member internal x.X = Foo()
+
+    test "cenwoiwe15" (lazy(sprintf "%A" (Foo()))) "... ... ... ... ... ... ... ..."
+
+// Check escaped brackets with no other members
+module CheckDisplayAttributes16 =
+
+    [<StructuredFormatDisplay("{\{\}}")>]
+    type Foo() = 
+      member __.``{}`` = "abc"
+
+    test "cenwoiwe16" (lazy(sprintf "%A" (Foo()))) "abc"
+
+// Check escaped brackets with other members
+module CheckDisplayAttributes17 =
+
+    [<StructuredFormatDisplay("{One\} \{Two}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+
+    test "cenwoiwe17" (lazy(sprintf "%A" (Foo()))) "abc"
+
+// Check escaped brackets with all brackets escaped
+module CheckDisplayAttributes18 =
+
+    [<StructuredFormatDisplay("\{One\} \{Two\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe18" (lazy(sprintf "%A" (Foo()))) "{One} {Two}"
+
+// Check escaped brackets with opening bracket escaped, invalidating property reference
+module CheckDisplayAttributes19 =
+
+    [<StructuredFormatDisplay("\{One\} \{Two}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe19" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check escaped brackets with closing bracket escaped, invalidating property reference
+module CheckDisplayAttributes20 =
+
+    [<StructuredFormatDisplay("{One\} \{Two\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe20" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check escaped brackets display properly
+module CheckDisplayAttributes21 =
+
+    [<StructuredFormatDisplay("\{{One}\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe21" (lazy(sprintf "%A" (Foo()))) "{123}"
+
+// Check one with an two matched pairs and a trailing closing bracket
+module CheckDisplayAttributes22 =
+
+    [<StructuredFormatDisplay("{Val}{Hello} }")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe22" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with an two matched pairs and an unmatched closing bracket in-between
+module CheckDisplayAttributes23 =
+
+    [<StructuredFormatDisplay("{Val} } {Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe23" (lazy(sprintf "%A" (Foo()))) "x"
+
 let func0()=
     test "test1" (lazy(sprintf "%b" true)) "true"
     test "test2" (lazy(sprintf "%5b" true)) " true"

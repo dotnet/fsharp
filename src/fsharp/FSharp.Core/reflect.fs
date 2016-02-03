@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Reflection on F# values. Analyze an object to see if it the representation
 // of an F# value.
@@ -125,9 +125,12 @@ module ReflectionAdapters =
         member this.GetConstructor(parameterTypes : Type[]) = 
             this.GetTypeInfo().DeclaredConstructors
             |> Seq.filter (fun ci ->
-                let parameters = ci.GetParameters()
-                (parameters.Length = parameterTypes.Length) &&
-                (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty) 
+                not ci.IsStatic && //exclude type initializer
+                (
+                    let parameters = ci.GetParameters()
+                    (parameters.Length = parameterTypes.Length) &&
+                    (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty) 
+                )
             )
             |> Seq.toArray
             |> commit

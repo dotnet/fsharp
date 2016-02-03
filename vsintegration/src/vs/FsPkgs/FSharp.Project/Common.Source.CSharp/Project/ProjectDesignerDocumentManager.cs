@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.CodeDom.Compiler;
@@ -24,14 +24,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     internal class ProjectDesignerDocumentManager : DocumentManager
     {
-        #region ctors
         public ProjectDesignerDocumentManager(ProjectNode node)
             : base(node)
         {
         }
-        #endregion
-
-        #region overriden methods
 
         public override int Open(ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction)
         {
@@ -75,7 +71,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
 
     }
 }

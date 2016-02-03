@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if TPEMIT_INTERNAL_AND_MINIMAL_FOR_TYPE_CONTAINERS
 namespace Internal.Utilities.TypeProvider.Emit
@@ -1429,6 +1429,13 @@ module Local =
                              failwith (sprintf "Unknown type '%s' in namespace '%s' (contains %s)" typeName namespaceName typenames)    
         }
 
+// Used by unit testing to check that invalidation handlers are being disconnected
+module GlobalCountersForInvalidation = 
+    let mutable invalidationHandlersAdded = 0
+    let mutable invalidationHandlersRemoved = 0
+    let GetInvalidationHandlersAdded() = invalidationHandlersAdded
+    let GetInvalidationHandlersRemoved() = invalidationHandlersRemoved
+
 
 type TypeProviderForNamespaces(namespacesAndTypes : list<(string * list<ProvidedTypeDefinition>)>) =
     let otherNamespaces = ResizeArray<string * list<ProvidedTypeDefinition>>()
@@ -1440,6 +1447,26 @@ type TypeProviderForNamespaces(namespacesAndTypes : list<(string * list<Provided
                      yield Local.makeProvidedNamespace namespaceName types |]
 
     let invalidateE = new Event<EventHandler,EventArgs>()    
+    let invalidateP = invalidateE.Publish
+    let invalidatePCounting = 
+            { new obj() with
+                  member x.ToString() = "<published event>"
+              interface IEvent<EventHandler,EventArgs> 
+              interface IDelegateEvent<EventHandler> with 
+                member e.AddHandler(d) = 
+                    GlobalCountersForInvalidation.invalidationHandlersAdded <- GlobalCountersForInvalidation.invalidationHandlersAdded + 1
+                    invalidateP.AddHandler(d)
+                member e.RemoveHandler(d) = 
+                    GlobalCountersForInvalidation.invalidationHandlersRemoved <- GlobalCountersForInvalidation.invalidationHandlersRemoved + 1
+                    invalidateP.RemoveHandler(d)
+              interface System.IObservable<EventArgs> with 
+                member e.Subscribe(observer) = 
+                   GlobalCountersForInvalidation.invalidationHandlersAdded <- GlobalCountersForInvalidation.invalidationHandlersAdded + 1
+                   let d = invalidateP.Subscribe(observer)
+                   { new System.IDisposable with 
+                        member x.Dispose() = 
+                            GlobalCountersForInvalidation.invalidationHandlersRemoved <- GlobalCountersForInvalidation.invalidationHandlersRemoved + 1
+                            d.Dispose() } }
 
     new (namespaceName:string,types:list<ProvidedTypeDefinition>) = new TypeProviderForNamespaces([(namespaceName,types)])
     new () = new TypeProviderForNamespaces([])
@@ -1450,7 +1477,7 @@ type TypeProviderForNamespaces(namespacesAndTypes : list<(string * list<Provided
         member x.Dispose() = ()
     interface ITypeProvider with
         [<CLIEvent>]
-        override this.Invalidate = invalidateE.Publish
+        override this.Invalidate = invalidatePCounting
         override this.GetNamespaces() = Array.copy providedNamespaces.Value
         member __.GetInvokerExpression(methodBase, parameters) = 
             match methodBase with

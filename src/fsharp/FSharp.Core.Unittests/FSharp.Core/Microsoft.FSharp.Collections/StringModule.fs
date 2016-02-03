@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -84,6 +84,20 @@ type StringModule() =
 
         let e2 = String.mapi (fun i c -> c) null 
         Assert.AreEqual("", e2)
+
+    [<Test>]
+    member this.Filter() =
+        let e1 = String.filter (fun c -> true) "foo"
+        Assert.AreEqual("foo", e1)
+
+        let e2 = String.filter (fun c -> true) null 
+        Assert.AreEqual("", e2)
+
+        let e3 = String.filter (fun c -> c <> 'o') "foo bar"
+        Assert.AreEqual("f bar", e3)
+
+        let e4 = String.filter (fun c -> c <> 'o') ""
+        Assert.AreEqual("", e4)
 
     [<Test>]
     member this.Collect() =

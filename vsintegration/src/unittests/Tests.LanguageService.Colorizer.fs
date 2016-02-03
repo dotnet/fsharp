@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.LanguageService
+namespace Tests.LanguageService.Colorizer
 
 open System
 open NUnit.Framework
@@ -9,8 +9,11 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
+open UnitTests.TestLib.ProjectSystem
 
-type ColorizerTests()  = 
+// context msbuild
+[<TestFixture>]
+type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
     //Marker At The End Helper Functions
@@ -985,7 +988,35 @@ let z = __LINE__(*Test3*)
         check "(*If*)" TokenType.Comment
         check "(*Else*)" TokenType.Comment
         check "(*Endif*)" TokenType.Comment
-        
+
+    /// FEATURE: Preprocessor extended grammar basic check.
+    /// FEATURE:  More extensive grammar test is done in compiler unit tests
+    [<Test>]
+    member public this.``Preprocessor.ExtendedIfGrammar.Basic01``() =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents = """
+                #if UNDEFINED || !UNDEFINED // Extended #if
+                let x = "activeCode"
+                #else
+                let x = "inactiveCode"
+                #endif
+                """,
+            marker = "activeCode",
+            tokenType = TokenType.String)
+
+    [<Test>]
+    member public this.``Preprocessor.ExtendedIfGrammar.Basic02``() =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents = """
+                #if UNDEFINED || !UNDEFINED // Extended #if
+                let x = "activeCode"
+                #else
+                let x = "inactiveCode"
+                #endif
+                """,
+            marker = "inactiveCode",
+            tokenType = TokenType.InactiveCode)
+
     /// #else / #endif in multiline strings is ignored
     [<Test>]
     member public this.``Preprocessor.DirectivesInString``() =
@@ -1040,7 +1071,7 @@ let z = __LINE__(*Test3*)
                                      "#endif"]
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToStartOfMarker(file, "!!COMPILED")
-        AssertEqual(TokenType.Operator, GetTokenTypeAtCursor(file))
+        AssertEqual(TokenType.Identifier, GetTokenTypeAtCursor(file))
 
 
     // This was an off-by-one bug in the replacement Colorizer
@@ -1053,25 +1084,9 @@ let z = __LINE__(*Test3*)
         MoveCursorToEndOfMarker(file,"(*Bob*)typ")
         AssertEqual(TokenType.Keyword,GetTokenTypeAtCursor(file))
 
-
-// Allow languageService tests to run under different contextes
-namespace UnitTests.Tests.LanguageService.Colorizer
-open UnitTests.Tests.LanguageService
-open UnitTests.TestLib.LanguageService
-open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
-open Salsa.Salsa
-
-// context msbuild
-[<TestFixture>]
-[<Category("LanguageService.MSBuild")>]
-type ``MSBuild`` = 
-   inherit ColorizerTests
-   new() = { inherit ColorizerTests(VsOpts = fst (Models.MSBuild())); }
-
 // Context project system
 [<TestFixture>]
-[<Category("LanguageService.ProjectSystem")>]
-type ``ProjectSystem`` = 
-    inherit ColorizerTests
-    new() = { inherit ColorizerTests(VsOpts = LanguageServiceExtension.ProjectSystem); }  
+type UsingProjectSystem() = 
+    inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
+    
+  

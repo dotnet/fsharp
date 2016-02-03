@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Core.LanguagePrimitives module
@@ -651,4 +651,35 @@ type MiscStuff() =
         incr x
         incr x
         decr x
-        Assert.AreEqual(1, !x)
+        Assert.IsTrue( 1 = !x )
+        
+        
+
+[<TestFixture>]
+type UnboxAndOptionStuff() =
+    [<Test>]
+    member this.TryUnbox() =
+        Assert.IsTrue( tryUnbox (box ([] : int list)) = Some ([]: int list))
+        Assert.IsTrue( tryUnbox (box ([1] : int list)) = Some ([1]: int list))
+        Assert.IsTrue( tryUnbox (box ([] : string list)) = (None : int list option)) // Option uses 'null' as representation
+        Assert.IsTrue( tryUnbox<int list> (box ([] : string list)) = None)
+        Assert.IsTrue( tryUnbox (box (None : int option)) = Some (None: int option))
+        Assert.IsTrue( tryUnbox (box (None : string option)) = Some (None: string option))
+        Assert.IsTrue( tryUnbox (box (None : string option)) = Some (None: int option)) // Option uses 'null' as representation
+        Assert.IsTrue( tryUnbox (box "") = Some "")
+        Assert.IsTrue( tryUnbox<int option> (box null) = Some None) // Option uses 'null' as representation
+        Assert.IsTrue( tryUnbox<int list> (box null) = None)
+        Assert.IsTrue( tryUnbox<int> (box null) = None)
+        Assert.IsTrue( tryUnbox<int> (box "1") = None)
+        Assert.IsTrue( tryUnbox<int> (box 1) = Some 1)
+        Assert.IsTrue( tryUnbox<string> (box "") = Some "")
+        Assert.IsTrue( tryUnbox<string> (box 1) = None)
+
+    [<Test>]
+    member this.IsNull() =
+        Assert.IsTrue( isNull (null : string))
+        Assert.IsTrue( isNull (null : string[]))
+        Assert.IsTrue( isNull (null : int[]))
+        Assert.IsTrue( not (isNull [| |]))
+        Assert.IsTrue( not (isNull ""))
+        Assert.IsTrue( not (isNull "1"))

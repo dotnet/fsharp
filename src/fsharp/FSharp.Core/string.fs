@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -29,8 +29,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IterateIndexed")>]
         let iteri f (str:string) =
             let str = emptyIfNull str
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             for i = 0 to str.Length - 1 do
-                f i str.[i] 
+                f.Invoke(i, str.[i]) 
 
         [<CompiledName("Map")>]
         let map (f: char -> char) (str:string) =
@@ -43,7 +44,15 @@ namespace Microsoft.FSharp.Core
         let mapi (f: int -> char -> char) (str:string) =
             let str = emptyIfNull str
             let res = new System.Text.StringBuilder(str.Length)
-            str |> iteri (fun i c -> res.Append(f i c) |> ignore);
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore);
+            res.ToString()
+
+        [<CompiledName("Filter")>]
+        let filter (f: char -> bool) (str:string) =
+            let str = emptyIfNull str
+            let res = new System.Text.StringBuilder(str.Length)
+            str |> iter (fun c -> if f c then res.Append(c) |> ignore)
             res.ToString()
 
         [<CompiledName("Collect")>]

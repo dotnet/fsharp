@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -24,6 +24,7 @@ module internal SR =
     let pickElementNotFound = "pickElementNotFound"            
     let notEnoughElements = "notEnoughElements"
     let inputMustBeNonNegative = "inputMustBeNonNegative"
+    let inputMustBePositive = "inputMustBePositive"
     let enumerationPastIntMaxValue = "enumerationPastIntMaxValue"
     let inputSequenceEmpty = "inputSequenceEmpty"
     let inputSequenceTooLong = "inputSequenceTooLong"

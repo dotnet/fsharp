@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// The IL Binary writer 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
@@ -16,21 +16,16 @@ type ILStrongNameSigner =
     static member OpenKeyContainer: string -> ILStrongNameSigner
 
 type options =
- { ilg: ILGlobals
-   pdbfile: string option;
-   signer : ILStrongNameSigner option;
-   fixupOverlappingSequencePoints : bool;
-   emitTailcalls: bool;
-   showTimes : bool;
-   dumpDebugInfo : bool }
+    { ilg: ILGlobals
+      pdbfile: string option
+      signer : ILStrongNameSigner option
+      fixupOverlappingSequencePoints : bool
+      emitTailcalls: bool
+      showTimes : bool
+      dumpDebugInfo : bool }
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
-val WriteILBinary: 
-    filename: string ->
-    options:  options ->
-    input:    ILModuleDef -> 
-    noDebugData: bool ->
-    unit
+val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit
 
 
 

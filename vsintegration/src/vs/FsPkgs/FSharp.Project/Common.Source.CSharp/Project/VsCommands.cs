@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -22,6 +22,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public static Guid guidSHLMainMenu = new Guid(0xd309f791, 0x903f, 0x11d0, 0x9e, 0xfc, 0x00, 0xa0, 0xc9, 0x11, 0x00, 0x4f);
 
         public static Guid guidVSUISet = new Guid("60481700-078b-11d1-aaf8-00a0c9055a90");
+
+        //"Open Folder in Windows Explorer" command ID.
+        //Don't change this! This is Visual Studio constant.
+        public const VSConstants.VSStd2KCmdID OpenFolderInExplorerCmdId = (VSConstants.VSStd2KCmdID)1635;
 
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cmds")]
         public static Guid guidVsUIHierarchyWindowCmds = new Guid("60481700-078B-11D1-AAF8-00A0C9055A90");

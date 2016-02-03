@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -39,8 +39,46 @@ type SeqModule2() =
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
         () 
+
+    [<Test>]
+    member this.TryHead() =
+        // int Seq     
+        let IntSeq =
+            seq { for i in 0 .. 9 -> i }
+                    
+        let intResult = Seq.tryHead IntSeq
+
+        // string Seq
+        let strResult = Seq.tryHead (seq ["first"; "second";  "third"])
+        Assert.AreEqual("first", strResult.Value)
+         
+        // Empty Seq
+        let emptyResult = Seq.tryHead Seq.empty
+        Assert.AreEqual(None, emptyResult)
+      
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
+        () 
         
+    [<Test>]
+    member this.Tl() =
+        // integer seq
+        let resultInt = Seq.tail <| seq { 1..10 }
+        VerifySeqsEqual (seq { 2..10 }) resultInt
         
+        // string seq
+        let resultStr = Seq.tail <| seq { yield "a"; yield "b"; yield "c"; yield "d" }      
+        VerifySeqsEqual (seq { yield "b";  yield "c" ; yield "d" }) resultStr
+        
+        // 1-element seq
+        let resultStr2 = Seq.tail <| seq { yield "a" }      
+        VerifySeqsEqual Seq.empty resultStr2
+
+        CheckThrowsArgumentNullException(fun () -> Seq.tail null |> ignore)
+        CheckThrowsArgumentException(fun () -> Seq.tail Seq.empty |> Seq.iter (fun _ -> failwith "Should not be reached"))
+        ()
+
     [<Test>]
     member this.Last() =
              
@@ -61,6 +99,28 @@ type SeqModule2() =
         // null Seq
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullSeq) 
+        () 
+
+    [<Test>]
+    member this.TryLast() =
+             
+        let IntSeq =
+            seq { for i in 0 .. 9 -> i }
+                    
+        let intResult = Seq.tryLast IntSeq
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string Seq
+        let strResult = Seq.tryLast (seq ["first"; "second";  "third"])
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty Seq
+        let emptyResult = Seq.tryLast Seq.empty
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore) 
         () 
         
     [<Test>]
@@ -246,6 +306,49 @@ type SeqModule2() =
         let nullseq:seq<'a> =  null
         CheckThrowsArgumentNullException (fun () -> Seq.iteri funcint nullseq |> ignore)  
         ()
+
+    [<Test>]
+    member this.Iteri2() =
+
+        //seq int
+        let seqint = seq [ 1..3]
+        let cacheint = ref 0
+       
+        let funcint x y z = cacheint := !cacheint + x + y + z
+        Seq.iteri2 funcint seqint seqint
+        Assert.AreEqual(15,!cacheint)
+              
+        //seq str
+        let seqStr = seq ["first";"second"]
+        let cachestr = ref 0
+        let funcstr (x:int) (y:string) (z:string) = cachestr := !cachestr + x + y.Length + z.Length
+        Seq.iteri2 funcstr seqStr seqStr
+         
+        Assert.AreEqual(23,!cachestr)
+        
+        // empty seq
+        let emptyseq = Seq.empty
+        let resultEpt = ref 0
+        Seq.iteri2 (fun x y z -> Assert.Fail()) emptyseq emptyseq 
+
+        // null seq
+        let nullseq:seq<'a> =  null
+        CheckThrowsArgumentNullException (fun () -> Seq.iteri2 funcint nullseq nullseq |> ignore)  
+        
+        // len1 <> len2
+        let shorterSeq = seq { 1..3 }
+        let longerSeq = seq { 2..2..100 }
+
+        let testSeqLengths seq1 seq2 =
+            let cache = ref 0
+            let f x y z = cache := !cache + x + y + z
+            Seq.iteri2 f seq1 seq2
+            !cache
+
+        Assert.AreEqual(21, testSeqLengths shorterSeq longerSeq)
+        Assert.AreEqual(21, testSeqLengths longerSeq shorterSeq)
+
+        ()
         
     [<Test>]
     member this.Length() =
@@ -325,8 +428,89 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.map2 funcInt nullSeq validSeq |> ignore)
         
         ()
-        
-        
+
+    [<Test>]
+    member this.Map3() = 
+        // Integer seq
+        let funcInt a b c = (a + b) * c
+        let resultInt = Seq.map3 funcInt { 1..8 } { 2..9 } { 3..10 }
+        let expectedInt = seq [9; 20; 35; 54; 77; 104; 135; 170]
+        VerifySeqsEqual expectedInt resultInt
+
+        // First seq is shorter
+        VerifySeqsEqual (seq [9; 20]) (Seq.map3 funcInt { 1..2 } { 2..9 } { 3..10 })
+        // Second seq is shorter
+        VerifySeqsEqual (seq [9; 20; 35]) (Seq.map3 funcInt { 1..8 } { 2..4 } { 3..10 })
+        // Third seq is shorter
+        VerifySeqsEqual (seq [9; 20; 35; 54]) (Seq.map3 funcInt { 1..8 } { 2..6 } { 3..6 })
+
+        // String seq
+        let funcStr a b c = a + b + c
+        let resultStr = Seq.map3 funcStr ["A";"B";"C";"D"] ["a";"b";"c";"d"] ["1";"2";"3";"4"]
+        let expectedStr = seq ["Aa1";"Bb2";"Cc3";"Dd4"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // Empty seq
+        let resultEmpty = Seq.map3 funcStr Seq.empty Seq.empty Seq.empty
+        VerifySeqsEqual Seq.empty resultEmpty
+
+        // Null seq
+        let nullSeq = null : seq<_>
+        let nonNullSeq = seq [1]
+        CheckThrowsArgumentNullException (fun () -> Seq.map3 funcInt nullSeq nonNullSeq nullSeq |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFold() =
+        // integer Seq
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = Seq.mapFold funcInt 100 <| seq { 1..10 }
+        VerifySeqsEqual (seq [ 1;20;3;40;5;60;7;80;9;100 ]) resultInt
+        Assert.AreEqual(105, resultIntAcc)
+
+        // string Seq
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Seq.mapFold funcStr "" <| seq [ "";"BB";"C";"" ]
+        VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty Seq
+        let resultEpt,resultEptAcc = Seq.mapFold funcInt 100 Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null Seq
+        let nullArr = null:seq<string>
+        CheckThrowsArgumentNullException (fun () -> Seq.mapFold funcStr "" nullArr |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer Seq
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = Seq.mapFoldBack funcInt (seq { 1..10 }) 100
+        VerifySeqsEqual (seq [ 1;2;3;4;5;6;7;80;90;100 ]) resultInt
+        Assert.AreEqual(106, resultIntAcc)
+
+        // string Seq
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Seq.mapFoldBack funcStr (seq [ "";"BB";"C";"" ]) ""
+        VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty Seq
+        let resultEpt,resultEptAcc = Seq.mapFoldBack funcInt Seq.empty 100
+        VerifySeqsEqual Seq.empty resultEpt
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null Seq
+        let nullArr = null:seq<string>
+        CheckThrowsArgumentNullException (fun () -> Seq.mapFoldBack funcStr nullArr "" |> ignore)
+
+        ()
+
     member private this.MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
         let i = ref 0
         let f x = i := !i + 1; x*x
@@ -469,6 +653,40 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
         
     [<Test>]
+    member this.Mapi2WithSideEffects () =
+        let i = ref 0
+        let f _ x y = i := !i + 1; x*x
+        let e = (Seq.mapi2 f [1;2] [1;2]).GetEnumerator()
+
+        CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
+        Assert.AreEqual(0, !i)
+        if not (e.MoveNext()) then Assert.Fail()
+        Assert.AreEqual(1, !i)
+        let _ = e.Current
+        Assert.AreEqual(1, !i)
+        let _ = e.Current
+        Assert.AreEqual(1, !i)
+
+        if not (e.MoveNext()) then Assert.Fail()
+        Assert.AreEqual(2, !i)
+        let _ = e.Current
+        Assert.AreEqual(2, !i)
+        let _ = e.Current
+        Assert.AreEqual(2, !i)
+
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(2,!i)
+        CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
+        Assert.AreEqual(2, !i)
+
+        i := 0
+        let e = (Seq.mapi2 f [] []).GetEnumerator()
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(0,!i)
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(0,!i)
+
+    [<Test>]
     member this.Collect() =
          // integer Seq
         let funcInt x = seq [x+1]
@@ -530,6 +748,67 @@ type SeqModule2() =
         
         ()
         
+    [<Test>]
+    member this.Mapi2() =
+         // integer Seq
+        let funcInt x y z = x+y+z
+        let resultInt = Seq.mapi2 funcInt { 1..10 } {2..2..20}
+        let expectedint = seq [3;7;11;15;19;23;27;31;35;39]
+
+        VerifySeqsEqual expectedint resultInt
+
+        // string Seq
+        let funcStr (x:int) (y:int) (z:string) = x+y+z.Length
+        let resultStr = Seq.mapi2 funcStr (seq[3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
+        let expectedSeq = seq [8;10;19;18]
+
+        VerifySeqsEqual expectedSeq resultStr
+
+        // empty Seq
+        let resultEpt = Seq.mapi2 funcInt Seq.empty Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        let validSeq = seq [1]
+        CheckThrowsArgumentNullException (fun () -> Seq.mapi2 funcInt nullSeq validSeq |> ignore)
+
+        // len1 <> len2
+        let shorterSeq = seq { 1..10 }
+        let longerSeq = seq { 2..20 }
+
+        let testSeqLengths seq1 seq2 =
+            let f x y z = x + y + z
+            Seq.mapi2 f seq1 seq2
+
+        VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths shorterSeq longerSeq)
+        VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths longerSeq shorterSeq)
+
+    [<Test>]
+    member this.Indexed() =
+
+         // integer Seq
+        let resultInt = Seq.indexed { 10..2..20 }
+        let expectedint = seq [(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)]
+
+        VerifySeqsEqual expectedint resultInt
+
+        // string Seq
+        let resultStr = Seq.indexed (seq ["Lists"; "Are"; "Commonly"; "List" ])
+        let expectedStr = seq [(0,"Lists");(1,"Are");(2,"Commonly");(3,"List")]
+
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.indexed Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.indexed nullSeq |> ignore)
+
+        ()
+
     [<Test>]
     member this.Max() =
          // integer Seq
@@ -615,35 +894,32 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.min nullSeq |> ignore)
         
         ()
-        
+
     [<Test>]
-    member this.Nth() =
-         
+    member this.Item() =
+         // integer Seq
+        let resultInt = Seq.item 3 { 10..20 }
+        Assert.AreEqual(13, resultInt)
+
+        // string Seq
+        let resultStr = Seq.item 2 (seq ["Lists"; "Are"; "Cool" ; "List" ])
+        Assert.AreEqual("Cool", resultStr)
+
+        // empty Seq
+        CheckThrowsArgumentException(fun () -> Seq.item 0 (Seq.empty : seq<decimal>) |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.item 3 nullSeq |> ignore)
+
         // Negative index
         for i = -1 downto -10 do
-           CheckThrowsArgumentException (fun () -> Seq.nth i { 10 .. 20 } |> ignore)
-            
+           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+
         // Out of range
         for i = 11 to 20 do
-           CheckThrowsArgumentException (fun () -> Seq.nth i { 10 .. 20 } |> ignore)
-         
-         // integer Seq
-        let resultInt = Seq.nth 3 { 10..20 } 
-        Assert.AreEqual(13, resultInt)
-        
-        // string Seq
-        let resultStr = Seq.nth 3 (seq ["Lists"; "Are";  "nthString" ; "List" ])
-        Assert.AreEqual("List",resultStr)
-          
-        // empty Seq
-        CheckThrowsArgumentException(fun () -> Seq.nth 0 (Seq.empty : seq<decimal>) |> ignore)
-       
-        // null Seq
-        let nullSeq:seq<'a> = null 
-        CheckThrowsArgumentNullException (fun () ->Seq.nth 3 nullSeq |> ignore)
-        
-        ()
-         
+           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+
     [<Test>]
     member this.Of_Array() =
          // integer Seq
@@ -722,7 +998,53 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullSeq  |> ignore)   
         ()
 
-         
+    [<Test>]
+    member this.ReduceBack() =
+        // int Seq
+        let funcInt x y = x - y
+        let IntSeq = seq { 1..4 }
+        let reduceInt = Seq.reduceBack funcInt IntSeq
+        Assert.AreEqual((1-(2-(3-4))), reduceInt)
+
+        // string Seq
+        let funcStr (x:string) (y:string) = y.Remove(0,x.Length)
+        let strSeq = seq [ "A"; "B"; "C"; "D" ; "ABCDE" ]
+        let reduceStr = Seq.reduceBack  funcStr strSeq
+        Assert.AreEqual("E", reduceStr)
+        
+        // string Seq
+        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let strSeq2 = seq [ "A" ]
+        let reduceStr2 = Seq.reduceBack  funcStr2 strSeq2
+        Assert.AreEqual("A", reduceStr2)
+
+        // Empty Seq
+        CheckThrowsArgumentException (fun () -> Seq.reduceBack funcInt Seq.empty |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.reduceBack funcInt nullSeq |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.Rev() =
+        // integer Seq
+        let resultInt = Seq.rev (seq [5;4;3;2;1])
+        VerifySeqsEqual (seq[1;2;3;4;5]) resultInt
+
+        // string Seq
+        let resultStr = Seq.rev (seq ["A"; "B";  "C" ; "D" ])
+        VerifySeqsEqual (seq["D";"C";"B";"A"]) resultStr
+
+        // empty Seq
+        VerifySeqsEqual Seq.empty (Seq.rev Seq.empty)
+
+        // null Seq
+        let nullSeq : seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.rev nullSeq  |> ignore)
+        ()
+
     [<Test>]
     member this.Scan() =
         // integer Seq
@@ -748,6 +1070,46 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.scan funcInt 5 seqNull |> ignore)
         ()
         
+    [<Test>]
+    member this.ScanBack() =
+        // integer Seq
+        let funcInt x y = x+y
+        let resultInt = Seq.scanBack funcInt { 1..10 } 9
+        let expectedInt = seq [64;63;61;58;54;49;43;36;28;19;9]
+        VerifySeqsEqual expectedInt resultInt
+
+        // string Seq
+        let funcStr x y = x+y
+        let resultStr = Seq.scanBack funcStr (seq ["A";"B";"C";"D"]) "X"
+        let expectedStr = seq ["ABCDX";"BCDX";"CDX";"DX";"X"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.scanBack funcInt Seq.empty 5
+        let expectedEpt = seq [5]
+        VerifySeqsEqual expectedEpt resultEpt
+
+        // null Seq
+        let seqNull:seq<'a> = null
+        CheckThrowsArgumentNullException(fun() -> Seq.scanBack funcInt seqNull 5 |> ignore)
+
+        // exception cases
+        let funcEx x (s:'State) = raise <| new System.FormatException() : 'State
+        // calling scanBack with funcEx does not throw
+        let resultEx = Seq.scanBack funcEx (seq {1..10}) 0
+        // reading from resultEx throws
+        CheckThrowsFormatException(fun() -> Seq.head resultEx |> ignore)
+
+        // Result consumes entire input sequence as soon as it is accesses an element
+        let i = ref 0
+        let funcState x s = (i := !i + x); x+s
+        let resultState = Seq.scanBack funcState (seq {1..3}) 0
+        Assert.AreEqual(0, !i)
+        use e = resultState.GetEnumerator()
+        Assert.AreEqual(6, !i)
+
+        ()
+
     [<Test>]
     member this.Singleton() =
         // integer Seq
@@ -858,7 +1220,105 @@ type SeqModule2() =
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.sortBy funcInt null  |> ignore)
         ()
+
+    [<Test>]
+    member this.SortDescending() =
+
+        // integer Seq
+        let resultInt = Seq.sortDescending (seq [1;3;2;Int32.MaxValue;4;6;Int32.MinValue;5;7;0])
+        let expectedInt = seq{
+            yield Int32.MaxValue;
+            yield! seq{ 7..-1..0 }
+            yield Int32.MinValue
+        }
+        VerifySeqsEqual expectedInt resultInt
         
+        // string Seq
+       
+        let resultStr = Seq.sortDescending (seq ["str1";null;"str3";"";"Str1";"str2";"str4"])
+        let expectedStr = seq ["str4";"str3";"str2";"str1";"Str1";"";null]
+        VerifySeqsEqual expectedStr resultStr
+        
+        // empty Seq 
+        let resultEpt = Seq.sortDescending Seq.empty 
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // tuple Seq
+        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let resultTup = Seq.sortDescending tupSeq
+        let expectedTup = (seq[(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")])   
+        VerifySeqsEqual  expectedTup resultTup
+         
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatSeq = seq [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = Seq.sortDescending floatSeq
+        let expectedFloat = seq [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        VerifySeqsEqual expectedFloat resultFloat
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sort null  |> ignore)
+        ()
+        
+    [<Test>]
+    member this.SortByDescending() =
+
+        // integer Seq
+        let funcInt x = Math.Abs(x-5)
+        let resultInt = Seq.sortByDescending funcInt (seq [1;2;4;5;7])
+        let expectedInt = seq [1;2;7;4;5]
+        VerifySeqsEqual expectedInt resultInt
+        
+        // string Seq
+        let funcStr (x:string) = x.IndexOf("key")
+        let resultStr =Seq.sortByDescending funcStr (seq ["st(key)r";"str(key)";"s(key)tr";"(key)str"])
+        
+        let expectedStr = seq ["str(key)";"st(key)r";"s(key)tr";"(key)str"]
+        VerifySeqsEqual expectedStr resultStr
+        
+        // empty Seq 
+        let resultEpt = Seq.sortByDescending funcInt Seq.empty 
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // tuple Seq
+        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let resultTup = Seq.sortByDescending snd tupSeq         
+        let expectedTup = (seq[(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")])
+        VerifySeqsEqual  expectedTup resultTup
+         
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatSeq = seq [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = Seq.sortByDescending id floatSeq
+        let expectedFloat = seq [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        VerifySeqsEqual expectedFloat resultFloat
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sortByDescending funcInt null  |> ignore)
+        ()
+        
+    member this.SortWith() =
+
+        // integer Seq
+        let intComparer a b = compare (a%3) (b%3)
+        let resultInt = Seq.sortWith intComparer (seq {0..10})
+        let expectedInt = seq [0;3;6;9;1;4;7;10;2;5;8]
+        VerifySeqsEqual expectedInt resultInt
+
+        // string Seq
+        let resultStr = Seq.sortWith compare (seq ["str1";"str3";"str2";"str4"])
+        let expectedStr = seq ["str1";"str2";"str3";"str4"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.sortWith intComparer Seq.empty
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sortWith intComparer null  |> ignore)
+
+        ()
+
     [<Test>]
     member this.Sum() =
     
@@ -1073,6 +1533,11 @@ type SeqModule2() =
         
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.truncate 1 null |> ignore)
+
+        // negative count
+        VerifySeqsEqual Seq.empty <| Seq.truncate -1 (seq [1;2;4;5;7])
+        VerifySeqsEqual Seq.empty <| Seq.truncate System.Int32.MinValue (seq [1;2;4;5;7])
+
         ()
         
     [<Test>]
@@ -1103,6 +1568,32 @@ type SeqModule2() =
         ()
         
     [<Test>]
+    member this.TryFindBack() =
+        // integer Seq
+        let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;2;4;5;7])
+        Assert.AreEqual(Some 4, resultInt)
+
+        // integer Seq - None
+        let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;3;5;7])
+        Assert.AreEqual(None, resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryFindBack (fun (x:string) -> x.Contains("2")) (seq ["str1";"str2";"str2x";"str3"])
+        Assert.AreEqual(Some "str2x", resultStr)
+
+        // string Seq - None
+        let resultStr = Seq.tryFindBack (fun (x:string) -> x.Contains("2")) (seq ["str1";"str4";"str3"])
+        Assert.AreEqual(None, resultStr)
+
+        // empty Seq
+        let resultEpt = Seq.tryFindBack (fun x -> (x%2=0)) Seq.empty
+        Assert.AreEqual(None, resultEpt)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.tryFindBack (fun x -> (x%2=0))  null |> ignore)
+        ()
+
+    [<Test>]
     member this.TryFindIndex() =
 
         // integer Seq
@@ -1130,6 +1621,33 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndex (fun x -> (x % 2 = 0))  null |> ignore)
         ()
         
+    [<Test>]
+    member this.TryFindIndexBack() =
+
+        // integer Seq
+        let resultInt = Seq.tryFindIndexBack (fun x -> (x % 5 = 0)) [5; 9; 10; 12]
+        Assert.AreEqual(Some(2), resultInt)
+
+        // integer Seq - None
+        let resultInt = Seq.tryFindIndexBack (fun x -> (x % 5 = 0)) [9;3;11]
+        Assert.AreEqual(None, resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryFindIndexBack (fun (x:string) -> x.Contains("2")) ["str1"; "str2"; "str2x"; "str3"]
+        Assert.AreEqual(Some(2), resultStr)
+
+        // string Seq - None
+        let resultStr = Seq.tryFindIndexBack (fun (x:string) -> x.Contains("2")) ["str1"; "str4"; "str3"]
+        Assert.AreEqual(None, resultStr)
+
+        // empty Seq
+        let resultEpt = Seq.tryFindIndexBack (fun x -> (x%2=0)) Seq.empty
+        Assert.AreEqual(None, resultEpt)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndexBack (fun x -> (x % 2 = 0))  null |> ignore)
+        ()
+
     [<Test>]
     member this.Unfold() =
         // integer Seq
@@ -1280,3 +1798,29 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun () -> Seq.tryPick funcNull nullSeq |> ignore)
    
         ()
+
+    [<Test>]
+    member this.tryItem() =
+        // integer Seq
+        let resultInt = Seq.tryItem 3 { 10..20 }
+        Assert.AreEqual(Some(13), resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryItem 2 (seq ["Lists"; "Are"; "Cool"; "List" ])
+        Assert.AreEqual(Some("Cool"), resultStr)
+
+        // empty Seq
+        let resultEmpty = Seq.tryItem 0 Seq.empty
+        Assert.AreEqual(None, resultEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.tryItem 3 nullSeq |> ignore)
+
+        // Negative index
+        let resultNegativeIndex = Seq.tryItem -1 { 10..20 }
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index greater than length
+        let resultIndexGreater = Seq.tryItem 31 { 10..20 }
+        Assert.AreEqual(None, resultIndexGreater)

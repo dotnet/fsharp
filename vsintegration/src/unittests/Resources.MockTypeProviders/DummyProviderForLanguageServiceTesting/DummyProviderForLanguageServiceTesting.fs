@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace DummyProviderForLanguageServiceTesting 
 
@@ -115,15 +115,25 @@ module internal TPModule =
 module GlobalCounters = 
     let mutable creations = 0
     let mutable disposals = 0
+    let mutable configs = ([]: TypeProviderConfig list)
     let GetTotalCreations() = creations
     let GetTotalDisposals() = disposals
+    let CheckAllConfigsDisposed() = 
+        for c in configs do 
+            try 
+                c.SystemRuntimeContainsType("System.Object") |> ignore
+                failwith "expected configuration object to be disposed"
+            with :? System.ObjectDisposedException -> 
+                ()
+
 
 
 [<TypeProvider>]
-type HelloWorldProvider() = 
+type HelloWorldProvider(config: TypeProviderConfig) = 
     inherit TypeProviderForNamespaces(TPModule.namespaceName,TPModule.types)
     do GlobalCounters.creations <- GlobalCounters.creations + 1                         
     let mutable disposed = false
+    do GlobalCounters.configs <- config :: GlobalCounters.configs
     interface System.IDisposable with 
         member x.Dispose() = 
             System.Diagnostics.Debug.Assert(not disposed)
@@ -208,6 +218,29 @@ module TypeProviderThatThrowsErrorsModule =
 [<TypeProvider>]
 type TypeProviderThatThrowsErrors() = 
     inherit TypeProviderForNamespaces(TypeProviderThatThrowsErrorsModule.rootNamespace, TypeProviderThatThrowsErrorsModule.types)
+
+open System.ComponentModel
+type TPBaseTy() =
+    [<EditorBrowsableAttribute(EditorBrowsableState.Never)>] 
+    [<CompilerMessageAttribute("This method is intended for use in generated code only.", 10001, IsHidden=true, IsError=false)>]
+    member this.DoNotShowHidden = ()
+
+    [<System.ObsoleteAttribute("TP base type obsolete member")>]
+    member this.DoNotShowObsolete = ()
+
+    member this.ShowThisProp = ()
+
+[<TypeProvider>]
+type HiddenMembersInBaseClassProvider() as this = 
+    inherit TypeProviderForNamespaces()
+    let namespaceName = "HiddenMembersInBaseClass"    
+    let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
+
+    let typeT = ProvidedTypeDefinition(thisAssembly, namespaceName, "HiddenBaseMembersTP", Some typeof<TPBaseTy>)
+    let types = [ typeT ]
+
+    do
+        this.AddNamespace(namespaceName,types)
 
 module TypeProviderForTestingTuplesErasureModule = 
     type private Marker = interface end

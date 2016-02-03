@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Layout
 
@@ -39,32 +39,28 @@ val aboveListL            : Layout list -> Layout
 val optionL               : ('a -> Layout) -> 'a option -> Layout    
 val listL                 : ('a -> Layout) -> 'a list   -> Layout
 
-val linkL                 : string -> Layout -> Layout
-
 val squashTo              : int -> Layout -> Layout
 
 val showL                 : Layout -> string
 val outL                  : TextWriter -> Layout -> unit
 val bufferL               : StringBuilder -> Layout -> unit
 
-(* render a Layout yielding an 'a using a 'b (hidden state) type *)
-type ('a,'b) render =
-    abstract Start    : unit -> 'b;
-    abstract AddText  : 'b -> string -> 'b;
-    abstract AddBreak : 'b -> int -> 'b;
-    abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b;
+/// render a Layout yielding an 'a using a 'b (hidden state) type 
+type LayoutRenderer<'a,'b> =
+    abstract Start    : unit -> 'b
+    abstract AddText  : 'b -> string -> 'b
+    abstract AddBreak : 'b -> int -> 'b
+    abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
     abstract Finish   : 'b -> 'a
 
-(* Run a render on a Layout *)      
-val renderL  : ('b,'a) render -> Layout -> 'b
-
-(* Primitive renders *)
-val stringR  : (string,string list) render
 type NoState = NoState
 type NoResult = NoResult
-val channelR : TextWriter -> (NoResult,NoState) render
-val bufferR  : StringBuilder -> (NoResult,NoState) render
 
-(* Combinator renders *)  
-val htmlR    :        ('a,'b) render -> ('a,'b) render (* assumes in <pre> context *)
-val indentR  : int -> ('a,'b) render -> ('a,'b) render
+/// Run a render on a Layout       
+val renderL  : LayoutRenderer<'b,'a> -> Layout -> 'b
+
+/// Primitive renders 
+val stringR  : LayoutRenderer<string,string list>
+val channelR : TextWriter -> LayoutRenderer<NoResult,NoState>
+val bufferR  : StringBuilder -> LayoutRenderer<NoResult,NoState>
+

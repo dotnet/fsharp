@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -128,7 +128,7 @@
     <value>F# Interactive options</value>
   </data>
   <data name="FSharpInteractiveOptionsDescr" xml:space="preserve">
-    <value>The command line arguments passed to the F# Interactive executable by Visual Studio.</value>
+    <value>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</value>
   </data>
   <data name="FSharpInteractiveMisc" xml:space="preserve">
     <value>Misc</value>
@@ -138,5 +138,14 @@
   </data>
   <data name="FSharpInteractiveShadowCopyDescr" xml:space="preserve">
     <value>Prevents referenced assemblies from being locked by the F# Interactive process.</value>
+  </data>
+  <data name="FSharpInteractiveDebugMode" xml:space="preserve">
+    <value>Enable script debugging</value>
+  </data>
+  <data name="FSharpInteractiveDebugModeDescr" xml:space="preserve">
+    <value>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</value>
+  </data>
+  <data name="FSharpInteractiveDebugging" xml:space="preserve">
+    <value>Debugging</value>
   </data>
 </root>

@@ -24,14 +24,14 @@ type AsyncTimer(f, ?delay ) =
   member t.Start() =
     let rec run() =
       async
-        { let curr_does_again = ref false
-          let curr_delay = ref None
+        { let mutable curr_does_again = false
+          let mutable curr_delay = None
           do lock t (fun _ -> 
-                curr_does_again := does_again 
-                curr_delay := t.Delay
+                curr_does_again <- does_again 
+                curr_delay <- t.Delay
               )
           if !curr_does_again then
-            match !curr_delay with
+            match curr_delay with
             | Some d -> 
                 do f()
                 do! Async.Sleep d

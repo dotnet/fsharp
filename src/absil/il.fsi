@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// The "unlinked" view of .NET metadata and code.  Central to 
 ///  to Abstract IL library
@@ -118,6 +118,7 @@ type PublicKey =
     member IsKeyToken: bool
     member Key: byte[]
     member KeyToken: byte[]
+    static member KeyAsToken: byte[] -> PublicKey 
 
 type ILVersionInfo = uint16 * uint16 * uint16 * uint16
 
@@ -970,7 +971,8 @@ type ILNativeType =
 [<NoComparison; NoEquality>]
 type ILLocal = 
     { Type: ILType;
-      IsPinned: bool }
+      IsPinned: bool;
+      DebugInfo: (string * int * int) option }
      
 
 type ILLocals = ILList<ILLocal>
@@ -1267,6 +1269,7 @@ type ILMethodDef =
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
+    member AsArray : ILMethodDef[]
     member AsList : ILMethodDef list
     member FindByName : string -> ILMethodDef list
 
@@ -1415,10 +1418,11 @@ type ILTypeDefKind =
 [<Sealed>]
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
+    member AsArray : ILTypeDef[]
     member AsList : ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves
-    member AsListOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) list
+    member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) array
 
     /// Calls to [FindByName] will result in any laziness in the overall 
     /// set of ILTypeDefs being read in in addition 
@@ -1620,6 +1624,7 @@ type ILModuleDef =
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
 val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
+val resolveILMethodRefWithRescope: (ILType -> ILType) -> ILTypeDef -> ILMethodRef -> ILMethodDef
 
 // ------------------------------------------------------------------ 
 // Type Names
@@ -1796,11 +1801,9 @@ val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef l
 /// Note: not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
 /// The following assumes enums have size int32. 
-/// It also does not completely decode System.Type attributes 
 val decodeILAttribData: 
     ILGlobals -> 
     ILAttribute -> 
-    ILScopeRef option ->
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
@@ -1955,7 +1958,7 @@ val mkILParam: string option * ILType -> ILParameter
 val mkILParamAnon: ILType -> ILParameter
 val mkILParamNamed: string * ILType -> ILParameter
 val mkILReturn: ILType -> ILReturn
-val mkILLocal: ILType -> ILLocal
+val mkILLocal: ILType -> (string * int * int) option -> ILLocal
 val mkILLocals : ILLocal list -> ILLocals
 val emptyILLocals : ILLocals
 
@@ -2024,7 +2027,8 @@ val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
 val mkILCustomAttrs: ILAttribute list -> ILAttributes
-val mkILComputedCustomAttrs: (unit -> ILAttribute list) -> ILAttributes
+val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
+val mkILComputedCustomAttrs: (unit -> ILAttribute[]) -> ILAttributes
 val emptyILCustomAttrs: ILAttributes
 
 val mkILSecurityDecls: ILPermission list -> ILPermissions
@@ -2043,8 +2047,8 @@ val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
-val mkILMethodsLazy: Lazy<ILMethodDef list> -> ILMethodDefs
-val addILMethod:  ILMethodDef -> ILMethodDefs -> ILMethodDefs
+val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
+val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
@@ -2055,7 +2059,8 @@ val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef  list -> ILTypeDefs
+val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
+val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 
 /// Create table of types which is loaded/computed on-demand, and whose individual 
@@ -2066,7 +2071,7 @@ val emptyILTypeDefs: ILTypeDefs
 /// 
 /// Note that individual type definitions may contain further delays 
 /// in their method, field and other tables. 
-val mkILTypeDefsLazy: Lazy<(string list * string * ILAttributes * Lazy<ILTypeDef>) list> -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>) array) -> ILTypeDefs
 val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
@@ -2252,11 +2257,12 @@ val getTyOfILEnumInfo: ILEnumInfo -> ILType
 
 val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
 
-// -------------------------------------------------------------------- 
+
+// --------------------------------------------------------------------
 // For completeness.  These do not occur in metadata but tools that
 // care about the existence of properties and events in the metadata
 // can benefit from them.
-// -------------------------------------------------------------------- 
+// --------------------------------------------------------------------
 
 [<Sealed>]
 type ILEventRef =

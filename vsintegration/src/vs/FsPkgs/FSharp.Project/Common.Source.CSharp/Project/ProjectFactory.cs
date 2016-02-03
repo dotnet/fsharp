@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -24,16 +24,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     , IVsProjectUpgradeViaFactory, IVsProjectUpgradeViaFactory4
 
 	{
-		#region fields
 		private Microsoft.VisualStudio.Shell.Package package;
 		private System.IServiceProvider site;
 
         private Microsoft.Build.Evaluation.ProjectCollection buildEngine;
         private Microsoft.Build.Evaluation.Project buildProject;
-        #endregion
 
-        #region properties
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.VisualStudio.Shell.Package Package
+        public Microsoft.VisualStudio.Shell.Package Package
         {
             get
             {
@@ -41,7 +38,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ System.IServiceProvider Site
+        public System.IServiceProvider Site
         {
             get
             {
@@ -52,7 +49,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The msbuild engine that we are going to use.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.Build.Evaluation.ProjectCollection BuildEngine
+        public Microsoft.Build.Evaluation.ProjectCollection BuildEngine
         {
             get
             {
@@ -63,7 +60,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The msbuild project for the temporary project file.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.Build.Evaluation.Project BuildProject
+        public Microsoft.Build.Evaluation.Project BuildProject
         {
             get
             {
@@ -74,22 +71,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.buildProject = value;
             }
         }
-        #endregion
 
-        #region ctor
-        public /*protected, but public for FSharp.Project.dll*/ ProjectFactory(Microsoft.VisualStudio.Shell.Package package)
+        public ProjectFactory(Microsoft.VisualStudio.Shell.Package package)
         {
             this.package = package;
             this.site = package;
             this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
         }
-        #endregion
 
-        #region abstract methods
         protected abstract ProjectNode CreateProject();
-        #endregion
 
-        #region overriden methods
         /// <summary>
         /// Rather than directly creating the project, ask VS to initate the process of
         /// creating an aggregated project in case we are flavored. We will be called
@@ -179,9 +170,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return guids;
         }
-        #endregion
 
-        #region helpers
 #if FX_ATLEAST_45
 
         private class ProjectInspector
@@ -290,9 +279,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return null;
         }
-	#endregion
 
-        #region IVsProjectUpgradeViaFactory
         private string m_lastUpgradedProjectFile;
         private const string SCC_PROJECT_NAME = "SccProjectName";
         private string m_sccProjectName;
@@ -823,8 +810,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 i++;
             }
         }
-
-        #endregion
-
     }
 }

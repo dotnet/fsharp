@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -28,22 +28,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class TrackDocumentsHelper
     {
-        #region fields
         private ProjectNode projectMgr;
-        #endregion
 
-        #region properties
-
-        #endregion
-
-        #region ctors
-        /*internal, but public for FSharp.Project.dll*/ public TrackDocumentsHelper(ProjectNode project)
+        public TrackDocumentsHelper(ProjectNode project)
         {
             this.projectMgr = project;
         }
-        #endregion
 
-        #region helper methods
         /// <summary>
         /// Gets the IVsTrackProjectDocuments2 object by asking the service provider for it.
         /// </summary>
@@ -67,7 +58,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="files">The files to add.</param>
         /// <param name="flags">The VSQUERYADDFILEFLAGS flags associated to the files added</param>
         /// <returns>true if the file can be added, false if not.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public bool CanAddItems(string[] files, VSQUERYADDFILEFLAGS[] flags)
+        public bool CanAddItems(string[] files, VSQUERYADDFILEFLAGS[] flags)
         {
             // If we are silent then we assume that the file can be added, since we do not want to trigger this event.
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) != 0)
@@ -94,7 +85,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Notify the environment about a file just added
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public void OnItemAdded(string file, VSADDFILEFLAGS flag)
+        public void OnItemAdded(string file, VSADDFILEFLAGS flag)
         {
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) == 0)
             {
@@ -108,7 +99,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="files">an array of files to remove</param>
         /// <param name="flags">The VSQUERYREMOVEFILEFLAGS associated to the files to be removed.</param>
         /// <returns>true if the files can be removed, false if not.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public bool CanRemoveItems(string[] files, VSQUERYREMOVEFILEFLAGS[] flags)
+        public bool CanRemoveItems(string[] files, VSQUERYREMOVEFILEFLAGS[] flags)
         {
             // If we are silent then we assume that the file can be removed, since we do not want to trigger this event.
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) != 0)
@@ -136,7 +127,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Notify the environment about a file just removed
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public void OnItemRemoved(string file, VSREMOVEFILEFLAGS flag)
+        public void OnItemRemoved(string file, VSREMOVEFILEFLAGS flag)
         {
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) == 0)
             {
@@ -151,7 +142,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="newFileName">Path to the new file.</param>
         /// <param name="flag">The VSRENAMEFILEFLAGS associated with the file to be renamed.</param>
         /// <returns>true if the file can be renamed. Otherwise false.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public bool CanRenameItem(string oldFileName, string newFileName, VSRENAMEFILEFLAGS flag)
+        public bool CanRenameItem(string oldFileName, string newFileName, VSRENAMEFILEFLAGS flag)
         {
             // If we are silent then we assume that the file can be renamed, since we do not want to trigger this event.
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) != 0)
@@ -168,14 +159,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Get's called to tell the env that a file was renamed
         /// </summary>
         /// 
-        /*internal, but public for FSharp.Project.dll*/ public void OnItemRenamed(string strOldName, string strNewName, VSRENAMEFILEFLAGS flag)
+        public void OnItemRenamed(string strOldName, string strNewName, VSRENAMEFILEFLAGS flag)
         {
             if ((this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerTrackerEvents) == 0)
             {
                 ErrorHandler.ThrowOnFailure(this.GetIVsTrackProjectDocuments2().OnAfterRenameFile(projectMgr.InteropSafeIVsProject, strOldName, strNewName, flag));
             }
         }
-        #endregion
     }
 }
 

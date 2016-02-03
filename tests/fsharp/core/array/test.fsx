@@ -594,13 +594,64 @@ module Array2Tests = begin
     //test "a2_sub"
     //    (Array2D.sub a 1 1 2 2 = b)
 
+
     Array2D.blit b 0 0 a 0 0 2 2
     //test "a2_blit"
     //      (Array2D.sub a 0 0 2 2 = b)
 
   let _ = test_make_get_set_length ()
 
+
 end
+
+#if !Portable
+module ArrayNonZeroBasedTestsSlice = 
+  let runTest () = 
+    let arr = (Array2D.initBased 5 4 3 2 (fun i j -> (i,j)))
+    test "fewoih1" (arr.[6,*] = [|(6, 4); (6, 5)|])
+    test "fewoih2" (arr.[*,*].[1,*] = [|(6, 4); (6, 5)|])
+    test "fewoih3" (arr.[*,5] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih4" (arr.[*,*].[*,1] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih5" (arr.GetLowerBound(0) = 5)
+    test "fewoih6" (arr.GetLowerBound(1) = 4)
+    test "fewoih7" (arr.[*,*].GetLowerBound(0) = 0)
+    test "fewoih8" (arr.[*,*].GetLowerBound(1) = 0)
+    test "fewoih9" (arr.[*,*].[0..,1] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih10" (arr.[*,*].[1..,1] =  [|(6, 5); (7, 5)|])
+    let arr2d = 
+        let arr = Array2D.zeroCreateBased 5 4 3 2 
+        for i in 5..7 do for j in 4..5 do arr.[i,j] <- (i,j)
+        arr
+    let arr2d2 = 
+        let arr = Array2D.zeroCreate 3 2 
+        for i in 0..2 do for j in 0..1 do arr.[i,j] <- (j,i)
+        arr
+    test "fewoih11" (arr2d.[6..6,5] =  [|(6, 5)|])
+    test "fewoih11" (arr2d.[..6,5] =  [|(5, 5); (6, 5)|])
+    test "fewoih11" (arr2d.[6..,5] =  [|(6, 5); (7, 5)|])
+    test "fewoih12" (arr2d.[*,*].[1..,1] =  [|(6, 5); (7, 5)|])
+    arr2d.[*,*] <- arr2d2
+    test "fewoih13" (arr2d.[*,*].[0..0,1] =  [|(1, 0)|])
+    test "fewoih13" (arr2d.[*,*].[1..,1] =  [|(1, 1); (1, 2)|])
+    test "fewoih13" (arr2d.[*,*].[1,1..] =  [|(1, 1)|])
+    test "fewoih13" (arr2d.[*,*].[1,0..0] =  [|(0, 1)|])
+    let arr3d = 
+        let arr = System.Array.CreateInstance(typeof<int*int*int>, [| 3;2;1 |], [|5;4;3|]) :?> (int*int*int)[,,]
+        for i in 5..7 do for j in 4..5 do for k in 3..3 do arr.[i,j,k] <- (i,j,k)
+        arr
+    let arr3d2 = 
+        let arr = System.Array.CreateInstance(typeof<int*int*int>, [| 3;2;1 |]) :?> (int*int*int)[,,]
+        for i in 0..2 do for j in 0..1 do for k in 0..0 do arr.[i,j,k] <- (k,j,i)
+        arr
+
+    test "fewoih14" (arr3d.[5,4,3] = (5,4,3))
+    test "fewoih15" (arr3d.[*,*,*].[0,0,0] =  (5,4,3))
+    arr3d.[*,*,*] <- arr3d2
+    test "fewoih16" (arr3d.[5,4,3] =  (0,0,0))
+    test "fewoih16" (arr3d.[5,5,3] =  (0,1,0))
+    test "fewoih16" (arr3d.[6,5,3] =  (0,1,1))
+  let _ = runTest()
+#endif
 
 module Array3Tests = begin
 
@@ -715,7 +766,7 @@ module SeqCacheAllTest =
 
 module StringSlicingTest = 
     let s1 = "abcdef"
-    test "slice1923" (s1.[*] = s1)
+    test "slice1922" (s1.[*] = s1)
     test "slice1923" (s1.[0..] = s1)
     test "slice1924" (s1.[1..] = "bcdef")
     test "slice1925" (s1.[2..] = "cdef")
@@ -731,6 +782,7 @@ module StringSlicingTest =
     test "slice1915" (s1.[..5] = "abcdef")
     test "slice1918" (try s1.[..6] |> ignore; false with _ -> true)
     test "slice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
+    test "slice1816" (s1.[1..-1] = "")
     test "slice1817" (s1.[1..0] = "")
     test "slice1811" (s1.[1..1] = "b")
     test "slice1812" (s1.[1..2] = "bc")
@@ -738,16 +790,28 @@ module StringSlicingTest =
     test "slice1814" (s1.[1..4] = "bcde")
     test "slice1815" (s1.[1 ..5] = "bcdef")
     test "slice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "slice1819" (try s1.[-1..1] |> ignore; false with _ -> true)
     test "slice1940" (s1.[0..1] = "ab")
     test "slice1941" (s1.[1..1] = "b")
     test "slice1942" (s1.[2..1] = "")
     test "slice1943" (s1.[3..1] = "")
     test "slice1944" (s1.[4..1] = "")
-
+    test "slice1950" (s1.[-3..-4] = "")
+    test "slice1951" (try s1.[-4..-3] |> ignore; false with _ -> true)
+    
+    let empty = ""
+    test "slice1961" (empty.[*] = "")
+    test "slice1962" (empty.[5..3] = "")
+    test "slice1963" (empty.[0..] = "")
+    test "slice1964" (try empty.[..0] |> ignore; false with _ -> true)
+    test "slice1965" (try empty.[0..0] |> ignore; false with _ -> true)
+    test "slice1966" (try empty.[0..1] |> ignore; false with _ -> true)
+    test "slice1967" (try empty.[3..5] |> ignore; false with _ -> true)
 
 module ArraySlicingTestBytes = 
 
     let s1 = "abcdef"B
+    test "bslice1922" (s1.[*] = s1)
     test "bslice1923" (s1.[0..] = s1)
     test "bslice1924" (s1.[1..] = "bcdef"B)
     test "bslice1925" (s1.[2..] = "cdef"B)
@@ -763,6 +827,7 @@ module ArraySlicingTestBytes =
     test "bslice1915" (s1.[..5] = "abcdef"B)
     test "bslice1918" (try s1.[..6] |> ignore; false with _ -> true)
     test "bslice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
+    test "bslice1816" (s1.[1..-1] = ""B)
     test "bslice1817" (s1.[1..0] = ""B)
     test "bslice1811" (s1.[1..1] = "b"B)
     test "bslice1812" (s1.[1..2] = "bc"B)
@@ -770,17 +835,28 @@ module ArraySlicingTestBytes =
     test "bslice1814" (s1.[1..4] = "bcde"B)
     test "bslice1815" (s1.[1 ..5] = "bcdef"B)
     test "bslice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "bslice1819" (try s1.[-1..1] |> ignore; false with _ -> true)
     test "bslice1940" (s1.[0..1] = "ab"B)
     test "bslice1941" (s1.[1..1] = "b"B)
     test "bslice1942" (s1.[2..1] = ""B)
     test "bslice1943" (s1.[3..1] = ""B)
     test "bslice1944" (s1.[4..1] = ""B)
+    test "bslice1950" (s1.[-3..-4] = ""B)
+    test "bslice1951" (try s1.[-4..-3] |> ignore; false with _ -> true)
 
-
+    let empty = ""B
+    test "bslice1961" (empty.[*] = ""B)
+    test "bslice1962" (empty.[5..3] = ""B)
+    test "bslice1963" (empty.[0..] = ""B)
+    test "bslice1964" (try empty.[..0] |> ignore; false with _ -> true)
+    test "bslice1965" (try empty.[0..0] |> ignore; false with _ -> true)
+    test "bslice1966" (try empty.[0..1] |> ignore; false with _ -> true)
+    test "bslice1967" (try empty.[3..5] |> ignore; false with _ -> true)
 
 module ArraySlicingTestInts = 
 
     let s1 = [| 1;2;3;4;5;6 |]
+    test "aslice1922" (s1.[*] = s1)
     test "aslice1923" (s1.[0..] = s1)
     test "aslice1924" (s1.[1..] = [| 2;3;4;5;6 |])
     test "aslice1925" (s1.[2..] = [| 3;4;5;6 |])
@@ -796,6 +872,7 @@ module ArraySlicingTestInts =
     test "aslice1915" (s1.[..5] = [| 1;2;3;4;5;6 |])
     test "aslice1918" (try s1.[..6] |> ignore; false with _ -> true)
     test "aslice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
+    test "aslice1816" (s1.[1..-1] = [| |])
     test "aslice1817" (s1.[1..0] = [|  |])
     test "aslice1811" (s1.[1..1] = [| 2 |])
     test "aslice1812" (s1.[1..2] = [| 2;3 |])
@@ -803,11 +880,23 @@ module ArraySlicingTestInts =
     test "aslice1814" (s1.[1..4] = [| 2;3;4;5|])
     test "aslice1815" (s1.[1 ..5] = [| 2;3;4;5;6|])
     test "aslice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "aslice1819" (try s1.[-1..1] |> ignore; false with _ -> true)
     test "aslice1940" (s1.[0..1] = [| 1;2|])
     test "aslice1941" (s1.[1..1] = [| 2 |])
     test "aslice1942" (s1.[2..1] = [| |])
     test "aslice1943" (s1.[3..1] = [| |])
     test "aslice1944" (s1.[4..1] = [| |])
+    test "aslice1950" (s1.[-3..-4] = [| |])
+    test "aslice1951" (try s1.[-4..-3] |> ignore; false with _ -> true)
+
+    let empty : int array = [| |]
+    test "aslice1961" (empty.[*] = [| |])
+    test "aslice1962" (empty.[5..3] = [| |])
+    test "aslice1963" (empty.[0..] = [| |])
+    test "aslice1964" (try empty.[..0] |> ignore; false with _ -> true)
+    test "aslice1965" (try empty.[0..0] |> ignore; false with _ -> true)
+    test "aslice1966" (try empty.[0..1] |> ignore; false with _ -> true)
+    test "aslice1967" (try empty.[3..5] |> ignore; false with _ -> true)
 
 
 module Array2DSlicingTests = 
@@ -1329,6 +1418,37 @@ module bug872632 =
                 |] 
 
     do check "bug872632" Foo.x.Length 8
+
+module CheckUnionTypesAreSealed =
+    open System
+#if NetCore
+    open System.Reflection
+    type System.Type with
+        member this.IsSealed
+            with get () = this.GetTypeInfo().IsSealed
+#endif
+
+    do check "vwllfewlkefw1" (typedefof<list<int>>.IsSealed) true
+    do check "vwllfewlkefw2" (typedefof<option<int>>.IsSealed) true
+    type X1 = A | B
+    do check "vwllfewlkefw3" (typedefof<X1>.IsSealed) true
+    type X2 = A | B of string
+    do check "vwllfewlkefw4" (typedefof<X2>.IsSealed) false
+    type X3 = A | B | C
+    do check "vwllfewlkefw5" (typedefof<X3>.IsSealed) true
+    type X4 = A | B | C | D | E | F | G | H | I
+    do check "vwllfewlkefw5" (typedefof<X4>.IsSealed) true
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    type SetTree<'T> = 
+        | SetEmpty                                          
+        | SetNode of 'T * SetTree<'T> *  SetTree<'T> 
+    do check "vwllfewlkefw6" (typedefof<SetTree<int>>.IsSealed) true
+
+    type SetTree2<'T> = 
+        | SetEmpty                                          
+        | SetNode of 'T * SetTree2<'T> *  SetTree2<'T> 
+    do check "vwllfewlkefw6" (typedefof<SetTree2<int>>.IsSealed) false
 
 module manyIndexes =
     open System

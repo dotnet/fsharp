@@ -64,29 +64,55 @@ type S =
     val mutable x : int
 #endif
 
+
 module TypedTest = begin 
+
+    // Checks the shape of the quotation to match that of
+    // foreach implemented in terms of GetEnumerator ()
+    let (|ForEachShape|_|) = function
+        | Let (
+                inputSequence,
+                inputSequenceBinding,
+                Let (
+                        enumerator,
+                        enumeratorBinding,
+                        TryFinally (
+                            WhileLoop (
+                                guard,
+                                Let (i, currentExpr, body)),
+                            cleanup)
+                        )
+                ) -> Some inputSequence
+        | _ -> None
 
     let x = <@ 1 @>
 
-    test "check SByte"   ((<@  1y   @> |> (function SByte 1y -> true | _ -> false))) 
-    test "check Int16"   ((<@  1s   @> |> (function Int16 1s -> true | _ -> false))) 
-    test "check Int32"   ((<@  1   @> |> (function Int32 1 -> true | _ -> false))) 
-    test "check Int64"   ((<@  1L   @> |> (function Int64 1L -> true | _ -> false))) 
-    test "check Byte"     ((<@  1uy   @> |> (function Byte 1uy -> true | _ -> false))) 
-    test "check UInt16"   ((<@  1us   @> |> (function UInt16 1us -> true | _ -> false))) 
-    test "check UInt32"   ((<@  1u   @> |> (function UInt32 1u -> true | _ -> false))) 
-    test "check UInt64"   ((<@  1UL   @> |> (function UInt64 1UL -> true | _ -> false))) 
-    test "check String"  ((<@  "1" @> |> (function String "1" -> true | _ -> false))) 
+    test "check SByte"    ((<@  1y   @> |> (function SByte 1y ->   true | _ -> false))) 
+    test "check Int16"    ((<@  1s   @> |> (function Int16 1s ->   true | _ -> false))) 
+    test "check Int32"    ((<@  1    @> |> (function Int32 1 ->    true | _ -> false))) 
+    test "check Int64"    ((<@  1L   @> |> (function Int64 1L ->   true | _ -> false))) 
+    test "check Byte"     ((<@  1uy  @> |> (function Byte 1uy ->   true | _ -> false))) 
+    test "check UInt16"   ((<@  1us  @> |> (function UInt16 1us -> true | _ -> false))) 
+    test "check UInt32"   ((<@  1u   @> |> (function UInt32 1u ->  true | _ -> false))) 
+    test "check UInt64"   ((<@  1UL  @> |> (function UInt64 1UL -> true | _ -> false))) 
+    test "check String"   ((<@  "1"  @> |> (function String "1" -> true | _ -> false))) 
 
-    test "check ~SByte"   ((<@  "1"   @> |> (function SByte _ -> false | _ -> true))) 
-    test "check ~Int16"   ((<@  "1"   @> |> (function Int16 _ -> false | _ -> true))) 
-    test "check ~Int32"   ((<@  "1"   @> |> (function Int32 _ -> false | _ -> true))) 
-    test "check ~Int64"   ((<@  "1"   @> |> (function Int64 _ -> false | _ -> true))) 
-    test "check ~Byte"   ((<@  "1"   @> |> (function Byte _ -> false | _ -> true))) 
-    test "check ~UInt16"   ((<@  "1"   @> |> (function UInt16 _ -> false | _ -> true))) 
-    test "check ~UInt32"   ((<@  "1"   @> |> (function UInt32 _ -> false | _ -> true))) 
-    test "check ~UInt64"   ((<@  "1"   @> |> (function UInt64 _ -> false | _ -> true))) 
-    test "check ~String" ((<@  1   @> |> (function String "1" -> false | _ -> true))) 
+    test "check ~SByte"   ((<@  "1"  @> |> (function SByte _ ->    false | _ -> true))) 
+    test "check ~Int16"   ((<@  "1"  @> |> (function Int16 _ ->    false | _ -> true))) 
+    test "check ~Int32"   ((<@  "1"  @> |> (function Int32 _ ->    false | _ -> true))) 
+    test "check ~Int64"   ((<@  "1"  @> |> (function Int64 _ ->    false | _ -> true))) 
+    test "check ~Byte"    ((<@  "1"  @> |> (function Byte _ ->     false | _ -> true))) 
+    test "check ~UInt16"  ((<@  "1"  @> |> (function UInt16 _ ->   false | _ -> true))) 
+    test "check ~UInt32"  ((<@  "1"  @> |> (function UInt32 _ ->   false | _ -> true))) 
+    test "check ~UInt64"  ((<@  "1"  @> |> (function UInt64 _ ->   false | _ -> true))) 
+    test "check ~String"  ((<@  1    @> |> (function String "1" -> false | _ -> true))) 
+
+#if FSHARP_CORE_31
+#else
+    test "check Decimal"  ((<@  1M   @> |> (function Decimal 1M -> true | _ -> false))) 
+    test "check ~Decimal" ((<@  "1"  @> |> (function Decimal _ ->  false | _ -> true))) 
+    test "check ~Decimal neither" ((<@ 1M + 1M @> |> (function Decimal _ ->  false | _ -> true))) 
+#endif
 
     test "check AndAlso" ((<@ true && true  @> |> (function AndAlso(Bool(true),Bool(true)) -> true | _ -> false))) 
     test "check OrElse"  ((<@ true || true  @> |> (function OrElse(Bool(true),Bool(true)) -> true | _ -> false))) 
@@ -103,7 +129,11 @@ module TypedTest = begin
     // In this example, the types of the start and end points are not known at the point the loop
     // is typechecked. There was a bug (6064) where the transformation to a ForIntegerRangeLoop was only happening
     // when types were known
-    test "check ForIntegerRangeLoop"   (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    test "check ForIntegerRangeLoop"    (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    // Checks that foreach over non-integer ranges should have the shape of foreach implemented in terms of GetEnumerator
+    test "check ForEachInSeq"           (<@ for i in seq {for x in 0..10 -> x} do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInList"          (<@ for i in "123" do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInString"        (<@ for i in [1;2;3] do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
     // A slight non orthogonality is that all other 'for' loops go to (quite complex) the desugared form
     test "check Other Loop"   (<@ for i in 1 .. 2 .. 10 do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
     test "check Other Loop"   (<@ for i in 1L .. 10L do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
@@ -500,6 +530,17 @@ module TypedTest = begin
             |   FieldGet(Some (Value (v,t)), _) -> Object.ReferenceEquals(v, foo)
             |   _ -> false
         end
+
+#if FSHARP_CORE_31
+#else
+    test "check accesses to readonly fields in ReflectedDefinitions" 
+        begin
+            let c1 = Class1("a")
+            match <@ c1.myReadonlyField @> with
+            |   FieldGet(Some (ValueWithName (_, v, "c1")), field) -> (v.Name = "Class1") && (field.Name = "myReadonlyField")
+            |   _ -> false
+        end
+#endif
 
 end
 
@@ -1634,7 +1675,13 @@ module QuotationConstructionTests =
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
     #endif
     check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
-    check "vcknwwe0qq" (Expr.Quote(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
+#if FSHARP_CORE_31
+#else
+    check "vcknwwe0qq1" (Expr.QuoteRaw(<@ "1" @>)) <@@ <@@ "1" @@> @@>
+    check "vcknwwe0qq2" (Expr.QuoteRaw(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
+    check "vcknwwe0qq3" (Expr.QuoteTyped(<@ "1" @>)) <@@ <@ "1" @> @@>
+    check "vcknwwe0qq4" (Expr.QuoteTyped(<@@ "1" @@>)) <@@ <@ "1" @> @@>
+#endif
     check "vcknwwe0ww" (Expr.Sequential(<@@ () @@>, <@@ 1 @@>)) <@@ (); 1 @@>
     check "vcknwwe0ee" (Expr.TryFinally(<@@ 1 @@>, <@@ () @@>)) <@@ try 1 finally () @@>
     check "vcknwwe0rr" (match Expr.TryWith(<@@ 1 @@>, Var.Global("e1",typeof<exn>), <@@ 1 @@>, Var.Global("e2",typeof<exn>), <@@ 2 @@>) with TryWith(b,v1,ef,v2,eh) -> b = <@@ 1 @@> && eh = <@@ 2 @@> && ef = <@@ 1 @@> && v1 = Var.Global("e1",typeof<exn>) && v2 = Var.Global("e2",typeof<exn>)| _ -> false) true 
@@ -2408,6 +2455,319 @@ module QuotationOfResizeArrayIteration =
                  -> true
          |    _ -> false)
         
+
+
+#if FSHARP_CORE_31
+#else
+module TestAutoQuoteAtStaticMethodCalls = 
+    open Microsoft.FSharp.Quotations
+
+    type C() = 
+        static let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        static member Plot ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        static member PlotTwoArg ([<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (x,y) |> cleanup
+
+        static member PlotThreeArg (w:int, [<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (w,x,y) |> cleanup
+
+        static member PlotParams ([<ReflectedDefinition; System.ParamArray>] x: Expr<int>[]) = 
+            sprintf "%A" x |> cleanup
+
+        static member PlotEval ([<ReflectedDefinition(true)>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+
+    let shouldEqual  id x y = check id y x
+    let x = 1
+    let y = 1
+    let xb = true
+    let yb = true
+    let testItAll() = 
+        let z = 1
+        let zb = true
+
+        C.Plot (xb && yb || zb)  |> shouldEqual "testd109700" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        C.Plot (x + y * z) |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        C.PlotTwoArg (x + y * z, 108) |> shouldEqual "testd109703" "(Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        C.PlotThreeArg (107, x + y * z, 108)|> shouldEqual "testd109704" "(107,Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        C.PlotParams (1, 2) |> shouldEqual "testd109708" "[|Value(1);Value(2)|]"
+
+        C.PlotParams (x + y) |> shouldEqual "testd109709" "[|Call(None,op_Addition,[PropertyGet(None,x,[]),PropertyGet(None,y,[])])|]"
+
+        C.Plot (fun (x,y,z) -> xb && yb || zb) |> shouldEqual "testd10970F" "Lambda(tupledArg,Let(x,TupleGet(tupledArg,0),Let(y,TupleGet(tupledArg,1),Let(z,TupleGet(tupledArg,2),IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))))))"
+
+        C.Plot (fun x -> x) |> shouldEqual "testd109710" "Lambda(x,x)"
+
+        C.Plot (fun x -> x, x+1)  |> shouldEqual "testd109711" "Lambda(x,NewTuple(x,Call(None,op_Addition,[x,Value(1)])))"
+
+        C.PlotEval (xb && yb || zb) |> shouldEqual "testd109712" "WithValue(true,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+    testItAll()
+
+module TestAutoQuoteAtInstanceMethodCalls = 
+    open Microsoft.FSharp.Quotations
+    open System.Runtime.CompilerServices
+
+
+    type C() = 
+        let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        member __.Plot ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        member __.PlotTwoArg ([<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (x,y) |> cleanup
+
+        member __.PlotThreeArg (w:int, [<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (w,x,y) |> cleanup
+
+        member __.PlotParams ([<ReflectedDefinition; System.ParamArray>] x: Expr<int>[]) = 
+            sprintf "%A" x |> cleanup
+
+        member __.Item ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        member __.PlotEval ([<ReflectedDefinition(true)>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        override __.ToString() = "C"
+
+    [<Extension>]
+    module CSharpStyleExtensionMember = 
+        let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        [<Extension>]
+        type CExtMem() = 
+            [<Extension>]
+            static member PlotCSharpStyleExtMem (this: C, [<ReflectedDefinition>] x: Expr<'T>) = 
+                sprintf "%A" x |> cleanup
+
+            // Adding 'ReflectedDefinition' to an argument that doesn't have type Expr<'T> is ignored (no error or warning is given at declaration or use)
+            [<Extension>]
+            static member PlotCSharpStyleExtMemNoExpr (this: C, [<ReflectedDefinition>] x: 'T) = 
+                sprintf "%A" x |> cleanup
+
+            // Adding 'ReflectedDefinition' to the 'this' argument of a C#-style extension member is ignored. 
+            //
+            //[<Extension>]
+            //static member PlotCSharpStyleExtMemWithReflectedThis ([<ReflectedDefinition>] this: Expr<C>, [<ReflectedDefinition>] x: Expr<'T>) = 
+            //    sprintf "%A" (this, x) |> cleanup
+            [<Extension>]
+            static member PlotCSharpStyleExtMemWithIgnoredReflectedThis ([<ReflectedDefinition>] this: C, [<ReflectedDefinition>] x: Expr<'T>) = 
+                sprintf "%A" (this, x) |> cleanup
+
+    open CSharpStyleExtensionMember
+    let shouldEqual  id x y = check id y x
+    let x = 1
+    let y = 1
+    let xb = true
+    let yb = true
+    let testItAll() = 
+        let z = 1
+        let zb = true
+        let c = C()
+
+        c.Plot (xb && yb || zb)  |> shouldEqual "testd109700" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        c.Plot (x + y * z) |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        c.[x + y * z] |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        c.PlotTwoArg (x + y * z, 108) |> shouldEqual "testd109703" "(Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        c.PlotThreeArg (107, x + y * z, 108)|> shouldEqual "testd109704" "(107,Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        c.PlotParams (1, 2) |> shouldEqual "testd109708" "[|Value(1);Value(2)|]"
+
+        c.PlotParams (x + y) |> shouldEqual "testd109709" "[|Call(None,op_Addition,[PropertyGet(None,x,[]),PropertyGet(None,y,[])])|]"
+
+        c.Plot (fun (x,y,z) -> xb && yb || zb) |> shouldEqual "testd10970F" "Lambda(tupledArg,Let(x,TupleGet(tupledArg,0),Let(y,TupleGet(tupledArg,1),Let(z,TupleGet(tupledArg,2),IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))))))"
+
+        c.Plot (fun x -> x) |> shouldEqual "testd109710" "Lambda(x,x)"
+
+        c.Plot (fun x -> x, x+1)  |> shouldEqual "testd109711" "Lambda(x,NewTuple(x,Call(None,op_Addition,[x,Value(1)])))"
+
+        c.PlotEval (xb && yb || zb) |> shouldEqual "testd109712" "WithValue(true,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+        c.PlotCSharpStyleExtMem (xb && yb || zb)  |> shouldEqual "testd109713" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        c.PlotCSharpStyleExtMemNoExpr (xb && yb || zb)  |> shouldEqual "testdoqhwm" "true"
+
+        c.PlotCSharpStyleExtMemWithIgnoredReflectedThis (xb && yb || zb)  |> shouldEqual "testd109714" "(C,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+    testItAll()
+
+module TestsForUsingReflectedDefinitionArgumentsAsFirstClassValues = 
+    open Microsoft.FSharp.Quotations
+    open System.Linq.Expressions
+    open System
+
+    type FirstClassTests() = 
+        static member PlotExpr ([<ReflectedDefinition>] x: Expr<'T>) = x.ToString()
+        static member PlotExprOverloadedByType ([<ReflectedDefinition>] x: Expr<int>) = x.ToString()
+        static member PlotExprOverloadedByType ([<ReflectedDefinition>] x: Expr<string>) = x.ToString()
+        static member PlotExprOverloadedByShape (x:int) = x.ToString()
+        static member PlotExprOverloadedByShape ([<ReflectedDefinition>] x: Expr<int>) = x.ToString()
+        static member PlotLinq (x: Expression<Func<int,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByType (x: Expression<Func<int,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByType (x: Expression<Func<string,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByShape (x: Func<int,'T>) =  x.ToString()
+        static member PlotLinqOverloadedByShape (x: Expression<Func<int,'T>>) =  x.ToString()
+
+    // Most of the following tests are just checking that overloads are resolved correctly
+    let runAll() = 
+
+        // Check we can define a function that calls the overloads
+        let callLinqWithoutAutoConv (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinq ef     
+        let callLinqWithAutoConv (f: int -> int) = FirstClassTests.PlotLinq (fun x -> f x)     // needs eta-expansion
+        let callLinqOverloadedByTypeWithoutAutoConvInt (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinqOverloadedByType ef     
+        let callLinqOverloadedByTypeWithoutAutoConvString (ef: Expression<Func<string,int>>) = FirstClassTests.PlotLinqOverloadedByType ef     
+        let callLinqOverloadedByTypeWithAutoConvInt (f: int -> int) = FirstClassTests.PlotLinqOverloadedByType (fun x -> f x)   
+        let callLinqOverloadedByTypeWithAutoConvString (f: string -> int) = FirstClassTests.PlotLinqOverloadedByType (fun x -> f x)   
+        let callLinqOverloadedByShapeWithoutAutoConv (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinqOverloadedByShape ef     
+        let callExprWithoutAutoConv (ef: Expr<int>) = FirstClassTests.PlotExpr <@ %ef @>
+        let callExprWithAutoConv (ef: int) = FirstClassTests.PlotExpr ef     
+        let callExprOverloadedWithoutAutoConvA (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByType <@ %ef @>
+        let callExprOverloadedWithoutAutoConvB (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByType ef
+        let callExprOverloadedWithAutoConv (ef: int) = FirstClassTests.PlotExprOverloadedByType ef     
+        let callExprOverloadedByShapeWithoutAutoConvA (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByShape <@ %ef @>
+        let callExprOverloadedByShapeWithoutAutoConvB (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByShape ef
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let callLinqOverloadedByShapeWithAutoConv (f: int -> int) = C.PlotLinqOverloadedByShape (fun x -> f x)    // overload not resolved
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let callExprOverloadedByShapeWithAutoConv (ef: int) = C.PlotExprOverloadedByShape ef      // overload not resolved
+
+        // Check type-checking for type-annotated first-class function values
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinq : (int -> int) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinq : Expression<Func<int,int>> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : (int -> int) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : (int -> string) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : Expression<Func<int,int>> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByShape : Expression<Func<int,int>> -> string)    
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByShape : Func<int,int> -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExpr : Expr<int> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExpr : int -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : Expr<int> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : int -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : string -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByShape : Expr<int> -> string)     
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: (C.PlotLinqOverloadedByShape : (int -> int) -> string)     // overload not resolved
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: (C.PlotExprOverloadedByShape : int -> string)           // overload not resolved
+
+
+        // Check type-checking for applications
+        let _unusedResultValue = FirstClassTests.PlotExpr 1
+        let _unusedResultValue = FirstClassTests.PlotExpr <@ 1 @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType 1
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType <@ 1 @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType "a"
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType <@ "a" @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByShape <@ 1 @>
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let _unusedResultValue = FirstClassTests.PlotLinqOverloadedByShape (fun x -> x)
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let _unusedResultValue = FirstClassTests.PlotExprOverloadedByShape 1  // overload not resolved
+
+
+        // Check type-checking for pipelining 
+        let _unusedResultValue = 1 |> FirstClassTests.PlotExpr
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExpr
+        let _unusedResultValue = 1 |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = "a" |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ "a" @> |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExprOverloadedByShape
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: 1 |> FirstClassTests.PlotExprOverloadedByShape // overload not resolved
+
+        ()
+
+    runAll()
+
+
+module NestedQuotations = 
+    open Microsoft.FSharp.Quotations
+    open System.Linq.Expressions
+    open System
+
+    let unnested1 = <@ 100 @> 
+    let unnested2 = <@@ 100 @@> 
+    let nested1 = <@@ <@ 100 @> @@>   
+    let nested2 = <@@ <@@ 100 @@> @@> 
+    let nested3 = <@ <@ 100 @> @>     
+    let nested4 = <@ <@@ 100 @@> @>   
+
+    let runAll() = 
+        test "lfhwwlefkhelw-1a" (match nested1 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-1b" (match nested1 with  QuoteTyped _ -> true | _ -> false)
+        test "lfhwwlefkhelw-1c" (match nested1 with  QuoteRaw _ -> false | _ -> true)
+        test "lfhwwlefkhelw-2a" (match nested2 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-2b" (match nested2 with  QuoteTyped _ -> false | _ -> true)
+        test "lfhwwlefkhelw-2c" (match nested2 with  QuoteRaw _ -> true | _ -> false)
+        test "lfhwwlefkhelw-3a" (match nested3 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-3b" (match nested3 with  QuoteTyped _ -> true | _ -> true)
+        test "lfhwwlefkhelw-3c" (match nested3 with  QuoteRaw _ -> false | _ -> true)
+        test "lfhwwlefkhelw-4a" (match nested4 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-4b" (match nested4 with  QuoteRaw _ -> true | _ -> false)
+        test "lfhwwlefkhelw-4c" (match nested4 with  QuoteTyped _ -> false | _ -> true)
+        test "clenewjclkw-1" (match Expr.Quote unnested1 with  QuoteTyped _ -> true | _ -> false)
+        test "clenewjclkw-2" (match Expr.QuoteRaw unnested1 with  QuoteRaw _ -> true | _ -> false)
+        test "clenewjclkw-3" (match Expr.Quote unnested2 with  QuoteTyped _ -> true | _ -> false)
+        test "clenewjclkw-4" (match Expr.QuoteRaw unnested2 with  QuoteRaw _ -> true | _ -> false)
+        test "clenewjclkw-5" (unnested1.Type = typeof<int>)
+        test "clenewjclkw-6" (unnested2.Type = typeof<int>)
+        test "clenewjclkw-7" (Expr.Quote(unnested1).Type = typeof<Expr<int>>)
+        test "clenewjclkw-8" (Expr.Quote(unnested2).Type = typeof<Expr<int>>)
+        test "clenewjclkw-9" (Expr.QuoteTyped(unnested1).Type = typeof<Expr<int>>)
+        test "clenewjclkw-10" (Expr.QuoteTyped(unnested2).Type = typeof<Expr<int>>)
+        test "clenewjclkw-11" (Expr.QuoteRaw(unnested1).Type = typeof<Expr>)
+        test "clenewjclkw-12" (Expr.QuoteRaw(unnested2).Type = typeof<Expr>)
+
+    runAll()
+
+module ExtensionMembersWithSameName = 
+
+    type System.Object with
+        [<ReflectedDefinition>]
+        member this.Add(x) = x
+        [<ReflectedDefinition>]
+        member this.Add(x, y) = x + y
+        [<ReflectedDefinition>]
+        static member SAdd(x) = x
+        [<ReflectedDefinition>]
+        static member SAdd(x, y) = x + y
+
+    let runAll () =
+        match  <@ obj().Add(2) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf094" text "Some Lambda (this, Lambda (x, x))"
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj().Add(2,3) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf095" (m.GetParameters().Length) 3
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj.SAdd(2) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf096" text "Some Lambda (x, x)"
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj.SAdd(2,3) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf097" (m.GetParameters().Length) 2
+        | _ -> failwith "unexpected shape"
+
+    runAll()
+#endif
+
+module TestAssemblyAttributes = 
+    let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
+
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
   else (stdout.WriteLine "Test Passed"; 

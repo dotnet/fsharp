@@ -26,6 +26,6 @@ $specialCaseCriteria = @{
 # seed for random selection is based on build # and test area
 # this ensures re-runs are predictable, but different test areas get different random choices
 $seed = (dir $fscPath).VersionInfo.FileBuildPart -bxor $testPath.GetHashCode()
-$permutations = ($allPermutations -split '\s+') |?{ $specialCaseCriteria[$_] -ne $false } | Get-Random -SetSeed $seed
+$permutations = ($allPermutations -split '\s+') |?{ $specialCaseCriteria[$_] -ne $false } #| Get-Random -SetSeed $seed
 
 $permutations -join ' '

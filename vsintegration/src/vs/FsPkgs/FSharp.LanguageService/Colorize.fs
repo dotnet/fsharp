@@ -1,15 +1,17 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Collections
+open System.Diagnostics
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop 
-open System.Diagnostics
 open Microsoft.VisualStudio
-open System.Collections
 open Microsoft.VisualStudio.Text
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -19,8 +21,8 @@ open Microsoft.VisualStudio.Text
 module internal ColorStateLookup =
     type ColorStateTable() = 
         let mutable nextInt = 0
-        let toInt = Dictionary<LexState,int>()
-        let toLexState = Dictionary<int,LexState>()
+        let toInt = Dictionary<FSharpTokenizerLexState,int>()
+        let toLexState = Dictionary<int,FSharpTokenizerLexState>()
             
         let Add(lexState) =
             let result = nextInt
@@ -53,77 +55,72 @@ module internal ColorStateLookup =
     let ColorStateOfLexState lexState = cst.ColorStateOfLexState(lexState)
     let LexStateOfColorState colorState = cst.LexStateOfColorState(colorState)
     
+/// A single scanner object which can be used to scan different lines of text.
+/// Each time a scan of new line of text is started the makeLineTokenizer function is called.
+///
+/// An instance of this is stored in the IVsUserData for the IVsTextLines buffer
+/// and retrieved using languageServiceState.GetColorizer(IVsTextLines).
+//
 //    Notes:
 //      - SetLineText() is called one line at a time.
 //      - An instance of FSharpScanner is associated with exactly one buffer (IVsTextLines).
-type internal FSharpScanner(makeLineTokenizer : string -> LineTokenizer) = 
+type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) = 
     let mutable lineTokenizer = makeLineTokenizer ""
 
-    let mutable extraColorizations = None
-    let tryFindExtraInfo ((* newSnapshot:Lazy<ITextSnapshot>, *) line, c1, c2) = 
+    let mutable extraColorizations : IDictionary<Line0, (range * FSharpTokenColorKind)[] > option = None
+
+    let tryFindExtraInfo (line, c1, c2) = 
         match extraColorizations with 
         | None -> None
-        | Some ((* hasTextChanged, *) table:IDictionary<_,_>) -> 
+        | Some (table:IDictionary<_,_>) -> 
              match table.TryGetValue line with 
              | false,_ -> None
              | true,entries -> 
-                 entries |> Array.tryPick (fun ((((_,sc),(_,ec)) as range),t) ->
-                     ignore range 
-#if COLORIZE_TYPES
-                     // If we are colorizing type names, then a lot more late-colorization is going on, and we have to be more precise and
-                     // check snapshots. However it is not clear where to get the new snapshot from, or if it is expensive to get it.
-                     // This is one of the reasons why COLORIZE_TYPES is not enabled.
-                     if sc <= c1 &&  c2+1 <= ec (* && not (hasTextChanged (newSnapshot.Force(),range)) *) then 
-#else
-                     // If we are only colorizing query keywords, and not types, then we can check the exact token range, and that tends to be enough 
-                     // to get pretty good incremental accuracy (while waiting for a re-typecheck to refresh results completely)
-                     if sc = c1 &&  c2+1 = ec then 
-#endif
+                 entries |> Array.tryPick (fun (range: Range.range,t) ->
+                     if range.StartColumn = c1 &&  c2+1 = range.EndColumn then 
                          Some t 
                      else 
                          None)
                  
-    /// Decode compiler TokenColorKind into VS TokenColor.
+    /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind = 
         match colorKind with
-        | TokenColorKind.Comment -> TokenColor.Comment
-        | TokenColorKind.Identifier -> TokenColor.Identifier
-        | TokenColorKind.Keyword -> TokenColor.Keyword
-        | TokenColorKind.String -> TokenColor.String
-        | TokenColorKind.Text -> TokenColor.Text
-        | TokenColorKind.UpperIdentifier -> TokenColor.Identifier
-        | TokenColorKind.Number -> TokenColor.Number
-        | TokenColorKind.InactiveCode -> enum 6          // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-        | TokenColorKind.PreprocessorKeyword -> enum 7   // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-        | TokenColorKind.Operator -> enum 8              // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-#if COLORIZE_TYPES
-        | TokenColorKind.TypeName -> enum 9              // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-#endif
-        | TokenColorKind.Default | _ -> TokenColor.Text
+        | FSharpTokenColorKind.Comment -> TokenColor.Comment
+        | FSharpTokenColorKind.Identifier -> TokenColor.Identifier
+        | FSharpTokenColorKind.Keyword -> TokenColor.Keyword
+        | FSharpTokenColorKind.String -> TokenColor.String
+        | FSharpTokenColorKind.Text -> TokenColor.Text
+        | FSharpTokenColorKind.UpperIdentifier -> TokenColor.Identifier
+        | FSharpTokenColorKind.Number -> TokenColor.Number
+        | FSharpTokenColorKind.InactiveCode -> enum 6          // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
+        | FSharpTokenColorKind.PreprocessorKeyword -> enum 7   // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
+        | FSharpTokenColorKind.Operator -> enum 8              // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
+        | FSharpTokenColorKind.Default | _ -> TokenColor.Text
 
+    /// Decode compiler FSharpTokenColorKind into VS TokenType.
     let lookupTokenType colorKind = 
         match colorKind with
-        | TokenColorKind.Comment -> TokenType.Comment
-        | TokenColorKind.Identifier -> TokenType.Identifier
-        | TokenColorKind.Keyword -> TokenType.Keyword
-        | TokenColorKind.String -> TokenType.String
-        | TokenColorKind.Text -> TokenType.Text
-        | TokenColorKind.UpperIdentifier -> TokenType.Identifier
-        | TokenColorKind.Number -> TokenType.Literal
-        | TokenColorKind.InactiveCode -> TokenType.Unknown
-        | TokenColorKind.PreprocessorKeyword -> TokenType.Unknown
-        | TokenColorKind.Operator -> TokenType.Operator
-#if COLORIZE_TYPES
-        | TokenColorKind.TypeName -> TokenType.Identifier
-#endif
-        | TokenColorKind.Default 
+        | FSharpTokenColorKind.Comment -> TokenType.Comment
+        | FSharpTokenColorKind.Identifier -> TokenType.Identifier
+        | FSharpTokenColorKind.Keyword -> TokenType.Keyword
+        | FSharpTokenColorKind.String -> TokenType.String
+        | FSharpTokenColorKind.Text -> TokenType.Text
+        | FSharpTokenColorKind.UpperIdentifier -> TokenType.Identifier
+        | FSharpTokenColorKind.Number -> TokenType.Literal
+        | FSharpTokenColorKind.InactiveCode -> TokenType.Unknown
+        | FSharpTokenColorKind.PreprocessorKeyword -> TokenType.Unknown
+        | FSharpTokenColorKind.Operator -> TokenType.Operator
+        | FSharpTokenColorKind.Default 
         | _ -> TokenType.Text
         
+    /// Scan a token from a line. This should only be used in cases where color information is irrelevant. 
+    /// Used by GetFullLineInfo (and only thus in a small workaroud in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
     member ws.ScanTokenWithDetails lexState =
         let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
         lexState := newLexState
         colorInfoOption
             
+    /// Scan a token from a line and write information about it into the tokeninfo object.
     member ws.ScanTokenAndProvideInfoAboutIt(line, tokenInfo:TokenInfo, lexState) =
         let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
         lexState := newLexState
@@ -133,14 +130,14 @@ type internal FSharpScanner(makeLineTokenizer : string -> LineTokenizer) =
             let color = 
                 // Upgrade identifiers to keywords based on extra info
                 match colorInfo.ColorClass with 
-                | TokenColorKind.Identifier 
-                | TokenColorKind.UpperIdentifier -> 
+                | FSharpTokenColorKind.Identifier 
+                | FSharpTokenColorKind.UpperIdentifier -> 
                     match tryFindExtraInfo (line, colorInfo.LeftColumn, colorInfo.RightColumn) with 
-                    | None -> TokenColorKind.Identifier 
+                    | None -> FSharpTokenColorKind.Identifier 
                     | Some info -> info // extra info found
                 | c -> c
 
-            tokenInfo.Trigger <- enum (int32 colorInfo.TriggerClass) // cast one enum to another
+            tokenInfo.Trigger <- enum (int32 colorInfo.FSharpTokenTriggerClass) // cast one enum to another
             tokenInfo.StartIndex <- colorInfo.LeftColumn
             tokenInfo.EndIndex <- colorInfo.RightColumn
             tokenInfo.Color <- lookupTokenColor color
@@ -148,16 +145,16 @@ type internal FSharpScanner(makeLineTokenizer : string -> LineTokenizer) =
             tokenInfo.Type <- lookupTokenType color 
             true
 
-    // This is called one line at a time.
+    /// Start tokenizing a line
     member ws.SetLineText lineText = 
         lineTokenizer <- makeLineTokenizer lineText
 
-    /// Adjust the set of extra colorizations and return a sorted list of changed lines.
-    member __.SetExtraColorizations (tokens: (Microsoft.FSharp.Compiler.SourceCodeServices.Range * Microsoft.FSharp.Compiler.SourceCodeServices.TokenColorKind)[]) = 
+    /// Adjust the set of extra colorizations and return a sorted list of affected lines.
+    member __.SetExtraColorizations (tokens: (Range.range * FSharpTokenColorKind)[]) = 
         if tokens.Length = 0 && extraColorizations.IsNone then 
             [| |] 
         else
-            let newExtraColorizationsKeyed = dict (tokens |> Seq.groupBy (fun (((sl,_),(_,_)), _) -> sl) |> Seq.map (fun (k,v) -> (k, Seq.toArray v))) 
+            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun (r, _) -> Range.Line.toZ r.StartLine))
             let oldExtraColorizationsKeyedOpt = extraColorizations
             extraColorizations <- Some newExtraColorizationsKeyed
             let changedLines = 
@@ -173,18 +170,8 @@ type internal FSharpScanner(makeLineTokenizer : string -> LineTokenizer) =
                    Array.append (Seq.toArray inOneButNotTheOther) (Seq.toArray inBoth)
             Array.sortInPlace changedLines
             changedLines
-            (*
-            if changedLines.Length = 0 then [| |] else
-            // Skip common parts in the sequence
-            [| let prev = ref (changedLines.[0] - 1)
-               let prevIdx = ref 0
-               for i in 0 .. changedLines.Length - 1 do 
-                   let curr = changedLines.[i]
-                   if curr <> prev.Value + 1 then 
-                       yield (prevIdx,curr)
-                       prevIdx := i
-                       prev := curr |]
-                       *)
+
+
 /// Implement the MPF Colorizer functionality.
 ///   onClose is a method to call when shutting down the colorizer.
 type internal FSharpColorizer(onClose:FSharpColorizer->unit,        
@@ -219,7 +206,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
         
         let length = lineText.Length
         let mutable linepos = 0
-        //let newSnapshot = lazy (SourceImpl.GetWpfTextViewFromVsTextView(scanner.TextView).TextSnapshot)
+        //let newSnapshot = lazy (FSharpSourceBase.GetWpfTextViewFromVsTextView(scanner.TextView).TextSnapshot)
         try 
             scanner.SetLineText lineText
             currentTokenInfo.EndIndex <- -1
@@ -278,7 +265,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
         let cache = new ResizeArray<TokenInfo>()
         let mutable tokenInfo = new TokenInfo(EndIndex = -1)
         let mutable firstTime = true 
-        //let newSnapshot = lazy (SourceImpl.GetWpfTextViewFromVsTextView(textView).TextSnapshot)
+        //let newSnapshot = lazy (FSharpSourceBase.GetWpfTextViewFromVsTextView(textView).TextSnapshot)
         while scanner.ScanTokenAndProvideInfoAboutIt(line, tokenInfo, refState) do
             if firstTime && tokenInfo.StartIndex > 1 then
                 cache.Add(new TokenInfo(0, tokenInfo.StartIndex - 1, TokenType.WhiteSpace)) 
@@ -312,6 +299,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
                 let _ = c.GetColorInfo(line,lineText, length, vsState)
                 cachedLineInfo
        
+    /// Provide token information for the token at the given line and column
     member c.GetTokenInfoAt(colorState,line,col) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
         let lexState = ref (ColorStateLookup.LexStateOfColorState state)
@@ -324,6 +312,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
             ()
         tokenInfo
 
+    /// Provide token information for the token at the given line and column (2nd variation - allows caller to get token info if an additional string were to be inserted)
     member c.GetTokenInfoAt(colorState,line,col,trialString,trialStringInsertionCol) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
         let lexState = ref (ColorStateLookup.LexStateOfColorState state)
@@ -336,6 +325,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
             ()
         tokenInfo
 
+    /// Provide token information for the token at the given line and column (3rd variation)
     member c.GetTokenInformationAt(colorState,line,col) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
         let lexState = ref (ColorStateLookup.LexStateOfColorState state)
@@ -356,3 +346,40 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
     member c.Buffer = buffer
 
     member __.SetExtraColorizations tokens = scanner.SetExtraColorizations tokens
+
+
+/// Implements IVsColorableItem and IVsMergeableUIItem, for colored text items
+type internal FSharpColorableItem(canonicalName: string, displayName : Lazy<string>, foreground, background) =
+
+    interface IVsColorableItem with 
+
+        member x.GetDefaultColors(piForeground, piBackground) =
+            piForeground.[0] <- foreground
+            piBackground.[0] <- background
+            VSConstants.S_OK
+
+        member x.GetDefaultFontFlags(pdwFontFlags) =
+            pdwFontFlags <- 0u
+            VSConstants.S_OK
+
+        member x.GetDisplayName(pbstrName) =
+            pbstrName <- displayName.Force()
+            VSConstants.S_OK 
+
+    interface IVsMergeableUIItem with
+
+        member this.GetCanonicalName(s) =
+            s <- canonicalName
+            VSConstants.S_OK 
+
+        member this.GetDescription(s) =
+            s <- ""
+            VSConstants.S_OK 
+
+        member x.GetDisplayName(s) =
+            s <- displayName.Force()
+            VSConstants.S_OK 
+
+        member x.GetMergingPriority(i) =
+            i <- 0x1000  // as per docs, MS products should use a value between 0x1000 and 0x2000
+            VSConstants.S_OK 

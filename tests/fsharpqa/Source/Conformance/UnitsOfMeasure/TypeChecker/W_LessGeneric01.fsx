@@ -2,9 +2,9 @@
 
 // Regression test for FSharp1.0:3579 - Problems in Units of Measure
 
-//<Expects status="success">      let avg = \(guess \+ other\) / 2</Expects>
-//<Expects status="success">  ---------------------\^</Expects>
-//<Expects status="warning" span="(22,22)" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The unit-of-measure variable 'u has been constrained to be measure ''u \^ 2'\.$</Expects>
+//<Expects status="success">  let fn \(x:float<'u>\) =</Expects>
+//<Expects status="success">  ----------------\^\^</Expects>
+//<Expects status="warning" span="(18,17)" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The unit-of-measure variable 'u has been constrained to be measure '1'\.$</Expects>
 //<Expects status="success">val loop : f:\('a -> 'a\) -> init:'a -> comp:\('a -> 'a -> bool\) -> 'a</Expects>
 //<Expects status="success">val fn : x:float -> float</Expects>
 

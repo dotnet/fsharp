@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
     using System.Runtime.InteropServices;
@@ -216,14 +216,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [DllImport("shell32.dll", EntryPoint = "DragQueryFileW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         public static extern uint DragQueryFile(IntPtr hDrop, uint iFile, char[] lpszFile, uint cch);
 
-        ///////////// UNUSED
-
-#if false
-        [DllImport(ExternDll.Oleaut32, PreserveSig=false)]
-        public static extern UCOMITypeLib LoadRegTypeLib(ref Guid clsid, int majorVersion, int minorVersion, int lcid);
-
-        #endif
-        
     }
 }
 

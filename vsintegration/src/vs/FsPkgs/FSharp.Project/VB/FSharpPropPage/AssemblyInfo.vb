@@ -1,4 +1,4 @@
-' Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+' Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 Imports System
 Imports System.Reflection
@@ -14,6 +14,6 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyCulture("")>
 
 #if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("12.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("12.0.0.9055")>
+<Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD
+<Assembly: AssemblyFileVersion("14.0.0.9055")>
 #end if
