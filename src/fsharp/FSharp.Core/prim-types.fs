@@ -402,6 +402,7 @@ namespace Microsoft.FSharp.Core
         type System.Type with
             member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
             member inline this.IsValueType = this.GetTypeInfo().IsValueType
+            member inline this.IsEnum = this.GetTypeInfo().IsEnum
             member inline this.IsSealed = this.GetTypeInfo().IsSealed
             member inline this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
             member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
