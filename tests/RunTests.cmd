@@ -339,11 +339,11 @@ set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
 set testbinpath=%~dp0%testbin\
-set architecturepath=\coreclr\fsc\win7-x86
+set architecturepath=\coreclr\win7-x64
 set CORERUNPATH="%testbinpath%%flavor%%architecturepath%"
 
-echo "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe"
-     "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe"
+echo "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
+     "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
 
 goto :EOF
 
