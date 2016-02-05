@@ -6504,58 +6504,58 @@ namespace Microsoft.FSharp.Core
                 mutable Current  : 'a
             }
             let inline variableStepIntegralRange n step m =
-                if step = LanguagePrimitives.GenericZero
-                then invalidArg "step" (SR.GetString(SR.stepCannotBeZero));
-                else
-                    let variableStepRangeEnumerator () =
-                        let state = {
-                            Started  = false
-                            Complete = false
-                            Current  = Unchecked.defaultof<'a>
-                        }
+                if step = LanguagePrimitives.GenericZero then
+                    invalidArg "step" (SR.GetString(SR.stepCannotBeZero));
 
-                        { new System.Collections.Generic.IEnumerator<'a> with
-                            member __.Dispose () = ()
+                let variableStepRangeEnumerator () =
+                    let state = {
+                        Started  = false
+                        Complete = false
+                        Current  = Unchecked.defaultof<'a>
+                    }
 
-                            member __.Current =
-                                // according to IEnumerator<int>.Current documentation, the result of of Current
-                                // is undefined prior to the first call of MoveNext and post called to MoveNext
-                                // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
-                                // so we should be able to just return value here, and we could get rid of the 
-                                // complete variable which would be faster
-                                if not state.Started then notStarted ()
-                                elif state.Complete  then alreadyFinished ()
-                                else state.Current
+                    { new System.Collections.Generic.IEnumerator<'a> with
+                        member __.Dispose () = ()
 
-                            member this.Current =
-                                box this.Current
+                        member __.Current =
+                            // according to IEnumerator<int>.Current documentation, the result of of Current
+                            // is undefined prior to the first call of MoveNext and post called to MoveNext
+                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                            // so we should be able to just return value here, and we could get rid of the 
+                            // complete variable which would be faster
+                            if not state.Started then notStarted ()
+                            elif state.Complete  then alreadyFinished ()
+                            else state.Current
 
-                            member __.Reset () =
-                                state.Started <- false
-                                state.Complete <- false
-                                state.Current <- Unchecked.defaultof<_> 
+                        member this.Current =
+                            box this.Current
 
-                            member __.MoveNext () =
-                                if not state.Started then
-                                    state.Started <- true
-                                    state.Current <- n
-                                    state.Complete <- 
-                                        (  (step > LanguagePrimitives.GenericZero && state.Current > m)
-                                        || (step < LanguagePrimitives.GenericZero && state.Current < m))
+                        member __.Reset () =
+                            state.Started <- false
+                            state.Complete <- false
+                            state.Current <- Unchecked.defaultof<_> 
+
+                        member __.MoveNext () =
+                            if not state.Started then
+                                state.Started <- true
+                                state.Current <- n
+                                state.Complete <- 
+                                    (  (step > LanguagePrimitives.GenericZero && state.Current > m)
+                                    || (step < LanguagePrimitives.GenericZero && state.Current < m))
+                            else
+                                let next = state.Current + step
+                                if   (step > LanguagePrimitives.GenericZero && next > state.Current && next <= m)
+                                    || (step < LanguagePrimitives.GenericZero && next < state.Current && next >= m)
+                                then
+                                    state.Current <- next
                                 else
-                                    let next = state.Current + step
-                                    if   (step > LanguagePrimitives.GenericZero && next > state.Current && next <= m)
-                                      || (step < LanguagePrimitives.GenericZero && next < state.Current && next >= m)
-                                    then
-                                        state.Current <- next
-                                    else
-                                        state.Complete <- true
+                                    state.Complete <- true
 
-                                not state.Complete }
+                            not state.Complete }
 
-                    { new System.Collections.Generic.IEnumerable<'a> with
-                        member __.  GetEnumerator () = variableStepRangeEnumerator ()
-                        member this.GetEnumerator () = this.GetEnumerator () :> System.Collections.IEnumerator }
+                { new System.Collections.Generic.IEnumerable<'a> with
+                    member __.  GetEnumerator () = variableStepRangeEnumerator ()
+                    member this.GetEnumerator () = this.GetEnumerator () :> System.Collections.IEnumerator }
 
             let inline simpleIntegralRange minValue maxValue n step m =
                 if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue
