@@ -119,7 +119,7 @@
     <Compile Include="DataObject.cs" />
     <Compile Include="DesignPropertyDescriptor.cs" />
     <Compile Include="DocumentManager.cs" />
-    <Compile Include="EnumDependencies.cs"/>
+    <Compile Include="EnumDependencies.cs" />
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
@@ -179,7 +179,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\FSharp.LanguageService\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
       <Name>FSharp.LanguageService.Base</Name>
     </ProjectReference>
@@ -191,6 +191,10 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Name>FSharp.LanguageService</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
