@@ -27,12 +27,13 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     // Compute the tuple end points
     let tupleEnds = 
+        let oneColAfter ((l,c): Pos01) = (l,c+1)
         let oneColBefore ((l,c): Pos01) = (l,c-1)
         [| yield Pos.toZ nwpl.LongIdStartLocation
            yield Pos.toZ nwpl.LongIdEndLocation
-           yield Pos.toZ nwpl.OpenParenLocation
+           yield oneColAfter (Pos.toZ nwpl.OpenParenLocation)
            for i in 0..nwpl.TupleEndLocations.Length-2 do
-                yield oneColBefore (Pos.toZ nwpl.TupleEndLocations.[i])
+                yield Pos.toZ nwpl.TupleEndLocations.[i]
            let last = Pos.toZ nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1]
            yield if nwpl.IsThereACloseParen then oneColBefore last else last  |]
 
@@ -261,7 +262,7 @@ type internal FSharpIntellisenseInfo
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
-                        // (it depends on the previous line), so we fitler it
+                        // (it depends on the previous line), so we filter it
                         //
                         // Note: this test isn't particularly elegant - encoded operator name would be something like "( ...> )"                        
                         if (methods.Methods.Length = 0 || methods.MethodName.EndsWith("> )")) then
