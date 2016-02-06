@@ -6498,10 +6498,10 @@ namespace Microsoft.FSharp.Core
                       member x.GetEnumerator() = (gen() :> IEnumerator) }
 
             [<NoEquality; NoComparison>]
-            type VariableStepIntegralRangeState<'a> = {
+            type VariableStepIntegralRangeState<'T> = {
                 mutable Started  : bool
                 mutable Complete : bool
-                mutable Current  : 'a
+                mutable Current  : 'T
             }
             let inline variableStepIntegralRange n step m =
                 if step = LanguagePrimitives.GenericZero then
@@ -6511,24 +6511,29 @@ namespace Microsoft.FSharp.Core
                     let state = {
                         Started  = false
                         Complete = false
-                        Current  = Unchecked.defaultof<'a>
+                        Current  = Unchecked.defaultof<'T>
                     }
 
-                    { new System.Collections.Generic.IEnumerator<'a> with
+                    let current () = 
+                        // according to IEnumerator<int>.Current documentation, the result of of Current
+                        // is undefined prior to the first call of MoveNext and post called to MoveNext
+                        // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                        // so we should be able to just return value here, and we could get rid of the 
+                        // complete variable which would be faster
+                        if not state.Started then
+                            notStarted ()
+                        elif state.Complete then
+                            alreadyFinished ()
+                        else
+                            state.Current
+
+                    { new IEnumerator<'T> with
                         member __.Dispose () = ()
 
-                        member __.Current =
-                            // according to IEnumerator<int>.Current documentation, the result of of Current
-                            // is undefined prior to the first call of MoveNext and post called to MoveNext
-                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
-                            // so we should be able to just return value here, and we could get rid of the 
-                            // complete variable which would be faster
-                            if not state.Started then notStarted ()
-                            elif state.Complete  then alreadyFinished ()
-                            else state.Current
+                        member __.Current = current ()
 
-                        member this.Current =
-                            box this.Current
+                      interface IEnumerator with 
+                        member __.Current = box (current ())
 
                         member __.Reset () =
                             state.Started <- false
@@ -6545,46 +6550,57 @@ namespace Microsoft.FSharp.Core
                             else
                                 let next = state.Current + step
                                 if   (step > LanguagePrimitives.GenericZero && next > state.Current && next <= m)
-                                    || (step < LanguagePrimitives.GenericZero && next < state.Current && next >= m)
-                                then
+                                    || (step < LanguagePrimitives.GenericZero && next < state.Current && next >= m) then
                                     state.Current <- next
                                 else
                                     state.Complete <- true
 
-                            not state.Complete }
+                            not state.Complete}
 
-                { new System.Collections.Generic.IEnumerable<'a> with
-                    member __.  GetEnumerator () = variableStepRangeEnumerator ()
-                    member this.GetEnumerator () = this.GetEnumerator () :> System.Collections.IEnumerator }
+                { new IEnumerable<'T> with
+                    member __.GetEnumerator () = variableStepRangeEnumerator ()
+
+                  interface IEnumerable with
+                    member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
 
             let inline simpleIntegralRange minValue maxValue n step m =
-                if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue
-                then variableStepIntegralRange n step m
+                if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue then 
+                    variableStepIntegralRange n step m
                 else 
                     // a constrained, common simple iterator that is fast.
                     let singleStepRangeEnumerator () =
-                        let mutable value : 'a = n - LanguagePrimitives.GenericOne
-                        { new System.Collections.Generic.IEnumerator<'a> with
+                        let value : Ref<'T> = ref (n - LanguagePrimitives.GenericOne)
+
+                        let inline current () =
+                            // according to IEnumerator<int>.Current documentation, the result of of Current
+                            // is undefined prior to the first call of MoveNext and post called to MoveNext
+                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                            // so we should be able to just return value here, which would be faster
+                            if !value < n then
+                                notStarted ()
+                            elif !value > m then
+                                alreadyFinished ()
+                            else 
+                                !value
+
+                        { new IEnumerator<'T> with
                             member __.Dispose () = ()
-                            member __.Current =
-                                // according to IEnumerator<int>.Current documentation, the result of of Current
-                                // is undefined prior to the first call of MoveNext and post called to MoveNext
-                                // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
-                                // so we should be able to just return value here, which would be faster
-                                if   value < n  then notStarted ()
-                                elif value > m then alreadyFinished ()
-                                else value
-                            member this.Current = box this.Current
-                            member __.Reset () = value <- n - LanguagePrimitives.GenericOne
+                            member __.Current = current ()
+
+                          interface IEnumerator with
+                            member __.Current = box (current ())
+                            member __.Reset () = value := n - LanguagePrimitives.GenericOne
                             member __.MoveNext () =
-                                if value < m then
-                                    value <- value + LanguagePrimitives.GenericOne
+                                if !value < m then
+                                    value := !value + LanguagePrimitives.GenericOne
                                     true
                                 else false }
 
-                    { new System.Collections.Generic.IEnumerable<'a> with
-                        member __.  GetEnumerator () = singleStepRangeEnumerator ()
-                        member this.GetEnumerator () = this.GetEnumerator () :> System.Collections.IEnumerator }
+                    { new IEnumerable<'T> with
+                        member __.GetEnumerator () = singleStepRangeEnumerator ()
+
+                      interface IEnumerable with
+                        member __.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
 
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 
