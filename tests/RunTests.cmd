@@ -4,8 +4,6 @@ setlocal
 set FLAVOR=%1
 if /I "%FLAVOR%" == "debug"     (goto :FLAVOR_OK)
 if /I "%FLAVOR%" == "release"   (goto :FLAVOR_OK)
-if /I "%FLAVOR%" == "vsdebug"   (goto :FLAVOR_OK)
-if /I "%FLAVOR%" == "vsrelease" (goto :FLAVOR_OK)
 goto :USAGE
 
 :flavor_ok
@@ -121,7 +119,7 @@ if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -157,8 +155,8 @@ set XMLFILE=FSharpNunit_Xml.xml
 set OUTPUTFILE=FSharpNunit_Output.log
 set ERRORFILE=FSharpNunit_Error.log
 
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
+echo "%NUNIT3_CONSOLE%" /verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+"%NUNIT3_CONSOLE%" /verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
 
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF
@@ -263,8 +261,8 @@ set XMLFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" /verbose /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /verbose /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
 call :UPLOAD_XML "%XMLFILE%"
 
@@ -276,8 +274,8 @@ set XMLFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" /verbose /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /verbose /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
 
 call :UPLOAD_XML "%XMLFILE%"
 
@@ -290,8 +288,8 @@ set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
 set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
-echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
-     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" /verbose --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /verbose --x86 /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
 call :UPLOAD_XML "%XMLFILE%"
 

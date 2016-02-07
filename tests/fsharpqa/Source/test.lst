@@ -7,74 +7,74 @@
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\ComputationExpressions
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\ComputationExpressions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\InequalityComparison
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\Misc
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\Misc
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\QueryExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\SeqExpressionTailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SerializableAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\StaticInit
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\StaticInit
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
+CodeGen01,NoMT,CodeGen,CI				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 NoHostedCompiler,CodeGen01,NoMT		CodeGen\EmittedIL\TypeProviders
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
-CodeGen01,NoMT,CodeGen				CodeGen\Structure
+CodeGen01,NoMT,CodeGen,CI				CodeGen\Structure
 
 
-CompilerOptions01,NoMT				CompilerOptions\fsc\checked
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
 CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
-CompilerOptions01,NoMT				CompilerOptions\fsc\debug
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\debug
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
 CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
-CompilerOptions01,NoMT				CompilerOptions\fsc\help
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
 CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
-CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
 CompilerOptions01,NoMT				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
 CompilerOptions01,NoMT				CompilerOptions\fsc\reference
-CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
 CompilerOptions01,NoMT,NoHostedCompiler		CompilerOptions\fsc\staticlink
 CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
-CompilerOptions01,NoMT				CompilerOptions\fsc\target
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\target
 CompilerOptions01,NoMT				CompilerOptions\fsc\times
 CompilerOptions01,NoMT				CompilerOptions\fsc\warn
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnaserror
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnon
-CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
+CompilerOptions01,NoMT,CI				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT				CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
-CompilerOptions01,NoMT				CompilerOptions\fsi\times
+CompilerOptions01,NoMT,CI				CompilerOptions\fsi\times
 CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 
 
 Conformance01			Conformance\BasicGrammarElements\Constants
-Conformance01			Conformance\BasicGrammarElements\OperatorNames
+Conformance01,CI			Conformance\BasicGrammarElements\OperatorNames
 Conformance01			Conformance\BasicGrammarElements\PrecedenceAndOperators
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags
+Conformance01,CI			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\New
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic
@@ -82,7 +82,7 @@ Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashi
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\NullRepresentations
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\RecordTypes
+Conformance01,Smoke			Conformance\BasicTypeAndModuleDefinitions\RecordTypes
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations
 Conformance01			Conformance\BasicTypeAndModuleDefinitions\UnionTypes
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\Basic
@@ -91,26 +91,26 @@ Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeM
 Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations
 Conformance01			Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes
 
-Conformance02			Conformance\DeclarationElements\CustomAttributes\AttributeUsage
+Conformance02,CI			Conformance\DeclarationElements\CustomAttributes\AttributeUsage
 Conformance02			Conformance\DeclarationElements\CustomAttributes\Basic
 Conformance02			Conformance\DeclarationElements\CustomAttributes\ImportedAttributes
 Conformance02			Conformance\DeclarationElements\Events\basic
 Conformance02			Conformance\DeclarationElements\FieldMembers
 Conformance02			Conformance\DeclarationElements\ImportDeclarations
-Conformance02			Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations
+Conformance02,CI			Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations
 Conformance02			Conformance\DeclarationElements\LetBindings\ActivePatternBindings
 Conformance02			Conformance\DeclarationElements\LetBindings\ArityInference
 Conformance02			Conformance\DeclarationElements\LetBindings\Basic
 Conformance02			Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters
 Conformance02			Conformance\DeclarationElements\LetBindings\TypeFunctions
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots
+Conformance02,CI			Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\NamedArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalArguments
 Conformance02			Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers
 Conformance02			Conformance\DeclarationElements\ModuleAbbreviations
 Conformance02			Conformance\DeclarationElements\ObjectConstructors
-Conformance02			Conformance\DeclarationElements\P-invokeDeclarations
+Conformance02,CI			Conformance\DeclarationElements\P-invokeDeclarations
 
 Conformance03			Conformance\Expressions\ApplicationExpressions\Assertion
 Conformance03			Conformance\Expressions\ApplicationExpressions\BasicApplication
@@ -120,7 +120,7 @@ Conformance03			Conformance\Expressions\ConstantExpressions
 Conformance03			Conformance\Expressions\ControlFlowExpressions\Assertion
 Conformance03			Conformance\Expressions\ControlFlowExpressions\Conditional
 Conformance03			Conformance\Expressions\ControlFlowExpressions\ParenthesizedAndBlock
-Conformance03			Conformance\Expressions\ControlFlowExpressions\PatternMatching
+Conformance03,CI			Conformance\Expressions\ControlFlowExpressions\PatternMatching
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequenceIteration
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequentialExecution
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SimpleFor
@@ -128,14 +128,14 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
-Conformance03,Smoke			Conformance\Expressions\DataExpressions\ComputationExpressions
+Conformance03,CI			Conformance\Expressions\DataExpressions\ComputationExpressions
 Conformance03			Conformance\Expressions\DataExpressions\ObjectExpressions
 Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
 
 Conformance04			Conformance\Expressions\DataExpressions\SequenceExpressions
 Conformance04			Conformance\Expressions\DataExpressions\Simple
-Conformance04,Smoke			Conformance\Expressions\DataExpressions\TupleExpressions
+Conformance04,CI			Conformance\Expressions\DataExpressions\TupleExpressions
 Conformance04			Conformance\Expressions\ElaborationAndElaboratedExpressions
 Conformance04			Conformance\Expressions\EvaluationAndValues
 Conformance04			Conformance\Expressions\EvaluationOfElaboratedForms
@@ -143,7 +143,7 @@ Conformance04			Conformance\Expressions\ExpressionQuotations\Baselines
 Conformance04			Conformance\Expressions\ExpressionQuotations\Regressions
 Conformance04			Conformance\Expressions\SomeCheckingAndInferenceTerminology
 Conformance04			Conformance\Expressions\SyntacticSugar
-Conformance04			Conformance\Expressions\SyntacticSugarAndAmbiguities
+Conformance04,CI			Conformance\Expressions\SyntacticSugarAndAmbiguities
 Conformance04			Conformance\Expressions\Type-relatedExpressions
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\CheckingOfImplementationFiles
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\InitializationSemanticsForImplementationFiles
@@ -179,7 +179,7 @@ Conformance06			Conformance\LexicalAnalysis\StringsAndCharacters
 Conformance06			Conformance\LexicalAnalysis\SymbolicKeywords
 Conformance06			Conformance\LexicalAnalysis\SymbolicOperators
 Conformance06			Conformance\LexicalAnalysis\Whitespace
-Conformance06			Conformance\LexicalFiltering\Basic\ByExample
+Conformance06,CI			Conformance\LexicalFiltering\Basic\ByExample
 Conformance06			Conformance\LexicalFiltering\Basic\OffsideExceptions
 Conformance06			Conformance\LexicalFiltering\HashLight
 Conformance06			Conformance\LexicalFiltering\HighPrecedenceApplication
@@ -190,7 +190,7 @@ Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\AutoPropert
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitFields
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitObjectConstructors
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors
-Conformance06,Smoke			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
+Conformance06,CI			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\LetDoDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\MemberDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\Misc
@@ -217,7 +217,7 @@ Conformance07			Conformance\PatternMatching\Record
 Conformance07			Conformance\PatternMatching\Simple
 Conformance07			Conformance\PatternMatching\SimpleConstant
 
-Conformance08			Conformance\PatternMatching\Tuple
+Conformance08,CI			Conformance\PatternMatching\Tuple
 Conformance08			Conformance\PatternMatching\TypeAnnotated
 Conformance08			Conformance\PatternMatching\TypeConstraint
 Conformance08			Conformance\PatternMatching\Union
@@ -229,18 +229,18 @@ Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
 Conformance08			Conformance\TypesAndTypeConstraints\TypeParameterDefinitions
-Conformance08,Smoke			Conformance\UnitsOfMeasure\Basic
+Conformance08,CI			Conformance\UnitsOfMeasure\Basic
 Conformance08			Conformance\UnitsOfMeasure\Bounds
 Conformance08			Conformance\UnitsOfMeasure\Constants
 Conformance08			Conformance\UnitsOfMeasure\Diagnostics
 Conformance08			Conformance\UnitsOfMeasure\Operators
 Conformance08			Conformance\UnitsOfMeasure\Parenthesis
-Conformance08			Conformance\UnitsOfMeasure\Parsing
+Conformance08,CI			Conformance\UnitsOfMeasure\Parsing
 Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
 
 
-NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
+NoHostedCompiler,TypeProviders01,CI			TypeProviders\Arrays
 NoHostedCompiler,TypeProviders01			TypeProviders\Attributes
 NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile
 NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\Diagnostics
@@ -264,7 +264,7 @@ NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypePro
 
 NoHostedCompiler,TypeProviders03			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\StaticParams
 NoHostedCompiler,TypeProviders03			TypeProviders\Events
-NoHostedCompiler,TypeProviders03			TypeProviders\Fields\Literals
+NoHostedCompiler,TypeProviders03,CI			TypeProviders\Fields\Literals
 NoHostedCompiler,TypeProviders03			TypeProviders\Generics
 NoHostedCompiler,TypeProviders03			TypeProviders\Inheritance
 NoHostedCompiler,TypeProviders03			TypeProviders\Interfaces\Erased
@@ -278,11 +278,11 @@ NoHostedCompiler,TypeProviders04			TypeProviders\Properties\Static
 NoHostedCompiler,TypeProviders04			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\QuerySql2DotNetTypes
 NoHostedCompiler,TypeProviders04			TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic
 NoHostedCompiler,TypeProviders04			TypeProviders\RuntimeDesignTimeAssembly\Negative
-NoHostedCompiler,TypeProviders04			TypeProviders\StaticParams
+NoHostedCompiler,TypeProviders04,CI			TypeProviders\StaticParams
 NoHostedCompiler,TypeProviders04			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\WsdlDotNetTypes
 
 
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
+Misc01,CI			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyVersion
 Misc01			Diagnostics\async
@@ -300,12 +300,12 @@ Misc01			Libraries\Core\ExtraTopLevelOperators
 Misc01			Libraries\Core\LanguagePrimitives
 Misc01			Libraries\Core\NativeInterop\stackalloc
 Misc01			Libraries\Core\Operators
-Misc01			Libraries\Core\Reflection
+Misc01,CI			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 
 Misc02			Libraries\Portable
 Misc02			Misc
-Misc02,Smoke			MultiTargeting
+Misc02,CI			MultiTargeting
 Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
@@ -317,6 +317,6 @@ Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents
 Misc02,NoMT		..\..\..\testsprivate\fsharpqa\Source\Setup
 Misc02			Stress
 Misc02			XmlDoc\Basic
-Misc02			XmlDoc\OCamlDoc
+Misc02,CI			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
 Diagnostics		Diagnostics\General
