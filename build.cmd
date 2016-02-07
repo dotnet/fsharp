@@ -42,6 +42,7 @@ set TEST_PORTABLE259_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
 set TEST_TAGS=
+set TEST_TAGS2=
 set TEST_FSHARPQA_SUITE=0
 set BUILD_CONFIG=Release
 set BUILD_CONFIG_LOWER=release
@@ -208,6 +209,7 @@ echo TEST_VS=%TEST_VS%
 echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
+echo TEST_TAGS2=%TEST_TAGS2%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWER=%BUILD_CONFIG_LOWER%
 echo.
@@ -350,7 +352,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS2% 
+call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS% 
 @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 )
 
