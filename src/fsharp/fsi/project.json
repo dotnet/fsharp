@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1-rc3-23726",
-    "NETStandard.Library": "1.0.0-rc3-23726",
-    "System.Diagnostics.Process": "4.1.0-rc3-23726",
-    "System.Linq.Expressions": "4.0.11-rc3-23726",
-    "System.Reflection.Emit": "4.0.1-rc3-23726",
-    "System.Runtime.Loader": "4.0.0-rc3-23726",
-    "System.Threading.Thread": "4.0.0-rc3-23726",
+    "Microsoft.NETCore.Platforms": "1.0.1-rc3-23805",
+    "NETStandard.Library": "1.0.0-rc3-23805",
+    "System.Diagnostics.Process": "4.1.0-rc3-23805",
+    "System.Linq.Expressions": "4.0.11-rc3-23805",
+    "System.Reflection.Emit": "4.0.1-rc3-23805",
+    "System.Runtime.Loader": "4.0.0-rc3-23805",
+    "System.Threading.Thread": "4.0.0-rc3-23805",
   },
   "runtimes": {
     "win7-x86": { },
