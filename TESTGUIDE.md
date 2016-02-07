@@ -66,8 +66,8 @@ If all of these steps complete without issue, the test is considered to have pas
 These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner 
 extension or the command line via `nunit3-console.exe`.
 
-Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, either `nunit3-console-x86.exe` or `nunit3-x86.exe`
-(todo: check if this comment still applies to NUnit3)
+Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
+using the '--x86' flag to `nunit3-console.exe`
 
 ### RunTests.cmd
 

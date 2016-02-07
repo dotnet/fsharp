@@ -8,40 +8,40 @@
 #      Remember to use **TABS** not spaces.
 #      I don't know who you are.  I don't know what you want. But if you hose daily automation by forgetting tabs, I will look for you, I will find you, and I will revert your checkin.
 
-Core01,Smoke		fsharp\core\access
+Core01,CI	fsharp\core\access
 Core01		fsharp\core\apporder
-Core01,Smoke		fsharp\core\array
+Core01,CI	fsharp\core\array
 Core01		fsharp\core\attributes
-Core01		fsharp\core\comprehensions
+Core01,CI	fsharp\core\comprehensions
 Core01		fsharp\core\control
 Core01		fsharp\core\controlChamenos
 Core01		fsharp\core\controlMailbox
 Core01		fsharp\core\controlStackOverflow
-Core01		fsharp\core\controlWebExt
+Core01,CI	fsharp\core\controlWebExt
 Core02		fsharp\core\controlWpf
 Core02		fsharp\core\csext
 Core02		..\testsprivate\fsharp\core\csfromfs
 Core02		fsharp\core\events
 Core02		fsharp\core\forwarders
 Core02		fsharp\core\forexpression
-Core02		fsharp\core\fsfromcs
+Core02,CI		fsharp\core\fsfromcs
 Core02		fsharp\core\fsfromfsviacs
 Core02		fsharp\core\fsiAndModifiers
 Core02		fsharp\core\fsi-reload
 Core02		fsharp\core\fsi-shadowcopy
-Core02		fsharp\core\genericmeasures
+Core02,CI		fsharp\core\genericmeasures
 Core02		fsharp\core\hiding
 Core03		fsharp\core\innerpoly
-Core03,Smoke		fsharp\core\int32
+Core03,CI,Smoke		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
 Core03		fsharp\core\interop
 Core03		fsharp\core\ilread
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
-Core03,Smoke		fsharp\core\libtest
+Core03,CI		fsharp\core\libtest
 Core03		fsharp\core\lift
 NO_CI,Core03		fsharp\core\load-script
-Core03		fsharp\core\longnames
+Core03,CI		fsharp\core\longnames
 Core03		fsharp\core\map
 Core04		..\testsprivate\fsharp\core\math\lapack
 Core04		fsharp\core\math\numbers
@@ -64,16 +64,16 @@ Core05		fsharp\core\queriesCustomQueryOps
 Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators
 Core06		fsharp\core\queriesOverIEnumerable
-Core06		fsharp\core\queriesOverIQueryable
+Core06,CI		fsharp\core\queriesOverIQueryable
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
 Core06		fsharp\core\queriesOverOData
-Core06,CoreQuotes,Smoke		fsharp\core\quotes
+Core06,CoreQuotes,CI		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
 Core07		fsharp\core\reflect
 Core07		fsharp\core\resources
-Core07		fsharp\core\seq
+Core07,CI		fsharp\core\seq
 Core07		fsharp\core\subtype
 Core07		fsharp\core\syntax
 Core07		fsharp\core\tlr
@@ -91,7 +91,7 @@ Portable259		fsharp\core\netcore\netcore259
 Samples01		..\testsprivate\fsharp\samples\adCenter
 Samples01		..\testsprivate\fsharp\samples\AntColony
 Samples01		..\testsprivate\fsharp\samples\asfparse
-Samples01		..\testsprivate\fsharp\samples\bitonic
+Samples01,CI		..\testsprivate\fsharp\samples\bitonic
 Samples01		..\testsprivate\fsharp\samples\blast
 Samples01		..\testsprivate\fsharp\samples\brianmcn
 Samples01		..\testsprivate\fsharp\samples\Cci2Test
@@ -99,7 +99,7 @@ Samples01		..\testsprivate\fsharp\samples\ChartControl
 Samples01		..\testsprivate\fsharp\samples\ChessAnalysis
 Samples01		..\testsprivate\fsharp\samples\CodeFormatter
 Samples02		..\testsprivate\fsharp\samples\ConcurrentLife
-Samples02		..\testsprivate\fsharp\samples\cs2fsform
+Samples02,CI		..\testsprivate\fsharp\samples\cs2fsform
 Samples02		..\testsprivate\fsharp\samples\expert-fsharp-book
 Samples02		..\testsprivate\fsharp\samples\formgen
 Samples02		..\testsprivate\fsharp\samples\FSforScientists
@@ -111,7 +111,7 @@ Samples03		..\testsprivate\fsharp\samples\graph
 Samples03		..\testsprivate\fsharp\samples\InteractiveDirectX
 Samples03		..\testsprivate\fsharp\samples\interactivewebcrawl
 Samples03		..\testsprivate\fsharp\samples\IntroductoryTutorial
-Samples03		..\testsprivate\fsharp\samples\Joins\ActiveObjects
+Samples03,CI		..\testsprivate\fsharp\samples\Joins\ActiveObjects
 Samples03		..\testsprivate\fsharp\samples\Joins\BoundedBuffer
 Samples03		..\testsprivate\fsharp\samples\Joins\ReaderWriter
 Samples03		..\testsprivate\fsharp\samples\jrh
@@ -119,7 +119,7 @@ Samples04		..\testsprivate\fsharp\samples\life
 Samples04		..\testsprivate\fsharp\samples\Micado
 Samples04		..\testsprivate\fsharp\samples\mort
 Samples04		..\testsprivate\fsharp\samples\mort3
-Samples04		..\testsprivate\fsharp\samples\mort-hw
+Samples04,CI		..\testsprivate\fsharp\samples\mort-hw
 Samples04		..\testsprivate\fsharp\samples\MSFDSL
 Samples04		..\testsprivate\fsharp\samples\nativecodebindingtutorial
 Samples04		..\testsprivate\fsharp\samples\netra
@@ -138,7 +138,7 @@ Samples06		..\testsprivate\fsharp\samples\SudokuSolver
 Samples06		..\testsprivate\fsharp\samples\t-pierred
 Samples06		..\testsprivate\fsharp\samples\TrueSkillDistribution\TrueSkillDistributionViewer
 Samples06		..\testsprivate\fsharp\samples\umrun
-Samples06		..\testsprivate\fsharp\samples\vsmocks
+Samples06,CI		..\testsprivate\fsharp\samples\vsmocks
 Samples06		..\testsprivate\fsharp\samples\wecker-1
 Samples07		..\testsprivate\fsharp\samples\WinFormsScripting
 Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogFilter
@@ -146,7 +146,7 @@ Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogViewer
 Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
-TypeProviders01,Smoke		fsharp\typeProviders\helloWorld
+TypeProviders01,CI		fsharp\typeProviders\helloWorld
 TypeProviders01		..\testsprivate\fsharp\typeProviders\builtin\DbmlFile
 TypeProviders01		fsharp\typeProviders\builtin\EdmxFile
 TypeProviders01		fsharp\typeProviders\builtin\ODataService
@@ -154,7 +154,7 @@ TypeProviders01		fsharp\typeProviders\builtin\SqlDataConnection
 TypeProviders01		fsharp\typeProviders\builtin\SqlEntityConnection
 TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
-TypeProviders01		fsharp\typeProviders\globalNamespace
+TypeProviders01,CI		fsharp\typeProviders\globalNamespace
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
 NO_CI,TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly
@@ -172,7 +172,7 @@ Misc01		fsharp\regression\83
 Misc01		fsharp\regression\84
 Misc01		fsharp\regression\85
 Misc01		fsharp\regression\86
-Misc02		fsharp\regression\321
+Misc02,CI		fsharp\regression\321
 Misc02		fsharp\regression\655
 Misc02		fsharp\regression\656
 Misc02		..\testsprivate\fsharp\regression\standalone-bug
