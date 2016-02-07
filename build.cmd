@@ -42,7 +42,7 @@ set TEST_PORTABLE259_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
 set TEST_TAGS=
-set TEST_TAGS2=
+set TEST_TAGS_CI=
 set TEST_FSHARPQA_SUITE=0
 set BUILD_CONFIG=Release
 set BUILD_CONFIG_LOWER=release
@@ -124,7 +124,7 @@ if /i '%ARG%' == 'ci' (
     set TEST_FSHARPQA_SUITE=1
     set TEST_VS=0
     set TEST_TAGS=
-    set TEST_TAGS2=CI
+    set TEST_TAGS_CI=CI
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
@@ -143,20 +143,20 @@ if /i '%ARG%' == 'ci_part1' (
     set TEST_PORTABLE259_COREUNIT=1
     set TEST_VS=0
     set TEST_TAGS=
-    set TEST_TAGS2=CI
+    set TEST_TAGS_CI=CI
 )
 
 if /i '%ARG%' == 'ci_part2' (
     set TEST_FSHARP_SUITE=1
     set TEST_TAGS=
-    set TEST_TAGS2=CI
+    set TEST_TAGS_CI=CI
 )
 
 
 if /i '%ARG%' == 'ci_part3' (
     set TEST_FSHARPQA_SUITE=1
     set TEST_TAGS=
-    set TEST_TAGS2=CI
+    set TEST_TAGS_CI=CI
 )
 
 if /i '%ARG%' == 'smoke' (
@@ -168,7 +168,7 @@ if /i '%ARG%' == 'smoke' (
 
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=0
-    set TEST_TAGS2=Smoke
+    set TEST_TAGS_CI=Smoke
 )
 
 if /i '%ARG%' == 'debug' (
@@ -209,7 +209,7 @@ echo TEST_VS=%TEST_VS%
 echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
-echo TEST_TAGS2=%TEST_TAGS2%
+echo TEST_TAGS_CI=%TEST_TAGS_CI%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWER=%BUILD_CONFIG_LOWER%
 echo.
@@ -346,7 +346,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS2% 
+call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS_CI% 
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
