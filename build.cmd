@@ -153,6 +153,10 @@ if /i '%ARG%' == 'ci_part2' (
 
 
 if /i '%ARG%' == 'ci_part3' (
+    set BUILD_PORTABLE47=1
+    set BUILD_PORTABLE7=1
+    set BUILD_PORTABLE78=1
+    set BUILD_PORTABLE259=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_TAGS=
     set TEST_TAGS2=CI
