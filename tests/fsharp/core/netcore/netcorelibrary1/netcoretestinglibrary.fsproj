@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>NetCoreLibrary1</RootNamespace>
     <AssemblyName>NetCoreTestingLibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetProfile>netcore</TargetProfile>
     <Name>NetCoreTestingLibrary</Name>
     <SccProjectName>SAK</SccProjectName>

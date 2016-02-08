@@ -13,7 +13,7 @@
     <ProjectGuid>{8C2439BD-0E49-4929-A8B1-29CEE228191E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>DefinitionLocationAttributeFileDoesnotExist</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>

@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>TypeProviderInCSharp</RootNamespace>
     <AssemblyName>TypeProviderInCSharp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>

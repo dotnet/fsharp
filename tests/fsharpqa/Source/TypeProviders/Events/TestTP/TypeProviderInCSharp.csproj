@@ -43,7 +43,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <ProjectGuid>{8226AB2A-FAC9-44CB-B9A5-4E543B0206F6}</ProjectGuid>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
