@@ -5310,73 +5310,73 @@ type Regression4319_T2 =
     static member ( +-+-+ ) : x:'a * y:'b -> string
   end
 
-> 
+
   type Regression4319_T0  = static member (+-+-+)             = "0 arguments";;
   -----------------------------------------^^^^^
 
 stdin(572,42): warning FS1172: Infix operator member '+-+-+' has no arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T0 =
   class
     static member ( +-+-+ ) : string
   end
 
-> 
+
   type Regression4319_T1  = static member (+-+-+) x           = "1 argument";;
   -----------------------------------------^^^^^
 
 stdin(573,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T1 =
   class
     static member ( +-+-+ ) : x:'a -> string
   end
 
-> 
+
   type Regression4319_T1b = static member (+-+-+) (x)         = "1 (argument) [brackets make no diff]";;
   -----------------------------------------^^^^^
 
 stdin(574,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T1b =
   class
     static member ( +-+-+ ) : x:'a -> string
   end
 
-> 
+
   type Regression4319_T1c = static member (+-+-+) x           = let a,b = x in "1 argument, tuple typed from RHS. Still not OK";;
   -----------------------------------------^^^^^
 
 stdin(575,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T1c =
   class
     static member ( +-+-+ ) : x:('a * 'b) -> string
   end
 
-> 
+
   type Regression4319_T1d = static member (+-+-+) (x:int*int) = "1 argument, tuple typed from LHS. Still not OK";;
   -----------------------------------------^^^^^
 
 stdin(576,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T1d =
   class
     static member ( +-+-+ ) : x:(int * int) -> string
   end
 
-> 
+
   type Regression4319_T3  = static member (+-+-+) (x,y,z)          = "3 arguments";;
   -----------------------------------------^^^^^
 
 stdin(578,42): warning FS1173: Infix operator member '+-+-+' has 3 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_T3 =
   class
     static member ( +-+-+ ) : x:'a * y:'b * z:'c -> string
   end
 
-> 
+
   type Regression4319_U1  = static member (+-+-+) x       moreArgs = "1 argument and further args";;
   -----------------------------------------^^^^^
 
@@ -5386,13 +5386,13 @@ stdin(579,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argum
   -----------------------------------------^^^^^
 
 stdin(579,42): warning FS1174: Infix operator member '+-+-+' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_U1 =
   class
     static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
   end
 
-> 
+
   type Regression4319_U1b = static member (+-+-+) (x)     moreArgs = "1 (argument) [brackets make no diff] and further args";;
   -----------------------------------------^^^^^
 
@@ -5402,24 +5402,24 @@ stdin(580,42): warning FS1173: Infix operator member '+-+-+' has 1 initial argum
   -----------------------------------------^^^^^
 
 stdin(580,42): warning FS1174: Infix operator member '+-+-+' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_U1b =
   class
     static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
   end
 
-> 
+
   type Regression4319_U2  = static member (+-+-+) (x,y)   moreArgs = "1 argument and further args";;
   -----------------------------------------^^^^^
 
 stdin(581,42): warning FS1174: Infix operator member '+-+-+' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_U2 =
   class
     static member ( +-+-+ ) : x:'a * y:'b -> moreArgs:'c -> string
   end
 
-> 
+
   type Regression4319_U3  = static member (+-+-+) (x,y,z) moreArgs = "1 argument and further args";;
   -----------------------------------------^^^^^
 
@@ -5429,13 +5429,13 @@ stdin(582,42): warning FS1173: Infix operator member '+-+-+' has 3 initial argum
   -----------------------------------------^^^^^
 
 stdin(582,42): warning FS1174: Infix operator member '+-+-+' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_U3 =
   class
     static member ( +-+-+ ) : x:'a * y:'b * z:'c -> moreArgs:'d -> string
   end
 
-> 
+
       static member (:=)             = "COLON_EQUALS"
   -------------------^^
 
@@ -5590,7 +5590,7 @@ stdin(618,21): warning FS1172: Infix operator member '...%' has no arguments. Ex
   --------------------^^
 
 stdin(619,21): warning FS1172: Infix operator member '**' has no arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
-
+> 
 type Regression4319_check =
   class
     static member ( & ) : string
@@ -5619,12 +5619,12 @@ type Regression4319_check =
     static member ( - ) : string
   end
 
-> 
+
       member this.ToString() = "ABC"
   ----------------^^^^^^^^
 
 stdin(624,17): warning FS0864: This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.
-Expect ABC = ABC
+> Expect ABC = ABC
 
 type Regression4469 =
   class
@@ -6277,33 +6277,33 @@ val fff : x:'a -> 'a
 val note_ExpectDupMethod : string =
   "Regression4927: Expect error due to duplicate methods in the "+[20 chars]
 
-> 
+
       member this.M() = "string"
   ----------------^
 
 stdin(765,17): error FS0438: Duplicate method. The method 'M' has the same name and signature as another method in this type.
-> 
+> > 
 val note_ExpectDupProperty : string =
   "Regression4927: Expect error due to duplicate properties in t"+[23 chars]
 
-> 
+
       member this.P = "string"
   ----------------^
 
 stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same name and signature as another method in this type.
-> > val it : string = "NOTE: Expect IAPrivate less accessible IBPublic"
-> 
+> > > val it : string = "NOTE: Expect IAPrivate less accessible IBPublic"
+
       type public   IBPublic   = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^
 
 stdin(779,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBPublic' it is used in
-> val it : string = "NOTE: Expect IAPrivate less accessible IBInternal"
-> 
+> > val it : string = "NOTE: Expect IAPrivate less accessible IBInternal"
+
       type internal IBInternal = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^^^
 
 stdin(784,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBInternal' it is used in
-> 
+> > 
 module Regression5265_PriPri = begin
   type private IAPrivate =
     interface
@@ -6317,12 +6317,12 @@ module Regression5265_PriPri = begin
 end
 
 > val it : string = "NOTE: Expect IAInternal less accessible IBPublic"
-> 
+
       type public   IBPublic   = interface inherit IAInternal abstract Q : int end
   ------------------^^^^^^^^
 
 stdin(793,19): error FS0410: The type 'IAInternal' is less accessible than the value, member or type 'IBPublic' it is used in
-> 
+> > 
 module Regression5265_IntInt = begin
   type internal IAInternal =
     interface
@@ -6389,12 +6389,12 @@ end
 
 > val it : string =
   "Regression4232: Expect an error about duplicate virtual methods from parent type"
-> 
+
           override x.M(a:string) = 1
   -------------------^
 
 stdin(825,20): error FS0361: The override 'M : string -> int' implements more than one abstract slot, e.g. 'abstract member Regression4232.D.M : 'U -> int' and 'abstract member Regression4232.D.M : 'T -> int'
-> val it : string =
+> > val it : string =
   "** Expect AnAxHostSubClass to be accepted. AxHost has a newslot virtual RightToLeft property outscope RightToLeft on Control"
 > 
 type AnAxHostSubClass =
@@ -6405,37 +6405,37 @@ type AnAxHostSubClass =
 
 > val it : string =
   "** Expect error because the active pattern result contains free type variables"
-> 
+
   let (|A|B|) (x:int) = A x;;
   -----^^^^^
 
 stdin(833,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
-> val it : string =
+> > val it : string =
   "** Expect error because the active pattern result contains free type variables (match value generic)"
-> 
+
   let (|A|B|) (x:'a) = A x;;
   -----^^^^^
 
 stdin(836,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
-> val it : string =
+> > val it : string =
   "** Expect error because the active pattern result contains free type variables (when active pattern also has parameters)"
-> 
+
   let (|A|B|) (p:'a) (x:int) = A p;;
   -----^^^^^
 
 stdin(839,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
-> val it : string =
+> > val it : string =
   "** Expect OK, since error message says constraint should work!"
 > 
 val ( |A|B| ) : x:int -> Choice<int,unit>
 
 > val it : string = "** Expect error since active pattern is not a function!"
-> 
+
   let (|A|B|) = failwith "" : Choice<int,int>;;
   -----^^^^^
 
 stdin(845,6): error FS1209: Active pattern '|A|B|' is not a function
-> val it : string =
+> > val it : string =
   "** Expect OK since active pattern result is not too generic, typars depend on match val"
 > 
 val ( |A|B| ) : p:bool -> 'a * 'b -> Choice<'a,'b>
