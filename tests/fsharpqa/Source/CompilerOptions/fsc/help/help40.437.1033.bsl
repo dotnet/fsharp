@@ -74,6 +74,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 		- MISCELLANEOUS -
 --nologo                       Suppress compiler copyright message
 --help                         Display this usage message (Short form: -?)
+--@<file>                      Read response file for more options
 
 
 		- ADVANCED -
