@@ -27,12 +27,8 @@ exit /b 1
 :ARGUMENTS_OK
 
 set BUILD_NET40=1
-set BUILD_CORECLR=0
-set BUILD_PORTABLE7=0
-set BUILD_PORTABLE47=0
-set BUILD_PORTABLE78=0
-set BUILD_PORTABLE259=0
-set BUILD_VS=1
+set BUILD_CORECLR=1
+set BUILD_PORTABLE=0
 set TEST_NET40=0
 set TEST_CORECLR=0
 set TEST_PORTABLE=0
@@ -52,22 +48,15 @@ for /l %%x in (1 1 9) do (
 )
 setlocal disableDelayedExpansion
 echo.
-echo.
 
 goto :MAIN
 
 :SET_CONFIG
 set ARG=%~1
 
-if "%RestorePackages%"=="" ( 
-    set RestorePackages=true 
-)
+if "%ARG%" == "" if "%2" == "" ( set ARG=ci )
 
-if "%ARG%" == "1" if "%2" == "" (
-    set ARG=ci
-)
-
-if "%2" == "" if not "%ARG%" == "ci" goto :EOF
+if "%2" == "" if not "%ARG%" == "build" goto :EOF
 
 echo Parse argument %ARG%
 
@@ -76,14 +65,8 @@ if /i '%ARG%' == 'compiler' (
 )
 
 if /i '%ARG%' == 'pcls' (
-    set BUILD_PORTABLE47=1
-    set TEST_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set TEST_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set TEST_PORTABLE78=1
-    set BUILD_PORTABLE259=1
-    set TEST_PORTABLE259=1
+    set BUILD_PORTABLE=1
+    set TEST_PORTABLE=1
 )
 
 if /i '%ARG%' == 'vs' (
@@ -92,18 +75,11 @@ if /i '%ARG%' == 'vs' (
 )
 
 if /i '%ARG%' == 'all' (
-    set BUILD_CORECLR=1
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set TEST_NET40=1
     set TEST_CORECLR=1
-    set TEST_PORTABLE47=1
-    set TEST_PORTABLE7=1
-    set TEST_PORTABLE78=1
-    set TEST_PORTABLE259=1
+    set TEST_PORTABLE=1
     set TEST_VS=1
     set TEST_CAMBRIDGE_SUITE=1
     set TEST_QA_SUITE=1
@@ -111,11 +87,7 @@ if /i '%ARG%' == 'all' (
 
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
-    set BUILD_CORECLR=1
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set TEST_NET40=1
     set TEST_CORECLR=1
@@ -129,11 +101,21 @@ if /i '%ARG%' == 'ci' (
 
 REM These divide 'ci' into three chunks which can be done in parallel
 
+if /i '%ARG%' == 'ci' (
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    set TEST_NET40=1
+    set TEST_PORTABLE=1
+    set TEST_VS=1
+    set TEST_CAMBRIDGE_SUITE=1
+    set CONF_CAMBRIDGE_SUITE=Smoke
+    set TEST_QA_SUITE=1
+    set CONF_QA_SUITE=Smoke
+    set TEST_CORECLR=1
+)
+
 if /i '%ARG%' == 'ci_part1' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set TEST_NET40=1
     set TEST_PORTABLE=1
@@ -144,7 +126,6 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_CAMBRIDGE_SUITE=1
     set CONF_CAMBRIDGE_SUITE=Smoke
 )
-
 
 if /i '%ARG%' == 'ci_part3' (
     set TEST_QA_SUITE=1
@@ -171,10 +152,7 @@ if /i '%ARG%' == 'debug' (
 if /i '%ARG%' == 'build' (
     set TEST_NET40=0
     set TEST_CORECLR=0
-    set TEST_PORTABLE47=0
-    set TEST_PORTABLE7=0
-    set TEST_PORTABLE78=0
-    set TEST_PORTABLE259=0
+    set TEST_PORTABLE=0
     set TEST_VS=0
     set TEST_CAMBRIDGE_SUITE=0
     set TEST_QA_SUITE=0
@@ -189,13 +167,12 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_NET40=%BUILD_NET40%
-echo BUILD_PORTABLE47=%BUILD_PORTABLE47%
-echo BUILD_PORTABLE7=%BUILD_PORTABLE7%
-echo BUILD_PORTABLE78=%BUILD_PORTABLE78%
-echo BUILD_PORTABLE259=%BUILD_PORTABLE259%
+echo BUILD_CORECLR=%BUILD_CORECLR%
+echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
 echo.
 echo TEST_NET40=%TEST_NET40%
+echo TEST_CORECLR=%TEST_CORECLR%
 echo TEST_PORTABLE=%TEST_PORTABLE%
 echo TEST_VS=%TEST_VS%
 echo TEST_CAMBRIDGE_SUITE=%TEST_CAMBRIDGE_SUITE%
@@ -205,6 +182,10 @@ echo CONF_QA_SUITE=%CONF_QA_SUITE%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWER=%BUILD_CONFIG_LOWER%
 echo.
+
+if "%RestorePackages%"=="" ( 
+    set RestorePackages=true 
+)
 
 @echo on
 
@@ -231,8 +212,8 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :fail
 if defined APPVEYOR (
     rem See <http://www.appveyor.com/docs/build-phase>
     if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-	rem HACK HACK HACK
-	set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    rem HACK HACK HACK
+    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
     )
 )
 
@@ -284,31 +265,25 @@ copy .\packages\lkg\coreconsole.exe .\packages\lkg\fsi.exe
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
 if '%BUILD_CORECLR%' == '1' (
-		%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-		@if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
+    @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
 )
 
 if '%BUILD_CORECLR%' == '1' (
-		%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-		@if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
+    %_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
+    @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 )
 
-if '%BUILD_PORTABLE7%' == '1' (
-		%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-		@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-)
+if '%BUILD_PORTABLE%' == '1' (
+    %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
 
-if '%BUILD_PORTABLE47%' == '1' (
     %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-)
 
-if '%BUILD_PORTABLE78%' == '1' (
     %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-)
 
-if '%BUILD_PORTABLE259%' == '' (
     %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 )
@@ -321,22 +296,16 @@ if '%TEST_NET40%' == '1' (
     @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
-if '%TEST_PORTABLE47%' == '1' (
-  	%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-	  @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
-)
-
-if '%TEST_PORTABLE7%' == '1' (
+if '%TEST_PORTABLE%' == '1' (
     %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
-)
 
-if '%TEST_PORTABLE78%' == '1' (
+    %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
+
     %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
-)
 
-if '%TEST_PORTABLE259%' == '1' (
     %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 )
@@ -391,41 +360,20 @@ if '%TEST_NET40%' == '1' (
         call RunTests.cmd release coreunitall
         @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunitall' failed && goto :failure
     )
-
-    call RunTests.cmd %BUILD_CONFIG_LOWER% coreunit
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
-)
-
-if '%TEST_PORTABLE47%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47' failed && goto :failure
-)
-
-if '%TEST_PORTABLE7%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7' failed && goto :failure
-)
-
-if '%TEST_PORTABLE78%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78' failed && goto :failure
-)
-
-if '%TEST_PORTABLE259%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
+    if '%TEST_PORTABLE%' == '0' (
+        call RunTests.cmd %BUILD_CONFIG_LOWER% coreunit
+        @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
+    )
 )
 
 if '%TEST_CORECLR%' == '1' (
-		call RunTests.cmd release fsharp coreclr
-		@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreclr' failed && goto :failure
+    call RunTests.cmd release fsharp coreclr
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreclr' failed && goto :failure
 
-		call RunTests.cmd release coreunitcoreclr
-		@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
+    call RunTests.cmd release coreunitcoreclr
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
 )
-
 popd
-
 goto :eof
 
 :failure

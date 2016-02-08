@@ -2,10 +2,12 @@ os: Visual Studio 2015
 
 environment:
   matrix:
-    - BUILD_PROFILE: ci_part1
-    - BUILD_PROFILE: ci_part2
-    - BUILD_PROFILE: ci_part3
-    - BUILD_PROFILE: ci_part4
+    - BUILD_PROFILE: ci
+#      Appveyor is not great at parallel jobs
+#    - BUILD_PROFILE: ci_part1
+#    - BUILD_PROFILE: ci_part2
+#    - BUILD_PROFILE: ci_part3
+#    - BUILD_PROFILE: ci_part4
 
 init: 
 build_script: 
