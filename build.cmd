@@ -123,7 +123,6 @@ if /i '%ARG%' == 'ci' (
     set TEST_FSHARPQA_SUITE=1
     set TEST_VS=0
     set TEST_TAGS=
-    set TEST_TAGS2=CI
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
@@ -142,20 +141,21 @@ if /i '%ARG%' == 'ci_part1' (
     set TEST_PORTABLE259_COREUNIT=1
     set TEST_VS=0
     set TEST_TAGS=
-    set TEST_TAGS2=CI
 )
 
 if /i '%ARG%' == 'ci_part2' (
     set TEST_FSHARP_SUITE=1
     set TEST_TAGS=
-    set TEST_TAGS2=CI
 )
 
 
 if /i '%ARG%' == 'ci_part3' (
+    set BUILD_PORTABLE47=1
+    set BUILD_PORTABLE7=1
+    set BUILD_PORTABLE78=1
+    set BUILD_PORTABLE259=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_TAGS=
-    set TEST_TAGS2=CI
 )
 
 if /i '%ARG%' == 'smoke' (
@@ -163,11 +163,10 @@ if /i '%ARG%' == 'smoke' (
 
     set TEST_COMPILERUNIT=0
     set TEST_NET40_COREUNIT=0
-    set TEST_TAGS=Smoke
-
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=0
-    set TEST_TAGS2=Smoke
+    set TEST_TAGS=Smoke
+
 )
 
 if /i '%ARG%' == 'debug' (
@@ -344,13 +343,13 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS2% 
+call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS% 
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS2% 
+call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS% 
 @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 )
 
