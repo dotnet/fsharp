@@ -295,43 +295,78 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
 call RunTests.cmd %BUILD_CONFIG_LOWERCASECASECASE% fsharp %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\FSharpNunit_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\FSharpNunit_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS%' failed
+    goto :failure
+  )
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\fsharpqa_failures.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% compilerunit %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CompilerUnit_net40_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\CompilerUnit_net40_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
+    goto :failure
+  )
 )
 
 if '%TEST_NET40_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CoreUnit_net40_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_net40_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
+    goto :failure
+  ) 
 )
 
 if '%TEST_PORTABLE_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CoreUnit_portable47_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable47_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS%' failed 
+    goto :failure
+  )
 
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CoreUnit_portable7_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable7_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS%' failed 
+    goto :failure
+  )
 
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CoreUnit_portable78_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable78_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS%' failed 
+    goto :failure 
+  )
 
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\CoreUnit_portable259_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS%' failed && goto :failure
-
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable259_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 if '%TEST_VS%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\IDEUnit_Error.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS%' failed && goto :failure
+@if ERRORLEVEL 1 (
+    type testresults\IDEUnit_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 popd
