@@ -167,7 +167,6 @@ type AttemptBuilder() =
                 this.Delay(fun () -> body enum.Current)))
 
 let attempt = new AttemptBuilder()
-let processor = attempt //TODO deprecated
 
 let log format = Printf.ksprintf (printfn "%s") format
 

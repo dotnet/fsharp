@@ -80,9 +80,7 @@
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>MultiProjectAnalysisTests.fs</Link>
     </Compile>
-    <CustomCopyLocal Include="Unittests.dll.config">
-      <TargetFilename>Unittests.dll.config</TargetFilename>
-    </CustomCopyLocal>
+	<None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

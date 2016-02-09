@@ -39,7 +39,7 @@ set TEST_FSHARP_SUITE=0
 set TEST_TAGS=
 set TEST_FSHARPQA_SUITE=0
 set BUILD_CONFIG=Release
-set BUILD_CONFIG_LOWER=release
+set BUILD_CONFIG_LOWERCASE=release
 
 setlocal enableDelayedExpansion
 set /a counter=0
@@ -138,7 +138,7 @@ if /i '%ARG%' == 'smoke' (
 
 if /i '%ARG%' == 'debug' (
     set BUILD_CONFIG=Debug
-    set BUILD_CONFIG_LOWER=debug
+    set BUILD_CONFIG_LOWERCASE=debug
 )
 
 if /i '%ARG%' == 'build' (
@@ -166,7 +166,7 @@ echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo BUILD_CONFIG=%BUILD_CONFIG%
-echo BUILD_CONFIG_LOWER=%BUILD_CONFIG_LOWER%
+echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 
 @echo on
@@ -274,18 +274,18 @@ if '%BUILD_VS%' == '1' (
 )
 
 @echo on
-call src\update.cmd %BUILD_CONFIG_LOWER% -ngen
+call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
 
 REM Remove lingering copies of the OSS FSharp.Core from the GAC
 gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
 
 REM This clobbers the installed F# SDK on the machine
-REM call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWER%
+REM call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
 pushd tests
 
 @echo on
-call BuildTestTools.cmd %BUILD_CONFIG_LOWER% 
-@if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_CONFIG_LOWER%' failed && goto :failure
+call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE% 
+@if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%' failed && goto :failure
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
@@ -294,46 +294,79 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS%' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASECASECASE% fsharp %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\FSharpNunit_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS%' failed
+    goto :failure
+  )
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS%' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\fsharpqa_failures.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% compilerunit %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% compilerunit' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% compilerunit %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CompilerUnit_net40_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
+    goto :failure
+  )
 )
 
 if '%TEST_NET40_COREUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunit %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_net40_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
+    goto :failure
+  ) 
 )
 
 if '%TEST_PORTABLE_COREUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47 %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable47_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS%' failed 
+    goto :failure
+  )
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7 %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable7_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS%' failed 
+    goto :failure
+  )
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78 %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable78_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS%' failed 
+    goto :failure 
+  )
 
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259 %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
-
-call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259 %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\CoreUnit_portable259_Error.log 
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 if '%TEST_VS%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWER% ideunit %TEST_TAGS% 
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
+@if ERRORLEVEL 1 (
+    type testresults\IDEUnit_Error.log
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS%' failed
+    goto :failure
+  )
 )
 
 popd

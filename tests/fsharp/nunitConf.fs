@@ -64,7 +64,7 @@ let initializeSuite () =
         | Some confName -> confName
         | None -> configurationName
 
-    processor {
+    attempt {
         do! updateCmd env { Configuration = configurationName; Ngen = doNgen; }
             |> Attempt.Run
             |> function Success () -> Success () | Failure msg -> genericError msg ()
@@ -80,7 +80,7 @@ let initializeSuite () =
 
         let directoryExists = Commands.directoryExists (Path.GetTempPath()) >> Option.isSome 
 
-        let checkfscBinPath () = processor {
+        let checkfscBinPath () = attempt {
 
             let fscBinPath = cfg.EnvironmentVariables |> Map.tryFind "FSCBINPATH"
             return!
@@ -90,7 +90,7 @@ let initializeSuite () =
                 | Some dir -> genericError (sprintf "environment variable 'FSCBinPath' is required to be a valid directory, but is '%s'" dir)
             }
 
-        let smokeTest () = processor {
+        let smokeTest () = attempt {
             let tempFile ext = 
                 let p = Path.ChangeExtension( Path.GetTempFileName(), ext)
                 File.AppendAllText (p, """printfn "ciao"; exit 0""")
@@ -248,25 +248,16 @@ let allPermutations =
       FSI_STDIN_GUI;
       FSC_BASIC; 
       GENERATED_SIGNATURE; 
-      EMPTY_SIGNATURE; 
-      EMPTY_SIGNATURE_OPT; 
       FSC_OPT_MINUS_DEBUG; 
       FSC_OPT_PLUS_DEBUG; 
-      //FRENCH; 
       SPANISH;
-      AS_DLL; 
-      WRAPPER_NAMESPACE; 
-      WRAPPER_NAMESPACE_OPT ]
+      AS_DLL]
 
 let codeAndInferencePermutations = 
-    [ EMPTY_SIGNATURE; 
-      EMPTY_SIGNATURE_OPT; 
-      GENERATED_SIGNATURE; 
+    [ GENERATED_SIGNATURE; 
       FSI_FILE; 
       FSC_OPT_PLUS_DEBUG;  
-      AS_DLL; 
-      WRAPPER_NAMESPACE; 
-      WRAPPER_NAMESPACE_OPT ]
+      AS_DLL ]
 
 let codePermutations = 
     [ FSI_FILE; 
@@ -288,14 +279,14 @@ type FSharpSuiteAllPermutationsAttribute(dir: string) =
     interface NUnit.Framework.Interfaces.ITestBuilder with
         member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, allPermutations)
 
-type FSharpSuiteCodeAndInferencePermutationsAttribute(dir: string) =
+type FSharpSuiteCodeAndSignaturePermutationsAttribute(dir: string) =
     inherit NUnitAttribute()
 
     let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
     interface NUnit.Framework.Interfaces.ITestBuilder with
         member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, codeAndInferencePermutations)
 
-type FSharpSuiteFscFsiCodePermutationAttribute(dir: string) =
+type FSharpSuiteScriptPermutationsAttribute(dir: string) =
     inherit NUnitAttribute()
 
     let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
@@ -327,7 +318,7 @@ module FileGuard =
     let exists (guard: T) = guard.Path |> File.Exists
         
 
-let checkGuardExists guard = processor {
+let checkGuardExists guard = attempt {
     if not <| (guard |> FileGuard.exists)
     then return! genericError (sprintf "exit code 0 but %s file doesn't exists" (guard.Path |> Path.GetFileName))
     }
@@ -474,7 +465,7 @@ module FscCommand =
 
     let parseFscOut = List.map parseFscOutLine
 
-    let fscToLibrary dir exec (fscExe: FilePath) flags (args: FscToLibraryArgs) = processor {
+    let fscToLibrary dir exec (fscExe: FilePath) flags (args: FscToLibraryArgs) = attempt {
         let ``exec 2>a`` a p = exec { RedirectInfo.Output = RedirectTo.Error(a); Input = None; } p >> checkResult
             
         let outStream = Path.GetTempFileName ()
