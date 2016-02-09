@@ -13,7 +13,7 @@ let testContext = FSharpTestSuite.testContext
 
 module Graph = 
 
-    [<Test; FSharpSuitePermutations("perf/graph")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("perf/graph")>]
     let graph p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -25,7 +25,7 @@ module Graph =
 
 module Nbody = 
 
-    [<Test; FSharpSuitePermutations("perf/nbody")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("perf/nbody")>]
     let nbody p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

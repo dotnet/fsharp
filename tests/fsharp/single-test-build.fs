@@ -52,19 +52,9 @@ let singleTestBuild cfg testDir =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.mli";"test2.ml";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
         |> List.filter fileExists
 
-    //set sourceshw=
-    //if exist test-hw.mli (set sourceshw=%sourceshw% test-hw.mli)
-    //if exist test-hw.ml (set sourceshw=%sourceshw% test-hw.ml)
-    //if exist test-hw.fsx (set sourceshw=%sourceshw% test-hw.fsx)
-    //if exist test2-hw.mli (set sourceshw=%sourceshw% test2-hw.mli)
-    //if exist test2-hw.ml (set sourceshw=%sourceshw% test2-hw.ml)
-    //if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
-    let sourceshw =
-        ["test-hw.mli";"test-hw.ml";"test-hw.fsx";"test2-hw.mli";"test2-hw.ml";"test2-hw.fsx"]
-        |> List.filter fileExists
 
     //rem to run the 64 bit version of the code set FSC_BASIC_64=FSC_BASIC_64
-    //set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
+    //set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
 
     //if "%REDUCED_RUNTIME%"=="1" (
     //    echo REDUCED_RUNTIME set
@@ -188,29 +178,6 @@ let singleTestBuild cfg testDir =
         do! doPeverify "testX64.exe"
         }
 
-    let doFscHW () = processor {
-        // if exist test-hw.* (
-        if Directory.EnumerateFiles(testDir, "test-hw.*") |> Seq.exists fileExists then
-            // "%FSC%" %fsc_flags% -o:test-hw.exe -g %sourceshw%
-            do! fsc "%s -o:test-hw.exe -g" fsc_flags sourceshw
-
-            // if NOT EXIST dont.run.peverify (
-            //   "%PEVERIFY%" test-hw.exe
-            // )
-            do! doPeverify "test-hw.exe" 
-        //)
-        else
-            do! NUnitConf.skip (sprintf "file '%s' not found" "test-hw.*")
-        }
-
-    let doFscO3 () = processor {
-        //"%FSC%" %fsc_flags% --optimize --define:PERF -o:test--optimize.exe -g %sources%
-        do! fsc "%s --optimize --define:PERF -o:test--optimize.exe -g" fsc_flags sources 
-        //if NOT EXIST dont.run.peverify (
-        //    "%PEVERIFY%" test--optimize.exe
-        //)
-        do! doPeverify "test--optimize.exe"
-        }
 
     let doGeneratedSignature () = processor {
         //if NOT EXIST dont.use.generated.signature (
@@ -381,8 +348,6 @@ let singleTestBuild cfg testDir =
         | SPANISH -> doBasic
         | FSC_BASIC -> doBasic
         | FSC_BASIC_64 -> doBasic64
-        | FSC_HW -> doFscHW
-        | FSC_O3 -> doFscO3
         | GENERATED_SIGNATURE -> doGeneratedSignature
         | EMPTY_SIGNATURE -> doEmptySignature
         | EMPTY_SIGNATURE_OPT -> doEmptySignatureOpt
@@ -398,7 +363,7 @@ let singleTestBuild cfg testDir =
         |> function 
             | Success () -> doneOk () 
             | Failure (Skipped msg) -> doneSkipped msg ()
-            | Failure (GenericError msg) -> doneError (GenericError msg) msg
-            | Failure (ProcessExecError (err,msg)) -> doneError (ProcessExecError(err,msg)) msg
+            | Failure (GenericError msg as err) -> doneError err msg
+            | Failure (ProcessExecError (_,_,msg) as err) -> doneError err msg
     
     flow

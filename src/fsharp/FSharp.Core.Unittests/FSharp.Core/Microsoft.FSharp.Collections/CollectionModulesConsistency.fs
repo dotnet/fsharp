@@ -1157,6 +1157,10 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 [<Test>]
 let ``unfold is consistent`` () =
     Check.QuickThrowOnFailure unfold<int,int>
+
+[<Test; Category("Expensive")>]
+let ``unfold is consistent full`` () =
+    Check.QuickThrowOnFailure unfold<int,int>
     Check.QuickThrowOnFailure unfold<string,string>
     Check.QuickThrowOnFailure unfold<float,int>
     Check.QuickThrowOnFailure unfold<float,string>

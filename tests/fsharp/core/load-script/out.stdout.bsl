@@ -1,18 +1,9 @@
-
-1.fsx
-
-
+// #Conformance #FSI 
 printfn "Hello"
-
-2.fsx
-
-
+// #Conformance #FSI 
 #load "1.fsx"
 printfn "World"
-
-3.fsx
-
-
+// #Conformance #FSI 
 #load "2.fsx"
 printfn "-the end"
 Test 1=================================================
@@ -41,10 +32,9 @@ namespace FSI_0002
 namespace FSI_0002
 
 > 
+
 Test 4=================================================
 Test 5=================================================
-
-usesfsi.fsx(1,1): error FS0039: The namespace or module 'fsi' is not defined
 Test 6=================================================
 Test 7=================================================
 Hello
