@@ -15,7 +15,7 @@ open System.Reflection
 module FS2003 =
 
     [<Test; FSharpSuiteTest()>]
-    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (processor {
+    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)

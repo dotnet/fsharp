@@ -14,7 +14,7 @@ let testContext = FSharpTestSuite.testContext
 module ``26`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/26")>]
-    let ``26`` p = check (processor {
+    let ``26`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p
@@ -26,7 +26,7 @@ module ``26`` =
 module ``321`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/321")>]
-    let ``321`` p = check (processor {
+    let ``321`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p
@@ -37,11 +37,11 @@ module ``321`` =
 
 module ``655`` = 
 
-    let build cfg dir = processor {
+    let build cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY ""
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
 
         // "%FSC%" %fsc_flags% -a -o:pack.dll xlibC.ml
         do! fsc "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
@@ -57,7 +57,7 @@ module ``655`` =
 
         }
 
-    let run cfg dir = processor {
+    let run cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
@@ -73,7 +73,7 @@ module ``655`` =
         }
 
     [<Test; FSharpSuiteTest("regression/655")>]
-    let ``655`` () = check (processor {
+    let ``655`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir
@@ -85,11 +85,11 @@ module ``655`` =
 
 module ``656`` = 
 
-    let build cfg dir = processor {
+    let build cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY ""
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
 
         // "%FSC%" %fsc_flags% -o:pack.exe misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs
         do! fsc "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
@@ -98,7 +98,7 @@ module ``656`` =
         do! peverify "pack.exe"
         }
 
-    let run cfg dir = processor {
+    let run cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
@@ -114,7 +114,7 @@ module ``656`` =
         }
 
     [<Test; FSharpSuiteTest("regression/656")>]
-    let ``656`` () = check (processor {
+    let ``656`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir
@@ -128,7 +128,7 @@ module ``656`` =
 module ``83`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/83")>]
-    let ``83`` p = check (processor {
+    let ``83`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         // if "%CLR_SUPPORTS_WINFORMS%"=="false" ( goto Skip)
@@ -156,7 +156,7 @@ module ``83`` =
 module ``84`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/84")>]
-    let ``84`` p = check (processor {
+    let ``84`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p
@@ -167,11 +167,11 @@ module ``84`` =
 
 module ``85`` = 
 
-    let build cfg dir = processor {
+    let build cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY ""
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
 
         // if "%CLR_SUPPORTS_GENERICS%"=="false" ( goto Skip)
         do! match cfg.EnvironmentVariables |> Map.tryFind "CLR_SUPPORTS_GENERICS" |> Option.map (fun s -> s.ToLower()) with
@@ -192,7 +192,7 @@ module ``85`` =
         }
 
     [<Test; FSharpSuiteTest("regression/85")>]
-    let ``85`` () = check (processor {
+    let ``85`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir
@@ -205,7 +205,7 @@ module ``85`` =
 module ``86`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/86")>]
-    let ``86`` p = check (processor {
+    let ``86`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p
@@ -217,7 +217,7 @@ module ``86`` =
 module ``Tuple-bug-1`` = 
 
     [<Test; FSharpSuiteFscCodePermutation("regression/tuple-bug-1")>]
-    let ``tuple-bug-1`` p = check (processor {
+    let ``tuple-bug-1`` p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p

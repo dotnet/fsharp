@@ -15,7 +15,7 @@ open System.Reflection
 module FileVersionInfoTest =
 
     [<Test; FSharpSuiteTest()>]
-    let ``should set file version info on generated file`` () = check (processor {
+    let ``should set file version info on generated file`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)

@@ -8,7 +8,7 @@ open PlatformHelpers
 open NUnitConf
 open FSharpTestSuiteTypes
 
-let private singleNegTestAux (cfg: TestConfig) workDir testname = processor {
+let private singleNegTestAux (cfg: TestConfig) workDir testname = attempt {
 
     // call %~d0%~p0..\config.bat
     ignore "from arguments"
@@ -62,19 +62,21 @@ let private singleNegTestAux (cfg: TestConfig) workDir testname = processor {
     // if exist "%testname%b.ml" (set sources=%sources% %testname%b.ml)
     // if exist "%testname%b.fs" (set sources=%sources% %testname%b.fs)
     let sources = [
-        let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx" ]
+        let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx";
+                    testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs"; 
+                    testname + "b.mli"; testname + "b.fsi"; testname + "b.ml"; testname + "b.fs"; ]
 
         yield! src |> List.filter fileExists
     
         // if exist "helloWorldProvider.dll" (set sources=%sources% -r:helloWorldProvider.dll)
-        if fileExists "helloWorldProvider.dll"
-        then yield "-r:helloWorldProvider.dll"
+        if fileExists "helloWorldProvider.dll" then 
+            yield "-r:helloWorldProvider.dll"
 
         // if exist "%testname%-pre.fs" (
         //     set sources=%sources% -r:%testname%-pre.dll
         // )
-        if fileExists (testname + "-pre.fs")
-        then yield (sprintf "-r:%s-pre.dll" testname)
+        if fileExists (testname + "-pre.fs") then 
+            yield (sprintf "-r:%s-pre.dll" testname)
 
         ]
 
@@ -111,7 +113,7 @@ let private singleNegTestAux (cfg: TestConfig) workDir testname = processor {
 
         Printf.ksprintf (fun flags sources errPath -> Commands.fsc (``exec 2>`` errPath) cfg.FSC flags sources |> checkErrorLevel1)
         
-    let fsdiff a b = processor {
+    let fsdiff a b = attempt {
         let out = new ResizeArray<string>()
         let redirectOutputToFile path args =
             log "%s %s" path args

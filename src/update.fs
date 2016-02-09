@@ -27,7 +27,7 @@ let private checkResult result =
     | CmdResult.ErrorLevel (msg, err) -> Failure (RunError.ProcessExecError (msg, err, sprintf "ERRORLEVEL %d" err))
     | CmdResult.Success -> Success ()
 
-let updateCmd envVars args = processor {
+let updateCmd envVars args = attempt {
     // @echo off
     // setlocal
     ignore "useless"
@@ -116,7 +116,7 @@ let updateCmd envVars args = processor {
     // %SN32% -Vr Unittests,b03f5f7f11d50a3a
     // %SN32% -Vr Salsa,b03f5f7f11d50a3a
 
-    let strongName (snExe: string -> Result<_,_>) = processor {
+    let strongName (snExe: string -> Result<_,_>) = attempt {
         let all = 
             [ "FSharp.Core";
             "FSharp.Build";

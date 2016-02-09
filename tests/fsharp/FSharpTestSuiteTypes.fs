@@ -15,15 +15,10 @@ type Permutation =
     | FSC_BASIC
     | FSC_BASIC_64
     | GENERATED_SIGNATURE
-    | EMPTY_SIGNATURE
-    | EMPTY_SIGNATURE_OPT
     | FSC_OPT_MINUS_DEBUG
     | FSC_OPT_PLUS_DEBUG
-    | FRENCH
     | SPANISH
     | AS_DLL
-    | WRAPPER_NAMESPACE
-    | WRAPPER_NAMESPACE_OPT
     override this.ToString() = (sprintf "%A" this)
 
 type TestConfig = 
