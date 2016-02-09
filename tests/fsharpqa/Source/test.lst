@@ -2,8 +2,7 @@
 # Official tags used in this suite
 # ================================
 # NoMT	-- skip this test/suite if we are doing a MultiTargeting run
-# ReqPP		-- skip this test/suite if there is no PowerPack installed
-# ReqNOCov	-- skip this test/suite if we are doing a code coverate run
+# ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
