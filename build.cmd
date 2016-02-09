@@ -294,7 +294,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
 @if ERRORLEVEL 1 (
     type testresults\FSharpNunit_Error.log
     echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
