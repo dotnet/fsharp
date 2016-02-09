@@ -2,15 +2,11 @@
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
-if /i "%1" == "vsdebug" goto :ok
-if /i "%1" == "vsrelease" goto :ok
 
 echo Builds a few test tools using latest compiler and runtime
 echo Usage:
 echo    BuildTestTools.cmd debug
 echo    BuildTestTools.cmd release
-echo    BuildTestTools.cmd vsdebug
-echo    BuildTestTools.cmd vsrelease
 exit /b 1
 
 :ok
@@ -88,10 +84,10 @@ rem deploy osx version of built compiler
 %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/osx.10.10-x64 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/ubuntu.14.04-x64 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\fsc\osx.10.10-x64 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:yes --v:quiet
 %_fsiexe% --exec %~dp0fsharpqa\testenv\src\DeployProj\DeployProj.fsx --TargetPlatformName:DNXCore,Version=v5.0/osx.10.10-x64 --projectJson:%~dp0fsharp\project.json --projectJsonLock:%~dp0fsharp\project.lock.json --packagesDir:%~dp0..\packages --targetPlatformName:DNXCore,Version=v5.0/win7-x64 --fsharpCore:%~dp0..\%1\coreclr\bin\fsharp.core.dll --output:%~dp0testbin\%1\coreclr\osx.10.10-x64 --nugetPath:%~dp0..\.nuget\nuget.exe --nugetConfig:%~dp0..\.nuget\nuget.config --copyCompiler:no --v:quiet
 
-echo  "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-xcopy "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-echo  "%~dp0\fsharpqa\testenv\src\nunit*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-xcopy "%~dp0\fsharpqa\testenv\src\nunit*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo  "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo  "%~dp0fsharpqa\testenv\src\nunit*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%~dp0fsharpqa\testenv\src\nunit*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 goto :EOF
 
 :error

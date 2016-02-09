@@ -1,7 +1,7 @@
 @echo off
 del 3.exe 2>nul 1>nul
 type 1.fsx
-type 2.fsx 
+type 2.fsx
 type 3.fsx
 echo Test 1=================================================
 "%FSC%" 3.fsx --nologo

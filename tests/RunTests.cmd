@@ -6,9 +6,9 @@ if /I "%FLAVOR%" == "debug"     (goto :FLAVOR_OK)
 if /I "%FLAVOR%" == "release"   (goto :FLAVOR_OK)
 goto :USAGE
 
-:flavor_ok
+:FLAVOR_OK
 
-set NUNITPATH=%~dp0\fsharpqa\testenv\bin\nunit\
+set NUNITPATH=%~dp0fsharpqa\testenv\bin\nunit\
 if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     pushd %~dp0
     ..\.nuget\nuget.exe restore ..\packages.config -PackagesDirectory ..\packages
@@ -48,12 +48,12 @@ if /I '%_tmp%' == 'coreclr' (
 )
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
-set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
-set NO_TTAGS=ReqPP,NOOPEN
+set NO_TTAGS_ARG=-nottags:NOOPEN
+set NO_TTAGS=NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' (
-    set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
-    set NO_TTAGS=ReqPP,NOOPEN,%_tmp:"=%
+    set NO_TTAGS_ARG=-nottags:NOOPEN,%_tmp:"=%
+    set NO_TTAGS=NOOPEN,%_tmp:"=%
 )
 
 if /I "%APPVEYOR_CI%" == "1" (
@@ -80,12 +80,12 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 ECHO FSCBINPATH%
 
 rem folder where test logs/results will be dropped
-set RESULTSDIR=%~dp0\TestResults
+set RESULTSDIR=%~dp0TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 setlocal EnableDelayedExpansion
 
-SET CONV_V2_TO_V3_CMD=%FSI% --exec --nologo "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
+SET CONV_V2_TO_V3_CMD="%LKG_FSI%" --exec --nologo "%~dp0%Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
 echo %CONV_V2_TO_V3_CMD%
 
 SET CONV_V2_TO_V3_CMD_TEMPFILE=%~dp0%nunit3args.txt
@@ -149,6 +149,8 @@ if /I "%2" == "coreunitcoreclr" (
 )
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
+REM ----------------------------------------------------------------------------
+
 :USAGE
 
 echo Usage:
@@ -156,6 +158,8 @@ echo.
 echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable7^|coreunitportable47^|coreunitportable78^|coreunitportable259^^|coreunitcoreclr^|coreunitcoreclr|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
+
+REM ----------------------------------------------------------------------------
 
 :FSHARP
 
@@ -185,21 +189,23 @@ if errorlevel 1 (
 )
 goto :EOF
 
+REM ----------------------------------------------------------------------------
 
 :FSHARP_NUNIT
 
 set FSHARP_TEST_SUITE_CONFIGURATION=%FLAVOR%
 
-set XMLFILE=FSharpNunit_Xml.xml
-set OUTPUTFILE=FSharpNunit_Output.log
-set ERRORFILE=FSharpNunit_Error.log
+set XMLFILE=%RESULTSDIR%\FSharpNunit_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\FSharpNunit_Output.log
+set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 
-echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%" 
-"%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%"
+echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2" 
+"%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2"
 
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF
 
+REM ----------------------------------------------------------------------------
 
 :FSHARPQA
 set OSARCH=%PROCESSOR_ARCHITECTURE%
@@ -274,7 +280,7 @@ if /I "%2" == "fsharpqadowntarget" (
 if /I "%2" == "fsharpqaredirect" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set PLATFORM=%OSARCH%
-   set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
+   set SIMULATOR_PIPE="%~dp0fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
    set RESULTFILE=FSharpQARedirect_Results.log
    set FAILFILE=FSharpQARedirect_Failures.log
@@ -287,12 +293,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-pushd %~dp0\fsharpqa\source
-echo perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
-     perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+pushd %~dp0fsharpqa\source
+echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
 
 popd
 goto :EOF
+
+REM ----------------------------------------------------------------------------
 
 :COREUNIT
 
@@ -345,6 +353,8 @@ echo "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unit
 
 goto :EOF
 
+REM ----------------------------------------------------------------------------
+
 :COMPILERUNIT
 
 set XMLFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Xml.xml
@@ -356,6 +366,8 @@ echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:
 
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF
+
+REM ----------------------------------------------------------------------------
 
 :IDEUNIT
 
@@ -378,6 +390,8 @@ powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
 
 goto :EOF
 
+REM ----------------------------------------------------------------------------
+
 :UPLOAD_XML
 
 rem See <http://www.appveyor.com/docs/environment-variables>
@@ -386,7 +400,7 @@ if not defined APPVEYOR goto :EOF
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
 powershell -File Upload-Results.ps1 "%~1"
-if %saved_errorlevel% neq 0 exit /b %saved_errorlevel%
+if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command

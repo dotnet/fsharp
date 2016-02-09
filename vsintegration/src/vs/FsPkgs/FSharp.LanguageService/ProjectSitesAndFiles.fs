@@ -51,7 +51,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
                                 |> List.map(fun r->sprintf "-r:%s.dll" r)
         (flags @ defaultReferences) |> List.toArray
 
-    let projectFileName = Path.Combine(System.IO.Path.GetDirectoryName(sourceFile),"orphan.fsproj")
+    let projectFileName = Path.Combine(Path.GetDirectoryName(sourceFile),"orphan.fsproj")
 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = [|sourceFile|]
@@ -64,7 +64,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.IsIncompleteTypeCheckEnvironment = true
         override this.TargetFrameworkMoniker = ""
-        override this.LoadTime = new System.DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
+        override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions
@@ -81,7 +81,7 @@ type internal ProjectSitesAndFiles() =
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
         if SourceFile.MustBeSingleFileProject(filename) then 
-            System.Diagnostics.Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
+            Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
 
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
@@ -136,11 +136,10 @@ type internal ProjectSitesAndFiles() =
                 match tryGetProjectSite(hier) with
                 | Some(site) -> 
 #if DEBUG
-                    site.SourceFilesOnDisk() |> Seq.iter (fun src -> 
-                        Debug.Assert(System.IO.Path.GetFullPath(src) = src, "SourceFilesOnDisk reported a filename that was not in canonical format")
-                    )
+                    for src in site.SourceFilesOnDisk() do 
+                        Debug.Assert(Path.GetFullPath(src) = src, "SourceFilesOnDisk reported a filename that was not in canonical format")
 #endif
-                    if site.SourceFilesOnDisk() |> Array.exists (fun src -> System.StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then
+                    if site.SourceFilesOnDisk() |> Array.exists (fun src -> StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then
                         Some site
                     else
                         None
