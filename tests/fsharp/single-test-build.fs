@@ -42,29 +42,17 @@ let singleTestBuild cfg testDir =
     //if exist test.ml (set sources=%sources% test.ml)
     //if exist test.fsi (set sources=%sources% test.fsi)
     //if exist test.fs (set sources=%sources% test.fs)
-    //if exist test2.mli (set sources=%sources% test2.mli)
-    //if exist test2.ml (set sources=%sources% test2.ml)
     //if exist test2.fsi (set sources=%sources% test2.fsi)
     //if exist test2.fs (set sources=%sources% test2.fs)
     //if exist test.fsx (set sources=%sources% test.fsx)
     //if exist test2.fsx (set sources=%sources% test2.fsx)
     let sources =
-        ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.mli";"test2.ml";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+        ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
         |> List.filter fileExists
 
-    //set sourceshw=
-    //if exist test-hw.mli (set sourceshw=%sourceshw% test-hw.mli)
-    //if exist test-hw.ml (set sourceshw=%sourceshw% test-hw.ml)
-    //if exist test-hw.fsx (set sourceshw=%sourceshw% test-hw.fsx)
-    //if exist test2-hw.mli (set sourceshw=%sourceshw% test2-hw.mli)
-    //if exist test2-hw.ml (set sourceshw=%sourceshw% test2-hw.ml)
-    //if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
-    let sourceshw =
-        ["test-hw.mli";"test-hw.ml";"test-hw.fsx";"test2-hw.mli";"test2-hw.ml";"test2-hw.fsx"]
-        |> List.filter fileExists
 
     //rem to run the 64 bit version of the code set FSC_BASIC_64=FSC_BASIC_64
-    //set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
+    //set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% GENERATED_SIGNATURE FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG SPANISH AS_DLL 
 
     //if "%REDUCED_RUNTIME%"=="1" (
     //    echo REDUCED_RUNTIME set
@@ -103,7 +91,7 @@ let singleTestBuild cfg testDir =
     let type_append_tofile = Commands.type_append_tofile testDir
     let fsc = Printf.ksprintf (fun flags -> Commands.fsc exec cfg.FSC flags)
     let fsc_flags = cfg.fsc_flags
-    let peverify = Commands.peverify exec cfg.PEVERIFY ""
+    let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
     let ``echo._tofile`` = Commands.``echo._tofile`` testDir
 
     //:Ok
@@ -139,12 +127,12 @@ let singleTestBuild cfg testDir =
     //set NonexistentErrorLevel 2> nul
     //goto Error
 
-    let skipIfExists file = processor {
+    let skipIfExists file = attempt {
         if fileExists file
         then return! NUnitConf.skip (sprintf "file '%s' found" file)
         }
 
-    let skipIfNotExists file = processor {
+    let skipIfNotExists file = attempt {
         if not (fileExists file)
         then return! NUnitConf.skip (sprintf "file '%s' not found" file)
         }
@@ -155,18 +143,18 @@ let singleTestBuild cfg testDir =
     ///    @if ERRORLEVEL 1 goto Error      <para/>
     /// )                                   <para/>
     /// </summary>
-    let doPeverify cmd = processor {
+    let doPeverify cmd = attempt {
         do! skipIfExists "dont.run.peverify"
         
         do! peverify cmd
         }
 
-    let doNOOP () = processor {
+    let doNOOP () = attempt {
         //@echo No build action to take for this permutation
         log "No build action to take for this permutation"
         }
 
-    let doBasic () = processor { 
+    let doBasic () = attempt { 
         // FSC %fsc_flags% --define:BASIC_TEST -o:test.exe -g %sources%
         //if ERRORLEVEL 1 goto Error
         do! fsc "%s --define:BASIC_TEST -o:test.exe -g" fsc_flags sources 
@@ -178,7 +166,7 @@ let singleTestBuild cfg testDir =
         do! doPeverify "test.exe"
         }
 
-    let doBasic64 () = processor {
+    let doBasic64 () = attempt {
         // "%FSC%" %fsc_flags% --define:BASIC_TEST --platform:x64 -o:testX64.exe -g %sources%
         do! fsc "%s --define:BASIC_TEST --platform:x64 -o:testX64.exe -g" fsc_flags sources
 
@@ -188,112 +176,77 @@ let singleTestBuild cfg testDir =
         do! doPeverify "testX64.exe"
         }
 
-    let doFscHW () = processor {
-        // if exist test-hw.* (
-        if Directory.EnumerateFiles(testDir, "test-hw.*") |> Seq.exists fileExists then
-            // "%FSC%" %fsc_flags% -o:test-hw.exe -g %sourceshw%
-            do! fsc "%s -o:test-hw.exe -g" fsc_flags sourceshw
 
-            // if NOT EXIST dont.run.peverify (
-            //   "%PEVERIFY%" test-hw.exe
-            // )
-            do! doPeverify "test-hw.exe" 
-        //)
-        else
-            do! NUnitConf.skip (sprintf "file '%s' not found" "test-hw.*")
-        }
-
-    let doFscO3 () = processor {
-        //"%FSC%" %fsc_flags% --optimize --define:PERF -o:test--optimize.exe -g %sources%
-        do! fsc "%s --optimize --define:PERF -o:test--optimize.exe -g" fsc_flags sources 
-        //if NOT EXIST dont.run.peverify (
-        //    "%PEVERIFY%" test--optimize.exe
-        //)
-        do! doPeverify "test--optimize.exe"
-        }
-
-    let doGeneratedSignature () = processor {
+    let doGeneratedSignature () = attempt {
         //if NOT EXIST dont.use.generated.signature (
         do! skipIfExists "dont.use.generated.signature"
 
         // if exist test.ml (
-        do! skipIfNotExists "test.ml"
+        do! skipIfNotExists "test.fs"
 
         //  echo Generating interface file...
         log "Generating interface file..."
         //  copy /y %source1% tmptest.ml
-        do! source1 |> Option.map (fun from -> copy_y from "tmptest.ml")
+        do! source1 |> Option.map (fun from -> copy_y from "tmptest.fs")
         //  REM NOTE: use --generate-interface-file since results may be in Unicode
         //  "%FSC%" %fsc_flags% --sig:tmptest.mli tmptest.ml
-        do! fsc "%s --sig:tmptest.mli" fsc_flags ["tmptest.ml"]
+        do! fsc "%s --sig:tmptest.fsi" fsc_flags ["tmptest.fs"]
 
         //  echo Compiling against generated interface file...
         log "Compiling against generated interface file..."
-        //  "%FSC%" %fsc_flags% -o:tmptest1.exe tmptest.mli tmptest.ml
-        do! fsc "%s -o:tmptest1.exe" fsc_flags ["tmptest.mli";"tmptest.ml"]
+        //  "%FSC%" %fsc_flags% -o:tmptest1.exe tmptest.fsi tmptest.fs
+        do! fsc "%s -o:tmptest1.exe" fsc_flags ["tmptest.fsi";"tmptest.fs"]
 
-        //  if NOT EXIST dont.run.peverify (
-        //    "%PEVERIFY%" tmptest1.exe
-        //  )
         do! doPeverify "tmptest1.exe"
         }
 
-    let doEmptySignature () = processor {
+    let doEmptySignature () = attempt {
         //if NOT EXIST dont.use.empty.signature (
         do! skipIfExists "dont.use.empty.signature"
 
-        // if exist test.ml ( 
-        do! skipIfNotExists "test.ml"
+        // if exist test.fs ( 
+        do! skipIfNotExists "test.fs"
 
         // echo Compiling against empty interface file...
         log "Compiling against empty interface file..."
-        // echo // empty file  > tmptest2.mli
-        echo_tofile "// empty file  " "tmptest2.mli"
-        // copy /y %source1% tmptest2.ml
-        do! source1 |> Option.map (fun from -> copy_y from "tmptest2.ml")
-        // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml
-        do! fsc "%s --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe" fsc_flags ["tmptest2.mli";"tmptest2.ml"]
+        // echo // empty file  > tmptest2.fsi
+        echo_tofile "// empty file  " "tmptest2.fsi"
+        // copy /y %source1% tmptest2.fs
+        do! source1 |> Option.map (fun from -> copy_y from "tmptest2.fs")
+        // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.fsi tmptest2.fs
+        do! fsc "%s --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe" fsc_flags ["tmptest2.fsi";"tmptest2.fs"]
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" tmptest2.exe
-        // )
         do! doPeverify "tmptest2.exe"
         }
 
 
-    let doEmptySignatureOpt () = processor {
+    let doEmptySignatureOpt () = attempt {
         //if NOT EXIST dont.use.empty.signature (
         do! skipIfExists "dont.use.empty.signature"
 
-        // if exist test.ml ( 
-        do! skipIfNotExists "test.ml"
+        // if exist test.fs ( 
+        do! skipIfNotExists "test.fs"
 
         // echo Compiling against empty interface file...
         log "Compiling against empty interface file..."
-        // echo // empty file  > tmptest2.mli
-        echo_tofile "// empty file  " "tmptest2.mli"
-        // copy /y %source1% tmptest2.ml
-        do! source1 |> Option.map (fun from -> copy_y from "tmptest2.ml")
-        // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE --optimize -o:tmptest2--optimize.exe tmptest2.mli tmptest2.ml
-        do! fsc "%s --define:COMPILING_WITH_EMPTY_SIGNATURE --optimize -o:tmptest2--optimize.exe" fsc_flags ["tmptest2.mli";"tmptest2.ml"]
+        // echo // empty file  > tmptest2.fsi
+        echo_tofile "// empty file  " "tmptest2.fsi"
+        // copy /y %source1% tmptest2.fs
+        do! source1 |> Option.map (fun from -> copy_y from "tmptest2.fs")
+        // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE --optimize -o:tmptest2--optimize.exe tmptest2.fsi tmptest2.fs
+        do! fsc "%s --define:COMPILING_WITH_EMPTY_SIGNATURE --optimize -o:tmptest2--optimize.exe" fsc_flags ["tmptest2.fsi";"tmptest2.fs"]
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" tmptest2--optimize.exe
-        // )
         do! doPeverify "tmptest2--optimize.exe"
         }
 
-    let doOptFscMinusDebug () = processor {
+    let doOptFscMinusDebug () = attempt {
         // "%FSC%" %fsc_flags% --optimize- --debug -o:test--optminus--debug.exe -g %sources%
         do! fsc "%s --optimize- --debug -o:test--optminus--debug.exe -g" fsc_flags sources
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" test--optminus--debug.exe
-        // )
         do! doPeverify "test--optminus--debug.exe"
         }
 
-    let doOptFscPlusDebug () = processor {
+    let doOptFscPlusDebug () = attempt {
         // "%FSC%" %fsc_flags% --optimize+ --debug -o:test--optplus--debug.exe -g %sources%
         do! fsc "%s --optimize+ --debug -o:test--optplus--debug.exe -g" fsc_flags sources
 
@@ -303,7 +256,7 @@ let singleTestBuild cfg testDir =
         do! doPeverify "test--optplus--debug.exe"
         }
 
-    let doAsDLL () = processor {
+    let doAsDLL () = attempt {
         //REM Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         //REM THe second compilation will not utilize the information from the first in any meaningful way, but the
         //REM compiler will unpickle the interface and optimization data, so we test unpickling as well.
@@ -328,47 +281,40 @@ let singleTestBuild cfg testDir =
         do! doPeverify "test--optimize-client-of-lib.exe"
         }
 
-    let doWrapperNamespace () = processor {
+    let doWrapperNamespace () = attempt {
         // if NOT EXIST dont.use.wrapper.namespace (
         do! skipIfExists "dont.use.wrapper.namespace"
 
-        // if exist test.ml (
-        do! skipIfNotExists "test.ml"
+        do! skipIfNotExists "test.fs"
          
         // echo Compiling when wrapped in a namespace declaration...
         log "Compiling when wrapped in a namespace declaration..."
-        // echo module TestNamespace.TestModule > tmptest3.ml
-        echo_tofile "module TestNamespace.TestModule " "tmptest3.ml"
-        // type %source1%  >> tmptest3.ml
-        source1 |> Option.iter (fun from -> type_append_tofile from "tmptest3.ml")
-        // "%FSC%" %fsc_flags% -o:tmptest3.exe tmptest3.ml
-        do! fsc "%s -o:tmptest3.exe" fsc_flags ["tmptest3.ml"]
+        // echo module TestNamespace.TestModule > tmptest3.fs
+        echo_tofile "module TestNamespace.TestModule " "tmptest3.fs"
+        // type %source1%  >> tmptest3.fs
+        source1 |> Option.iter (fun from -> type_append_tofile from "tmptest3.fs")
+        // "%FSC%" %fsc_flags% -o:tmptest3.exe tmptest3.fs
+        do! fsc "%s -o:tmptest3.exe" fsc_flags ["tmptest3.fs"]
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" tmptest3.exe
-        // )
         do! doPeverify "tmptest3.exe"
         }
 
-    let doWrapperNamespaceOpt () = processor {
+    let doWrapperNamespaceOpt () = attempt {
         //if NOT EXIST dont.use.wrapper.namespace (
         do! skipIfExists "dont.use.wrapper.namespace"
 
-        // if exist test.ml (
-        do! skipIfNotExists "test.ml"
+        // if exist test.fs (
+        do! skipIfNotExists "test.fs"
 
         // echo Compiling when wrapped in a namespace declaration...
         log "Compiling when wrapped in a namespace declaration..."
-        // echo module TestNamespace.TestModule > tmptest3.ml
-        echo_tofile "module TestNamespace.TestModule " "tmptest3.ml"
-        // type %source1%  >> tmptest3.ml
-        source1 |> Option.iter (fun from -> type_append_tofile from "tmptest3.ml")
-        // "%FSC%" %fsc_flags% --optimize -o:tmptest3--optimize.exe tmptest3.ml
-        do! fsc "%s --optimize -o:tmptest3--optimize.exe" fsc_flags ["tmptest3.ml"]
+        // echo module TestNamespace.TestModule > tmptest3.fs
+        echo_tofile "module TestNamespace.TestModule " "tmptest3.fs"
+        // type %source1%  >> tmptest3.fs
+        source1 |> Option.iter (fun from -> type_append_tofile from "tmptest3.fs")
+        // "%FSC%" %fsc_flags% --optimize -o:tmptest3--optimize.exe tmptest3.fs
+        do! fsc "%s --optimize -o:tmptest3--optimize.exe" fsc_flags ["tmptest3.fs"]
 
-        // if NOT EXIST dont.run.peverify (
-        //     "%PEVERIFY%" tmptest3--optimize.exe
-        // )
         do! doPeverify "tmptest3--optimize.exe"
         }
 
@@ -377,20 +323,13 @@ let singleTestBuild cfg testDir =
         | FSI_STDIN -> doNOOP
         | FSI_STDIN_OPT -> doNOOP
         | FSI_STDIN_GUI -> doNOOP
-        | FRENCH -> doBasic
         | SPANISH -> doBasic
         | FSC_BASIC -> doBasic
         | FSC_BASIC_64 -> doBasic64
-        | FSC_HW -> doFscHW
-        | FSC_O3 -> doFscO3
         | GENERATED_SIGNATURE -> doGeneratedSignature
-        | EMPTY_SIGNATURE -> doEmptySignature
-        | EMPTY_SIGNATURE_OPT -> doEmptySignatureOpt
         | FSC_OPT_MINUS_DEBUG -> doOptFscMinusDebug
         | FSC_OPT_PLUS_DEBUG -> doOptFscPlusDebug
         | AS_DLL -> doAsDLL
-        | WRAPPER_NAMESPACE -> doWrapperNamespace
-        | WRAPPER_NAMESPACE_OPT -> doWrapperNamespaceOpt
 
     let flow p () =
         build p () 
@@ -398,7 +337,7 @@ let singleTestBuild cfg testDir =
         |> function 
             | Success () -> doneOk () 
             | Failure (Skipped msg) -> doneSkipped msg ()
-            | Failure (GenericError msg) -> doneError (GenericError msg) msg
-            | Failure (ProcessExecError (err,msg)) -> doneError (ProcessExecError(err,msg)) msg
+            | Failure (GenericError msg as err) -> doneError err msg
+            | Failure (ProcessExecError (_,_,msg) as err) -> doneError err msg
     
     flow
