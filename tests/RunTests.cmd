@@ -6,7 +6,7 @@ if /I "%FLAVOR%" == "debug"     (goto :FLAVOR_OK)
 if /I "%FLAVOR%" == "release"   (goto :FLAVOR_OK)
 goto :USAGE
 
-:flavor_ok
+:FLAVOR_OK
 
 set NUNITPATH=%~dp0fsharpqa\testenv\bin\nunit\
 if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
