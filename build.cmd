@@ -92,6 +92,7 @@ if /i '%ARG%' == 'all' (
 
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
@@ -107,17 +108,19 @@ if /i '%ARG%' == 'ci' (
 REM These divide 'ci' into three chunks which can be done in parallel
 
 if /i '%ARG%' == 'ci_part1' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_VS=0
+    set TEST_VS=1
     set TEST_TAGS=
 )
 
 if /i '%ARG%' == 'ci_part2' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
@@ -128,6 +131,7 @@ if /i '%ARG%' == 'ci_part2' (
 if /i '%ARG%' == 'smoke' (
     REM Smoke tests are a very small quick subset of tests
 
+    set SKIP_EXPENSIVE_TESTS=1
     set TEST_COMPILERUNIT=0
     set TEST_NET40_COREUNIT=0
     set TEST_FSHARP_SUITE=1
@@ -294,7 +298,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
 @if ERRORLEVEL 1 (
     type testresults\FSharpNunit_Error.log
     echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
@@ -304,7 +308,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%
 @if ERRORLEVEL 1 (
     type testresults\fsharpqa_failures.log
     echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed

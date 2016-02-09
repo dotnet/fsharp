@@ -44,8 +44,7 @@ if /I "%APPVEYOR_CI%" == "1" (
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=1
-if "%REDUCED_RUNTIME%" == "1" (
+if "%SKIP_EXPENSIVE_TESTS%" == "1" (
     set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
     set NO_TTAGS=%NO_TTAGS%,Expensive
 )

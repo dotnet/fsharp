@@ -1288,13 +1288,11 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              ]
         
     [<Test>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
     member public this.``LongPaths``() =
         let text,cases = this.GetLongPathsTestCases()
         this.QuickInfoResolutionTest text cases
 
     [<Test>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
     member public this.``Global.LongPaths``() =
         let text,cases = this.GetLongPathsTestCases()
         let replace (s:string) = s.Replace("System", "global.System")
@@ -1611,7 +1609,6 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         
     // In this bug, relative paths with .. in them weren't working.
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``BugInRelativePaths``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1640,7 +1637,6 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
     // QuickInfo over a type that references types in an unreferenced assembly works.        
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``MissingDependencyReferences.QuickInfo.Bug5409``() =     
         let code = 
                                     ["#light"
@@ -3153,7 +3149,7 @@ query."
                          ("(*Marker4*)", "Gets and sets X")]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Automation.EnumDUInterfacefromFSBrowse``() =
         let fileContent ="""module Test
 
@@ -3200,7 +3196,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries true
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Automation.RecordAndInterfaceFromFSProj``() =
         let fileContent ="""module Test
 
@@ -3355,7 +3351,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Automation.TupleRecordfromFSBrowse``() =
         let fileContent ="""module Test
 
@@ -3392,7 +3388,7 @@ query."
                         ]
         this.VerifyUsingFsTestLib fileContent queries true
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Automation.UnionAndStructFromFSProj``() =
         let fileContent ="""module Test
 

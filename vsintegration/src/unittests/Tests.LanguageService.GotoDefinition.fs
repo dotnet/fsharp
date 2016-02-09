@@ -909,7 +909,6 @@ type UsingMSBuild()  =
 
     /// let #x = () in $x
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``GotoDefinition.InsideClass.Bug3176`` () =
       this.GotoDefinitionTestWithSimpleFile "id77 (*loc-77*)" (Some("val id77 (*loc-77*) : int", "id77"))
 
@@ -1358,7 +1357,6 @@ type UsingMSBuild()  =
         Assert.Fail("Expected result, but didn't receive one!")
 
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``GetCompleteIdTest.TrivialBefore`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let $ThisIsAnIdentifier = ()" (Some "ThisIsAnIdentifier")

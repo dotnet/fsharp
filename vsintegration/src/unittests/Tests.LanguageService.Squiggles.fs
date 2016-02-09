@@ -535,7 +535,6 @@ type X() =
     /// When a .fs file is opened with no project context we do show squiggles
     /// for missing types etc.
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``OrphanFs.MissingTypesShouldNotShowErrors``() =
         let fileContent = """open Unknown(*Mark*)"""
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "Unknown"))  
@@ -550,7 +549,6 @@ type X() =
     /// FEATURE: If a .fs file has a BuildAction other than "Compile", it behaves like a
     /// single-file-project with regards to intellisense.
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Project.FsFileWithBuildActionOtherThanCompileBehavesLikeSingleFileProject``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -571,7 +569,6 @@ type X() =
 
     /// FEATURE: Errors in the code are underlined with red squiggles and a clickable description of the error appears in the Error List.
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Basic.Case1``() =
         let fileContent = """
             let x = 3
@@ -580,7 +577,6 @@ type X() =
         this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "This value is not a function and cannot be applied")) 
 
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Basic.Case2``() =
         let fileContent = """
             let x(*Mark*) = 3

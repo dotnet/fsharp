@@ -1304,7 +1304,7 @@ type UsingMSBuild() as this =
         
 
     // Compile a script which #loads a source file. The build can't succeed without the loaded file.      
-    [<Test>]
+    [<Test; Category("Expensive")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_2``() =
@@ -1327,7 +1327,7 @@ type UsingMSBuild() as this =
         Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")
         
     // Compile a script which #loads a source file. The build can't succeed without 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_3``() =
@@ -1537,8 +1537,7 @@ type UsingMSBuild() as this =
         
         
     /// There was a problem in which synthetic tokens like #load were causing asserts
-    [<Test>]
-    [<Category("PerfCheck")>]
+    [<Test;; Category("Expensive")>]
     member public this.``Fsx.SyntheticTokens``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1704,12 +1703,10 @@ type UsingMSBuild() as this =
         Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Test;Category("TypeProvider"; Category("Expensive"))>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Test;Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
 
