@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable">
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Include href="..\FSharp.VS.FSI\fsiCommands.vsct"/>    <!-- FSI-LINKAGE-POINT -->
+  
+  <!-- Stake a claime to existing commands so they aren't marked as unused and removed. -->
+  <UsedCommands>
+    <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCE" />
+    <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCECTX" />
+  </UsedCommands>
+  
+  <Commands package ="FSharpProjectPackage">
+    <Groups>
+      <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
+        <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
+      </Group>
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddBelowMenu" />
+      </Group>
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddAboveMenu" />
+      </Group>
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCE"/>        
+      </Group>
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCEROOT"/>        
+      </Group>
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>        
+      </Group>    
+    </Groups>
+    <Menus >
+      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddBelowMenu" priority ="0x305" type ="Menu">
+        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddBelowButton">Add &amp;Below</ButtonText>
+          <MenuText _locID="FSharpProjectAddBelowMenu">Add &amp;Below</MenuText>
+          <CommandName>Add &amp;Below</CommandName>
+        </Strings>
+      </Menu>
+      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddAboveMenu" priority ="0x300" type ="Menu">
+        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddAboveButton">Add &amp;Above</ButtonText>
+          <MenuText _locID="FSharpProjectAddAboveMenu">Add &amp;Above</MenuText>
+          <CommandName>Add &amp;Above</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
+    <Buttons>
+      <Button guid ="FSharpProjectCmdSet" id ="FSharpSendThisReferenceToInteractiveCmd" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpSendThisReferenceToInteractiveGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectSendThisToFSIButton">&amp;Send to F# Interactive</ButtonText>
+          <MenuText _locID="FSharpProjectSendThisToFSIMenu">&amp;Send to F# Interactive</MenuText>
+          <CommandName>SendThisReferenceToInteractive</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="FSharpSendReferencesToInteractiveCmd" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpSendReferencesToInteractiveGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectSendReferencesToFSIButton">&amp;Send References to F# Interactive</ButtonText>
+          <MenuText _locID="FSharpProjectSendReferencesToFSIMenu">&amp;Send References to F# Interactive</MenuText>
+          <CommandName>SendReferencesToInteractive</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="FSharpSendProjectOutputToInteractiveCmd" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpSendProjectOutputToInteractiveGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectSendOutputToFSIButton">&amp;Send Project Output to F# Interactive</ButtonText>
+          <MenuText _locID="FSharpProjectSendOutputToFSIMenu">&amp;Send Project Output to F# Interactive</MenuText>
+          <CommandName>FSharpSendProjectOutputToInteractive</CommandName>
+        </Strings>
+      </Button>      
+      <Button guid ="FSharpProjectCmdSet" id ="MoveUpCmd" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="MyFSharpGroup"/>
+        <Icon guid="FSharpMoveUpBmp" id="moveUp"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectMoveUpButton">Move &amp;Up</ButtonText>
+          <MenuText _locID="FSharpProjectMoveUpMenu">Move &amp;Up</MenuText>
+          <CommandName>MoveFileUp</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="MoveDownCmd" priority ="0x105" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="MyFSharpGroup"/>
+        <Icon guid="FSharpMoveDownBmp" id="moveDown"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectMoveDownButton">Mo&amp;ve Down</ButtonText>
+          <MenuText _locID="FSharpProjectMoveDownMenu">Mo&amp;ve Down</MenuText>          
+          <CommandName>MoveFileDown</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="AddNewItemBelow" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddBelow"/>
+        <!-- copied from C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Inc\ShellCmdDef.vsct -->
+        <Icon guid="guidSHLMainMenu" id="1"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextMenuUseButton</CommandFlag>
+        <CommandFlag>TextContextUseButton</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddNewItemBelowButton">Add Ne&amp;w Item...</ButtonText>
+          <MenuText _locID="FSharpProjectAddNewItemBelowMenu">Ne&amp;w Item...</MenuText>
+          <ToolTipText _locID="FSharpProjectAddNewItemBelowToolTip">Add New Item</ToolTipText>
+          <CommandName>Add New Item</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="AddExistingItemBelow" priority ="0x105" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddBelow"/>
+        <!-- copied from C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Inc\ShellCmdDef.vsct -->
+        <Icon guid="guidSHLMainMenu" id="16"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextMenuUseButton</CommandFlag>
+        <CommandFlag>TextContextUseButton</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddExistingBelowButton">Add Existin&amp;g Item...</ButtonText>
+          <MenuText _locID="FSharpProjectAddExistingBelowMenu">Existin&amp;g Item...</MenuText>
+          <ToolTipText _locID="FSharpProjectAddExistingBelowToolTip">Add Existing Item</ToolTipText>
+          <CommandName>Add Existing Item</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="AddNewItemAbove" priority ="0x100" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddAbove"/>
+        <!-- copied from C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Inc\ShellCmdDef.vsct -->
+        <Icon guid="guidSHLMainMenu" id="1"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextMenuUseButton</CommandFlag>
+        <CommandFlag>TextContextUseButton</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddNewItemAboveButton">Add Ne&amp;w Item...</ButtonText>
+          <MenuText _locID="FSharpProjectAddNewItemAboveMenu">Ne&amp;w Item...</MenuText>
+          <ToolTipText _locID="FSharpProjectAddNewItemAboveToolTip">Add New Item</ToolTipText>
+          <CommandName>Add New Item</CommandName>
+        </Strings>
+      </Button>
+      <Button guid ="FSharpProjectCmdSet" id ="AddExistingItemAbove" priority ="0x105" type ="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddAbove"/>
+        <!-- copied from C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Inc\ShellCmdDef.vsct -->
+        <Icon guid="guidSHLMainMenu" id="16"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextMenuUseButton</CommandFlag>
+        <CommandFlag>TextContextUseButton</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddExistingItemAboveButton">Add Existin&amp;g Item...</ButtonText>
+          <MenuText _locID="FSharpProjectAddExistingItemAboveMenu">Existin&amp;g Item...</MenuText>
+          <ToolTipText _locID="FSharpProjectAddExistingItemAboveToolTip">Add Existing Item</ToolTipText>
+          <CommandName>Add Existing Item</CommandName>
+        </Strings>
+      </Button>
+    </Buttons>
+    <Bitmaps>
+      <Bitmap guid="FSharpMoveUpBmp" href="Resources\MoveUp.bmp" usedList="moveUp"/>
+      <Bitmap guid="FSharpMoveDownBmp" href="Resources\MoveDown.bmp" usedList="moveDown"/>
+    </Bitmaps>
+  </Commands>
+  <KeyBindings>
+    <KeyBinding guid="FSharpProjectCmdSet" id="MoveUpCmd" editor="SlnExplorerGuid" key1="VK_UP" mod1="Alt" />
+    <KeyBinding guid="FSharpProjectCmdSet" id="MoveDownCmd" editor="SlnExplorerGuid" key1="VK_DOWN" mod1="Alt" />
+  </KeyBindings>
+  <Symbols>
+    <GuidSymbol name ="FSharpProjectPackage" value ="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" />
+    <GuidSymbol name ="FSharpProjectCmdSet" value ="{75AC5611-A912-4195-8A65-457AE17416FB}">
+      <IDSymbol name ="MyFSharpGroup" value ="0x4001"/>
+      <IDSymbol name ="FSharpAddBelowMenu" value ="0x4002"/>
+      <IDSymbol name ="FSharpGroupAddBelow" value ="0x4003"/>
+      <IDSymbol name ="FSharpAddAboveMenu" value ="0x4004"/>
+      <IDSymbol name ="FSharpGroupAddAbove" value ="0x4005"/>
+
+      <IDSymbol name ="MoveUpCmd" value ="0x3002"/>
+      <IDSymbol name ="AddNewItemBelow" value ="0x3003"/>
+      <IDSymbol name ="AddExistingItemBelow" value ="0x3004"/>
+      <IDSymbol name ="AddNewItemAbove" value ="0x3005"/>
+      <IDSymbol name ="AddExistingItemAbove" value ="0x3006"/>
+      <IDSymbol name ="MoveDownCmd" value ="0x3007"/>
+
+      <IDSymbol name = "FSharpSendThisReferenceToInteractiveGroup" value = "0x5001"/>
+      <IDSymbol name = "FSharpSendReferencesToInteractiveGroup" value = "0x5002"/>
+      <IDSymbol name = "FSharpSendProjectOutputToInteractiveGroup" value = "0x5003"/>
+      <IDSymbol name = "FSharpSendThisReferenceToInteractiveCmd" value ="0x5004"/>
+      <IDSymbol name = "FSharpSendReferencesToInteractiveCmd" value ="0x5005"/>
+      <IDSymbol name = "FSharpSendProjectOutputToInteractiveCmd" value ="0x5006"/>    
+    </GuidSymbol>
+    <GuidSymbol name="FSharpMoveUpBmp" value="{6C2FAD07-753D-45ab-BEE9-5D12D207991B}" >
+      <IDSymbol name="moveUp" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="FSharpMoveDownBmp" value="{E249E640-8AD4-4f84-81E7-2EE58E9641AC}" >
+      <IDSymbol name="moveDown" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="SlnExplorerGuid" value="{3AE79031-E1BC-11D0-8F78-00A0C9110057}" />
+  </Symbols>
+</CommandTable>
