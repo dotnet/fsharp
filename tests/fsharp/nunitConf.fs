@@ -13,17 +13,16 @@ let checkTestResult result =
     match result with
     | Success () -> ()
     | Failure (GenericError msg) -> Assert.Fail (msg)
-    | Failure (ProcessExecError (err, msg)) -> Assert.Fail (sprintf "ERRORLEVEL %i %s" err msg)
+    | Failure (ProcessExecError (msg1, err, msg2)) -> Assert.Fail (sprintf "%s. ERRORLEVEL %i %s" msg1 err msg2)
     | Failure (Skipped msg) -> Assert.Ignore(sprintf "skipped. Reason: %s" msg)
 
 let checkResult result = 
     match result with
-    | CmdResult.ErrorLevel err -> let x = err, (sprintf "ERRORLEVEL %d" err) in Failure (RunError.ProcessExecError x)
+    | CmdResult.ErrorLevel (msg1, err) -> Failure (RunError.ProcessExecError (msg1, err, sprintf "ERRORLEVEL %d" err))
     | CmdResult.Success -> Success ()
 
 let skip msg () = Failure (Skipped msg)
 let genericError msg () = Failure (GenericError msg)
-let errorLevel exitCode msg () = Failure (ProcessExecError (exitCode,msg))
 
 let envVars () = 
     System.Environment.GetEnvironmentVariables () 
@@ -32,7 +31,7 @@ let envVars () =
     |> Map.ofSeq
 
 let defaultConfigurationName =
-#if !DEBUG
+#if DEBUG
     DEBUG
 #else
     RELEASE
@@ -242,26 +241,74 @@ type FSharpSuiteTestCaseAttribute =
             this.Properties |> FSharpTestSuite.setProps dir
 
 
-type FSharpSuitePermutationsAttribute(dir: string) =
+let allPermutations = 
+    [ FSI_FILE; 
+      FSI_STDIN; 
+      FSI_STDIN_OPT; 
+      FSI_STDIN_GUI;
+      FSC_BASIC; 
+      GENERATED_SIGNATURE; 
+      EMPTY_SIGNATURE; 
+      EMPTY_SIGNATURE_OPT; 
+      FSC_OPT_MINUS_DEBUG; 
+      FSC_OPT_PLUS_DEBUG; 
+      //FRENCH; 
+      SPANISH;
+      AS_DLL; 
+      WRAPPER_NAMESPACE; 
+      WRAPPER_NAMESPACE_OPT ]
+
+let codeAndInferencePermutations = 
+    [ EMPTY_SIGNATURE; 
+      EMPTY_SIGNATURE_OPT; 
+      GENERATED_SIGNATURE; 
+      FSI_FILE; 
+      FSC_OPT_PLUS_DEBUG;  
+      AS_DLL; 
+      WRAPPER_NAMESPACE; 
+      WRAPPER_NAMESPACE_OPT ]
+
+let codePermutations = 
+    [ FSI_FILE; 
+      FSC_OPT_PLUS_DEBUG;  ]
+
+let slowLibCodePermutations = 
+    [ FSC_OPT_PLUS_DEBUG;  ]
+
+let BuildFrom(dir, builder:NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder, methodInfo, suite, permutations: Permutation list) =
+    permutations
+    |> List.map (fun p -> (new FSharpSuiteTestCaseData (dir, p)))
+    |> List.map (fun tc -> builder.BuildTestMethod(methodInfo, suite, tc))
+    |> Seq.ofList
+
+type FSharpSuiteAllPermutationsAttribute(dir: string) =
     inherit NUnitAttribute()
 
     let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
     interface NUnit.Framework.Interfaces.ITestBuilder with
-        member x.BuildFrom(methodInfo, suite) =
-            let allPermutations = 
-                [ FSI_FILE; FSI_STDIN; FSI_STDIN_OPT; FSI_STDIN_GUI;
-                  FSC_BASIC; FSC_HW; FSC_O3;
-                  GENERATED_SIGNATURE; EMPTY_SIGNATURE; EMPTY_SIGNATURE_OPT; 
-                  FSC_OPT_MINUS_DEBUG; FSC_OPT_PLUS_DEBUG; 
-                  FRENCH; SPANISH;
-                  AS_DLL; 
-                  WRAPPER_NAMESPACE; WRAPPER_NAMESPACE_OPT 
-                ]
-                |> List.map (fun p -> (new FSharpSuiteTestCaseData (dir, p)))
+        member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, allPermutations)
 
-            allPermutations
-            |> List.map (fun tc -> _builder.BuildTestMethod(methodInfo, suite, tc))
-            |> Seq.ofList
+type FSharpSuiteCodeAndInferencePermutationsAttribute(dir: string) =
+    inherit NUnitAttribute()
+
+    let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
+    interface NUnit.Framework.Interfaces.ITestBuilder with
+        member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, codeAndInferencePermutations)
+
+type FSharpSuiteFscFsiCodePermutationAttribute(dir: string) =
+    inherit NUnitAttribute()
+
+    let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
+    interface NUnit.Framework.Interfaces.ITestBuilder with
+        member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, codePermutations)
+
+type FSharpSuiteFscCodePermutationAttribute(dir: string) =
+    inherit NUnitAttribute()
+
+    let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
+    interface NUnit.Framework.Interfaces.ITestBuilder with
+        member x.BuildFrom(methodInfo, suite) = BuildFrom(dir, _builder, methodInfo, suite, slowLibCodePermutations)
+
 
 module FileGuard =
     let private remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
@@ -297,7 +344,8 @@ type RedirectInfo =
 and RedirectTo = 
     | Inherit
     | Output of RedirectToType
-    | OutputAndError of RedirectToType
+    | OutputAndError of RedirectToType * RedirectToType
+    | OutputAndErrorToSameFile of RedirectToType 
     | Error of RedirectToType
 
 and RedirectToType = 
@@ -320,7 +368,8 @@ module Command =
             function
             | Inherit -> ""
             | Output r-> sprintf " 1%s" (redirectType r)
-            | OutputAndError r -> sprintf " 1%s 2>&1" (redirectType r)
+            | OutputAndError (r1, r2) -> sprintf " 1%s 2%s" (redirectType r1)  (redirectType r2)
+            | OutputAndErrorToSameFile r -> sprintf " 1%s 2>1" (redirectType r)  
             | Error r -> sprintf " 2%s" (redirectType r)
         sprintf "%s%s%s%s" path (match args with "" -> "" | x -> " " + x) (inF redirect.Input) (outF redirect.Output)
 
@@ -364,7 +413,13 @@ module Command =
                 use outFile = redirectTo writer
                 use toLog = redirectToLog ()
                 fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some (toLog.Post) }
-            | OutputAndError r ->
+            | OutputAndError (r1,r2) ->
+                use writer1 = openWrite r1
+                use writer2 = openWrite r2
+                use outFile1 = redirectTo writer1
+                use outFile2 = redirectTo writer2
+                fCont { cmdArgs with RedirectOutput = Some (outFile1.Post); RedirectError = Some (outFile2.Post) }
+            | OutputAndErrorToSameFile r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
                 fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some (outFile.Post) }
@@ -402,7 +457,7 @@ module FscCommand =
 
     type FscToLibraryResult = {
         OutLibraryFullPath: FilePath
-        OutText: string list
+        StderrText: string list
         }
 
     let private parseFscOutLine line =
@@ -420,10 +475,10 @@ module FscCommand =
     let parseFscOut = List.map parseFscOutLine
 
     let fscToLibrary dir exec (fscExe: FilePath) flags (args: FscToLibraryArgs) = processor {
-        let ``exec >a`` a p = exec { RedirectInfo.Output = OutputAndError(a); Input = None; } p >> checkResult
+        let ``exec 2>a`` a p = exec { RedirectInfo.Output = RedirectTo.Error(a); Input = None; } p >> checkResult
             
         let outStream = Path.GetTempFileName ()
-        let fsc = Printf.ksprintf (Commands.fsc (``exec >a`` (Overwrite(outStream))) fscExe)
+        let fsc = Printf.ksprintf (Commands.fsc (``exec 2>a`` (Overwrite(outStream))) fscExe)
     
         let sourceFiles = 
             args.SourceFiles 
@@ -450,5 +505,5 @@ module FscCommand =
         let outText = File.ReadAllLines(outStream) |> List.ofArray
 
         return { FscToLibraryResult.OutLibraryFullPath = (Commands.getfullpath dir outDll)
-                 OutText = outText }
+                 StderrText = outText }
         }

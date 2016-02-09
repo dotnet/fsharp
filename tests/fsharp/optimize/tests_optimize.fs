@@ -14,7 +14,7 @@ module Analyses =
 
     let ``fsc >a 2>&1`` cfg dir = 
         let ``exec >a 2>&1`` outFile p = 
-            Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Overwrite(outFile)); Input = None; } p 
+            Command.exec dir cfg.EnvironmentVariables { Output = OutputAndErrorToSameFile(Overwrite(outFile)); Input = None; } p 
             >> checkResult
         Printf.ksprintf (fun flags sources out -> Commands.fsc (``exec >a 2>&1`` out) cfg.FSC flags sources)
 
@@ -22,7 +22,7 @@ module Analyses =
         let out = new ResizeArray<string>()
         let redirectOutputToFile path args =
             log "%s %s" path args
-            let toLog = redirectToLog ()
+            use toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
         do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
         return out.ToArray() |> List.ofArray

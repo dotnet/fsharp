@@ -209,25 +209,6 @@ let private singleTestRun' cfg testDir =
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
-    // :FSC_HW
-    // @echo do :FSC_HW
-    let runFSC_HW () = processor {
-        // if exist test-hw.* (
-        if Directory.EnumerateFiles(testDir, "test-hw.*") |> Seq.exists fileExists then 
-            // if exist test.ok (del /f /q test.ok)
-            use testOkFile = createTestOkFile () 
-            // %CLIX% .\test-hw.exe && (
-            do! exec ("."/"test-hw.exe") ""
-            // dir test.ok > NUL 2>&1 ) || (
-            // @echo  :FSC_HW failed
-            // set ERRORMSG=%ERRORMSG% FSC_HW failed;
-            // )
-            do! testOkFile |> NUnitConf.checkGuardExists
-            //)
-        else 
-            do! NUnitConf.skip (sprintf "file '%s' not found" "test-hw.*")
-        }
-
     // :FSC_O3
     // @echo do :FSC_O3
     let runFSC_O3 () = processor {
@@ -435,8 +416,6 @@ let private singleTestRun' cfg testDir =
         | SPANISH -> runSPANISH
         | FSC_BASIC -> runFSC_BASIC
         | FSC_BASIC_64 -> runFSC_BASIC_64
-        | FSC_HW -> runFSC_HW
-        | FSC_O3 -> runFSC_O3
         | GENERATED_SIGNATURE -> runGENERATED_SIGNATURE
         | EMPTY_SIGNATURE -> runEMPTY_SIGNATURE
         | EMPTY_SIGNATURE_OPT -> runEMPTY_SIGNATURE_OPT
@@ -521,7 +500,7 @@ let singleTestRun config testDir =
             | Success () -> doneOK ()
             | Failure (Skipped msg) -> doneSkipped msg
             | Failure (GenericError msg) -> doneError (GenericError msg) msg
-            | Failure (ProcessExecError (err,msg)) -> doneError (ProcessExecError(err,msg)) msg
+            | Failure (ProcessExecError (_,_,msg) as err) -> doneError err msg
 
 
     flow

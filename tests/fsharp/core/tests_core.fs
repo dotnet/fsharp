@@ -22,7 +22,7 @@ let requireVSUltimate cfg = processor {
     }
 
 module Access =
-    [<Test; FSharpSuitePermutations("core/access")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/access")>]
     let access p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -32,7 +32,7 @@ module Access =
         })
 
 module Apporder = 
-    [<Test; FSharpSuitePermutations("core/apporder")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/apporder")>]
     let apporder p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -42,7 +42,7 @@ module Apporder =
         })
 
 module Array = 
-    [<Test; FSharpSuitePermutations("core/array")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/array")>]
     let array p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -52,7 +52,7 @@ module Array =
         })
 
 module Attributes = 
-    [<Test; FSharpSuitePermutations("core/attributes")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/attributes")>]
     let attributes p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -62,7 +62,17 @@ module Attributes =
         }) 
 
 module Comprehensions = 
-    [<Test; FSharpSuitePermutations("core/comprehensions")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/comprehensions")>]
+    let comprehensions p = check  (processor {
+        let { Directory = dir; Config = cfg } = testContext ()
+        
+        do! SingleTestBuild.singleTestBuild cfg dir p
+        
+        do! SingleTestRun.singleTestRun cfg dir p
+        })
+
+module ComprehensionsHw = 
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/comprehensions-hw")>]
     let comprehensions p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -72,7 +82,7 @@ module Comprehensions =
         })
 
 module Control = 
-    [<Test; FSharpSuitePermutations("core/control")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/control")>]
     let control p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -81,7 +91,7 @@ module Control =
         do! SingleTestRun.singleTestRun cfg dir p
         })
 
-    [<Test; FSharpSuitePermutations("core/control")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/control")>]
     let ``control --tailcalls`` p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -91,7 +101,7 @@ module Control =
         })
 
 module ControlChamenos =
-    [<Test; FSharpSuitePermutations("core/controlChamenos")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/controlChamenos")>]
     let controlChamenos p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -101,7 +111,7 @@ module ControlChamenos =
         })
 
 module ControlMailbox =
-    [<Test; FSharpSuitePermutations("core/controlMailbox")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
     let controlMailbox p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -110,7 +120,7 @@ module ControlMailbox =
         do! SingleTestRun.singleTestRun cfg  dir p
         })
 
-    [<Test; FSharpSuitePermutations("core/controlMailbox")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
     let ``controlMailbox --tailcalls`` p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -120,7 +130,7 @@ module ControlMailbox =
         })
 
 module ControlWpf = 
-    [<Test; FSharpSuitePermutations("core/controlwpf")>]
+    [<Test; FSharpSuiteFscCodePermutation("core/controlwpf")>]
     let controlWpf p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -130,7 +140,7 @@ module ControlWpf =
         })
 
 module Csext = 
-    [<Test; FSharpSuitePermutations("core/csext")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/csext")>]
     let csext p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -505,7 +515,7 @@ module fsiAndModifiers =
 
 module GenericMeasures = 
 
-    [<Test; FSharpSuitePermutations("core/genericmeasures")>]
+    [<Test; FSharpSuiteCodeAndInferencePermutations("core/genericmeasures")>]
     let genericmeasures p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -548,7 +558,7 @@ module Hiding =
 
 module Innerpoly = 
 
-    [<Test; FSharpSuitePermutations("core/innerpoly")>]
+    [<Test; FSharpSuiteCodeAndInferencePermutations("core/innerpoly")>]
     let innerpoly p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -560,7 +570,7 @@ module Innerpoly =
         
 module ``test int32`` = 
 
-    [<Test; FSharpSuitePermutations("core/int32")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/int32")>]
     let int32 p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -658,12 +668,12 @@ module Printing =
     // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
     [<Test>]
     [<SetCulture("en-US"); SetUICulture("en-US")>] //not enough
-    [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.txt", "z.output.test.default.bsl")>]
-    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.txt", "z.output.test.1000.bsl")>]
-    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize200.fsx", "z.output.test.200.txt", "z.output.test.200.bsl")>]
-    [<FSharpSuiteTestCase("core/printing", "--use:preludeShowDeclarationValuesFalse.fsx", "z.output.test.off.txt", "z.output.test.off.bsl")>]
-    [<FSharpSuiteTestCase("core/printing", "--quiet", "z.output.test.quiet.txt", "z.output.test.quiet.bsl")>]
-    let printing flag diffFile expectedFile = check (processor {
+    [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.stdout.txt", "z.output.test.default.stdout.bsl", "z.output.test.default.stderr.txt", "z.output.test.default.stderr.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.stdout.txt", "z.output.test.1000.stdout.bsl", "z.output.test.1000.stderr.txt", "z.output.test.1000.stderr.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize200.fsx", "z.output.test.200.stdout.txt", "z.output.test.200.stdout.bsl", "z.output.test.200.stderr.txt", "z.output.test.200.stderr.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludeShowDeclarationValuesFalse.fsx", "z.output.test.off.stdout.txt", "z.output.test.off.stdout.bsl", "z.output.test.off.stderr.txt", "z.output.test.off.stderr.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--quiet", "z.output.test.quiet.stdout.txt", "z.output.test.quiet.stdout.bsl", "z.output.test.quiet.stderr.txt", "z.output.test.quiet.stderr.bsl")>]
+    let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
@@ -672,12 +682,12 @@ module Printing =
         let fileExists = Commands.fileExists dir >> Option.isSome
         let getfullpath = Commands.getfullpath dir
 
-        let ``fsi <a >b 2>&1`` =
+        let ``fsi <a >b 2>c`` =
             // "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
-            let ``exec <a >b 2>&1`` inFile outFile p = 
-                Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Overwrite(outFile)); Input = Some(RedirectInput(inFile)); } p 
+            let ``exec <a >b 2>c`` (inFile, outFile, errFile) p = 
+                Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Overwrite(outFile), Overwrite(errFile)); Input = Some(RedirectInput(inFile)); } p 
                 >> checkResult
-            Printf.ksprintf (fun flags in' out -> Commands.fsi (``exec <a >b 2>&1`` in' out) cfg.FSI flags [])
+            Printf.ksprintf (fun flags (inFile, outFile, errFile) -> Commands.fsi (``exec <a >b 2>c`` (inFile, outFile, errFile)) cfg.FSI flags [])
         
         let fsdiff a b = 
             let ``exec >`` f p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(f)); Input = None} p >> checkResult
@@ -696,8 +706,9 @@ module Printing =
         // "%FSI%" %fsc_flags_errors_ok%  --nologo --use:preludeShowDeclarationValuesFalse.fsx <test.fsx >z.raw.output.test.off.txt     2>&1
         // echo == Quiet
         // "%FSI%" %fsc_flags_errors_ok% --nologo --quiet                              <test.fsx >z.raw.output.test.quiet.txt   2>&1
-        let rawFile = Path.GetTempFileName()
-        do! ``fsi <a >b 2>&1`` "%s --nologo %s" fsc_flags_errors_ok flag "test.fsx" rawFile
+        let rawFileOut = Path.GetTempFileName()
+        let rawFileErr = Path.GetTempFileName()
+        do! ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
         let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
@@ -709,46 +720,18 @@ module Printing =
         // findstr /v "%CD%" z.raw.output.test.200.txt     | findstr /v -C:"--help' for options" > z.output.test.200.txt
         // findstr /v "%CD%" z.raw.output.test.off.txt     | findstr /v -C:"--help' for options" > z.output.test.off.txt
         // findstr /v "%CD%" z.raw.output.test.quiet.txt   | findstr /v -C:"--help' for options" > z.output.test.quiet.txt
-        removeCDandHelp rawFile diffFile
+        removeCDandHelp rawFileOut diffFileOut
+        removeCDandHelp rawFileErr diffFileErr
 
         let withDefault default' to' =
             if not (fileExists to') then Some (copy default' to') else None
-        // if NOT EXIST z.output.test.default.bsl COPY z.output.test.default.txt z.output.test.default.bsl
-        // if NOT EXIST z.output.test.off.bsl     COPY z.output.test.off.txt     z.output.test.off.bsl
-        // if NOT EXIST z.output.test.1000.bsl    COPY z.output.test.1000.txt    z.output.test.1000.bsl
-        // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
-        // if NOT EXIST z.output.test.quiet.bsl   COPY z.output.test.quiet.txt   z.output.test.quiet.bsl
-        do! expectedFile |> withDefault diffFile
 
-        // %PRDIFF% z.output.test.default.txt z.output.test.default.bsl > z.output.test.default.diff
-        // %PRDIFF% z.output.test.off.txt     z.output.test.off.bsl     > z.output.test.off.diff
-        // %PRDIFF% z.output.test.1000.txt    z.output.test.1000.bsl    > z.output.test.1000.diff
-        // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
-        // %PRDIFF% z.output.test.quiet.txt   z.output.test.quiet.bsl   > z.output.test.quiet.diff
-        do! fsdiff diffFile expectedFile
+        do! expectedFileOut |> withDefault diffFileOut
+        do! expectedFileErr |> withDefault diffFileErr
 
-        // echo ======== Differences From ========
-        // TYPE  z.output.test.default.diff
-        // TYPE  z.output.test.off.diff
-        // TYPE  z.output.test.1000.diff
-        // TYPE  z.output.test.200.diff
-        // TYPE  z.output.test.quiet.diff
-        // echo ========= Differences To =========
-        // 
-        // TYPE  z.output.test.default.diff  > zz.alldiffs
-        // TYPE  z.output.test.off.diff     >> zz.alldiffs
-        // TYPE  z.output.test.1000.diff    >> zz.alldiffs
-        // TYPE  z.output.test.200.diff     >> zz.alldiffs
-        // TYPE  z.output.test.quiet.diff   >> zz.alldiffs
-        // 
-        // for /f %%c IN (zz.alldiffs) do (
-        //   echo NOTE -------------------------------------
-        //   echo NOTE ---------- THERE ARE DIFFs ----------
-        //   echo NOTE -------------------------------------
-        //   echo .
-        //   echo To update baselines: "sd edit *bsl", "del *bsl", "build.bat" regenerates bsl, "sd diff ...", check what changed.
-        //   goto Error
-        // )
+        do! fsdiff diffFileOut expectedFileOut
+        do! fsdiff diffFileErr expectedFileErr
+
         ignore "printed to log"
 
 
@@ -850,7 +833,7 @@ module Quotes =
 
 module Namespaces = 
 
-    [<Test; FSharpSuitePermutations("core/namespaces")>]
+    [<Test; FSharpSuiteCodeAndInferencePermutations("core/namespaces")>]
     let attributes p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -953,7 +936,7 @@ module Unicode =
         do! run cfg dir
         }) 
 
-    [<Test; FSharpSuitePermutations("core/unicode")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/unicode")>]
     let unicode2 p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1060,7 +1043,7 @@ module Interop =
 
 module ``test lazy`` = 
 
-    [<Test; FSharpSuitePermutations("core/lazy")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/lazy")>]
     let ``lazy`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1071,7 +1054,7 @@ module ``test lazy`` =
 
 module letrec = 
 
-    [<Test; FSharpSuitePermutations("core/letrec")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/letrec")>]
     let letrec p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1082,7 +1065,7 @@ module letrec =
 
 module LibTest = 
 
-    [<Test; FSharpSuitePermutations("core/libtest")>]
+    [<Test; FSharpSuiteAllPermutations("core/libtest")>]
     let libtest p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1093,7 +1076,7 @@ module LibTest =
 
 module Lift = 
 
-    [<Test; FSharpSuitePermutations("core/lift")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/lift")>]
     let lift p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1105,25 +1088,27 @@ module Lift =
 
 module ``Load-Script`` = 
 
-    let ``script > a 2>&1`` cfg dir to' = processor {
+    let ``script > a 2>b`` cfg dir (stdout,stderr) = processor {
 
-        let toPath = to' |> Commands.getfullpath dir
+        let stdoutPath = stdout |> Commands.getfullpath dir
+        let stderrPath = stderr |> Commands.getfullpath dir
 
         let alwaysSuccess _ = Success ()
 
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Append(toPath)); Input = None; } p >> alwaysSuccess
-        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Append(toPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = None; } p >> alwaysSuccess
+        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(l)) } p >> alwaysSuccess
         
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let type_append_tofile from = Commands.type_append_tofile dir from toPath
-        let echo text = Commands.echo_append_tofile dir text toPath
+        let type_append_tofile from = Commands.type_append_tofile dir from stdoutPath
+        let echo text = Commands.echo_append_tofile dir text stdoutPath
         let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
         let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
         let fileExists = Commands.fileExists dir >> Option.isSome
         let del = Commands.rm dir
         let getfullpath = Commands.getfullpath dir
 
-        File.WriteAllText(toPath, "")
+        File.WriteAllText(stdoutPath, "")
+        File.WriteAllText(stderrPath, "")
 
         // del 3.exe 2>nul 1>nul
         do if fileExists "3.exe" then getfullpath "3.exe" |> File.Delete
@@ -1218,14 +1203,13 @@ module ``Load-Script`` =
     let build cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let ``script > out.txt 2>&1`` () = ``script > a 2>&1`` cfg dir "out.txt"
         let getfullpath = Commands.getfullpath dir
 
         let fsdiff a b = processor {
             let out = new ResizeArray<string>()
             let redirectOutputToFile path args =
                 log "%s %s" path args
-                let toLog = redirectToLog ()
+                use toLog = redirectToLog ()
                 Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
             do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
             return out.ToArray() |> List.ofArray
@@ -1233,7 +1217,7 @@ module ``Load-Script`` =
 
 
         // script > out.txt 2>&1
-        do! ``script > out.txt 2>&1`` ()
+        do! ``script > a 2>b`` cfg dir ("out.stdout.txt", "out.stderr.txt")
 
         // if NOT EXIST out.bsl COPY out.txt
         ignore "useless, first run, same as use an empty file"
@@ -1244,32 +1228,20 @@ module ``Load-Script`` =
             let contents = System.Text.RegularExpressions.Regex.Replace(text, System.Text.RegularExpressions.Regex.Escape(dir), dummyPath)
             File.WriteAllText(f, contents)
 
-        normalizePaths (getfullpath "out.txt")
+        normalizePaths (getfullpath "out.stdout.txt")
+        normalizePaths (getfullpath "out.stderr.txt")
 
-        // %FSDIFF% out.txt out.bsl > out.diff
-        let! diffs = fsdiff (getfullpath "out.txt") (getfullpath "out.bsl")
+        let! diffs = fsdiff (getfullpath "out.stdout.txt") (getfullpath "out.stdout.bsl")
 
-        // %FSDIFF% z.output.fsi.help.txt z.output.fsi.help.bsl > z.output.fsi.help.diff
-
-        // echo ======== Differences From ========
-        // TYPE  out.diff
-        // echo ========= Differences To =========
-
-        // for /f %%c IN (out.diff do (
-        //   echo .  
-        //   echo To update baselines: "sd edit *bsl", "del *bsl", "build.bat" regenerates bsl, "sd diff ...", check what changed.  
-        //   goto Error
-        // )
         do! match diffs with
             | [] -> Success
-            | l ->
-                // echo NOTE -------------------------------------
-                // echo NOTE ---------- THERE ARE DIFFs ----------
-                // echo NOTE -------------------------------------
-                log "NOTE -------------------------------------"
-                log "NOTE ---------- THERE ARE DIFFs ----------"
-                log "NOTE -------------------------------------"
-                NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath "out.txt") (getfullpath "out.bsl") diffs)
+            | l -> NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath "out.stdout.txt") (getfullpath "out.stdout.bsl") diffs)
+
+        let! diffs = fsdiff (getfullpath "out.stderr.txt") (getfullpath "out.stderr.bsl")
+
+        do! match diffs with
+            | [] -> Success
+            | l -> NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath "out.stderr.txt") (getfullpath "out.stderr.bsl") diffs)
         }
 
     [<Test; FSharpSuiteTest("core/load-script")>]
@@ -1283,7 +1255,7 @@ module ``Load-Script`` =
 
 module LongNames = 
 
-    [<Test; FSharpSuitePermutations("core/longnames")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/longnames")>]
     let longnames p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1295,7 +1267,7 @@ module LongNames =
 
 module ``test map`` = 
 
-    [<Test; FSharpSuitePermutations("core/map")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/map")>]
     let map p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1309,7 +1281,7 @@ module Math =
     
     module Numbers = 
 
-        [<Test; FSharpSuitePermutations("core/math/numbers")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/math/numbers")>]
         let numbers p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1321,7 +1293,7 @@ module Math =
 
     module numbersVS2008 = 
 
-        [<Test; FSharpSuitePermutations("core/math/numbersVS2008")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/math/numbersVS2008")>]
         let numbersVS2008 p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1334,7 +1306,7 @@ module Math =
 
 module Measures = 
 
-    [<Test; FSharpSuitePermutations("core/measures")>]
+    [<Test; FSharpSuiteCodeAndInferencePermutations("core/measures")>]
     let measures p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1345,37 +1317,19 @@ module Measures =
 
 module Members =
 
-    //TODO members/console does not have build.bat/run.bat
-
-    (* REVIEW This test fail for FSI_STDIN*
-       Output:
-
-        // D:\github\fsharp\tests\fsharp\..\..\Debug\net40\bin\fsiAnyCPU.exe  -r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror  <test.fs
-        // 
-        // ...fsi stuff ...
-        // 
-        // For help type #help;;
-        // 
-        //   #nowarn "62"
-        //   ^
-        // 
-        // stdin(5,1): error FS0010: Unexpected start of structured construct in definition. Expected '=' or other token.
-        // > 
-        // 
-        // ERRORLEVEL 1
-
-      Fail only for with redirected input:
-      - FAIL: `fsiAnyCPU.exe ..args.. <test.fs`
-      - OK: `fsiAnyCPU.exe ..args.. test.fs`
-
-      also the output of FSI has `>` character (input ready) after stdin(5,1): error. 
-      Redirect is too fast and fsi discard input when starting?
-    *)
-    [<Category("fail_new"); Category("fail_reason_FSI_STDIN"); Category("ok_old"); Category("fail_commandline")>]
     module Basics = 
 
-        [<Test; FSharpSuitePermutations("core/members/basics")>]
+        [<Test; FSharpSuiteCodeAndInferencePermutations("core/members/basics")>]
         let Basics p = check (processor {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+        [<Test; FSharpSuiteCodeAndInferencePermutations("core/members/basics-hw")>]
+        let BasicsHw p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
             do! SingleTestBuild.singleTestBuild cfg dir p
@@ -1385,7 +1339,7 @@ module Members =
 
     module Ctree = 
 
-        [<Test; FSharpSuitePermutations("core/members/ctree")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/members/ctree")>]
         let ctree p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1396,7 +1350,7 @@ module Members =
 
     module Factors = 
 
-        [<Test; FSharpSuitePermutations("core/members/factors")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/members/factors")>]
         let factors p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1407,7 +1361,7 @@ module Members =
 
     module Incremental = 
 
-        [<Test; FSharpSuitePermutations("core/members/incremental")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/members/incremental")>]
         let incremental p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1418,7 +1372,7 @@ module Members =
 
     module Ops =
 
-        [<Test; FSharpSuitePermutations("core/members/ops")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("core/members/ops")>]
         let ops p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1430,7 +1384,7 @@ module Members =
 
 module Nested = 
 
-    [<Test; FSharpSuitePermutations("core/nested")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/nested")>]
     let nested p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1593,7 +1547,7 @@ module NetCore =
 
 module Patterns = 
 
-    [<Test; FSharpSuitePermutations("core/patterns")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/patterns")>]
     let patterns p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2219,7 +2173,7 @@ module QuotesInMultipleModules =
 
 module Reflect = 
 
-    [<Test; FSharpSuitePermutations("core/reflect")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/reflect")>]
     let reflect p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2299,7 +2253,7 @@ module ``test resources`` =
 
 module ``test seq`` = 
 
-    [<Test; FSharpSuitePermutations("core/seq")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/seq")>]
     let seq p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2312,7 +2266,7 @@ module ``test seq`` =
 
 module Subtype = 
 
-    [<Test; FSharpSuitePermutations("core/subtype")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/subtype")>]
     let subtype p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2325,7 +2279,7 @@ module Subtype =
 
 module Syntax = 
 
-    [<Test; FSharpSuitePermutations("core/syntax")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/syntax")>]
     let syntax p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2338,7 +2292,7 @@ module Syntax =
 
 module Tlr = 
 
-    [<Test; FSharpSuitePermutations("core/tlr")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("core/tlr")>]
     let tlr p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

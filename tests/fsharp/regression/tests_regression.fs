@@ -13,7 +13,7 @@ let testContext = FSharpTestSuite.testContext
 
 module ``26`` = 
 
-    [<Test; FSharpSuitePermutations("regression/26")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/26")>]
     let ``26`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -25,7 +25,7 @@ module ``26`` =
 
 module ``321`` = 
 
-    [<Test; FSharpSuitePermutations("regression/321")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/321")>]
     let ``321`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -127,7 +127,7 @@ module ``656`` =
 
 module ``83`` = 
 
-    [<Test; FSharpSuitePermutations("regression/83")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/83")>]
     let ``83`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -155,7 +155,7 @@ module ``83`` =
 
 module ``84`` = 
 
-    [<Test; FSharpSuitePermutations("regression/84")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/84")>]
     let ``84`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -204,7 +204,7 @@ module ``85`` =
 
 module ``86`` = 
 
-    [<Test; FSharpSuitePermutations("regression/86")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/86")>]
     let ``86`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -216,7 +216,7 @@ module ``86`` =
 
 module ``Tuple-bug-1`` = 
 
-    [<Test; FSharpSuitePermutations("regression/tuple-bug-1")>]
+    [<Test; FSharpSuiteFscCodePermutation("regression/tuple-bug-1")>]
     let ``tuple-bug-1`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

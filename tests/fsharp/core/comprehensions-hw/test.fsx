@@ -1,7 +1,7 @@
 // #Conformance #Sequences #Regression #ControlFlow #SyntacticSugar #ComputationExpressions 
 
 //#nowarn "57"
-module Test
+
 
 open System.Text.RegularExpressions
 open System.IO

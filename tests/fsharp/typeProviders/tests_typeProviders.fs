@@ -25,7 +25,7 @@ module Builtin =
 
     module EdmxFile = 
 
-        [<Test; FSharpSuitePermutations("typeProviders/builtin/EdmxFile")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/builtin/EdmxFile")>]
         let EdmxFile p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -40,7 +40,7 @@ module Builtin =
 
     module ODataService = 
 
-        [<Test; FSharpSuitePermutations("typeProviders/builtin/ODataService")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/builtin/ODataService")>]
         let oDataService p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -55,8 +55,9 @@ module Builtin =
 
     module SqlDataConnection = 
 
-        [<Test; FSharpSuitePermutations("typeProviders/builtin/SqlDataConnection")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/builtin/SqlDataConnection")>]
         let sqlDataConnection p = check (processor {
+            let p = FSC_OPT_PLUS_DEBUG
             let { Directory = dir; Config = cfg } = testContext ()
 
             let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
@@ -89,7 +90,7 @@ module Builtin =
 
     module WsdlService = 
 
-        [<Test; FSharpSuitePermutations("typeProviders/builtin/WsdlService")>]
+        [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/builtin/WsdlService")>]
         let wsdlService p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -323,7 +324,7 @@ module HelloWorld =
 
         }
 
-    [<Test; FSharpSuitePermutations("typeProviders/helloWorld")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/helloWorld")>]
     let helloWorld p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -511,41 +512,35 @@ module NegTests =
         ignore "is a parametrized test, like --withDefine"
 
         // :Preprocess
-        let preprocess bslppName pref = processor {
-
-            let tempFile = Path.GetTempFileName()
-
-            let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(tempFile)); Input = Some(RedirectInput(l)) } p >> checkResult
-            let ``| exec >`` out p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(out)); Input = Some(RedirectInput(tempFile)) } p >> checkResult
-
-            let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-            let ``| fsi >`` = Printf.ksprintf (fun flags sources out -> Commands.fsi (``| exec >`` out) cfg.FSI flags sources)
-
-            // "%FSI%" --exec sed.fsx "<ASSEMBLY>" "%~d0%~p0provider_%1.dll" < %~1.%~2bslpp 
-            do! ``fsi <`` """--exec sed.fsx "<ASSEMBLY>" "%s" """ (getfullpath (sprintf "provider_%s.dll" name)) (sprintf "%s.%sbslpp" bslppName pref) 
-
-            // | fsi --exec sed.fsx "<URIPATH>" "file:///%CD%\\" > %~1.%~2bsl
-            do! ``| fsi >`` """--exec sed.fsx "<URIPATH>" "%O" """ (Uri(dir |> Commands.pathAddBackslash)) [] (sprintf "%s.%sbsl" bslppName pref)
-            }
+        let preprocess name pref = 
+          processor {
+           let dirp = (dir |> Commands.pathAddBackslash)
+           do
+            File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
+               .Replace("<ASSEMBLY>", getfullpath (sprintf "provider_%s.dll" name))
+               .Replace("<URIPATH>",sprintf "file:///%s" dirp)
+               |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
+          }
 
         // :RunTestWithDefine
         let runTestWithDefine = processor {
             // "%FSC%" --define:%1 --out:provider_%1.dll -a  provider.fsx
-            do! fsc (sprintf "--define:%s --out:provider_%s.dll -a" name name) ["provider.fsx"]
+
+            do! if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then Success ()
+                else  fsc (sprintf "--define:%s --out:provider_%s.dll -a" name name) ["provider.fsx"]
 
             // :RunTest
             // if EXIST %1.bslpp   call :Preprocess "%1" ""
-            do! if fileExists (sprintf "%s.bslpp" name)
-                then preprocess name ""
+            do! if fileExists (sprintf "%s.bslpp" name) then preprocess name ""
                 else Success
 
             // if EXIST %1.vsbslpp call :Preprocess "%1" "vs"
-            do! if fileExists (sprintf "%s.vsbslpp" name)
-                then preprocess name "vs"
+            do! if fileExists (sprintf "%s.vsbslpp" name) then preprocess name "vs"
                 else Success
 
             // :DoRunTest
             // call ..\..\single-neg-test.bat %1
+            //let cfg2 = {cfg with fsc_flags = sprintf "%s -r:provider_%s.dll" cfg.fsc_flags name }
             do! SingleNegTest.singleNegTest cfg dir name
 
             }
@@ -567,7 +562,7 @@ module NegTests =
 
 module SplitAssembly = 
 
-    [<Test; FSharpSuitePermutations("typeProviders/splitAssembly")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("typeProviders/splitAssembly")>]
     let splitAssembly p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 

@@ -24,7 +24,7 @@ let private regQuery = WindowsPlatform.regQuery
 
 let private checkResult result =
     match result with
-    | CmdResult.ErrorLevel err -> let x = err, (sprintf "ERRORLEVEL %d" err) in Failure (RunError.ProcessExecError x)
+    | CmdResult.ErrorLevel (msg, err) -> Failure (RunError.ProcessExecError (msg, err, sprintf "ERRORLEVEL %d" err))
     | CmdResult.Success -> Success ()
 
 let updateCmd envVars args = processor {
@@ -91,12 +91,12 @@ let updateCmd envVars args = processor {
     // set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
     let NGEN64 = windir/"Microsoft.NET"/"Framework64"/"v4.0.30319"/"ngen.exe"
 
-    let checkResult = function CmdResult.ErrorLevel err -> Failure (sprintf "ERRORLEVEL %d" err) | CmdResult.Success -> Success ()
+    let checkResult = function CmdResult.ErrorLevel (msg, err) -> Failure (sprintf "%s. ERRORLEVEL %d" msg err) | CmdResult.Success -> Success ()
 
     let ngen32 = Commands.ngen exec NGEN32 >> checkResult
     let ngen64 = Commands.ngen exec NGEN64 >> checkResult
     let sn32 = exec SN32 >> checkResult
-    let sn64 = exec SN32 >> checkResult
+    let sn64 = exec SN64 >> checkResult
 
     // rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
     // %SN32% -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -129,7 +129,8 @@ let updateCmd envVars args = processor {
             "VisualFSharp.Unittests";
             "VisualFSharp.Salsa" ]
         for a in all do
-            do! snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a) 
+            snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a)   |> ignore // ignore result - SN is not needed for tests to pass, and this fails without admin rights
+
         }
 
     do! strongName sn32
@@ -165,14 +166,15 @@ let updateCmd envVars args = processor {
         // "%NGEN32%" install "%BINDIR%\fsi.exe" /queue:1
         // "%NGEN32%" install "%BINDIR%\FSharp.Build.dll" /queue:1
         // "%NGEN32%" executeQueuedItems 1
-        do! ngen32 [binDir/"fsc.exe"; binDir/"fsi.exe"; binDir/"FSharp.Build.dll"]
+        ngen32 [binDir/"fsc.exe"; binDir/"fsi.exe"; binDir/"FSharp.Build.dll"] |> ignore // Ignore because may fail without admin rights
+
 
         // if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
         if processorArchitecture = AMD64 then
             // "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" /queue:1
             // "%NGEN64%" install "%BINDIR%\FSharp.Build.dll" /queue:1
             // "%NGEN64%" executeQueuedItems 1
-            do! ngen64 [binDir/"fsiAnyCpu.exe"; binDir/"FSharp.Build.dll"]
+            ngen64 [binDir/"fsiAnyCpu.exe"; binDir/"FSharp.Build.dll"] |> ignore // Ignore because may fail without admin rights
         // )
     //:donengen
     

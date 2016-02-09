@@ -4,7 +4,7 @@ open PlatformHelpers
 
 type RunError = 
     | GenericError of string
-    | ProcessExecError of (int * string)
+    | ProcessExecError of (string * int * string)
     | Skipped of string
 
 type Permutation = 
@@ -14,8 +14,6 @@ type Permutation =
     | FSI_STDIN_GUI
     | FSC_BASIC
     | FSC_BASIC_64
-    | FSC_HW
-    | FSC_O3
     | GENERATED_SIGNATURE
     | EMPTY_SIGNATURE
     | EMPTY_SIGNATURE_OPT

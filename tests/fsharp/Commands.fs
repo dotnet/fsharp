@@ -79,8 +79,9 @@ let ngen exec (ngenExe: FilePath) assemblies =
     List.concat [ queue; ["executeQueuedItems 1"] ]
     |> Seq.ofList
     |> Seq.map (fun args -> exec ngenExe args)
-    |> Seq.takeWhile (function ErrorLevel _ -> false | Ok -> true)
-    |> Seq.last
+    |> Seq.skipWhile (function ErrorLevel _ -> false | CmdResult.Success -> true)
+    |> Seq.tryHead
+    |> function None -> CmdResult.Success | Some res -> res
 
 let fsc exec (fscExe: FilePath) flags srcFiles =
     // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml

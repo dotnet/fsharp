@@ -151,12 +151,12 @@ goto :EOF
 
 set FSHARP_TEST_SUITE_CONFIGURATION=%FLAVOR%
 
-set XMLFILE=FSharpNunit_Xml.xml
-set OUTPUTFILE=FSharpNunit_Output.log
-set ERRORFILE=FSharpNunit_Error.log
+set XMLFILE=%RESULTSDIR%\FSharpNunit_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\FSharpNunit_Output.log
+set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 
-echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%" 
-"%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%"
+echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2" 
+"%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%;format=nunit2" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2"
 
 call :UPLOAD_XML "%XMLFILE%"
 goto :EOF

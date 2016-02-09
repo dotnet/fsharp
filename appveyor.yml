@@ -2,7 +2,8 @@ os: Visual Studio 2015
 
 environment:
   matrix:
-    - BUILD_PROFILE: ci
+    - BUILD_PROFILE: ci_part1
+    - BUILD_PROFILE: ci_part2
 
 init: 
 build_script: 

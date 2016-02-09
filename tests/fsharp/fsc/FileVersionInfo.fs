@@ -59,7 +59,7 @@ open System.Runtime.InteropServices
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
         
-        result.OutText 
+        result.StderrText
         |> FscCommand.parseFscOut 
         |> List.choose (function FscCommand.FscOutputLine.Warning(w,e) -> Some w | _ -> None)
         |> Assert.areEqual []

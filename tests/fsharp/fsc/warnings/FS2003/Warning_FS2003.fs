@@ -43,7 +43,7 @@ open System.Reflection
         |> Assert.areEqual (45,2048,0,0)
 
         let w =
-            result.OutText
+            result.StderrText
             |> FscCommand.parseFscOut
             |> List.tryFind (function FscCommand.FscOutputLine.Warning ("FS2003", desc) -> true | _ -> false)
         

@@ -13,7 +13,7 @@ let testContext = FSharpTestSuite.testContext
 
 module ``Full-rank-arrays`` = 
 
-    [<Test; FSharpSuitePermutations("typecheck/full-rank-arrays")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("typecheck/full-rank-arrays")>]
     let ``full-rank-arrays`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -31,7 +31,7 @@ module ``Full-rank-arrays`` =
 
 module Misc = 
 
-    [<Test; FSharpSuitePermutations("typecheck/misc")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("typecheck/misc")>]
     let misc p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

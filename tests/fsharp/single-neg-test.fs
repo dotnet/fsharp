@@ -8,7 +8,7 @@ open PlatformHelpers
 open NUnitConf
 open FSharpTestSuiteTypes
 
-let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
+let private singleNegTestAux (cfg: TestConfig) workDir testname = processor {
 
     // call %~d0%~p0..\config.bat
     ignore "from arguments"
@@ -40,21 +40,12 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     ignore "from arguments"
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
-    let BSLFILE = 
+    let VSBSLFILE = 
         // IF     EXIST %testname%.vsbsl (set BSLFILE=%testname%.vsbsl)
         // IF NOT EXIST %testname%.vsbsl (set BSLFILE=%testname%.bsl)
         if (sprintf "%s.vsbsl" testname) |> fileExists 
         then sprintf "%s.vsbsl" testname
         else sprintf "%s.bsl" testname
-
-    // %FSDIFF% %~f0 %~f0
-    // @if ERRORLEVEL 1 (
-    //     set ERRORMSG=%ERRORMSG% FSDIFF likely not found;
-    //     goto Error
-    // )
-
-    //REVIEW move to suite smoke tests like fsc/fsi?
-    do! fsdiff BSLFILE BSLFILE
 
     // set sources=
     // if exist "%testname%.mli" (set sources=%sources% %testname%.mli)
@@ -71,10 +62,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     // if exist "%testname%b.ml" (set sources=%sources% %testname%b.ml)
     // if exist "%testname%b.fs" (set sources=%sources% %testname%b.fs)
     let sources = [
-        let src = 
-            [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx"; 
-              testname + "a.mli"; testname + "a.fsi"; testname + "a.ml"; testname + "a.fs";
-              testname + "b.mli"; testname + "b.fsi"; testname + "b.ml"; testname + "b.fs" ]
+        let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx" ]
 
         yield! src |> List.filter fileExists
     
@@ -118,7 +106,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
         // )
         let ``exec 2>`` errPath = Command.exec workDir cfg.EnvironmentVariables { Output = Error(Overwrite(errPath)); Input = None }
         let checkErrorLevel1 = function 
-            | CmdResult.ErrorLevel 1 -> Success
+            | CmdResult.ErrorLevel (_,1) -> Success
             | CmdResult.Success | CmdResult.ErrorLevel _ -> NUnitConf.genericError (sprintf "FSC passed unexpectedly for  %A" sources)
 
         Printf.ksprintf (fun flags sources errPath -> Commands.fsc (``exec 2>`` errPath) cfg.FSC flags sources |> checkErrorLevel1)
@@ -127,7 +115,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
         let out = new ResizeArray<string>()
         let redirectOutputToFile path args =
             log "%s %s" path args
-            let toLog = redirectToLog ()
+            use toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } workDir cfg.EnvironmentVariables path args
         do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> checkResult
         return out.ToArray() |> List.ofArray
@@ -159,19 +147,19 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     // )
 
     // %FSDIFF% %testname%.vserr %BSLFILE% > %testname%.vsdiff
-    let! testnameDiff = fsdiff (sprintf "%s.vserr" testname) BSLFILE
+    let! testnameDiff = fsdiff (sprintf "%s.vserr" testname) VSBSLFILE
 
     // for /f %%c IN (%testname%.vsdiff) do (
     do! match testnameDiff with
         | [] -> Success
         | l ->
             // echo ***** %testname%.vserr %BSLFILE% differed: a bug or baseline may neeed updating
-            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname BSLFILE
+            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname VSBSLFILE
             // set ERRORMSG=%ERRORMSG% %testname%.vserr %BSLFILE% differ;
-            NUnitConf.genericError (sprintf "%s.vserr %s differ; %A" testname BSLFILE l)
+            NUnitConf.genericError (sprintf "%s.vserr %s differ; %A" testname VSBSLFILE l)
 
     // echo Good, output %testname%.vserr matched %BSLFILE%
-    log "Good, output %s.vserr matched %s" testname BSLFILE
+    log "Good, output %s.vserr matched %s" testname VSBSLFILE
     // )
     }
 
@@ -209,11 +197,11 @@ let singleNegTest =
     // goto :EOF
 
     let flow cfg workDir testname () =    
-        singleNegTest' cfg workDir testname
+        singleNegTestAux cfg workDir testname
         |> Attempt.Run
         |> function
            | Success () -> doneOK ()
            | Failure (Skipped msg) -> doneSkipped workDir msg ()
            | Failure (GenericError msg) -> doneError (GenericError msg) msg
-           | Failure (ProcessExecError (err,msg)) -> doneError (ProcessExecError(err,msg)) msg
+           | Failure (ProcessExecError (_,_,msg) as err) -> doneError err msg
     flow

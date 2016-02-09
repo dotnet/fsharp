@@ -52,7 +52,7 @@ module Bundle =
 
 module Eval = 
 
-    [<Test; FSharpSuitePermutations("tools/eval")>]
+    [<Test; FSharpSuiteFscFsiCodePermutation("tools/eval")>]
     let eval p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

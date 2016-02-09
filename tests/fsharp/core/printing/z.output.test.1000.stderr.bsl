@@ -1,14 +1,3 @@
-[Building 2 4...done]
-[Building 2 6...done]
-[Building 2 8...done]
-[Building 2 10...done]
-[Building 2 12...done]
-[Building 2 14...done]
-[Building 3 8...done]
-[Building 4 8...done]
-[Building 5 8...done]
-[Building 6 8...done]
-[Building 5 3...done]
 
   type Regression4319_T0  = static member (+-+-+)             = "0 arguments";;
   -----------------------------------------^^^^^
@@ -234,8 +223,6 @@ stdin(619,21): warning FS1172: Infix operator member '**' has no arguments. Expe
   ----------------^^^^^^^^
 
 stdin(624,17): warning FS0864: This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.
-Expect ABC = ABC
-Expect ABC = ABC
 
       member this.M() = "string"
   ----------------^

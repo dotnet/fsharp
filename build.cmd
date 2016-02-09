@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|build^|debug^|release^|compiler^|pcls^|vs^|ci^|ci_part1^|ci_part2^|ci_part3^>
+echo build.cmd ^<all^|build^|debug^|release^|compiler^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
 echo.
 echo No arguments default to 'build' 
 echo.
@@ -28,17 +28,12 @@ exit /b 1
 
 set BUILD_PROTO=0
 set BUILD_NET40=1
-set BUILD_PORTABLE47=0
-set BUILD_PORTABLE7=0
-set BUILD_PORTABLE78=0
-set BUILD_PORTABLE259=0
+set BUILD_PORTABLE=0
 set BUILD_VS=0
+set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
-set TEST_PORTABLE47_COREUNIT=0
-set TEST_PORTABLE7_COREUNIT=0
-set TEST_PORTABLE78_COREUNIT=0
-set TEST_PORTABLE259_COREUNIT=0
+set TEST_PORTABLE_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
 set TEST_TAGS=
@@ -74,14 +69,8 @@ if /i '%ARG%' == 'compiler' (
 )
 
 if /i '%ARG%' == 'pcls' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
-    set TEST_PORTABLE47_COREUNIT=1
-    set TEST_PORTABLE7_COREUNIT=1
-    set TEST_PORTABLE78_COREUNIT=1
-    set TEST_PORTABLE259_COREUNIT=1
+    set BUILD_PORTABLE=1
+    set TEST_PORTABLE_COREUNIT=1
 )
 
 if /i '%ARG%' == 'vs' (
@@ -91,16 +80,11 @@ if /i '%ARG%' == 'vs' (
 
 if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
-    set TEST_PORTABLE47_COREUNIT=1
-    set TEST_PORTABLE7_COREUNIT=1
-    set TEST_PORTABLE78_COREUNIT=1
-    set TEST_PORTABLE259_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT=1
     set TEST_VS=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
@@ -108,17 +92,12 @@ if /i '%ARG%' == 'all' (
 
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE47_COREUNIT=1
-    set TEST_PORTABLE7_COREUNIT=1
-    set TEST_PORTABLE78_COREUNIT=1
-    set TEST_PORTABLE259_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_VS=0
@@ -128,33 +107,21 @@ if /i '%ARG%' == 'ci' (
 REM These divide 'ci' into three chunks which can be done in parallel
 
 if /i '%ARG%' == 'ci_part1' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE47_COREUNIT=1
-    set TEST_PORTABLE7_COREUNIT=1
-    set TEST_PORTABLE78_COREUNIT=1
-    set TEST_PORTABLE259_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT=1
     set TEST_VS=0
     set TEST_TAGS=
 )
 
 if /i '%ARG%' == 'ci_part2' (
-    set TEST_FSHARP_SUITE=1
-    set TEST_TAGS=
-)
-
-
-if /i '%ARG%' == 'ci_part3' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
+    set TEST_FSHARP_SUITE=1
     set TEST_TAGS=
 )
 
@@ -175,12 +142,8 @@ if /i '%ARG%' == 'debug' (
 )
 
 if /i '%ARG%' == 'build' (
-    set BUILD_PORTABLE47=1
-    set BUILD_PORTABLE7=1
-    set BUILD_PORTABLE78=1
-    set BUILD_PORTABLE259=1
+    set BUILD_PORTABLE=1
     set BUILD_VS=1
-
 )
 
 goto :EOF
@@ -192,17 +155,12 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_NET40=%BUILD_NET40%
-echo BUILD_PORTABLE47=%BUILD_PORTABLE47%
-echo BUILD_PORTABLE7=%BUILD_PORTABLE7%
-echo BUILD_PORTABLE78=%BUILD_PORTABLE78%
-echo BUILD_PORTABLE259=%BUILD_PORTABLE259%
+echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
+echo BUILD_FSHARP_DATA_TYPEPROVIDERS=%BUILD_FSHARP_DATA_TYPEPROVIDERS%
 echo.
 echo TEST_COMPILERUNIT=%TEST_COMPILERUNIT%
-echo TEST_PORTABLE47_COREUNIT=%TEST_PORTABLE47_COREUNIT%
-echo TEST_PORTABLE7_COREUNIT=%TEST_PORTABLE7_COREUNIT%
-echo TEST_PORTABLE78_COREUNIT=%TEST_PORTABLE78_COREUNIT%
-echo TEST_PORTABLE259_COREUNIT=%TEST_PORTABLE259_COREUNIT%
+echo TEST_PORTABLE_COREUNIT=%TEST_PORTABLE_COREUNIT%
 echo TEST_VS=%TEST_VS%
 echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
@@ -268,22 +226,21 @@ if '%BUILD_PROTO%' == '1' (
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
-if '%BUILD_PORTABLE47%' == '1' (
+if '%BUILD_FSHARP_DATA_TYPEPROVIDERS%' == '1' (
+%_msbuildexe% src/fsharp-typeproviders-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: type provider build failed && goto :failure
+)
+
+if '%BUILD_PORTABLE%' == '1' (
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-)
 
-if '%BUILD_PORTABLE7%' == '1' (
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-)
 
-if '%BUILD_PORTABLE78%' == '1' (
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-)
 
-if '%BUILD_PORTABLE259%' == '' (
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 )
@@ -297,22 +254,16 @@ if '%TEST_COREUNIT%' == '1' (
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
-if '%TEST_PORTABLE47_COREUNIT%' == '1' (
+if '%TEST_PORTABLE_COREUNIT%' == '1' (
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
-)
 
-if '%TEST_PORTABLE7_COREUNIT%' == '1' (
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
-)
 
-if '%TEST_PORTABLE78_COREUNIT%' == '1' (
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
-)
 
-if '%TEST_PORTABLE259_COREUNIT%' == '1' (
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 )
@@ -344,13 +295,13 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
 call RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharp %TEST_TAGS%' failed && goto :failure
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS% 
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %CONF_QA_SUITE%' failed && goto :failure
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% fsharpqa %TEST_TAGS%' failed && goto :failure
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
@@ -363,27 +314,19 @@ call RunTests.cmd %BUILD_CONFIG_LOWER% coreunit %TEST_TAGS%
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunit' failed && goto :failure
 )
 
-if '%TEST_PORTABLE47_COREUNIT%' == '1' (
+if '%TEST_PORTABLE_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47 %TEST_TAGS% 
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable47' failed && goto :failure
-)
 
-if '%TEST_PORTABLE7_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7 %TEST_TAGS% 
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable7' failed && goto :failure
-)
 
-if '%TEST_PORTABLE78_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78 %TEST_TAGS% 
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable78' failed && goto :failure
-)
 
-if '%TEST_PORTABLE259_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259 %TEST_TAGS% 
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
-)
 
-if '%TEST_PORTABLE259_COREUNIT%' == '1' (
 call RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259 %TEST_TAGS% 
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
 )
