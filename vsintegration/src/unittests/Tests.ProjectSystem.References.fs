@@ -560,8 +560,8 @@ type References() =
             let dirName = Path.GetDirectoryName(projFile)
             let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
             let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
-            let refLibPath = Path.Combine(libDirName, "nunit.core.dll")
-            File.Copy(Path.Combine(codeBase, "nunit.core.dll"), refLibPath)
+            let refLibPath = Path.Combine(libDirName, "nunit.framework.dll")
+            File.Copy(Path.Combine(codeBase, "nunit.framework.dll"), refLibPath)
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [refLibPath], ""))
             use project = TheTests.CreateProject(projFile) 
             let l = new List<AssemblyReferenceNode>()
