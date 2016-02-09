@@ -28,12 +28,12 @@ if not '%_tmp%' == '' (
 )
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
-set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
-set NO_TTAGS=ReqPP,NOOPEN
+set NO_TTAGS_ARG=-nottags:NOOPEN
+set NO_TTAGS=NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' (
-    set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
-    set NO_TTAGS=ReqPP,NOOPEN,%_tmp:"=%
+    set NO_TTAGS_ARG=-nottags:NOOPEN,%_tmp:"=%
+    set NO_TTAGS=NOOPEN,%_tmp:"=%
 )
 
 if /I "%APPVEYOR_CI%" == "1" (
