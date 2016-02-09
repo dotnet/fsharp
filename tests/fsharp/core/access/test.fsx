@@ -260,6 +260,7 @@ module RestrictedRecordsAndUnionsUsingPrivateAndInternalTypes =
 
     (*--------------------*)  
 
+report_failure ()
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
