@@ -170,7 +170,7 @@ type AsyncModule() =
     let dispose(d : #IDisposable) = d.Dispose()
 
     let testErrorAndCancelRace computation = 
-        for _ in 1..100 do
+        for _ in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
             async { cts.Cancel() } 
@@ -291,7 +291,7 @@ type AsyncModule() =
             cts.Cancel()
             sleep(100)
             Assert.IsTrue(isSet())
-        for _i = 1 to 50 do test()
+        for _i = 1 to 3 do test()
 
     [<Test>]
     member this.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
@@ -317,10 +317,10 @@ type AsyncModule() =
             Assert.IsTrue(ok, "Computation should be completed")
             Assert.IsFalse(!cancelledWasCalled, "Cancellation handler should not be called")
 
-        for _i = 1 to 50 do test()
+        for _i = 1 to 3 do test()
 
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -352,7 +352,7 @@ type AsyncModule() =
             Assert.IsFalse(resource.IsAlive)
         
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
-        for _ in 1..100 do tryToLeak()
+        for _ in 1..10 do tryToLeak()
            
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
@@ -415,7 +415,7 @@ type AsyncModule() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
-    [<Test; Category("CHOICE")>]
+    [<Test; Category("Expensive")>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         Check.QuickThrowOnFailure (normalize >> runChoice)
 #endif
@@ -562,7 +562,7 @@ type AsyncModule() =
             try cts.Cancel() with _ -> () 
             System.Threading.Thread.Sleep 1500 
             printfn "====" 
-        for i = 1 to 20 do test()
+        for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
 #endif
