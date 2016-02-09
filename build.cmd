@@ -294,26 +294,26 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWERCASECASECASE% fsharp %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS% 
 @if ERRORLEVEL 1 (
     type testresults\FSharpNunit_Error.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharp %TEST_TAGS%' failed
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
     goto :failure
   )
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS% 
 @if ERRORLEVEL 1 (
     type testresults\fsharpqa_failures.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% fsharpqa %TEST_TAGS%' failed
+    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed
     goto :failure
   )
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASECASE% compilerunit %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit %TEST_TAGS% 
 @if ERRORLEVEL 1 (
     type testresults\CompilerUnit_net40_Error.log
     echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
