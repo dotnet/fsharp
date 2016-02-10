@@ -23,10 +23,12 @@
   <ItemGroup>
     <Compile Include="TokenContext.fs" />
     <Compile Include="SmartIndent.fs" />
-    <Compile Include="BraceCompletion.fs" />
+    <Compile Include="FSRoslynProjectSiteService.fs" />
     <Content Include="extension.vsixmanifest">
       <CopyToOutputDirectory>false</CopyToOutputDirectory>
     </Content>
+    <Compile Include="BraceCompletion.fs" />
+    <Compile Include="FSRoslynContentType.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
@@ -50,6 +52,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="EnvDTE" />
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -64,6 +67,33 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
+    <Reference Include="System.Composition.AttributedModel">
+      <HintPath>..\..\..\..\..\packages\Roslyn\System.Composition.AttributedModel.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\..\..\..\..\packages\Roslyn\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Workspaces">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Features">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.CodeAnalysis.Features.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.EditorFeatures">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.CodeAnalysis.EditorFeatures.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.EditorFeatures.Text">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.CodeAnalysis.EditorFeatures.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.LanguageServices">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.VisualStudio.LanguageServices.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.LanguageServices.Implementation">
+      <HintPath>..\..\..\..\..\packages\Roslyn\Microsoft.VisualStudio.LanguageServices.Implementation.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

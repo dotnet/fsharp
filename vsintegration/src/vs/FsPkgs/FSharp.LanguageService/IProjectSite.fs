@@ -21,6 +21,9 @@ type internal IProjectSite =
     /// Register for notifications when project is cleaned/rebuilt (and thus any live TypeProviders should be refreshed)
     abstract AdviseProjectSiteCleaned : (*callbackOwnerKey*)string * AdviseProjectSiteChanges -> unit
 
+    // Register for notifications when project is closed.
+    abstract AdviseProjectSiteClosed : (*callbackOwnerKey*)string * AdviseProjectSiteChanges -> unit
+
     /// A user-friendly description of the project. Used only for developer/DEBUG tooltips and such.
     abstract DescriptionOfProject : unit -> string
 

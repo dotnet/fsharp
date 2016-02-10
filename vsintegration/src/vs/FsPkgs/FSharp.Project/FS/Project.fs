@@ -105,6 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ProjectFileName() = inner.ProjectFileName()
             member ips.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
             member ips.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
+            member ips.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
             member ips.ErrorListTaskProvider() = inner.ErrorListTaskProvider()
             member ips.ErrorListTaskReporter() = inner.ErrorListTaskReporter()
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
@@ -472,6 +473,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             
             let sourcesAndFlagsNotifier = new Notifier()
             let cleanNotifier = new Notifier()
+            let closeNotifier = new Notifier()
             
             [<Microsoft.FSharp.Core.DefaultValue>]
             static val mutable private imageOffset : int 
@@ -648,6 +650,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     | _ -> ()
                 vsProject <- null
                 accessor <- null
+                closeNotifier.Notify()
                 base.Close()
 
             override x.Load(filename:string, location:string, name:string, flags:uint32, iidProject:byref<Guid>, canceled:byref<int> ) =
@@ -1611,6 +1614,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
                     member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) =
                         cleanNotifier.Advise(callbackOwnerKey,callback)
+                    member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) =
+                        closeNotifier.Advise(callbackOwnerKey,callback)
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.LoadTime = creationTime
@@ -1640,6 +1645,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     member ips.ErrorListTaskReporter() = taskReporter
                     member this.AdviseProjectSiteChanges(_,_) = ()
                     member this.AdviseProjectSiteCleaned(_,_) = ()
+                    member this.AdviseProjectSiteClosed(_,_) = ()
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.LoadTime = creationTime
