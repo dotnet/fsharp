@@ -19,3 +19,7 @@ version: 0.0.1.{build}
 artifacts: 
   - path: Release
     name: Release
+
+  - path: tests\TestResults
+    name: TestResults
+    type: zip
