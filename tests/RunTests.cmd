@@ -299,8 +299,8 @@ set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
 set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
-echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
-     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
 call :UPLOAD_XML "%XMLFILE%"
 
