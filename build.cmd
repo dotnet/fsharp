@@ -111,9 +111,9 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
-    set TEST_COMPILERUNIT=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_PORTABLE_COREUNIT=0
     set TEST_VS=1
 )
 
@@ -279,7 +279,7 @@ REM Remove lingering copies of the OSS FSharp.Core from the GAC
 gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
 
 REM This clobbers the installed F# SDK on the machine
-REM call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
+call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
 pushd tests
 
 @echo on
