@@ -107,10 +107,41 @@ echo Building the test tree using configuration: %BUILD_PROFILE%
 @if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 
 echo Running update scripts
+call src\update.cmd %BUILD_PROFILE% -ngen
+call vsintegration\update-vsintegration.cmd %BUILD_PROFILE%
 
+REM Build the tools that are used for testing
 @echo on
 call tests/BuildTestTools.cmd %BUILD_PROFILE% 
 @if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_PROFILE%' failed && goto :failure
+
+REM Actually run the tests
+
+cd tests
+
+call RunTests.cmd %BUILD_PROFILE% fsharp Smoke
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd %BUILD_PROFILE% fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% fsharpqa Smoke
+REM @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd %BUILD_PROFILE% fsharpqa %CONF_QA_SUITE%' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% compilerunit
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% compilerunit' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% coreunit
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunit' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% coreunitportable47
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable47' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% coreunitportable7
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable7' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% coreunitportable78
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable78' failed && goto :failure
+
+REM call RunTests.cmd %BUILD_PROFILE% coreunitportable259
+REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_PROFILE% coreunitportable259' failed && goto :failure
 
 goto :eof
 
