@@ -11,6 +11,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                assembly
 --delaysign[+|-]               Delay-sign the assembly using only the public
                                portion of the strong name key
+--publicsign[+|-]              Public-sign the assembly using only the public
+                               portion of the strong name key, and mark the
+                               assembly as signed
 --doc:<file>                   Write the xmldoc of the assembly to the given
                                file
 --keyfile:<file>               Specify a strong name key file
