@@ -1,0 +1,3 @@
+# For vsintegration\... we use CRLF wince all the files are Windows-only
+* text=crlf
+
