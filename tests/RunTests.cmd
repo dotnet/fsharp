@@ -299,8 +299,8 @@ set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
 set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
-echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
-     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
 call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 
@@ -319,7 +319,7 @@ echo powershell -File Upload-Results.ps1 "%~1"
      powershell -File Upload-Results.ps1 "%~1"
 echo powershell -Command {Push-AppveyorArtifact "%~2"}
      powershell -Command {Push-AppveyorArtifact "%~2"}
-if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
+REM if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
