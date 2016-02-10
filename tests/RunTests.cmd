@@ -317,8 +317,8 @@ set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
 echo powershell -File Upload-Results.ps1 "%~1"
      powershell -File Upload-Results.ps1 "%~1"
-echo powershell -Command {Push-AppveyorArtifact (Resolve-Path "%~2")}
-     powershell -Command {Push-AppveyorArtifact (Resolve-Path "%~2")}
+echo powershell -Command {Push-AppveyorArtifact "%~2"}
+     powershell -Command {Push-AppveyorArtifact "%~2"}
 if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
 goto :EOF
 
