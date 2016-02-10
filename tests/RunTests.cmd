@@ -162,7 +162,7 @@ set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2" 
 "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -271,7 +271,7 @@ set ERRORFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 
 goto :EOF
 
@@ -286,7 +286,7 @@ set ERRORFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 
 goto :EOF
 
@@ -302,20 +302,23 @@ pushd %FSCBINPATH%
 echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
      "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 
 goto :EOF
 
 REM ----------------------------------------------------------------------------
 
-:UPLOAD_XML
+:UPLOAD_TEST_RESULTS
 
 rem See <http://www.appveyor.com/docs/environment-variables>
 if not defined APPVEYOR goto :EOF
 
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
-powershell -File Upload-Results.ps1 "%~1"
+echo powershell -File Upload-Results.ps1 "%~1"
+     powershell -File Upload-Results.ps1 "%~1"
+echo powershell -Command {Push-AppveyorArtifact (Resolve-Path "%~2")}
+     powershell -Command {Push-AppveyorArtifact (Resolve-Path "%~2")}
 if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
 goto :EOF
 
