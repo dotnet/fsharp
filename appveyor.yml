@@ -3,10 +3,11 @@ os: Visual Studio 2015
 environment:
   matrix:
     - BUILD_PROFILE: ci_part1
+    - BUILD_PROFILE: ci_part2
 
-#    - BUILD_PROFILE: ci_part2
+init:
+  - git config --global core.autocrlf true
 
-init: 
 build_script: 
   - cmd: build.cmd %BUILD_PROFILE%
 
