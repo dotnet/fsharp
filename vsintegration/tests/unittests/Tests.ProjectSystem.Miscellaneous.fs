@@ -535,9 +535,9 @@ type Miscellaneous() =
             use project = project
             let values = project.BuildActionConverter.GetStandardValues()
             let list = values |> Seq.cast |> Seq.map (fun (ba : BuildAction)-> ba.Name) |> Seq.toList
-            // expected list of build actions is union of standard actions, custom actions, and "extended" standard actions (populated from, e.g., WPF or Fakes)
+            // expected list of build actions is union of standard actions, custom actions, and "extended" standard actions 
             // this is not exhaustive (exhaustive list is not static), but covers the main equivalence classes
-            let expected = ["Compile"; "Content"; "EmbeddedResource"; "None"; "MyBuildAction"; "MyBuildAction3"; "Resource"; "SplashScreen"; "Fakes"]
+            let expected = ["Compile"; "Content"; "EmbeddedResource"; "None"; "MyBuildAction"; "MyBuildAction3"; "Resource"]
             if expected |> List.forall (fun i -> List.exists ((=)i) list) |> not then                
                 let s0 = sprintf "%A" expected
                 let s1 = sprintf "%A" list
