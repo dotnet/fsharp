@@ -284,7 +284,6 @@ EdmxFile
  
     /// FEATURE: (Project System only) Adding a file outside the project directory creates a link
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``ProjectSystem.FilesOutsideProjectDirectoryBecomeLinkedFiles``() =
         use _guard = this.UsingNewVS()
         if OutOfConeFilesAreAddedAsLinks(this.VS) then
@@ -300,7 +299,6 @@ EdmxFile
             AssertMatchesRegex '<' @"<ItemGroup>\s*<Compile Include=""..\\link.fs"">\s*<Link>link.fs</Link>" projFileText
                                   
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Lexer.CommentsLexing.Bug1548``() =
         let scan = new FSharpScanner(fun source -> 
                         let filename = "test.fs"
@@ -399,7 +397,6 @@ EdmxFile
 
     // Make sure that possible overloads (and other related errors) are shown in the error list
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``ErrorLogging.Bug5144``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -422,8 +419,7 @@ EdmxFile
             Helper.AssertListContainsInOrder(GetOutputWindowPaneLines(this.VS), 
                                       ["error FS0041: A unique overload for method 'Plot' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member N.M.LineChart.Plot : f:(float -> float) * xmin:float * xmax:float -> unit, member N.M.LineChart.Plot : f:System.Func<double,double> * xmin:float * xmax:float -> unit"])
 
-    [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAsserted``() =     
         Helper.ExhaustivelyScrutinize(
           this.TestRunner,
@@ -433,8 +429,7 @@ EdmxFile
             """    else [],""            """ ]
             )
 
-    [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedToo``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -443,8 +438,8 @@ EdmxFile
               "    interface System.IComparable with "
               "        member __.CompareTo(v:obj) = 1" ]
             )
-    [<Category("TakesMoreThanFifteenSeconds")>]
-    [<Test>]
+
+    [<Test; Category("Expensive")>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedThree``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -466,7 +461,7 @@ EdmxFile
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedFive``() =     
         Helper.ExhaustivelyScrutinize(this.TestRunner, [ """CSV.File<@"File1.txt">.[0].""" ])  // <@ is one token, wanted < @"...
 
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     [<Test>]
     member public this.``ExhaustivelyScrutinize.Bug2277``() =     
         Helper.ExhaustivelyScrutinize(
@@ -481,7 +476,7 @@ EdmxFile
                "let pp= plot(Area(xs,ys))" ]
                 )
                                      
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     [<Test>]
     member public this.``ExhaustivelyScrutinize.Bug2283``() =     
         Helper.ExhaustivelyScrutinize(

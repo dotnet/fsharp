@@ -1941,7 +1941,6 @@ let x = new MyClass2(0)
           []
 
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Project.FsFileWithBuildAction``() =
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let i = 4"
@@ -2337,7 +2336,7 @@ let x = new MyClass2(0)
     [<Test>]
     /// This is the case where at (*TYPING*) we first type 1...N-1 characters of the target custom operation and then invoke the completion list, and we check that the completion list contains the custom operation
     [<Category("QueryExpressions")>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     member this.``QueryExpression.CtrlSpaceSystematic1``() = 
        let rec strictPrefixes (s:string) = seq { if s.Length > 1 then let s = s.[0..s.Length-2] in yield s; yield! strictPrefixes s}
        for customOperation in ["select";"skip";"contains";"groupJoin"] do
@@ -2420,7 +2419,7 @@ let x = new MyClass2(0)
 
     [<Test>]
     [<Category("QueryExpressions")>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     member this.``QueryExpressions.QueryAndSequenceExpressionWithForYieldLoopSystematic``() = 
 
         let prefix =  """
@@ -2482,7 +2481,7 @@ let aaaaaa = [| "1" |]
 
     [<Test>]
     [<Category("QueryExpressions")>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     /// Incrementally enter a seq{ .. while ...} loop and check for availability of intellisense etc.
     member this.``SequenceExpressions.SequenceExprWithWhileLoopSystematic``() = 
 
@@ -2523,7 +2522,7 @@ let aaaaaa = 0
 
     [<Test>]
     [<Category("QueryExpressions")>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     /// Incrementally enter query with a 'join' and check for availability of quick info, auto completion and dot completion 
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnSingleLine``() = 
 
@@ -2582,7 +2581,7 @@ let aaaaaa = 0
     [<Test>]
     /// This is a sanity check that the multiple-line case is much the same as the single-line cae
     [<Category("QueryExpressions")>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnMultipleLine``() = 
 
         let prefix =  """
@@ -3656,7 +3655,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain
 
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Expressions.Computation``() =        
         AssertAutoCompleteContains 
           [
@@ -4179,7 +4177,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
     // FEATURE: Saving file N does not cause files 1 to N-1 to re-typecheck (but does cause files N to <end> to 
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Performance.Bug5774``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4290,7 +4287,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     /// FEATURE: The filename on disk and the filename in the project can differ in case.
     [<Test>]
-    [<Category("PerfCheck")>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 
         let solution = this.CreateSolution()
@@ -4312,7 +4308,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
     /// In this bug, a bogus flag caused the rest of flag parsing to be ignored.
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``FlagsAndSettings.Bug1969``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -6557,7 +6552,7 @@ let rec f l =
 
     // Regression test for 1067 -- Completion lists don't work after generic arguments  - for generic functions and for static members of generic types
     [<Test>]
-    member this.``Regression1067.InstanceOfGeniricType``() =
+    member this.``Regression1067.InstanceOfGenericType``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type GT<'a> =

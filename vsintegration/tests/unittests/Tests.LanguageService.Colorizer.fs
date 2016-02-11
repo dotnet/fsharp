@@ -648,7 +648,6 @@ type UsingMSBuild()  =
 
         //ColorizerTest start
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Regression.Bug2986``() =
         let code = 
                                     [

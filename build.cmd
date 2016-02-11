@@ -92,6 +92,7 @@ if /i '%ARG%' == 'all' (
 
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
@@ -101,33 +102,33 @@ if /i '%ARG%' == 'ci' (
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_VS=0
-    set TEST_TAGS=
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
 
 if /i '%ARG%' == 'ci_part1' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_VS=0
-    set TEST_TAGS=
+    set TEST_VS=1
 )
 
 if /i '%ARG%' == 'ci_part2' (
+    set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=1
-    set TEST_TAGS=
 )
 
 if /i '%ARG%' == 'smoke' (
     REM Smoke tests are a very small quick subset of tests
 
+    set SKIP_EXPENSIVE_TESTS=1
     set TEST_COMPILERUNIT=0
     set TEST_NET40_COREUNIT=0
     set TEST_FSHARP_SUITE=1
@@ -158,6 +159,8 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_FSHARP_DATA_TYPEPROVIDERS=%BUILD_FSHARP_DATA_TYPEPROVIDERS%
+echo BUILD_CONFIG=%BUILD_CONFIG%
+echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 echo TEST_COMPILERUNIT=%TEST_COMPILERUNIT%
 echo TEST_PORTABLE_COREUNIT=%TEST_PORTABLE_COREUNIT%
@@ -165,13 +168,9 @@ echo TEST_VS=%TEST_VS%
 echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
-echo BUILD_CONFIG=%BUILD_CONFIG%
-echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 
 @echo on
-
-set APPVEYOR_CI=1
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
@@ -280,7 +279,7 @@ REM Remove lingering copies of the OSS FSharp.Core from the GAC
 gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
 
 REM This clobbers the installed F# SDK on the machine
-REM call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
+call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
 pushd tests
 
 @echo on
@@ -304,7 +303,7 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS% 
+call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%
 @if ERRORLEVEL 1 (
     type testresults\fsharpqa_failures.log
     echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed

@@ -140,7 +140,6 @@ type UsingMSBuild()  =
             failwith "Expected parameter info to contain AsyncRead"
     
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Regression.MethodInfo.WithColon.Bug4518_1``() =
         let fileContent = """
             type T() =
@@ -2020,7 +2019,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Project ref method for multi-parameterinfo tests ----------------------------------------------- *)
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Multi.ReferenceToProjectLibrary``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

@@ -5,7 +5,9 @@ environment:
     - BUILD_PROFILE: ci_part1
     - BUILD_PROFILE: ci_part2
 
-init: 
+init:
+  - git config --global core.autocrlf true
+
 build_script: 
   - cmd: build.cmd %BUILD_PROFILE%
 
@@ -19,3 +21,9 @@ version: 0.0.1.{build}
 artifacts: 
   - path: Release
     name: Release
+  - path: tests\TestResults
+    name: TestResults
+    type: zip
+
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

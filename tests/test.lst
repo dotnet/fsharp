@@ -40,14 +40,14 @@ Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03		fsharp\core\libtest
 Core03		fsharp\core\lift
-NO_CI,Core03		fsharp\core\load-script
+Core03		fsharp\core\load-script
 Core03		fsharp\core\longnames
 Core03		fsharp\core\map
 Core04		..\testsprivate\fsharp\core\math\lapack
 Core04		fsharp\core\math\numbers
 Core04		fsharp\core\math\numbersVS2008
 Core04		fsharp\core\measures
-NO_CI,Core04		fsharp\core\members\basics
+Core04		fsharp\core\members\basics
 Core04		fsharp\core\members\ctree
 Core04		fsharp\core\members\factors
 Core04		fsharp\core\members\incremental
@@ -156,7 +156,7 @@ TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
-NO_CI,TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
+TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly
 TypeProviders01		fsharp\typeProviders\wedgeAssembly
 

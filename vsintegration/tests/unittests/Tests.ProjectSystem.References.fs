@@ -470,7 +470,7 @@ type References() =
         let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
         k exe))
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->

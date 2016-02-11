@@ -55,7 +55,6 @@ type UsingMSBuild()  =
 
     [<Test>]
     [<Category("error_recovery")>]
-    [<Category("PerfCheck")>]
     member public this.``ErrorRecovery.Bug4881_1``() =  
         let code = 
                                     ["let s = \"\""

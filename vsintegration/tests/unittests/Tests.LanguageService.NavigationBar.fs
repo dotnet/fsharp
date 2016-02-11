@@ -159,7 +159,6 @@ type UsingMSBuild() =
             "SomeModule", "(*5e*)" (* entire module *) ]
                           
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``Record1``() =        
         this.TestNavigationBar NavigationFile1 "SomeModule.Rec" ["RFirst"; "RSecond"]
         
