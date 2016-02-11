@@ -8,7 +8,7 @@ open FSharpTestSuiteTypes
 open PlatformHelpers
 open NUnitConf
 
-let copy (cfg: TestConfig) (dir: string) = processor {
+let copy (cfg: TestConfig) (dir: string) = attempt {
     let fileExists = Commands.fileExists dir >> Option.isSome
     let getfullpath = Commands.getfullpath dir
 

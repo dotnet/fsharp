@@ -30,7 +30,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <NoWarn>$(NoWarn);2008</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\fsharp.common.props" />
+  <Import Project="..\..\FSharp.Common.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
