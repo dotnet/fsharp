@@ -986,13 +986,14 @@ type UsingMSBuild() as this =
     //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
     //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
-    [<Test>]
-    [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
-        let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-        let marker = "#r \"Microsoft.SqlSe"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
+    // // Disabled because it seems Microsoft.SqlServer.SString.dll is no longer always available on CI installs in the same way
+    //[<Test>]
+    //[<Category("fsx closure")>]
+    //member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
+    //    let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
+    //    let marker = "#r \"Microsoft.SqlSe"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
         
     [<Test>]
     [<Category("fsx closure")>]
