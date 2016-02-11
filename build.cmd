@@ -291,8 +291,22 @@ if '%TEST_COMPILERUNIT%' == '1' (
     @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 )
 
-if '%TEST_COREUNIT%' == '1' (
+if '%TEST_NET40_COREUNIT%' == '1' (
    %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+)
+
+if '%TEST_PORTABLE_COREUNIT%' == '1' (
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
@@ -348,7 +362,6 @@ if '%TEST_COMPILERUNIT%' == '1' (
         goto :failure
     )
 )
-
 if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
