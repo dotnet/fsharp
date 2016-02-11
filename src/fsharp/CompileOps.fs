@@ -5225,6 +5225,3 @@ let TypeCheckClosedInputSet (checkForErrors, tcConfig, tcImports, tcGlobals, pre
     let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls, tcState)
     tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile
 
-
-
-

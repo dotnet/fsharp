@@ -2,13 +2,14 @@ os: Visual Studio 2015
 
 environment:
   matrix:
-    - BUILD_PROFILE: net40,portable7,portable47,portable78,portable259,vs
-    - BUILD_PROFILE: cambridge_suite,smoke_only
-    - BUILD_PROFILE: qa_suite,smoke_only
+    - BUILD_PROFILE: ci_part1
+    - BUILD_PROFILE: ci_part2
 
-init: 
+init:
+  - git config --global core.autocrlf true
+
 build_script: 
-  - cmd: appveyor-build.cmd %BUILD_PROFILE%
+  - cmd: build.cmd %BUILD_PROFILE%
 
 # scripts that run after cloning repository
 install:
@@ -20,3 +21,9 @@ version: 0.0.1.{build}
 artifacts: 
   - path: Release
     name: Release
+  - path: tests\TestResults
+    name: TestResults
+    type: zip
+
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
