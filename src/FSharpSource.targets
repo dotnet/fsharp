@@ -720,7 +720,6 @@
     <CompileDependsOn>ValidateConfiguration;$(CompileDependsOn);CustomCopyLocalFiles</CompileDependsOn>
     <RootNamespace></RootNamespace>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
-    <EnsureThereAreNoUnusedFsSrGenResources>false</EnsureThereAreNoUnusedFsSrGenResources>
   </PropertyGroup>
 
   <Target Name="ValidateConfiguration">
