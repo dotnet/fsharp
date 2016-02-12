@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Open up the compiler as an incremental service for parsing,
@@ -7,14 +7,12 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Internal.Utilities
-open System
-open System.Collections.Generic
- 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
+ 
 
+/// A range of utility functions to assist with traversing an AST
 module internal AstTraversal =
     // treat ranges as though they are half-open: [,)
     let rangeContainsPosLeftEdgeInclusive (m1:range) p =
@@ -80,7 +78,7 @@ module internal AstTraversal =
     let dive node range project =
         range,(fun() -> project node)
 
-    let pick pos _line _col (outerRange:range) (_debugObj:obj) (diveResults:list<range*_>) =
+    let pick pos (outerRange:range) (_debugObj:obj) (diveResults:list<range*_>) =
         match diveResults with
         | [] -> None
         | _ ->
@@ -123,16 +121,15 @@ module internal AstTraversal =
         | _ -> 
 #if DEBUG
             assert(false)
-            failwithf "multiple disjoint AST node ranges claimed to contain (%d,%d) from %+A" _line _col _debugObj
+            failwithf "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos _debugObj
 #else
             None
 #endif
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
-    let internal Traverse(line, col, parseTree, visitor:AstVisitorBase<'T>) =
-        let pos = Pos.fromVS line col  // line was 0-based, need 1-based
-        let pick x = pick pos line col x
+    let (*internal*) Traverse(pos:pos, parseTree, visitor:AstVisitorBase<'T>) =
+        let pick x = pick pos x
         let rec traverseSynModuleDecl path (decl:SynModuleDecl) =
             let pick = pick decl.Range
             let defaultTraverse m = 

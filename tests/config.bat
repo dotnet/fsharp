@@ -40,7 +40,6 @@ if not defined CSC    set CSC=csc.exe %csc_flags%
 
 REM SDK Dependencires.
 if not defined ILDASM   set ILDASM=ildasm.exe
-if not defined GACUTIL   set GACUTIL=gacutil.exe
 if not defined PEVERIFY set PEVERIFY=peverify.exe
 if not defined RESGEN   set RESGEN=resgen.exe
 
@@ -75,7 +74,6 @@ set fsc_flags=%fsc_flags%
 
 set CLR_SUPPORTS_GENERICS=true
 set ILDASM=%ILDASM%
-set GACUTIL=%GACUTIL%
 set CLR_SUPPORTS_WINFORMS=true
 set CLR_SUPPORTS_SYSTEM_WEB=true
 
@@ -98,10 +96,11 @@ REM == Use the same runtime as our architecture
 REM == ASSUMPTION: This could be a good or bad thing.
 IF /I NOT "%PROCESSOR_ARCHITECTURE%"=="x86" set CORDIR=%CORDIR:Framework=Framework64%
 
-FOR /F "tokens=2*" %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
-
-IF "%CORSDK%"=="" FOR /F "tokens=2*" %%A IN ('reg QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows" /v CurrentInstallFolder') DO SET CORSDK=%%BBin
-IF NOT "%CORDIR40%"=="" IF EXIST "%CORSDK%\NETFX 4.0 Tools" set CORSDK=%CORSDK%\NETFX 4.0 Tools
+FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
 
 REM == Fix up CORSDK for 64bit platforms...
 IF /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" SET CORSDK=%CORSDK%\x64
@@ -147,7 +146,6 @@ REM == The logic here is: pick the latest msbuild
 REM == If we are testing against NDP4.0, then don't try msbuild 3.5
 REM ==
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\ildasm.exe"          SET ILDASM=%CORSDK%\ildasm.exe
-IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\gacutil.exe"         SET GACUTIL=%CORSDK%\gacutil.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORSDK%\peverify.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\resgen.exe"          SET RESGEN=%CORSDK%\resgen.exe
 IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
@@ -212,11 +210,11 @@ echo FSCOREDLLPORTABLEPATH =%FSCOREDLLPORTABLEPATH%
 echo FSCOREDLLNETCOREPATH=%FSCOREDLLNETCOREPATH%
 echo FSCOREDLLNETCORE78PATH=%FSCOREDLLNETCORE78PATH%
 echo FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%
+echo FSCOREDLLVPREVPATH  =%FSCOREDLLVPREVPATH%
 echo FSDATATPPATH        =%FSDATATPPATH%
 echo FSDIFF              =%FSDIFF%
 echo FSI                 =%FSI%
 echo fsi_flags           =%fsi_flags%
-echo GACUTIL             =%GACUTIL%
 echo ILDASM              =%ILDASM%
 echo INSTALL_SKU         =%INSTALL_SKU%
 echo MSBUILDTOOLSPATH    =%MSBuildToolsPath%
@@ -258,13 +256,14 @@ IF /I "%OSARCH%"=="IA64"  set X86_PROGRAMFILES=%ProgramFiles(x86)%
 IF /I "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
 REM == Default VS install locations
-set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
-set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.0
-set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.0
-set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.0
-set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.0
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
+set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
+set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
 
 REM == Check if using open build instead
 IF EXIST "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
@@ -281,4 +280,4 @@ set FSCOREDLLPORTABLEPATH=%FSCOREDLLPORTABLEPATH%\FSharp.Core.dll
 set FSCOREDLLNETCOREPATH=%FSCOREDLLNETCOREPATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE78PATH=%FSCOREDLLNETCORE78PATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
-set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
+set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll

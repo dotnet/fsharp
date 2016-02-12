@@ -6,7 +6,7 @@
 // This test should probably go under the SystematicUnitTests suite, but 
 // I could not decide how to make it fit... so I'm leaving it here.
 //
-//<Expect status=success><Expect>
+//<Expect status="success"></Expect>
 
 let mutable dispose_called_in_E = 0    // we expect this to be incremented 3 times
 let mutable dispose_called_in_C = 0    // we expect this to be incremented once (=this is what the bug was about, i.e. .Dispose() was never invoked)

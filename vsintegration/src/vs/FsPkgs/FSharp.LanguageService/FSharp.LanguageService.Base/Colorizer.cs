@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
@@ -46,7 +46,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     }
 
 #if COLORABLE_ITEM
-    /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem"]/*' />
     [CLSCompliant(false)]
     [System.Runtime.InteropServices.ComVisible(true)]
     public class ColorableItem : IVsColorableItem, IVsHiColorItem, IVsMergeableUIItem {
@@ -55,7 +54,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         Color hiForeColor, hiBackColor;
         FONTFLAGS fontFlags;
 
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.ColorableItem"]/*' />
         internal ColorableItem(string name, string displayName, COLORINDEX foreColor, COLORINDEX backColor, Color hiForeColor, Color hiBackColor, FONTFLAGS fontFlags) {
             this.name = name;
             this.displayName = displayName;
@@ -66,27 +64,20 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.hiBackColor = hiBackColor;
         }
 
-    #region IVsColorableItem methods
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetDefaultColors"]/*' />
         public virtual int GetDefaultColors(COLORINDEX[] foreColor, COLORINDEX[] backColor) {
             if (foreColor != null) foreColor[0] = this.foreColor;
             if (backColor != null) backColor[0] = this.backColor;
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetDefaultFontFlags"]/*' />
         public virtual int GetDefaultFontFlags(out uint fontFlags) {
             fontFlags = (uint)this.fontFlags;
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetDisplayName"]/*' />
         public virtual int GetDisplayName(out string name) {
             name = this.displayName;
             return NativeMethods.S_OK;
         }
-        #endregion
 
-    #region IVsHiColorItem methods
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="Colorizer.GetColorData"]/*' />
         public virtual int GetColorData(int cdElement, out uint crColor) 
         {
             crColor = 0;
@@ -126,18 +117,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             return (uint)(red | (green << 8) | (blue << 16));
         }
-        #endregion
 
 
-    #region IVsMergeableUIItem Members
-
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetCanonicalName"]/*' />
         public virtual int GetCanonicalName(out string name) {
             name = this.name;
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetDescription"]/*' />
         public virtual int GetDescription(out string desc) {
             // The reason this is not implemented is because the core text editor
             // doesn't use it.
@@ -145,13 +131,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return NativeMethods.E_NOTIMPL;
         }
 
-        /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetMergingPriority"]/*' />
         public virtual int GetMergingPriority(out int priority) {
             priority = -1;
             return NativeMethods.E_NOTIMPL;
         }
 
-        #endregion
     }
 #endif
 

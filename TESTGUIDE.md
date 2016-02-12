@@ -23,7 +23,7 @@ In order to run all of the tests, you will need to install
 
 * [Perl](http://www.perl.org/get.html) (ActiveState Perl 5.16.3 is known to work fine)
 
-Perl must be included in the `%PATH%` for the below steps to work.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
+Perl must be included in the `%PATH%` for the below steps to work.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
 
 Before running tests, make sure you have successfully built all required projects as specified in the 'Prepare For Tests' section of the [DEVGUIDE](DEVGUIDE.md).
 
@@ -103,7 +103,7 @@ To build these unit test binaries, from the `src` directory call
 - `msbuild fsharp-library-unittests-build.proj`
   - Output binary is `FSharp.Core.Unittests.dll`
 
-You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit-console.exe`.
+You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit3-console.exe`.
 
 ### Visual F# Tools IDE Unit Test Suite
 
@@ -113,9 +113,9 @@ To build the unit test binary, call
 msbuild fsharp-vsintegration-unittests-build.proj
 ```
 
-from the `src` directory.  Tests are contained in the binary `Unittests.dll`. 
+from the `src` directory.  Tests are contained in the binary `VisualFSharp.Unittests.dll`. 
 
-The IDE unit tests rely on the "Salsa" library, which is a set of Visual Studio mocks. The code for Salsa resides at `vsintegration\src\Salsa`.
+The IDE unit tests rely on the "VisualFSharp.Salsa" library, which is a set of Visual Studio mocks. The code for Salsa resides at `vsintegration\src\Salsa`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, either `nunit-console-x86.exe` or `nunit-x86.exe`.
 

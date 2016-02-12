@@ -1,6 +1,8 @@
 
 #r "provider.dll"
 #r "test1.dll"
+#load "./test1.fsx"
+#load "./test2a.fsx"
 
 module ErasedTypes = 
     let f() : FSharp.HelloWorld.HelloWorldType = Unchecked.defaultof<_>

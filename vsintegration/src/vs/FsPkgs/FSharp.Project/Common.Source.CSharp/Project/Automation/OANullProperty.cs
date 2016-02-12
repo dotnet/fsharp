@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -21,19 +21,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [CLSCompliant(false), ComVisible(true)]
     public class OANullProperty : EnvDTE.Property
     {
-        #region fields
         private OAProperties parent;
-        #endregion
-
-        #region ctors
 
         internal OANullProperty(OAProperties parent)
         {
             this.parent = parent;
         }
-        #endregion
-
-        #region EnvDTE.Property
 
         public object Application
         {
@@ -97,6 +90,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             get { return String.Empty; }
             set { }
         }
-        #endregion
     }
 }

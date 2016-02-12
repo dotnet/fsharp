@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -45,7 +45,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate")>]
         val iter: action:('T -> unit) -> array:'T[,,] -> unit
 
-        /// <summary>Applies the given function to each element of the array. The integer indicies passed to the
+        /// <summary>Applies the given function to each element of the array. The integer indices passed to the
         /// function indicates the index of element.</summary>
         /// <param name="action">The function to apply to each element of the array.</param>
         /// <param name="array">The input array.</param>
@@ -73,7 +73,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Builds a new array whose elements are the results of applying the given function
         /// to each of the elements of the array.</summary>
         ///
-        /// <remarks>For non-zero-based arrays the basing on an input array will be propogated to the output
+        /// <remarks>For non-zero-based arrays the basing on an input array will be propagated to the output
         /// array.</remarks>
         /// <param name="mapping">The function to transform each element of the array.</param>
         /// <param name="array">The input array.</param>
@@ -85,7 +85,7 @@ namespace Microsoft.FSharp.Collections
         /// to each of the elements of the array. The integer indices passed to the
         /// function indicates the element being transformed.</summary>
         ///
-        /// <remarks>For non-zero-based arrays the basing on an input array will be propogated to the output
+        /// <remarks>For non-zero-based arrays the basing on an input array will be propagated to the output
         /// array.</remarks>
         /// <param name="mapping">The function to transform the elements at each index in the array.</param>
         /// <param name="array">The input array.</param>

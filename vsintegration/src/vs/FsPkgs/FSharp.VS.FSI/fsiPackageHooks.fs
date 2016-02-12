@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
@@ -29,12 +29,6 @@ module internal Hooks =
 
     // This should be called from the Package ctor, to do unsited initialisation.
     let fsiConsoleWindowPackageCtorUnsited (this:Package) =        
-(*      // "Proffer the service"
-        let serviceContainer = this :> IServiceContainer
-        let langService = new FsiLanguageService()
-        langService.SetSite(this)        
-        serviceContainer.AddService(typeof<FsiLanguageService>,langService,true)
-*)
 
         // This seems an alternative to the boiler plate proffering above. Gives delayed creation?
         let callback  = fsiServiceCreatorCallback(this)

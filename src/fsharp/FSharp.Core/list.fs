@@ -1,8 +1,9 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
     open System.Diagnostics
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives
@@ -41,22 +42,37 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        [<CompiledName("CountBy")>]
-        let countBy projection (list:'T list) =
-            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =
+            let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
                 | [] -> ()
                 | h::t ->
-                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection h)
+                    let safeKey = projection h
                     let mutable prev = 0
-                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                    if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
                     loop t
             loop list
             let mutable result = []
             for group in dict do
-                result <- (group.Key.Value, group.Value) :: result
+                result <- (getKey group.Key, group.Value) :: result
             result |> rev
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let countByValueType (projection:'T->'Key) (list:'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let countByRefType   (projection:'T->'Key) (list:'T list) = countByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) list
+
+        [<CompiledName("CountBy")>]
+        let countBy (projection:'T->'Key) (list:'T list) =
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then countByValueType projection list
+                else countByRefType   projection list
 
         [<CompiledName("Map")>]
         let map f list = Microsoft.FSharp.Primitives.Basics.List.map f list
@@ -434,30 +450,45 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
-        [<CompiledName("GroupBy")>]
-        let groupBy keyf (list: 'T list) =
-            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+            let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Build the groupings
             let rec loop list =
                 match list with
                 | v :: t -> 
-                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf v)
-                    let ok,prev = dict.TryGetValue(key)
-                    if ok then
-                        prev.Add(v)
+                    let safeKey = keyf v
+                    let mutable prev = Unchecked.defaultof<_>
+                    if dict.TryGetValue(safeKey, &prev) then
+                        prev.Add v
                     else 
-                        let prev = new ResizeArray<'T>(1)
-                        dict.[key] <- prev
-                        prev.Add(v)
+                        let prev = ResizeArray ()
+                        dict.[safeKey] <- prev
+                        prev.Add v
                     loop t
                 | _ -> ()
             loop list
 
             // Return the list-of-lists.
             dict
-            |> Seq.map (fun group -> (group.Key.Value, Seq.toList group.Value))
+            |> Seq.map (fun group -> (getKey group.Key, Seq.toList group.Value))
             |> Seq.toList
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let groupByRefType   (keyf:'T->'Key) (list:'T list) = groupByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) list
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (keyf:'T->'Key) (list:'T list) =
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then groupByValueType keyf list
+                else groupByRefType   keyf list
 
         [<CompiledName("Partition")>]
         let partition p x = Microsoft.FSharp.Primitives.Basics.List.partition p x

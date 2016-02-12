@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// <summary>Pervasives: Additional bindings available at the top level</summary>
 namespace Microsoft.FSharp.Core
@@ -73,7 +73,7 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     val set : elements:seq<'T> -> Set<'T>
 
-    /// <summary>Builds an aysnchronous workflow using computation expression syntax.</summary>
+    /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
     [<CompiledName("DefaultAsyncBuilder")>]
     val async : Microsoft.FSharp.Control.AsyncBuilder  
 

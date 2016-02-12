@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// tinfos, minfos, finfos, pinfos - summaries of information for references
 /// to .NET and F# constructs.
@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Core.Printf
@@ -365,6 +365,21 @@ type ValRef with
         let flags = membInfo.MemberFlags
         not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || nonNil membInfo.ImplementedSlotSigs)
 
+    /// Check if an F#-declared member value is an  explicit interface member implementation
+    member vref.IsFSharpExplicitInterfaceImplementation g = 
+        match vref.MemberInfo with 
+        | None -> false
+        | Some membInfo ->
+        not membInfo.MemberFlags.IsDispatchSlot && 
+        (match membInfo.ImplementedSlotSigs with 
+         | TSlotSig(_,oty,_,_,_,_) :: _ -> isInterfaceTy g oty
+         | [] -> false)
+
+    member vref.ImplementedSlotSignatures =
+        match vref.MemberInfo with
+        | None -> []
+        | Some membInfo -> membInfo.ImplementedSlotSigs
+
 //-------------------------------------------------------------------------
 // Helper methods associated with using TAST metadata (F# members, values etc.) 
 // as backing data for MethInfo, PropInfo etc.
@@ -472,7 +487,7 @@ type OptionalArgInfo =
 
     /// Compute the OptionalArgInfo for an IL parameter
     ///
-    /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optinal arguments.
+    /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optional arguments.
     static member FromILParameter g amap m ilScope ilTypeInst (ilParam: ILParameter) = 
         if ilParam.IsOptional then 
             match ilParam.Default with 
@@ -507,9 +522,9 @@ type ReflectedArgInfo =
 [<NoComparison; NoEquality>]
 /// Partial information about a parameter returned for use by the Language Service
 type ParamNameAndType = 
-    | ParamNameAndType of string option * TType
+    | ParamNameAndType of Ident option * TType
 
-    static member FromArgInfo (ty,argInfo : ArgReprInfo) = ParamNameAndType(Option.map textOfId argInfo.Name, ty)
+    static member FromArgInfo (ty,argInfo : ArgReprInfo) = ParamNameAndType(argInfo.Name, ty)
     static member FromMember isCSharpExtMem g vref = GetArgInfosOfMember isCSharpExtMem g vref |> List.mapSquared ParamNameAndType.FromArgInfo
     static member Instantiate inst p = let (ParamNameAndType(nm,ty)) = p in ParamNameAndType(nm, instType inst ty)
     static member InstantiateCurried inst paramTypes = paramTypes |> List.mapSquared (ParamNameAndType.Instantiate inst)
@@ -518,7 +533,7 @@ type ParamNameAndType =
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData = 
     /// ParamData(isParamArray, isOut, optArgInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * OptionalArgInfo * string option * ReflectedArgInfo * TType
+    ParamData of bool * bool * OptionalArgInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -741,7 +756,7 @@ type ILMethInfo =
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then 
     /// drop the object argument.
     member x.GetParamNamesAndTypes(amap,m,minst) = 
-        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(p.Name, ImportTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
+        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
 
     /// Get a reference to the method (dropping all generic instantiations), as an Abstract IL ILMethodRef.
     member x.ILMethodRef = 
@@ -753,7 +768,7 @@ type ILMethInfo =
     member x.IsDllImport g = 
         match g.attrib_DllImportAttribute with
         | None -> false
-        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref (Some tref.Scope)  |> isSome
+        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref  |> isSome
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method. 
     /// An instance extension method returns one object argument.
@@ -835,7 +850,7 @@ type MethInfo =
 #if EXTENSIONTYPING
         | ProvidedMeth (_, mb, _, m) -> 
             let staticParams = mb.PApplyWithProvider((fun (mb,provider) -> mb.GetStaticParametersForMethod(provider)), range=m) 
-            let staticParams = staticParams.PApplyArray(id, "GetStaticParameters", m)
+            let staticParams = staticParams.PApplyArray(id, "GetStaticParametersForMethod", m)
             match staticParams with 
             | [| |] -> None
             | _ -> Some (mb,staticParams)
@@ -1060,6 +1075,15 @@ type MethInfo =
 #endif
            | DefaultStructCtor _ -> false))
 
+    /// Check if this method is an explicit implementation of an interface member
+    member x.IsFSharpExplicitInterfaceImplementation = 
+        match x with 
+        | ILMeth _ -> false
+        | FSMeth(g,_,vref,_) -> vref.IsFSharpExplicitInterfaceImplementation g
+        | DefaultStructCtor _ -> false
+#if EXTENSIONTYPING
+        | ProvidedMeth _ -> false 
+#endif
 
     /// Check if this method is marked 'override' and thus definitely overrides another method.
     member x.IsDefiniteFSharpOverride = 
@@ -1070,6 +1094,11 @@ type MethInfo =
 #if EXTENSIONTYPING
         | ProvidedMeth _ -> false 
 #endif
+
+    member x.ImplementedSlotSignatures =
+        match x with 
+        | FSMeth(_,_,vref,_) -> vref.ImplementedSlotSignatures
+        | _ -> failwith "not supported"
 
     /// Indicates if this is an extension member. 
     member x.IsExtensionMember = x.IsCSharpStyleExtensionMember || x.IsFSharpStyleExtensionMember
@@ -1233,7 +1262,7 @@ type MethInfo =
             [ [ for p in ilMethInfo.ParamMetadata do
                  let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
                  let reflArgInfo = 
-                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef (Some(g.attrib_ReflectedDefinitionAttribute.TypeRef.Scope)) p.CustomAttrs with 
+                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with 
                      | Some ([ILAttribElem.Bool b ],_) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
@@ -1359,7 +1388,7 @@ type MethInfo =
                         let pname = 
                             match p.PUntaint((fun p -> p.Name), m) with
                             | null -> None
-                            | name -> Some name
+                            | name -> Some (mkSynId m name)
                         let ptyp =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
@@ -1502,6 +1531,14 @@ type ILFieldInfo =
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
 
+    static member ILFieldInfosUseIdenticalDefinitions x1 x2 = 
+        match x1,x2 with 
+        | ILFieldInfo(_, x1), ILFieldInfo(_, x2) -> (x1 === x2)
+#if EXTENSIONTYPING
+        | ProvidedField(_,fi1,_), ProvidedField(_,fi2,_)-> ProvidedFieldInfo.TaintedEquals (fi1, fi2) 
+        | _ -> false
+#endif
+
      /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member x.ILFieldRef = rescopeILFieldRef x.ScopeRef (mkILFieldRef(x.ILTypeRef,x.FieldName,x.ILFieldType))
     override x.ToString() =  x.FieldName
@@ -1614,12 +1651,12 @@ type ILPropInfo =
         (x.HasGetter && x.GetterMethod(g).IsNewSlot) ||
         (x.HasSetter && x.SetterMethod(g).IsNewSlot) 
 
-    /// Get the names and types of the indexer arguments associated wih the IL property.
+    /// Get the names and types of the indexer arguments associated with the IL property.
     member x.GetParamNamesAndTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> ILList.toList |> List.map (fun ty -> ParamNameAndType(None, ImportTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
 
-    /// Get the types of the indexer arguments associated wih the IL property.
+    /// Get the types of the indexer arguments associated with the IL property.
     member x.GetParamTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> ILList.toList |> List.map (fun ty -> ImportTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
@@ -1769,6 +1806,15 @@ type PropInfo =
         | Some vref -> vref.IsDefiniteFSharpOverrideMember
         | None -> false
 
+    member x.ImplementedSlotSignatures =
+        x.ArbitraryValRef.Value.ImplementedSlotSignatures  
+
+    member x.IsFSharpExplicitInterfaceImplementation = 
+        match x.ArbitraryValRef with 
+        | Some vref -> vref.IsFSharpExplicitInterfaceImplementation x.TcGlobals
+        | None -> false
+
+
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
     member x.IsIndexer = 
         match x with 
@@ -1870,7 +1916,7 @@ type PropInfo =
 #if EXTENSIONTYPING
         | ProvidedProp (_,pi,m) -> 
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
-                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
+                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
                 let paramType = Import.ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                 yield ParamNameAndType(paramName, paramType) ]
 #endif
@@ -1981,7 +2027,7 @@ type ILEventInfo =
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
 exception BadEventTransformation of range
 
-/// Properties compatible with type IDelegateEvent and atributed with CLIEvent are special: 
+/// Properties compatible with type IDelegateEvent and attributed with CLIEvent are special: 
 /// we generate metadata and add/remove methods 
 /// to make them into a .NET event, and mangle the name of a property.  
 /// We don't handle static, indexer or abstract properties correctly. 
@@ -2165,7 +2211,7 @@ let CompiledSigOfMeth g amap m (minfo:MethInfo) =
 
     // The formal method typars returned are completely formal - they don't take into account the instantiation 
     // of the enclosing type. For example, they may have constraints involving the _formal_ type parameters 
-    // of the enclosing type. This instaniations can be used to interpret those type parameters 
+    // of the enclosing type. This instantiations can be used to interpret those type parameters 
     let fmtpinst = 
         let parentTyArgs = argsOfAppTy g minfo.EnclosingType
         let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m 
@@ -2400,7 +2446,7 @@ module AccessibilityLogic =
             let tcrefOfViewedItem,_ = destAppTy g ty
             IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
-    /// Compute the accessiblity of a provided member
+    /// Compute the accessibility of a provided member
     let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
         if isPublic then ILMemberAccess.Public
         elif isFamily then ILMemberAccess.Family
@@ -2408,7 +2454,7 @@ module AccessibilityLogic =
         elif isFamilyAndAssembly then ILMemberAccess.FamilyAndAssembly
         else ILMemberAccess.Private
 
-    /// IndiCompute the accessiblity of a provided member
+    /// IndiCompute the accessibility of a provided member
     let IsILFieldInfoAccessible g amap m ad x = 
         match x with 
         | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
@@ -2418,26 +2464,32 @@ module AccessibilityLogic =
             IsProvidedMemberAccessible amap m ad pfi.EnclosingType access
 #endif
 
-    let IsILEventInfoAccessible g amap m ad (ILEventInfo (tinfo,edef)) =
-        let access = (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 
-        IsILTypeAndMemberAccessible g amap m ad ad tinfo access
+    let GetILAccessOfILEventInfo (ILEventInfo (tinfo,edef)) =
+        (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 
+
+    let IsILEventInfoAccessible g amap m ad einfo =
+        let access = GetILAccessOfILEventInfo einfo
+        IsILTypeAndMemberAccessible g amap m ad ad einfo.ILTypeInfo access
 
     let private IsILMethInfoAccessible g amap m adType ad ilminfo = 
         match ilminfo with 
         | ILMethInfo (_,typ,None,mdef,_) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g typ) mdef.Access 
         | ILMethInfo (_,_,Some declaringTyconRef,mdef,_) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
 
-    let IsILPropInfoAccessible g amap m ad (ILPropInfo(tinfo,pdef)) =
+    let GetILAccessOfILPropInfo (ILPropInfo(tinfo,pdef)) =
         let tdef = tinfo.RawMetadata
-        let ilAccess = 
+        let ilAccess =
             match pdef.GetMethod with 
             | Some mref -> (resolveILMethodRef tdef mref).Access 
             | None -> 
                 match pdef.SetMethod with 
                 | None -> ILMemberAccess.Public
                 | Some mref -> (resolveILMethodRef tdef mref).Access
+        ilAccess
 
-        IsILTypeAndMemberAccessible g amap m ad ad tinfo ilAccess
+    let IsILPropInfoAccessible g amap m ad pinfo =
+        let ilAccess = GetILAccessOfILPropInfo pinfo
+        IsILTypeAndMemberAccessible g amap m ad ad pinfo.ILTypeInfo ilAccess
 
     let IsValAccessible ad (vref:ValRef) = 
         vref.Accessibility |> IsAccessible ad
@@ -2533,9 +2585,179 @@ open AccessibilityLogic
 exception ObsoleteWarning of string * range
 exception ObsoleteError of string * range
 
+let fail() = failwith "This custom attribute has an argument that can not yet be converted using this API"
+
+let rec evalILAttribElem e = 
+    match e with 
+    | ILAttribElem.String (Some x)  -> box x
+    | ILAttribElem.String None      -> null
+    | ILAttribElem.Bool x           -> box x
+    | ILAttribElem.Char x           -> box x
+    | ILAttribElem.SByte x          -> box x
+    | ILAttribElem.Int16 x          -> box x
+    | ILAttribElem.Int32 x          -> box x
+    | ILAttribElem.Int64 x          -> box x
+    | ILAttribElem.Byte x           -> box x
+    | ILAttribElem.UInt16 x         -> box x
+    | ILAttribElem.UInt32 x         -> box x
+    | ILAttribElem.UInt64 x         -> box x
+    | ILAttribElem.Single x         -> box x
+    | ILAttribElem.Double x         -> box x
+    | ILAttribElem.Null             -> null
+    | ILAttribElem.Array (_, a)     -> box [| for i in a -> evalILAttribElem i |]
+    // TODO: typeof<..> in attribute values
+    | ILAttribElem.Type (Some _t)    -> fail() 
+    | ILAttribElem.Type None        -> null
+    | ILAttribElem.TypeRef (Some _t) -> fail()
+    | ILAttribElem.TypeRef None     -> null
+
+let rec evalFSharpAttribArg g e = 
+    match e with
+    | Expr.Const(c,_,_) -> 
+        match c with 
+        | Const.Bool b -> box b
+        | Const.SByte i  -> box i
+        | Const.Int16 i  -> box  i
+        | Const.Int32 i   -> box i
+        | Const.Int64 i   -> box i  
+        | Const.Byte i    -> box i
+        | Const.UInt16 i  -> box i
+        | Const.UInt32 i  -> box i
+        | Const.UInt64 i  -> box i
+        | Const.Single i   -> box i
+        | Const.Double i -> box i
+        | Const.Char i    -> box i
+        | Const.Zero -> null
+        | Const.String s ->  box s
+        | _ -> fail()
+    | Expr.Op (TOp.Array,_,a,_) -> box [| for i in a -> evalFSharpAttribArg g i |]
+    | TypeOfExpr g ty -> box ty
+    // TODO: | TypeDefOfExpr g ty
+    | _ -> fail()
+
+type AttribInfo = 
+    | FSAttribInfo of TcGlobals * Attrib
+    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+
+    member x.TyconRef = 
+         match x with 
+         | FSAttribInfo(_g,Attrib(tcref,_,_,_,_,_,_)) -> tcref
+         | ILAttribInfo (g, amap, scoref, a, m) -> 
+             let ty = ImportType scoref amap m [] a.Method.EnclosingType
+             tcrefOfAppTy g ty
+
+    member x.ConstructorArguments = 
+         match x with 
+         | FSAttribInfo(g,Attrib(_,_,unnamedArgs,_,_,_,_)) -> 
+             unnamedArgs
+             |> List.map (fun (AttribExpr(origExpr,evaluatedExpr)) -> 
+                    let ty = tyOfExpr g origExpr
+                    let obj = evalFSharpAttribArg g evaluatedExpr
+                    ty,obj) 
+         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
+              let parms, _args = decodeILAttribData g.ilg cattr 
+              [ for (argty,argval) in Seq.zip cattr.Method.FormalArgTypes parms ->
+                    let ty = ImportType scoref amap m [] argty
+                    let obj = evalILAttribElem argval
+                    ty,obj ]
+
+    member x.NamedArguments = 
+         match x with 
+         | FSAttribInfo(g,Attrib(_,_,_,namedArgs,_,_,_)) -> 
+             namedArgs
+             |> List.map (fun (AttribNamedArg(nm,_,isField,AttribExpr(origExpr,evaluatedExpr))) -> 
+                    let ty = tyOfExpr g origExpr
+                    let obj = evalFSharpAttribArg g evaluatedExpr
+                    ty, nm, isField, obj) 
+         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
+              let _parms, namedArgs = decodeILAttribData g.ilg cattr 
+              [ for (nm, argty, isProp, argval) in namedArgs ->
+                    let ty = ImportType scoref amap m [] argty
+                    let obj = evalILAttribElem argval
+                    let isField = not isProp 
+                    ty, nm, isField, obj ]
+
+
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
 module AttributeChecking = 
+
+    let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
+        attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+
+    let AttribInfosOfFS g attribs = 
+        attribs |> List.map (fun a -> FSAttribInfo (g, a))
+
+    let GetAttribInfosOfEntity g amap m (tcref:TyconRef) = 
+        match metadataOfTycon tcref.Deref with 
+#if EXTENSIONTYPING
+        // TODO: provided attributes
+        | ProvidedTypeMetadata _info -> []
+            //let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
+            //match provAttribs.PUntaint((fun a -> a. .GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
+            //| Some args -> f3 args
+            //| None -> None
+#endif
+        | ILTypeMetadata (scoref,tdef) -> 
+            tdef.CustomAttrs |> AttribInfosOfIL g amap scoref m
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+            tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
+
+
+    let GetAttribInfosOfMethod amap m minfo = 
+        match minfo with 
+        | ILMeth (g,ilminfo,_) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
+        | FSMeth (g,_,vref,_) -> vref.Attribs |> AttribInfosOfFS g 
+        | DefaultStructCtor _ -> []
+#if EXTENSIONTYPING
+        // TODO: provided attributes
+        | ProvidedMeth (_,_mi,_,_m) -> 
+              []
+
+#endif
+
+    let GetAttribInfosOfProp amap m pinfo = 
+        match pinfo with 
+        | ILProp(g,ilpinfo) -> ilpinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL g amap ilpinfo.ILTypeInfo.ILScopeRef m
+        | FSProp(g,_,Some vref,_) 
+        | FSProp(g,_,_,Some vref) -> vref.Attribs |> AttribInfosOfFS g 
+        | FSProp _ -> failwith "GetAttribInfosOfProp: unreachable"
+#if EXTENSIONTYPING
+        // TODO: provided attributes
+        | ProvidedProp _ ->  []
+#endif
+
+    let GetAttribInfosOfEvent amap m einfo = 
+        match einfo with 
+        | ILEvent(g, x) -> x.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap x.ILTypeInfo.ILScopeRef m
+        | FSEvent(_, pi, _vref1, _vref2) -> GetAttribInfosOfProp amap m pi
+#if EXTENSIONTYPING
+        // TODO: provided attributes
+        | ProvidedEvent _ -> []
+#endif
+
+    /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
+    /// provided attributes.
+    //
+    // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
+    let TryBindTyconRefAttribute g m (AttribInfo (atref,_) as args) (tcref:TyconRef) f1 f2 f3 = 
+        ignore m; ignore f3
+        match metadataOfTycon tcref.Deref with 
+#if EXTENSIONTYPING
+        | ProvidedTypeMetadata info -> 
+            let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
+            match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
+            | Some args -> f3 args
+            | None -> None
+#endif
+        | ILTypeMetadata (_,tdef) -> 
+            match TryDecodeILAttribute g atref tdef.CustomAttrs with 
+            | Some attr -> f1 attr
+            | _ -> None
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+            match TryFindFSharpAttribute g args tcref.Attribs with 
+            | Some attr -> f2 attr
+            | _ -> None
 
     /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
     /// provided attributes.
@@ -2558,7 +2780,7 @@ module AttributeChecking =
         ignore f3
 #endif
         BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> TryDecodeILAttribute g atref (Some(atref.Scope)) ilAttribs |> Option.bind f1)
+            (fun ilAttribs -> TryDecodeILAttribute g atref ilAttribs |> Option.bind f1)
             (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)
 #if EXTENSIONTYPING
             (fun provAttribs -> 
@@ -2591,7 +2813,7 @@ module AttributeChecking =
     /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
     let private CheckILAttributes g cattrs m = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-        match TryDecodeILAttribute g tref (Some(tref.Scope)) cattrs with 
+        match TryDecodeILAttribute g tref cattrs with 
         | Some ([ILAttribElem.String (Some msg) ],_) -> 
              WarnD(ObsoleteWarning(msg,m))
         | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ],_) -> 
@@ -2676,7 +2898,7 @@ module AttributeChecking =
     /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
     let CheckILAttributesForUnseen g cattrs _m = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-        isSome (TryDecodeILAttribute g tref (Some(tref.Scope)) cattrs)
+        isSome (TryDecodeILAttribute g tref cattrs)
 
     /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
     /// items to be suppressed from intellisense.
@@ -3017,7 +3239,7 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
         else
             props.[pinfo] <- pinfo
 
-    member x.Collect(membInfo,vref:ValRef) = 
+    member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
             let pinfo = FSProp(g,typ,Some vref,None) 
@@ -3118,7 +3340,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         infos           
 
     /// Get the declared events of a type, not including inherited events 
-    let GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
+    let ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
         let infos =
             match metadataOfTy g typ with 
 #if EXTENSIONTYPING
@@ -3145,8 +3367,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         infos 
 
     /// Make a reference to a record or class field
-    let MakeRecdFieldInfo g typ tcref fspec = 
-        RecdFieldInfo(argsOfAppTy g typ,mkNestedRecdFieldRef tcref fspec)
+    let MakeRecdFieldInfo g typ (tcref:TyconRef) fspec = 
+        RecdFieldInfo(argsOfAppTy g typ,tcref.MakeNestedRecdFieldRef fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
     let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =
@@ -3178,7 +3400,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
 
     let GetIntrinsicEventInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
+        FoldPrimaryHierarchyOfType (fun typ acc -> ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
 
     let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter,ad),m,typ) =
         FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
@@ -3197,7 +3419,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
              let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ
              let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ 
              let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ 
-             let einfos = GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
+             let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
              match acc with 
              | Some(MethodItem(inheritedMethSets)) when nonNil minfos -> Some(MethodItem (minfos::inheritedMethSets))
@@ -3290,6 +3512,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member x.GetILFieldInfosOfType (optFilter,ad,m,typ) =
         ilFieldInfoCache.Apply(((optFilter,ad),m,typ))
+
+    member x.GetImmediateIntrinsicEventsOfType (optFilter,ad,m,typ) = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ
 
     /// Read the events of a type, including inherited ones. Cache the result for monomorphic types.
     member x.GetEventInfosOfType (optFilter,ad,m,typ) =
@@ -3395,7 +3619,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
         // none the elements of 'itemsToAdd' are equivalent. 
         itemsToAdd |> List.filter (fun item -> List.forall (keepTest item) (x.ItemsWithName(nmf item)))
 
-/// Add all the items to the IndexedList, prefering the ones in the super-types. This is used to hide methods
+/// Add all the items to the IndexedList, preferring the ones in the super-types. This is used to hide methods
 /// in super classes and/or hide overrides of methods in subclasses.
 ///
 /// Assume no items in 'items' are equivalent according to 'equivTest'. This is valid because each step in a
@@ -3416,7 +3640,7 @@ let private FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf keepTest itemLists
             ilist.AddItems(itemsToAdd,nmf)
     (loop itemLists).Items
 
-/// Add all the items to the IndexedList, prefering the ones in the sub-types.
+/// Add all the items to the IndexedList, preferring the ones in the sub-types.
 let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists  = 
     let rec loop itemLists (indexedItemsInSubTypes:IndexedList<_>) = 
         match itemLists with
@@ -3481,7 +3705,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
           //   [<AbstractClass>]
           //   type PC() =
           //       inherit PB<int>()
-          //       // Here, PA.M amd PB<int>.M have the same signature, so PA.M is unimplementable.
+          //       // Here, PA.M and PB<int>.M have the same signature, so PA.M is unimplementable.
           //       // REVIEW: in future we may give a friendly error at this point
           // 
           //   type PD() = 

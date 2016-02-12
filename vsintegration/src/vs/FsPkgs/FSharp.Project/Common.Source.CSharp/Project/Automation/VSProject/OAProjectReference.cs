@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -23,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
         }
 
-        #region Reference override
         public override string Culture
         {
             get { return string.Empty; }
@@ -82,6 +81,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
             get { return string.Empty; }
         }
-        #endregion
     }
 }

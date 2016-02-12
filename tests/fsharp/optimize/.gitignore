@@ -1,0 +1,14 @@
+
+analyses/sizes.exe
+analyses/effects.exe
+analyses/tailcalls.exe
+analyses/*.output.test.txt
+
+inline/FSharpOptimizationData.*
+inline/FSharpSignatureData.*
+inline/*.il
+inline/*.res
+
+stats/*.resources
+stats/*.il
+stats/*.res

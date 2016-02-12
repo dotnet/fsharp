@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -29,31 +29,26 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
     }
 
-    /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper"]/*' />
     internal sealed class TextSpanHelper
     {
 
         private TextSpanHelper() { }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.StartsAfterStartOf"]/*' />
         /// <devdoc>Returns true if the first span starts after the start of the second span.</devdoc>
         internal static bool StartsAfterStartOf(TextSpan span1, TextSpan span2)
         {
             return (span1.iStartLine > span2.iStartLine || (span1.iStartLine == span2.iStartLine && span1.iStartIndex >= span2.iStartIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.StartsAfterEndOf"]/*' />
         /// <devdoc>Returns true if the first span starts after the end of the second span.</devdoc>
         internal static bool StartsAfterEndOf(TextSpan span1, TextSpan span2)
         {
             return (span1.iStartLine > span2.iEndLine || (span1.iStartLine == span2.iEndLine && span1.iStartIndex >= span2.iEndIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.StartsBeforeStartOf"]/*' />
         /// <devdoc>Returns true if the first span starts before the start of the second span.</devdoc>
         internal static bool StartsBeforeStartOf(TextSpan span1, TextSpan span2)
         {
             return !StartsAfterStartOf(span1, span2);
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.StartsBeforeEndOf"]/*' />
         /// <devdoc>Returns true if the first span starts before the end of the second span.</devdoc>
         internal static bool StartsBeforeEndOf(TextSpan span1, TextSpan span2)
         {
@@ -61,33 +56,28 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 (span1.iStartLine == span2.iEndLine && span1.iStartIndex < span2.iEndIndex));
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.EndsBeforeStartOf"]/*' />
         /// <devdoc>Returns true if the first span ends before the start of the second span.</devdoc>
         internal static bool EndsBeforeStartOf(TextSpan span1, TextSpan span2)
         {
             return (span1.iEndLine < span2.iStartLine || (span1.iEndLine == span2.iStartLine && span1.iEndIndex <= span2.iStartIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.EndsBeforeEndOf"]/*' />
         /// <devdoc>Returns true if the first span starts before the end of the second span.</devdoc>
         internal static bool EndsBeforeEndOf(TextSpan span1, TextSpan span2)
         {
             return (span1.iEndLine < span2.iEndLine || (span1.iEndLine == span2.iEndLine && span1.iEndIndex <= span2.iEndIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.EndsAfterStartOf"]/*' />
         /// <devdoc>Returns true if the first span ends after the start of the second span.</devdoc>
         internal static bool EndsAfterStartOf(TextSpan span1, TextSpan span2)
         {
             return (span1.iEndLine > span2.iStartLine ||
                 (span1.iEndLine == span2.iStartLine && span1.iEndIndex > span2.iStartIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.EndsBeforeEndOf"]/*' />
         /// <devdoc>Returns true if the first span starts after the end of the second span.</devdoc>
         internal static bool EndsAfterEndOf(TextSpan span1, TextSpan span2)
         {
             return !EndsBeforeEndOf(span1, span2);
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.Merge"]/*' />
         internal static TextSpan Merge(TextSpan span1, TextSpan span2)
         {
             TextSpan span = new TextSpan();
@@ -116,23 +106,19 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             return span;
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsPositive"]/*' />
         internal static bool IsPositive(TextSpan span)
         {
             return (span.iStartLine < span.iEndLine || (span.iStartLine == span.iEndLine && span.iStartIndex <= span.iEndIndex));
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.ClearTextSpan"]/*' />
         internal static void Clear(ref TextSpan span)
         {
             span.iStartLine = span.iEndLine = 0;
             span.iStartIndex = span.iEndIndex = 0;
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsEmpty"]/*' />
         internal static bool IsEmpty(TextSpan span)
         {
             return (span.iStartLine == span.iEndLine) && (span.iStartIndex == span.iEndIndex);
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.MakePositive"]/*' />
         internal static void MakePositive(ref TextSpan span)
         {
             if (!IsPositive(span))
@@ -150,7 +136,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             return;
         }
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.TextSpanNormalize"]/*' />
         /// <devdoc>Pins the text span to valid line bounds returned from IVsTextLines.</devdoc>
         internal static void Normalize(ref  TextSpan span, IVsTextLines textLines)
         {
@@ -177,14 +162,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             span.iEndIndex = Math.Min(span.iEndIndex, lineLength);
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsSameSpan"]/*' />
         internal static bool IsSameSpan(TextSpan span1, TextSpan span2)
         {
             return span1.iStartLine == span2.iStartLine && span1.iStartIndex == span2.iStartIndex && span1.iEndLine == span2.iEndLine && span1.iEndIndex == span2.iEndIndex;
         }
 
         // Returns true if the given position is to left of textspan.
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsBeforeStartOf"]/*' />
         internal static bool IsBeforeStartOf(TextSpan span, int line, int col)
         {
             if (line < span.iStartLine || (line == span.iStartLine && col < span.iStartIndex))
@@ -195,7 +178,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         // Returns true if the given position is to right of textspan.
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsAfterEndOf"]/*' />
         internal static bool IsAfterEndOf(TextSpan span, int line, int col)
         {
             if (line > span.iEndLine || (line == span.iEndLine && col > span.iEndIndex))
@@ -206,7 +188,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         // Returns true if the given position is at the edge or inside the span.
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.ContainsInclusive"]/*' />
         internal static bool ContainsInclusive(TextSpan span, int line, int col)
         {
             if (line > span.iStartLine && line < span.iEndLine)
@@ -225,7 +206,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         // Returns true if the given position is purely inside the span.
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.ContainsExclusive"]/*' />
         internal static bool ContainsExclusive(TextSpan span, int line, int col)
         {
             if (line > span.iStartLine && line < span.iEndLine)
@@ -244,7 +224,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         //returns true is span1 is Embedded in span2
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.IsEmbedded"]/*' />
         internal static bool IsEmbedded(TextSpan span1, TextSpan span2)
         {
             return (!TextSpanHelper.IsSameSpan(span1, span2) &&
@@ -252,7 +231,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     TextSpanHelper.EndsBeforeEndOf(span1, span2));
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.Intersects"]/*' />
         internal static bool Intersects(TextSpan span1, TextSpan span2)
         {
             return TextSpanHelper.StartsBeforeEndOf(span1, span2) &&
@@ -261,7 +239,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         // This method simulates what VS does in debug mode so that we can catch the
         // errors in managed code before they go to the native debug assert.
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.ValidSpan"]/*' />
         internal static bool ValidSpan(ISource src, TextSpan span)
         {
             if (!ValidCoord(src, span.iStartLine, span.iStartIndex))
@@ -277,7 +254,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return true;
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="TextSpanHelper.ValidCoord"]/*' />
         internal static bool ValidCoord(ISource src, int line, int pos)
         {
             // validate line
@@ -315,112 +291,62 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
     }
 
-    /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant"]/*' />
     internal struct Variant
     {
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType"]/*' />
         internal enum VariantType
         {
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_EMPTY"]/*' />
             VT_EMPTY = 0,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_NULL"]/*' />
             VT_NULL = 1,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_I2"]/*' />
             VT_I2 = 2,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_I4"]/*' />
             VT_I4 = 3,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_R4"]/*' />
             VT_R4 = 4,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_R8"]/*' />
             VT_R8 = 5,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_CY"]/*' />
             VT_CY = 6,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_DATE"]/*' />
             VT_DATE = 7,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_BSTR"]/*' />
             VT_BSTR = 8,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_DISPATCH"]/*' />
             VT_DISPATCH = 9,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_ERROR"]/*' />
             VT_ERROR = 10,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_BOOL"]/*' />
             VT_BOOL = 11,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_VARIANT"]/*' />
             VT_VARIANT = 12,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UNKNOWN"]/*' />
             VT_UNKNOWN = 13,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_DECIMAL"]/*' />
             VT_DECIMAL = 14,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_I1"]/*' />
             VT_I1 = 16,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UI1"]/*' />
             VT_UI1 = 17,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UI2"]/*' />
             VT_UI2 = 18,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UI4"]/*' />
             VT_UI4 = 19,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_I8"]/*' />
             VT_I8 = 20,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UI8"]/*' />
             VT_UI8 = 21,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_INT"]/*' />
             VT_INT = 22,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_UINT"]/*' />
             VT_UINT = 23,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_VOID"]/*' />
             VT_VOID = 24,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_HRESULT"]/*' />
             VT_HRESULT = 25,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_PTR"]/*' />
             VT_PTR = 26,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_SAFEARRAY"]/*' />
             VT_SAFEARRAY = 27,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_CARRAY"]/*' />
             VT_CARRAY = 28,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_USERDEFINED"]/*' />
             VT_USERDEFINED = 29,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_LPSTR"]/*' />
             VT_LPSTR = 30,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_LPWSTR"]/*' />
             VT_LPWSTR = 31,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_FILETIME"]/*' />
             VT_FILETIME = 64,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_BLOB"]/*' />
             VT_BLOB = 65,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_STREAM"]/*' />
             VT_STREAM = 66,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_STORAGE"]/*' />
             VT_STORAGE = 67,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_STREAMED_OBJECT"]/*' />
             VT_STREAMED_OBJECT = 68,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_STORED_OBJECT"]/*' />
             VT_STORED_OBJECT = 69,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_BLOB_OBJECT"]/*' />
             VT_BLOB_OBJECT = 70,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_CF"]/*' />
             VT_CF = 71,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_CLSID"]/*' />
             VT_CLSID = 72,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_VECTOR"]/*' />
             VT_VECTOR = 0x1000,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_ARRAY"]/*' />
             VT_ARRAY = 0x2000,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_BYREF"]/*' />
             VT_BYREF = 0x4000,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_RESERVED"]/*' />
             VT_RESERVED = 0x8000,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_ILLEGAL"]/*' />
             VT_ILLEGAL = 0xffff,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_ILLEGALMASKED"]/*' />
             VT_ILLEGALMASKED = 0xfff,
-            /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.VariantType.VT_TYPEMASK"]/*' />
             VT_TYPEMASK = 0xfff
         };
 
         private ushort vt;
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.Vt"]/*' />
         internal VariantType Vt
         {
             get
@@ -435,7 +361,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         private long value;
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.Value"]/*' />
         internal long Value
         {
             get
@@ -448,7 +373,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.ToVariant"]/*' />
         internal static Variant ToVariant(IntPtr ptr)
         {
             // Marshal.GetObjectForNativeVariant is doing way too much work.
@@ -471,7 +395,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return new Variant();
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="Variant.ToChar"]/*' />
         internal char ToChar()
         {
             if (this.Vt == VariantType.VT_UI2)
@@ -484,10 +407,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
     }
 
-    /// <include file='doc\Utilities.uex' path='docs/doc[@for="FilePathUtilities"]/*' />
     internal sealed class FilePathUtilities
     {
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="FilePathUtilities.GetFilePath"]/*' />
         /// <summary>
         /// Get path for text buffer.
         /// </summary>
@@ -503,7 +424,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return GetFilePathInternal(textLines);
         }
 
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="FilePathUtilities.GetFilePath"]/*' />
         /// <summary>
         /// Get file path for an object that is implementing IVsUserData.
         /// </summary>
@@ -555,7 +475,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return fname;
         }
 
-        /// <include file='doc\HierarchyItem.uex' path='docs/doc[@for="VsShell.GetFilePath"]/*' />
         /// <summary>This method returns the file extension in lower case, including the "."
         /// and trims any blanks or null characters from the string.  Null's can creep in via
         /// interop if we get a badly formed BSTR</summary>

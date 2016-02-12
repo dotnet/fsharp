@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\src</FSharpSourcesRoot>
@@ -27,7 +27,8 @@
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <TargetFrameworkProfile></TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -38,6 +39,10 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <ItemGroup>
+    <ProjectReference Include="..\..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
+      <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
+      <Name>FSharp.VS.FSI</Name>
+    </ProjectReference>
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="microsoft.msxml" />
@@ -74,11 +79,6 @@
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
-      <Name>FSharp.VS.FSI</Name>
-      <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="InternalsVisibleTo.cs" />
@@ -88,7 +88,6 @@
     <Compile Include="DocumentProperties.cs" />
     <Compile Include="DocumentTask.cs" />
     <Compile Include="EditArray.cs" />
-    <Compile Include="EditorFactory.cs" />
     <Compile Include="EditorView.cs" />
     <Compile Include="ExpansionProvider.cs" />
     <Compile Include="ExternDll.cs" />

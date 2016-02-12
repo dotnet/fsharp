@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// <summary>This namespace contains constructs for reflecting on the representation of
 /// F# values and types. It augments the design of System.Reflection.</summary>
@@ -161,7 +161,7 @@ type FSharpValue =
     /// <returns>The description of the union case reader.</returns>
     static member PreComputeUnionTagMemberInfo : unionType:Type  * ?bindingFlags:BindingFlags -> MemberInfo
 
-    /// <summary>Precomputes a function for reading all the fields for a particular discriminator case of a union type</summary>
+    /// <summary>Precompute a function for reading all the fields for a particular discriminator case of a union type</summary>
     ///
     /// <remarks>Using the computed function will typically be faster than executing a corresponding call to GetFields</remarks>
     /// <param name="unionCase">The description of the union case to read.</param>
@@ -169,7 +169,7 @@ type FSharpValue =
     /// <returns>A function to for reading the fields of the given union case.</returns>
     static member PreComputeUnionReader       : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj -> obj[])
 
-    /// <summary>Precomputes a function for constructing a discriminated union value for a particular union case. </summary>
+    /// <summary>Precompute a function for constructing a discriminated union value for a particular union case. </summary>
     /// <param name="unionCase">The description of the union case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A function for constructing values of the given union case.</returns>
@@ -216,7 +216,7 @@ type FSharpValue =
     /// <returns>An array of the fields from the given tuple.</returns>
     static member GetTupleFields: tuple:obj -> obj []
     
-    /// <summary>Precomputes a function for reading the values of a particular tuple type</summary>
+    /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
     /// <remarks>Assumes the given type is a TupleType.
     /// If not, ArgumentException is raised during pre-computation.</remarks>
@@ -231,7 +231,7 @@ type FSharpValue =
     /// <returns>The description of the tuple element and an optional type and index if the tuple is big.</returns>
     static member PreComputeTuplePropertyInfo: tupleType:Type * index:int -> PropertyInfo * (Type * int) option
     
-    /// <summary>Precomputes a function for reading the values of a particular tuple type</summary>
+    /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
     /// <remarks>Assumes the given type is a TupleType.
     /// If not, ArgumentException is raised during pre-computation.</remarks>
@@ -440,7 +440,7 @@ module FSharpReflectionExtensions =
         /// <returns>The description of the union case reader.</returns>
         static member PreComputeUnionTagMemberInfo : unionType:Type * ?allowAccessToPrivateRepresentation : bool -> MemberInfo
 
-        /// <summary>Precomputes a function for reading all the fields for a particular discriminator case of a union type</summary>
+        /// <summary>Precompute a function for reading all the fields for a particular discriminator case of a union type</summary>
         ///
         /// <remarks>Using the computed function will typically be faster than executing a corresponding call to GetFields</remarks>
         /// <param name="unionCase">The description of the union case to read.</param>
@@ -448,7 +448,7 @@ module FSharpReflectionExtensions =
         /// <returns>A function to for reading the fields of the given union case.</returns>
         static member PreComputeUnionReader       : unionCase:UnionCaseInfo * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
 
-        /// <summary>Precomputes a function for constructing a discriminated union value for a particular union case. </summary>
+        /// <summary>Precompute a function for constructing a discriminated union value for a particular union case. </summary>
         /// <param name="unionCase">The description of the union case.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>A function for constructing values of the given union case.</returns>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -23,15 +23,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAReferenceItem : OAProjectItem<ReferenceNode>
     {
-        #region ctors
         internal OAReferenceItem(OAProject project, ReferenceNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Not implemented. If called throws invalid operation exception.
         /// </summary>    
@@ -51,9 +47,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Gets or sets the name of the object.
-        /// </summary>
         public override string Name
         {
             get
@@ -87,6 +80,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return null;
             }
         }
-        #endregion
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
 
@@ -70,7 +70,7 @@ type internal Tainted<'T> =
     /// Apply an operation that returns an option. Unwrap option. Any exception will be attributed to the type provider with an error located at the given range
     member PApplyOption : ('T -> 'U option) * range:range -> Tainted<'U> option
 
-    /// Apply an operation and 'untaint' the result. The result must be marshalable. Any exception will be attributed to the type provider with an error located at the given range
+    /// Apply an operation and 'untaint' the result. The result must be marshallable. Any exception will be attributed to the type provider with an error located at the given range
     member PUntaint : ('T -> 'U) * range:range -> 'U
 
     /// Apply an operation and 'untaint' the result. This can be used if the return type 
@@ -81,7 +81,7 @@ type internal Tainted<'T> =
     member OfType<'U> : unit -> Tainted<'U> option
 
     /// Assert that the value is of 'U and coerce the value.
-    /// If corecion fails, the failuer will be blamed on a type provider
+    /// If coercion fails, the failure will be blamed on a type provider
     member Coerce<'U> : range:range -> Tainted<'U>
 
 

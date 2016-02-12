@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -23,8 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             AddEventSource<_dispBuildManagerEvents>(this as IEventSource<_dispBuildManagerEvents>);
         }
 
-
-        #region BuildManager Members
 
         public string BuildDesignTimeOutput(string bstrOutputMoniker)
         {
@@ -53,15 +51,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             get { throw new NotImplementedException(); }
         }
 
-        #endregion
-
-        #region _dispBuildManagerEvents_Event Members
-
         public event _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler DesignTimeOutputDeleted;
 
         public event _dispBuildManagerEvents_DesignTimeOutputDirtyEventHandler DesignTimeOutputDirty;
-
-        #endregion
 
         private void OnDesignTimeOutputDeleted(object sender, EventArgs args)
         {
@@ -97,8 +89,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return moniker;
         }
 
-        #region IEventSource<_dispBuildManagerEvents> Members
-
         void IEventSource<_dispBuildManagerEvents>.OnSinkAdded(_dispBuildManagerEvents sink)
         {
             DesignTimeOutputDeleted += new _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler(sink.DesignTimeOutputDeleted);
@@ -110,7 +100,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             DesignTimeOutputDeleted -= new _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler(sink.DesignTimeOutputDeleted);
             DesignTimeOutputDirty -= new _dispBuildManagerEvents_DesignTimeOutputDirtyEventHandler(sink.DesignTimeOutputDirty);
         }
-
-        #endregion
     }
 }

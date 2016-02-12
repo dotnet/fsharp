@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if FX_NO_CANCELLATIONTOKEN_CLASSES
 namespace System
@@ -264,9 +264,24 @@ namespace Microsoft.FSharp.Control
         /// The overall computation will respond to cancellation while executing the child computations.
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
         /// for the other child computations to complete.</remarks>
-        /// <param name="computationList">A sequence of distinct computations to be parallelized.</param>
+        /// <param name="computations">A sequence of distinct computations to be parallelized.</param>
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
         static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
+        /// returning the result of the first succeeding computation (one whose result is 'Some x').
+        /// If all child computations complete with None, the parent computation also returns None.</summary>
+        ///
+        /// <remarks>
+        /// If any child computation raises an exception, then the overall computation will trigger an 
+        /// exception, and cancel the others. 
+        ///
+        /// The overall computation will respond to cancellation while executing the child computations.
+        /// If cancelled, the computation will cancel any remaining child computations but will still wait
+        /// for the other child computations to complete.</remarks>
+        /// <param name="computations">A sequence of computations to be parallelized.</param>
+        /// <returns>A computation that returns the first succeeding computation.</returns>
+        static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
 
         //---------- Thread Control
         
@@ -375,7 +390,7 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : beginAction:(System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overlaod should be used if the operation is 
+        /// the style used in CLI APIs. This overload should be used if the operation is 
         /// qualified by one argument. For example, 
         ///     <c>Async.FromBeginEnd(place,ws.BeginGetWeather,ws.EndGetWeather)</c>
         /// When the computation is run, <c>beginFunc</c> is executed, with
@@ -396,7 +411,7 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : arg:'Arg1 * beginAction:('Arg1 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overlaod should be used if the operation is 
+        /// the style used in CLI APIs. This overload should be used if the operation is 
         /// qualified by two arguments. For example, 
         ///     <c>Async.FromBeginEnd(arg1,arg2,ws.BeginGetWeather,ws.EndGetWeather)</c>
         /// When the computation is run, <c>beginFunc</c> is executed, with
@@ -418,7 +433,7 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * beginAction:('Arg1 * 'Arg2 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overlaod should be used if the operation is 
+        /// the style used in CLI APIs. This overload should be used if the operation is 
         /// qualified by three arguments. For example, 
         ///     <c>Async.FromBeginEnd(arg1,arg2,arg3,ws.BeginGetWeather,ws.EndGetWeather)</c>
         /// When the computation is run, <c>beginFunc</c> is executed, with
@@ -629,7 +644,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The input computation.</param>
         /// <param name="compensation">The action to be run after <c>computation</c> completes or raises an
         /// exception (including cancellation).</param>
-        /// <returns>An asynchronous computation that executes computation and compensation aftewards or
+        /// <returns>An asynchronous computation that executes computation and compensation afterwards or
         /// when an exception is raised.</returns>
         member TryFinally : computation:Async<'T> * compensation:(unit -> unit) -> Async<'T>
 
@@ -809,7 +824,7 @@ namespace Microsoft.FSharp.Control
         /// the message to be sent.</param>
         /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
         /// Defaults to -1 which corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asychronous computation that will wait for the reply from the agent.</returns>
+        /// <returns>An asynchronous computation that will wait for the reply from the agent.</returns>
         member PostAndAsyncReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> Async<'Reply>
 
         /// <summary>Like PostAndReply, but returns None if no reply within the timeout period.</summary>

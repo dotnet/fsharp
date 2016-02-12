@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #nowarn "1204"
 
@@ -167,11 +167,11 @@ open ReflectionAdapters
 
 module LeafExpressionConverter =
 
-    // The following is recognized as a LINQ 'member intialization pattern' in a quotation.
+    // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
     let MemberInitializationHelper (_x:'T)  : 'T =  raise (NotSupportedException "This function should not be called directly")
 
 
-    // The following is recognized as a LINQ 'member intialization pattern' in a quotation.
+    // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
     let NewAnonymousObjectHelper (_x:'T)  : 'T =  raise (NotSupportedException "This function should not be called directly")
 
     // This is used to mark expressions inserted to satisfy C#'s design where, inside C#-compiler generated

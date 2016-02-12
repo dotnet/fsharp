@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -25,12 +25,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [CLSCompliant(false), ComVisible(true)]
     public class OAProperties : EnvDTE.Properties
     {
-        #region fields
         private NodeProperties target;
         private Dictionary<string, EnvDTE.Property> properties = new Dictionary<string, EnvDTE.Property>(StringComparer.OrdinalIgnoreCase);
-        #endregion
 
-        #region properties
         /// <summary>
         /// Defines the NodeProperties object that contains the defines the properties.
         /// </summary>
@@ -63,9 +60,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.properties;
             }
         }
-        #endregion
 
-        #region ctor
         internal OAProperties(NodeProperties target)
         {
             System.Diagnostics.Debug.Assert(target != null);
@@ -73,9 +68,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             this.target = target;
             this.AddPropertiesFromType(target.GetType());
         }
-        #endregion
 
-        #region EnvDTE.Properties
         /// <summary>
         /// For use by F# tooling only.
         /// </summary>
@@ -170,21 +163,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
             throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "index");
         }
-        /// <summary>
-        /// Gets the immediate parent object of a Properties collection.
-        /// </summary>
+
         public virtual object Parent
         {
             get { return null; }
         }
-        #endregion
 
-        #region methods
         /// <summary>
         /// Add properties to the collection of properties filtering only those properties which are com-visible and AutomationBrowsable
         /// </summary>
         /// <param name="targetType">The type of NodeProperties the we should filter on</param>
-        public /*protected, but public for FSharp.Project.dll*/ void AddPropertiesFromType(Type targetType)
+        public void AddPropertiesFromType(Type targetType)
         {
             Debug.Assert(targetType != null);
 
@@ -202,20 +191,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             }
         }
-        #endregion
 
-        #region virtual methods
         /// <summary>
         /// Creates a new OAProperty object and adds it to the current list of properties
         /// </summary>
         /// <param name="propertyInfo">The property to be associated with an OAProperty object</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void AddProperty(PropertyInfo propertyInfo)
+        public virtual void AddProperty(PropertyInfo propertyInfo)
         {
             this.properties.Add(propertyInfo.Name, new OAProperty(this, propertyInfo));
         }
-        #endregion
-
-        #region helper methods
 
         private bool IsInMap(PropertyInfo propertyInfo)
         {
@@ -263,6 +247,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
             return true;
         }
-        #endregion
     }
 }

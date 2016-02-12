@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class OutputGroup : IVsOutputGroup2
     {
-        #region fields
         private ProjectConfig projectCfg;
         private ProjectNode project;
 
@@ -30,14 +29,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Output keyOutput = null;
         private string name;
         private string targetName;
-        #endregion
 
-        #region properties
         /// <summary>
         /// Get the project configuration object associated with this output group
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cfg")]
-        public /*protected, but public for FSharp.Project.dll*/ ProjectConfig ProjectCfg
+        public ProjectConfig ProjectCfg
         {
             get { return projectCfg; }
         }
@@ -45,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get the project object that produces this output group.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ ProjectNode Project
+        public ProjectNode Project
         {
             get { return project; }
         }
@@ -54,7 +51,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the msbuild target name which is assciated to the outputgroup.
         /// ProjectNode defines a static collection of output group names and their associated MsBuild target
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ string TargetName
+        public string TargetName
         {
             get { return targetName; }
         }
@@ -84,10 +81,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
  
-        #endregion
-
-        #region ctors
-
         /// <summary>
         /// Constructor for IVSOutputGroup2 implementation
         /// </summary>
@@ -111,10 +104,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             project = projectManager;
             projectCfg = configuration;
         }
-        #endregion
 
-        #region virtual methods
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Refresh()
+        public virtual void Refresh()
         {
             // Let MSBuild know which configuration we are working with
             project.SetConfiguration(projectCfg.ConfigCanonicalName);
@@ -163,18 +154,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             keyOutput = null;
         }
-        #endregion
 
-        #region event handlers
         private void OnProjectPropertyChanged(object sender, ProjectPropertyChangedArgs args)
         {
             // In theory here we should decide if we have to invalidate the group according with the kind of property
             // that is changed.
             InvalidateGroup();
         }
-        #endregion
-
-        #region IVsOutputGroup2 Members
 
         public virtual int get_CanonicalName(out string pbstrCanonicalName)
         {
@@ -284,7 +270,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             pvar = project.GetProjectProperty(pszProperty);
             return VSConstants.S_OK;
         }
-
-        #endregion
     }
 }

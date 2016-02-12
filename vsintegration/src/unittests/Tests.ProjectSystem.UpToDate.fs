@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace UnitTests.Tests.ProjectSystem
+namespace Tests.ProjectSystem
 
 // System namespaces
 open System
@@ -388,7 +388,7 @@ type ``UpToDate PreserveNewest`` () =
         let test (input, inputTimestamp) (output, outputTimestamp) =
             let logs = ref []
             let outputPanel = VsMocks.vsOutputWindowPane(logs)
-            let logger = OutputWindowLogger.CreateUpToDateCheckLogger(outputPanel)
+            let logger = OutputWindowLogger((fun () -> true), outputPanel)
         
             let tryTimestamp (path: string) (_l: OutputWindowLogger) =
                 let toN = function Some d -> Nullable<_>(d) | None -> Nullable<_>()

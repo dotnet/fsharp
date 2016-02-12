@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.Win32;
@@ -35,7 +35,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [ DllImport( "oleaut32.dll", CharSet = CharSet.Unicode, PreserveSig = false )]
         private static extern void LoadTypeLibEx(string strTypeLibName, RegKind regKind, [ MarshalAs( UnmanagedType.Interface )] out object typeLib );
 
-        #region fields
         private string typeName;
         private Guid typeGuid;
         private string projectRelativeFilePath;
@@ -43,9 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string minorVersionNumber;
         private string majorVersionNumber;
         private readonly int lcid;
-        #endregion
 
-        #region properties
         public override string Caption
         {
             get { return this.typeName; }
@@ -104,7 +101,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
         private Automation.OAComReference comReference;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -115,12 +112,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return comReference;
             }
         }
-        #endregion
 
-        #region ctors
-        /// <summary>
-        /// Constructor for the ComReferenceNode. 
-        /// </summary>
         internal ComReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {
@@ -213,13 +205,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-        #region methods
         /// <summary>
         /// Links a reference node to the project and hierarchy.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void BindReferenceData()
+        public override void BindReferenceData()
         {
             Debug.Assert(this.ItemNode != null, "The AssemblyName field has not been initialized");
 
@@ -240,7 +229,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Checks if a reference is already added. The method parses all references and compares the the FinalItemSpec and the Guid.
         /// </summary>
         /// <returns>true if the assembly has already been added.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool IsAlreadyAdded(out ReferenceNode existingNode)
+        public override bool IsAlreadyAdded(out ReferenceNode existingNode)
         {
             ReferenceContainerNode referencesFolder = this.ProjectMgr.FindChild(ReferenceContainerNode.ReferencesNodeVirtualName) as ReferenceContainerNode;
             Debug.Assert(referencesFolder != null, "Could not find the References node");
@@ -268,7 +257,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Determines if this is node a valid node for painting the default reference icon.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+        public override bool CanShowDefaultIcon()
         {
             return !String.IsNullOrEmpty(this.installedFilePath);
         }
@@ -380,7 +369,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-
-        #endregion
     }
 }

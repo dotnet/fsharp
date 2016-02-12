@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if FX_NO_CANCELLATIONTOKEN_CLASSES
 namespace System
@@ -1226,7 +1226,7 @@ namespace Microsoft.FSharp.Control
 
     module CancellationTokenOps =
         /// Run the asynchronous workflow and wait for its result.
-        let RunSynchronously (token:CancellationToken,computation,timeout) =
+        let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
             let token,innerCTS = 
                 // If timeout is provided, we govern the async by our own CTS, to cancel
                 // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1261,6 +1261,40 @@ namespace Microsoft.FSharp.Control
                 |   None -> ()
                 commit res
 
+        let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
+            use resultCell = new ResultCell<Result<_>>()
+            let trampolineHolder = TrampolineHolder()
+
+            trampolineHolder.Protect
+                (fun () ->
+                    startA
+                        token
+                        trampolineHolder
+                        (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
+                        (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
+                        (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
+                        computation)
+            |> unfake
+
+            commit (resultCell.TryWaitForResultSynchronously() |> Option.get)
+
+        let RunSynchronously (token:CancellationToken,computation,timeout) =
+            // Reuse the current ThreadPool thread if possible. Unfortunately
+            // Thread.IsThreadPoolThread isn't available on all profiles so
+            // we approximate it by testing synchronization context for null.
+            match SynchronizationContext.Current, timeout with
+            | null, None -> RunSynchronouslyInCurrentThread (token, computation)
+            // When the timeout is given we need a dedicated thread
+            // which cancels the computation.
+            // Performing the cancellation in the ThreadPool eg. by using
+            // Timer from System.Threading or CancellationTokenSource.CancelAfter
+            // (which internally uses Timer) won't work properly
+            // when the ThreadPool is busy.
+            //
+            // And so when the timeout is given we always use the current thread
+            // for the cancellation and run the computation in another thread.
+            | _ -> RunSynchronouslyInAnotherThread (token, computation, timeout)
+
         let Start (token:CancellationToken,computation) =
             queueAsync 
                   token
@@ -1287,7 +1321,7 @@ namespace Microsoft.FSharp.Control
 
             // The contract: 
             //      a) cancellation signal should always propagate to task
-            //      b) CancellationTokenSource that produced a token must not be disposed until the the task.IsComplete
+            //      b) CancellationTokenSource that produced a token must not be disposed until the task.IsComplete
             // We are:
             //      1) registering for cancellation signal here so that not to miss the signal
             //      2) disposing the registration just before setting result/exception on TaskCompletionSource -
@@ -1414,8 +1448,7 @@ namespace Microsoft.FSharp.Control
                     let count = ref tasks.Length
                     let firstExn = ref None
                     let results = Array.zeroCreate tasks.Length
-                    // Attept to cancel the individual operations if an exception happens on any the other threads
-                    //let failureCTS = new CancellationTokenSource()
+                    // Attept to cancel the individual operations if an exception happens on any of the other threads
                     let innerCTS = new LinkedSubSource(aux.token)
                     let trampolineHolder = aux.trampolineHolder
                     
@@ -1462,6 +1495,54 @@ namespace Microsoft.FSharp.Control
                                 p
                             |> unfake);
                     FakeUnit))
+
+        static member Choice(computations : Async<'T option> seq) : Async<'T option> =
+            unprotectedPrimitive(fun args ->
+                let result =
+                    try Seq.toArray computations |> Choice1Of2
+                    with exn -> ExceptionDispatchInfo.RestoreOrCapture exn |> Choice2Of2
+
+                match result with
+                | Choice2Of2 edi -> args.aux.econt edi
+                | Choice1Of2 [||] -> args.cont None
+                | Choice1Of2 computations ->
+                    protectedPrimitiveCore args (fun args ->
+                        let ({ aux = aux } as args) = delimitSyncContext args
+                        let noneCount = ref 0
+                        let exnCount = ref 0
+                        let innerCts = new LinkedSubSource(aux.token)
+                        let trampolineHolder = aux.trampolineHolder
+
+                        let scont (result : 'T option) =
+                            match result with
+                            | Some _ -> 
+                                if Interlocked.Increment exnCount = 1 then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont result)
+                                else
+                                    FakeUnit
+
+                            | None ->
+                                if Interlocked.Increment noneCount = computations.Length then
+                                    innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.cont None)
+                                else
+                                    FakeUnit
+ 
+                        let econt (exn : ExceptionDispatchInfo) =
+                            if Interlocked.Increment exnCount = 1 then 
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.econt exn)
+                            else
+                                FakeUnit
+ 
+                        let ccont (exn : OperationCanceledException) =
+                            if Interlocked.Increment exnCount = 1 then
+                                innerCts.Cancel(); trampolineHolder.Protect(fun () -> args.aux.ccont exn)
+                            else
+                                FakeUnit
+
+                        for c in computations do
+                            queueAsync innerCts.Token scont econt ccont c |> unfake
+
+                        FakeUnit))
 
 #if FX_NO_TASK
 #else
@@ -1769,7 +1850,7 @@ namespace Microsoft.FSharp.Control
                             // Call the cancellation routine
                             match cancelAction with 
                             | None -> 
-                                // Register the result. This may race with a sucessful result, but
+                                // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
                                 once.Do(fun () ->
                                             let canceledResult = Canceled (OperationCanceledException())
@@ -1936,7 +2017,7 @@ namespace Microsoft.FSharp.Control
                             | None -> 
                                 // We've been cancelled without a cancel action. Stop listening to events
                                 event.RemoveHandler(del)
-                                // Register the result. This may race with a sucessful result, but
+                                // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
                                 once.Do(fun () -> resultCell.RegisterResult(Canceled (OperationCanceledException()),reuseThread=true) |> unfake) 
                             | Some cancel -> 
@@ -2360,7 +2441,7 @@ namespace Microsoft.FSharp.Control
                                     // That continuation is a no-op now, but it is still a registered reader for arriving messages.
                                     // Therefore we just abandon it - a brutal way of canceling.
                                     // This ugly non-compositionality is only needed because we only support a single mailbox reader
-                                    // (i.e. the user is not allowed to run several Recieve/TryRecieve/Scan/TryScan in parallel) - otherwise 
+                                    // (i.e. the user is not allowed to run several Receive/TryReceive/Scan/TryScan in parallel) - otherwise 
                                     // we would just have an extra no-op reader in the queue.
                                     savedCont <- None)
 

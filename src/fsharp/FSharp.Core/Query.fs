@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Linq
 
@@ -148,7 +148,7 @@ type QueryBuilder() =
             acc <- plus acc (selector e.Current)
             count <- count + 1
         if count = 0 then 
-            invalidOp "source" (System.Linq.Enumerable.Average ([| |]: int[])) // raise the same error as LINQ
+            invalidOp "source"
         LanguagePrimitives.DivideByInt< (^U) > acc count
 
     member inline __.SumBy< 'T, 'Q, ^Value 

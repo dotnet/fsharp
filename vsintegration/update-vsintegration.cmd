@@ -1,5 +1,5 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
+@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
 @rem               Version 2.0.  See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
@@ -22,62 +22,81 @@ set BINDIR=%~dp0..\%1\net40\bin
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
-set GACUTIL="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\gacutil.exe"
-set SN32="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\sn.exe"
-set SN64="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\x64\sn.exe"
+set REGEXE32BIT=reg.exe
+if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
+
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+
+set SN32="%WINSDKNETFXTOOLS%sn.exe"
+set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-copy /y "%BINDIR%\fsc.exe" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\fsc.exe.config" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\FSharp.Build.dll" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\FSharp.Compiler.dll" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\FSharp.Compiler.Interactive.Settings.dll" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\Fsi.exe" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\Fsi.exe.config" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\FsiAnyCPU.exe" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\FsiAnyCPU.exe.config" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\Microsoft.FSharp.targets" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
-copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0"
+set FSHARPVERSION=4.1
+set FSHARPVERSION2=41
 
-mkdir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055"
-copy /y "%BINDIR%\FSharp.Core.dll" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055"
-copy /y "%BINDIR%\FSharp.Core.optdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055"
-copy /y "%BINDIR%\FSharp.Core.sigdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055"
-copy /y "%BINDIR%\FSharp.Core.xml" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055"
+set COMPILERSDKPATH=%X86_PROGRAMFILES%\Microsoft SDKs\F#\%FSHARPVERSION%\Framework\v4.0
+mkdir "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsc.exe" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\fsc.exe.config" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FSharp.Build.dll" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FSharp.Compiler.dll" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FSharp.Compiler.Interactive.Settings.dll" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Fsi.exe" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Fsi.exe.config" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FsiAnyCPU.exe" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FsiAnyCPU.exe.config" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
 
-mkdir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.9055"
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.dll" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.9055"
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.optdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.9055"
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.sigdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.9055"
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.xml" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.9055"
+set COMPILERMAINASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055
+mkdir "%COMPILERMAINASSEMBLIESPATH%"
+copy /y "%BINDIR%\FSharp.Core.dll" "%COMPILERMAINASSEMBLIESPATH%"
+copy /y "%BINDIR%\FSharp.Core.optdata" "%COMPILERMAINASSEMBLIESPATH%"
+copy /y "%BINDIR%\FSharp.Core.sigdata" "%COMPILERMAINASSEMBLIESPATH%"
+copy /y "%BINDIR%\FSharp.Core.xml" "%COMPILERMAINASSEMBLIESPATH%"
 
-mkdir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.9055"
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.dll" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.9055"
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.optdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.9055"
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.sigdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.9055"
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.xml" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.9055"
+set COMPILER7ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.%FSHARPVERSION2%.9055
+mkdir "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.dll" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.optdata" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.sigdata" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.xml" "%COMPILER7ASSEMBLIESPATH%"
 
-mkdir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.9055"
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.dll" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.9055"
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.optdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.9055"
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.sigdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.9055"
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.xml" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.9055"
+set COMPILER78ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.%FSHARPVERSION2%.9055
+mkdir "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.dll" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.optdata" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.sigdata" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.xml" "%COMPILER78ASSEMBLIESPATH%"
 
-mkdir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.9055"
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.dll" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.9055"
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.optdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.9055"
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.sigdata" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.9055"
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.xml" "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.9055"
+set COMPILER259ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.%FSHARPVERSION2%.9055
+mkdir "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.dll" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.optdata" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.sigdata" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.xml" "%COMPILER259ASSEMBLIESPATH%"
 
-REM echo ^<configuration^>^<runtime^>^<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v4.0.30319"^>^<dependentAssembly^>^<assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" /^> ^<bindingRedirect oldVersion="2.0.0.0-4.4.0.0" newVersion="4.4.0.9055"/^>^</dependentAssembly^>^</assemblyBinding^>^</runtime^>^</configuration^> > "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055\pub.config"
+set COMPILER47ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.%FSHARPVERSION2%.9055
+mkdir "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.dll" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.optdata" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.sigdata" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.xml" "%COMPILER47ASSEMBLIESPATH%"
+
+REM echo ^<configuration^>^<runtime^>^<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v4.0.30319"^>^<dependentAssembly^>^<assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" /^> ^<bindingRedirect oldVersion="2.0.0.0-4.%FSHARPVERSION%.0" newVersion="4.%FSHARPVERSION%.9055"/^>^</dependentAssembly^>^</assemblyBinding^>^</runtime^>^</configuration^> > "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\pub.config"
 
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# 4.0 Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055\
-    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# 4.0 Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055\
+    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
+    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 )
-REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# 4.0 Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055\
-REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# 4.0 Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.9055\
+REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
+REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 
 
 
@@ -97,8 +116,8 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-%SN32% -Vr Unittests,b03f5f7f11d50a3a
-%SN32% -Vr Salsa,b03f5f7f11d50a3a
+%SN32% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
+%SN32% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -116,21 +135,27 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-    %SN64% -Vr Unittests,b03f5f7f11d50a3a
-    %SN64% -Vr Salsa,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
 )
 
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Interactive.Settings.dll
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Server.Shared.dll
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
+if exist "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 
-"%NGEN32%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe" /queue:1
-"%NGEN32%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsi.exe" /queue:1
-"%NGEN32%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsiAnyCpu.exe" /queue:1
-"%NGEN32%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\FSharp.Build.dll" /queue:1
+"%NGEN32%" install "%COMPILERSDKPATH%\fsc.exe" /queue:1
+"%NGEN32%" install "%COMPILERSDKPATH%\fsi.exe" /queue:1
+"%NGEN32%" install "%COMPILERSDKPATH%\fsiAnyCpu.exe" /queue:1
+"%NGEN32%" install "%COMPILERSDKPATH%\FSharp.Build.dll" /queue:1
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    "%NGEN64%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsiAnyCpu.exe" /queue:1
-    "%NGEN64%" install "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0\FSharp.Build.dll" /queue:1
+    "%NGEN64%" install "%COMPILERSDKPATH%\fsiAnyCpu.exe" /queue:1
+    "%NGEN64%" install "%COMPILERSDKPATH%\FSharp.Build.dll" /queue:1
 )

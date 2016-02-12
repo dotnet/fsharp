@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 #if DESIGNER
@@ -33,7 +33,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.TextManager.Interop
 
 module internal AssemblyAttributes = 
-    //[<assembly: System.Security.SecurityTransparent>]
     [<assembly:ComVisible(true)>]
     do()
 

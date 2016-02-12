@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
+using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -25,7 +25,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class FolderNode : HierarchyNode
     {
-        #region ctors
         /// <summary>
         /// Constructor for the FolderNode
         /// </summary>
@@ -37,9 +36,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.VirtualNodeName = relativePath.TrimEnd('\\');
         }
-        #endregion
 
-        #region overridden properties
         /// <summary>
         /// This relates to the SCC glyph
         /// </summary>
@@ -51,15 +48,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return VsStateIcon.STATEICON_NOSTATEICON;
             }
         }
-        #endregion
 
-        #region overridden methods
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new FolderNodeProperties(this);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override void DeleteFromStorage(string path)
+        public override void DeleteFromStorage(string path)
         {
             this.DeleteFolder(path);
         }
@@ -108,7 +103,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             // Verify that No Directory/file already exists with the new name on disk
-            if (Directory.Exists(newPath) || FSSafe.File.SafeExists(newPath))
+            if (Directory.Exists(newPath) || FSLib.Shim.FileSystem.SafeExists(newPath))
             {
                 return ShowFileOrFolderAlreadExistsErrorMessage(newPath);
             }
@@ -182,7 +177,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The list of files to be placed under source control.</param>
         /// <param name="flags">The flags that are associated to the files.</param>
-        public /*protected, but public for FSharp.Project.dll*/ override void GetSccFiles(System.Collections.Generic.IList<string> files, System.Collections.Generic.IList<tagVsSccFilesFlags> flags)
+        public override void GetSccFiles(System.Collections.Generic.IList<string> files, System.Collections.Generic.IList<tagVsSccFilesFlags> flags)
         {
             return;
         }
@@ -195,7 +190,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="flags">The flags that are associated to the files.</param>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "scc")]
-        public /*protected, but public for FSharp.Project.dll*/ override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
+        public override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
         {
             if (this.ExcludeNodeFromScc)
             {
@@ -216,23 +211,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "sccFile");
             }
-
-            // Get the file node for the file passed in.
-            FileNode node = this.FindChild(sccFile) as FileNode;
-
-#if UNUSED_DEPENDENT_FILES
-            // Dependents do not participate directly in scc.
-            if (node != null && !(node is DependentFileNode))
-            {
-                node.GetSccSpecialFiles(sccFile, files, flags);
-            }
-#endif
         }
 
         /// <summary>
         /// Recursevily walks the folder nodes and redraws the state icons
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void UpdateSccStateIcons()
+        public override void UpdateSccStateIcons()
         {
             for (HierarchyNode child = this.FirstChild; child != null; child = child.NextSibling)
             {
@@ -306,7 +290,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             if (deleteOperation == __VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage)
             {
@@ -315,9 +299,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return false;
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Override if your node is not a file system folder so that
         /// it does nothing or it deletes it from your storage location.
@@ -405,9 +386,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Directory.Move(this.Url, newPath);
             }
         }
-        #endregion
 
-        #region helper methods
         private void RenameFolder(string newName)
         {
             // Do the rename (note that we only do the physical rename if the leaf name changed)
@@ -464,7 +443,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException(errorMessage);
             }
         }
-
-        #endregion
     }
 }

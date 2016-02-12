@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -24,17 +24,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OANavigableProjectItems : EnvDTE.ProjectItems
     {
-        #region fields
         private OAProject project;
         private IList<EnvDTE.ProjectItem> items;
         private HierarchyNode nodeWithItems;
-        #endregion
 
-        #region properties
         /// <summary>
-        /// Defines an /*internal, but public for FSharp.Project.dll*/ public list of project items
+        /// Defines an public list of project items
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public IList<EnvDTE.ProjectItem> Items
+        public IList<EnvDTE.ProjectItem> Items
         {
             get
             {
@@ -45,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Defines a relationship to the associated project.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public OAProject Project
+        public OAProject Project
         {
             get
             {
@@ -56,16 +53,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Defines the node that contains the items
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public HierarchyNode NodeWithItems
+        public HierarchyNode NodeWithItems
         {
             get
             {
                 return this.nodeWithItems;
             }
         }
-        #endregion
 
-        #region ctor
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -90,9 +85,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             this.project = project;
             this.nodeWithItems = nodeWithItems;
         }
-        #endregion
-
-        #region EnvDTE.ProjectItems
 
         /// <summary>
         /// Gets a value indicating the number of objects in the collection.
@@ -105,9 +97,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        /// <summary>
-        /// Gets the immediate parent object of a ProjectItems collection.
-        /// </summary>
         public virtual object Parent
         {
             get
@@ -232,10 +221,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return null;
         }
 
-        /// <summary>
-        /// Returns an enumeration for items in a collection. 
-        /// </summary>
-        /// <returns>An IEnumerator for this object.</returns>
         public virtual IEnumerator GetEnumerator()
         {
             if (this.items == null)
@@ -251,14 +236,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Retrives a list of items associated with the current node.
         /// </summary>
         /// <returns>A List of project items</returns>
-        public /*protected, but public for FSharp.Project.dll*/ IList<EnvDTE.ProjectItem> GetListOfProjectItems()
+        public IList<EnvDTE.ProjectItem> GetListOfProjectItems()
         {
             return UIThread.DoOnUIThread(delegate() {
                 List<EnvDTE.ProjectItem> list = new List<EnvDTE.ProjectItem>();
@@ -277,6 +259,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return list;
             });
         }
-        #endregion
     }
 }

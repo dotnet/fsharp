@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -119,11 +119,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsBrowseObject,
         IVsBuildMacroInfo
     {
-        #region fields
         private HierarchyNode node;
-        #endregion
 
-        #region properties
         [Browsable(false)]
         [AutomationBrowsable(false)]
         public HierarchyNode Node
@@ -141,9 +138,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return this.node.Caption; }
         }
 
-        #endregion
-
-        #region ctors
         internal NodeProperties(HierarchyNode node)
         {
             if (node == null)
@@ -152,9 +146,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             this.node = node;
         }
-        #endregion
 
-        #region ISpecifyPropertyPages methods
         public virtual void GetPages(CAUUID[] pages)
         {
             // We do not check whether the supportsProjectDesigner is set to false on the ProjectNode.
@@ -173,9 +165,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             pages[0] = new CAUUID();
             pages[0].cElems = 0;
         }
-        #endregion
-
-        #region IVsBuildMacroInfo methods
 
         /// <summary>
         /// We support this interface so the build event command dialog can display a list
@@ -227,9 +216,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return NativeMethods.S_OK;
         }
 
-        #endregion
-
-        #region IVsSpecifyProjectDesignerPages
         /// <summary>
         /// Implementation of the IVsSpecifyProjectDesignerPages. It will retun the pages that are configuration independent.
         /// </summary>
@@ -240,17 +226,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.GetCommonPropertyPages(pages);
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region IVsGetCfgProvider methods
         public virtual int GetCfgProvider(out IVsCfgProvider p)
         {
             p = null;
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region IVsBrowseObject methods
         /// <summary>
         /// Maps back to the hierarchy or project item object corresponding to the browse object.
         /// </summary>
@@ -267,9 +249,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             itemid = this.node.ID;
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region overridden methods
         /// <summary>
         /// Get the Caption of the Hierarchy Node instance. If Caption is null or empty we delegate to base
         /// </summary>
@@ -286,16 +266,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return caption;
             }
         }
-        #endregion
 
-        #region helper methods
-        public /*protected, but public for FSharp.Project.dll*/ string GetProperty(string name, string def)
+        public string GetProperty(string name, string def)
         {
             string a = this.Node.ItemNode.GetMetadata(name);
             return (a == null) ? def : a;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ void SetProperty(string name, string value)
+        public void SetProperty(string name, string value)
         {
             this.Node.ItemNode.SetMetadata(name, value);
         }
@@ -347,9 +325,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 pages[0].cElems = 0;
             }
         }
-        #endregion
-
-        #region IInternalExtenderProvider Members
 
         bool EnvDTE80.IInternalExtenderProvider.CanExtend(string extenderCATID, string extenderName, object extendeeObject)
         {
@@ -381,9 +356,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return null;
         }
 
-        #endregion
-
-        #region ExtenderSupport
         [Browsable(false)]
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CATID")]
         public virtual string ExtenderCATID
@@ -421,8 +393,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return extenderService.GetExtender(this.ExtenderCATID, extenderName, this);
         }
-
-        #endregion
     }
 
     internal sealed class BuildActionPropertyDescriptor : DesignPropertyDescriptor
@@ -652,8 +622,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class FileNodeProperties : BuildableNodeProperties
     {
-        #region properties
-
         [SRCategoryAttribute(SR.Advanced)]
         [LocDisplayName(SR.CopyToOutputDirectory)]
         [SRDescriptionAttribute(SR.CopyToOutputDirectoryDescription)]
@@ -703,7 +671,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #region non-browsable properties - used for automation only
         [Browsable(false)]
         public string Extension
         {
@@ -712,31 +679,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return Path.GetExtension(this.Node.Caption);
             }
         }
-        #endregion
 
-
-        #endregion
-
-        #region ctors
         internal FileNodeProperties(HierarchyNode node)
             : base(node)
         {
         }
-        #endregion
 
-        #region overridden methods
         public override string GetClassName()
         {
             return SR.GetString(SR.FileProperties, CultureInfo.CurrentUICulture);
         }
-        #endregion
     }
 
     [CLSCompliant(false), ComVisible(true)]
     public class DependentFileNodeProperties : BuildableNodeProperties
     {
-        #region properties
-
         [SRCategoryAttribute(SR.Misc)]
         [LocDisplayName(SR.FileName)]
         [SRDescriptionAttribute(SR.FileNameDescription)]
@@ -758,116 +715,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.Node.Url;
             }
         }
-        #endregion
 
-        #region ctors
         internal DependentFileNodeProperties(HierarchyNode node)
             : base(node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         public override string GetClassName()
         {
             return SR.GetString(SR.FileProperties, CultureInfo.CurrentUICulture);
         }
-        #endregion
     }
-
-#if SINGLE_FILE_GENERATOR
-    [CLSCompliant(false), ComVisible(true)]
-    public class SingleFileGeneratorNodeProperties : FileNodeProperties
-    {
-    #region fields
-        private EventHandler<HierarchyNodeEventArgs> onCustomToolChanged;
-        private EventHandler<HierarchyNodeEventArgs> onCustomToolNameSpaceChanged;
-        public /*protected, but public for FSharp.Project.dll*/ string _customTool = "";
-        public /*protected, but public for FSharp.Project.dll*/ string _customToolNamespace = "";
-        #endregion
-
-    #region custom tool events
-        /*internal, but public for FSharp.Project.dll*/ public event EventHandler<HierarchyNodeEventArgs> OnCustomToolChanged
-        {
-            add { onCustomToolChanged += value; }
-            remove { onCustomToolChanged -= value; }
-        }
-
-        /*internal, but public for FSharp.Project.dll*/ public event EventHandler<HierarchyNodeEventArgs> OnCustomToolNameSpaceChanged
-        {
-            add { onCustomToolNameSpaceChanged += value; }
-            remove { onCustomToolNameSpaceChanged -= value; }
-        }
-
-        #endregion
-
-    #region properties
-        [SRCategoryAttribute(SR.Advanced)]
-        [LocDisplayName(SR.CustomTool)]
-        [SRDescriptionAttribute(SR.CustomToolDescription)]
-        public virtual string CustomTool
-        {
-            get
-            {
-                _customTool = this.Node.ItemNode.GetMetadata(ProjectFileConstants.Generator);
-                return _customTool;
-            }
-            set
-            {
-                _customTool = value;
-                if (!string.IsNullOrEmpty(_customTool))
-                {
-                    this.Node.ItemNode.SetMetadata(ProjectFileConstants.Generator, _customTool);
-                    HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(this.Node);
-                    if (onCustomToolChanged != null)
-                    {
-                        onCustomToolChanged(this.Node, args);
-                    }
-                }
-            }
-        }
-
-        [SRCategoryAttribute(SR.Advanced)]
-        [LocDisplayName(SR.CustomToolNamespace)]
-        [SRDescriptionAttribute(SR.CustomToolNamespaceDescription)]
-        public virtual string CustomToolNamespace
-        {
-            get
-            {
-                _customToolNamespace = this.Node.ItemNode.GetMetadata(ProjectFileConstants.CustomToolNamespace);
-                return _customToolNamespace;
-            }
-            set
-            {
-                _customToolNamespace = value;
-                if (!string.IsNullOrEmpty(_customToolNamespace))
-                {
-                    this.Node.ItemNode.SetMetadata(ProjectFileConstants.CustomToolNamespace, _customToolNamespace);
-                    HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(this.Node);
-                    if (onCustomToolNameSpaceChanged != null)
-                    {
-                        onCustomToolNameSpaceChanged(this.Node, args);
-                    }
-                }
-            }
-        }
-        #endregion
-
-    #region ctors
-        internal SingleFileGeneratorNodeProperties(HierarchyNode node)
-            : base(node)
-        {
-        }
-        #endregion
-    }
-#endif
 
     [CLSCompliant(false), ComVisible(true)]
     public class ProjectNodeProperties : NodeProperties
         , VSLangProj.ProjectProperties
     {
-        #region properties
         [SRCategoryAttribute(SR.Misc)]
         [LocDisplayName(SR.ProjectFolder)]
         [SRDescriptionAttribute(SR.ProjectFolderDescription)]
@@ -896,7 +759,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #region non-browsable properties - used for automation only
         [Browsable(false)]
         public string FileName
         {
@@ -939,18 +801,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
 
-        #endregion
-
-        #region ctors
         internal ProjectNodeProperties(ProjectNode node)
             : base(node)
         {
         }
-        #endregion
 
-        #region overridden methods
         public override string GetClassName()
         {
             return SR.GetString(SR.ProjectProperties, CultureInfo.CurrentUICulture);
@@ -987,9 +843,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return base.GetCfgProvider(out p);
         }
-
-        #endregion
-        #region VsLangProj.ProjectProperties
 
         string VSLangProj.ProjectProperties.__id
         {
@@ -1336,14 +1189,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return assemblyName + extension;
             }
         }
-
-        #endregion
     }
 
     [CLSCompliant(false), ComVisible(true)]
     public class FolderNodeProperties : NodeProperties
     {
-        #region properties
         [SRCategoryAttribute(SR.Misc)]
         [LocDisplayName(SR.FolderName)]
         [SRDescriptionAttribute(SR.FolderNameDescription)]
@@ -1361,7 +1211,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #region properties - used for automation only
         [Browsable(false)]
         [AutomationBrowsable(true)]
         public string FileName
@@ -1393,23 +1242,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
 
-        #endregion
-
-        #region ctors
         internal FolderNodeProperties(HierarchyNode node)
             : base(node)
         {
         }
-        #endregion
 
-        #region overridden methods
         public override string GetClassName()
         {
             return SR.GetString(SR.FolderProperties, CultureInfo.CurrentUICulture);
         }
-        #endregion
     }
 
     [CLSCompliant(false), ComVisible(true)]
@@ -1417,7 +1259,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         bool copyLocalDefault;
 
-        #region properties
         [SRCategoryAttribute(SR.Misc)]
         [LocDisplayName(SR.RefName)]
         [SRDescriptionAttribute(SR.RefNameDescription)]
@@ -1459,9 +1300,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.Node.Url;
             }
         }
-        #endregion
 
-        #region ctors
         internal ReferenceNodeProperties(HierarchyNode node)
             : this(node, false)
         {
@@ -1472,14 +1311,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.copyLocalDefault = copyLocalDefault;
         }
-        #endregion
 
-        #region overridden methods
         public override string GetClassName()
         {
             return SR.GetString(SR.ReferenceProperties, CultureInfo.CurrentUICulture);
         }
-        #endregion
     }
 
     class FSharpCoreVersionConverter : StringConverter
@@ -1596,14 +1432,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class ProjectReferencesProperties : ReferenceNodeProperties
     {
-        #region ctors
         internal ProjectReferencesProperties(ProjectReferenceNode node)
             : base(node, true)
         {
         }
-        #endregion
 
-        #region overriden methods
         public override string FullPath
         {
             get
@@ -1611,6 +1444,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return ((ProjectReferenceNode)Node).ReferencedProjectOutputPath;
             }
         }
-        #endregion
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module UnitTests.TestLib.Salsa
 
@@ -119,9 +119,3 @@ module HiddenFunctions =
     /// if you really need it - use qualified form: GlobalFunctions.AddDisabledWarning
     let AddDisabledWarning() : unit = failwith "Should not be called"
 
-// Common type provider approval code
-
-let ApproveAllMockTypeProviders() =
-    ClearAllTypeProviderApprovals()      
-    for file in System.IO.Directory.EnumerateFiles(System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\")) do
-        AddTypeProviderApprovedForDevelopment(file)       
