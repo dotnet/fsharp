@@ -23,11 +23,11 @@
   <ItemGroup>
     <Compile Include="TokenContext.fs" />
     <Compile Include="SmartIndent.fs" />
-    <Compile Include="FSRoslynProjectSiteService.fs" />
     <Content Include="extension.vsixmanifest">
       <CopyToOutputDirectory>false</CopyToOutputDirectory>
     </Content>
     <Compile Include="BraceCompletion.fs" />
+    <Compile Include="FSRoslynProjectSiteService.fs" />
     <Compile Include="FSRoslynContentType.fs" />
   </ItemGroup>
   <ItemGroup>

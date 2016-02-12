@@ -44,8 +44,6 @@ module internal FSharpConstants =
     let PLKProductName                  = "f#" // "Visual Studio Integration of FSharp Language Service"
     let PLKProductVersion               = "1.0"
     let PLKResourceID                   = 1s        
-    let enableLanguageService = "fsharp-language-service-enabled"
-
 
                 
 /// This class defines capabilities of the language service. 

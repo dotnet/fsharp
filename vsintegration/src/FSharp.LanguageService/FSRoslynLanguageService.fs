@@ -18,18 +18,6 @@ open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
-module FSRoslynCommonConstants =
-    [<Literal>]
-    let packageGuid = "871D2A70-12A2-4e42-9440-425DD92A4116"
-    [<Literal>]
-    let languageServiceGuid = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
-    [<Literal>]
-    let editorFactoryGuid = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
-    [<Literal>]
-    let FSharpLanguageName = "F#"
-    [<Literal>]
-    let FSharpContentType = "F#"
-
 [<Guid(FSRoslynCommonConstants.languageServiceGuid)>]
 type FSRoslynLanguageService(package : FSRoslynPackage) = 
     inherit AbstractLanguageService<FSRoslynPackage, FSRoslynLanguageService, FSRoslynProject>(package)
@@ -79,7 +67,8 @@ and [<Guid(FSRoslynCommonConstants.packageGuid)>]
     override this.RoslynLanguageName = FSRoslynCommonConstants.FSharpLanguageName
 
     override this.Initialize() = 
-        base.Initialize()
+        if LanguageServiceUtils.shouldEnableRoslynLanguageService then
+            base.Initialize()
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
     

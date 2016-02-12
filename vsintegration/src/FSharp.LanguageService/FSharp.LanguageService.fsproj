@@ -25,6 +25,7 @@
     <EmbeddedResource Include="VSPackage.resx" />
     <EmbeddedResource Include="FSLangSvcStrings.resx" />
     <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="LanguageServiceUtils.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="Quickparse.fs" />
     <Compile Include="Vs.fs" />

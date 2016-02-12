@@ -19,20 +19,11 @@ type internal SVsSettingsPersistenceManager = class end
 [<Guid("871D2A70-12A2-4e42-9440-425DD92A4116")>]
 type internal FSharpPackage() as self =
     inherit Package()
-    
-    // In case the config file is incorrect, we silently recover and leave the feature enabled
-    let enableLanguageService = 
-        try 
-            "false" <> ConfigurationManager.AppSettings.[FSharpConstants.enableLanguageService]
-        with e -> 
-            System.Diagnostics.Debug.Assert
-              (false, sprintf "Error while loading 'devenv.exe.config' configuration: %A" e)
-            true         
 
     let mutable componentID = 0u
     
     let CreateIfEnabled container serviceType = 
-        if enableLanguageService then 
+        if LanguageServiceUtils.shouldEnableVSLanguageService then 
             self.CreateService(container,serviceType) 
         else 
             null
