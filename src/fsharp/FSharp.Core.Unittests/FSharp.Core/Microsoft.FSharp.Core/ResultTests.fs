@@ -26,8 +26,8 @@ type ResultTests() =
     let fail_if_empty email=
         if String.IsNullOrEmpty(email) then Error Empty else Success email
 
-    let fail_if_not_at email=
-        if (email |> Seq.contains '@') then Success email else Error NoAt
+    let fail_if_not_at (email:string)=
+        if (email.Contains("@")) then Success email else Error NoAt
 
     let validate_email =
         fail_if_empty
