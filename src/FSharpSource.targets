@@ -707,7 +707,7 @@
 
   <!-- Reference an existing FSI.EXE for use from within MSBuild -->
   <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.2.0.0-rc2\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
