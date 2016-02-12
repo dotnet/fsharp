@@ -26,7 +26,8 @@
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <TargetFrameworkProfile></TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
@@ -88,7 +89,6 @@
     <Compile Include="GroupingReferenceNode.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="AssemblyInfo.cs" />
-
     <!-- Automation Objects -->
     <Compile Include="Automation\OAFileItem.cs" />
     <Compile Include="Automation\OAFolderItem.cs" />
@@ -101,7 +101,6 @@
     <Compile Include="Automation\OANavigableProjectItems.cs" />
     <Compile Include="Automation\OAReferenceFolderItem.cs" />
     <Compile Include="Automation\OAReferenceItem.cs" />
-
     <!-- Objects needed to implement a Language Project -->
     <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
     <Compile Include="Automation\VSProject\OABuildManager.cs" />
@@ -179,7 +178,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
     <ProjectReference Include="..\..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
       <Name>FSharp.LanguageService.Base</Name>
@@ -193,7 +191,7 @@
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+    <ProjectReference Include="..\..\FSharp.LanguageService\FSharp.LanguageService.fsproj">
       <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
       <Name>FSharp.LanguageService</Name>
     </ProjectReference>
