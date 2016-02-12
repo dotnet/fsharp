@@ -601,7 +601,7 @@ namespace Microsoft.FSharp.Control
         let mutable defaultCancellationTokenSource = new CancellationTokenSource()
 
         [<NoEquality; NoComparison>]
-        type Result<'T>  =
+        type AsyncImplResult<'T>  =
         |   Ok of 'T
         |   Error of ExceptionDispatchInfo
         |   Canceled of OperationCanceledException
@@ -805,9 +805,9 @@ namespace Microsoft.FSharp.Control
         let reify res =
             unprotectedPrimitive (fun args ->
                 match res with
-                |   Result.Ok r -> args.cont r
-                |   Result.Error e -> args.aux.econt e
-                |   Result.Canceled oce -> args.aux.ccont oce)
+                |   AsyncImplResult.Ok r -> args.cont r
+                |   AsyncImplResult.Error e -> args.aux.econt e
+                |   AsyncImplResult.Canceled oce -> args.aux.ccont oce)
 
         //----------------------------------
         // BUILDER OPREATIONS
@@ -1236,7 +1236,7 @@ namespace Microsoft.FSharp.Control
                         let subSource = new LinkedSubSource(token)
                         subSource.Token, Some subSource
                 
-            use resultCell = new ResultCell<Result<_>>()
+            use resultCell = new ResultCell<AsyncImplResult<_>>()
             queueAsync 
                     token                        
                     (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
@@ -1262,7 +1262,7 @@ namespace Microsoft.FSharp.Control
                 commit res
 
         let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
-            use resultCell = new ResultCell<Result<_>>()
+            use resultCell = new ResultCell<AsyncImplResult<_>>()
             let trampolineHolder = TrampolineHolder()
 
             trampolineHolder.Protect
@@ -1792,7 +1792,7 @@ namespace Microsoft.FSharp.Control
 
 
         /// Await the result of a result cell without a timeout
-        static member ReifyResult(result:Result<'T>) : Async<'T> =
+        static member ReifyResult(result:AsyncImplResult<'T>) : Async<'T> =
             unprotectedPrimitive(fun ({ aux = aux } as args) -> 
                    (match result with 
                     | Ok v -> args.cont v 
@@ -1800,7 +1800,7 @@ namespace Microsoft.FSharp.Control
                     | Canceled exn -> aux.ccont exn) )
 
         /// Await the result of a result cell without a timeout       
-        static member AwaitAndReifyResult(resultCell:ResultCell<Result<'T>>) : Async<'T> =
+        static member AwaitAndReifyResult(resultCell:ResultCell<AsyncImplResult<'T>>) : Async<'T> =
             async {
                 let! result = resultCell.AwaitResult
                 return! Async.ReifyResult(result)
@@ -1812,7 +1812,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// Always resyncs to the synchronization context if needed, by virtue of it being built
         /// from primitives which resync.
-        static member AsyncWaitAsyncWithTimeout(innerCTS : CancellationTokenSource, resultCell:ResultCell<Result<'T>>,millisecondsTimeout) : Async<'T> =
+        static member AsyncWaitAsyncWithTimeout(innerCTS : CancellationTokenSource, resultCell:ResultCell<AsyncImplResult<'T>>,millisecondsTimeout) : Async<'T> =
             match millisecondsTimeout with
             | None | Some -1 -> 
                 resultCell |> Async.AwaitAndReifyResult
@@ -1918,9 +1918,9 @@ namespace Microsoft.FSharp.Control
 
          let cts = new CancellationTokenSource()
 
-         let result = new ResultCell<Result<'T>>()
+         let result = new ResultCell<AsyncImplResult<'T>>()
 
-         member s.SetResult(v: Result<'T>) =  
+         member s.SetResult(v: AsyncImplResult<'T>) =  
              result.RegisterResult(v,reuseThread=true) |> unfake
              match callback with
              | null -> ()
@@ -2207,7 +2207,7 @@ namespace Microsoft.FSharp.Control
                     | :? System.Net.WebException as webExn 
                             when webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && !canceled -> 
 
-                        Async.ReifyResult(Result.Canceled (OperationCanceledException webExn.Message))
+                        Async.ReifyResult(AsyncImplResult.Canceled (OperationCanceledException webExn.Message))
                     | _ -> 
                         edi.ThrowAny())
 
@@ -2279,9 +2279,9 @@ namespace Microsoft.FSharp.Control
                 let! ct = Async.CancellationToken
                 let start a f =
                     Async.StartWithContinuationsUsingDispatchInfo(a, 
-                        (fun res -> c.RegisterResult(f res |> Result.Ok, reuseThread=false) |> unfake),
-                        (fun edi -> c.RegisterResult(edi |> Result.Error, reuseThread=false) |> unfake),
-                        (fun oce -> c.RegisterResult(oce |> Result.Canceled, reuseThread=false) |> unfake),
+                        (fun res -> c.RegisterResult(f res |> AsyncImplResult.Ok, reuseThread=false) |> unfake),
+                        (fun edi -> c.RegisterResult(edi |> AsyncImplResult.Error, reuseThread=false) |> unfake),
+                        (fun oce -> c.RegisterResult(oce |> AsyncImplResult.Canceled, reuseThread=false) |> unfake),
                         cancellationToken = ct
                         )
                 start a1 Choice1Of2
