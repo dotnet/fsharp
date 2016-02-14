@@ -1871,7 +1871,12 @@ namespace Microsoft.FSharp.Core
             module mos =
                 type IGetType =
                     abstract Get : unit -> Type
-                            
+
+                let isEqualTypedef (t1:Type) (t2:Type) =
+                    t1.IsGenericType
+                    && t2.IsGenericType
+                    && (t1.GetGenericTypeDefinition ()).Equals (t2.GetGenericTypeDefinition ())
+
                 let makeType (ct:Type) (def:Type) : Type =
                     def.MakeGenericType [|ct|]
 
@@ -2068,11 +2073,32 @@ namespace Microsoft.FSharp.Core
                     override __.Invoke (comp, x:'a, y:'a) =
                         phantom<'comp>.Ensorcel (comp, x, y)
 
-                let makeComparerInvoker (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,ComparerTypes.Int32>>
-                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
-                    Activator.CreateInstance wrapperType
+                [<Sealed>]
+                type ComparerInvoker_StructuralComparable<'a when 'a : null>() =
+                    inherit ComparerInvoker<'a>()
 
+                    override this.Invoke (comp, x:'a, y:'a) =
+                        match x with
+                        | null ->
+                            match y with
+                            | null -> 0
+                            | _ -> -1
+                        | _ -> (unboxPrim x : IStructuralComparable).CompareTo (y, comp)
+
+                let makeComparerInvoker (ty:Type) (comp:Type) =
+                    let wrapperType = 
+                        if mos.isEqualTypedef comp typeof<ComparerTypes.RefType.StructuralComparable<Tuple<int,int>>> then
+                            // This is required because recursive types do an extensive recursive function calls
+                            // for comparison, and the constrained types building blocks model doesn't actually
+                            // allow the IL instruction tail on constrained calls. This short circuits the implementation
+                            // with an ComparerInvoker that casts so as to avoid that situation.
+                            let wrapperTypeDef = typedefof<ComparerInvoker_StructuralComparable<_>>
+                            wrapperTypeDef.MakeGenericType [| ty |]
+                        else
+                            let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,ComparerTypes.Int32>>
+                            wrapperTypeDef.MakeGenericType [| ty; comp |]
+                    Activator.CreateInstance wrapperType
+    
                 type t = ComparerTypes.Int32
                 type Function<'relation, 'a>() =
                     static let essenceType : Type = 
@@ -2118,7 +2144,7 @@ namespace Microsoft.FSharp.Core
                     match info.ComparerType with
                     | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
                     | ComparerType.PER_gt 
-                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericComparisonForInequality comp x y)
+                    | ComparerType.PER_lt -> GenericComparisonForInequality comp x y
                     | _ -> raise (Exception "invalid logic")
                 | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
                     eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
@@ -2720,9 +2746,30 @@ namespace Microsoft.FSharp.Core
                     override __.Invoke (comp, x:'a, y:'a) =
                         phantom<'eq>.Ensorcel (comp, x, y)
 
-                let makeEqualsWrapper (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,EqualsTypes.Int32>>
-                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
+                [<Sealed>]
+                type EqualsInvoker_StructuralEquatable<'a when 'a : null>() =
+                    inherit EqualsInvoker<'a>()
+
+                    override this.Invoke (comp, x:'a, y:'a) =
+                        match x with
+                        | null ->
+                            match y with
+                            | null -> true
+                            | _ -> false
+                        | _ -> (unboxPrim x : IStructuralEquatable).Equals (y, comp)
+
+                let makeEqualsWrapper (ty:Type) (comp:Type) =
+                    let wrapperType = 
+                        if mos.isEqualTypedef comp typeof<CommonEqualityTypes.RefType.StructuralEquatable<Tuple<int,int>>> then
+                            // This is required because recursive types do an extensive recursive function calls
+                            // for equality, and the constrained types building blocks model doesn't actually
+                            // allow the IL instruction tail on constrained calls. This short circuits the implementation
+                            // with an EqualsInvoker that casts so as to avoid that situation.
+                            let wrapperTypeDef = typedefof<EqualsInvoker_StructuralEquatable<_>>
+                            wrapperTypeDef.MakeGenericType [| ty |]
+                        else
+                            let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,EqualsTypes.Int32>>
+                            wrapperTypeDef.MakeGenericType [| ty; comp |]
                     Activator.CreateInstance wrapperType
 
                 type u = EqualsTypes.Int32
@@ -2762,7 +2809,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (fsEqualityComparerNoHashingPER, x, y))
+                GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (fsEqualityComparerNoHashingPER, x, y)
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -2787,7 +2834,7 @@ namespace Microsoft.FSharp.Core
                 | :? IEqualityComparerInfo as info ->
                     match info.Info with
                     | EqualityComparerInfo.ER  -> eliminate_tail_call_bool (GenericEqualityERIntrinsic x y)
-                    | EqualityComparerInfo.PER -> eliminate_tail_call_bool (GenericEqualityIntrinsic x y)
+                    | EqualityComparerInfo.PER -> GenericEqualityIntrinsic x y
                     | _ -> raise (Exception "invalid logic")
                 | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   ->
                     eliminate_tail_call_bool (EqualityComparer<'T>.Default.Equals (x, y))
