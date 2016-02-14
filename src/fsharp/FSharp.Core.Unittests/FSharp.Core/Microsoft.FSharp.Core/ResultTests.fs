@@ -16,8 +16,6 @@ type EmailValidation=
 module Results=
     let bind f m = match m with Error e -> Error e | Success x -> f x
 
-    let inline (>>=) result f = bind f result
-
 open Results
 
 [<TestFixture>]
