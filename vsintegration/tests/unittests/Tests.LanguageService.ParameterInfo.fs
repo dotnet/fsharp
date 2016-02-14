@@ -879,7 +879,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,12);(5,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(5,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
@@ -901,7 +901,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,17);(4,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(4,0)|], info.GetNoteworthyParamInfoLocations())
 
 
 (*
@@ -1001,23 +1001,23 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``LocationOfParams.Case1``() =        
-        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^^("hel$lo"^)""")
+        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^(^"hel$lo"^)""")
 
     [<Test>]
     member public this.``LocationOfParams.Case2``() =        
-        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   ^(  "hel$lo {0}"  ^, "Brian" ^)""")
+        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   (^  "hel$lo {0}"  ,^ "Brian" ^)""")
 
     [<Test>]
     member public this.``LocationOfParams.Case3``() =        
         this.TestParameterInfoLocationOfParams(
             """^System.Console.WriteLine^  
-                 ^(  
-                        "hel$lo {0}"  ^, 
+                 (^  
+                        "hel$lo {0}"  ,^ 
                         "Brian" ^)  """)
 
     [<Test>]
     member public this.``LocationOfParams.Case4``() =        
-        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   ^(  "hello {0}"  ^, ("tuples","don't $ confuse it") ^)""")
+        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^   (^  "hello {0}"  ,^ ("tuples","don't $ confuse it") ^)""")
 
     [<Test>]
     member public this.``ParameterInfo.LocationOfParams.Bug112688``() =
@@ -1048,14 +1048,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Regression.LocationOfParams.Bug91479``() =        
-        this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^^($ """, markAtEOF=true)
+        this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^(^$ """, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.Attributes.Bug230393``() =        
         this.TestParameterInfoLocationOfParams("""
             let paramTest((strA : string),(strB : string)) =
                 strA + strB
-            ^paramTest^^( $ 
+            ^paramTest^(^ $ 
  
             [<^Measure>]
             type RMB
@@ -1064,32 +1064,32 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``LocationOfParams.InfixOperators.Case1``() =        
         // infix operators like '+' do not give their own param info
-        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^^("" + "$"^)""")
+        this.TestParameterInfoLocationOfParams("""^System.Console.WriteLine^(^"" + "$"^)""")
 
     [<Test>]
     member public this.``LocationOfParams.InfixOperators.Case2``() =        
         // infix operators like '+' do give param info when used as prefix ops
-        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine((^+^)^($3^)(4))""")
+        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine((^+^)(^$3^)(4))""")
 
     [<Test>]
     member public this.``LocationOfParams.GenericMethodExplicitTypeArgs()``() =        
         this.TestParameterInfoLocationOfParams("""
             type T<'a> =
                 static member M(x:int, y:string) = x + y.Length
-            let x = ^T<int>.M^^(1^, $"test"^)    """)
+            let x = ^T<int>.M^(^1,^ $"test"^)    """)
 
     [<Test>]
     member public this.``LocationOfParams.InsideAMemberOfAType``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
-                member x.a = (1 <> ^System.Int32.Parse^^("$"^)) """)
+                member x.a = (1 <> ^System.Int32.Parse^(^"$"^)) """)
 
     [<Test>]
     member public this.``LocationOfParams.InsidePropertyGettersAndSetters.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             type Widget(z) = 
                 member x.P1 
-                    with get() = ^System.Int32.Parse^^("$"^)
+                    with get() = ^System.Int32.Parse^(^"$"^)
                     and set(z) = System.Int32.Parse("") |> ignore
                 member x.P2 with get() = System.Int32.Parse("")
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
@@ -1100,7 +1100,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type Widget(z) = 
                 member x.P1 
                     with get() = System.Int32.Parse("")
-                    and set(z) = ^System.Int32.Parse^^("$"^) |> ignore
+                    and set(z) = ^System.Int32.Parse^(^"$"^) |> ignore
                 member x.P2 with get() = System.Int32.Parse("")
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
 
@@ -1111,7 +1111,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member x.P1 
                     with get() = System.Int32.Parse("")
                     and set(z) = System.Int32.Parse("") |> ignore
-                member x.P2 with get() = ^System.Int32.Parse^^("$"^)
+                member x.P2 with get() = ^System.Int32.Parse^(^"$"^)
                 member x.P2 with set(z) = System.Int32.Parse("") |> ignore """)
 
     [<Test>]
@@ -1122,46 +1122,46 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     with get() = System.Int32.Parse("")
                     and set(z) = System.Int32.Parse("") |> ignore
                 member x.P2 with get() = System.Int32.Parse("")
-                member x.P2 with set(z) = ^System.Int32.Parse^^("$"^) |> ignore """)
+                member x.P2 with set(z) = ^System.Int32.Parse^(^"$"^) |> ignore """)
 
     [<Test>]
     member public this.``LocationOfParams.InsideObjectExpression``() =        
         this.TestParameterInfoLocationOfParams("""
-                let _ = { new ^System.Object^^($^) with member __.GetHashCode() = 2}""")
+                let _ = { new ^System.Object^(^$^) with member __.GetHashCode() = 2}""")
 
     [<Test>]
     member public this.``LocationOfParams.Nested1``() =        
-        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  ^(4$2.0 ^) )""")
+        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  (^4$2.0 ^) )""")
 
 
     [<Test>]
     member public this.``LocationOfParams.MatchGuard``() =        
-        this.TestParameterInfoLocationOfParams("""match [1] with | [x] when ^box^^($x^) <> null -> ()""")
+        this.TestParameterInfoLocationOfParams("""match [1] with | [x] when ^box^(^$x^) <> null -> ()""")
 
     [<Test>]
     member public this.``LocationOfParams.Nested2``() =        
-        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  ^4$2.0^ )""")
+        this.TestParameterInfoLocationOfParams("""System.Console.WriteLine("hello {0}"  , ^sin^  4^$2.0^ )""")
 
     [<Test>]
     member public this.``LocationOfParams.Generics1``() =        
         this.TestParameterInfoLocationOfParams("""
             let f<'T,'U>(x:'T, y:'U) = (y,x)
-            let r = ^f^<int,string>^(4$2^,""^)""")
+            let r = ^f^<int,string>(^4$2,^""^)""")
 
     [<Test>]
     member public this.``LocationOfParams.Generics2``() =        
-        this.TestParameterInfoLocationOfParams("""let x = ^System.Collections.Generic.Dictionary^<int,int>^(42^,n$ull^)""")
+        this.TestParameterInfoLocationOfParams("""let x = ^System.Collections.Generic.Dictionary^<int,int>(^42,^n$ull^)""")
 
     [<Test>]
     member public this.``LocationOfParams.Unions1``() =        
         this.TestParameterInfoLocationOfParams("""
             type MyDU =
                 | FOO of int * string
-            let r = ^FOO^^(42^,"$"^) """)
+            let r = ^FOO^(^42,^"$"^) """)
 
     [<Test>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case1``() =        
-        this.TestParameterInfoLocationOfParams("""let a = new ^System.IO.FileStream^^($^)""")
+        this.TestParameterInfoLocationOfParams("""let a = new ^System.IO.FileStream^(^$^)""")
 
     [<Test>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case2``() =        
@@ -1169,7 +1169,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             open System.Collections.Generic
             open System.Linq
             let l = List<int>([||])
-            ^l.Aggregate^^($^) // was once a bug""")
+            ^l.Aggregate^(^$^) // was once a bug""")
 
     [<Test>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
@@ -1179,7 +1179,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type CC() =
                 member this.M(a,b,c,d) = a+b+c+d
             let c = new CC()
-            ^c.M^^(1^,2^,3^, $
+            ^c.M^(^1,^2,^3,^ $
             c.M(1,2,3,4)""", markAtEOF=true)
 
     [<Test>]
@@ -1200,7 +1200,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type CC() =
                 member this.M(a,b,c,d) = a+b+c+d
             let c = new CC()
-            ^c.M^^(1,2,3, $
+            ^c.M^(^1,2,3, $
             c.M(1,2,3,4)
             c.M(1,2,3,4)
             c.M(1,2,3,4)""", markAtEOF=true)
@@ -1208,12 +1208,12 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
-            ^System.Console.WriteLine^^( (4$2,43) ^) // oops""")
+            ^System.Console.WriteLine^(^ (4$2,43) ^) // oops""")
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug91360.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
-            ^System.Console.WriteLine^^( $(42,43) ^) // oops""")
+            ^System.Console.WriteLine^(^ $(42,43) ^) // oops""")
 
     [<Test>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
@@ -1223,20 +1223,20 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 member this.M1(a:int*string, b:'a -> unit) = ()
             let x = new T<Expr>()
  
-            ^x.M1^^((1,$ """, markAtEOF=true)
+            ^x.M1^(^(1,$ """, markAtEOF=true)
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Open``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
-            arr.[1] <- ^System.Int32.Parse^^($
+            arr.[1] <- ^System.Int32.Parse^(^$
             open^ System""")
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.OtherCases.Module``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
-            arr.[1] <- ^System.Int32.Parse^^($
+            arr.[1] <- ^System.Int32.Parse^(^$
             ^module Foo =
                 let x = 42""")
 
@@ -1246,14 +1246,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
             namespace Foo
             module Bar =
                 let arr = Array.create 4 1
-                arr.[1] <- ^System.Int32.Parse^^($
+                arr.[1] <- ^System.Int32.Parse^(^$
             namespace^ Other""")
 
     [<Test>]
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.Ok``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
-            arr.[1] <- ^System.Int32.Parse^^($
+            arr.[1] <- ^System.Int32.Parse^(^$
             let squares3 = () 
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
@@ -1262,7 +1262,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParens.Bug91609.AlsoOk``() =        
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
-            arr.[1] <- System.Int32.Parse(int(int(int(^int^^($
+            arr.[1] <- System.Int32.Parse(int(int(int(^int^(^$
             let squares3 = () 
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
@@ -1273,7 +1273,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         // However now that we recover from more kinds of tokens, e.g. OBLOCKEND, we can easily go much much deeper, and so this case (and most practical cases) now succeeds.
         this.TestParameterInfoLocationOfParams("""
             let arr = Array.create 4 1
-            arr.[1] <- System.Int32.Parse(int(int(int(int(int(int(^int^^($
+            arr.[1] <- System.Int32.Parse(int(int(int(int(int(int(^int^(^$
             let squares3 = () 
             ^type Expr = class end
             let rec Evaluate (env:Map<string,int>) exp = ()""")
@@ -1282,7 +1282,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParens.Bug150492.Case1``() =        
         this.TestParameterInfoLocationOfParams("""
             module Inner =
-                ^System.Console.Write^^($
+                ^System.Console.Write^(^$
                 let y = 4 
             ^type Foo() = inherit obj()
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
@@ -1293,7 +1293,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         // like previous test, but with explicit begin-end at module
         this.TestParameterInfoLocationOfParams("""
             module Inner = begin
-                ^System.Console.Write^^($
+                ^System.Console.Write^(^$
                 let y = 4 
             ^end
             type Foo() = inherit obj()
@@ -1307,7 +1307,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let xxx = 42
             type FooBaz() = class end
             module Inner =
-                ^System.Console.Write^^($
+                ^System.Console.Write^(^$
                 let y = 4 
             ^type Foo() = inherit obj()
             [<assembly:System.Security.AllowPartiallyTrustedCallersAttribute>]
@@ -1321,7 +1321,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let xxx = 42
             type FooBaz() = class end
             module Inner = begin
-                ^System.Console.Write^^($
+                ^System.Console.Write^(^$
                 let y = 4 
             ^end
             type Foo() = inherit obj()
@@ -1334,7 +1334,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             type B(x : int) = 
                new(x1:int, x2: int) = new B(10)
             type A() =
-               inherit ^B^^(1$^,2^)""")
+               inherit ^B^(^1$,^2^)""")
 
     [<Test>]
     member public this.``LocationOfParams.ThisOnceAsserted``() =        
@@ -1345,7 +1345,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     match args with
                     | [| y |] -> 
                         for name, kind in (headerNames,
-                        rowType.AddMember(new ^ProvidedProperty^^($
+                        rowType.AddMember(new ^ProvidedProperty^(^$
                         null                       
                     | _ -> failwith "unexpected generic params" )
 
@@ -1371,7 +1371,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1a``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                for a in ^System.Int16.TryParse^^($  
+                for a in ^System.Int16.TryParse^(^$  
             ^module AA = 
                 let x = 10 """)
 
@@ -1379,7 +1379,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                for a in ^System.Int16.TryParse^^("4$2"  
+                for a in ^System.Int16.TryParse^(^"4$2"  
             ^module AA = 
                 let x = 10 """)
 
@@ -1387,7 +1387,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case1c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                for a in ^System.Int16.TryParse^^("4$2"^,  
+                for a in ^System.Int16.TryParse^(^"4$2",^  
             ^module AA = 
                 let x = 10 """)
 
@@ -1395,7 +1395,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2a``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                query { for a in ^System.Int16.TryParse^^($   
+                query { for a in ^System.Int16.TryParse^(^$   
             ^module AA = 
                 let x = 10 """)
 
@@ -1403,7 +1403,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2b``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                query { for a in ^System.Int16.TryParse^^("4$2"  
+                query { for a in ^System.Int16.TryParse^(^"4$2"  
             ^module AA = 
                 let x = 10 """)
 
@@ -1411,7 +1411,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.UnmatchedParensBeforeModuleKeyword.Bug245850.Case2c``() =        
         this.TestParameterInfoLocationOfParams("""
             module Repro =
-                query { for a in ^System.Int16.TryParse^^("4$2"^,  
+                query { for a in ^System.Int16.TryParse^(^"4$2",^  
             ^module AA = 
                 let x = 10 """)
 
@@ -1423,7 +1423,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let q2 = query {
                for e in T().GetCollection() do
                  where (e > 250)
-                 ^skip^^($  
+                 ^skip^(^$  
             ^} """)
 
     [<Test>]
@@ -1434,7 +1434,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             open System.Linq
             let q6 =
                   query {
-                    for E in ^T().GetCollection().Aggregate^^($
+                    for E in ^T().GetCollection().Aggregate^(^$
                   ^} """)
 
     [<Test>]
@@ -1445,7 +1445,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             open System.Linq
             let q6 =
                   query {
-                    for E in ^T().GetCollection().Aggregate^^(42$
+                    for E in ^T().GetCollection().Aggregate^(^42$
                   ^} """)
 
     [<Test>]
@@ -1456,7 +1456,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             open System.Linq
             let q6 =
                   query {
-                    for E in ^T().GetCollection().Aggregate^^(42^,$
+                    for E in ^T().GetCollection().Aggregate^(^42,^$
                   ^} """)
 
     [<Test>]
@@ -1467,7 +1467,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             open System.Linq
             let q6 =
                   query {
-                    for E in ^T().GetCollection().Aggregate^^(42^, 43$
+                    for E in ^T().GetCollection().Aggregate^(^42,^ 43$
                   ^} """)
 
     (* Tests for type provider static argument parameterinfos ------------------------------------------ *)
@@ -1519,85 +1519,85 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Basic``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, 42 ^>""", 
+            type U = ^N1.T^<^ "fo$o",^ 42 ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicNamed``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 ^>""", 
+            type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< $ """, // missing all params, just have <
+            type U = ^N1.T^<^ $ """, // missing all params, just have <
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, 42 """, // missing >
+            type U = ^N1.T^<^ "fo$o",^ 42 """, // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, ParamIgnored=42 """, // missing >
+            type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 """, // missing >
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, """, // missing last param
+            type U = ^N1.T^<^ "fo$o",^ """, // missing last param
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, ParamIgnored= """, // missing last param after name with equals
+            type U = ^N1.T^<^ "fo$o",^ ParamIgnored= """, // missing last param after name with equals
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, ParamIgnored """, // missing last param after name sans equals
+            type U = ^N1.T^<^ "fo$o",^ ParamIgnored """, // missing last param after name sans equals
             markAtEnd = true,
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative1``() =       
             this.TestNoParameterInfo("""
-                type D = ^System.Collections.Generic.Dictionary^^< in$t, int ^>""")
+                type D = ^System.Collections.Generic.Dictionary^<^ in$t, int ^>""")
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative2``() =       
             this.TestNoParameterInfo("""
-                type D = ^System.Collections.Generic.List^^< in$t ^>""")
+                type D = ^System.Collections.Generic.List^<^ in$t ^>""")
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative3``() =       
             this.TestNoParameterInfo("""
                 let i = 42
-                let b = ^i^^< 4$2""")
+                let b = ^i^<^ 4$2""")
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Negative4.Bug181000``() =       
             this.TestNoParameterInfo("""
-                type U = ^N1.T^^< "foo"^, 42 ^>$  """,   // when the caret is right of the '>', we should not report any param info
+                type U = ^N1.T^<^ "foo",^ 42 ^>$  """,   // when the caret is right of the '>', we should not report any param info
                 additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =
             this.TestNoParameterInfo("""
                 let f() =
-                    let r = id( ^N1.T^^< "fo$o"^, ParamIgnored=42 ^> )
+                    let r = id( ^N1.T^<^ "fo$o",^ ParamIgnored=42 ^> )
                     r    """, 
                 additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
@@ -1605,26 +1605,26 @@ We really need to rewrite some code paths here to use the real parse tree rather
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        
         this.TestParameterInfoLocationOfParams("""
             let f() =
-                let r = ^id^^( N1.$T< "foo", ParamIgnored=42 > ^)
+                let r = ^id^(^ N1.$T< "foo", ParamIgnored=42 > ^)
                 r    """, 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, 42^, ^, ^>""", 
+            type U = ^N1.T^<^ "fo$o",^ 42,^ ,^ ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< "fo$o"^, ^, ^>""", 
+            type U = ^N1.T^<^ "fo$o",^ ,^ ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case3``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
-            type U = ^N1.T^^< ^,$ ^>""", 
+            type U = ^N1.T^<^ ,^$ ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
