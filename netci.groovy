@@ -11,7 +11,7 @@ def machineLabelMap = ['Ubuntu':'ubuntu-doc',
                        'CentOS7.1' : 'centos-71']
 
 def static getBuildJobName(def configuration, def os) {
-    return configuration.toLowerCase() + '_' + os.toLowerCase()
+    return branch.toLowerCase() + '_' + configuration.toLowerCase() + '_' + os.toLowerCase()
 }
 
 [true, false].each { isPullRequest ->
