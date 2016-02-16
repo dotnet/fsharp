@@ -40,7 +40,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NetCoreProfile78ProjectTemplates</RootNamespace>
     <AssemblyName>NetCoreProfile78ProjectTemplates</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>

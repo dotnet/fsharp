@@ -16,7 +16,7 @@
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>

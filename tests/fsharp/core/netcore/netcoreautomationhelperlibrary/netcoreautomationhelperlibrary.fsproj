@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>NetCoreAutomationHelperLibrary</RootNamespace>
     <AssemblyName>NetCoreAutomationHelperLibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetProfile>netcore</TargetProfile>
     <Name>NetCoreAutomationHelperLibrary</Name>
     <SccProjectName>SAK</SccProjectName>
