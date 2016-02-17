@@ -757,7 +757,7 @@
     </CreateItem>
   </Target>
 
-  <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
+  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.2.0.0-rc5\content\FSharp.SRGen.targets" />
   
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
