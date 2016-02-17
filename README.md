@@ -7,9 +7,9 @@
 
 |            |Debug (Build only)|Release (Build only)|Release (Build and tests)|
 |:----------:|:----------------:|:------------------:|:-----------------------:|
-|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/release_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/release_windows_nt/)| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master) |
-|**vs2015**  ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/vs2015.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/vs2015) |
-|**coreclr** ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/coreclr.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/coreclr) |
+|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master_debug_windows_nt_prtest)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master_debug_windows_nt_prtest/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master_release_windows_nt_prtest)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master_release_windows_nt_prtest/)|[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master) |
+|**vs2015**  |||[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/vs2015.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/vs2015)|
+|**coreclr** |||[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/coreclr.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/coreclr)|
 
 ###Contributing to the F# Language, Library, and Tools
 
