@@ -1,6 +1,7 @@
 import jobs.generation.Utilities;
 
 def project = GithubProject
+def branch = GithubBranchName
 
 def osList = ['Windows_NT'] //'Ubuntu', 'OSX', 'CentOS7.1'
 
@@ -9,8 +10,8 @@ def machineLabelMap = ['Ubuntu':'ubuntu-doc',
                        'Windows_NT':'windows-elevated',
                        'CentOS7.1' : 'centos-71']
 
-def static getBuildJobName(def configuration, def os) {
-    return configuration.toLowerCase() + '_' + os.toLowerCase()
+def static getBuildJobName(def branchName, def configuration, def os) {
+    return branchName.toLowerCase() + '_' + configuration.toLowerCase() + '_' + os.toLowerCase()
 }
 
 [true, false].each { isPullRequest ->
@@ -20,7 +21,7 @@ def static getBuildJobName(def configuration, def os) {
             def lowerConfiguration = configuration.toLowerCase()
 	        
             // Calculate job name
-            def jobName = getBuildJobName(configuration, os)
+            def jobName = getBuildJobName(branch, configuration, os)
 
             def buildCommand = '';
             if (os == 'Windows_NT') {
@@ -48,9 +49,17 @@ def static getBuildJobName(def configuration, def os) {
 			// TODO: set to false after tests are fully enabled
 			def skipIfNoTestFiles = true
             
-            Utilities.simpleInnerLoopJobSetup(newJob, project, isPullRequest, "Jenkins ${os} ${configuration}")
-            Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+			Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
+			Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
+			Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
+			Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+			
+			if (isPullRequest) {
+				Utilities.addGithubPRTriggerForBranch(newJob, branch, "${branch} ${os} ${configuration} Build")
+			}
+			else {
+				Utilities.addGithubPushTrigger(newJob)
+			}
         }
     }
 }
