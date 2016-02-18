@@ -114,7 +114,7 @@
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
 	<MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
 	<SystemCollectionsImmutableVersion>1.1.37</SystemCollectionsImmutableVersion>
-	<RoslynVersion>1.2.0-beta1-20160215-01</RoslynVersion>
+	<RoslynVersion>1.2.0-beta1-20160218-02</RoslynVersion>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
