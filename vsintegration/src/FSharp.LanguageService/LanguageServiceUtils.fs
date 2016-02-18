@@ -6,7 +6,7 @@ open System
 open System.Configuration
 open System.Diagnostics
 
-module FSharpCommonConstants =
+module internal FSharpCommonConstants =
     [<Literal>]
     let packageGuid = "871D2A70-12A2-4e42-9440-425DD92A4116"
     [<Literal>]
@@ -14,13 +14,17 @@ module FSharpCommonConstants =
     [<Literal>]
     let editorFactoryGuid = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
     [<Literal>]
+    let codePageEditorFactoryGuid = "82A16493-EF43-47E0-B42D-D87BAAB5335D"
+    [<Literal>]
+    let svsSettingsPersistenceManagerGuid = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+    [<Literal>]
     let FSharpLanguageName = "F#"
     [<Literal>]
     let FSharpContentTypeName = "F#"
     [<Literal>]
     let FSharpLanguageServiceCallbackName = "F# Language Service"
 
-module LanguageServiceUtils = 
+module internal LanguageServiceUtils = 
 
     // This key can have 'true' and 'false' values. Will default to 'true'.
     let private shouldEnableLanguageServiceKey = "enable-fsharp-language-service"

@@ -14,17 +14,18 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
+open Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
 open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
+[<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuid)>]
 type internal SVsSettingsPersistenceManager = class end
 
 [<Guid(FSharpCommonConstants.languageServiceGuid)>]
-type FSharpLanguageService(package : FSharpPackage) = 
+type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService, FSharpProjectSite>(package)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
@@ -59,14 +60,18 @@ type FSharpLanguageService(package : FSharpPackage) =
         | _ -> ()
 
 and [<Guid(FSharpCommonConstants.editorFactoryGuid)>]
-    FSharpEditorFactory(package : FSharpPackage) =
+    internal FSharpEditorFactory(package : FSharpPackage) =
     inherit AbstractEditorFactory(package)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.GetFormattedTextChanges(_, _, _, _) = System.Collections.Generic.List<Text.TextChange>() :> System.Collections.Generic.IList<Text.TextChange>
+    
+and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuid)>]
+    internal FSharpCodePageEditorFactory(editorFactory: FSharpEditorFactory) =
+    inherit AbstractCodePageEditorFactory(editorFactory)
 
 and [<Guid(FSharpCommonConstants.packageGuid)>]
-    FSharpPackage() = 
+    internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService, FSharpProjectSite>()
     
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
@@ -77,12 +82,16 @@ and [<Guid(FSharpCommonConstants.packageGuid)>]
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
     
-    override this.CreateLanguageService() = 
-        let language = new FSharpLanguageService(this)
-        language
+    override this.CreateLanguageService() = new FSharpLanguageService(this)
 
     override this.CreateEditorFactories() = 
-        [] :> IEnumerable<IVsEditorFactory>
+        let editorFactory = new FSharpEditorFactory(this)
+        let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
+
+        [|
+            editorFactory :> IVsEditorFactory;
+            codePageEditorFactory :> IVsEditorFactory;
+        |] :> IEnumerable<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     

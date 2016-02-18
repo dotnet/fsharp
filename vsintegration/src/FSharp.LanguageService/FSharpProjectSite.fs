@@ -19,7 +19,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
-type FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
+type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
     inherit AbstractProject(visualStudioWorkspace.ProjectTracker, null, projectName, hierarchy, "F#", serviceProvider, null, visualStudioWorkspace, null)
 
     let mutable checkOptions : FSharpProjectOptions option = None
