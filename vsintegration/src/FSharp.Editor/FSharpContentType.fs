@@ -9,16 +9,16 @@ open Microsoft.VisualStudio.Utilities
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-module FSRoslynStaticTypeDefinitions = 
+module FSharpStaticTypeDefinitions = 
     [<Export>]
     [<Name("F#")>]
     [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
-    let FSRoslynContentTypeDefinition = ContentTypeDefinition()
+    let FSharpContentTypeDefinition = ContentTypeDefinition()
 
-[<ExportContentTypeLanguageService(FSRoslynCommonConstants.FSharpContentType, FSRoslynCommonConstants.FSharpLanguageName)>]
-type FSRoslynContentTypeLanguageService [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
+[<ExportContentTypeLanguageService(FSharpCommonConstants.FSharpContentTypeName, FSharpCommonConstants.FSharpLanguageName)>]
+type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
     member this.contentTypeRegistryService = contentTypeRegistry
  
     interface IContentTypeLanguageService with
         member this.GetDefaultContentType() = 
-            this.contentTypeRegistryService.GetContentType(FSRoslynCommonConstants.FSharpContentType);
+            this.contentTypeRegistryService.GetContentType(FSharpCommonConstants.FSharpContentTypeName);

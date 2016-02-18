@@ -28,8 +28,8 @@
       <CopyToOutputDirectory>false</CopyToOutputDirectory>
     </Content>
     <Compile Include="BraceCompletion.fs" />
-    <Compile Include="FSRoslynProjectSiteService.fs" />
-    <Compile Include="FSRoslynContentType.fs" />
+    <Compile Include="FSharpProjectSiteService.fs" />
+    <Compile Include="FSharpContentType.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj">

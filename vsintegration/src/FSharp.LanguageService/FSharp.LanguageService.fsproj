@@ -39,10 +39,8 @@
     <Compile Include="NavigationBar.fs" />
     <Compile Include="Intellisense.fs" />
     <Compile Include="BackgroundRequests.fs" />
+    <Compile Include="FSharpProjectSite.fs" />
     <Compile Include="FSharpLanguageService.fs" />
-    <Compile Include="FSharpPackage.fs" />
-    <Compile Include="FSRoslynProject.fs" />
-    <Compile Include="FSRoslynLanguageService.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

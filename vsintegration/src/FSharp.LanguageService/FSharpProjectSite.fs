@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -19,7 +19,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
-type FSRoslynProject(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
+type FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
     inherit AbstractProject(visualStudioWorkspace.ProjectTracker, null, projectName, hierarchy, "F#", serviceProvider, null, visualStudioWorkspace, null)
 
     let mutable checkOptions : FSharpProjectOptions option = None
@@ -32,10 +32,10 @@ type FSRoslynProject(hierarchy: IVsHierarchy, serviceProvider: System.IServicePr
     member internal this.Initialize(hier: IVsHierarchy, site : IProjectSite) =
         this.ProjectTracker.AddProject(this)
 
-        site.AdviseProjectSiteChanges(KnownAdviseProjectSiteChangesCallbackOwners.LanguageService,
+        site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName,
                                         new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(hier, site)))
 
-        site.AdviseProjectSiteClosed(KnownAdviseProjectSiteChangesCallbackOwners.LanguageService, 
+        site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
                                         new AdviseProjectSiteChanges(fun () -> this.Disconnect()))
 
         // Add files and references.

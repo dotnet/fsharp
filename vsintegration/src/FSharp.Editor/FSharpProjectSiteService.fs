@@ -19,10 +19,10 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 type internal IHostProjectService =
     inherit IWorkspaceService
 
-    abstract member GetHostProject : id : ProjectId -> FSRoslynProject
+    abstract member GetHostProject : id : ProjectId -> FSharpProjectSite
 
 [<ExportWorkspaceServiceFactory(typeof<IHostProjectService>, ServiceLayer.Default); Shared>]
-type internal FSRoslynProjectSiteService [<ImportingConstructor>] (vsWorkspace : VisualStudioWorkspaceImpl) =
+type internal FSharpProjectSiteService [<ImportingConstructor>] (vsWorkspace : VisualStudioWorkspaceImpl) =
     interface IWorkspaceServiceFactory with
         member this.CreateService(_) = upcast this
 

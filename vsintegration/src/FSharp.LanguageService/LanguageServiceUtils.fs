@@ -6,7 +6,7 @@ open System
 open System.Configuration
 open System.Diagnostics
 
-module FSRoslynCommonConstants =
+module FSharpCommonConstants =
     [<Literal>]
     let packageGuid = "871D2A70-12A2-4e42-9440-425DD92A4116"
     [<Literal>]
@@ -16,27 +16,23 @@ module FSRoslynCommonConstants =
     [<Literal>]
     let FSharpLanguageName = "F#"
     [<Literal>]
-    let FSharpContentType = "F#"
+    let FSharpContentTypeName = "F#"
+    [<Literal>]
+    let FSharpLanguageServiceCallbackName = "F# Language Service"
 
 module LanguageServiceUtils = 
 
-    // This key can have 'off', 'vs', and 'roslyn' states. Will default to 'vs'.
-    let private languageServiceTypeKey = "fsharp-language-service"
+    // This key can have 'true' and 'false' values. Will default to 'true'.
+    let private shouldEnableLanguageServiceKey = "enable-fsharp-language-service"
 
     let private getConfigValue(key: string) =
         try
-            ConfigurationManager.AppSettings.[key].ToLower()
+            ConfigurationManager.AppSettings.[key]
         with ex -> 
             Debug.Assert(false, sprintf "Error loading 'devenv.exe.config' configuration[%s]: %A" key ex)
             String.Empty
 
-    let shouldEnableVSLanguageService =
-        match getConfigValue(languageServiceTypeKey) with
-        | "off" -> false
-        | "roslyn" -> false
+    let shouldEnableLanguageService =
+        match getConfigValue(shouldEnableLanguageServiceKey).ToLower() with
+        | "false" -> false
         | _ -> true
-
-    let shouldEnableRoslynLanguageService =
-        match getConfigValue(languageServiceTypeKey) with
-        | "roslyn" -> true
-        | _ -> false
