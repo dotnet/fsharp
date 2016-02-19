@@ -85,12 +85,14 @@ and [<Guid(FSharpCommonConstants.packageGuid)>]
     override this.CreateLanguageService() = new FSharpLanguageService(this)
 
     override this.CreateEditorFactories() = 
-        let editorFactory = new FSharpEditorFactory(this)
-        let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
+        // Disabling editor factories until fully implemented
+        
+        // let editorFactory = new FSharpEditorFactory(this)
+        // let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
 
         [|
-            editorFactory :> IVsEditorFactory;
-            codePageEditorFactory :> IVsEditorFactory;
+            // editorFactory :> IVsEditorFactory;
+            // codePageEditorFactory :> IVsEditorFactory;
         |] :> IEnumerable<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()

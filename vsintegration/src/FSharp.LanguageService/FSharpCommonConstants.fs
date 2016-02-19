@@ -23,20 +23,3 @@ module internal FSharpCommonConstants =
     let FSharpContentTypeName = "F#"
     [<Literal>]
     let FSharpLanguageServiceCallbackName = "F# Language Service"
-
-module internal LanguageServiceUtils = 
-
-    // This key can have 'true' and 'false' values. Will default to 'true'.
-    let private shouldEnableLanguageServiceKey = "enable-fsharp-language-service"
-
-    let private getConfigValue(key: string) =
-        try
-            ConfigurationManager.AppSettings.[key]
-        with ex -> 
-            Debug.Assert(false, sprintf "Error loading 'devenv.exe.config' configuration[%s]: %A" key ex)
-            String.Empty
-
-    let shouldEnableLanguageService =
-        match getConfigValue(shouldEnableLanguageServiceKey).ToLower() with
-        | "false" -> false
-        | _ -> true
