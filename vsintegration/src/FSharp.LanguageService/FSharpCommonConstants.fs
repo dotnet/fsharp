@@ -8,15 +8,15 @@ open System.Diagnostics
 
 module internal FSharpCommonConstants =
     [<Literal>]
-    let packageGuid = "871D2A70-12A2-4e42-9440-425DD92A4116"
+    let packageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
     [<Literal>]
-    let languageServiceGuid = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
+    let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     [<Literal>]
-    let editorFactoryGuid = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
+    let editorFactoryGuidString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
     [<Literal>]
-    let codePageEditorFactoryGuid = "82A16493-EF43-47E0-B42D-D87BAAB5335D"
+    let codePageEditorFactoryGuidString = "82A16493-EF43-47E0-B42D-D87BAAB5335D"
     [<Literal>]
-    let svsSettingsPersistenceManagerGuid = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+    let svsSettingsPersistenceManagerGuidString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
     [<Literal>]
     let FSharpLanguageName = "F#"
     [<Literal>]

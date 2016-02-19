@@ -9,7 +9,6 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.SolutionCrawler
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -21,10 +20,10 @@ open Microsoft.VisualStudio.Shell.Interop
 
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuid)>]
+[<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuidString)>]
 type internal SVsSettingsPersistenceManager = class end
 
-[<Guid(FSharpCommonConstants.languageServiceGuid)>]
+[<Guid(FSharpCommonConstants.languageServiceGuidString)>]
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService, FSharpProjectSite>(package)
 
@@ -32,7 +31,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
-    override this.LanguageServiceId = new Guid(FSharpCommonConstants.languageServiceGuid)
+    override this.LanguageServiceId = new Guid(FSharpCommonConstants.languageServiceGuidString)
     override this.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
 
     override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
@@ -51,26 +50,26 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             match hier with
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
-
-                let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(site.ProjectFileName(), site.ProjectFileName())
+                let projectFileName = site.ProjectFileName()
+                let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
                 if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
-                    let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, site.ProjectFileName());
+                    let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, projectFileName);
                     projectSite.Initialize(hier, site)                    
             | _ -> ()
         | _ -> ()
 
-and [<Guid(FSharpCommonConstants.editorFactoryGuid)>]
+and [<Guid(FSharpCommonConstants.editorFactoryGuidString)>]
     internal FSharpEditorFactory(package : FSharpPackage) =
     inherit AbstractEditorFactory(package)
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
-    override this.GetFormattedTextChanges(_, _, _, _) = System.Collections.Generic.List<Text.TextChange>() :> System.Collections.Generic.IList<Text.TextChange>
+    override this.GetFormattedTextChanges(_, _, _, _) = upcast Array.empty
     
-and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuid)>]
+and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuidString)>]
     internal FSharpCodePageEditorFactory(editorFactory: FSharpEditorFactory) =
     inherit AbstractCodePageEditorFactory(editorFactory)
 
-and [<Guid(FSharpCommonConstants.packageGuid)>]
+and [<Guid(FSharpCommonConstants.packageGuidString)>]
     internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService, FSharpProjectSite>()
     
@@ -93,7 +92,7 @@ and [<Guid(FSharpCommonConstants.packageGuid)>]
         [|
             // editorFactory :> IVsEditorFactory;
             // codePageEditorFactory :> IVsEditorFactory;
-        |] :> IEnumerable<IVsEditorFactory>
+        |] :> seq<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     

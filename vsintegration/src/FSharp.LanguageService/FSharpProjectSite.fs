@@ -38,28 +38,18 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
         site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
                                         new AdviseProjectSiteChanges(fun () -> this.Disconnect()))
 
-        // Add files and references.
-        site.SourceFilesOnDisk() |> 
-            Seq.iter(fun file -> this.AddDocument(hier, file))
-        
-        this.GetReferences(site.CompilerFlags()) |> 
-            Seq.iter(fun ref -> this.AddReference(ref) |> ignore)
+        // Add files and references
+        for file in site.SourceFilesOnDisk() do this.AddDocument(hier, file)
+        for ref in this.GetReferences(site.CompilerFlags()) do this.AddReference(ref)
         
         // Capture the F# specific options that we'll pass to the type checker.
         checkOptions <- Some(ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName()))
 
     member this.GetReferences(flags : string[]) =
-        let (|Reference|_|) (f : string) = if f.StartsWith("-r:") then Some (f.Replace("-r:", "")) else None
-
-        let references = flags |> 
-                         Seq.map(fun flag -> match flag with 
-                                             | Reference ref -> ref
-                                             | _ -> "") |>
-                         Seq.where(fun s -> s <> "")
-        references
+        flags |> Array.choose(fun flag -> if flag.StartsWith("-r:") then Some(flag.Substring(3)) else None)
 
     member this.AddReference(filePath : string) = 
-        this.AddMetadataReferenceAndTryConvertingToProjectReferenceIfPossible(filePath, new MetadataReferenceProperties(), VSConstants.S_FALSE)
+        this.AddMetadataReferenceAndTryConvertingToProjectReferenceIfPossible(filePath, new MetadataReferenceProperties(), VSConstants.S_FALSE) |> ignore
 
     member this.RemoveReference(filePath: string) =
         this.RemoveMetadataReference(filePath)
@@ -75,24 +65,19 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
 
     member internal this.OnProjectSettingsChanged(hier: IVsHierarchy, site : IProjectSite) = 
         let sourceFiles = site.SourceFilesOnDisk()
-        // Added files.
-        sourceFiles |> 
-            Seq.where(fun file -> not(this.ContainsFile(file))) |> 
-            Seq.iter(fun file -> this.AddDocument(hier, file))
-        // Removed files.
-        this.GetCurrentDocuments() |> 
-            Seq.where(fun doc -> not(sourceFiles |> Seq.contains(doc.FilePath))) |>
-            Seq.iter(fun doc -> this.RemoveDocument(doc))
 
+        // Added files
+        for file in sourceFiles do if not(this.ContainsFile(file)) then this.AddDocument(hier, file)
+        // Removed files
+        let removedDocuments = this.GetCurrentDocuments() |> Seq.where(fun doc -> not(sourceFiles |> Seq.contains(doc.FilePath))) |> Seq.toList
+        for doc in removedDocuments do this.RemoveDocument(doc)
+        
         let references = this.GetReferences(site.CompilerFlags())
+
         // Added references
-        references |> 
-            Seq.where(fun ref -> not(this.HasMetadataReference(ref))) |>
-            Seq.iter(fun ref -> this.AddReference(ref) |> ignore)
+        for ref in references do if not(this.HasMetadataReference(ref)) then this.AddReference(ref)
         // Removed references
-        this.GetCurrentMetadataReferences() |>
-            Seq.where(fun ref -> not(references |> Seq.contains(ref.FilePath))) |>
-            Seq.iter(fun ref -> this.RemoveReference(ref.FilePath))
+        for ref in this.GetCurrentMetadataReferences() do if not(references |> Seq.contains(ref.FilePath)) then this.RemoveReference(ref.FilePath)
 
         // If the order of files changed, that'll be captured in the checkOptions.
         checkOptions <- Some(ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName()))

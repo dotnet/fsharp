@@ -49,7 +49,7 @@ type SmartIndent (textView : ITextView, textManager : IVsTextManager) =
         /// or null when no indentation is desired or unable to determine indentation
         member this.GetDesiredIndentation(line : ITextSnapshotLine) =
 
-            let lp = [| LANGPREFERENCES(guidLang = Guid(FSharpCommonConstants.languageServiceGuid)) |]
+            let lp = [| LANGPREFERENCES(guidLang = Guid(FSharpCommonConstants.languageServiceGuidString)) |]
             let indentStyle = if ErrorHandler.Succeeded(textManager.GetUserPreferences(null, null, lp, null)) then lp.[0].IndentStyle else vsIndentStyle.vsIndentStyleDefault
 
             if (indentStyle = vsIndentStyle.vsIndentStyleNone || _textView = null || _textView.IsClosed) then

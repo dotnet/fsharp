@@ -751,7 +751,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.GetGuidProperty(propid:int, guid:byref<Guid> ) =
                 if (enum propid = __VSHPROPID.VSHPROPID_PreferredLanguageSID) then 
-                    guid <- new Guid(FSharpCommonConstants.languageServiceGuid)
+                    guid <- new Guid(FSharpCommonConstants.languageServiceGuidString)
                     VSConstants.S_OK
                 // below is how VS decide 'which templates' to associate with an 'add new item' call in this project
                 elif (enum propid = __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 

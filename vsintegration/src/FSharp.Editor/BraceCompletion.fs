@@ -24,7 +24,7 @@ type internal CompletionContext(tokenContext : TokenContext, textManager : IVsTe
         /// Called when user hits Return while inside of a brace completion session.
         member this.OnReturn(session) =
             
-            let lp = [| LANGPREFERENCES(guidLang = Guid(FSharpCommonConstants.languageServiceGuid)) |]
+            let lp = [| LANGPREFERENCES(guidLang = Guid(FSharpCommonConstants.languageServiceGuidString)) |]
             ErrorHandler.ThrowOnFailure(textManager.GetUserPreferences(null, null, lp, null)) |> ignore
 
             // if smart indent is not enabled, or we are in a string, don't do any special formatting
