@@ -312,6 +312,7 @@ module internal Salsa =
           member this.ErrorListTaskReporter() = None
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
+          member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) = () // no unit testing support here
           member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = System.DateTime(2000,1,1)

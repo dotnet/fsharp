@@ -17,7 +17,7 @@
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS;STAMP_OSS_VERSION</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
@@ -26,7 +26,8 @@
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <TargetFrameworkProfile></TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
@@ -88,7 +89,6 @@
     <Compile Include="GroupingReferenceNode.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="AssemblyInfo.cs" />
-
     <!-- Automation Objects -->
     <Compile Include="Automation\OAFileItem.cs" />
     <Compile Include="Automation\OAFolderItem.cs" />
@@ -101,7 +101,6 @@
     <Compile Include="Automation\OANavigableProjectItems.cs" />
     <Compile Include="Automation\OAReferenceFolderItem.cs" />
     <Compile Include="Automation\OAReferenceItem.cs" />
-
     <!-- Objects needed to implement a Language Project -->
     <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
     <Compile Include="Automation\VSProject\OABuildManager.cs" />
@@ -119,7 +118,7 @@
     <Compile Include="DataObject.cs" />
     <Compile Include="DesignPropertyDescriptor.cs" />
     <Compile Include="DocumentManager.cs" />
-    <Compile Include="EnumDependencies.cs"/>
+    <Compile Include="EnumDependencies.cs" />
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
@@ -191,6 +190,10 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Name>FSharp.LanguageService</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -32,6 +32,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.ErrorListTaskReporter() = None
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
+        override this.AdviseProjectSiteClosed(_,_) = ()
         override this.IsIncompleteTypeCheckEnvironment = checkOptions.IsIncompleteTypeCheckEnvironment
         override this.TargetFrameworkMoniker = ""
         override this.LoadTime = checkOptions.LoadTime
@@ -62,6 +63,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.ErrorListTaskReporter() = None
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
+        override this.AdviseProjectSiteClosed(_,_) = ()
         override this.IsIncompleteTypeCheckEnvironment = true
         override this.TargetFrameworkMoniker = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
