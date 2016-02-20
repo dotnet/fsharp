@@ -143,3 +143,39 @@ let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` ()
     Assert.IsTrue ((x3.R2 = x1 ))
     Assert.IsTrue ((y3.R2 = x1 ))
  
+[<Struct>]
+[<CustomComparison; CustomEquality>]
+type ComparisonStructRecord =
+    {   C1 :int
+        C2: int
+    }
+    override self.Equals other =
+        match other with
+        | :? ComparisonStructRecord as o ->  (self.C1 + self.C2) = (o.C1 + o.C2)
+        | _ -> false
+
+    override self.GetHashCode() = hash self
+    interface IComparable with
+        member self.CompareTo other =
+            match other with
+            | :? ComparisonStructRecord as o -> compare (self.C1 + self.C2) (o.C1 + o.C2)
+            | _ -> invalidArg "other" "cannot compare values of different types"
+
+
+let [<Test>] ``struct records support [CustomEquality>]`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) ->
+        let sr1 = { C1 = i1; C2 = i2 }
+        let sr2 = { C1 = i1; C2 = i2 }
+        (sr1.Equals sr2)      
+
+
+let [<Test>] ``struct records support [<CustomComparison>]`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) (k1:int) (k2:int) ->        
+        let sr1 = { C1 = i1; C2 = i2 }
+        let sr2 = { C1 = k1; C2 = k2 }
+        if   sr1 > sr2 then compare sr1 sr2 = 1
+        elif sr1 < sr2 then compare sr1 sr2 = -1
+        elif sr1 = sr2 then compare sr1 sr2 = 0
+        else false
