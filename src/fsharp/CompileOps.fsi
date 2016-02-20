@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal Microsoft.FSharp.Compiler.CompileOps
@@ -351,6 +351,7 @@ type TcConfigBuilder =
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
       mutable exename : string option 
+      mutable copyFSharpCore : bool
       mutable shadowCopyReferences : bool }
 
 
@@ -508,6 +509,7 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
+    member copyFSharpCore : bool
     member shadowCopyReferences : bool
  
     static member Create : TcConfigBuilder * validate: bool -> TcConfig

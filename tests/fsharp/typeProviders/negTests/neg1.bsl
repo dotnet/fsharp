@@ -8,11 +8,15 @@ neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided 
 
 neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
+neg1.fsx(9,38,9,64): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(9,38,9,64): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(10,38,10,60): typecheck error FS3013: Provided type 'FSharp.EvilProvider.IsArrayTypeReturnsTrue' has 'IsArray' as true, but array types are not supported.
 
 neg1.fsx(10,38,10,60): typecheck error FS3013: Provided type 'FSharp.EvilProvider.IsArrayTypeReturnsTrue' has 'IsArray' as true, but array types are not supported.
+
+neg1.fsx(10,38,10,60): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeReturnsTrue' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(10,38,10,60): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeReturnsTrue' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -60,11 +64,15 @@ neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provide
 
 neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' member 'IsGenericType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
+neg1.fsx(13,38,13,66): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(13,38,13,66): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(14,38,14,62): typecheck error FS3011: Provided type 'FSharp.EvilProvider.IsGenericTypeReturnsTrue' has 'IsGenericType' as true, but generic types are not supported.
 
 neg1.fsx(14,38,14,62): typecheck error FS3011: Provided type 'FSharp.EvilProvider.IsGenericTypeReturnsTrue' has 'IsGenericType' as true, but generic types are not supported.
+
+neg1.fsx(14,38,14,62): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeReturnsTrue' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(14,38,14,62): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeReturnsTrue' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -152,6 +160,8 @@ neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provide
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
+neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
@@ -168,6 +178,8 @@ neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provide
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
+neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
@@ -179,6 +191,8 @@ neg1.fsx(18,39,18,68): typecheck error FS0039: The type 'TypeWhereNamespaceRetur
 neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
 neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+
+neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -187,6 +201,8 @@ neg1.fsx(19,39,19,67): typecheck error FS3033: The type provider 'Provider.EvilP
 neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
 neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+
+neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -271,6 +287,8 @@ neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
 neg1.fsx(23,39,23,76): typecheck error FS0039: The type 'TypeWhereGetPropertiesRaisesException' is not defined
+
+neg1.fsx(24,39,24,77): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(24,39,24,77): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -374,6 +392,8 @@ neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provide
 
 neg1.fsx(30,39,30,72): typecheck error FS0039: The type 'TypeWhereGetPropertiesReturnsNull' is not defined
 
+neg1.fsx(31,39,31,73): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesReturnsNull' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(31,39,31,73): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesReturnsNull' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsReturnsNull' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetConstructors'
@@ -400,9 +420,15 @@ neg1.fsx(33,39,33,72): typecheck error FS3042: Unexpected 'null' return value fr
 
 neg1.fsx(33,39,33,72): typecheck error FS3042: Unexpected 'null' return value from provided type 'FSharp.EvilProvider.TypeWhereGetInterfacesReturnsNull' member 'GetInterfaces'
 
+neg1.fsx(33,39,33,72): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetInterfacesReturnsNull' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(33,39,33,72): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetInterfacesReturnsNull' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
+neg1.fsx(36,38,36,81): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetGenericArgumentsRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
 neg1.fsx(36,38,36,81): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetGenericArgumentsRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
+
+neg1.fsx(37,38,37,72): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetMembersRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(37,38,37,72): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetMembersRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 

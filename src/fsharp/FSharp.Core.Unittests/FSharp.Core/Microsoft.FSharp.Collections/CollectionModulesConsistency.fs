@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections.CollectionModulesConsistency
 
@@ -1156,6 +1156,10 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 
 [<Test>]
 let ``unfold is consistent`` () =
+    Check.QuickThrowOnFailure unfold<int,int>
+
+[<Test; Category("Expensive")>]
+let ``unfold is consistent full`` () =
     Check.QuickThrowOnFailure unfold<int,int>
     Check.QuickThrowOnFailure unfold<string,string>
     Check.QuickThrowOnFailure unfold<float,int>

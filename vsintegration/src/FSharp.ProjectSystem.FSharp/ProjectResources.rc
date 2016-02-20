@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+// Note that, regardless of what numbers are given here, the wix code (src\wix\script.fs) that references these uses 'IconIndex' starting at 0
+#define FS       100
+#define FSI      101
+#define FSX      102
+#define FSPROJ   103
+// Note that these are not always the same as the .bmp that appears in Solution Explorer, but we think these are best for 'windows folder' for now
+FS       ICON "Resources\FSharpCodeFile_32.ico"
+FSI      ICON "Resources\FSharpSignature.ico"
+FSX      ICON "Resources\FSharpScript.ico"
+FSPROJ   ICON "Resources\FSharpAboutBox.ico"

@@ -1,24 +1,24 @@
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="src\salsa\Salsa.fsproj"/>
-    <ProjectFiles Include="src\unittests\unittests.fsproj"/>
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
-    <ProjectFiles Include="src\unittests\Resources.MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
+    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj"/>
+    <ProjectFiles Include="tests\unittests\VisualFSharp.Unittests.fsproj"/>
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" />
+    <ProjectFiles Include="tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

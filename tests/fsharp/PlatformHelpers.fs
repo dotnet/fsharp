@@ -18,7 +18,7 @@ type FilePath = string
 
 type CmdResult = 
     | Success
-    | ErrorLevel of int
+    | ErrorLevel of string * int
 
 type CmdArguments = 
     { RedirectOutput : (string -> unit) option
@@ -51,50 +51,41 @@ module Process =
         p.EnableRaisingEvents <- true
         p.StartInfo <- processInfo
 
-        cmdArgs.RedirectOutput
-        |> Option.map (fun f -> (fun (ea: DataReceivedEventArgs) -> ea.Data |> f)) 
-        |> Option.iter (fun newOut ->
+        cmdArgs.RedirectOutput|> Option.iter (fun f ->
             processInfo.RedirectStandardOutput <- true
-            p.OutputDataReceived.Add newOut
+            p.OutputDataReceived.Add (fun ea -> if ea.Data <> null then f ea.Data)
         )
 
-        cmdArgs.RedirectError 
-        |> Option.map (fun f -> (fun (ea: DataReceivedEventArgs) -> ea.Data |> f)) 
-        |> Option.iter (fun newErr ->
+        cmdArgs.RedirectError |> Option.iter (fun f ->
             processInfo.RedirectStandardError <- true
-            p.ErrorDataReceived.Add newErr
+            p.ErrorDataReceived.Add (fun ea -> if ea.Data <> null then f ea.Data)
         )
 
         cmdArgs.RedirectInput
         |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
-
-        let exitedAsync (proc: Process) =
-            let tcs = new System.Threading.Tasks.TaskCompletionSource<int>();
-            p.Exited.Add (fun s -> 
-                tcs.TrySetResult(proc.ExitCode) |> ignore
-                proc.Dispose())
-            tcs.Task
 
         p.Start() |> ignore
     
         cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
         cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
-        cmdArgs.RedirectInput
-        |> Option.map (fun input -> async {
+        cmdArgs.RedirectInput |> Option.iter (fun input -> 
+           async {
             let inputWriter = p.StandardInput
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
             input inputWriter
             do! inputWriter.FlushAsync () |> Async.AwaitIAsyncResult |> Async.Ignore
             inputWriter.Close ()
-            })
-        |> Option.iter Async.Start
+           } 
+           |> Async.Start)
 
-        let exitCode = p |> exitedAsync |> Async.AwaitTask |> Async.RunSynchronously
+        p.WaitForExit() 
 
-        match exitCode with
+        match p.ExitCode with
         | 0 -> Success
-        | err -> ErrorLevel err
+        | err -> 
+            let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" exePath arguments workDir 
+            ErrorLevel (msg, err)
 
 
 
@@ -175,30 +166,27 @@ type AttemptBuilder() =
             this.While(enum.MoveNext, 
                 this.Delay(fun () -> body enum.Current)))
 
-let processor = new AttemptBuilder()
-
+let attempt = new AttemptBuilder()
 
 let log format = Printf.ksprintf (printfn "%s") format
 
-type OutPipe (mailbox: MailboxProcessor<_>) =
-    member x.Post msg = mailbox.Post(msg)
-    interface System.IDisposable with
-        member x.Dispose () = 
-            async {
-                while mailbox.CurrentQueueLength > 0 do
-                    let timeout = System.TimeSpan.FromMilliseconds(50.0)
-                    do! Async.Sleep (timeout.TotalMilliseconds |> int)
-            } |> Async.RunSynchronously
 
-let redirectTo (writer: TextWriter) =
-    let mailbox = MailboxProcessor.Start(fun inbox -> 
-        let rec loop () = async {
-            let! (msg : string) = inbox.Receive ()
-            do! writer.WriteLineAsync(msg) |> (Async.AwaitIAsyncResult >> Async.Ignore)
-            return! loop () }
-        loop ())
-    new OutPipe (mailbox)
+type OutPipe (writer: TextWriter) =
+    member x.Post (msg:string) = lock writer (fun () -> writer.WriteLine(msg))
+    interface System.IDisposable with 
+       member __.Dispose() = writer.Flush()
+     
+let redirectTo (writer: TextWriter) = new OutPipe (writer)
 
 let redirectToLog () = redirectTo System.Console.Out
 
-let inline (/) a (b: string) = System.IO.Path.Combine(a,b)
+let inline (++) a (b: string) = System.IO.Path.Combine(a,b)
+let inline (/) a b = a ++ b  //TODO deprecated
+
+let splitAtFirst (c: char -> bool) (s: string) =
+    let rec helper x (rest: string) =
+        match x with
+        | [] -> rest, None
+        | x :: xs when c(x) -> rest, Some (xs |> Array.ofList |> System.String)
+        | x :: xs -> helper xs (rest + x.ToString())
+    helper (s.ToCharArray() |> List.ofArray) ""

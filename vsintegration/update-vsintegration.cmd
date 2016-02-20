@@ -1,5 +1,5 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
+@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
 @rem               Version 2.0.  See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
@@ -18,6 +18,7 @@ exit /b 1
 :ok
 
 set BINDIR=%~dp0..\%1\net40\bin
+set TOPDIR=%~dp0..
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
@@ -31,7 +32,6 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 
-set GACUTIL="%WINSDKNETFXTOOLS%gacutil.exe"
 set SN32="%WINSDKNETFXTOOLS%sn.exe"
 set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
@@ -53,7 +53,7 @@ copy /y "%BINDIR%\FsiAnyCPU.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FsiAnyCPU.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
+copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
 
 set COMPILERMAINASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055
 mkdir "%COMPILERMAINASSEMBLIESPATH%"
@@ -117,8 +117,8 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-%SN32% -Vr Unittests,b03f5f7f11d50a3a
-%SN32% -Vr Salsa,b03f5f7f11d50a3a
+%SN32% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
+%SN32% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -136,12 +136,18 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-    %SN64% -Vr Unittests,b03f5f7f11d50a3a
-    %SN64% -Vr Salsa,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
 )
 
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Interactive.Settings.dll
-%GACUTIL% /if %BINDIR%\FSharp.Compiler.Server.Shared.dll
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
+if exist "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
+	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
+	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
+)
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 
