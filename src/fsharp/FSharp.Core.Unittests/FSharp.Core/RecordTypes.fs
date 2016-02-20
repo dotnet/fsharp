@@ -24,11 +24,13 @@ let [<Test>] ``can compare records`` () =
             ({ r1 with A = r1.B} <> r2) |@ "{r1 with A = r1.B} <> r2" .&.
             (r1.Equals r2)              |@ "r1.Equals r2"
 
+
 [<Struct>]
 type StructRecord =
     {   C: int
         D: int
     }
+
 
 let [<Test>] ``can compare struct records`` () =
     Check.QuickThrowOnFailure <|
@@ -79,6 +81,7 @@ type MutableStructRecord =
         mutable M2: int
     }                  
     
+
 let [<Test>] ``can mutate struct record fields`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) (m1:int) (m2:int) ->
@@ -90,39 +93,36 @@ let [<Test>] ``can mutate struct record fields`` () =
 
 [<Struct>]
 type StructRecordDefaultValue =
-    {   [<DefaultValue (false)>] R1: Record
+    {   [<DefaultValue (false)>] 
+        R1: Record
         R2: StructRecord
     }
+
 
 let [<Test>] ``correct behaviour with a [<DefaultValue>] on a ref type field of a struct record`` () =
     Check.QuickThrowOnFailure <|
         fun (i1:int) (i2:int) ->
             let s = { C = i1; D = i2 }
-            let r1 =
-                {
-                    R2 = s
-                }
-
+            let r1 = { R2 = s }
             (obj.ReferenceEquals (r1.R1, null))     |@ "r1.R1 is null" .&.
             (r1.R2 = { C = i1; D = i2 })            |@ "r1.R2 = { C = i1; D = i2 }"
 
 [<Struct>]
 type StructRecordDefaultValue2 =
     {   R1: Record
-        [<DefaultValue (false)>] R2: StructRecord
+        [<DefaultValue (false)>] 
+        R2: StructRecord
     }
+
 
 let [<Test>] ``correct behaviour with a [<DefaultValue>] on a value type field of a struct record`` () =
     Check.QuickThrowOnFailure <|
         fun (i1:int) (i2:int) ->
             let r = { A = i1; B = i2 }
-            let r1 =
-                {
-                    R1 = r
-                }
-
+            let r1 = { R1 = r }
             (r1.R1 = { A = i1; B = i2 })    |@ "r1.R1 = { A = i1; B = i2 }" .&.
             (r1.R2 = { C = 0; D = 0 })      |@ "r1.R2 = { C = 0; D = 0 }"
+
 
 let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` () =
     let x1 = { C = 0; D = 0 }
@@ -143,6 +143,7 @@ let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` ()
     Assert.IsTrue ((x3.R2 = x1))
     Assert.IsTrue ((y3.R2 = x1))
  
+
 [<Struct>]
 [<CustomComparison; CustomEquality>]
 type ComparisonStructRecord =
@@ -162,7 +163,7 @@ type ComparisonStructRecord =
             | _ -> invalidArg "other" "cannot compare values of different types"
 
 
-let [<Test>] ``struct records support [CustomEquality>]`` () =
+let [<Test>] ``struct records support [<CustomEquality>]`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = { C1 = i1; C2 = i2 }
