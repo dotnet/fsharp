@@ -136,12 +136,12 @@ let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` ()
     Assert.IsTrue ((x1 = y1))
 
     Assert.IsTrue (( (obj.ReferenceEquals (x2.R1, null)) = (obj.ReferenceEquals (y2.R1, null)) ))
-    Assert.IsTrue ((x2.R2 = x1 ))
-    Assert.IsTrue ((y2.R2 = x1 ))
+    Assert.IsTrue ((x2.R2 = x1))
+    Assert.IsTrue ((y2.R2 = x1))
 
     Assert.IsTrue (( (obj.ReferenceEquals (x3.R1, null)) = (obj.ReferenceEquals (y3.R1, null)) ))
-    Assert.IsTrue ((x3.R2 = x1 ))
-    Assert.IsTrue ((y3.R2 = x1 ))
+    Assert.IsTrue ((x3.R2 = x1))
+    Assert.IsTrue ((y3.R2 = x1))
  
 [<Struct>]
 [<CustomComparison; CustomEquality>]
