@@ -40,3 +40,54 @@ let [<Test>] ``can compare struct records`` () =
             ({ sr1 with C = sr1.D} <> sr2) |@ "{sr1 with C = sr1.D} <> sr2" .&.
             (sr1.Equals sr2)               |@ "sr1.Equals sr2"
 
+
+let [<Test>] ``pattern matching on struct records`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) ->
+        let sr1 = { C = i1; D = i2 }
+        (match sr1 with
+        | { C = c; D = d } when c = i1 && d = i2 -> true
+        | _ -> false) 
+        |@ "with pattern match on struct record" .&.
+        (sr1 |> function 
+        | { C = c; D = d } when c = i1 && d = i2 -> true
+        | _ -> false)
+        |@ "function pattern match on struct record"
+
+
+let [<Test>] ``let binds using struct records`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) ->
+        let sr1 = { C = i1; D = i2 }
+        let { C = c1; D = d2 } as sr2 = sr1
+        (sr1 = sr2)          |@ "sr1 = sr2" .&.
+        (c1 = i1 && d2 = i2) |@ "c1 = i1 && d2 = i2"
+
+
+let [<Test>] ``function argument bindings using struct records`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) ->
+        let sr1 = { C = i1; D = i2 }
+        let test sr1 ({ C = c1; D = d2 } as sr2) =
+            sr1 = sr2 && c1 = i1 && d2 = i2
+        test sr1 sr1      
+        
+        
+[<Struct>]
+type MutableStructRecord =
+    {   mutable M1: int
+        mutable M2: int
+    }                  
+    
+let [<Test>] ``can mutate struct record fields`` () =
+    Check.QuickThrowOnFailure <|
+    fun (i1:int) (i2:int) (m1:int) (m2:int) ->
+        (i1 <> m1 && i2 <> m2) ==>
+            let mutable sr1 = { M1 = i1; M2 = i2}
+            sr1.M1 <- m1
+            sr1.M2 <- m2
+            sr1.M1 = m1 && sr1.M2 = m2
+
+
+
+ 
