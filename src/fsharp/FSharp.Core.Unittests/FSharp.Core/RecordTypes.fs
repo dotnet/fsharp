@@ -88,6 +88,58 @@ let [<Test>] ``can mutate struct record fields`` () =
             sr1.M2 <- m2
             sr1.M1 = m1 && sr1.M2 = m2
 
+[<Struct>]
+type StructRecordDefaultValue =
+    {   [<DefaultValue (false)>] R1: Record
+        R2: StructRecord
+    }
 
+let [<Test>] ``correct behaviour with a [<DefaultValue>] on a ref type field of a struct record`` () =
+    Check.QuickThrowOnFailure <|
+        fun (i1:int) (i2:int) ->
+            let s = { C = i1; D = i2 }
+            let r1 =
+                {
+                    R2 = s
+                }
 
+            (obj.ReferenceEquals (r1.R1, null))     |@ "r1.R1 is null" .&.
+            (r1.R2 = { C = i1; D = i2 })            |@ "r1.R2 = { C = i1; D = i2 }"
+
+[<Struct>]
+type StructRecordDefaultValue2 =
+    {   R1: Record
+        [<DefaultValue (false)>] R2: StructRecord
+    }
+
+let [<Test>] ``correct behaviour with a [<DefaultValue>] on a value type field of a struct record`` () =
+    Check.QuickThrowOnFailure <|
+        fun (i1:int) (i2:int) ->
+            let r = { A = i1; B = i2 }
+            let r1 =
+                {
+                    R1 = r
+                }
+
+            (r1.R1 = { A = i1; B = i2 })    |@ "r1.R1 = { A = i1; B = i2 }" .&.
+            (r1.R2 = { C = 0; D = 0 })      |@ "r1.R2 = { C = 0; D = 0 }"
+
+let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` () =
+    let x1 = { C = 0; D = 0 }
+    let x2 : StructRecordDefaultValue = { R2 = { C = 0; D = 0 } }
+    let x3 : StructRecordDefaultValue2 = { R1 = Unchecked.defaultof<Record> }
+
+    let y1 = Unchecked.defaultof<StructRecord>
+    let y2 = Unchecked.defaultof<StructRecordDefaultValue>
+    let y3 = Unchecked.defaultof<StructRecordDefaultValue2>
+
+    Assert.IsTrue ((x1 = y1))
+
+    Assert.IsTrue (( (obj.ReferenceEquals (x2.R1, null)) = (obj.ReferenceEquals (y2.R1, null)) ))
+    Assert.IsTrue ((x2.R2 = x1 ))
+    Assert.IsTrue ((y2.R2 = x1 ))
+
+    Assert.IsTrue (( (obj.ReferenceEquals (x3.R1, null)) = (obj.ReferenceEquals (y3.R1, null)) ))
+    Assert.IsTrue ((x3.R2 = x1 ))
+    Assert.IsTrue ((y3.R2 = x1 ))
  
