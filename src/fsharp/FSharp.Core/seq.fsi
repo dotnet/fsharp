@@ -14,6 +14,14 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
 
+        /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
+        /// <param name="source1">The first sequence.</param>
+        /// <param name="source2">The second sequence.</param>
+        /// <returns>The result sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        [<CompiledName("AllPairs")>]
+        val allPairs: source1:seq<'T1> -> source2:seq<'T2> -> seq<'T1 * 'T2>
+
         /// <summary>Wraps the two given enumerations as a single concatenated
         /// enumeration.</summary>
         ///
