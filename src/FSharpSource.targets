@@ -112,6 +112,7 @@
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
+    <FsSrGenVersion>2.0.0</FsSrGenVersion>
     <FsSrGenBuildTasksVersion>2.0.0</FsSrGenBuildTasksVersion>
   </PropertyGroup>
 
@@ -708,7 +709,7 @@
 
   <!-- Reference an existing FSI.EXE for use from within MSBuild -->
   <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.2.0.0\lib\net46</FsSrGenToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.$(FsSrGenVersion)\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
