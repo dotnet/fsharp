@@ -112,6 +112,7 @@
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
+    <FsSrGenBuildTasksVersion>2.0.0</FsSrGenBuildTasksVersion>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -757,7 +758,7 @@
     </CreateItem>
   </Target>
 
-  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.2.0.0\content\FSharp.SRGen.targets" />
+  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.$(FsSrGenBuildTasksVersion)\content\FSharp.SRGen.targets" />
   
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
