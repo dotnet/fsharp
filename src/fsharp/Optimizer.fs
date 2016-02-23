@@ -1066,7 +1066,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
            ValInfos = 
                ValInfos(ss.ValInfos.Entries 
                          |> Seq.filter (fun (vref,_) -> not (hiddenVal vref.Deref))
-                         |> Seq.map (fun (vref,e) -> check (* "its implementation uses a binding hidden by a signature" m *)  vref (abstractValInfo e) )) } 
+                         |> Seq.map (fun (vref,e) -> (vref, (abstractValInfo e) ))) } 
     and abstractLazyModulInfo (ss:LazyModuleInfo) = 
           ss.Force() |> abstractModulInfo |> notlazy
 
@@ -2749,7 +2749,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let valu =   
           match baseValOpt with 
           | None -> CurriedLambdaValue (lambdaId,arities,bsize,expr',ety) 
-          | _ -> UnknownValue
+          | Some baseVal -> 
+              let fvs = freeInExpr CollectLocals body'
+              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+                 UnknownValue
+              else 
+                  let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (body',bodyty)
+                  CurriedLambdaValue (lambdaId,arities,bsize,expr2,ety) 
+                  
 
         expr', { TotalSize=bsize + (if isTopLevel then methodDefnTotalSize else closureTotalSize); (* estimate size of new syntactic closure - expensive, in contrast to a method *)
                  FunctionSize=1; 
@@ -3055,7 +3062,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
             then {einfo with Info=UnknownValue} 
             else einfo 
         if v.MustInline  && IsPartialExprVal einfo.Info then 
-            errorR(InternalError("the mustinline value '"^v.LogicalName^"' was not inferred to have a known value",v.Range));
+            errorR(NumberedError(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
 #if DEBUG
         if verboseOptimizations then dprintf "val %s gets opt info %s\n" (showL(valL v)) (showL(exprValueInfoL cenv.g einfo.Info));
 #endif
