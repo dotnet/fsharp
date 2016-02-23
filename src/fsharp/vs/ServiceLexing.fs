@@ -485,7 +485,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let skip = false   // don't skip whitespace in the lexer 
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
-    let fsx = CompileOps.IsScript(filename)
+    let fsx = match filename with
+              | null -> false
+              | _ -> CompileOps.IsScript(filename)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -552,7 +554,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
           
 
 
-    do resetLexbufPos filename lexbuf 
+    do match filename with 
+       | null -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
+       | _ -> resetLexbufPos filename lexbuf
     
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
         use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)

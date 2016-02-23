@@ -15,6 +15,9 @@ open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 
+type Position = int * int
+type Range = Position * Position
+
 /// Represents encoded information for the end-of-line continutation of lexing
 type FSharpTokenizerLexState = int64
 
