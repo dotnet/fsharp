@@ -16,6 +16,7 @@
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INTERNALIZED_FSLEXYACC_RUNTIME;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
     <BuildWith>LKG</BuildWith>
     <AllowCrossTargeting>true</AllowCrossTargeting>
