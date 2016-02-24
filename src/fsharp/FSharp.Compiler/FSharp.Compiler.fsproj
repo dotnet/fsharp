@@ -469,5 +469,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.$(FsLexYaccVersion)\build\FsLexYacc.targets" />
 </Project>
