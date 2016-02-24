@@ -43,17 +43,17 @@
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    <Compile Include="..\..\utils\Lexing.fsi">
+      <Link>LexYaccRuntime\Lexing.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    <Compile Include="..\..\utils\Lexing.fs">
+      <Link>LexYaccRuntime\Lexing.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    <Compile Include="..\..\utils\Parsing.fsi">
+      <Link>LexYaccRuntime\Parsing.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
+    <Compile Include="..\..\utils\Parsing.fs">
+      <Link>LexYaccRuntime\Parsing.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\resizearray.fsi">
       <Link>Utilities\resizearray.fsi</Link>
