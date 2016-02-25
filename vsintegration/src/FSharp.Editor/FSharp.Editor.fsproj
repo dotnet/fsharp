@@ -30,6 +30,7 @@
     <Compile Include="BraceCompletion.fs" />
     <Compile Include="FSharpProjectSiteService.fs" />
     <Compile Include="FSharpContentType.fs" />
+    <Compile Include="FSharpColorizationService.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj">

@@ -88,9 +88,7 @@ type FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-#if COLORIZE_TYPES
     | TypeName = 11
-#endif
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
