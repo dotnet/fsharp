@@ -22,15 +22,14 @@
     <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="TokenContext.fs" />
     <Compile Include="SmartIndent.fs" />
-    <Content Include="extension.vsixmanifest">
-      <CopyToOutputDirectory>false</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="BraceCompletion.fs" />
     <Compile Include="FSharpProjectSiteService.fs" />
     <Compile Include="FSharpContentType.fs" />
     <Compile Include="FSharpColorizationService.fs" />
+    <Compile Include="FSharpBraceMatchingService.fs" />
+    <Content Include="extension.vsixmanifest">
+      <CopyToOutputDirectory>false</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj">
