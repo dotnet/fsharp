@@ -58,7 +58,7 @@ type internal FSharpBraceMatchingService() =
         if position < 0 || position >= sourceText.Length then
             Nullable()
         else
-            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, cancellationToken)
+            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, [], cancellationToken)
 
             let shouldBeIgnored(characterPosition) =
                 match classificationData.GetClassifiedSpan(characterPosition) with

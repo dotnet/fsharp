@@ -26,6 +26,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 // TODO: add types colorization if available from intellisense
+// TODO: add defines flags if available from project sites and files
 
 type internal SourceTextColorizationData(classificationData: seq<ClassifiedSpan>) =
     member this.Tokens = classificationData |> Seq.toArray
@@ -69,26 +70,25 @@ type internal FSharpColorizationService() =
                 new ClassifiedSpan(ClassificationTypeNames.WhiteSpace, classifiedSpan.TextSpan)
 
 
-    static member ColorizationDataCache = ConditionalWeakTable<SourceText, SourceTextColorizationData>()
+    static member private ColorizationDataCache = ConditionalWeakTable<SourceText, SourceTextColorizationData>()
 
-    static member GetColorizationData(sourceText: SourceText, cancellationToken: CancellationToken) : SourceTextColorizationData =
-        FSharpColorizationService.ColorizationDataCache.GetValue(sourceText, fun key -> FSharpColorizationService.ScanSourceText(key, cancellationToken))
+    static member GetColorizationData(sourceText: SourceText, defines: string list, cancellationToken: CancellationToken) : SourceTextColorizationData =
+        FSharpColorizationService.ColorizationDataCache.GetValue(sourceText, fun key -> FSharpColorizationService.ScanSourceText(key, defines, cancellationToken))
 
-
-    static member ClassifySourceTextAsync(sourceText: SourceText, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+    static member private ClassifySourceTextAsync(sourceText: SourceText, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
         Task.Run(fun () ->
             try
-                let classificationData = FSharpColorizationService.GetColorizationData(sourceText, cancellationToken)
+                let classificationData = FSharpColorizationService.GetColorizationData(sourceText, [], cancellationToken)
                 result.AddRange(classificationData.Tokens |> Seq.filter(fun token -> textSpan.Start <= token.TextSpan.Start && token.TextSpan.End <= textSpan.End))
             with ex -> 
                 Assert.Exception(ex)
                 reraise()  
         )
 
-    static member ScanSourceText(sourceText: SourceText, cancellationToken: CancellationToken): SourceTextColorizationData =
+    static member private ScanSourceText(sourceText: SourceText, defines: string list, cancellationToken: CancellationToken): SourceTextColorizationData =
         let mutable runningLexState = ref(0L)
         let result = new List<ClassifiedSpan>()
-        let sourceTokenizer = FSharpSourceTokenizer([], String.Empty)
+        let sourceTokenizer = FSharpSourceTokenizer(defines, String.Empty)
         
         let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) = 
             match colorKind with
