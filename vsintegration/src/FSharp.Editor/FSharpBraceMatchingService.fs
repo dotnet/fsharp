@@ -27,53 +27,76 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService() =
-    
-    interface IBraceMatcher with
-        member this.FindBracesAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<Nullable<BraceMatchingResult>> =
-            let computation = async {
-                let! text = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                return this.FindBraces(text, position, cancellationToken)
-            }
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
-            
-    member this.SupportedBraceTypes = [
+              
+    let SupportedBraceTypes = [
         ('(', ')');
         ('<', '>');
         ('[', ']');
         ('{', '}');
     ]
+    
+    let IgnoredClassificationTypes = [
+        ClassificationTypeNames.Comment;
+        ClassificationTypeNames.StringLiteral;
+        ClassificationTypeNames.ExcludedCode;
+    ]
 
-    member this.FindBraces(text: SourceText, position: int, cancellationToken: CancellationToken) : Nullable<BraceMatchingResult> =
-        let currentCharacter = text.[position]
+    interface IBraceMatcher with
+        member this.FindBracesAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<Nullable<BraceMatchingResult>> =
+            let computation = async {
+                let! text = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                return
+                    try
+                        this.FindBraces(text, position, cancellationToken)
+                    with ex -> 
+                        Assert.Exception(ex)
+                        reraise()
+            }
+            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+  
+    member this.FindBraces(sourceText: SourceText, position: int, cancellationToken: CancellationToken) : Nullable<BraceMatchingResult> =
+        if position < 0 || position >= sourceText.Length then
+            Nullable()
+        else
+            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, cancellationToken)
 
-        let proceedToLeft(i) = i - 1
-        let proceedToRight(i) = i + 1
+            let shouldBeIgnored(characterPosition) =
+                match classificationData.GetClassifiedSpan(characterPosition) with
+                | None -> false
+                | Some(classifiedSpan) -> IgnoredClassificationTypes |> Seq.contains classifiedSpan.ClassificationType
+                
+            if shouldBeIgnored(position) then
+                Nullable()
+            else
+                let currentCharacter = sourceText.[position]
 
-        let afterEndOfString(i) = i >= text.Length
-        let beforeStartOfString(i) = i < 0
+                let proceedToStartOfString(i) = i - 1
+                let proceedToEndOfString(i) = i + 1
 
-        let pickBraceType(leftBrace, rightBrace) =
-            if currentCharacter = leftBrace then Some(proceedToRight, afterEndOfString, leftBrace, rightBrace)
-            else if currentCharacter = rightBrace then Some(proceedToLeft, beforeStartOfString, rightBrace, leftBrace)
-            else None
+                let afterEndOfString(i) = i >= sourceText.Length
+                let beforeStartOfString(i) = i < 0
 
-        match this.SupportedBraceTypes |> Seq.tryPick(pickBraceType) with
-        | None -> Nullable()
-        | Some(proceedFunc, stoppingCondition, matchedBrace, nonMatchedBrace) ->
-            let mutable currentPosition = proceedFunc position
-            let mutable result = Nullable()
-            let mutable braceDepth = 0
+                let pickBraceType(leftBrace, rightBrace) =
+                    if currentCharacter = leftBrace then Some(proceedToEndOfString, afterEndOfString, leftBrace, rightBrace)
+                    else if currentCharacter = rightBrace then Some(proceedToStartOfString, beforeStartOfString, rightBrace, leftBrace)
+                    else None
 
-            // TODO: ignore brace matching if part of a string literal or a comment
+                match SupportedBraceTypes |> Seq.tryPick(pickBraceType) with
+                | None -> Nullable()
+                | Some(proceedFunc, stoppingCondition, matchedBrace, nonMatchedBrace) ->
+                    let mutable currentPosition = proceedFunc position
+                    let mutable result = Nullable()
+                    let mutable braceDepth = 0
 
-            while result.HasValue = false && stoppingCondition(currentPosition) = false do
-                cancellationToken.ThrowIfCancellationRequested()
-                if text.[currentPosition] = matchedBrace then
-                    braceDepth <- braceDepth + 1
-                else if text.[currentPosition] = nonMatchedBrace then
-                    if braceDepth = 0 then
-                        result <- Nullable(BraceMatchingResult(TextSpan(min position currentPosition, 1), TextSpan(max position currentPosition, 1)))
-                    else
-                        braceDepth <- braceDepth - 1
-                currentPosition <- proceedFunc currentPosition
-            result
+                    while result.HasValue = false && stoppingCondition(currentPosition) = false do
+                        cancellationToken.ThrowIfCancellationRequested()
+                        if shouldBeIgnored(currentPosition) = false then
+                            if sourceText.[currentPosition] = matchedBrace then
+                                braceDepth <- braceDepth + 1
+                            else if sourceText.[currentPosition] = nonMatchedBrace then
+                                if braceDepth = 0 then
+                                    result <- Nullable(BraceMatchingResult(TextSpan(min position currentPosition, 1), TextSpan(max position currentPosition, 1)))
+                                else
+                                    braceDepth <- braceDepth - 1
+                        currentPosition <- proceedFunc currentPosition
+                    result
