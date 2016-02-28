@@ -173,6 +173,9 @@ set OSARCH=%PROCESSOR_ARCHITECTURE%
 set X86_PROGRAMFILES=%ProgramFiles%
 if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
+set SYSWOW64=.
+if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
+
 set REGEXE32BIT=reg.exe
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 

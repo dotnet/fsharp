@@ -9128,11 +9128,13 @@ and TcMethodApplication
         // Handle CallerSide optional arguments. 
         //
         // CallerSide optional arguments are largely for COM interop, e.g. to PIA assemblies for Word etc.
-        // As a result we follow the VB spec here. To quote from an email exchange between the C# and VB teams.
+        // As a result we follow the VB and C# behavior here.
         //
-        //   "1.        If the parameter is statically typed as System.Object and does not have a value, then there are two cases:
-        //       a.     The parameter may have the IDispatchConstantAttribute or IUnknownConstantAttribute attribute. If this is the case, the VB compiler then create an instance of the System.Runtime.InteropServices.DispatchWrapper /System.Runtime.InteropServices.UnknownWrapper type at the call site to wrap the value Nothing/null.
-        //       b.     If the parameter does not have those two attributes, we will emit Missing.Value.
+        //   "1.        If the parameter is statically typed as System.Object and does not have a value, then there are four cases:
+        //       a.     The parameter is marked with MarshalAs(IUnknown), MarshalAs(Interface), or MarshalAs(IDispatch). In this case we pass null.
+        //       b.     Else if the parameter is marked with IUnknownConstantAttribute. In this case we pass new System.Runtime.InteropServices.UnknownWrapper(null)
+        //       c.     Else if the parameter is marked with IDispatchConstantAttribute. In this case we pass new System.Runtime.InteropServices.DispatchWrapper(null)
+        //       d.     Else, we will pass Missing.Value.
         //    2.        Otherwise, if there is a value attribute, then emit the default value.
         //    3.        Otherwise, we emit default(T).
         //    4.        Finally, we apply conversions from the value to the parameter type. This is where the nullable conversions take place for VB.
@@ -9174,7 +9176,7 @@ and TcMethodApplication
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
@@ -9182,7 +9184,7 @@ and TcMethodApplication
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | PassByRef (ty, dfltVal2) ->
                               let v,_ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
