@@ -300,4 +300,18 @@ let [<Test>] ``struct records order mutable field correctly with [<StructLayout(
     Assert.IsTrue (compareOffsets "First@"  (<) "Second@")
     Assert.IsTrue (compareOffsets "Second@" (<) "Third@")
     Assert.IsTrue (compareOffsets "Third@"  (<) "Fourth@")
+
+let [<Test>] ``can properly construct a struct record using FSharpValue.MakeRecord, and we get the fields by FSharpValue.GetRecordFields`` () =
+    let structRecord = Microsoft.FSharp.Reflection.FSharpValue.MakeRecord (typeof<StructRecord>, [|1234;999|])
+
+    Assert.IsTrue (structRecord.GetType().IsValueType)
+
+    let fields = Microsoft.FSharp.Reflection.FSharpValue.GetRecordFields structRecord
+
+    let c = (fields.[0] :?> int)
+    Assert.AreEqual (1234, c)
+
+    let d = (fields.[1] :?> int)
+    Assert.AreEqual (999, d)
+
     
