@@ -13511,8 +13511,8 @@ module EstablishTypeDefinitionCores = begin
         | k -> 
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
-               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) ||
-               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then
+               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) || 
+               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then 
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
@@ -13680,7 +13680,7 @@ module EstablishTypeDefinitionCores = begin
                 InferTyconKind cenv.g (TyconILAssemblyCode,attrs,[],[],inSig,true,m) |> ignore
                 TAsmRepr s
 
-            | SynTypeDefnSimpleRepr.Record (_,_,m) ->
+            | SynTypeDefnSimpleRepr.Record (_,_,m) -> 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind cenv.g (TyconRecord,attrs,[],[],inSig,true,m) |> ignore
                 // Note: the table of record fields is initially empty
@@ -14036,7 +14036,7 @@ module EstablishTypeDefinitionCores = begin
                   | SynTypeDefnSimpleRepr.Union _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                   | SynTypeDefnSimpleRepr.Record _ ->
-                      if tycon.Data.entity_flags.IsStructRecordType then Some(cenv.g.system_Value_typ)
+                      if tycon.IsStructRecordTycon then Some(cenv.g.system_Value_typ)
                       else None
                   | SynTypeDefnSimpleRepr.General (kind,_,slotsigs,fields,isConcrete,_,_,_) ->
                       let kind = InferTyconKind cenv.g (kind,attrs,slotsigs,fields,inSig,isConcrete,m)
@@ -14233,7 +14233,7 @@ module EstablishTypeDefinitionCores = begin
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Record (_,fields,_) ->
+                | SynTypeDefnSimpleRepr.Record (_,fields,_) -> 
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()

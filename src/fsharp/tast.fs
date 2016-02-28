@@ -771,6 +771,9 @@ type Entity =
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true |  _ -> false
 
+    /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
+    member x.IsStructRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> x.Data.entity_flags.IsStructRecordType | _ -> false
+
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFsObjModelRepr _ -> true |  _ -> false
 
@@ -815,7 +818,7 @@ type Entity =
     /// Indicates if this is an F#-defined struct or enum type definition , i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
-        | TRecdRepr _ -> x.Data.entity_flags.IsStructRecordType
+        | TRecdRepr _ -> x.IsStructRecordTycon
         | TFsObjModelRepr info ->
             match info.fsobjmodel_kind with
             | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false

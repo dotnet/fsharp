@@ -6098,7 +6098,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | TTyconInterface  -> ILTypeDefKind.Interface
                | TTyconEnum       -> ILTypeDefKind.Enum 
                | TTyconDelegate _ -> ILTypeDefKind.Delegate 
-           | TRecdRepr _ when tycon.Data.entity_flags.IsStructRecordType -> ILTypeDefKind.ValueType
+           | TRecdRepr _ when tycon.IsStructRecordTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField = 
@@ -6300,7 +6300,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      relevantFields
                      |> List.map (fun (_,ilFieldName,_,_,_,ilPropType,_,fspec) -> (fspec.Name,ilFieldName,ilPropType))
 
-                 let isStructRecord = tycon.Data.entity_flags.IsStructRecordType
+                 let isStructRecord = tycon.IsStructRecordTycon
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(cenv.g.ilg.tspec_Object)
