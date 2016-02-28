@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Core.RecordTypes
 
+#nowarn "9"
+
 open System
-open System.Numerics
-open FSharp.Core.Unittests.LibraryTestFx
+open System.Runtime.InteropServices
 open NUnit.Framework
 open FsCheck
 open FsCheck.PropOperators
@@ -18,11 +19,11 @@ let [<Test>] ``can compare records`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         i1 <> i2 ==>
-            let r1 = { A = i1; B = i2 }
-            let r2 = { A = i1; B = i2 }
-            (r1 = r2)                   |@ "r1 = r2" .&.
-            ({ r1 with A = r1.B} <> r2) |@ "{r1 with A = r1.B} <> r2" .&.
-            (r1.Equals r2)              |@ "r1.Equals r2"
+        let r1 = { A = i1; B = i2 }
+        let r2 = { A = i1; B = i2 }
+        (r1 = r2)                   |@ "r1 = r2" .&.
+        ({ r1 with A = r1.B} <> r2) |@ "{r1 with A = r1.B} <> r2" .&.
+        (r1.Equals r2)              |@ "r1.Equals r2"
 
 
 [<Struct>]
@@ -32,18 +33,22 @@ type StructRecord =
     }
 
 
-let [<Test>] ``can compare struct records`` () =
+let [<Test>] ``struct records hold [<Struct>] metadata`` () =
+    Assert.IsTrue (typeof<StructRecord>.IsDefined (typeof<StructAttribute>, false))
+
+
+let [<Test>] ``struct records are comparable`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         i1 <> i2 ==>
-            let sr1 = { C = i1; D = i2 }
-            let sr2 = { C = i1; D = i2 }
-            (sr1 = sr2)                    |@ "sr1 = sr2" .&.
-            ({ sr1 with C = sr1.D} <> sr2) |@ "{sr1 with C = sr1.D} <> sr2" .&.
-            (sr1.Equals sr2)               |@ "sr1.Equals sr2"
+        let sr1 = { C = i1; D = i2 }
+        let sr2 = { C = i1; D = i2 }
+        (sr1 = sr2)                    |@ "sr1 = sr2" .&.
+        ({ sr1 with C = sr1.D} <> sr2) |@ "{sr1 with C = sr1.D} <> sr2" .&.
+        (sr1.Equals sr2)               |@ "sr1.Equals sr2"
 
 
-let [<Test>] ``pattern matching on struct records`` () =
+let [<Test>] ``struct records support pattern matching`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = { C = i1; D = i2 }
@@ -57,7 +62,7 @@ let [<Test>] ``pattern matching on struct records`` () =
         |@ "function pattern match on struct record"
 
 
-let [<Test>] ``let binds using struct records`` () =
+let [<Test>] ``struct records support let binds using `` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = { C = i1; D = i2 }
@@ -66,7 +71,7 @@ let [<Test>] ``let binds using struct records`` () =
         (c1 = i1 && d2 = i2) |@ "c1 = i1 && d2 = i2"
 
 
-let [<Test>] ``function argument bindings using struct records`` () =
+let [<Test>] ``struct records support function argument bindings`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = { C = i1; D = i2 }
@@ -82,7 +87,7 @@ type MutableStructRecord =
     }                  
     
 
-let [<Test>] ``can mutate struct record fields`` () =
+let [<Test>] ``struct recrods fields can be mutated`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) (m1:int) (m2:int) ->
         (i1 <> m1 && i2 <> m2) ==>
@@ -90,6 +95,7 @@ let [<Test>] ``can mutate struct record fields`` () =
             sr1.M1 <- m1
             sr1.M2 <- m2
             sr1.M1 = m1 && sr1.M2 = m2
+
 
 [<Struct>]
 type StructRecordDefaultValue =
@@ -99,13 +105,14 @@ type StructRecordDefaultValue =
     }
 
 
-let [<Test>] ``correct behaviour with a [<DefaultValue>] on a ref type field of a struct record`` () =
+let [<Test>] ``struct records have correct behaviour with a [<DefaultValue>] on a ref type field`` () =
     Check.QuickThrowOnFailure <|
-        fun (i1:int) (i2:int) ->
-            let s = { C = i1; D = i2 }
-            let r1 = { R2 = s }
-            (obj.ReferenceEquals (r1.R1, null))     |@ "r1.R1 is null" .&.
-            (r1.R2 = { C = i1; D = i2 })            |@ "r1.R2 = { C = i1; D = i2 }"
+    fun (i1:int) (i2:int) ->
+        let s = { C = i1; D = i2 }
+        let r1 = { R2 = s }
+        (obj.ReferenceEquals (r1.R1, null))     |@ "r1.R1 is null" .&.
+        (r1.R2 = { C = i1; D = i2 })            |@ "r1.R2 = { C = i1; D = i2 }"
+
 
 [<Struct>]
 type StructRecordDefaultValue2 =
@@ -115,16 +122,16 @@ type StructRecordDefaultValue2 =
     }
 
 
-let [<Test>] ``correct behaviour with a [<DefaultValue>] on a value type field of a struct record`` () =
+let [<Test>] ``struct records have correct behaviour with a [<DefaultValue>] on a value type field`` () =
     Check.QuickThrowOnFailure <|
-        fun (i1:int) (i2:int) ->
-            let r = { A = i1; B = i2 }
-            let r1 = { R1 = r }
-            (r1.R1 = { A = i1; B = i2 })    |@ "r1.R1 = { A = i1; B = i2 }" .&.
-            (r1.R2 = { C = 0; D = 0 })      |@ "r1.R2 = { C = 0; D = 0 }"
+    fun (i1:int) (i2:int) ->
+        let r = { A = i1; B = i2 }
+        let r1 = { R1 = r }
+        (r1.R1 = { A = i1; B = i2 })    |@ "r1.R1 = { A = i1; B = i2 }" .&.
+        (r1.R2 = { C = 0; D = 0 })      |@ "r1.R2 = { C = 0; D = 0 }"
 
 
-let [<Test>] ``correct behaviour for Unchecked.defaultof on a struct record`` () =
+let [<Test>] ``struct records exhibit correct behaviour for Unchecked.defaultof`` () =
     let x1 = { C = 0; D = 0 }
     let x2 : StructRecordDefaultValue = { R2 = { C = 0; D = 0 } }
     let x3 : StructRecordDefaultValue2 = { R1 = Unchecked.defaultof<Record> }
@@ -180,3 +187,57 @@ let [<Test>] ``struct records support [<CustomComparison>]`` () =
         elif sr1 < sr2 then compare sr1 sr2 = -1
         elif sr1 = sr2 then compare sr1 sr2 = 0
         else false
+
+
+let [<Test>] ``struct records hold [<CustomComparison>] [<CustomEquality>] metadata`` () =
+    Assert.IsTrue (typeof<ComparisonStructRecord>.IsDefined (typeof<CustomComparisonAttribute>, false))
+    Assert.IsTrue (typeof<ComparisonStructRecord>.IsDefined (typeof<CustomEqualityAttribute>, false))
+
+
+[<Struct>]
+[<NoComparison; NoEquality>]
+type NoComparisonStructRecord =
+    {   N1 : int
+        N2 : int
+    }
+
+
+let [<Test>] ``struct records hold [<NoComparison>] [<NoEquality>] metadata`` () =
+    Assert.IsTrue (typeof<NoComparisonStructRecord>.IsDefined (typeof<NoComparisonAttribute>, false))
+    Assert.IsTrue (typeof<NoComparisonStructRecord>.IsDefined (typeof<NoEqualityAttribute>, false))
+
+
+[<Struct>]
+[<StructLayout(LayoutKind.Explicit)>]
+type ExplicitLayoutStructRecord =
+    {   [<FieldOffset 8>] mutable Z : int
+        [<FieldOffset 4>] mutable Y : int
+        [<FieldOffset 0>] mutable X : int
+    }
+
+
+let [<Test>] ``struct records layout mutable fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
+    let checkOffset fieldName offset = 
+        offset = int (Marshal.OffsetOf (typeof<ExplicitLayoutStructRecord>, fieldName))
+    Assert.IsTrue (checkOffset "X@" 0)
+    Assert.IsTrue (checkOffset "Y@" 4)
+    Assert.IsTrue (checkOffset "Z@" 8)
+
+
+[<Struct>]
+[<StructLayout(LayoutKind.Sequential)>]
+type SequentialLayoutStructRecord =
+    {   mutable First   : int
+        mutable Second  : float
+        mutable Third   : decimal
+        mutable Fourth  : int
+    }
+
+let [<Test>] ``struct records layout mutable fields in order with [<StructLayout(LayoutKind.Sequential)>]`` () =
+    let compareOffsets field1 fn field2 = 
+        fn  (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field1))
+            (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
+    Assert.IsTrue (compareOffsets "First@"  (<) "Second@")
+    Assert.IsTrue (compareOffsets "Second@" (<) "Third@")
+    Assert.IsTrue (compareOffsets "Third@"  (<) "Fourth@")
+    
