@@ -110,8 +110,8 @@ let [<Test>] ``struct records have correct behaviour with a [<DefaultValue>] on 
     fun (i1:int) (i2:int) ->
         let s = { C = i1; D = i2 }
         let r1 = { R2 = s }
-        (obj.ReferenceEquals (r1.R1, null))     |@ "r1.R1 is null" .&.
-        (r1.R2 = { C = i1; D = i2 })            |@ "r1.R2 = { C = i1; D = i2 }"
+        (obj.ReferenceEquals (r1.R1, null)) |@ "r1.R1 is null" .&.
+        (r1.R2 = { C = i1; D = i2 })        |@ "r1.R2 = { C = i1; D = i2 }"
 
 
 [<Struct>]
@@ -127,8 +127,8 @@ let [<Test>] ``struct records have correct behaviour with a [<DefaultValue>] on 
     fun (i1:int) (i2:int) ->
         let r = { A = i1; B = i2 }
         let r1 = { R1 = r }
-        (r1.R1 = { A = i1; B = i2 })    |@ "r1.R1 = { A = i1; B = i2 }" .&.
-        (r1.R2 = { C = 0; D = 0 })      |@ "r1.R2 = { C = 0; D = 0 }"
+        (r1.R1 = { A = i1; B = i2 }) |@ "r1.R1 = { A = i1; B = i2 }" .&.
+        (r1.R2 = { C = 0; D = 0 })   |@ "r1.R2 = { C = 0; D = 0 }"
 
 
 let [<Test>] ``struct records exhibit correct behaviour for Unchecked.defaultof`` () =
@@ -210,13 +210,13 @@ let [<Test>] ``struct records hold [<NoComparison>] [<NoEquality>] metadata`` ()
 [<Struct>]
 [<StructLayout(LayoutKind.Explicit)>]
 type ExplicitLayoutStructRecord =
-    {   [<FieldOffset 8>] mutable Z : int
-        [<FieldOffset 4>] mutable Y : int
-        [<FieldOffset 0>] mutable X : int
+    {   [<FieldOffset 8>] Z : int
+        [<FieldOffset 4>] Y : int
+        [<FieldOffset 0>] X : int
     }
 
 
-let [<Test>] ``struct records layout mutable fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
+let [<Test>] ``struct records offset fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
     let checkOffset fieldName offset = 
         offset = int (Marshal.OffsetOf (typeof<ExplicitLayoutStructRecord>, fieldName))
     Assert.IsTrue (checkOffset "X@" 0)
@@ -225,18 +225,74 @@ let [<Test>] ``struct records layout mutable fields correctly with [<StructLayou
 
 
 [<Struct>]
+[<StructLayout(LayoutKind.Explicit)>]
+type ExplicitLayoutMutableStructRecord =
+    {   [<FieldOffset 8>] mutable Z : int
+        [<FieldOffset 4>] mutable Y : int
+        [<FieldOffset 0>] mutable X : int
+    }
+
+
+let [<Test>] ``struct records offset mutable fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
+    let checkOffset fieldName offset = 
+        offset = int (Marshal.OffsetOf (typeof<ExplicitLayoutMutableStructRecord>, fieldName))
+    Assert.IsTrue (checkOffset "X@" 0)
+    Assert.IsTrue (checkOffset "Y@" 4)
+    Assert.IsTrue (checkOffset "Z@" 8)
+
+
+[<Struct>]
+type DefaultLayoutStructRecord =
+    {   First   : int
+        Second  : float
+        Third   : decimal
+        Fourth  : int
+    }
+
+
+[<Struct>]
 [<StructLayout(LayoutKind.Sequential)>]
 type SequentialLayoutStructRecord =
+    {   First   : int
+        Second  : float
+        Third   : decimal
+        Fourth  : int
+    }
+
+
+let [<Test>] ``struct records order fields correctly with [<StructLayout(LayoutKind.Sequential)>]`` () =
+    let compareOffsets field1 fn field2 = 
+        fn  (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field1))
+            (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
+    Assert.IsTrue (compareOffsets "First@"  (<) "Second@")
+    Assert.IsTrue (compareOffsets "Second@" (<) "Third@")
+    Assert.IsTrue (compareOffsets "Third@"  (<) "Fourth@")
+
+
+let [<Test>] ``struct records default field order matches [<StructLayout(LayoutKind.Sequential)>]`` () =
+    let compareOffsets field1 fn field2 = 
+        fn  (Marshal.OffsetOf (typeof<DefaultLayoutStructRecord>, field1))
+            (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
+    Assert.IsTrue (compareOffsets "First@"  (=) "First@")
+    Assert.IsTrue (compareOffsets "Second@" (=) "Second@")
+    Assert.IsTrue (compareOffsets "Third@"  (=) "Third@")
+    Assert.IsTrue (compareOffsets "Fourth@" (=) "Fourth@")
+
+
+[<Struct>]
+[<StructLayout(LayoutKind.Sequential)>]
+type SequentialLayoutMutableStructRecord =
     {   mutable First   : int
         mutable Second  : float
         mutable Third   : decimal
         mutable Fourth  : int
     }
 
-let [<Test>] ``struct records layout mutable fields in order with [<StructLayout(LayoutKind.Sequential)>]`` () =
+
+let [<Test>] ``struct records order mutable field correctly with [<StructLayout(LayoutKind.Sequential)>]`` () =
     let compareOffsets field1 fn field2 = 
-        fn  (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field1))
-            (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
+        fn  (Marshal.OffsetOf (typeof<SequentialLayoutMutableStructRecord>, field1))
+            (Marshal.OffsetOf (typeof<SequentialLayoutMutableStructRecord>, field2))
     Assert.IsTrue (compareOffsets "First@"  (<) "Second@")
     Assert.IsTrue (compareOffsets "Second@" (<) "Third@")
     Assert.IsTrue (compareOffsets "Third@"  (<) "Fourth@")
