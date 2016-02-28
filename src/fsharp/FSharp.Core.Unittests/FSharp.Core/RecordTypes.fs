@@ -4,6 +4,7 @@ module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Core.RecordTypes
 #nowarn "9"
 
 open System
+open System.Reflection
 open System.Runtime.InteropServices
 open NUnit.Framework
 open FsCheck
@@ -32,9 +33,12 @@ type StructRecord =
         D: int
     }
 
+let private hasAttribute<'T,'Attr>() =
+    typeof<'T>.GetTypeInfo().GetCustomAttributes() |> Seq.exists  (fun x -> x.GetType() = typeof<'Attr>)
+
 
 let [<Test>] ``struct records hold [<Struct>] metadata`` () =
-    Assert.IsTrue (typeof<StructRecord>.IsDefined (typeof<StructAttribute>, false))
+    Assert.IsTrue (hasAttribute<StructRecord,StructAttribute>())
 
 
 let [<Test>] ``struct records are comparable`` () =
@@ -190,8 +194,8 @@ let [<Test>] ``struct records support [<CustomComparison>]`` () =
 
 
 let [<Test>] ``struct records hold [<CustomComparison>] [<CustomEquality>] metadata`` () =
-    Assert.IsTrue (typeof<ComparisonStructRecord>.IsDefined (typeof<CustomComparisonAttribute>, false))
-    Assert.IsTrue (typeof<ComparisonStructRecord>.IsDefined (typeof<CustomEqualityAttribute>, false))
+    Assert.IsTrue (hasAttribute<ComparisonStructRecord,CustomComparisonAttribute>())
+    Assert.IsTrue (hasAttribute<ComparisonStructRecord,CustomEqualityAttribute>())
 
 
 [<Struct>]
@@ -203,8 +207,8 @@ type NoComparisonStructRecord =
 
 
 let [<Test>] ``struct records hold [<NoComparison>] [<NoEquality>] metadata`` () =
-    Assert.IsTrue (typeof<NoComparisonStructRecord>.IsDefined (typeof<NoComparisonAttribute>, false))
-    Assert.IsTrue (typeof<NoComparisonStructRecord>.IsDefined (typeof<NoEqualityAttribute>, false))
+    Assert.IsTrue (hasAttribute<NoComparisonStructRecord,NoComparisonAttribute>())
+    Assert.IsTrue (hasAttribute<NoComparisonStructRecord,NoEqualityAttribute>())
 
 
 [<Struct>]
