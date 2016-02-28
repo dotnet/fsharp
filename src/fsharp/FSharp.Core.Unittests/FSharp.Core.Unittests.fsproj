@@ -100,7 +100,7 @@
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
-    <Compile Include="FSharp.Core\RecordTypes.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable78'"/>
+    <Compile Include="FSharp.Core\RecordTypes.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable78' AND '$(TargetFramework)' != 'portable259'"/>
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
