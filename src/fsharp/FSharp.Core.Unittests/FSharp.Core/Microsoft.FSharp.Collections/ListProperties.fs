@@ -846,9 +846,9 @@ let ``List.allPairs first elements are correct`` () =
     Check.QuickThrowOnFailure allPairsFst<NormalFloat, NormalFloat>
 
 let allPairsSnd<'a, 'b when 'b : equality> (xs : 'a list) (ys : 'b list) =
-    let pairsFst = List.allPairs xs ys |> List.map snd
+    let pairsSnd = List.allPairs xs ys |> List.map snd
     let check = [ for i in 1 .. xs.Length do yield! ys ]
-    pairsFst = check
+    pairsSnd = check
 
 [<Test>]
 let ``List.allPairs second elements are correct`` () =
