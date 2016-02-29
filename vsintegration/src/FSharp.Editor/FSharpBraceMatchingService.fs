@@ -28,14 +28,14 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService() =
               
-    let SupportedBraceTypes = [
+    static member private SupportedBraceTypes = [
         ('(', ')');
         ('<', '>');
         ('[', ']');
         ('{', '}');
     ]
     
-    let IgnoredClassificationTypes = [
+    static member private IgnoredClassificationTypes = [
         ClassificationTypeNames.Comment;
         ClassificationTypeNames.StringLiteral;
         ClassificationTypeNames.ExcludedCode;
@@ -44,26 +44,38 @@ type internal FSharpBraceMatchingService() =
     interface IBraceMatcher with
         member this.FindBracesAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<Nullable<BraceMatchingResult>> =
             let computation = async {
-                let! text = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 return
                     try
-                        this.FindBraces(text, position, cancellationToken)
+                        FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, position, cancellationToken)
                     with ex -> 
                         Assert.Exception(ex)
                         reraise()
             }
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
   
-    member this.FindBraces(sourceText: SourceText, position: int, cancellationToken: CancellationToken) : Nullable<BraceMatchingResult> =
+    static member FindMatchingBrace(sourceText: SourceText, fileName: string, position: int, cancellationToken: CancellationToken) : Option<int> =
+        let braceMatchingResult = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, fileName, position, cancellationToken)
+        if braceMatchingResult.HasValue then
+            if braceMatchingResult.Value.LeftSpan.Start = position then
+                Some(braceMatchingResult.Value.RightSpan.Start)
+            else if braceMatchingResult.Value.RightSpan.Start = position then
+                Some(braceMatchingResult.Value.LeftSpan.Start)
+            else
+                None
+        else
+            None
+
+    static member private GetBraceMatchingResult(sourceText: SourceText, fileName: string, position: int, cancellationToken: CancellationToken) : Nullable<BraceMatchingResult> =
         if position < 0 || position >= sourceText.Length then
             Nullable()
         else
-            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, [], cancellationToken)
+            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, fileName, [], cancellationToken)
 
             let shouldBeIgnored(characterPosition) =
                 match classificationData.GetClassifiedSpan(characterPosition) with
                 | None -> false
-                | Some(classifiedSpan) -> IgnoredClassificationTypes |> Seq.contains classifiedSpan.ClassificationType
+                | Some(classifiedSpan) -> FSharpBraceMatchingService.IgnoredClassificationTypes |> Seq.contains classifiedSpan.ClassificationType
                 
             if shouldBeIgnored(position) then
                 Nullable()
@@ -81,7 +93,7 @@ type internal FSharpBraceMatchingService() =
                     else if currentCharacter = rightBrace then Some(proceedToStartOfString, beforeStartOfString, rightBrace, leftBrace)
                     else None
 
-                match SupportedBraceTypes |> Seq.tryPick(pickBraceType) with
+                match FSharpBraceMatchingService.SupportedBraceTypes |> Seq.tryPick(pickBraceType) with
                 | None -> Nullable()
                 | Some(proceedFunc, stoppingCondition, matchedBrace, nonMatchedBrace) ->
                     let mutable currentPosition = proceedFunc position
