@@ -9,11 +9,16 @@ type S =
         member this.Value = this.x
     end
 
+[<Struct>]
+type StructRecord = { X : int }
+
 let isStruct (x : 'a when 'a : struct) = ()
 
 // Works
 let s = new S()
 do isStruct s
+
+do isStruct { X = 99 }
 
 // This also works, System.Int32 is a value type
 do isStruct 42
