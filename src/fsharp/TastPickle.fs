@@ -2295,9 +2295,9 @@ and p_op x st =
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
     | TOp.Tuple tupInfo             -> 
          if evalTupInfoIsStruct tupInfo then 
-              p_byte 2 st
-         else 
               p_byte 28 st
+         else 
+              p_byte 2 st
     | TOp.Recd (a,b)                -> p_byte 3 st; p_tup2 p_recdInfo (p_tcref "recd op") (a,b) st
     | TOp.ValFieldSet (a)            -> p_byte 4 st; p_rfref a st
     | TOp.ValFieldGet (a)            -> p_byte 5 st; p_rfref a st
@@ -2308,9 +2308,9 @@ and p_op x st =
     | TOp.ExnFieldSet (a,b) -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a,b) st
     | TOp.TupleFieldGet (tupInfo,a)       -> 
          if evalTupInfoIsStruct tupInfo then 
-              p_byte 11 st; p_int a st
-         else 
               p_byte 29 st; p_int a st
+         else 
+              p_byte 11 st; p_int a st
     | TOp.ILAsm (a,b)                 -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
     | TOp.RefAddrGet              -> p_byte 13 st
     | TOp.UnionCaseProof (a)           -> p_byte 14 st; p_ucref a st
@@ -2393,7 +2393,7 @@ and u_op st =
     | 27 -> TOp.Reraise
     | 28 -> TOp.Tuple tupInfoStruct
     | 29 -> let a = u_int st
-            TOp.TupleFieldGet (tupInfoRef, a) 
+            TOp.TupleFieldGet (tupInfoStruct, a) 
     | _ -> ufailwith st "u_op" 
 
 #if INCLUDE_METADATA_WRITER

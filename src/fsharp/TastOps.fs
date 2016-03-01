@@ -731,7 +731,7 @@ let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs,
 let destFunTy      g ty = ty |> stripTyEqns g |> (function TType_fun (tyv,tau) -> (tyv,tau) | _ -> failwith "destFunTy: not a function type")
 let destAnyTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) -> tupInfo,l | _ -> failwith "destAnyTupleTy: not a tuple type")
 let destRefTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
-let destStructTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a reference tuple type")
+let destStructTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
 let destTyparTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
 let destAnyParTy   g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
 let destMeasureTy  g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
@@ -758,7 +758,6 @@ let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> 
 let tcrefOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> Some tcref | _ -> None) 
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
-let (|AnyTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(_todo,tys) -> Some tys | _ -> None)
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_,tinst) -> tinst | _ -> []) 
@@ -4423,19 +4422,19 @@ let decideStaticOptimizationConstraint g c =
                match b with 
                | AppTy g (tcref2, _) -> 
                 if tyconRefEq g tcref1 tcref2 then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
-               | AnyTupleTy g _  | FunTy g _  -> StaticOptimizationAnswer.No
+               | RefTupleTy g _  | FunTy g _  -> StaticOptimizationAnswer.No
                | _ -> StaticOptimizationAnswer.Unknown
 
            | FunTy g _ ->
                let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
                match b with 
                | FunTy g _   -> StaticOptimizationAnswer.Yes
-               | AppTy g _ | AnyTupleTy g _ -> StaticOptimizationAnswer.No
+               | AppTy g _ | RefTupleTy g _ -> StaticOptimizationAnswer.No
                | _ -> StaticOptimizationAnswer.Unknown
-           | AnyTupleTy g ts1 -> 
+           | RefTupleTy g ts1 -> 
                let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
                match b with 
-               | AnyTupleTy g ts2 ->
+               | RefTupleTy g ts2 ->
                 if ts1.Length = ts2.Length then StaticOptimizationAnswer.Yes
                 else StaticOptimizationAnswer.No
                | AppTy g _ | FunTy g _ -> StaticOptimizationAnswer.No

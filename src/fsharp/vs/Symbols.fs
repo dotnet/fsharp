@@ -1556,7 +1556,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let argtysl, _typ = stripFunTy cenv.g tau
                 [ for typ in argtysl do
                     let allArguments =
-                        if isAnyTupleTy cenv.g typ
+                        if isRefTupleTy cenv.g typ
                         then tryDestRefTupleTy cenv.g typ
                         else [typ]
                     yield
