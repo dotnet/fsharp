@@ -115,6 +115,8 @@
 	<MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
 	<SystemCollectionsImmutableVersion>1.1.37</SystemCollectionsImmutableVersion>
 	<RoslynVersion>1.2.0-beta1-20160218-02</RoslynVersion>
+    <FsSrGenVersion>2.0.0</FsSrGenVersion>
+    <FsSrGenBuildTasksVersion>2.0.0</FsSrGenBuildTasksVersion>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -710,7 +712,7 @@
 
   <!-- Reference an existing FSI.EXE for use from within MSBuild -->
   <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.$(FsSrGenVersion)\lib\net46</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
@@ -723,7 +725,6 @@
     <CompileDependsOn>ValidateConfiguration;$(CompileDependsOn);CustomCopyLocalFiles</CompileDependsOn>
     <RootNamespace></RootNamespace>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
-    <EnsureThereAreNoUnusedFsSrGenResources>false</EnsureThereAreNoUnusedFsSrGenResources>
   </PropertyGroup>
 
   <Target Name="ValidateConfiguration">
@@ -761,7 +762,7 @@
     </CreateItem>
   </Target>
 
-  <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
+  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.$(FsSrGenBuildTasksVersion)\content\FSharp.SRGen.targets" />
   
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
