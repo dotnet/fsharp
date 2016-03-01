@@ -475,7 +475,7 @@ type SingleLineTokenState =
 [<Sealed>]
 type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, 
                             maxLength: int option,
-                            filename : string, 
+                            filename : Option<string>, 
                             lexArgsLightOn : lexargs,
                             lexArgsLightOff : lexargs
                             ) = 
@@ -484,8 +484,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
     let fsx = match filename with
-              | null -> false
-              | _ -> CompileOps.IsScript(filename)
+              | None -> false
+              | Some(value) -> CompileOps.IsScript(value)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -553,8 +553,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
 
     do match filename with 
-       | null -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
-       | _ -> resetLexbufPos filename lexbuf
+       | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
+       | Some(value) -> resetLexbufPos value lexbuf
     
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
         use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
@@ -738,7 +738,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         LexerStateEncoding.encodeLexCont colorState ncomments position ifdefStack light
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants : string list, filename : string) =     
+type FSharpSourceTokenizer(defineConstants : string list, filename : Option<string>) =     
     let lexResourceManager = new Lexhelp.LexResourceManager() 
 
     let lexArgsLightOn = mkLexargs(filename,defineConstants,LightSyntaxStatus(true,false),lexResourceManager, ref [],DiscardErrorsLogger) 

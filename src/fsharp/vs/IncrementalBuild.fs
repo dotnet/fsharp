@@ -927,8 +927,7 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(id: string, fileName, s:pos, e:pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
-    member __.Id = id
+type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
     member __.StartLine = Line.toZ s.Line
     member __.StartLineAlternate = s.Line
     member __.EndLine = Line.toZ e.Line
@@ -940,18 +939,17 @@ type FSharpErrorInfo(id: string, fileName, s:pos, e:pos, severity: FSharpErrorSe
     member __.Subcategory = subcategory
     member __.FileName = fileName
     member __.ErrorNumber = errorNum
-    member __.WithStart(newStart) = FSharpErrorInfo(id, fileName, newStart, e, severity, message, subcategory, errorNum)
-    member __.WithEnd(newEnd) = FSharpErrorInfo(id, fileName, s, newEnd, severity, message, subcategory, errorNum)
+    member __.WithStart(newStart) = FSharpErrorInfo(fileName, newStart, e, severity, message, subcategory, errorNum)
+    member __.WithEnd(newEnd) = FSharpErrorInfo(fileName, s, newEnd, severity, message, subcategory, errorNum)
     override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
             
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member (*internal*) CreateFromException(exn,warn,trim:bool,fallbackRange:range) = 
-        let id = "FS" + GetErrorNumber(exn).ToString()
         let m = match GetRangeOfError exn with Some m -> m | None -> fallbackRange 
         let e = if trim then m.Start else m.End
         let msg = bufs (fun buf -> OutputPhasedError buf exn false)
         let errorNum = GetErrorNumber exn
-        FSharpErrorInfo(id, m.FileName, m.Start, e, (if warn then FSharpErrorSeverity.Warning else FSharpErrorSeverity.Error), msg, exn.Subcategory(), errorNum)
+        FSharpErrorInfo(m.FileName, m.Start, e, (if warn then FSharpErrorSeverity.Warning else FSharpErrorSeverity.Error), msg, exn.Subcategory(), errorNum)
         
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member internal CreateFromExceptionAndAdjustEof(exn,warn,trim:bool,fallbackRange:range, (linesCount:int, lastLength:int)) = 

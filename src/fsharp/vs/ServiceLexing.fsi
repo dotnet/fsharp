@@ -206,7 +206,7 @@ type internal FSharpLineTokenizer =
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
 type internal FSharpSourceTokenizer =
-    new : conditionalDefines:string list * fileName:string -> FSharpSourceTokenizer
+    new : conditionalDefines:string list * fileName:Option<string> -> FSharpSourceTokenizer
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     

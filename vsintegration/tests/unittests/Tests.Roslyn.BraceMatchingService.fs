@@ -18,7 +18,7 @@ type BraceMatchingServiceTests()  =
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
 
-        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), "test.fs", markerPosition, CancellationToken.None) with
+        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), markerPosition, CancellationToken.None) with
         | None -> ()
         | Some(foundMatch) -> Assert.Fail("Found match for brace at position '{0}'", foundMatch)
 
@@ -28,7 +28,7 @@ type BraceMatchingServiceTests()  =
         let endMarkerPosition = fileContents.IndexOf(endMarker)
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
 
-        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), "test.fs", startMarkerPosition, CancellationToken.None) with
+        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), startMarkerPosition, CancellationToken.None) with
         | None -> Assert.Fail("Didn't find a match for brace at position '{0}", startMarkerPosition)
         | Some(foundMatch) -> Assert.AreEqual(endMarkerPosition, foundMatch, "Found match at incorrect position")
         
@@ -110,10 +110,10 @@ type BraceMatchingServiceTests()  =
     [<TestCase("(endsInString")>]
     [<TestCase(")endsInString")>]
     [<TestCase("<startsInString")>]
-    [<TestCase("<startsInString")>]
+    [<TestCase(">startsInString")>]
     member this.BraceStartingOrEndingInStringShouldnotBeMatched(startMarker: string) = 
         let code = "
             let x = \"stringValue\" + (endsInString +
             \" )endsInString <startsInString \" +
-            ) + <startsInString"
+            + >startsInString"
         this.VerifyNoBraceMatch(code, startMarker)

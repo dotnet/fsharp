@@ -14,8 +14,9 @@ open Microsoft.VisualStudio.FSharp.Editor
 type ColorizationServiceTests()  =
     
     member private this.VerifyColorizerAtStartOfMarker(fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool) =
+        let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
-        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), fileName, defines, CancellationToken.None)
+        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
 
@@ -24,8 +25,9 @@ type ColorizationServiceTests()  =
         | Some(classifiedSpan) -> Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for start of marker")
         
     member private this.VerifyColorizerAtEndOfMarker(fileContents : string, marker : string, defines: string list, classificationType: string, ?isScriptFile: bool) =
+        let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
-        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), fileName, defines, CancellationToken.None)
+        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
 

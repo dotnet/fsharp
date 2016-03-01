@@ -48,45 +48,9 @@ type internal SourceTextColorizationData(classificationData: seq<ClassifiedSpan>
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpColorizationService() =
 
-    interface IEditorClassificationService with
-        
-        member this.AddLexicalClassifications(text: SourceText, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            FSharpColorizationService.ClassifySourceTextAsync(text, String.Empty, textSpan, result, cancellationToken).Wait(cancellationToken)
-        
-        member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            let sourceText = document.GetTextAsync(cancellationToken).Result
-            FSharpColorizationService.ClassifySourceTextAsync(sourceText, document.Name, textSpan, result, cancellationToken)
-
-        member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            let sourceText = document.GetTextAsync(cancellationToken).Result
-            FSharpColorizationService.ClassifySourceTextAsync(sourceText, document.Name, textSpan, result, cancellationToken)
-
-        member this.AdjustStaleClassification(text: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan =
-            let result = new List<ClassifiedSpan>()
-            FSharpColorizationService.ClassifySourceTextAsync(text, String.Empty, classifiedSpan.TextSpan, result, CancellationToken.None).Wait()
-            if result.Any() then
-                result.First()
-            else
-                new ClassifiedSpan(ClassificationTypeNames.WhiteSpace, classifiedSpan.TextSpan)
-
-
-    static member private ColorizationDataCache = ConditionalWeakTable<SourceText, SourceTextColorizationData>()
-
-    // Helper function to proxy Roslyn types to tests
-    static member GetColorizationData(sourceText: SourceText, fileName: string, defines: string list, cancellationToken: CancellationToken) : SourceTextColorizationData =
-        FSharpColorizationService.ColorizationDataCache.GetValue(sourceText, fun key -> FSharpColorizationService.ScanSourceText(key, fileName, defines, cancellationToken))
-
-    static member private ClassifySourceTextAsync(sourceText: SourceText, fileName: string, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-        Task.Run(fun () ->
-            try
-                let classificationData = FSharpColorizationService.GetColorizationData(sourceText, fileName, [], cancellationToken)
-                result.AddRange(classificationData.Tokens |> Seq.filter(fun token -> textSpan.Start <= token.TextSpan.Start && token.TextSpan.End <= textSpan.End))
-            with ex -> 
-                Assert.Exception(ex)
-                reraise()  
-        )
-
-    static member private ScanSourceText(sourceText: SourceText, fileName: string, defines: string list, cancellationToken: CancellationToken): SourceTextColorizationData =
+    static let colorizationDataCache = ConditionalWeakTable<(SourceText * TextSpan * Option<string>), SourceTextColorizationData>()
+    
+    static let scanSourceText(sourceText: SourceText, textSpan: TextSpan, fileName: Option<string>, defines: string list, cancellationToken: CancellationToken): SourceTextColorizationData =
         let mutable runningLexState = ref(0L)
         let result = new List<ClassifiedSpan>()
         let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
@@ -133,9 +97,47 @@ type internal FSharpColorizationService() =
                 result.Add(new ClassifiedSpan(classificationType, textSpan))
                 startPosition <- endPosition
 
-        for i = 0 to sourceText.Lines.Count - 1 do
+        let scanStartLine = sourceText.Lines.GetLineFromPosition(textSpan.Start).LineNumber
+        let scanEndLine = sourceText.Lines.GetLineFromPosition(textSpan.End).LineNumber
+
+        for i = scanStartLine to scanEndLine do
             cancellationToken.ThrowIfCancellationRequested()
             let currentLine = sourceText.Lines.Item(i)
             scanSourceLine(currentLine, runningLexState)
 
         SourceTextColorizationData(result)
+        
+    static let classifySourceTextAsync(sourceText: SourceText, fileName: Option<string>, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+        Task.Run(fun () ->
+            try
+                let classificationData = FSharpColorizationService.GetColorizationData(sourceText, textSpan, fileName, [], cancellationToken)
+                result.AddRange(classificationData.Tokens |> Seq.filter(fun token -> textSpan.Start <= token.TextSpan.Start && token.TextSpan.End <= textSpan.End))
+            with ex -> 
+                Assert.Exception(ex)
+                reraise()  
+        )
+
+    interface IEditorClassificationService with
+        
+        member this.AddLexicalClassifications(text: SourceText, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            classifySourceTextAsync(text, None, textSpan, result, cancellationToken).Wait(cancellationToken)
+        
+        member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            let sourceText = document.GetTextAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult()
+            classifySourceTextAsync(sourceText, Some(document.Name), textSpan, result, cancellationToken)
+
+        member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            let sourceText = document.GetTextAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult()
+            classifySourceTextAsync(sourceText, Some(document.Name), textSpan, result, cancellationToken)
+
+        member this.AdjustStaleClassification(text: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan =
+            let result = new List<ClassifiedSpan>()
+            classifySourceTextAsync(text, None, classifiedSpan.TextSpan, result, CancellationToken.None).Wait()
+            if result.Any() then
+                result.First()
+            else
+                new ClassifiedSpan(ClassificationTypeNames.WhiteSpace, classifiedSpan.TextSpan)
+
+    // Helper function to proxy Roslyn types to tests
+    static member GetColorizationData(sourceText: SourceText, textSpan: TextSpan, fileName: Option<string>, defines: string list, cancellationToken: CancellationToken) : SourceTextColorizationData =
+        colorizationDataCache.GetValue((sourceText, textSpan, fileName), fun key -> scanSourceText(sourceText, textSpan, fileName, defines, cancellationToken))

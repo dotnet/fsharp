@@ -208,7 +208,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     let filename = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
                     let defines = this.ProjectSitesAndFiles.GetDefinesForFile(rdt, filename)
-                    let sourceTokenizer = FSharpSourceTokenizer(defines,filename)
+                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(filename))
                     sourceTokenizer.CreateLineTokenizer(source))
 
             let colorizer = new FSharpColorizer(this.CloseColorizer, buffer, scanner) 

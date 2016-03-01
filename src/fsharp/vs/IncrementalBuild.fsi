@@ -19,8 +19,7 @@ type internal FSharpErrorSeverity =
     | Error
 
 [<Class>]
-type internal FSharpErrorInfo =
-    member Id: string
+type internal FSharpErrorInfo = 
     member FileName: string
     member StartLineAlternate:int
     member EndLineAlternate:int
