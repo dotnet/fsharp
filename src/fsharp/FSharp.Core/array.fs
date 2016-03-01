@@ -384,7 +384,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let len = array.Length
             let rec loop i = i < len && (f array.[i] || loop (i+1))
-            loop 0
+            len > 0 && loop 0
 
         [<CompiledName("Contains")>]
         let inline contains e (array:'T[]) =
