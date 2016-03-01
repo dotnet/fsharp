@@ -42,7 +42,7 @@ type Pattern =
   | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
   | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
   | TPat_exnconstr of TyconRef * Pattern list * range
-  | TPat_tuple of  Pattern list * TType list * range
+  | TPat_tuple of  TupInfo * Pattern list * TType list * range
   | TPat_array of  Pattern list * TType * range
   | TPat_recd of TyconRef * TypeInst * Pattern list * range
   | TPat_range of char * char * range
@@ -58,7 +58,7 @@ type Pattern =
     |   TPat_query(_,_,m) -> m
     |   TPat_unioncase(_,_,_,m) -> m
     |   TPat_exnconstr(_,_,m) -> m
-    |   TPat_tuple(_,_,m) -> m
+    |   TPat_tuple(_,_,_,m) -> m
     |   TPat_array(_,_,m) -> m
     |   TPat_recd(_,_,_,m) -> m
     |   TPat_range(_,_,m) -> m
@@ -181,7 +181,7 @@ let RefuteDiscrimSet g m path discrims =
         | PathConj (p,_j) -> 
              go p tm
         | PathTuple (p,tys,j) -> 
-             go p (fun _ -> mkTupled g m (mkOneKnown tm j tys) tys)
+             go p (fun _ -> mkRefTupled g m (mkOneKnown tm j tys) tys)
         | PathRecd (p,tcref,tinst,j) -> 
              let flds = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
              go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m))
@@ -607,7 +607,7 @@ let rec layoutPat pat =
     | TPat_query (_,pat,_) -> Layout.(--) (Layout.wordL "query") (layoutPat pat)
     | TPat_wild _ -> Layout.wordL "wild"
     | TPat_as _ -> Layout.wordL "var"
-    | TPat_tuple (pats, _, _) 
+    | TPat_tuple (_, pats, _, _) 
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
     | _ -> Layout.wordL "?" 
   
@@ -633,7 +633,7 @@ let rec isPatternPartial p =
     | TPat_wild _ -> false
     | TPat_as (p,_,_) -> isPatternPartial p
     | TPat_disjs (ps,_) | TPat_conjs(ps,_) 
-    | TPat_tuple (ps,_,_) | TPat_exnconstr(_,ps,_) 
+    | TPat_tuple (_,ps,_,_) | TPat_exnconstr(_,ps,_) 
     | TPat_array (ps,_,_) | TPat_unioncase (_,_,ps,_)
     | TPat_recd (_,_,ps,_) -> List.exists isPatternPartial ps
     | TPat_range _ -> false
@@ -648,7 +648,7 @@ let rec erasePartialPatterns inpp =
     | TPat_as (p,x,m) -> TPat_as (erasePartialPatterns p,x,m)
     | TPat_disjs (ps,m) -> TPat_disjs(erasePartials ps, m)
     | TPat_conjs(ps,m) -> TPat_conjs(erasePartials ps, m)
-    | TPat_tuple (ps,x,m) -> TPat_tuple(erasePartials ps, x, m)
+    | TPat_tuple (tupInfo,ps,x,m) -> TPat_tuple(tupInfo,erasePartials ps, x, m)
     | TPat_exnconstr(x,ps,m) -> TPat_exnconstr(x,erasePartials ps,m) 
     | TPat_array (ps,x,m) -> TPat_array (erasePartials ps,x,m)
     | TPat_unioncase (x,y,ps,m) -> TPat_unioncase (x,y,erasePartials ps,m)
@@ -1171,8 +1171,8 @@ let CompilePatternBasic
         | TPat_as(p',pbind,m) -> 
             let (v,e') =  BindSubExprOfInput g amap topgtvs pbind m subExpr
             BindProjectionPattern (Active(path,subExpr,p')) (accActive,accValMap.Add v e' )
-        | TPat_tuple(ps,tyargs,_m) ->
-            let accessf' j tpinst e' = mkTupleFieldGet(accessf tpinst e',instTypes tpinst tyargs,j,exprm)
+        | TPat_tuple(tupInfo,ps,tyargs,_m) ->
+            let accessf' j tpinst e' = mkTupleFieldGet(tupInfo,accessf tpinst e',instTypes tpinst tyargs,j,exprm)
             let pathBuilder path j = PathTuple(path,tyargs,j)
             let newActives = List.mapi (mkSubActive pathBuilder accessf') ps
             BindProjectionPatterns newActives s 

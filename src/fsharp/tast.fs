@@ -243,14 +243,17 @@ type ValFlags(flags:int64) =
 type TyparKind = 
     | Type 
     | Measure
+    // | TupInfo
     member x.AttrName =
       match x with
       | TyparKind.Type -> None
       | TyparKind.Measure -> Some "Measure"
+      // | TyparKind.TupInfo -> Some "TupInfo"
     override x.ToString() = 
       match x with
       | TyparKind.Type -> "type"
       | TyparKind.Measure -> "measure"
+      // | TyparKind.TupInfo -> "tupInfo"
 
 [<RequireQualifiedAccess>]
 /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
@@ -277,70 +280,73 @@ type TyparRigidity =
 type TyparFlags(flags:int32) =
 
     new (kind:TyparKind, rigidity:TyparRigidity, isFromError:bool, isCompGen:bool, staticReq:TyparStaticReq, dynamicReq:TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool) = 
-        TyparFlags((if isFromError then       0b000000000010 else 0) |||
-                   (if isCompGen   then       0b000000000100 else 0) |||
+        TyparFlags((if isFromError then                0b0000000000010 else 0) |||
+                   (if isCompGen   then                0b0000000000100 else 0) |||
                    (match staticReq with
-                     | NoStaticReq         -> 0b000000000000
-                     | HeadTypeStaticReq   -> 0b000000001000) |||
+                     | NoStaticReq                  -> 0b0000000000000
+                     | HeadTypeStaticReq            -> 0b0000000001000) |||
                    (match rigidity with
-                     | TyparRigidity.Rigid          -> 0b000000000000
-                     | TyparRigidity.WillBeRigid    -> 0b000000100000
-                     | TyparRigidity.WarnIfNotRigid -> 0b000001000000
-                     | TyparRigidity.Flexible       -> 0b000001100000
-                     | TyparRigidity.Anon           -> 0b000010000000) |||
+                     | TyparRigidity.Rigid          -> 0b0000000000000
+                     | TyparRigidity.WillBeRigid    -> 0b0000000100000
+                     | TyparRigidity.WarnIfNotRigid -> 0b0000001000000
+                     | TyparRigidity.Flexible       -> 0b0000001100000
+                     | TyparRigidity.Anon           -> 0b0000010000000) |||
                    (match kind with
-                     | TyparKind.Type            -> 0b000000000000
-                     | TyparKind.Measure         -> 0b000100000000) |||
+                     | TyparKind.Type               -> 0b0000000000000
+                     | TyparKind.Measure            -> 0b0000100000000
+                     //| TyparKind.TupInfo            -> 0b1000000000000   /// NOTE <<--- bit out of order!
+                                                                      ) |||   
                    (if comparisonDependsOn then 
-                                              0b001000000000 else 0) |||
+                                                       0b0001000000000 else 0) |||
                    (match dynamicReq with
-                     | TyparDynamicReq.No        -> 0b000000000000
-                     | TyparDynamicReq.Yes          -> 0b010000000000) |||
+                     | TyparDynamicReq.No           -> 0b0000000000000
+                     | TyparDynamicReq.Yes          -> 0b0010000000000) |||
                    (if equalityDependsOn then 
-                                              0b100000000000 else 0))
+                                                       0b0100000000000 else 0))
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
-    member x.IsFromError         = (flags &&& 0b000000000010) <> 0x0
+    member x.IsFromError         = (flags &&& 0b0000000000010) <> 0x0
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
-    member x.IsCompilerGenerated = (flags &&& 0b000000000100) <> 0x0
+    member x.IsCompilerGenerated = (flags &&& 0b0000000000100) <> 0x0
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq           = 
-                             match (flags &&& 0b000000001000) with 
-                                            | 0b000000000000 -> NoStaticReq
-                                            | 0b000000001000 -> HeadTypeStaticReq
+                             match (flags &&& 0b0000000001000) with 
+                                            | 0b0000000000000 -> NoStaticReq
+                                            | 0b0000000001000 -> HeadTypeStaticReq
                                             | _             -> failwith "unreachable"
 
     /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
     member x.Rigidity = 
-                             match (flags &&& 0b000011100000) with 
-                                            | 0b000000000000 -> TyparRigidity.Rigid
-                                            | 0b000000100000 -> TyparRigidity.WillBeRigid
-                                            | 0b000001000000 -> TyparRigidity.WarnIfNotRigid
-                                            | 0b000001100000 -> TyparRigidity.Flexible
-                                            | 0b000010000000 -> TyparRigidity.Anon
+                             match (flags &&& 0b0000011100000) with 
+                                            | 0b0000000000000 -> TyparRigidity.Rigid
+                                            | 0b0000000100000 -> TyparRigidity.WillBeRigid
+                                            | 0b0000001000000 -> TyparRigidity.WarnIfNotRigid
+                                            | 0b0000001100000 -> TyparRigidity.Flexible
+                                            | 0b0000010000000 -> TyparRigidity.Anon
                                             | _          -> failwith "unreachable"
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind           = 
-                             match (flags &&& 0b000100000000) with 
-                                            | 0b000000000000 -> TyparKind.Type
-                                            | 0b000100000000 -> TyparKind.Measure
+                             match (flags &&& 0b1000100000000) with 
+                                            | 0b0000000000000 -> TyparKind.Type
+                                            | 0b0000100000000 -> TyparKind.Measure
+                                            //| 0b1000000000000 -> TyparKind.TupInfo
                                             | _             -> failwith "unreachable"
 
 
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member x.ComparisonConditionalOn =
-                                   (flags &&& 0b001000000000) <> 0x0
+                                   (flags &&& 0b0001000000000) <> 0x0
     /// Indicates if a type parameter is needed at runtime and may not be eliminated
     member x.DynamicReq     = 
-                             match (flags &&& 0b010000000000) with 
-                                            | 0b000000000000 -> TyparDynamicReq.No
-                                            | 0b010000000000 -> TyparDynamicReq.Yes
+                             match (flags &&& 0b0010000000000) with 
+                                            | 0b0000000000000 -> TyparDynamicReq.No
+                                            | 0b0010000000000 -> TyparDynamicReq.Yes
                                             | _             -> failwith "unreachable"
     /// Indicates that whether or not a generic type definition satisfies the equality constraint is dependent on whether this type variable satisfies the equality constraint.
     member x.EqualityConditionalOn = 
-                                   (flags &&& 0b100000000000) <> 0x0
+                                   (flags &&& 0b0100000000000) <> 0x0
 
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
@@ -3255,7 +3261,7 @@ and
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of TTypes
+    | TType_tuple of TupInfo * TTypes
 
     /// TType_fun(domainType,rangeType).
     ///
@@ -3273,39 +3279,57 @@ and
     | TType_var of Typar 
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
-    | TType_measure of MeasureExpr
+    | TType_measure of Measure
+
+    // /// Indicates the type is a tupInfo expression being used as part of a substitution
+    // | TType_tupinfo of TupInfo
 
     override x.ToString() =  
         match x with 
         | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
         | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_tuple tinst -> "(" + String.concat "," (List.map string tinst) + ")"
+        | TType_tuple (tupInfo, tinst) -> 
+            (match tupInfo with 
+             | TupInfo.Const false -> ""
+             | TupInfo.Const true -> "struct "
+             //| _ -> tupInfo.ToString() 
+             )
+             + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
         | TType_measure ms -> sprintf "%A" ms
+        //| TType_tupinfo ms -> sprintf "%A" ms
 
 and TypeInst = TType list 
 and TTypes = TType list 
 
-and MeasureExpr = 
+and [<RequireQualifiedAccess>] TupInfo = 
+    // /// A variable tupInfo
+    // | Var of Typar
+
+    /// Some constant, e.g. true or false for tupInfo
+    | Const of bool
+
+and [<RequireQualifiedAccess>] Measure = 
     /// A variable unit-of-measure
-    | MeasureVar of Typar
+    | Var of Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | MeasureCon of TyconRef
+    | Con of TyconRef
 
     /// A product of two units of measure
-    | MeasureProd of MeasureExpr*MeasureExpr
+    | Prod of Measure*Measure
 
     /// An inverse of a units of measure expression
-    | MeasureInv of MeasureExpr
+    | Inv of Measure
 
     /// The unit of measure '1', e.g. float = float<1>
-    | MeasureOne
+    | One
 
     /// Raising a measure to a rational power 
-    | MeasureRationalPower of MeasureExpr * Rational
+    | RationalPower of Measure * Rational
+
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -3773,7 +3797,7 @@ and
     /// An operation representing the creation of an exception value using an F# exception declaration
     | ExnConstr of TyconRef
     /// An operation representing the creation of a tuple value
-    | Tuple 
+    | Tuple of TupInfo 
     /// An operation representing the creation of an array value
     | Array
     /// Constant byte arrays (used for parser tables and other embedded data)
@@ -3815,7 +3839,7 @@ and
     /// An operation representing a field-set on an F# exception value.
     | ExnFieldSet of TyconRef * int 
     /// An operation representing a field-get from an F# tuple value.
-    | TupleFieldGet of int 
+    | TupleFieldGet of TupInfo * int 
     /// IL assembly code - type list are the types pushed on the stack 
     | ILAsm of ILInstr list * TTypes 
     /// Generate a ldflda on an 'a ref. 
@@ -4101,6 +4125,12 @@ let typesOfVals (v:Val list) = v |> List.map (fun v -> v.Type)
 let nameOfVal   (v:Val) = v.LogicalName
 let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
 
+let tupInfoRef = TupInfo.Const false
+let tupInfoStruct = TupInfo.Const true
+let structnessDefault = false
+let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
+let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
+
 //---------------------------------------------------------------------------
 // Aggregate operations to help transform the components that 
 // make up the entire compilation unit
@@ -4211,7 +4241,8 @@ let ccuOfTyconRef eref =
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
     | TyparKind.Type -> tp.AsType 
-    | TyparKind.Measure -> TType_measure (MeasureVar tp)
+    | TyparKind.Measure -> TType_measure (Measure.Var tp)
+    //| TyparKind.TupInfo -> TType_tupinfo (TupInfo.Var tp)
 
 let copyTypar (tp: Typar) = let x = tp.Data in Typar.New { x with typar_stamp=newStamp() }
 let copyTypars tps = List.map copyTypar tps
@@ -4226,7 +4257,7 @@ let tryShortcutSolvedUnitPar canShortcut (r:Typar) =
     | Some (TType_measure unt) -> 
         if canShortcut then 
             match unt with 
-            | MeasureVar r2 -> 
+            | Measure.Var r2 -> 
                match r2.Solution with
                | None -> ()
                | Some _ as soln -> 
@@ -4238,7 +4269,7 @@ let tryShortcutSolvedUnitPar canShortcut (r:Typar) =
       
 let rec stripUnitEqnsAux canShortcut unt = 
     match unt with 
-    | MeasureVar r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
+    | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
 let rec stripTyparEqnsAux canShortcut ty = 

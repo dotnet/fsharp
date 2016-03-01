@@ -911,8 +911,11 @@ module private PrintTypes =
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
         // Layout a tuple type 
-        | TType_tuple t ->
-            bracketIfL (prec <= 2) (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
+        | TType_tuple (tupInfo,t)  ->
+            if evalTupInfoIsStruct tupInfo then 
+                wordL "struct" --- bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
+            else 
+                bracketIfL (prec <= 2) (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
 
         // Layout a first-class generic type. 
         | TType_forall (tps,tau) ->
@@ -1840,7 +1843,7 @@ module private PrintData =
                 (wordL c.CaseName ++ bracketL (commaListL (dataExprsL denv args)))
             
         | Expr.Op (TOp.ExnConstr(c),_,args,_)           ->  (wordL c.LogicalName ++ bracketL (commaListL (dataExprsL denv args)))
-        | Expr.Op (TOp.Tuple,_,xs,_)                  -> tupleL (dataExprsL denv xs)
+        | Expr.Op (TOp.Tuple _,_,xs,_)                  -> tupleL (dataExprsL denv xs)
         | Expr.Op (TOp.Recd (_,tc),_,xs,_) -> 
             let fields = tc.TrueInstanceFieldsAsList
             let lay fs x = (wordL fs.rfield_id.idText ^^ sepL "=") --- (dataExprL denv x)

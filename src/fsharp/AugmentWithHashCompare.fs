@@ -25,13 +25,13 @@ let mkGenericIComparableCompareToSlotSig g typ =
     TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.int_ty)
     
 let mkIStructuralComparableCompareToSlotSig g =
-    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkTupleTy [g.obj_ty ; g.mk_IComparer_ty]),false,false,false,[])]], Some g.int_ty)
+    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]),false,false,false,[])]], Some g.int_ty)
     
 let mkGenericIEquatableEqualsSlotSig g typ =
     TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.bool_ty)
     
 let mkIStructuralEquatableEqualsSlotSig g =
-    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkTupleTy [g.obj_ty ; g.mk_IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
+    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
 
 let mkIStructuralEquatableGetHashCodeSlotSig g =
     TSlotSig("GetHashCode",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,g.mk_IEqualityComparer_ty,false,false,false,[])]], Some g.int_ty)
@@ -55,11 +55,11 @@ let mkThisTy  g ty = if isStructTy g ty then mkByrefTy g ty else ty
 
 let mkCompareObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.int_ty)
 let mkCompareTy             g ty = (mkThisTy g ty) --> (ty --> g.int_ty)
-let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkTupleTy [g.obj_ty ; g.mk_IComparer_ty]) --> g.int_ty)
+let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]) --> g.int_ty)
 
 let mkEqualsObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.bool_ty)
 let mkEqualsTy             g ty = (mkThisTy g ty) --> (ty --> g.bool_ty)
-let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkTupleTy [g.obj_ty ; g.mk_IEqualityComparer_ty]) --> g.bool_ty)
+let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]) --> g.bool_ty)
 
 let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
 let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.mk_IEqualityComparer_ty --> g.int_ty)

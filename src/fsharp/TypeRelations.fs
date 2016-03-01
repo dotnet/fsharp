@@ -57,7 +57,8 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2
     | TType_ucase (tc1,l1)  ,TType_ucase (tc2,l2) when g.unionCaseRefEq tc1 tc2  ->  
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2
-    | TType_tuple l1    ,TType_tuple l2     -> 
+    | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
+        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         typeEquiv g d1 d2 && typeEquiv g r1 r2
@@ -92,7 +93,8 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     | _, TType_var _ -> true
     | TType_app (tc1,l1)  ,TType_app (tc2,l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
-    | TType_tuple l1    ,TType_tuple l2     -> 
+    | TType_tuple (tupInfo1, l1)    ,TType_tuple (tupInfo2, l2)     -> 
+        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
@@ -113,7 +115,8 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     | TType_app (tc1,l1)  ,TType_app (tc2,l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
-    | TType_tuple l1    ,TType_tuple l2     -> 
+    | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
+        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
@@ -144,7 +147,7 @@ let ChooseTyparSolutionAndRange g amap (tp:Typar) =
          let initial = 
              match tp.Kind with 
              | TyparKind.Type -> g.obj_ty 
-             | TyparKind.Measure -> TType_measure MeasureOne
+             | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
          ((initial,m), tp.Constraints) ||> List.fold (fun (maxSoFar,_) tpc -> 
              let join m x = 
@@ -189,7 +192,7 @@ let ChooseTyparSolutionAndRange g amap (tp:Typar) =
 
 let ChooseTyparSolution g amap tp = 
     let ty,_m = ChooseTyparSolutionAndRange g amap tp
-    if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure MeasureOne) then
+    if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure Measure.One) then
         warning(Error(FSComp.SR.csCodeLessGeneric(),tp.Range))
     ty
 
@@ -2197,7 +2200,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
                 let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
                 let actualTypeInst = 
-                    if isTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g (destTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
+                    if isRefTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g false (destRefTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
                     elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
                     else minfo.DeclaringTypeInst
                 let actualMethInst = minst
@@ -2257,7 +2260,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
                         match delArgVals with 
                         | [] -> error(nonStandardEventError einfo.EventName m)
                         | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
-                        | h :: t -> [exprForVal m h; mkTupledVars g m t] 
+                        | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
                 mkApps g ((f,fty),[],args,m)
@@ -2428,7 +2431,7 @@ module ProvidedMethodCalls =
             | Some info -> 
                 let elems = info.PApplyArray(id, "GetInvokerExpresson",m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
-                let exprT = mkTupledNoTypes g m elemsT
+                let exprT = mkRefTupledNoTypes g m elemsT // TODO: struct tuples??
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedNewArrayExpr x -> Some x | _ -> None), m) with
@@ -2448,8 +2451,8 @@ module ProvidedMethodCalls =
                 let typeOfExpr = 
                     let t = tyOfExpr g inpT
                     stripTyEqnsWrtErasure EraseMeasures g t
-                let tysT = tryDestTupleTy g typeOfExpr
-                let exprT = mkTupleFieldGet (inpT, tysT, n.PUntaint(id,m), m)
+                let tupInfo, tysT = tryDestAnyTupleTy g typeOfExpr
+                let exprT = mkTupleFieldGet (tupInfo, inpT, tysT, n.PUntaint(id,m), m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with

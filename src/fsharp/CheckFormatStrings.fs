@@ -294,7 +294,7 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
 let ParseFormatString m g source fmt bty cty dty = 
     let argtys, specifierLocations = parseFormatStringInternal m g source fmt bty cty
     let aty = List.foldBack (-->) argtys dty
-    let ety = mkTupledTy g argtys
+    let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
 
 let TryCountFormatStringArguments m g fmt bty cty =

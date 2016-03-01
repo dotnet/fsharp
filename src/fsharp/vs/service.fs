@@ -166,7 +166,7 @@ module internal Params =
                 let _, tau = vref.TypeScheme
                 if isFunTy denv.g tau then 
                     let arg,rtau = destFunTy denv.g tau 
-                    let args = tryDestTupleTy denv.g arg 
+                    let args = tryDestAnyTupleTy denv.g arg 
                     ParamsOfTypes g denv args rtau
                 else []
             match vref.ValReprInfo with

@@ -415,9 +415,15 @@ and
     /// F# syntax : type.A.B.C<type, ..., type>
     ///   commasm: ranges for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
     | LongIdentApp of SynType * LongIdentWithDots * range option * SynType list * range list * range option * range
+
     /// F# syntax : type * ... * type
     // the bool is true if / rather than * follows the type
     | Tuple of (bool*SynType) list * range    
+
+    /// F# syntax : struct (type * ... * type)
+    // the bool is true if / rather than * follows the type
+    | StructTuple of (bool*SynType) list * range    
+
     /// F# syntax : type[]
     | Array of  int * SynType * range
     /// F# syntax : type -> type
@@ -445,7 +451,7 @@ and
     member x.Range = 
         match x with 
         | SynType.LongIdent(lidwd) -> lidwd.Range
-        | SynType.App(_,_,_,_,_,_,m) | SynType.LongIdentApp(_,_,_,_,_,_,m) | SynType.Tuple(_,m) | SynType.Array(_,_,m) | SynType.Fun(_,_,m)
+        | SynType.App(_,_,_,_,_,_,m) | SynType.LongIdentApp(_,_,_,_,_,_,m) | SynType.Tuple(_,m) | SynType.StructTuple(_,m) | SynType.Array(_,_,m) | SynType.Fun(_,_,m)
         | SynType.Var(_,m) | SynType.Anon m | SynType.WithGlobalConstraints(_,_,m)
         | SynType.StaticConstant(_,m) | SynType.StaticConstantExpr(_,m) | SynType.StaticConstantNamed(_,_,m)
         | SynType.HashConstraint(_,m) | SynType.MeasureDivide(_,_,m) | SynType.MeasurePower(_,_,m) -> m
@@ -476,6 +482,9 @@ and
 
     /// F# syntax: e1, ..., eN
     | Tuple of  SynExpr list * range list * range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
+
+    /// F# syntax: struct (e1, ..., eN)
+    | StructTuple of  SynExpr list * range list * range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of  bool * SynExpr list * range 
@@ -692,6 +701,7 @@ and
         | SynExpr.Const(_,m) 
         | SynExpr.Typed (_,_,m)
         | SynExpr.Tuple (_,_,m)
+        | SynExpr.StructTuple (_,_,m)
         | SynExpr.ArrayOrList (_,_,m)
         | SynExpr.Record (_,_,_,m)
         | SynExpr.New (_,_,_,m)
@@ -752,6 +762,7 @@ and
         | SynExpr.Const(_,m) 
         | SynExpr.Typed (_,_,m)
         | SynExpr.Tuple (_,_,m)
+        | SynExpr.StructTuple (_,_,m)
         | SynExpr.ArrayOrList (_,_,m)
         | SynExpr.Record (_,_,_,m)
         | SynExpr.New (_,_,_,m)
@@ -812,6 +823,7 @@ and
         | SynExpr.Const(_,m) 
         | SynExpr.Typed (_,_,m)
         | SynExpr.Tuple (_,_,m)
+        | SynExpr.StructTuple (_,_,m)
         | SynExpr.ArrayOrList (_,_,m)
         | SynExpr.Record (_,_,_,m)
         | SynExpr.New (_,_,_,m)
@@ -939,6 +951,7 @@ and
     | Ands of  SynPat list * range
     | LongIdent of LongIdentWithDots * (* holds additional ident for tooling *) Ident option * SynValTyparDecls option (* usually None: temporary used to parse "f<'a> x = x"*) * SynConstructorArgs  * SynAccess option * range
     | Tuple of  SynPat list * range
+    | StructTuple of  SynPat list * range
     | Paren of  SynPat * range
     | ArrayOrList of  bool * SynPat list * range
     | Record of ((LongIdent * Ident) * SynPat) list * range
@@ -962,7 +975,7 @@ and
     member p.Range = 
       match p with 
       | SynPat.Const(_,m) | SynPat.Wild m | SynPat.Named (_,_,_,_,m) | SynPat.Or (_,_,m) | SynPat.Ands (_,m) 
-      | SynPat.LongIdent (_,_,_,_,_,m) | SynPat.ArrayOrList(_,_,m) | SynPat.Tuple (_,m) |SynPat.Typed(_,_,m) |SynPat.Attrib(_,_,m) 
+      | SynPat.LongIdent (_,_,_,_,_,m) | SynPat.ArrayOrList(_,_,m) | SynPat.Tuple (_,m) | SynPat.StructTuple (_,m) |SynPat.Typed(_,_,m) |SynPat.Attrib(_,_,m) 
       | SynPat.Record (_,m) | SynPat.DeprecatedCharRange (_,_,m) | SynPat.Null m | SynPat.IsInst (_,m) | SynPat.QuoteExpr (_,m)
       | SynPat.InstanceMember(_,_,_,_,m) | SynPat.OptionalVal(_,m) | SynPat.Paren(_,m) 
       | SynPat.FromParseError (_,m) -> m 
@@ -2237,7 +2250,8 @@ let rec synExprContainsError inpExpr =
               walkExpr e1 || walkExpr e2
 
           | SynExpr.ArrayOrList (_,es,_)
-          | SynExpr.Tuple (es,_,_) -> 
+          | SynExpr.Tuple (es,_,_) 
+          | SynExpr.StructTuple (es,_,_) -> 
               walkExprs es
 
           | SynExpr.Record (_,_,fs,_) ->

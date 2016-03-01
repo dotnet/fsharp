@@ -2828,6 +2828,16 @@ atomicPattern:
   | LPAREN recover 
       {  reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()); 
          SynPat.Wild (lhs parseState)}  
+  | STRUCT LPAREN tupleParenPatternElements rparen
+      { SynPat.StructTuple(List.rev $3,lhs parseState) }
+  | STRUCT LPAREN tupleParenPatternElements recover
+      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()); 
+        SynPat.StructTuple(List.rev $3,lhs parseState) }
+  | STRUCT LPAREN error rparen 
+      { (* silent recovery *) SynPat.Wild (lhs parseState) }
+  | STRUCT LPAREN recover 
+      {  reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()); 
+         SynPat.Wild (lhs parseState)}  
 
   
       
@@ -3582,6 +3592,11 @@ atomicExpr:
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()); 
         // silent recovery 
         exprFromParseError (SynExpr.ArrayOrList(false,[ ], rhs parseState 1)),false  } 
+  | STRUCT LPAREN tupleExpr rparen  
+      { let exprs,commas = $3 in SynExpr.StructTuple(List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
+  | STRUCT LPAREN tupleExpr recover  
+      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket()); 
+        let exprs,commas = $3 in SynExpr.StructTuple(List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ), false }
   | atomicExprAfterType 
       { $1,false }
 
@@ -4404,6 +4419,25 @@ atomType:
   | LPAREN typ recover      
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
        $2 }  
+
+  | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
+    { SynType.StructTuple((false,$3) :: $5,lhs parseState) }
+
+  | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
+    { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
+      SynType.StructTuple((false,$3) :: $5,lhs parseState) }
+
+  | STRUCT LPAREN appType STAR recover
+    { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
+      SynType.Anon (lhs parseState) }
+
+  | STRUCT LPAREN appType recover
+    { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
+      SynType.Anon (lhs parseState) }
+
+  | STRUCT LPAREN recover
+    { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
+      SynType.Anon (lhs parseState) }
 
   | rawConstant 
      { SynType.StaticConstant($1, rhs parseState 1) }

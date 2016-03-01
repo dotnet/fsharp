@@ -178,7 +178,7 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : QP.ExprData =
     if cenv.emitDebugInfoInQuotations && not (QP.isAttributedExpression astExpr) then
         cenv.emitDebugInfoInQuotations <- false
         try
-            let mk_tuple g m es = mkTupled g m es (List.map (tyOfExpr g) es)
+            let mk_tuple g m es = mkRefTupled g m es (List.map (tyOfExpr g) es)
 
             let rangeExpr = 
                     mk_tuple cenv.g m 
@@ -264,7 +264,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         // If so, adjust and try again
         if curriedArgs.Length < curriedArgInfos.Length ||
            ((List.take curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
-                       (argInfo.Length > (tryDestTuple arg).Length))) then
+                       (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
 
             if verboseCReflect then 
                 dprintfn "vref.DisplayName = %A was under applied" vref.DisplayName 
@@ -292,7 +292,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         let numUntupledArgs = curriedArgInfo.Length 
                         (if numUntupledArgs = 0 then [] 
                          elif numUntupledArgs = 1 then [arg] 
-                         else tryDestTuple arg))
+                         else tryDestRefTupleExpr arg))
 
                 if verboseCReflect then 
                     dprintfn "vref.DisplayName  = %A , after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
@@ -372,7 +372,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
          QP.mkLetRec(FlatList.toList bindsR,bodyR)
 
     | Expr.Lambda(_,_,_,vs,b,_,_) -> 
-        let v,b = MultiLambdaToTupledLambda vs b 
+        let v,b = MultiLambdaToTupledLambda cenv.g vs b 
         let vR = ConvVal cenv env v 
         let bR  = ConvExpr cenv (BindVal env v) b 
         QP.mkLambda(vR, bR)
@@ -415,10 +415,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkSum(mkR,tyargsR,argsR)
-        | TOp.Tuple,tyargs,_ -> 
-            let tyR = ConvType cenv env m (mkTupledTy cenv.g tyargs)
+        | TOp.Tuple tupInfo,tyargs,_ -> 
+            let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
-            QP.mkTuple(tyR,argsR)
+            QP.mkTuple(tyR,argsR) // TODO: propagate to quotations
         | TOp.Recd (_,tcref),_,_  -> 
             let rgtypR = ConvTyconRef cenv tcref m
             let tyargsR = ConvTypes cenv env m tyargs
@@ -439,8 +439,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldGet(rfref),tyargs,args ->
             ConvRFieldGet cenv env m rfref tyargs args            
 
-        | TOp.TupleFieldGet(n),tyargs,[e] -> 
-            let tyR = ConvType cenv env m (mkTupledTy cenv.g tyargs)
+        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] when not (evalTupInfoIsStruct tupInfo) -> 
+            let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
             QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
 
         | TOp.ILAsm(([ I_ldfld(_,_,fspec) ] 
@@ -790,7 +790,7 @@ and ConvType cenv env m typ =
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
-    | TType_tuple(l)          -> ConvType cenv env m (mkCompiledTupleTy cenv.g l)
+    | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))

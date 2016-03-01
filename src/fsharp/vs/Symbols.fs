@@ -1186,7 +1186,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | M m -> 
                 let rty = m.GetFSharpReturnTy(cenv.amap,range0,m.FormalMethodInst)
                 let argtysl = m.GetParamTypes(cenv.amap,range0,m.FormalMethodInst) 
-                mkIteratedFunTy (List.map (mkTupledTy cenv.g) argtysl) rty
+                mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
             | V v -> v.TauType
         FSharpType(cenv,  ty)
 
@@ -1556,8 +1556,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let argtysl, _typ = stripFunTy cenv.g tau
                 [ for typ in argtysl do
                     let allArguments =
-                        if isTupleTy cenv.g typ
-                        then tryDestTupleTy cenv.g typ
+                        if isAnyTupleTy cenv.g typ
+                        then tryDestRefTupleTy cenv.g typ
                         else [typ]
                     yield
                       allArguments
@@ -1729,10 +1729,10 @@ and FSharpType(cenv, typ:TType) =
        ErrorLogger.protectAssemblyExploration true <| fun () -> 
         match stripTyparEqns typ with 
         | TType_app (tcref,_) -> FSharpEntity(cenv,  tcref).IsUnresolved
-        | TType_measure (MeasureCon tcref) ->  FSharpEntity(cenv,  tcref).IsUnresolved
-        | TType_measure (MeasureProd _) ->  FSharpEntity(cenv,  cenv.g.measureproduct_tcr).IsUnresolved 
-        | TType_measure MeasureOne ->  FSharpEntity(cenv,  cenv.g.measureone_tcr).IsUnresolved 
-        | TType_measure (MeasureInv _) ->  FSharpEntity(cenv,  cenv.g.measureinverse_tcr).IsUnresolved 
+        | TType_measure (Measure.Con tcref) ->  FSharpEntity(cenv,  tcref).IsUnresolved
+        | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv,  cenv.g.measureproduct_tcr).IsUnresolved 
+        | TType_measure Measure.One ->  FSharpEntity(cenv,  cenv.g.measureone_tcr).IsUnresolved 
+        | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv,  cenv.g.measureinverse_tcr).IsUnresolved 
         | _ -> false
     
     let isResolved() = not (isUnresolved())
@@ -1745,7 +1745,7 @@ and FSharpType(cenv, typ:TType) =
        isResolved() &&
        protect <| fun () -> 
          match stripTyparEqns typ with 
-         | TType_app _ | TType_measure (MeasureCon _ | MeasureProd _ | MeasureInv _ | MeasureOne _) -> true 
+         | TType_app _ | TType_measure (Measure.Con _ | Measure.Prod _ | Measure.Inv _ | Measure.One _) -> true 
          | _ -> false
 
     member __.IsTupleType = 
@@ -1762,10 +1762,10 @@ and FSharpType(cenv, typ:TType) =
        protect <| fun () -> 
         match stripTyparEqns typ with 
         | TType_app (tcref,_) -> FSharpEntity(cenv,  tcref) 
-        | TType_measure (MeasureCon tcref) ->  FSharpEntity(cenv,  tcref) 
-        | TType_measure (MeasureProd _) ->  FSharpEntity(cenv,  cenv.g.measureproduct_tcr) 
-        | TType_measure MeasureOne ->  FSharpEntity(cenv,  cenv.g.measureone_tcr) 
-        | TType_measure (MeasureInv _) ->  FSharpEntity(cenv,  cenv.g.measureinverse_tcr) 
+        | TType_measure (Measure.Con tcref) ->  FSharpEntity(cenv,  tcref) 
+        | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv,  cenv.g.measureproduct_tcr) 
+        | TType_measure Measure.One ->  FSharpEntity(cenv,  cenv.g.measureone_tcr) 
+        | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv,  cenv.g.measureinverse_tcr) 
         | _ -> invalidOp "not a named type"
 
     member __.GenericArguments = 
@@ -1774,10 +1774,10 @@ and FSharpType(cenv, typ:TType) =
         | TType_app (_,tyargs) 
         | TType_tuple (tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv,  ty)) |> makeReadOnlyCollection) 
         | TType_fun(d,r) -> [| FSharpType(cenv,  d); FSharpType(cenv,  r) |] |> makeReadOnlyCollection
-        | TType_measure (MeasureCon _) ->  [| |] |> makeReadOnlyCollection
-        | TType_measure (MeasureProd (t1,t2)) ->  [| FSharpType(cenv,  TType_measure t1); FSharpType(cenv,  TType_measure t2) |] |> makeReadOnlyCollection
-        | TType_measure MeasureOne ->  [| |] |> makeReadOnlyCollection
-        | TType_measure (MeasureInv t1) ->  [| FSharpType(cenv,  TType_measure t1) |] |> makeReadOnlyCollection
+        | TType_measure (Measure.Con _) ->  [| |] |> makeReadOnlyCollection
+        | TType_measure (Measure.Prod (t1,t2)) ->  [| FSharpType(cenv,  TType_measure t1); FSharpType(cenv,  TType_measure t2) |] |> makeReadOnlyCollection
+        | TType_measure Measure.One ->  [| |] |> makeReadOnlyCollection
+        | TType_measure (Measure.Inv t1) ->  [| FSharpType(cenv,  TType_measure t1) |] |> makeReadOnlyCollection
         | _ -> invalidOp "not a named type"
 
 (*
@@ -1806,14 +1806,14 @@ and FSharpType(cenv, typ:TType) =
        protect <| fun () -> 
         match stripTyparEqns typ with 
         | TType_var _ -> true 
-        | TType_measure (MeasureVar _) -> true 
+        | TType_measure (Measure.Var _) -> true 
         | _ -> false
 
     member __.GenericParameter = 
        protect <| fun () -> 
         match stripTyparEqns typ with 
         | TType_var tp 
-        | TType_measure (MeasureVar tp) -> 
+        | TType_measure (Measure.Var tp) -> 
             FSharpGenericParameter (cenv,  tp)
         | _ -> invalidOp "not a generic parameter type"
 

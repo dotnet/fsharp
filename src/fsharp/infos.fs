@@ -81,7 +81,7 @@ let GetSuperTypeOfType g amap m typ =
             Some g.system_Array_typ
         elif isRefTy g typ && not (isObjTy g typ) then 
             Some g.obj_ty
-        elif isTupleStructTy g typ then 
+        elif isStructTupleTy g typ then 
             Some g.obj_ty
         else 
             None
@@ -3110,7 +3110,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
                 if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length,m));
                 let tupargs,argst = List.chop arity args
                 let tuptys = tupargs |> List.map (tyOfExpr g) 
-                (mkTupled g m tupargs tuptys),
+                (mkRefTupled g m tupargs tuptys),
                 (argst, rangeOfFunTy g fty) )
     if not leftover.IsEmpty then error(InternalError("Unexpected "+string(leftover.Length)+" remaining arguments in method application",m))
     mkApps g ((vexp,vexprty),[],args3,m), 
@@ -3824,7 +3824,7 @@ let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_,compiledViewOfDelArgTys,delRetTy,_)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkTupledTy g argTys,delRetTy)
+    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
     | _ -> None
 
 

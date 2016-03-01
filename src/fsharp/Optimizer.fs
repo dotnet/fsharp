@@ -79,14 +79,14 @@ type ExprValueInfo =
   /// information.
   | ValValue    of ValRef * ExprValueInfo    
 
-  | TupleValue  of ExprValueInfo array 
+  | TupleValue  of isRef:bool * ExprValueInfo[]
   
   /// RecdValue(tycon, values)
   ///
   /// INVARIANT: values are in field definition order .
-  | RecdValue   of TyconRef * ExprValueInfo array         
+  | RecdValue   of TyconRef * ExprValueInfo[]      
 
-  | UnionCaseValue of UnionCaseRef * ExprValueInfo array 
+  | UnionCaseValue of UnionCaseRef * ExprValueInfo[]
 
   | ConstValue of Const * TType
 
@@ -158,7 +158,7 @@ let rec exprValueInfoL g = function
   | UnknownValue             -> wordL "?"
   | SizeValue (_,vinfo)      -> exprValueInfoL g vinfo
   | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL "alias") --- exprValueInfoL g vinfo)
-  | TupleValue vinfos        -> bracketL (exprValueInfosL g vinfos)
+  | TupleValue (_,vinfos)    -> bracketL (exprValueInfosL g vinfos)
   | RecdValue (_,vinfos)     -> braceL   (exprValueInfosL g vinfos)
   | UnionCaseValue (ucr,vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
   | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL "lam" ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
@@ -203,7 +203,7 @@ and SizeOfValueInfo x =
     | ConstValue (_x,_)        -> 1
     | UnknownValue             -> 1
     | ValValue (_vr,vinfo)     -> SizeOfValueInfo vinfo + 1
-    | TupleValue vinfos        
+    | TupleValue (_,vinfos)        
     | RecdValue (_,vinfos)
     | UnionCaseValue (_,vinfos)-> 1 + SizeOfValueInfos vinfos
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
@@ -225,7 +225,7 @@ let BoundValueInfoBySize vinfo =
         match x with
         | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
         | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
-        | TupleValue vinfos        -> TupleValue (Array.map (bound (depth-1)) vinfos)
+        | TupleValue (flag,vinfos) -> TupleValue (flag,Array.map (bound (depth-1)) vinfos)
         | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
         | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
         | ConstValue _             -> x
@@ -354,7 +354,7 @@ type IncrementalOptimizationEnv =
 let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     match x with
     | UnknownValue -> true
-    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
+    | TupleValue (_,args) | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
@@ -604,7 +604,7 @@ let (|StripLambdaValue|_|) ev =
 
 let destTupleValue ev = 
   match stripValue ev with 
-  | TupleValue info -> Some info
+  | TupleValue (flag,info) -> Some (flag,info)
   | _ -> None
 
 let destRecdValue ev = 
@@ -1041,8 +1041,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
              (isAssemblyBoundary && not (freeTyvarsAllPublic ftyvs)) || 
              Zset.exists hiddenTycon ftyvs.FreeTycons) ->
                 UnknownValue
-        | TupleValue vinfos         -> 
-            TupleValue (Array.map abstractExprInfo vinfos)
+        | TupleValue (flag,vinfos)         -> 
+            TupleValue (flag, Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
             if hiddenTyconRepr tcref.Deref || Array.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
@@ -1142,7 +1142,7 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
               UnknownValue
 
           // Otherwise check all sub-values 
-          | TupleValue vinfos -> TupleValue (Array.map (abstractExprInfo) vinfos)
+          | TupleValue (flag,vinfos) -> TupleValue (flag,Array.map (abstractExprInfo) vinfos)
           | RecdValue (tcref,vinfos) -> RecdValue (tcref,Array.map (abstractExprInfo) vinfos)
           | UnionCaseValue (cspec,vinfos) -> UnionCaseValue(cspec,Array.map (abstractExprInfo) vinfos)
           | CurriedLambdaValue _ 
@@ -1173,7 +1173,7 @@ let RemapOptimizationInfo g tmenv =
         if verboseOptimizationInfo then dprintf "remapExprInfo\n"; 
         match ivalue with 
         | ValValue (v,detail)      -> ValValue (remapValRef tmenv v,remapExprInfo detail)
-        | TupleValue vinfos         -> TupleValue (Array.map remapExprInfo vinfos)
+        | TupleValue (flag,vinfos)  -> TupleValue (flag,Array.map remapExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> RecdValue (remapTyconRef tmenv.tyconRefRemap tcref, Array.map remapExprInfo vinfos)
         | UnionCaseValue(cspec,vinfos) -> UnionCaseValue (remapUnionCaseRef tmenv.tyconRefRemap cspec,Array.map remapExprInfo vinfos)
         | SizeValue(_vdepth,vinfo) -> MakeSizedValueInfo (remapExprInfo vinfo)
@@ -1305,7 +1305,7 @@ and BindingsHaveEffect g binds = FlatList.exists (BindingHasEffect g) binds
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
-    | TOp.Tuple -> false
+    | TOp.Tuple _ -> false
     | TOp.Recd (ctor,tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
@@ -1446,20 +1446,20 @@ let ExprIsValue = function Expr.Val _ -> true | _ -> false
 let ExpandStructuralBindingRaw cenv expr =
     match expr with
     | Expr.Let (TBind(v,rhs,tgtSeqPtOpt),body,m,_) 
-        when (isTupleExpr rhs &&
+        when (isRefTupleExpr rhs &&
               CanExpandStructuralBinding v) ->
-          let args   = tryDestTuple rhs
+          let args   = tryDestRefTupleExpr rhs
           if List.forall ExprIsValue args then
               expr (* avoid re-expanding when recursion hits original binding *)
           else
-              let argTys = destTupleTy cenv.g v.Type
+              let argTys = destRefTupleTy cenv.g v.Type
               let argBind i (arg:Expr) argTy =
                   let name = v.LogicalName ^ "_" ^ string i
                   let v,ve = mkCompGenLocal arg.Range name argTy
                   ve,mkCompGenBind v arg
            
               let ves,binds = List.mapi2 argBind args argTys |> List.unzip
-              let tuple = mkTupled cenv.g m ves argTys
+              let tuple = mkRefTupled cenv.g m ves argTys
               mkLetsBind m binds (mkLet tgtSeqPtOpt m v tuple body)
               (* REVIEW: other cases - records, explicit lists etc. *)
     | expr -> expr
@@ -1478,14 +1478,14 @@ let rec RearrangeTupleBindings expr fin =
         match RearrangeTupleBindings body fin with
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
-    | Expr.Op (TOp.Tuple,_,_,_) -> Some (fin expr)
+    | Expr.Op (TOp.Tuple tupInfo,_,_,_) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
     match expr with
     | Expr.Let (TBind(v,rhs,tgtSeqPtOpt),body,m,_)
-        when (isTupleTy cenv.g v.Type &&
-              not (isTupleExpr rhs) &&
+        when (isRefTupleTy cenv.g v.Type &&
+              not (isRefTupleExpr rhs) &&
               CanExpandStructuralBinding v) ->
         match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
         | Some e -> ExpandStructuralBindingRaw cenv e
@@ -1510,10 +1510,10 @@ let (|QueryRun|_|) g expr =
     | _ -> 
         None
 
-let (|MaybeTupled|) e = tryDestTuple e 
+let (|MaybeRefTupled|) e = tryDestRefTupleExpr e 
 let (|AnyInstanceMethodApp|_|) e = 
     match e with 
-    | Expr.App(Expr.Val (vref,_,_),_,tyargs,[obj; MaybeTupled args],_) -> Some (vref,tyargs,obj,args)
+    | Expr.App(Expr.Val (vref,_,_),_,tyargs,[obj; MaybeRefTupled args],_) -> Some (vref,tyargs,obj,args)
     | _ -> None
 
 let (|InstanceMethodApp|_|) g (expectedValRef:ValRef) e = 
@@ -1551,14 +1551,14 @@ let (|QueryZero|_|) g = function
     | _ ->  None
 
 /// Look for a possible tuple and transform
-let (|AnyTupleTrans|) e = 
+let (|AnyRefTupleTrans|) e = 
     match e with 
-    | Expr.Op (TOp.Tuple,tys,es,m) -> (es, (fun es -> Expr.Op (TOp.Tuple,tys,es,m)))  
+    | Expr.Op (TOp.Tuple tupInfo,tys,es,m) when not (evalTupInfoIsStruct tupInfo) -> (es, (fun es -> Expr.Op (TOp.Tuple tupInfo,tys,es,m)))  
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
 let (|AnyQueryBuilderOpTrans|_|) g = function
-    | Expr.App((Expr.Val (vref,_,_) as v),vty,tyargs,[builder; AnyTupleTrans( (src::rest), replaceArgs) ],m) when 
+    | Expr.App((Expr.Val (vref,_,_) as v),vty,tyargs,[builder; AnyRefTupleTrans( (src::rest), replaceArgs) ],m) when 
           (match vref.ApparentParent with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
          Some (src,(fun newSource -> Expr.App(v,vty,tyargs,[builder; replaceArgs(newSource::rest)],m)))
     | _ ->  None
@@ -1882,7 +1882,7 @@ and OptimizeExprOp cenv env (op,tyargs,args,m) =
     let knownValue = 
         match op,arginfos with 
         | TOp.ValFieldGet (rf),[e1info] -> TryOptimizeRecordFieldGet cenv env (e1info,rf,tyargs,m) 
-        | TOp.TupleFieldGet n,[e1info] -> TryOptimizeTupleFieldGet cenv env (e1info,tyargs,n,m)
+        | TOp.TupleFieldGet (tupInfo,n),[e1info] -> TryOptimizeTupleFieldGet cenv env (tupInfo,e1info,tyargs,n,m)
         | TOp.UnionCaseFieldGet (cspec,n),[e1info] -> TryOptimizeUnionCaseGet cenv env (e1info,cspec,tyargs,n,m)
         | _ -> None
     match knownValue with 
@@ -1904,7 +1904,7 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
       match op with
       | TOp.UnionCase c -> 2,MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possible here *)
-      | TOp.Tuple       -> 1, MakeValueInfoForTuple (Array.ofList argValues)
+      | TOp.Tuple tupInfo        -> let refness = evalTupInfoIsStruct tupInfo in (if refness then 1 else 0), MakeValueInfoForTuple (refness, Array.ofList argValues)
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
@@ -1996,9 +1996,9 @@ and TryOptimizeRecordFieldGet cenv _env (e1info,r:RecdFieldRef,_tinst,m) =
         Some finfos.[n]   (* Uses INVARIANT on record ValInfos that exprs are in defn order *)
     | _ -> None
   
-and TryOptimizeTupleFieldGet cenv _env (e1info,tys,n,m) =
+and TryOptimizeTupleFieldGet cenv _env (_tupInfo,e1info,tys,n,m) =
     match destTupleValue e1info.Info with
-    | Some tups when cenv.settings.EliminateTupleFieldGet() && not e1info.HasEffect ->
+    | Some (_tupInfo2,tups) when cenv.settings.EliminateTupleFieldGet() && not e1info.HasEffect ->
         let len = tups.Length 
         if len <> tys.Length then errorR(InternalError("error: tuple lengths don't match",m));
         if n >= len then errorR(InternalError("TryOptimizeTupleFieldGet: tuple index out of range",m));
@@ -2309,9 +2309,9 @@ and OptimizeVal cenv env expr (v:ValRef,m) =
 
 and StripToNominalTyconRef cenv ty = 
     if isAppTy cenv.g ty then destAppTy cenv.g ty 
-    elif isTupleTy cenv.g ty then 
-        let tyargs = destTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g tyargs, tyargs 
+    elif isRefTupleTy cenv.g ty then 
+        let tyargs = destRefTupleTy cenv.g ty
+        mkCompiledTupleTyconRef cenv.g false tyargs, tyargs 
     else failwith "StripToNominalTyconRef: unreachable" 
       
 
@@ -2377,7 +2377,7 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -2399,16 +2399,16 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_,_,withcEqualsVal), [comp; x; y]  -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
-    | Expr.Val(v,_,_),[ty],_ when CanDevirtualizeApplication cenv v cenv.g.generic_equality_per_inner_vref ty args  && not(isTupleTy cenv.g ty) ->
+    | Expr.Val(v,_,_),[ty],_ when CanDevirtualizeApplication cenv v cenv.g.generic_equality_per_inner_vref ty args  && not(isRefTupleTy cenv.g ty) ->
        let tcref,tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_,_,withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty); (mkCallGetGenericPEREqualityComparer cenv.g m)]]
+           let args2 = [x; mkRefTupledNoTypes cenv.g m [mkCoerceExpr(y,cenv.g.obj_ty,m,ty); (mkCallGetGenericPEREqualityComparer cenv.g m)]]
            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
@@ -2431,8 +2431,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         | _ -> None 
 
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_compare_withc_tuple2_vref 
@@ -2445,8 +2445,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_hash_withc_tuple2_vref 
@@ -2462,8 +2462,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic for tuple types
     //  REVIEW (5537): GenericEqualityIntrinsic implements PER semantics, and we are replacing it to something also
     //                 implementing PER semantics. However GenericEqualityIntrinsic should implement ER semantics.
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_per_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_per_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_equals_withc_tuple2_vref 
@@ -2476,8 +2476,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_withc_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_withc_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_compare_withc_tuple2_vref 
@@ -2490,8 +2490,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_withc_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_withc_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_hash_withc_tuple2_vref 
@@ -2504,8 +2504,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic for tuple types
-    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_withc_inner_vref && isTupleTy cenv.g ty ->
-        let tyargs = destTupleTy cenv.g ty 
+    | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_withc_inner_vref && isRefTupleTy cenv.g ty ->
+        let tyargs = destRefTupleTy cenv.g ty 
         let vref = 
             match tyargs.Length with 
             | 2 -> Some cenv.g.generic_equals_withc_tuple2_vref 
@@ -2643,7 +2643,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
                 List.take  nShapes detupArgsL |> List.map (fun detupArgs -> 
                     match detupArgs with 
                     | [] | [_] -> UnknownValue
-                    | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
+                    | _ -> TupleValue(false,Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
             detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue
             
         | _ -> args |> List.map (fun _ -> UnknownValue) 
@@ -2787,9 +2787,9 @@ and OptimizeDecisionTreeTargets cenv env m targets =
 
 and ReshapeExpr cenv (shape,e) = 
   match shape,e with 
-  | TupleValue(subshapes), Expr.Val(_vref,_vFlags,m) ->
-      let tinst = destTupleTy cenv.g (tyOfExpr cenv.g e)
-      mkTupled cenv.g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet(e,tinst,i,m))) (Array.toList subshapes)) tinst
+  | TupleValue(_tupInfo,subshapes), Expr.Val(_vref,_vFlags,m) ->
+      let tupInfo, tinst = destAnyTupleTy cenv.g (tyOfExpr cenv.g e)
+      mkAnyTupled cenv.g m tupInfo (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet(tupInfo,e,tinst,i,m))) (Array.toList subshapes)) tinst
   | _ ->  
       e
 
@@ -3000,7 +3000,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
                         ivalue
 
             | ValValue(v,x) -> ValValue(v,cut x)
-            | TupleValue a -> TupleValue(Array.map cut a)
+            | TupleValue (flag,a) -> TupleValue(flag,Array.map cut a)
             | RecdValue (tcref,a) -> RecdValue(tcref,Array.map cut a)       
             | UnionCaseValue (a,b) -> UnionCaseValue (a,Array.map cut b)
             | UnknownValue | ConstValue _  | ConstExprValue _ -> ivalue
@@ -3242,12 +3242,13 @@ let rec p_ExprValueInfo x st =
     | ConstValue (c,ty)              -> p_byte 0 st; p_tup2 p_const p_typ (c,ty) st 
     | UnknownValue                   -> p_byte 1 st
     | ValValue (a,b)                 -> p_byte 2 st; p_tup2 (p_vref "optval") p_ExprValueInfo (a,b) st
-    | TupleValue a                   -> p_byte 3 st; p_array p_ExprValueInfo a st
+    | TupleValue (false,a)           -> p_byte 3 st; p_array p_ExprValueInfo a st
     | UnionCaseValue (a,b)           -> p_byte 4 st; p_tup2 p_ucref (p_array p_ExprValueInfo) (a,b) st
     | CurriedLambdaValue (_,b,c,d,e) -> p_byte 5 st; p_tup4 p_int p_int p_expr p_typ (b,c,d,e) st
     | ConstExprValue (a,b)           -> p_byte 6 st; p_tup2 p_int p_expr (a,b) st
     | RecdValue (tcref,a)            -> p_byte 7 st; p_tup2 (p_tcref "opt data") (p_array p_ExprValueInfo) (tcref,a) st
     | SizeValue (_adepth,a)          -> p_ExprValueInfo a st
+    | TupleValue (true,a)            -> p_byte 8 st; p_array p_ExprValueInfo a st
 
 and p_ValInfo (v:ValInfo) st = 
     p_tup2 p_ExprValueInfo p_bool (v.ValExprInfo, v.ValMakesNoCriticalTailcalls) st
@@ -3272,11 +3273,12 @@ let rec u_ExprInfo st =
         | 0 -> u_tup2 u_const u_typ               st |> (fun (c,ty) -> ConstValue(c,ty))
         | 1 -> UnknownValue
         | 2 -> u_tup2 u_vref loop                 st |> (fun (a,b) -> ValValue (a,b))
-        | 3 -> u_array loop                       st |> (fun a -> TupleValue a)
+        | 3 -> u_array loop                       st |> (fun a -> TupleValue (false,a))
         | 4 -> u_tup2 u_ucref (u_array loop)      st |> (fun (a,b) -> UnionCaseValue (a,b))
         | 5 -> u_tup4 u_int u_int u_expr u_typ    st |> (fun (b,c,d,e) -> CurriedLambdaValue (newUnique(),b,c,d,e))
         | 6 -> u_tup2 u_int u_expr                st |> (fun (a,b) -> ConstExprValue (a,b))
         | 7 -> u_tup2 u_tcref (u_array loop)      st |> (fun (a,b) -> RecdValue (a,b))
+        | 8 -> u_array loop                       st |> (fun a -> TupleValue (true,a))
         | _ -> failwith "loop"
     MakeSizedValueInfo (loop st) (* calc size of unpicked ExprValueInfo *)
 
