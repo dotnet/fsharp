@@ -79,7 +79,7 @@ type ExprValueInfo =
   /// information.
   | ValValue    of ValRef * ExprValueInfo    
 
-  | TupleValue  of isRef:bool * ExprValueInfo[]
+  | TupleValue  of ExprValueInfo[]
   
   /// RecdValue(tycon, values)
   ///
@@ -158,7 +158,7 @@ let rec exprValueInfoL g = function
   | UnknownValue             -> wordL "?"
   | SizeValue (_,vinfo)      -> exprValueInfoL g vinfo
   | ValValue (vr,vinfo)      -> bracketL ((valRefL vr ^^ wordL "alias") --- exprValueInfoL g vinfo)
-  | TupleValue (_,vinfos)    -> bracketL (exprValueInfosL g vinfos)
+  | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
   | RecdValue (_,vinfos)     -> braceL   (exprValueInfosL g vinfos)
   | UnionCaseValue (ucr,vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
   | CurriedLambdaValue(_lambdaId,_arities,_bsize,expr',_ety) -> wordL "lam" ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
@@ -203,7 +203,7 @@ and SizeOfValueInfo x =
     | ConstValue (_x,_)        -> 1
     | UnknownValue             -> 1
     | ValValue (_vr,vinfo)     -> SizeOfValueInfo vinfo + 1
-    | TupleValue (_,vinfos)        
+    | TupleValue vinfos        
     | RecdValue (_,vinfos)
     | UnionCaseValue (_,vinfos)-> 1 + SizeOfValueInfos vinfos
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
@@ -225,7 +225,7 @@ let BoundValueInfoBySize vinfo =
         match x with
         | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
         | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
-        | TupleValue (flag,vinfos) -> TupleValue (flag,Array.map (bound (depth-1)) vinfos)
+        | TupleValue vinfos -> TupleValue (Array.map (bound (depth-1)) vinfos)
         | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
         | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
         | ConstValue _             -> x
@@ -354,7 +354,7 @@ type IncrementalOptimizationEnv =
 let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     match x with
     | UnknownValue -> true
-    | TupleValue (_,args) | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
+    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
@@ -604,7 +604,7 @@ let (|StripLambdaValue|_|) ev =
 
 let destTupleValue ev = 
   match stripValue ev with 
-  | TupleValue (flag,info) -> Some (flag,info)
+  | TupleValue info -> Some info
   | _ -> None
 
 let destRecdValue ev = 
@@ -1041,8 +1041,8 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
              (isAssemblyBoundary && not (freeTyvarsAllPublic ftyvs)) || 
              Zset.exists hiddenTycon ftyvs.FreeTycons) ->
                 UnknownValue
-        | TupleValue (flag,vinfos)         -> 
-            TupleValue (flag, Array.map abstractExprInfo vinfos)
+        | TupleValue vinfos         -> 
+            TupleValue (Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
             if hiddenTyconRepr tcref.Deref || Array.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
@@ -1142,7 +1142,7 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
               UnknownValue
 
           // Otherwise check all sub-values 
-          | TupleValue (flag,vinfos) -> TupleValue (flag,Array.map (abstractExprInfo) vinfos)
+          | TupleValue vinfos -> TupleValue (Array.map (abstractExprInfo) vinfos)
           | RecdValue (tcref,vinfos) -> RecdValue (tcref,Array.map (abstractExprInfo) vinfos)
           | UnionCaseValue (cspec,vinfos) -> UnionCaseValue(cspec,Array.map (abstractExprInfo) vinfos)
           | CurriedLambdaValue _ 
@@ -1173,7 +1173,7 @@ let RemapOptimizationInfo g tmenv =
         if verboseOptimizationInfo then dprintf "remapExprInfo\n"; 
         match ivalue with 
         | ValValue (v,detail)      -> ValValue (remapValRef tmenv v,remapExprInfo detail)
-        | TupleValue (flag,vinfos)  -> TupleValue (flag,Array.map remapExprInfo vinfos)
+        | TupleValue vinfos  -> TupleValue (Array.map remapExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> RecdValue (remapTyconRef tmenv.tyconRefRemap tcref, Array.map remapExprInfo vinfos)
         | UnionCaseValue(cspec,vinfos) -> UnionCaseValue (remapUnionCaseRef tmenv.tyconRefRemap cspec,Array.map remapExprInfo vinfos)
         | SizeValue(_vdepth,vinfo) -> MakeSizedValueInfo (remapExprInfo vinfo)
@@ -1904,7 +1904,10 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
       match op with
       | TOp.UnionCase c -> 2,MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possible here *)
-      | TOp.Tuple tupInfo        -> let refness = evalTupInfoIsStruct tupInfo in (if refness then 1 else 0), MakeValueInfoForTuple (refness, Array.ofList argValues)
+      | TOp.Tuple tupInfo        -> 
+          let isStruct = evalTupInfoIsStruct tupInfo 
+          if isStruct then 0,valu 
+          else 1,MakeValueInfoForTuple (Array.ofList argValues)
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
@@ -1998,7 +2001,7 @@ and TryOptimizeRecordFieldGet cenv _env (e1info,r:RecdFieldRef,_tinst,m) =
   
 and TryOptimizeTupleFieldGet cenv _env (_tupInfo,e1info,tys,n,m) =
     match destTupleValue e1info.Info with
-    | Some (_tupInfo2,tups) when cenv.settings.EliminateTupleFieldGet() && not e1info.HasEffect ->
+    | Some tups when cenv.settings.EliminateTupleFieldGet() && not e1info.HasEffect ->
         let len = tups.Length 
         if len <> tys.Length then errorR(InternalError("error: tuple lengths don't match",m));
         if n >= len then errorR(InternalError("TryOptimizeTupleFieldGet: tuple index out of range",m));
@@ -2643,7 +2646,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
                 List.take  nShapes detupArgsL |> List.map (fun detupArgs -> 
                     match detupArgs with 
                     | [] | [_] -> UnknownValue
-                    | _ -> TupleValue(false,Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
+                    | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
             detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue
             
         | _ -> args |> List.map (fun _ -> UnknownValue) 
@@ -2787,9 +2790,9 @@ and OptimizeDecisionTreeTargets cenv env m targets =
 
 and ReshapeExpr cenv (shape,e) = 
   match shape,e with 
-  | TupleValue(_tupInfo,subshapes), Expr.Val(_vref,_vFlags,m) ->
-      let tupInfo, tinst = destAnyTupleTy cenv.g (tyOfExpr cenv.g e)
-      mkAnyTupled cenv.g m tupInfo (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet(tupInfo,e,tinst,i,m))) (Array.toList subshapes)) tinst
+  | TupleValue(subshapes), Expr.Val(_vref,_vFlags,m) ->
+      let tinst = destRefTupleTy cenv.g (tyOfExpr cenv.g e)
+      mkRefTupled cenv.g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet cenv.g (tupInfoRef,e,tinst,i,m))) (Array.toList subshapes)) tinst
   | _ ->  
       e
 
@@ -3000,7 +3003,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
                         ivalue
 
             | ValValue(v,x) -> ValValue(v,cut x)
-            | TupleValue (flag,a) -> TupleValue(flag,Array.map cut a)
+            | TupleValue a -> TupleValue(Array.map cut a)
             | RecdValue (tcref,a) -> RecdValue(tcref,Array.map cut a)       
             | UnionCaseValue (a,b) -> UnionCaseValue (a,Array.map cut b)
             | UnknownValue | ConstValue _  | ConstExprValue _ -> ivalue
@@ -3242,13 +3245,12 @@ let rec p_ExprValueInfo x st =
     | ConstValue (c,ty)              -> p_byte 0 st; p_tup2 p_const p_typ (c,ty) st 
     | UnknownValue                   -> p_byte 1 st
     | ValValue (a,b)                 -> p_byte 2 st; p_tup2 (p_vref "optval") p_ExprValueInfo (a,b) st
-    | TupleValue (false,a)           -> p_byte 3 st; p_array p_ExprValueInfo a st
+    | TupleValue a                   -> p_byte 3 st; p_array p_ExprValueInfo a st
     | UnionCaseValue (a,b)           -> p_byte 4 st; p_tup2 p_ucref (p_array p_ExprValueInfo) (a,b) st
     | CurriedLambdaValue (_,b,c,d,e) -> p_byte 5 st; p_tup4 p_int p_int p_expr p_typ (b,c,d,e) st
     | ConstExprValue (a,b)           -> p_byte 6 st; p_tup2 p_int p_expr (a,b) st
     | RecdValue (tcref,a)            -> p_byte 7 st; p_tup2 (p_tcref "opt data") (p_array p_ExprValueInfo) (tcref,a) st
     | SizeValue (_adepth,a)          -> p_ExprValueInfo a st
-    | TupleValue (true,a)            -> p_byte 8 st; p_array p_ExprValueInfo a st
 
 and p_ValInfo (v:ValInfo) st = 
     p_tup2 p_ExprValueInfo p_bool (v.ValExprInfo, v.ValMakesNoCriticalTailcalls) st
@@ -3273,12 +3275,11 @@ let rec u_ExprInfo st =
         | 0 -> u_tup2 u_const u_typ               st |> (fun (c,ty) -> ConstValue(c,ty))
         | 1 -> UnknownValue
         | 2 -> u_tup2 u_vref loop                 st |> (fun (a,b) -> ValValue (a,b))
-        | 3 -> u_array loop                       st |> (fun a -> TupleValue (false,a))
+        | 3 -> u_array loop                       st |> (fun a -> TupleValue a)
         | 4 -> u_tup2 u_ucref (u_array loop)      st |> (fun (a,b) -> UnionCaseValue (a,b))
         | 5 -> u_tup4 u_int u_int u_expr u_typ    st |> (fun (b,c,d,e) -> CurriedLambdaValue (newUnique(),b,c,d,e))
         | 6 -> u_tup2 u_int u_expr                st |> (fun (a,b) -> ConstExprValue (a,b))
         | 7 -> u_tup2 u_tcref (u_array loop)      st |> (fun (a,b) -> RecdValue (a,b))
-        | 8 -> u_array loop                       st |> (fun a -> TupleValue (true,a))
         | _ -> failwith "loop"
     MakeSizedValueInfo (loop st) (* calc size of unpicked ExprValueInfo *)
 

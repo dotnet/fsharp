@@ -1172,7 +1172,7 @@ let CompilePatternBasic
             let (v,e') =  BindSubExprOfInput g amap topgtvs pbind m subExpr
             BindProjectionPattern (Active(path,subExpr,p')) (accActive,accValMap.Add v e' )
         | TPat_tuple(tupInfo,ps,tyargs,_m) ->
-            let accessf' j tpinst e' = mkTupleFieldGet(tupInfo,accessf tpinst e',instTypes tpinst tyargs,j,exprm)
+            let accessf' j tpinst e' = mkTupleFieldGet g (tupInfo,accessf tpinst e',instTypes tpinst tyargs,j,exprm)
             let pathBuilder path j = PathTuple(path,tyargs,j)
             let newActives = List.mapi (mkSubActive pathBuilder accessf') ps
             BindProjectionPatterns newActives s 

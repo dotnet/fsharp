@@ -721,6 +721,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         else            
           if cenv.reportErrors  then 
               errorR(Error(FSComp.SR.chkNoAddressOfAtThisPoint(v.DisplayName), m))
+    | TOp.TupleFieldGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs;
+        CheckExprDirectArgs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
     | TOp.ValFieldGet _rf,_,[arg1],_arity -> 
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprDirectArgs cenv env [arg1]          (* See mkRecdFieldGetViaExprAddr -- byref arg1 when #args =1 *)

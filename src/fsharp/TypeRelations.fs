@@ -2452,7 +2452,7 @@ module ProvidedMethodCalls =
                     let t = tyOfExpr g inpT
                     stripTyEqnsWrtErasure EraseMeasures g t
                 let tupInfo, tysT = tryDestAnyTupleTy g typeOfExpr
-                let exprT = mkTupleFieldGet (tupInfo, inpT, tysT, n.PUntaint(id,m), m)
+                let exprT = mkTupleFieldGet g (tupInfo, inpT, tysT, n.PUntaint(id,m), m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with

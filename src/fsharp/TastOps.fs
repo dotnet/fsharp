@@ -1234,7 +1234,7 @@ let mkCoerceExpr(e,to_ty,m,from_ty)                     = Expr.Op (TOp.Coerce,[t
 let mkAsmExpr(code,tinst,args,rettys,m)                 = Expr.Op (TOp.ILAsm(code,rettys),tinst,args,m)
 let mkUnionCaseExpr(uc,tinst,args,m)                        = Expr.Op (TOp.UnionCase uc,tinst,args,m)
 let mkExnExpr(uc,args,m)                          = Expr.Op (TOp.ExnConstr uc,[],args,m)
-let mkTupleFieldGet(tupInfo,e,tinst,i,m)                  = Expr.Op (TOp.TupleFieldGet(tupInfo,i), tinst, [e],m)
+let mkTupleFieldGetViaExprAddr(tupInfo,e,tinst,i,m)                  = Expr.Op (TOp.TupleFieldGet(tupInfo,i), tinst, [e],m)
 
 let mkRecdFieldGetViaExprAddr(e,fref,tinst,m)      = Expr.Op (TOp.ValFieldGet(fref), tinst, [e],m)
 let mkRecdFieldGetAddrViaExprAddr(e,fref,tinst,m) = Expr.Op (TOp.ValFieldGetAddr(fref), tinst, [e],m)
@@ -5538,6 +5538,10 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
         let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" ty
         (fun rest -> mkCompGenLet m tmp e rest), (mkValAddr m (mkLocalValRef tmp))        
 
+let mkTupleFieldGet g (tupInfo,e,tinst,i,m) = 
+    let wrap,e' = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
+    wrap (mkTupleFieldGetViaExprAddr(tupInfo,e',tinst,i,m))
+
 let mkRecdFieldGet g (e,fref:RecdFieldRef,tinst,m) = 
     let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkRecdFieldGetViaExprAddr(e',fref,tinst,m))
@@ -5572,10 +5576,10 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   let exprToFix =  stripExpr exprToFix
   match exprToFix with 
   | Expr.Const _ -> ()
-  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when evalTupInfoIsStruct tupInfo ->
+  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
-            (mkTupleFieldGet(tupInfo,access,argtys,n,m), 
+            (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
             (fun e -> 
               // NICE: it would be better to do this check in the type checker 
               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeInConstructionOfTuple(),m));
@@ -6281,7 +6285,7 @@ let untupledToRefTupled g vs =
     let untupledTys = typesOfVals vs
     let m = (List.head vs).Range
     let tupledv,tuplede = mkCompGenLocal m "tupledArg" (mkRefTupledTy g untupledTys)
-    let untupling_es =  List.mapi (fun i _ ->  mkTupleFieldGet(tupInfoRef,tuplede,untupledTys,i,m)) untupledTys
+    let untupling_es =  List.mapi (fun i _ ->  mkTupleFieldGet g (tupInfoRef,tuplede,untupledTys,i,m)) untupledTys
     tupledv, mkInvisibleLets m vs untupling_es 
     
 // The required tupled-arity (arity) can either be 1 
@@ -6549,7 +6553,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             
                 mkRefTupled g appm 
                    ((actualTys,argTys) ||> List.mapi2 (fun i actualTy dummyTy ->  
-                       let argExprElement = mkTupleFieldGet(tupInfoRef,tupleVar,argTys,i,appm)
+                       let argExprElement = mkTupleFieldGet g (tupInfoRef,tupleVar,argTys,i,appm)
                        mkCoerceIfNeeded  g actualTy dummyTy argExprElement))
                    actualTys
 

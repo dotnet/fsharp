@@ -180,7 +180,7 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 // Make projection operations
 //------------------------------------------------------------------------- 
  
-val mkTupleFieldGet                : TupInfo * Expr * TypeInst * int * range -> Expr
+val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
 val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
