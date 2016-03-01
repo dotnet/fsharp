@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.Lexhelp
 
 open System
+open System.IO
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -340,14 +341,14 @@ module Keywords =
                     if String.IsNullOrWhiteSpace(filename) then
                         String.Empty
                     else if filename = stdinMockFilename then
-                        System.IO.Directory.GetCurrentDirectory()
+                        Directory.GetCurrentDirectory()
                     else
                         filename
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
-                        |> System.IO.Path.GetDirectoryName
+                        |> Path.GetDirectoryName
                 KEYWORD_STRING dirname
             | "__SOURCE_FILE__" -> 
-               KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+               KEYWORD_STRING (Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
                KEYWORD_STRING (string lexbuf.StartPos.Line)
             | _ -> 

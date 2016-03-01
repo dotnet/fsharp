@@ -54,6 +54,7 @@ type internal FSharpBraceMatchingService() =
             }
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
   
+    // Helper function to proxy Roslyn types to tests
     static member FindMatchingBrace(sourceText: SourceText, fileName: string, position: int, cancellationToken: CancellationToken) : Option<int> =
         let braceMatchingResult = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, fileName, position, cancellationToken)
         if braceMatchingResult.HasValue then

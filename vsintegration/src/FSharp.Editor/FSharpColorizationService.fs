@@ -72,6 +72,7 @@ type internal FSharpColorizationService() =
 
     static member private ColorizationDataCache = ConditionalWeakTable<SourceText, SourceTextColorizationData>()
 
+    // Helper function to proxy Roslyn types to tests
     static member GetColorizationData(sourceText: SourceText, fileName: string, defines: string list, cancellationToken: CancellationToken) : SourceTextColorizationData =
         FSharpColorizationService.ColorizationDataCache.GetValue(sourceText, fun key -> FSharpColorizationService.ScanSourceText(key, fileName, defines, cancellationToken))
 
