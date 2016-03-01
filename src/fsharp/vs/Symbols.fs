@@ -1755,6 +1755,13 @@ and FSharpType(cenv, typ:TType) =
         | TType_tuple _ -> true 
         | _ -> false
 
+    member __.IsStructTupleType = 
+       isResolved() &&
+       protect <| fun () -> 
+        match stripTyparEqns typ with 
+        | TType_tuple (tupInfo,_) -> evalTupInfoIsStruct tupInfo
+        | _ -> false
+
     member x.IsNamedType = x.HasTypeDefinition
     member x.NamedEntity = x.TypeDefinition
 
@@ -1772,7 +1779,7 @@ and FSharpType(cenv, typ:TType) =
        protect <| fun () -> 
         match stripTyparEqns typ with 
         | TType_app (_,tyargs) 
-        | TType_tuple (tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv,  ty)) |> makeReadOnlyCollection) 
+        | TType_tuple (_,tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv,  ty)) |> makeReadOnlyCollection) 
         | TType_fun(d,r) -> [| FSharpType(cenv,  d); FSharpType(cenv,  r) |] |> makeReadOnlyCollection
         | TType_measure (Measure.Con _) ->  [| |] |> makeReadOnlyCollection
         | TType_measure (Measure.Prod (t1,t2)) ->  [| FSharpType(cenv,  TType_measure t1); FSharpType(cenv,  TType_measure t2) |] |> makeReadOnlyCollection

@@ -1340,6 +1340,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
             // So this dictionary is indexed by integers.
             let dict = 
                 entries  
+                |> List.filter (fun (_,tcref,_) -> tcref.CanDeref) 
                 |> List.map (fun (_,tcref,builder) -> tcref.Stamp, builder) 
                 |> Dictionary.ofList 
             (fun tcref2 tinst -> 

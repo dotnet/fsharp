@@ -579,6 +579,15 @@ module internal Impl =
     let tuple7 = typedefof<obj * obj * obj * obj * obj * obj * obj>
     let tuple8 = typedefof<obj * obj * obj * obj * obj * obj * obj * obj>
 
+    let stuple1 = typedefof<StructTuple<obj>>
+    let stuple2 = typedefof<StructTuple<obj,obj>>
+    let stuple3 = typedefof<StructTuple<obj,obj,obj>>
+    let stuple4 = typedefof<StructTuple<obj,obj,obj,obj>>
+    let stuple5 = typedefof<StructTuple<obj,obj,obj,obj,obj>>
+    let stuple6 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj>>
+    let stuple7 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj,obj>>
+    let stuple8 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj,obj,obj>>
+
     let isTuple1Type typ = equivHeadTypes typ tuple1
     let isTuple2Type typ = equivHeadTypes typ tuple2
     let isTuple3Type typ = equivHeadTypes typ tuple3
@@ -587,6 +596,15 @@ module internal Impl =
     let isTuple6Type typ = equivHeadTypes typ tuple6
     let isTuple7Type typ = equivHeadTypes typ tuple7
     let isTuple8Type typ = equivHeadTypes typ tuple8
+
+    let isStructTuple1Type typ = equivHeadTypes typ stuple1
+    let isStructTuple2Type typ = equivHeadTypes typ stuple2
+    let isStructTuple3Type typ = equivHeadTypes typ stuple3
+    let isStructTuple4Type typ = equivHeadTypes typ stuple4
+    let isStructTuple5Type typ = equivHeadTypes typ stuple5
+    let isStructTuple6Type typ = equivHeadTypes typ stuple6
+    let isStructTuple7Type typ = equivHeadTypes typ stuple7
+    let isStructTuple8Type typ = equivHeadTypes typ stuple8
 
     let isTupleType typ = 
            isTuple1Type typ
@@ -597,25 +615,33 @@ module internal Impl =
         || isTuple6Type typ 
         || isTuple7Type typ 
         || isTuple8Type typ
+        || isStructTuple1Type typ
+        || isStructTuple2Type typ
+        || isStructTuple3Type typ 
+        || isStructTuple4Type typ 
+        || isStructTuple5Type typ 
+        || isStructTuple6Type typ 
+        || isStructTuple7Type typ 
+        || isStructTuple8Type typ
 
     let maxTuple = 8
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple-1
     
-    let rec mkTupleType (tys: Type[]) = 
+    let rec mkTupleType isStruct (tys: Type[]) = 
         match tys.Length with 
-        | 1 -> tuple1.MakeGenericType(tys)
-        | 2 -> tuple2.MakeGenericType(tys)
-        | 3 -> tuple3.MakeGenericType(tys)
-        | 4 -> tuple4.MakeGenericType(tys)
-        | 5 -> tuple5.MakeGenericType(tys)
-        | 6 -> tuple6.MakeGenericType(tys)
-        | 7 -> tuple7.MakeGenericType(tys)
+        | 1 -> (if isStruct then stuple1 else tuple1).MakeGenericType(tys)
+        | 2 -> (if isStruct then stuple2 else tuple2).MakeGenericType(tys)
+        | 3 -> (if isStruct then stuple3 else tuple3).MakeGenericType(tys)
+        | 4 -> (if isStruct then stuple4 else tuple4).MakeGenericType(tys)
+        | 5 -> (if isStruct then stuple5 else tuple5).MakeGenericType(tys)
+        | 6 -> (if isStruct then stuple6 else tuple6).MakeGenericType(tys)
+        | 7 -> (if isStruct then stuple7 else tuple7).MakeGenericType(tys)
         | n when n >= maxTuple -> 
             let tysA = tys.[0..tupleEncField-1]
             let tysB = tys.[maxTuple-1..]
-            let tyB = mkTupleType tysB
-            tuple8.MakeGenericType(Array.append tysA [| tyB |])
+            let tyB = mkTupleType isStruct tysB
+            (if isStruct then stuple8 else tuple8).MakeGenericType(Array.append tysA [| tyB |])
         | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
 
@@ -765,9 +791,6 @@ module internal Impl =
       typ.GetProperties(instancePropertyFlags ||| bindingFlags) 
       |> Array.filter isFieldProperty
       |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
-
-    let recdDescOfProps props = 
-       props |> Array.toList |> List.map (fun (p:PropertyInfo) -> p.Name, p.PropertyType) 
 
     let getRecd obj (props:PropertyInfo[]) = 
         props |> Array.map (fun prop -> prop.GetValue(obj,null))
@@ -921,7 +944,13 @@ type FSharpType =
         Impl.checkNonNull "types" types;
         if types |> Array.exists (function null -> true | _ -> false) then 
              invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
-        Impl.mkTupleType types
+        Impl.mkTupleType false types
+
+    static member MakeStructTupleType(types:Type[]) =  
+        Impl.checkNonNull "types" types;
+        if types |> Array.exists (function null -> true | _ -> false) then 
+             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
+        Impl.mkTupleType true types
 
     static member GetTupleElements(tupleType:Type) =
         Impl.checkTupleType("tupleType",tupleType);

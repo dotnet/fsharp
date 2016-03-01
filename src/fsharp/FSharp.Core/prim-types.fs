@@ -638,7 +638,6 @@ namespace System
 #else   
 #endif
 
-
 namespace Microsoft.FSharp.Core
 
     open System
@@ -7726,4 +7725,92 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="Like F# record types, F# exception declarations implement one primary constructor which accepts initial values for all fields")>]
     [<assembly:CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents@")>]
     do()
+
+namespace System
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.BasicInlinedOperations
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open System.Diagnostics
+    open System.Globalization
+    open System.Text
+
+    
+    [<DebuggerDisplay("({Item1})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1>(t1:'T1) = 
+        member t.Item1 = t1
+            
+    [<DebuggerDisplay("({Item1},{Item2})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2>(t1:'T1,t2:'T2) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+
+    [<DebuggerDisplay("({Item1},{Item2},{Item3})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3>(t1:'T1,t2:'T2,t3:'T3) =       
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+
+    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4>(t1:'T1,t2:'T2,t3:'T3,t4:'T4) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+        member t.Item4 = t4
+
+    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+        member t.Item4 = t4
+        member t.Item5 = t5
+
+    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+        member t.Item4 = t4
+        member t.Item5 = t5
+        member t.Item6 = t6
+
+    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+        member t.Item4 = t4
+        member t.Item5 = t5
+        member t.Item6 = t6
+        member t.Item7 = t7
+            
+    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7},{Rest})")>]
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7,rest:'TRest) = 
+        member t.Item1 = t1
+        member t.Item2 = t2
+        member t.Item3 = t3
+        member t.Item4 = t4
+        member t.Item5 = t5
+        member t.Item6 = t6
+        member t.Item7 = t7
+        member t.Rest = rest
+
 

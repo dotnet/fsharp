@@ -608,24 +608,24 @@ let isCompiledTupleTyconRef g tcref =
          tyconRefEq g g.struct_tuple8_tcr x) -> true
     | _ -> false
 
-let mkCompiledTupleTyconRef g tupInfo tys = 
+let mkCompiledTupleTyconRef g isStruct tys = 
     let n = List.length tys 
-    if   n = 1 then (if tupInfo then g.struct_tuple1_tcr else g.ref_tuple1_tcr)
-    elif n = 2 then (if tupInfo then g.struct_tuple2_tcr else g.ref_tuple2_tcr)
-    elif n = 3 then (if tupInfo then g.struct_tuple3_tcr else g.ref_tuple3_tcr)
-    elif n = 4 then (if tupInfo then g.struct_tuple4_tcr else g.ref_tuple4_tcr)
-    elif n = 5 then (if tupInfo then g.struct_tuple5_tcr else g.ref_tuple5_tcr)
-    elif n = 6 then (if tupInfo then g.struct_tuple6_tcr else g.ref_tuple6_tcr)
-    elif n = 7 then (if tupInfo then g.struct_tuple7_tcr else g.ref_tuple7_tcr)
-    elif n = 8 then (if tupInfo then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+    if   n = 1 then (if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr)
+    elif n = 2 then (if isStruct then g.struct_tuple2_tcr else g.ref_tuple2_tcr)
+    elif n = 3 then (if isStruct then g.struct_tuple3_tcr else g.ref_tuple3_tcr)
+    elif n = 4 then (if isStruct then g.struct_tuple4_tcr else g.ref_tuple4_tcr)
+    elif n = 5 then (if isStruct then g.struct_tuple5_tcr else g.ref_tuple5_tcr)
+    elif n = 6 then (if isStruct then g.struct_tuple6_tcr else g.ref_tuple6_tcr)
+    elif n = 7 then (if isStruct then g.struct_tuple7_tcr else g.ref_tuple7_tcr)
+    elif n = 8 then (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
     else failwithf "mkCompiledTupleTyconRef, n = %d" n
 
-let rec mkCompiledTupleTy g tupInfo tys = 
+let rec mkCompiledTupleTy g isStruct tys = 
     let n = List.length tys 
-    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g tupInfo tys, tys)
+    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g isStruct tys, tys)
     else 
         let tysA,tysB = List.splitAfter goodTupleFields tys
-        TType_app ((if tupInfo then g.ref_tuple8_tcr else g.struct_tuple8_tcr), tysA@[mkCompiledTupleTy g tupInfo tysB])
+        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB])
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -7769,10 +7769,10 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref:ValRef) =
 //------------------------------------------------------------------------ 
 
 
-let rec mkCompiledTuple g tupInfo (argtys,args,m) = 
+let rec mkCompiledTuple g isStruct (argtys,args,m) = 
     let n = List.length argtys 
     if n <= 0 then failwith "mkCompiledTuple"
-    elif n < maxTuple then  (mkCompiledTupleTyconRef g tupInfo argtys, argtys, args, m)
+    elif n < maxTuple then  (mkCompiledTupleTyconRef g isStruct argtys, argtys, args, m)
     else
         let argtysA,argtysB = List.splitAfter goodTupleFields argtys
         let argsA,argsB = List.splitAfter (goodTupleFields) args
@@ -7784,16 +7784,16 @@ let rec mkCompiledTuple g tupInfo (argtys,args,m) =
                 |  TType_app(tn, _)  when (isCompiledTupleTyconRef g tn) ->
                     ty8,arg8
                 | _ ->
-                    let ty8enc = TType_app((if tupInfo then g.struct_tuple1_tcr else g.ref_tuple1_tcr),[ty8])
-                    let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const tupInfo),[ty8],[arg8],m) 
+                    let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr),[ty8])
+                    let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const isStruct),[ty8],[arg8],m) 
                     ty8enc,v8enc
             | _ -> 
-                let a,b,c,d = mkCompiledTuple g tupInfo (argtysB, argsB, m)
+                let a,b,c,d = mkCompiledTuple g isStruct (argtysB, argsB, m)
                 let ty8plus = TType_app(a,b)
-                let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const tupInfo),b,c,d)
+                let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct),b,c,d)
                 ty8plus,v8plus
         let argtysAB = argtysA @ [ty8] 
-        (mkCompiledTupleTyconRef g tupInfo argtysAB, argtysAB,argsA @ [v8],m)
+        (mkCompiledTupleTyconRef g isStruct argtysAB, argtysAB,argsA @ [v8],m)
 
 let mkILMethodSpecForTupleItem (_g : TcGlobals) (typ:ILType) n = 
     mkILNonGenericInstanceMethSpecInTy(typ, (if n < goodTupleFields then "get_Item"+(n+1).ToString() else "get_Rest"), [], mkILTyvarTy (uint16 n))
