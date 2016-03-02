@@ -30,7 +30,6 @@ set BUILD_PROTO=0
 set BUILD_NET40=1
 set BUILD_PORTABLE=0
 set BUILD_VS=0
-set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
 set TEST_PORTABLE_COREUNIT=0
@@ -82,7 +81,6 @@ if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_PORTABLE_COREUNIT=1
     set TEST_VS=1
@@ -95,7 +93,6 @@ if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
@@ -110,7 +107,6 @@ if /i '%ARG%' == 'ci_part1' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
@@ -120,7 +116,6 @@ if /i '%ARG%' == 'ci_part1' (
 if /i '%ARG%' == 'ci_part2' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=1
 )
@@ -158,7 +153,6 @@ echo.
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
-echo BUILD_FSHARP_DATA_TYPEPROVIDERS=%BUILD_FSHARP_DATA_TYPEPROVIDERS%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
@@ -224,11 +218,6 @@ if '%BUILD_PROTO%' == '1' (
 
 %_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
-
-if '%BUILD_FSHARP_DATA_TYPEPROVIDERS%' == '1' (
-%_msbuildexe% %msbuildflags% src/fsharp-typeproviders-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: type provider build failed && goto :failure
-)
 
 if '%BUILD_PORTABLE%' == '1' (
 %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
