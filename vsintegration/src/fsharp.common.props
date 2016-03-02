@@ -7,7 +7,7 @@
   </PropertyGroup>  
 
   <!-- Use standard VS for Open Build. -->
-  <Import Project="..\..\..\fsharp.common.props" Condition="Exists('..\..\..\fsharp.common.props') AND $(_NTROOT) != ''" />
+  <Import Project="..\..\..\src\FSharp.Common.props" Condition="Exists('..\..\..\src\FSharp.Common.props') AND $(_NTROOT) != ''" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(DevDivBuild)' == '' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
   <PropertyGroup Condition="'$(DevDivBuild)' == ''">

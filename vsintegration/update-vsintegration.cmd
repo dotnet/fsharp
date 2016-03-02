@@ -18,6 +18,7 @@ exit /b 1
 :ok
 
 set BINDIR=%~dp0..\%1\net40\bin
+set TOPDIR=%~dp0..
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
@@ -52,7 +53,7 @@ copy /y "%BINDIR%\FsiAnyCPU.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FsiAnyCPU.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
+copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
 
 set COMPILERMAINASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055
 mkdir "%COMPILERMAINASSEMBLIESPATH%"

@@ -1,4 +1,5 @@
 // #Conformance #FSI 
+module FlagCheck 
 #nowarn "22"
 #if INTERACTIVE
 printfn "INTERACTIVE is defined"

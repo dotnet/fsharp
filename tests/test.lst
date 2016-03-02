@@ -8,16 +8,16 @@
 #      Remember to use **TABS** not spaces.
 #      I don't know who you are.  I don't know what you want. But if you hose daily automation by forgetting tabs, I will look for you, I will find you, and I will revert your checkin.
 
-Core01,Smoke		fsharp\core\access
+Core01	fsharp\core\access
 Core01		fsharp\core\apporder
-Core01,Smoke		fsharp\core\array
+Core01	fsharp\core\array
 Core01		fsharp\core\attributes
-Core01		fsharp\core\comprehensions
+Core01	fsharp\core\comprehensions
 Core01		fsharp\core\control
 Core01		fsharp\core\controlChamenos
 Core01		fsharp\core\controlMailbox
 Core01		fsharp\core\controlStackOverflow
-Core01		fsharp\core\controlWebExt
+Core01	fsharp\core\controlWebExt
 Core02		fsharp\core\controlWpf
 Core02		fsharp\core\csext
 Core02		..\testsprivate\fsharp\core\csfromfs
@@ -38,16 +38,16 @@ Core03		fsharp\core\interop
 Core03		fsharp\core\ilread
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
-Core03,Smoke		fsharp\core\libtest
+Core03		fsharp\core\libtest
 Core03		fsharp\core\lift
-NO_CI,Core03		fsharp\core\load-script
+Core03		fsharp\core\load-script
 Core03		fsharp\core\longnames
 Core03		fsharp\core\map
 Core04		..\testsprivate\fsharp\core\math\lapack
 Core04		fsharp\core\math\numbers
 Core04		fsharp\core\math\numbersVS2008
 Core04		fsharp\core\measures
-NO_CI,Core04		fsharp\core\members\basics
+Core04		fsharp\core\members\basics
 Core04		fsharp\core\members\ctree
 Core04		fsharp\core\members\factors
 Core04		fsharp\core\members\incremental
@@ -68,7 +68,7 @@ Core06		fsharp\core\queriesOverIQueryable
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
 Core06		fsharp\core\queriesOverOData
-Core06,CoreQuotes,Smoke		fsharp\core\quotes
+Core06,CoreQuotes		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
 Core07		fsharp\core\reflect
@@ -146,11 +146,11 @@ Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogViewer
 Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
-TypeProviders01,Smoke		fsharp\typeProviders\helloWorld
+TypeProviders01		fsharp\typeProviders\helloWorld
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
-NO_CI,TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
+TypeProviders01,TypeProvidersNeg		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly
 TypeProviders01		fsharp\typeProviders\wedgeAssembly
 

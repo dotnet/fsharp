@@ -23,12 +23,6 @@ type private FSLibPaths =
       FSDATATPPATH : string
       FSCOREDLLVPREVPATH : string }
 
-
-let private checkResult result = 
-    match result with
-    | CmdResult.ErrorLevel err -> let x = err, (sprintf "ERRORLEVEL %d" err) in Failure (RunError.ProcessExecError x)
-    | CmdResult.Success -> Success ()
-
 // REM ===
 // REM === Find paths to shipped F# libraries referenced by clients
 // REM ===

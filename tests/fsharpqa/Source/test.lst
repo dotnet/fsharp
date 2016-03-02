@@ -2,28 +2,27 @@
 # Official tags used in this suite
 # ================================
 # NoMT	-- skip this test/suite if we are doing a MultiTargeting run
-# ReqPP		-- skip this test/suite if there is no PowerPack installed
-# ReqNOCov	-- skip this test/suite if we are doing a code coverate run
+# ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\ComputationExpressions
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\Misc
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SerializableAttribute
-CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\StaticInit
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
@@ -128,14 +127,14 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
-Conformance03,Smoke			Conformance\Expressions\DataExpressions\ComputationExpressions
+Conformance03			Conformance\Expressions\DataExpressions\ComputationExpressions
 Conformance03			Conformance\Expressions\DataExpressions\ObjectExpressions
 Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
 
 Conformance04			Conformance\Expressions\DataExpressions\SequenceExpressions
 Conformance04			Conformance\Expressions\DataExpressions\Simple
-Conformance04,Smoke			Conformance\Expressions\DataExpressions\TupleExpressions
+Conformance04			Conformance\Expressions\DataExpressions\TupleExpressions
 Conformance04			Conformance\Expressions\ElaborationAndElaboratedExpressions
 Conformance04			Conformance\Expressions\EvaluationAndValues
 Conformance04			Conformance\Expressions\EvaluationOfElaboratedForms
@@ -190,7 +189,7 @@ Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\AutoPropert
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitFields
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitObjectConstructors
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors
-Conformance06,Smoke			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
+Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\LetDoDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\MemberDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\Misc
@@ -229,7 +228,7 @@ Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
 Conformance08			Conformance\TypesAndTypeConstraints\TypeParameterDefinitions
-Conformance08,Smoke			Conformance\UnitsOfMeasure\Basic
+Conformance08			Conformance\UnitsOfMeasure\Basic
 Conformance08			Conformance\UnitsOfMeasure\Bounds
 Conformance08			Conformance\UnitsOfMeasure\Constants
 Conformance08			Conformance\UnitsOfMeasure\Diagnostics
@@ -284,7 +283,7 @@ Misc01			Libraries\Core\Unchecked
 
 Misc02			Libraries\Portable
 Misc02			Misc
-Misc02,Smoke			MultiTargeting
+Misc02			MultiTargeting
 Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
