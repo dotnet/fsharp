@@ -94,7 +94,7 @@ let executeCompiler sources references =
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "--reference:%s" i)
     printfn ">%s<" (GetKeyFileOption)
     printfn ">%s<" (GetDelaySignOption)
-    let arguments = sprintf @"%s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s %s %s %s %s"
+    let arguments = sprintf @"%s --debug:portable --debug+ --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s %s %s %s %s"
                             (System.IO.Path.Combine(CompilerPath, "fsc.exe")) 
                             (Output) 
                             (Win32Manifest) 

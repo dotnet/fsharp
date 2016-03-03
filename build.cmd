@@ -174,7 +174,7 @@ echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 
 if "%RestorePackages%"=="" ( 
-    set RestorePackages=true 
+    set RestorePackages=true
 )
 
 @echo on
@@ -210,10 +210,12 @@ set msbuildflags=/maxcpucount
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-%_ngenexe% install .\.nuget\NuGet.exe 
+if '%RestorePackages%' == 'true' (
+    %_ngenexe% install .\.nuget\NuGet.exe 
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
-@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
+    @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+)
 
 set DOTNET_HOME  .\packages\dotnet
 
@@ -253,14 +255,14 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%
+%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
+%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
+@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
+
 if '%BUILD_FSHARP_DATA_TYPEPROVIDERS%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-typeproviders-build.proj /p:Configuration=%BUILD_CONFIG%
+    %_msbuildexe% %msbuildflags% src/fsharp-typeproviders-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
     @if ERRORLEVEL 1 echo Error: type provider build failed && goto :failure
 )
 
@@ -270,6 +272,11 @@ if '%BUILD_CORECLR%' == '1' (
 
     %_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
     @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
+
+    if '%TEST_CORECLR%' == '1' (
+        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG%
+        @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+    )
 )
 
 if '%BUILD_PORTABLE%' == '1' (

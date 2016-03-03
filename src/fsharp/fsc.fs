@@ -1761,6 +1761,7 @@ module FileWriter =
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     showTimes = tcConfig.showTimes
+                    portable = tcConfig.portable
                     signer = GetSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },

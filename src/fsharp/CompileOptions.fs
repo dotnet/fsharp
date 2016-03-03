@@ -478,10 +478,11 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "pdbonly" -> tcConfigB.jitTracking <- false
-       | "full" -> tcConfigB.jitTracking <- true 
+       | "portable" -> tcConfigB.jitTracking <- true; tcConfigB.portable <- true
+       | "pdbonly" -> tcConfigB.jitTracking <- false; tcConfigB.portable <- false
+       | "full" -> tcConfigB.jitTracking <- true;     tcConfigB.portable <- false
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None -> tcConfigB.jitTracking <- s = OptionSwitch.On 
+    | None -> tcConfigB.jitTracking <- s = OptionSwitch.On; tcConfigB.portable <- false
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let setOutFileName tcConfigB s = 
@@ -502,7 +503,7 @@ let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
 let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
-let tagFullPDBOnly = "{full|pdbonly}"
+let tagFullPDBOnlyPortable = "{full|pdbonly|portable}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
@@ -524,13 +525,13 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  doTLR  . . . . . . . . : %+A" tcConfigB.doTLR
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
     printfn "  jitTracking  . . . . . : %+A" tcConfigB.jitTracking
+    printfn "  portable . . . . . . . : %+A" tcConfigB.portable
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
     printfn "  copyFSharpCore . . . . : %+A" tcConfigB.copyFSharpCore
     tcConfigB.includes |> List.sort
                        |> List.iter (printfn "  include  . . . . . . . : %A")
-  
 
 // OptionBlock: Input files
 //-------------------------
@@ -665,7 +666,7 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
         CompilerOption("debug", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None,
                            Some (FSComp.SR.optsDebugPM()));
 
-        CompilerOption("debug", tagFullPDBOnly, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
+        CompilerOption("debug", tagFullPDBOnlyPortable, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
                            Some (FSComp.SR.optsDebug()));
 
         CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None,

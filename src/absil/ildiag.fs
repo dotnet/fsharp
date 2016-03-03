@@ -23,3 +23,21 @@ let dprintfn (fmt: Format<_,_,_,_>) =
     Printf.kfprintf dflushn (match !diagnosticsLog with None -> System.IO.TextWriter.Null | Some d -> d) fmt
 
 let setDiagnosticsChannel s = diagnosticsLog := s
+
+//---------------------------------------------------------------------
+// Library: ReportTime
+//---------------------------------------------------------------------
+
+let reportTime =
+    let tFirst = ref None     
+    let tPrev = ref None     
+    fun showTimes descr ->
+        if showTimes then 
+            let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+            let prev = match !tPrev with None -> 0.0 | Some t -> t
+            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
+            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            tPrev := Some t
+
+
+

@@ -102,19 +102,14 @@ val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* 
 //---------------------------------------------------------------------
 
 type PdbDocumentWriter
-#endif
 
-#if FX_NO_LINKEDRESOURCES
-#else
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
-#endif
-#if FX_NO_PDB_WRITER
-#else
+
 val pdbInitialize: 
     string (* .exe/.dll already written and closed *) -> 
     string  (* .pdb to write *) ->
@@ -130,7 +125,7 @@ val pdbCloseScope: PdbWriter -> int -> unit
 val pdbDefineLocalVariable: PdbWriter -> string -> byte[] -> int32 -> unit
 val pdbSetMethodRange: PdbWriter -> PdbDocumentWriter -> int -> int -> PdbDocumentWriter -> int -> int -> unit
 val pdbDefineSequencePoints: PdbWriter -> PdbDocumentWriter -> (int * int * int * int * int) array -> unit
-val pdbGetDebugInfo: PdbWriter -> idd
+val pdbWriteDebugInfo: PdbWriter -> idd
 #endif
 
 //---------------------------------------------------------------------

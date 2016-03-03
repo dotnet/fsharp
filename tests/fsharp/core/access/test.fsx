@@ -8,6 +8,7 @@ open coreclrutilities
 #endif
 
 #light
+
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true

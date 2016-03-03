@@ -3,6 +3,29 @@
   "version": 2,
   "targets": {
     "DNXCore,Version=v5.0": {
+      "Microsoft.DiaSymReader/1.0.7": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        }
+      },
+      "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.DiaSymReader": "1.0.7",
+          "System.Collections.Immutable": "1.1.37",
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+        },
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        }
+      },
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
@@ -464,7 +487,7 @@
           "ref/dotnet5.1/System.Reflection.Extensions.dll": {}
         }
       },
-      "System.Reflection.Metadata/1.2.0-rc3-23805": {
+      "System.Reflection.Metadata/1.3.0-beta-23816": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.0",
@@ -782,6 +805,29 @@
       }
     },
     "DNXCore,Version=v5.0/osx.10.10-x64": {
+      "Microsoft.DiaSymReader/1.0.7": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        }
+      },
+      "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.DiaSymReader": "1.0.7",
+          "System.Collections.Immutable": "1.1.37",
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+        },
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        }
+      },
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package",
         "dependencies": {
@@ -2009,7 +2055,7 @@
           "ref/dotnet5.1/System.Reflection.Extensions.dll": {}
         }
       },
-      "System.Reflection.Metadata/1.2.0-rc3-23805": {
+      "System.Reflection.Metadata/1.3.0-beta-23816": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.0",
@@ -2380,6 +2426,29 @@
       }
     },
     "DNXCore,Version=v5.0/ubuntu.14.04-x64": {
+      "Microsoft.DiaSymReader/1.0.7": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        }
+      },
+      "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.DiaSymReader": "1.0.7",
+          "System.Collections.Immutable": "1.1.37",
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+        },
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        }
+      },
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package",
         "dependencies": {
@@ -3609,7 +3678,7 @@
           "ref/dotnet5.1/System.Reflection.Extensions.dll": {}
         }
       },
-      "System.Reflection.Metadata/1.2.0-rc3-23805": {
+      "System.Reflection.Metadata/1.3.0-beta-23816": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.0",
@@ -3980,6 +4049,29 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x64": {
+      "Microsoft.DiaSymReader/1.0.7": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        }
+      },
+      "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.DiaSymReader": "1.0.7",
+          "System.Collections.Immutable": "1.1.37",
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+        },
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        }
+      },
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package",
         "dependencies": {
@@ -5330,7 +5422,7 @@
           "ref/dotnet5.1/System.Reflection.Extensions.dll": {}
         }
       },
-      "System.Reflection.Metadata/1.2.0-rc3-23805": {
+      "System.Reflection.Metadata/1.3.0-beta-23816": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.0",
@@ -5764,6 +5856,29 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x86": {
+      "Microsoft.DiaSymReader/1.0.7": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.dll": {}
+        }
+      },
+      "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.DiaSymReader": "1.0.7",
+          "System.Collections.Immutable": "1.1.37",
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+        },
+        "compile": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
+        }
+      },
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
@@ -7104,7 +7219,7 @@
           "ref/dotnet5.1/System.Reflection.Extensions.dll": {}
         }
       },
-      "System.Reflection.Metadata/1.2.0-rc3-23805": {
+      "System.Reflection.Metadata/1.3.0-beta-23816": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.0",
@@ -7539,6 +7654,30 @@
     }
   },
   "libraries": {
+    "Microsoft.DiaSymReader/1.0.7": {
+      "sha512": "4tPrkKu02w87HEvoubBGm7Hqjps69DucsBWQvGezwvDV5RJt+eZqdmdC/jNH1qn6hIem9JpJnLBK0abBzhErOg==",
+      "type": "package",
+      "files": [
+        "Microsoft.DiaSymReader.1.0.7.nupkg.sha512",
+        "Microsoft.DiaSymReader.nuspec",
+        "lib/net20/Microsoft.DiaSymReader.dll",
+        "lib/net20/Microsoft.DiaSymReader.xml",
+        "lib/portable-net45+win8/Microsoft.DiaSymReader.dll",
+        "lib/portable-net45+win8/Microsoft.DiaSymReader.xml"
+      ]
+    },
+    "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
+      "sha512": "xgkCQFUZQ73Wpqoyt2C3hvSOEnYEDNsHHfffUs6m+UgycITJCz5F1VBnuIUSb3tJ8Oqr8lNDBoWNzukE6Rr+ug==",
+      "type": "package",
+      "files": [
+        "Microsoft.DiaSymReader.PortablePdb.1.0.0-rc-60301.nupkg.sha512",
+        "Microsoft.DiaSymReader.PortablePdb.nuspec",
+        "lib/net45/Microsoft.DiaSymReader.PortablePdb.dll",
+        "lib/net45/Microsoft.DiaSymReader.PortablePdb.xml",
+        "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll",
+        "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.xml"
+      ]
+    },
     "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
       "sha512": "8B1JNAz0dQPltBIonw8TTE16OeY+iUVw1bFLJlZ70zX3hf+18tyKiQmJK1adOTObxJ6uFEz18Mxt2Ue5LtgQXQ==",
       "type": "package",
@@ -10918,11 +11057,11 @@
         "runtime.json"
       ]
     },
-    "System.Reflection.Metadata/1.2.0-rc3-23805": {
-      "sha512": "EUdvtSKTE9/tbkrSkgwdNbKw7vFuxzooAWNjk+tFXL4Tj2m4AlIScq0iNGqZVGW+EGyMn1XjPE4Jv1KQptcr+g==",
+    "System.Reflection.Metadata/1.3.0-beta-23816": {
+      "sha512": "6pn0tC1qbf7oZC/H5txVnOmbYkYI87xbLPXdncLPu65wVWt80yi0IEsqwYYmdmBEhv/g9ZmjMDX3VAfzUxCNyg==",
       "type": "package",
       "files": [
-        "System.Reflection.Metadata.1.2.0-rc3-23805.nupkg.sha512",
+        "System.Reflection.Metadata.1.3.0-beta-23816.nupkg.sha512",
         "System.Reflection.Metadata.nuspec",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
@@ -12210,6 +12349,8 @@
   },
   "projectFileDependencyGroups": {
     "": [
+      "Microsoft.DiaSymReader >= 1.0.7",
+      "Microsoft.DiaSymReader.PortablePdb >= 1.0.0-rc-60301",
       "Microsoft.NETCore.Platforms >= 1.0.1-rc3-23805",
       "NETStandard.Library >= 1.0.0-rc3-23805",
       "System.Collections.Immutable >= 1.2.0-rc3-23805",
@@ -12220,7 +12361,7 @@
       "System.Net.Requests >= 4.0.11-rc3-23805",
       "System.Reflection.Emit >= 4.0.1-rc3-23805",
       "System.Reflection.Emit.ILGeneration >= 4.0.1-rc3-23805",
-      "System.Reflection.Metadata >= 1.2.0-rc3-23805",
+      "System.Reflection.Metadata >= 1.3.0-beta-23816",
       "System.Runtime.InteropServices >= 4.1.0-rc3-23805",
       "System.Runtime.InteropServices.PInvoke >= 4.0.0-rc3-23805",
       "System.Runtime.Loader >= 4.0.0-rc3-23805",

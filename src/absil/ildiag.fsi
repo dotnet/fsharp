@@ -20,3 +20,4 @@ val public dprintf: TextWriterFormat<'a> -> 'a
 
 val public dprintn: string -> unit
 
+val reportTime : (bool -> string -> unit)

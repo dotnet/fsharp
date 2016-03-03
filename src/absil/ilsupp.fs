@@ -1018,13 +1018,13 @@ type ISymUnmanagedWriter2 =
 
 type PdbWriter = { symWriter : ISymUnmanagedWriter2 }
 type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
-#endif
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
+#endif
 
 #if FX_NO_PDB_WRITER
 #else
@@ -1147,7 +1147,7 @@ let pdbDefineSequencePoints (writer:PdbWriter) (docWriter: PdbDocumentWriter) (p
     let endColumns = (Array.map (fun (_,_,_,_,x) -> x) pts) 
     writer.symWriter.DefineSequencePoints(docWriter.symDocWriter, pts.Length, offsets, lines, columns, endLines, endColumns)
 
-let pdbGetDebugInfo (writer: PdbWriter) = 
+let pdbWriteDebugInfo (writer: PdbWriter) = 
     let mutable iDD = new ImageDebugDirectory()
     let mutable length = 0
     writer.symWriter.GetDebugInfo(&iDD, 0, &length, null)
