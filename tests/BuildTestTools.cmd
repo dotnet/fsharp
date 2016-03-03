@@ -2,15 +2,11 @@
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
-if /i "%1" == "vsdebug" goto :ok
-if /i "%1" == "vsrelease" goto :ok
 
 echo Builds a few test tools using latest compiler and runtime
 echo Usage:
 echo    BuildTestTools.cmd debug
 echo    BuildTestTools.cmd release
-echo    BuildTestTools.cmd vsdebug
-echo    BuildTestTools.cmd vsrelease
 exit /b 1
 
 :ok
@@ -32,25 +28,25 @@ if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
 
-if not exist "%~dp0\fsharpqa\testenv\bin" mkdir "%~dp0\fsharpqa\testenv\bin"  || goto :error
-%_msbuildexe% %~dp0\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj /p:Configuration=%1 /t:Build  || goto :error
-xcopy /Y %~dp0\fsharpqa\testenv\src\ILComparer\bin\%1\* %~dp0\fsharpqa\testenv\bin  || goto :error
+if not exist "%~dp0fsharpqa\testenv\bin" mkdir "%~dp0fsharpqa\testenv\bin"  || goto :error
+%_msbuildexe% %~dp0fsharpqa\testenv\src\ILComparer\ILComparer.fsproj /p:Configuration=%1 /t:Build  || goto :error
+xcopy /Y %~dp0fsharpqa\testenv\src\ILComparer\bin\%1\* %~dp0fsharpqa\testenv\bin  || goto :error
 
-%_msbuildexe% %~dp0\fsharpqa\testenv\src\diff\diff.fsproj /p:Configuration=%1 /t:Build  || goto :error
-xcopy /Y %~dp0\fsharpqa\testenv\src\diff\bin\%1\* %~dp0\fsharpqa\testenv\bin  || goto :error
+%_msbuildexe% %~dp0fsharpqa\testenv\src\diff\diff.fsproj /p:Configuration=%1 /t:Build  || goto :error
+xcopy /Y %~dp0fsharpqa\testenv\src\diff\bin\%1\* %~dp0fsharpqa\testenv\bin  || goto :error
 
-%_msbuildexe% %~dp0\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj /p:Configuration=%1 /t:Build  || goto :error
-xcopy /Y %~dp0\fsharpqa\testenv\src\HostedCompilerServer\bin\%1\* %~dp0\fsharpqa\testenv\bin  || goto :error
+%_msbuildexe% %~dp0fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj /p:Configuration=%1 /t:Build  || goto :error
+xcopy /Y %~dp0fsharpqa\testenv\src\HostedCompilerServer\bin\%1\* %~dp0fsharpqa\testenv\bin  || goto :error
 
-%_msbuildexe% %~dp0\fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x86  || goto :error
-xcopy /IY %~dp0\fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0\fsharpqa\testenv\bin\x86  || goto :error
+%_msbuildexe% %~dp0fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x86  || goto :error
+xcopy /IY %~dp0fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0fsharpqa\testenv\bin\x86  || goto :error
 
-%_msbuildexe% %~dp0\fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x64  || goto :error
-xcopy /IY %~dp0\fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0\fsharpqa\testenv\bin\AMD64  || goto :error
+%_msbuildexe% %~dp0fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x64  || goto :error
+xcopy /IY %~dp0fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0fsharpqa\testenv\bin\AMD64  || goto :error
 
-if exist %~dp0\..\%1\net40\bin (
-    xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.sigdata %~dp0\fsharpqa\testenv\bin  || goto :error
-    xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.optdata %~dp0\fsharpqa\testenv\bin  || goto :error
+if exist %~dp0..\%1\net40\bin (
+    xcopy /Y %~dp0..\%1\net40\bin\FSharp.Core.sigdata %~dp0fsharpqa\testenv\bin  || goto :error
+    xcopy /Y %~dp0..\%1\net40\bin\FSharp.Core.optdata %~dp0fsharpqa\testenv\bin  || goto :error
 )
 
 echo set NUNITPATH=%~dp0%..\packages\NUnit.Console.3.0.0\tools\
@@ -62,10 +58,10 @@ if not exist "%NUNITPATH%" (
     .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
     popd
 )    
-echo  "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-xcopy "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-echo  "%~dp0\fsharpqa\testenv\src\nunit*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-xcopy "%~dp0\fsharpqa\testenv\src\nunit*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo  "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo  "%~dp0fsharpqa\testenv\src\nunit*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%~dp0fsharpqa\testenv\src\nunit*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 goto :EOF
 
 :error

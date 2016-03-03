@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
 // Regression test for FSHARP1.0:2435 (ICE on duplicate property definitions.)
 // See also bug FSHARP1.0:4925 (this test will have to be updated once that bug is resolved)
-//<Expects id="FS0438" span="(9,18-9,21)" status="error">Duplicate method\. The method 'get_Property001' has the same name and signature as another method in this type</Expects>
+//<Expects id="FS0438" span="(10,18-10,29)" status="error">Duplicate method\. The method 'get_Property001' has the same name and signature as another method in this type</Expects>
 module NM = 
     type ClassMembers ()  = 
      let mutable adjustableInstanceValue = "3"
