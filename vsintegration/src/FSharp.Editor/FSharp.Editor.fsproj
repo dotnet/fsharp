@@ -22,14 +22,15 @@
     <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="TokenContext.fs" />
+    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="SmartIndent.fs" />
+    <Compile Include="FSharpProjectSiteService.fs" />
+    <Compile Include="FSharpContentType.fs" />
+    <Compile Include="FSharpColorizationService.fs" />
+    <Compile Include="FSharpBraceMatchingService.fs" />
     <Content Include="extension.vsixmanifest">
       <CopyToOutputDirectory>false</CopyToOutputDirectory>
     </Content>
-    <Compile Include="BraceCompletion.fs" />
-    <Compile Include="FSharpProjectSiteService.fs" />
-    <Compile Include="FSharpContentType.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj">
@@ -64,10 +65,13 @@
     <Reference Include="Microsoft.VisualStudio.Text.Logic" />
     <Reference Include="Microsoft.VisualStudio.CoreUtility" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop" />
-    <Reference Include="Microsoft.VisualStudio.Shell" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
+    <Reference Include="Microsoft.VisualStudio.Threading" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="WindowsBase" />
     <Reference Include="System.Composition.AttributedModel">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Composition.$(MicrosoftCompositionVersion)\lib\portable-net45+win8+wp8+wpa81\System.Composition.AttributedModel.dll</HintPath>
     </Reference>

@@ -15,6 +15,9 @@ open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 
+type Position = int * int
+type Range = Position * Position
+
 /// Represents encoded information for the end-of-line continutation of lexing
 type FSharpTokenizerLexState = int64
 
@@ -49,9 +52,7 @@ type internal FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-#if COLORIZE_TYPES
     | TypeName = 11
-#endif
     
 /// Gives an indication of what should happen when the token is typed in an IDE
 type internal FSharpTokenTriggerClass =
@@ -205,7 +206,7 @@ type internal FSharpLineTokenizer =
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
 type internal FSharpSourceTokenizer =
-    new : conditionalDefines:string list * fileName:string -> FSharpSourceTokenizer
+    new : conditionalDefines:string list * fileName:Option<string> -> FSharpSourceTokenizer
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     

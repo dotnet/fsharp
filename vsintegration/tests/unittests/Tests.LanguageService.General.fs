@@ -304,7 +304,7 @@ EdmxFile
                         let filename = "test.fs"
                         let defines = [ "COMPILED"; "EDITING" ]
             
-                        FSharpSourceTokenizer(defines,filename).CreateLineTokenizer(source))
+                        FSharpSourceTokenizer(defines,Some(filename)).CreateLineTokenizer(source))
         
         let cm = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Comment
         let kw = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Keyword

@@ -39,12 +39,11 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.SetupNewTextView(view) =
         base.SetupNewTextView(view)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
-        let sp = new ServiceProvider(this.SystemServiceProvider.GetService())
 
         // Ensure that we have a project in the workspace for this document.
         let (_, buffer) = view.GetBuffer()
         let filename = VsTextLines.GetFilename buffer
-        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(sp.RunningDocumentTable,filename)
+        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename)
         match result with
         | Some (hier, _) ->
             match hier with
@@ -57,17 +56,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     projectSite.Initialize(hier, site)                    
             | _ -> ()
         | _ -> ()
-
-and [<Guid(FSharpCommonConstants.editorFactoryGuidString)>]
-    internal FSharpEditorFactory(package : FSharpPackage) =
-    inherit AbstractEditorFactory(package)
-
-    override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
-    override this.GetFormattedTextChanges(_, _, _, _) = upcast Array.empty
-    
-and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuidString)>]
-    internal FSharpCodePageEditorFactory(editorFactory: FSharpEditorFactory) =
-    inherit AbstractCodePageEditorFactory(editorFactory)
 
 and [<Guid(FSharpCommonConstants.packageGuidString)>]
     internal FSharpPackage() = 
@@ -83,16 +71,7 @@ and [<Guid(FSharpCommonConstants.packageGuidString)>]
     
     override this.CreateLanguageService() = new FSharpLanguageService(this)
 
-    override this.CreateEditorFactories() = 
-        // Disabling editor factories until fully implemented
-        
-        // let editorFactory = new FSharpEditorFactory(this)
-        // let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
-
-        [|
-            // editorFactory :> IVsEditorFactory;
-            // codePageEditorFactory :> IVsEditorFactory;
-        |] :> seq<IVsEditorFactory>
+    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     
