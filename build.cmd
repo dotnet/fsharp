@@ -173,6 +173,9 @@ echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 
+REM Remove lingering copies of the OSS FSharp.Core from the GAC
+gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
+
 if "%RestorePackages%"=="" ( 
     set RestorePackages=true
 )
@@ -324,9 +327,6 @@ if '%BUILD_VS%' == '1' (
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
-
-REM Remove lingering copies of the OSS FSharp.Core from the GAC
-gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
 
 REM This clobbers the installed F# SDK on the machine
 REM call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
