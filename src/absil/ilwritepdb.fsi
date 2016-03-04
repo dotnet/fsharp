@@ -75,7 +75,6 @@ val DumpDebugInfo : string -> PdbData -> unit
 val WriteMdbInfo<'a> : string -> string -> PdbData -> 'a
 #endif
 
-//#if FX_PORTABLEPDB_WRITER
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
@@ -84,7 +83,6 @@ type idd =
       iddData: byte[]; }
 
 val WritePortablePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> fpdb:string -> info:PdbData -> idd
-//#endif
 
 #if !FX_NO_PDB_WRITER
 val WritePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> idd

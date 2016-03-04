@@ -197,8 +197,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) = 
-
+let WritePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) = 
     try FileSystem.FileDelete fpdb with _ -> ()
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
@@ -208,23 +207,23 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
             Array.empty<PdbDocumentData>
         else
             info.Documents
-
+ 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name:string) =
         let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
-
+ 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
  
         let writer = new BlobBuilder()
         writer.WriteByte(byte(separator))
-
+ 
         for part in name.Split( [| separator |] ) do
             let partIndex = MetadataTokens.GetHeapOffset(BlobHandle.op_Implicit(metadata.GetBlobUtf8(part)))
             writer.WriteCompressedInteger(int(partIndex))
  
         metadata.GetBlob(writer);
-
+ 
     let corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
     let documentIndex =
         let mutable index = new Dictionary<string, DocumentHandle>()
@@ -244,7 +243,7 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                                          metadata.GetGuid(corSymLanguageTypeFSharp))
             index.Add(doc.File, handle)
         index
-
+ 
     metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
     info.Methods |> Array.iteri (fun _i minfo ->
         let docHandle, sequencePointBlob =
@@ -255,13 +254,13 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                     match minfo.Range with
                     | None -> Array.empty<PdbSequencePoint>
                     | Some (_,_) -> minfo.SequencePoints
-
+ 
             let getDocumentName i = 
                 if i < 0 || i > docs.Length then 
                     failwith "getDocument: bad doc number"
                 else
                     docs.[i].File
-
+ 
             let getDocumentHandle d = 
                 if docs.Length = 0 || d < 0 || d > docs.Length then 
                     Unchecked.defaultof<DocumentHandle>
@@ -269,7 +268,7 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                     match documentIndex.TryGetValue(getDocumentName d) with
                     | false, _ -> Unchecked.defaultof<DocumentHandle>
                     | true, f  -> f
-
+ 
             let tryGetSingleDocumentIndex =
                 let mutable singleDocumentIndex = 0
                 for i in 1 .. sps.Length - 1 do
@@ -277,22 +276,22 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                     if index <> singleDocumentIndex then 
                         singleDocumentIndex <- index
                 singleDocumentIndex
-
+ 
             if sps.Length = 0 then 
                 Unchecked.defaultof<DocumentHandle>, Unchecked.defaultof<BlobHandle>
             else
                 let builder = new BlobBuilder()
                 builder.WriteCompressedInteger(minfo.LocalSignatureToken)
-
+ 
                 let mutable previousNonHiddenStartLine = -1
                 let mutable previousNonHiddenStartColumn = -1
                 
                 let mutable previousDocumentIndex = -1
                 let mutable singleDocumentIndex = tryGetSingleDocumentIndex
                 let mutable currentDocumentIndex = previousDocumentIndex
-
+ 
                 for i in 0 .. (sps.Length - 1) do
-
+ 
                     if previousDocumentIndex <> currentDocumentIndex then
                         // optional document in header or document record:
                         if previousDocumentIndex <> -1   then
@@ -300,29 +299,29 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                             builder.WriteCompressedInteger(0)
                         builder.WriteCompressedInteger(currentDocumentIndex)
                         previousDocumentIndex <- currentDocumentIndex
-
+ 
                     // delta IL offset:
                     if i > 0 then 
                         builder.WriteCompressedInteger(sps.[i].Offset - sps.[i - 1].Offset)
                     else
                         builder.WriteCompressedInteger(sps.[i].Offset)
-
+ 
                         // F# does not support hidden sequence points yet !!!
                         // if (sequencePoints[i].IsHidden)
                         // {
                         //     builder.WriteInt16(0);
                         //     continue;
                         // }
-
+ 
                     let deltaLines = sps.[i].EndLine - sps.[i].Line;
                     let deltaColumns = sps.[i].EndColumn - sps.[i].Column;
                     builder.WriteCompressedInteger(deltaLines);
-
+ 
                     if deltaLines = 0 then 
                         builder.WriteCompressedInteger(deltaColumns)
                     else
                         builder.WriteCompressedSignedInteger(deltaColumns)
-
+ 
                     // delta Start Lines & Columns:
                     if previousNonHiddenStartLine < 0 then
                         builder.WriteCompressedInteger(sps.[i].Line)
@@ -330,12 +329,12 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                     else
                         builder.WriteCompressedSignedInteger(sps.[i].Line - previousNonHiddenStartLine)
                         builder.WriteCompressedSignedInteger(sps.[i].Column - previousNonHiddenStartColumn)
-
+ 
                     previousNonHiddenStartLine <- sps.[i].Line
                     previousNonHiddenStartColumn <- sps.[i].Column
-
+ 
                 getDocumentHandle singleDocumentIndex, metadata.GetBlob(builder)
-
+ 
         // Write the scopes 
         let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
@@ -351,20 +350,20 @@ let WritePortablePdbInfo fixupSPs showTimes fpdb (info:PdbData) =
                 for localVariable in scope.Locals do
                     lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetString(localVariable.Name))
                 scope.Children |> Array.iter (writePdbScope false)
-
+ 
         writePdbScope true minfo.RootScope
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore)
-
+ 
     let entryPoint =
         match info.EntryPoint with 
         | None -> MetadataTokens.MethodDefinitionHandle(0)
         | Some x -> MetadataTokens.MethodDefinitionHandle(x) 
-
+ 
     let pdbContentId = ContentId(info.ModuleID, BitConverter.GetBytes(info.Timestamp))
     let serializer = StandaloneDebugMetadataSerializer(metadata, externalRowCounts, entryPoint, false)
     let blobBuilder = new BlobBuilder()
-    let _metadataContentId = serializer.SerializeMetadata(blobBuilder, (fun builder -> pdbContentId))
-
+    serializer.SerializeMetadata(blobBuilder, (fun builder -> pdbContentId)) |> ignore
+ 
     reportTime showTimes "PDB: Created"
     use portablePdbStream = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     blobBuilder.WriteContentTo(portablePdbStream)
