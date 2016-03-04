@@ -25,6 +25,8 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+// TODO: add defines flags if available from project sites and files
+
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService() =
               
@@ -41,17 +43,17 @@ type internal FSharpBraceMatchingService() =
         ClassificationTypeNames.ExcludedCode;
     ]
     
-    static let getBraceMatchingResult(sourceText: SourceText, fileName: Option<string>, position: int, cancellationToken: CancellationToken) : Option<BraceMatchingResult> =
+    static let getBraceMatchingResult(sourceText: SourceText, fileName: Option<string>, defines: string list, position: int, cancellationToken: CancellationToken) : Option<BraceMatchingResult> =
         if position < 0 || position >= sourceText.Length then
             None
         else
-            let completeTextSpan = TextSpan(0, sourceText.Length)
-            let classificationData = FSharpColorizationService.GetColorizationData(sourceText, completeTextSpan, fileName, [], cancellationToken)
-
             let shouldBeIgnored(characterPosition) =
-                match classificationData.GetClassifiedSpan(characterPosition) with
-                | None -> false
-                | Some(classifiedSpan) -> ignoredClassificationTypes |> Seq.contains classifiedSpan.ClassificationType
+                let textSpan = TextSpan(characterPosition, 1)
+                let classifiedSpans = FSharpColorizationService.GetColorizationData(sourceText, textSpan, fileName, defines, cancellationToken)
+                if classifiedSpans.Any() then
+                    ignoredClassificationTypes |> Seq.contains (classifiedSpans.First().ClassificationType)
+                else
+                    false
                 
             if shouldBeIgnored(position) then
                 None
@@ -69,7 +71,7 @@ type internal FSharpBraceMatchingService() =
                     else if currentCharacter = rightBrace then Some(proceedToStartOfString, beforeStartOfString, rightBrace, leftBrace)
                     else None
 
-                match supportedBraceTypes |> Seq.tryPick(pickBraceType) with
+                match supportedBraceTypes |> List.tryPick(pickBraceType) with
                 | None -> None
                 | Some(proceedFunc, stoppingCondition, matchedBrace, nonMatchedBrace) ->
                     let mutable currentPosition = proceedFunc position
@@ -91,19 +93,19 @@ type internal FSharpBraceMatchingService() =
 
     interface IBraceMatcher with
         member this.FindBracesAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<Nullable<BraceMatchingResult>> =
-            let computation() =
-                let sourceText = document.GetTextAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult()
-                try match getBraceMatchingResult(sourceText, Some(document.Name), position, cancellationToken) with
-                    | None -> Nullable()
-                    | Some(braceMatchingResult) -> Nullable(braceMatchingResult)
-                with ex -> 
-                    Assert.Exception(ex)
-                    reraise()
-            Task.Run(computation, cancellationToken)
-  
+            document.GetTextAsync(cancellationToken).ContinueWith(
+                fun (sourceTextTask: Task<SourceText>) ->
+                    try match getBraceMatchingResult(sourceTextTask.Result, Some(document.Name), [], position, cancellationToken) with
+                        | None -> Nullable()
+                        | Some(braceMatchingResult) -> Nullable(braceMatchingResult)
+                    with ex -> 
+                        Assert.Exception(ex)
+                        reraise()
+                , TaskContinuationOptions.OnlyOnRanToCompletion)
+
     // Helper function to proxy Roslyn types to tests
-    static member FindMatchingBrace(sourceText: SourceText, fileName: Option<string>, position: int, cancellationToken: CancellationToken) : Option<int> =
-        match getBraceMatchingResult(sourceText, fileName, position, cancellationToken) with
+    static member FindMatchingBrace(sourceText: SourceText, fileName: Option<string>, defines: string list, position: int, cancellationToken: CancellationToken) : Option<int> =
+        match getBraceMatchingResult(sourceText, fileName, defines, position, cancellationToken) with
         | None -> None
         | Some(braceMatchingResult) ->
             if braceMatchingResult.LeftSpan.Start = position then

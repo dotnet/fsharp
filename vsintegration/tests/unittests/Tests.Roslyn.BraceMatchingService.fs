@@ -18,7 +18,7 @@ type BraceMatchingServiceTests()  =
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
 
-        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), markerPosition, CancellationToken.None) with
+        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), [], markerPosition, CancellationToken.None) with
         | None -> ()
         | Some(foundMatch) -> Assert.Fail("Found match for brace at position '{0}'", foundMatch)
 
@@ -28,7 +28,7 @@ type BraceMatchingServiceTests()  =
         let endMarkerPosition = fileContents.IndexOf(endMarker)
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
 
-        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), startMarkerPosition, CancellationToken.None) with
+        match FSharpBraceMatchingService.FindMatchingBrace(SourceText.From(fileContents), Some("test.fs"), [], startMarkerPosition, CancellationToken.None) with
         | None -> Assert.Fail("Didn't find a match for brace at position '{0}", startMarkerPosition)
         | Some(foundMatch) -> Assert.AreEqual(endMarkerPosition, foundMatch, "Found match at incorrect position")
         
@@ -65,7 +65,7 @@ type BraceMatchingServiceTests()  =
 
     [<TestCase("[start")>]
     [<TestCase("]end")>]
-    member this.BraceInMultiLineCommentShouldnotBeMatched(startMarker: string) = 
+    member this.BraceInMultiLineCommentShouldNotBeMatched(startMarker: string) = 
         let code = "
             let x = 3
             (* This [start
@@ -87,7 +87,7 @@ type BraceMatchingServiceTests()  =
     [<TestCase(")endsInComment")>]
     [<TestCase("<startsInComment")>]
     [<TestCase("<startsInComment")>]
-    member this.BraceStartingOrEndingInCommentShouldnotBeMatched(startMarker: string) = 
+    member this.BraceStartingOrEndingInCommentShouldNotBeMatched(startMarker: string) = 
         let code = "
             let x = 123 + (endsInComment
             (* )endsInComment <startsInComment *)
@@ -98,7 +98,7 @@ type BraceMatchingServiceTests()  =
     [<TestCase(")endsInDisabledCode")>]
     [<TestCase("<startsInDisabledCode")>]
     [<TestCase("<startsInDisabledCode")>]
-    member this.BraceStartingOrEndingInDisabledCodeShouldnotBeMatched(startMarker: string) = 
+    member this.BraceStartingOrEndingInDisabledCodeShouldNotBeMatched(startMarker: string) = 
         let code = "
             let x = 123 + (endsInDisabledCode
             #if UNDEFINED
@@ -111,7 +111,7 @@ type BraceMatchingServiceTests()  =
     [<TestCase(")endsInString")>]
     [<TestCase("<startsInString")>]
     [<TestCase(">startsInString")>]
-    member this.BraceStartingOrEndingInStringShouldnotBeMatched(startMarker: string) = 
+    member this.BraceStartingOrEndingInStringShouldNotBeMatched(startMarker: string) = 
         let code = "
             let x = \"stringValue\" + (endsInString +
             \" )endsInString <startsInString \" +

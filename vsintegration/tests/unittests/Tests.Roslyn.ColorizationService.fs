@@ -12,26 +12,24 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 [<TestFixture>]
 type ColorizationServiceTests()  =
-    
-    member private this.VerifyColorizerAtStartOfMarker(fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool) =
+
+    member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
         let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
-        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
+        let tokens = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
-
-        match colorizationData.GetClassifiedSpan(markerPosition) with
+        (tokens, markerPosition)
+    
+    member private this.VerifyColorizerAtStartOfMarker(fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool) =
+        let (tokens, markerPosition) = this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+        match tokens |> Seq.tryFind(fun token -> token.TextSpan.Contains(markerPosition)) with
         | None -> Assert.Fail("Cannot find colorization data for start of marker")
         | Some(classifiedSpan) -> Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for start of marker")
         
-    member private this.VerifyColorizerAtEndOfMarker(fileContents : string, marker : string, defines: string list, classificationType: string, ?isScriptFile: bool) =
-        let textSpan = TextSpan(0, fileContents.Length)
-        let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
-        let colorizationData = FSharpColorizationService.GetColorizationData(SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
-        let markerPosition = fileContents.IndexOf(marker)
-        Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
-
-        match colorizationData.GetClassifiedSpan(markerPosition + marker.Length - 1) with
+    member private this.VerifyColorizerAtEndOfMarker(fileContents : string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool) =
+        let (tokens, markerPosition) = this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+        match tokens |> Seq.tryFind(fun token -> token.TextSpan.Contains(markerPosition + marker.Length - 1)) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
         | Some(classifiedSpan) -> Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for end of marker")
 
