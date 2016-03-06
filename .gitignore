@@ -95,3 +95,6 @@ tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.mdf
 *.ldf
 tests/**/FSharp.Core.dll
+project.lock.json
+src/fsharp/FSharp.Compiler/FSComp.fs
+bin/builtfsc/
