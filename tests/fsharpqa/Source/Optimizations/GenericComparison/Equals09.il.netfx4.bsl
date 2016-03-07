@@ -36,13 +36,13 @@
   // Offset: 0x00000AB0 Length: 0x0000058F
 }
 .module Equals09.dll
-// MVID: {56DBF22A-0759-46D9-A745-03832AF2DB56}
+// MVID: {56DD23D1-0759-46D9-A745-0383D123DD56}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x022D0000
+// Image base: 0x00DE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -265,6 +265,8 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       14 (0xe)
         .maxstack  8
+        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+        .line 4,4 : 10,13 'E:\\Documents\\GitHub\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals09.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -286,6 +288,7 @@
                  [3] int32 V_3,
                  [4] int32 V_4,
                  [5] int32 V_5)
+        .line 4,4 : 10,13 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Equals09/EqualsMicroPerfAndCodeGenerationTests/Key
@@ -435,6 +438,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
+        .line 4,4 : 10,13 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -826,6 +830,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       14 (0xe)
         .maxstack  8
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -852,6 +857,7 @@
                  [8] class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key V_8,
                  [9] class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key V_9,
                  [10] int32 V_10)
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
@@ -1039,6 +1045,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -1258,9 +1265,11 @@
                [1] class Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys key1,
                [2] class Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys key2,
                [3] int32 i)
+      .line 7,7 : 8,29 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
+      .line 8,8 : 8,65 ''
       IL_0003:  ldc.i4.1
       IL_0004:  ldc.i4.2
       IL_0005:  call       class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key Equals09/EqualsMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
@@ -1278,6 +1287,7 @@
       IL_001d:  call       class Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                       class [mscorlib]System.Tuple`2<class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key,class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key>)
       IL_0022:  stloc.1
+      .line 9,9 : 8,65 ''
       IL_0023:  ldc.i4.1
       IL_0024:  ldc.i4.2
       IL_0025:  call       class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key Equals09/EqualsMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
@@ -1295,10 +1305,12 @@
       IL_003d:  call       class Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Equals09/EqualsMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                       class [mscorlib]System.Tuple`2<class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key,class Equals09/EqualsMicroPerfAndCodeGenerationTests/Key>)
       IL_0042:  stloc.2
+      .line 10,10 : 8,32 ''
       IL_0043:  ldc.i4.0
       IL_0044:  stloc.3
       IL_0045:  br.s       IL_0058
 
+      .line 11,11 : 12,30 ''
       IL_0047:  ldloc.1
       IL_0048:  ldloc.2
       IL_0049:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -1309,6 +1321,7 @@
       IL_0055:  ldc.i4.1
       IL_0056:  add
       IL_0057:  stloc.3
+      .line 10,10 : 21,29 ''
       IL_0058:  ldloc.3
       IL_0059:  ldc.i4     0x989681
       IL_005e:  blt.s      IL_0047
