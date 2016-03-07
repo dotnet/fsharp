@@ -3,33 +3,20 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
 
 open System
+open System.Collections.Generic 
 open System.Collections.Immutable
+open System.IO
 open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Reflection.Metadata.Ecma335.Blobs
 open System.Reflection.PortableExecutable
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-
-#if FX_NO_CORHOST_SIGNER
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-#endif
-
-open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
-
-open System.Collections.Generic 
-open System.IO
 
 // -------------------------------------------------------------------- 
 // PDB types
@@ -374,8 +361,10 @@ let WritePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
-let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
+let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
+
     try FileSystem.FileDelete fpdb with _ -> ()
+
     let pdbw = ref Unchecked.defaultof<PdbWriter>
 
     try
