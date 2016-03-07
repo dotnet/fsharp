@@ -258,20 +258,16 @@ let WritePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
                     | None -> Array.empty<PdbSequencePoint>
                     | Some (_,_) -> minfo.SequencePoints
  
-            let getDocumentName i = 
-                if i < 0 || i > docs.Length then 
-                    failwith "getDocument: bad doc number"
-                else
-                    docs.[i].File
- 
             let getDocumentHandle d = 
                 if docs.Length = 0 || d < 0 || d > docs.Length then 
                     Unchecked.defaultof<DocumentHandle>
                 else 
-                    match documentIndex.TryGetValue(getDocumentName d) with
+                    match documentIndex.TryGetValue(docs.[d].File) with
                     | false, _ -> Unchecked.defaultof<DocumentHandle>
                     | true, f  -> f
 
+            // Return a document that the entire method body is declared within. 
+            // If part of the method body is in another document returns nil handle.
             let tryGetSingleDocumentIndex =
                 let mutable singleDocumentIndex = 0
                 for i in 1 .. sps.Length - 1 do
