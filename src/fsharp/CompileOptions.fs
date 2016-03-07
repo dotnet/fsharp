@@ -478,11 +478,11 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "portable" -> tcConfigB.jitTracking <- false; tcConfigB.portable <- true
-       | "pdbonly" -> tcConfigB.jitTracking <- false; tcConfigB.portable <- false
-       | "full" -> tcConfigB.jitTracking <- true;     tcConfigB.portable <- false
+       | "portable" -> tcConfigB.jitTracking <- false; tcConfigB.portablePDB <- true
+       | "pdbonly" -> tcConfigB.jitTracking <- false; tcConfigB.portablePDB <- false
+       | "full" -> tcConfigB.jitTracking <- true;     tcConfigB.portablePDB <- false
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None -> tcConfigB.jitTracking <- s = OptionSwitch.On; tcConfigB.portable <- false
+    | None -> tcConfigB.jitTracking <- s = OptionSwitch.On; tcConfigB.portablePDB <- false
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let setOutFileName tcConfigB s = 
@@ -525,7 +525,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  doTLR  . . . . . . . . : %+A" tcConfigB.doTLR
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
     printfn "  jitTracking  . . . . . : %+A" tcConfigB.jitTracking
-    printfn "  portable . . . . . . . : %+A" tcConfigB.portable
+    printfn "  portablePDB. . . . . . : %+A" tcConfigB.portablePDB
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText

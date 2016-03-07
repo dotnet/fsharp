@@ -2012,7 +2012,7 @@ type TcConfigBuilder =
       mutable useOptimizationDataFile : bool
       mutable useSignatureDataFile : bool
       mutable jitTracking : bool
-      mutable portable : bool
+      mutable portablePDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -2186,7 +2186,7 @@ type TcConfigBuilder =
           useOptimizationDataFile = false
           useSignatureDataFile = false
           jitTracking = true
-          portable = true
+          portablePDB = true
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2678,7 +2678,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.useOptimizationDataFile  = data.useOptimizationDataFile
     member x.useSignatureDataFile = data.useSignatureDataFile
     member x.jitTracking  = data.jitTracking
-    member x.portable  = data.portable
+    member x.portablePDB  = data.portablePDB
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations

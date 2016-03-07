@@ -18,7 +18,7 @@ type ILStrongNameSigner =
 type options =
  { ilg: ILGlobals
    pdbfile: string option
-   portable: bool
+   portablePDB: bool
    signer : ILStrongNameSigner option
    fixupOverlappingSequencePoints : bool
    emitTailcalls: bool

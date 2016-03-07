@@ -103,7 +103,7 @@ let getUncodedToken (tab:TableName) idx = ((tab.Index <<< 24) ||| idx)
 
 // From ECMA for UserStrings:
 // This final byte holds the value 1 if and only if any UTF16 character within the string has any bit set in its top byte, or its low byte is any of the following:
-// 0x01�0x08, 0x0E�0x1F, 0x27, 0x2D,
+// 0x01-0x08, 0x0E-0x1F, 0x27, 0x2D,
 // 0x7F. Otherwise, it holds 0. The 1 signifies Unicode characters that require handling beyond that normally provided for 8-bit encoding sets.
 
 // HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. We�ve raised the issue with both teams. See Dev10 bug 850073 for details.
@@ -3564,7 +3564,7 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portable, 
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, 
                                   fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -4190,10 +4190,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         try 
             let idd = 
 #if FX_NO_PDB_WRITER
-                ignore portable
+                ignore portablePDB
                 WritePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
 #else
-                if portable then 
+                if portablePDB then 
                     WritePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
                 else
                     WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
@@ -4252,7 +4252,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 type options =
    { ilg: ILGlobals;
      pdbfile: string option
-     portable: bool
+     portablePDB: bool
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
@@ -4261,7 +4261,7 @@ type options =
 
 
 let WriteILBinary (outfile, (args: options), modul, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portable, 
+    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, 
                                           args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, 
                                           args.dumpDebugInfo) modul noDebugData)
 
