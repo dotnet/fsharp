@@ -59,7 +59,7 @@ module internal Locals =
     /// Given a list of (key,value)
     /// Chunk into (key,values) where the values are keys of (key,value) with the same key.    
     /// Complexity: this code is linear in (length kxs).
-    let rec chunkKeyValues allEntries =
+    let chunkKeyValues allEntries =
         allEntries
         |> List.groupBy(fun (responseType, line) -> responseType)
         |> List.map(fun (responseType, entries) -> (responseType, entries |> List.map(fun (_, line) -> line)))
