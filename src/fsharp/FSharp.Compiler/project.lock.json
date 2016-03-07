@@ -17,7 +17,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc3-23811"
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -819,7 +819,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc3-23811"
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -2440,7 +2440,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc3-23811"
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -4063,7 +4063,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc3-23811"
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -5870,7 +5870,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc3-23811"
+          "System.Reflection.Metadata": "1.2.0-rc2-23826"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -7667,7 +7667,7 @@
       ]
     },
     "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
-      "sha512": "kxhV2ONRooXh3bFbOU8DJ9WyOoqFmNYkMWpSAdsa3H9JxmyjbDI/RdKxuqvbczoeBYLrrETXu3Ls3/v+gJp0+w==",
+      "sha512": "xgkCQFUZQ73Wpqoyt2C3hvSOEnYEDNsHHfffUs6m+UgycITJCz5F1VBnuIUSb3tJ8Oqr8lNDBoWNzukE6Rr+ug==",
       "type": "package",
       "files": [
         "Microsoft.DiaSymReader.PortablePdb.1.0.0-rc-60301.nupkg.sha512",
