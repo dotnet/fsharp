@@ -11,6 +11,7 @@ open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Reflection.Metadata.Ecma335.Blobs
 open System.Reflection.PortableExecutable
+open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
@@ -137,6 +138,15 @@ let checkSum (url:string) =
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.
 //------------------------------------------------------------------------------
+
+// This function takes output file name and returns debug file name.
+let getDebugFileName outfile = 
+#if ENABLE_MONO_SUPPORT
+  if IL.runningOnMono then 
+      outfile + ".mdb"
+  else 
+#endif
+      (Filename.chopExtension outfile) + ".pdb" 
 
 let sortMethods showTimes info =
     reportTime showTimes (sprintf "PDB: Defined %d documents" info.Documents.Length)

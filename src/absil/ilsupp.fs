@@ -41,16 +41,6 @@ let check _action (hresult) =
     System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hresult)
   //printf "action = %s, hresult = 0x%nx \n" action hresult
   
-// Depending on the configuration, we may want to include the output file extension in the name 
-// of the debug symbols file. This function takes output file name and returns debug file name.
-let getDebugFileName outfile = 
-#if ENABLE_MONO_SUPPORT
-  if IL.runningOnMono then 
-      outfile+".mdb"
-  else 
-#endif
-      (Filename.chopExtension outfile)+".pdb" 
-
 type PEFileType = X86 | X64
 
 let MAX_PATH = 260

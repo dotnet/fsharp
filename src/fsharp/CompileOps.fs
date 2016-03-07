@@ -2265,17 +2265,7 @@ type TcConfigBuilder =
             (fileNameWithoutExtension baseName)
 
         let pdbfile = 
-            
             if tcConfigB.debuginfo then
-#if FX_NO_PDB_WRITER
-              Some (match tcConfigB.debugSymbolFile with None -> (Filename.chopExtension outfile) + (
-#if ENABLE_MONO_SUPPORT
-                                                                    if runningOnMono then
-                                                                        ".mdb"
-                                                                    else
-#endif
-                                                                        ".pdb") | Some f -> f)
-#else
               Some (match tcConfigB.debugSymbolFile with 
                     | None -> Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
 #if ENABLE_MONO_SUPPORT
@@ -2285,12 +2275,12 @@ type TcConfigBuilder =
                         Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
 #endif
                     | Some f -> f)   
-#endif
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
-              error(Error(FSComp.SR.buildPdbRequiresDebug(),rangeStartup))  
-            else None
+                error(Error(FSComp.SR.buildPdbRequiresDebug(),rangeStartup))  
+            else
+                None
         tcConfigB.outputFile <- Some(outfile)
-        outfile,pdbfile,assemblyName
+        outfile, pdbfile, assemblyName
 
     member tcConfigB.TurnWarningOff(m,s:string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)    

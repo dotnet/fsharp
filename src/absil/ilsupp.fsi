@@ -20,7 +20,6 @@ val pdbReadClose: PdbReader -> unit
 
 val absilWriteGetTimeStamp: unit -> int32
 
-
 open System
 open System.Runtime.InteropServices
 #if FX_NO_SYMBOLSTORE
@@ -36,10 +35,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 #else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 #endif
-
-
-/// Takes the output file name and returns debug file name.
-val getDebugFileName: string -> string
 
 /// Unmanaged resource file linker - for native resources (not managed ones).
 /// The function may be called twice, once with a zero-RVA and
