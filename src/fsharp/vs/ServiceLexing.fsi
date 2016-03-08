@@ -15,10 +15,10 @@ open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 
-/// Represents encoded information for the end-of-line continutation of lexing
+/// Represents encoded information for the end-of-line continuation of lexing
 type FSharpTokenizerLexState = int64
 
-/// Represents stable information for the state of the laxing engine at the end of a line
+/// Represents stable information for the state of the lexing engine at the end of a line
 type internal FSharpTokenizerColorState =
     | Token = 1
     | IfDefSkip = 3
@@ -36,7 +36,7 @@ type internal FSharpTokenizerColorState =
     | InitialState = 0 
     
 
-/// Gives an indicattion of the color class to assign to the token an IDE
+/// Gives an indication of the color class to assign to the token an IDE
 type internal FSharpTokenColorKind =
     | Default = 0
     | Text = 0
@@ -64,7 +64,7 @@ type internal FSharpTokenTriggerClass =
     | ParamNext    = 0x00000020
     | ParamEnd     = 0x00000040    
     
-/// Gives an indication of the class to assign to the characters of the token an IDE
+/// Gives an indication of the class to assign to the characters of the token in an IDE
 type internal FSharpTokenCharKind = 
     | Default     = 0x00000000
     | Text        = 0x00000000
