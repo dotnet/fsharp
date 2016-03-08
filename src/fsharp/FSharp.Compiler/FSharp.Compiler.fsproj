@@ -87,6 +87,12 @@
     <Compile Include="..\FlatList.fs">
       <Link>Utilities\FlatList.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\illib.fs">
       <Link>Utilities\illib.fs</Link>
     </Compile>
@@ -113,12 +119,6 @@
     </Compile>
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fsi">
-      <Link>Utilities\ildiag.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fs">
-      <Link>Utilities\ildiag.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>

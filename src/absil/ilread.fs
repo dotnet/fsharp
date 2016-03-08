@@ -1460,7 +1460,7 @@ let readBlobHeapAsDouble ctxt vidx = fst (sigptrGetDouble (readBlobHeap ctxt vid
 //        (e) the start of the native resources attached to the binary if any
 // ----------------------------------------------------------------------*)
 
-#if FX_NO_PDB_READER
+#if FX_NO_LINKEDRESOURCES
 let readNativeResources _ctxt = []
 #else
 let readNativeResources ctxt = 
@@ -3959,10 +3959,11 @@ let mkDefault ilg =
       pdbPath= None; 
       ilGlobals = ilg } 
 
-#if FX_NO_PDB_READER
-let ClosePdbReader _x =  ()
-#else
 let ClosePdbReader pdb =  
+#if FX_NO_PDB_READER
+    ignore pdb
+    ()
+#else
     match pdb with 
     | Some (pdbr,_) -> pdbReadClose pdbr
     | None -> ()

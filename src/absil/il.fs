@@ -4512,12 +4512,10 @@ type ILGlobals with
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
-           [ILAttribElem.Int32(
-                            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-                              (0) |||  
-                              (if jitOptimizerDisabled then 256 else 0) |||  
-                              (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                              (if enableEnC then 4 else 0))],[])
+           (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
+           [ILAttribElem.Int32( (if jitOptimizerDisabled then 256 else 0) |||  
+                                (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
+                                (if enableEnC then 4 else 0))],[])
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 
