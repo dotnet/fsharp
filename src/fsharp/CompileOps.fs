@@ -2267,12 +2267,12 @@ type TcConfigBuilder =
         let pdbfile = 
             if tcConfigB.debuginfo then
               Some (match tcConfigB.debugSymbolFile with 
-                    | None -> Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
+                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(),rangeCmdArgs)) ; ()
-                        Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
+                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
 #endif
                     | Some f -> f)   
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
