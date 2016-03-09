@@ -478,10 +478,11 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "pdbonly" -> tcConfigB.jitTracking <- false
-       | "full" -> tcConfigB.jitTracking <- true 
+       | "portable" -> tcConfigB.portablePDB <- true
+       | "pdbonly" ->  tcConfigB.portablePDB <- false
+       | "full" ->     tcConfigB.portablePDB <- false
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None -> tcConfigB.jitTracking <- s = OptionSwitch.On 
+    | None -> tcConfigB.portablePDB <- false
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let setOutFileName tcConfigB s = 
@@ -502,7 +503,7 @@ let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
 let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
-let tagFullPDBOnly = "{full|pdbonly}"
+let tagFullPDBOnlyPortable = "{full|pdbonly|portable}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
@@ -523,14 +524,13 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  doDetuple  . . . . . . : %+A" tcConfigB.doDetuple
     printfn "  doTLR  . . . . . . . . : %+A" tcConfigB.doTLR
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
-    printfn "  jitTracking  . . . . . : %+A" tcConfigB.jitTracking
+    printfn "  portablePDB. . . . . . : %+A" tcConfigB.portablePDB
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
     printfn "  copyFSharpCore . . . . : %+A" tcConfigB.copyFSharpCore
     tcConfigB.includes |> List.sort
                        |> List.iter (printfn "  include  . . . . . . . : %A")
-  
 
 // OptionBlock: Input files
 //-------------------------
@@ -665,7 +665,7 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
         CompilerOption("debug", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None,
                            Some (FSComp.SR.optsDebugPM()));
 
-        CompilerOption("debug", tagFullPDBOnly, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
+        CompilerOption("debug", tagFullPDBOnlyPortable, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
                            Some (FSComp.SR.optsDebug()));
 
         CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None,
@@ -914,8 +914,8 @@ let deprecatedFlagsFsc tcConfigB =
     cliRootFlag tcConfigB;
     CompilerOption("jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None);
     CompilerOption("no-jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None);
-    CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> tcConfigB.jitTracking <- true), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None);
-    CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> tcConfigB.jitTracking <- false), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None);
+    CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> () ), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None);
+    CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> () ), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None);
     CompilerOption("progress", tagNone, OptionUnit (fun () -> progress := true), Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None);
     (compilingFsLibFlag tcConfigB) ;
     (compilingFsLib20Flag tcConfigB) ;

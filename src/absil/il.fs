@@ -4504,20 +4504,18 @@ type ILGlobals with
         | Some res -> res
 
     member this.mkDebuggerStepThroughAttribute() = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerStepThroughAttribute, [], [], [])
-    member this.mkDebuggableAttribute (jitTracking, jitOptimizerDisabled) =
-        mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool jitTracking; ILAttribElem.Bool jitOptimizerDisabled], [])
+    member this.mkDebuggableAttribute (jitOptimizerDisabled) =
+        mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
 
-    member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled,enableEnC) =
+    member this.mkDebuggableAttributeV2(ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
-           [ILAttribElem.Int32( 
-                            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-                              (if jitTracking then 1 else 0) |||  
-                              (if jitOptimizerDisabled then 256 else 0) |||  
-                              (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                              (if enableEnC then 4 else 0))],[])
+           (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
+           [ILAttribElem.Int32( (if jitOptimizerDisabled then 256 else 0) |||  
+                                (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
+                                (if enableEnC then 4 else 0))],[])
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 

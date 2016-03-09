@@ -9,6 +9,7 @@ open System.Collections
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
@@ -24,6 +25,20 @@ let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
 let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
 let nonNull msg x = if isNonNull x then x else failwith ("null: " ^ msg) 
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
+
+//---------------------------------------------------------------------
+// Library: ReportTime
+//---------------------------------------------------------------------
+let reportTime =
+    let tFirst = ref None     
+    let tPrev = ref None     
+    fun showTimes descr ->
+        if showTimes then 
+            let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+            let prev = match !tPrev with None -> 0.0 | Some t -> t
+            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
+            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            tPrev := Some t
 
 //-------------------------------------------------------------------------
 // Library: projections

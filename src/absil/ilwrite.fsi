@@ -18,6 +18,7 @@ type ILStrongNameSigner =
 type options =
  { ilg: ILGlobals
    pdbfile: string option
+   portablePDB: bool
    signer : ILStrongNameSigner option
    fixupOverlappingSequencePoints : bool
    emitTailcalls: bool
@@ -26,6 +27,3 @@ type options =
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
 val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit
-
-
-

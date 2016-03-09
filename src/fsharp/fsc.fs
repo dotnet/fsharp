@@ -1067,7 +1067,7 @@ module MainModuleBuilder =
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
                    if Option.isSome pdbfile then 
-                       yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
+                       yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
                    yield! reflectedDefinitionAttrs ]
 
         // Make the manifest of the assembly
@@ -1081,7 +1081,6 @@ module MainModuleBuilder =
              Some { man with Version= Some ver;
                              CustomAttrs = manifestAttrs;
                              DisableJitOptimizations=disableJitOptimizations;
-                             JitTracking= tcConfig.jitTracking;
                              SecurityDecls=secDecls } 
 
         let resources = 
@@ -1761,6 +1760,7 @@ module FileWriter =
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     showTimes = tcConfig.showTimes
+                    portablePDB = tcConfig.portablePDB
                     signer = GetSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },

@@ -2011,7 +2011,7 @@ type TcConfigBuilder =
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
       mutable useSignatureDataFile : bool
-      mutable jitTracking : bool
+      mutable portablePDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -2184,7 +2184,7 @@ type TcConfigBuilder =
           onlyEssentialOptimizationData = false
           useOptimizationDataFile = false
           useSignatureDataFile = false
-          jitTracking = true
+          portablePDB = true
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2265,32 +2265,22 @@ type TcConfigBuilder =
             (fileNameWithoutExtension baseName)
 
         let pdbfile = 
-            
             if tcConfigB.debuginfo then
-#if FX_NO_PDB_WRITER
-              Some (match tcConfigB.debugSymbolFile with None -> (Filename.chopExtension outfile) + (
-#if ENABLE_MONO_SUPPORT
-                                                                    if runningOnMono then
-                                                                        ".mdb"
-                                                                    else
-#endif
-                                                                        ".pdb") | Some f -> f)
-#else
               Some (match tcConfigB.debugSymbolFile with 
-                    | None -> Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
+                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(),rangeCmdArgs)) ; ()
-                        Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
+                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
 #endif
                     | Some f -> f)   
-#endif
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
-              error(Error(FSComp.SR.buildPdbRequiresDebug(),rangeStartup))  
-            else None
+                error(Error(FSComp.SR.buildPdbRequiresDebug(),rangeStartup))  
+            else
+                None
         tcConfigB.outputFile <- Some(outfile)
-        outfile,pdbfile,assemblyName
+        outfile, pdbfile, assemblyName
 
     member tcConfigB.TurnWarningOff(m,s:string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)    
@@ -2675,7 +2665,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.onlyEssentialOptimizationData  = data.onlyEssentialOptimizationData
     member x.useOptimizationDataFile  = data.useOptimizationDataFile
     member x.useSignatureDataFile = data.useSignatureDataFile
-    member x.jitTracking  = data.jitTracking
+    member x.portablePDB  = data.portablePDB
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations

@@ -20,7 +20,6 @@ val pdbReadClose: PdbReader -> unit
 
 val absilWriteGetTimeStamp: unit -> int32
 
-
 open System
 open System.Runtime.InteropServices
 #if FX_NO_SYMBOLSTORE
@@ -36,10 +35,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 #else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 #endif
-
-
-/// Takes the output file name and returns debug file name.
-val getDebugFileName: string -> string
 
 /// Unmanaged resource file linker - for native resources (not managed ones).
 /// The function may be called twice, once with a zero-RVA and
@@ -102,19 +97,14 @@ val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* 
 //---------------------------------------------------------------------
 
 type PdbDocumentWriter
-#endif
 
-#if FX_NO_LINKEDRESOURCES
-#else
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
-#endif
-#if FX_NO_PDB_WRITER
-#else
+
 val pdbInitialize: 
     string (* .exe/.dll already written and closed *) -> 
     string  (* .pdb to write *) ->
@@ -130,7 +120,7 @@ val pdbCloseScope: PdbWriter -> int -> unit
 val pdbDefineLocalVariable: PdbWriter -> string -> byte[] -> int32 -> unit
 val pdbSetMethodRange: PdbWriter -> PdbDocumentWriter -> int -> int -> PdbDocumentWriter -> int -> int -> unit
 val pdbDefineSequencePoints: PdbWriter -> PdbDocumentWriter -> (int * int * int * int * int) array -> unit
-val pdbGetDebugInfo: PdbWriter -> idd
+val pdbWriteDebugInfo: PdbWriter -> idd
 #endif
 
 //---------------------------------------------------------------------

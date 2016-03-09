@@ -168,7 +168,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.DebugSymbols
         with get() = debugSymbols
         and set(b) = debugSymbols <- b
-    // --debug <none/pdbonly/full>: Emit debugging information
+    // --debug <none/portable/pdbonly/full>: Emit debugging information
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
@@ -384,9 +384,10 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             if debugType = null then null else
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
+                | "PORTABLE" -> "portable"
                 | "PDBONLY"  -> "pdbonly"
                 | "FULL"     -> "full"
-                | _         -> null)
+                | _          -> null)
         // NoFramework
         if noFramework then 
             builder.AppendSwitch("--noframework") 
