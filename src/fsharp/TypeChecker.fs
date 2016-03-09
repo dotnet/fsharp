@@ -15376,7 +15376,7 @@ module TcDeclarations = begin
         let mutRecDefnsAfterSplit = SplitMutRecSignatures tspecs
         let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcTypeDefnCores cenv env parent true tpenv (mutRecDefnsAfterSplit,m,scopem)
         let _ = TcTyconSignatureMemberSpecs cenv parent envMutRec mutRecDefnsAfterCore
-        env
+        envMutRec
 end
 
 //-------------------------------------------------------------------------
