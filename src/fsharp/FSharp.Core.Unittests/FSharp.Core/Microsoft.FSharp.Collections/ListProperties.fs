@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections.ListProperties
 
@@ -823,3 +823,35 @@ let ``List.sumBy calculates the sum of the mapped list`` () =
     Check.QuickThrowOnFailure sumBy<int>
     Check.QuickThrowOnFailure sumBy<string> 
     Check.QuickThrowOnFailure sumBy<float>
+
+let allPairsCount<'a, 'b> (xs : 'a list) (ys : 'b list) =
+    let pairs = List.allPairs xs ys
+    pairs.Length = xs.Length * ys.Length
+
+[<Test>]
+let ``List.allPairs produces the correct number of pairs`` () =
+    Check.QuickThrowOnFailure allPairsCount<int, int>
+    Check.QuickThrowOnFailure allPairsCount<string, string>
+    Check.QuickThrowOnFailure allPairsCount<float, float>
+
+let allPairsFst<'a, 'b when 'a : equality> (xs : 'a list) (ys : 'b list) =
+    let pairsFst = List.allPairs xs ys |> List.map fst
+    let check = xs |> List.collect (List.replicate ys.Length)
+    pairsFst = check
+
+[<Test>]
+let ``List.allPairs first elements are correct`` () =
+    Check.QuickThrowOnFailure allPairsFst<int, int>
+    Check.QuickThrowOnFailure allPairsFst<string, string>
+    Check.QuickThrowOnFailure allPairsFst<NormalFloat, NormalFloat>
+
+let allPairsSnd<'a, 'b when 'b : equality> (xs : 'a list) (ys : 'b list) =
+    let pairsSnd = List.allPairs xs ys |> List.map snd
+    let check = [ for i in 1 .. xs.Length do yield! ys ]
+    pairsSnd = check
+
+[<Test>]
+let ``List.allPairs second elements are correct`` () =
+    Check.QuickThrowOnFailure allPairsFst<int, int>
+    Check.QuickThrowOnFailure allPairsFst<string, string>
+    Check.QuickThrowOnFailure allPairsFst<NormalFloat, NormalFloat>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.Portable.SurfaceArea
 
@@ -87,6 +87,7 @@ Microsoft.FSharp.Collections.ArrayModule: System.Collections.Generic.IEnumerable
 Microsoft.FSharp.Collections.ArrayModule: System.String ToString()
 Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[System.Int32,T][] Indexed[T](T[])
 Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[T,T][] Pairwise[T](T[])
+Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[T1,T2][] AllPairs[T1,T2](T1[], T2[])
 Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[T1,T2][] Zip[T1,T2](T1[], T2[])
 Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[T1[],T2[]] Unzip[T1,T2](System.Tuple`2[T1,T2][])
 Microsoft.FSharp.Collections.ArrayModule: System.Tuple`2[TKey,System.Int32][] CountBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], T[])
@@ -283,6 +284,7 @@ Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[T]] Windowed[T](Int32, Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Int32,T]] Indexed[T](Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[T,T]] Pairwise[T](Microsoft.FSharp.Collections.FSharpList`1[T])
+Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[T1,T2]] AllPairs[T1,T2](Microsoft.FSharp.Collections.FSharpList`1[T1], Microsoft.FSharp.Collections.FSharpList`1[T2])
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[T1,T2]] Zip[T1,T2](Microsoft.FSharp.Collections.FSharpList`1[T1], Microsoft.FSharp.Collections.FSharpList`1[T2])
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[TKey,Microsoft.FSharp.Collections.FSharpList`1[T]]] GroupBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.ListModule: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[TKey,System.Int32]] CountBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], Microsoft.FSharp.Collections.FSharpList`1[T])
@@ -419,6 +421,7 @@ Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] 
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] TryLast[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.Int32,T]] Indexed[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T,T]] Pairwise[T](System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T1,T2]] AllPairs[T1,T2](System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T1,T2]] Zip[T1,T2](System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,System.Collections.Generic.IEnumerable`1[T]]] GroupBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,System.Int32]] CountBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], System.Collections.Generic.IEnumerable`1[T])

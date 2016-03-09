@@ -94,3 +94,4 @@ tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.orig
 *.mdf
 *.ldf
+tests/**/FSharp.Core.dll

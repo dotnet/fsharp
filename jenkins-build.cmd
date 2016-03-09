@@ -22,7 +22,7 @@ goto :USAGE
 
 echo Usage:
 echo Builds the source tree using a specific configuration
-echo appveyor-build.cmd ^<debug^|release^>
+echo jenkins-build.cmd ^<debug^|release^>
 exit /b 1
 
 :ARGUMENTS_OK
@@ -116,7 +116,7 @@ echo Building the test tree using configuration: %BUILD_PROFILE%
 %_msbuildexe% tests/fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_PROFILE%
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=%BUILD_PROFILE%
+%_msbuildexe% VisualFSharp.sln /p:Configuration=%BUILD_PROFILE%
 @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 
 %_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_PROFILE%

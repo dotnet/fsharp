@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -11,6 +11,13 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module List = 
+
+        /// <summary>Returns a new list that contains the cartesian product of the two input lists.</summary>
+        /// <param name="list1">The first input list.</param>
+        /// <param name="list2">The second input list.</param>
+        /// <returns>The resulting list of pairs.</returns>
+        [<CompiledName("AllPairs")>]
+        val allPairs: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
 
         /// <summary>Returns a new list that contains the elements of the first list
         /// followed by elements of the second.</summary>

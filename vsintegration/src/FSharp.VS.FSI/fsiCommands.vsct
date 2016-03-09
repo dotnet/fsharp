@@ -1,0 +1,311 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!--  This is the file that defines the actual layout and type of the commands.
+        It is divided in different sections (e.g. command definition, command
+        placement, ...), with each defining a specific set of properties.
+        See the comment before each section for more details about how to
+        use it. -->
+
+  <!--  The VSCT compiler (the tool that translates this file into the binary 
+        format that VisualStudio will consume) has the ability to run a preprocessor 
+        on the vsct file; this preprocessor is (usually) the C++ preprocessor, so 
+        it is possible to define includes and macros with the same syntax used 
+        in C++ files. Using this ability of the compiler here, we include some files 
+        defining some of the constants that we will use inside the file. -->
+
+  <!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
+  <Extern href="stdidcmd.h"/>
+
+  <!--This header contains the command ids for the menus provided by the shell. -->
+  <Extern href="vsshlids.h"/>
+
+  <!--The Commands section is where we the commands, menus and menu groups are defined.
+      This section uses a Guid to identify the package that provides the command defined inside it. -->
+  <Commands package="guidFsiPkg">
+    <!-- Inside this section we have different sub-sections: one for the menus, another  
+    for the menu groups, one for the buttons (the actual commands), one for the combos 
+    and the last one for the bitmaps used. Each element is identified by a command id that  
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+    called "command set" and is used to group different command inside a logically related  
+    group; your package should define its own command set in order to avoid collisions  
+    with command ids defined by other packages. -->
+
+    <!--This is the sub-section that defines the menus and toolbars. -->
+    <Menus>
+      <!--To define an element in this group you need an ID, a parent group, a display priority, 
+      a menu type, a name and a default text. -->
+      <Menu guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu" priority="0x0000" type="Context">
+        <Parent guid="guidFsiConsoleCmdSet" id="0"/>
+        <Strings>
+          <ButtonText>FSI Console Context</ButtonText>
+          <CommandName>FSI Console Context</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
+  </Commands>
+  
+  <Commands package="guidFsiPkg">
+    <!-- In this section you can define new menu groups. A menu group is a container for 
+         other menus or buttons (commands); from a visual point of view you can see the 
+         group as the part of a menu contained between two lines. The parent of a group 
+         must be a menu. -->
+    <Groups>
+      <Group guid="guidFsiPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+      <!-- Context menu groups. Note, ordered using priority. -->
+      <!-- Context menu, session group -->
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp" priority="0x100">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+      <!-- Context menu, edit group -->
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp" priority="0x200">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+      <!-- Context menu, clear group -->
+      <Group guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp" priority="0x300">
+        <Parent guid="guidFsiConsoleCmdSet" id="cmdIDFsiConsoleContextMenu"/>
+      </Group>
+    </Groups>
+
+    <!--Buttons section. -->
+    <!--This section defines the elements the user can interact with, like a menu command or a button 
+        or combo box in a toolbar. -->
+    <Buttons>
+      <!--To define a menu group you have to specify its ID, the parent menu and its display priority. 
+          Some commands are not defined as shared, so they use our package CLSID as the command set GUID. 
+          Also, by specifying blank for the FLAGS, the command is default visible and enabled. Other valid 
+          values for FLAGS are the following: DEFAULTDISABLED, DEFAULTINVISIBLE, DYNAMICVISIBILITY, TEXTCHANGES 
+          
+          These values for FLAGS can be or'ed together, e.g. "DEFAULTINVISIBLE | DYNAMICVISIBILITY" 
+          If you do not want an image next to your command, remove the Icon node -->
+
+      <Button guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow" priority="0x8000" type="Button"> <!-- low priority -->
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <!-- Icon guid="guidImages" id="bmpPic2" /--> 
+        <Icon guid="guidFsiConsoleBmp" id="bmpConsole" />
+        <Strings>
+          <CommandName>FSharp.Interactive.ToolWindow</CommandName>
+          <ButtonText>F# Interactive</ButtonText>
+        </Strings>
+      </Button>
+
+      <!-- In Dev11+, shell now has 
+      <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionInterrupt" priority ="0x100" type ="Button">
+      <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionRestart" priority ="0x105" type ="Button">
+      -->
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0100" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.AttachDebugger</CommandName>
+          <ButtonText>Start Debugging</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+      
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0101" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
+          <ButtonText>Stop Debugging</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+
+      <!-- The following places a button on the F# Editor Context Menu -->
+      <!-- In Dev11+, shell now has 
+      <Button guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" priority ="0x100" type ="Button">
+      -->
+      <Button guid ="guidInteractive" id ="cmdidDebugSelection" priority ="0x106" type ="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
+        <Strings>
+          <ButtonText>Debug In Interactive</ButtonText>
+          <CommandName>Interactive.Debug.Selection.Context</CommandName>
+        </Strings>
+       <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+
+    </Buttons>
+
+    <Bitmaps>
+      <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+      <Bitmap guid="guidFsiConsoleBmp" href="Resources\TabIcon.png" />
+      <Bitmap guid="guidCancelEvaluationBmp" href="Resources\CancelEvaluation.bmp" usedList="bmpConsole"/>
+      <Bitmap guid="guidResetSessionBmp" href="Resources\ResetSession.bmp" usedList="bmpConsole"/>
+    </Bitmaps>
+  </Commands>
+
+  <!--Within this section you can specify the set of commands defined somewhere else that your  
+      packages uses; for instance if your package uses the standard ‘Copy’ command, you don’t  
+      need to define it, because it is defined by the shell, but you have to use this section  
+      of the CTC file to notify the shell that your package uses it using this section. -->
+  <UsedCommands>
+    <UsedCommand guid="guidVSStd97" id="cmdidCut"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidCopy"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidPaste"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidClearPane"/>
+  </UsedCommands>
+
+
+  <!--Inside this section, we have the ability to place menu groups inside some other menu or 
+      menu / commands inside other groups. 
+      For instance, it is possible to place one of VisualStudio's menus or commands inside one of our  
+      groups or one of our groups inside a menu defined somewhere else. -->
+  <CommandPlacements>
+    <!-- Context menu, edit group -->
+    <CommandPlacement guid="guidVSStd97" id="cmdidCut" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidCopy" priority="0x0300">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd97" id="cmdidPaste" priority="0x0500">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleEditGrp"/>
+    </CommandPlacement>
+    <!-- Context menu, clear group -->
+    <!-- uncomment here to add standard VS "WordWrap" toggle command to the context menu (note, it indicates toggle status with a box around the icon)
+    <CommandPlacement guid="GUID_CMDSETID_StandardCommandSet2K" id="ECMD_TOGGLEWORDWRAP" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp"/>
+    </CommandPlacement>
+    -->
+    <CommandPlacement guid="guidVSStd97" id="cmdidClearPane" priority="0x0200">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp"/>
+    </CommandPlacement>
+          
+    <!-- Context menu, session group -->
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" priority="0x0100">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionRestart" priority="0x0300">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0700">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    
+    <!-- Adds MLSend to the context menu:
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidMLSendSelection" priority="0x0500">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    -->
+  </CommandPlacements>
+  
+  <!-- Control visibility of menu commands. What UIContext guids can we use here? -->
+  <VisibilityConstraints>
+       <!-- Attempted to set visibility to the Language Service Guid, but it did not seem to work... -->
+       <!-- So, the visibility is set in code based on the IVsWindowFrame document path... -->
+       <!-- <VisibilityItem guid="guidFsiConsoleCmdSet" id="cmdidMLSendSelection"  context="guidFsharpLanguageService" /> -->
+  </VisibilityConstraints>
+
+  <KeyBindings>
+    <!--
+      To define a binding, we have to specify the sequence of keys to press to activate the command (keystate).
+      A key binding can use one or two key and optionlly up to two modifiers (Alt, Control or Shift keys); the
+      keys are specified using the key1 and key2 attributes (key2 can be omitted) and the modifiers using the
+      mod1 and mod2 attributes (both optional).
+      The editor attribute is used to specify the UI context that activates the key binding.
+      Notice that Visual Studio has a lot of components and commands, so it can be difficult to find a
+      key binding not used by somebody else; if the key bindings are conflicting only one will be used
+      and one problem is that the shell will not inform the user that a conflict was found. The only
+      way to detect the problem is to start Visual Studio under debugger, try to execute any command
+      and look if there is a message in the output window about a duplicated accelerator found.
+    -->
+    <!-- For global scope: guidVSStd97 -->
+    <!-- For key1 values, see http://msdn.microsoft.com/en-us/library/ms645540.aspx virtual key code -->
+    <!-- KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidMLSendSelection" editor="guidVSStd97" key1="VK_RETURN" mod1="ALT" /-->    
+    
+    <!-- ALT-ENTER is used for the SendToInteractive command.
+         ALT-ENTER is globally bound to Diagram.Property.
+         Here we bind it in the Editor context of the standard TextEditor.
+         Ideally, we would bind it for F# only editor.
+    -->
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="GUID_TextEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
+
+    <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
+    <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt"  />
+
+    <!-- CRTL-Break when in FSI ToolWindow is Interrupt --> 
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />
+  
+    <!-- CRTL-Alt-R when in FSI ToolWindow is Reset -->  
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt"  />
+  
+     <!-- CRTL-Alt-C when in FSI ToolWindow is Clear All -->
+    <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="C" mod1="Control Alt"  />
+    
+    <!-- CRTL-Alt-D when in FSI ToolWindow is attach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt"  />
+    
+    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift"  /> 
+  </KeyBindings>
+
+  <Symbols>
+    <!-- FSI-LINKAGE-POINT: choose the right package guid. -->
+    <!-- GuidSymbol name="guidFsiPkg" value="{eeeeeeee-9342-42f1-8ea9-42f0e8a6be55}" /-->  <!-- fsi package guid    -->
+    <GuidSymbol name="guidFsiPkg" value="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" />        <!-- project system guid -->
+
+    <GuidSymbol name="guidEditorFactory"      value="{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}" /> <!-- Linked to constants in project system -->
+    <GuidSymbol name="GUID_TextEditorFactory" value="{8b382828-6202-11d1-8870-0000f87579d2}" /> <!-- Standard TextEditorFactory Guid? --> 
+    <GuidSymbol name="GUID_CMDSETID_StandardCommandSet2K" value="{1496A755-94DE-11D0-8C3F-00C04FC2AAE2}" /> <!-- See stdidcmd.h -->
+    <GuidSymbol name="guidFsiToolWindow"      value="{dee22b65-9761-4a26-8fb2-759b971d6dfc}" />
+    <GuidSymbol name="guidFsharpEditorUIContext" value="{63492653-460B-4bcc-B57B-233FD0F1F33D}" />
+    <GuidSymbol name="guidFsharpLanguageService" value="{BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B}" />        
+
+    <!-- This is the guid used to group the menu commands together -->
+    <GuidSymbol name="guidFsiPackageCmdSet" value="{0be3b0d7-4fc2-45bf-a168-957e8a8834d0}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidFsiToolWindow" value="0x0101" />
+    </GuidSymbol> 
+
+    <GuidSymbol name="guidImages" value="{43ba0ca6-658b-43a7-8773-b5f9506b4335}" >
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidFsiConsoleCmdSet" value="{0E455B35-F2EB-431b-A0BE-B268D8A7D17F}" >
+      <IDSymbol name="cmdIDFsiConsoleContextMenu" value="0x2100" />
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="FsiConsoleEditGrp" value="0x1030" />
+      <IDSymbol name="FsiConsoleClearGrp" value="0x1040" /> 
+      <IDSymbol name="FsiConsoleSessionsGrp" value="0x1050" />      
+      <IDSymbol name="cmdidFsiConsole" value="0x101" />
+      <IDSymbol name="cmdidAttachDebugger" value="0x104" />
+      <IDSymbol name="cmdidDetachDebugger" value="0x105" />
+     </GuidSymbol>
+
+    <GuidSymbol name="guidFsiConsoleBmp" value="{01F8DC29-935A-4460-8D5D-F213B4CFA7EA}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidCancelEvaluationBmp" value="{28D7068A-2B32-4CD0-AA0E-AB119744E7C0}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidResetSessionBmp" value="{E8B33A9E-F5A0-492B-BB84-EC294A164CFD}" >
+      <IDSymbol name="bmpConsole" value="0x01" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}" >
+      <IDSymbol name="cmdidExecuteSelectionInInteractive" value ="0x018"/>
+      <IDSymbol name="cmdidExecuteLineInInteractive" value ="0x019"/>
+      <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
+      <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
+    </GuidSymbol>
+  
+    <GuidSymbol name="guidInteractive" value="{8B9BF77B-AF94-4588-8847-2EB2BFFD29EB}" >
+      <IDSymbol name="cmdidDebugSelection" value ="0x01"/>
+    </GuidSymbol>
+
+  </Symbols>
+
+</CommandTable>
+
+

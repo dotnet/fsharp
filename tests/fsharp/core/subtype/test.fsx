@@ -1484,9 +1484,9 @@ module TestTwoConversionsOK =
 // asserted to be equal.
 //
 //This rule is a deliberate artificial limitation to reduce the complexity 
-// of type inference in the common case, at the cost of making “inline” code 
+// of type inference in the common case, at the cost of making Â“inlineÂ” code 
 // less generic. However, the rule should not apply to op_Explicit and op_Implicit constraints. These are special constraint names, known to the language, and we already have special rules around these operators to ensure that the return type 
-// is effectively considered to be part of the “name” of the constraint
+// is effectively considered to be part of the Â“nameÂ” of the constraint
 //  (i.t. op_Explicit -->  int64 is effectively a different constraint to op_Explicit --> int32). 
 //
 //So the solution is thus to not apply the rule for these constraints. 
@@ -1695,6 +1695,24 @@ module RecordPropertyConstraintTests =
     check "ckjwnewk" (f9()) ()
     check "ckjwnewk" (f8()) (System.TimeSpan.FromSeconds 2.0) // after mutation
     check "ckjwnewk" (f10()) "Gary"
+
+// See https://github.com/Microsoft/visualfsharp/issues/740 - inlining on subtypes was not allowed
+module InliningOnSubTypes1 = 
+    type A() =
+        static member inline dosomething() = ()
+
+    type B() =
+        inherit A()
+        member inline this.SomethingElse a = a + 10
+        member inline this.SomethingElse2 a b = a + b + 10
+
+    let f () = 
+        let b = B() 
+        let x1 = b.SomethingElse 3
+        let x2 = b.SomethingElse2 3 4
+        (x1, x2)
+    do check "clkewlijwlkw" (f()) (13, 17) 
+
 
 
 // See https://github.com/Microsoft/visualfsharp/issues/238

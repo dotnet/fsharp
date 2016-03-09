@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Primitives.Basics 
 
@@ -223,6 +223,30 @@ module internal List =
             let cons = freshConsNoTail (Unchecked.defaultof<'U>)
             collectToFreshConsTail f list cons
             cons.Tail 
+
+    let rec allPairsToFreshConsTailSingle x ys cons =
+        match ys with
+        | [] -> cons
+        | (h2::t2) ->
+            let cons2 = freshConsNoTail (x,h2)
+            setFreshConsTail cons cons2
+            allPairsToFreshConsTailSingle x t2 cons2
+
+    let rec allPairsToFreshConsTail xs ys cons =
+        match xs with
+        | [] -> setFreshConsTail cons []
+        | (h::t) ->
+            let p = allPairsToFreshConsTailSingle h ys cons
+            allPairsToFreshConsTail  t ys p
+
+    let allPairs (xs:'T list) (ys:'U list) =
+        match xs, ys with
+        | _, [] -> []
+        | [], _ -> []
+        | _ ->
+            let cons = freshConsNoTail (Unchecked.defaultof<'T * 'U>)
+            allPairsToFreshConsTail xs ys cons
+            cons.Tail
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.

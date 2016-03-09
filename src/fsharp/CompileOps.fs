@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal Microsoft.FSharp.Compiler.CompileOps
@@ -5224,7 +5224,4 @@ let TypeCheckClosedInputSet (checkForErrors, tcConfig, tcImports, tcGlobals, pre
     let (tcEnvAtEndOfLastFile, topAttrs, mimpls),tcState = TypeCheckMultipleInputs (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
     let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls, tcState)
     tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile
-
-
-
 

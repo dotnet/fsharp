@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -11,6 +11,14 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module Array = 
+
+        /// <summary>Builds a new array that contains the cartesian product of the two input arrays.</summary>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <returns>The resulting array of pairs.</returns>
+        [<CompiledName("AllPairs")>]
+        val allPairs: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
 
         /// <summary>Builds a new array that contains the elements of the first array followed by the elements of the second array.</summary>
         /// <param name="array1">The first input array.</param>
