@@ -15,6 +15,7 @@
     <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INTERNALIZED_FSLEXYACC_RUNTIME;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -43,17 +44,17 @@
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    <Compile Include="..\..\utils\Lexing.fsi">
+      <Link>LexYaccRuntime\Lexing.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    <Compile Include="..\..\utils\Lexing.fs">
+      <Link>LexYaccRuntime\Lexing.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    <Compile Include="..\..\utils\Parsing.fsi">
+      <Link>LexYaccRuntime\Parsing.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
+    <Compile Include="..\..\utils\Parsing.fs">
+      <Link>LexYaccRuntime\Parsing.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\resizearray.fsi">
       <Link>Utilities\resizearray.fsi</Link>
@@ -526,7 +527,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.$(FsLexYaccVersion)\build\FsLexYacc.targets" />
   <PropertyGroup>
     <OtherFlags>$(OtherFlags) /warnon:1182 --sig:$(IntermediateOutputPath)\$(AssemblyName).sig</OtherFlags>
     <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>

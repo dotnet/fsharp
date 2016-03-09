@@ -517,7 +517,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
     //    (start-pos, end-pos, eof-reached)
     //
     // You may ask why the F# parser reads this lexbuf state directly.  Well, the
-    // pars.fsy code itself it doesn't, but the parser engines (prim-parsing.fs) 
+    // pars.fsy code itself it doesn't, but the parser engines (Parsing.fs) 
     // certainly do for F#. e.g. when these parsers read a token 
     // from the lexstream they also read the position information and keep this
     // a related stack. 
