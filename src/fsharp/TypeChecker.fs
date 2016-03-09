@@ -3885,7 +3885,7 @@ type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * Dec
 type MutRecSignatureInitialData = MutRecShape<SynTypeDefnSig, SynBinding list, SynComponentInfo> list
 type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo> list
 
-type MutRecDefnsPass1DataForTycon = MutRecDefnsPass1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool 
+type MutRecDefnsPass1DataForTycon = MutRecDefnsPass1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
 type MutRecDefnsPass1Data = MutRecShape<MutRecDefnsPass1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo> list
 
 type MutRecDefnsPass2DataForTycon = MutRecDefnsPass2DataForTycon of Tycon option * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK
@@ -13705,7 +13705,7 @@ module EstablishTypeDefinitionCores = begin
     /// Get the component types that make a record, union or struct type.
     ///
     /// Used when determining if a structural type supports structural comparison.
-    let private GetStructuralElementsOfTyconDefn cenv env tpenv (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_)) tycon = 
+    let private GetStructuralElementsOfTyconDefn cenv env tpenv (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let m = tycon.Range
         let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) env
@@ -13756,7 +13756,7 @@ module EstablishTypeDefinitionCores = begin
     ///    - computing the mangled name for C
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
-    let private TcTyconDefnCore_Phase0_BuildInitialTycon cenv env parent (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor)) = 
+    let private TcTyconDefnCore_Phase0_BuildInitialTycon cenv env parent (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor, _)) = 
         let (ComponentInfo(_,synTypars, _,id,doc,preferPostfix, vis,_)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
@@ -13799,7 +13799,7 @@ module EstablishTypeDefinitionCores = begin
     ///
     ///  synTyconInfo: Syntactic AST for the name, attributes etc. of the type constructor
     ///  synTyconRepr: Syntactic AST for the RHS of the type definition
-    let private TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envinner (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,_,_)) (tycon:Tycon) = 
+    let private TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envinner (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,_,_,_)) (tycon:Tycon) = 
         let (ComponentInfo(synAttrs,typars, _,_, _, _,_,_)) = synTyconInfo
         let m = tycon.Range
         let id = tycon.Id
@@ -14078,7 +14078,7 @@ module EstablishTypeDefinitionCores = begin
     // such as 'isTupleTy' will return reliable results, e.g. isTupleTy on the 
     /// TAST type for 'PairOfInts' will report 'true' 
     //
-    let private TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envinner inSig tpenv pass (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
+    let private TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envinner inSig tpenv pass (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
         let m = tycon.Range
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
@@ -14150,7 +14150,7 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec, mutRecDecls) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo,tyconAndAttrsOpt)  -> 
                match origInfo, tyconAndAttrsOpt with 
                | (tyconDefCore,_), Some (tycon, checkedAttrs) ->
-                let (MutRecDefnsPass1DataForTycon(_,synTyconRepr,explicitImplements,_,_)) = tyconDefCore
+                let (MutRecDefnsPass1DataForTycon(_,synTyconRepr,explicitImplements,_,_,_)) = tyconDefCore
                 let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
@@ -14239,7 +14239,7 @@ module EstablishTypeDefinitionCores = begin
            with e -> errorRecovery e m))
 
     /// Establish the fields, dispatch slots and union cases of a type
-    let private TcTyconDefnCore_Phase6_EstablishRepresentation cenv envinner tpenv inSig (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
+    let private TcTyconDefnCore_Phase6_EstablishRepresentation cenv envinner tpenv inSig (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
         let m = tycon.Range
         try 
             let id = tycon.Id
@@ -14766,7 +14766,10 @@ module EstablishTypeDefinitionCores = begin
             tycon.Data.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclicThroughInheritance(),tycon.Range)))
         
-    let isAugmentationTyconDefnRepr x = match x with (SynTypeDefnSimpleRepr.General(TyconAugmentation,_,_,_,_,_,_,_)) -> true | _ -> false
+    let isAugmentationTyconDefnRepr x = 
+        match x with 
+        | (SynTypeDefnSimpleRepr.General(TyconAugmentation,_,_,_,_,_,_,_)) -> true 
+        | _ -> false
 
     let ComputeModuleOrNamespaceKind g isModule attribs = 
         if not isModule then Namespace 
@@ -14803,10 +14806,12 @@ module EstablishTypeDefinitionCores = begin
                  parent 
                  (fun innerParent modInfo -> TcTyconDefnCore_Phase0_BuildInitialModule cenv envInitial innerParent modInfo) 
                  (fun innerParent ((tyconDefCore,_) as c) -> 
-                     let (MutRecDefnsPass1DataForTycon(_,repr,_,_,_)) = tyconDefCore
+                     let (MutRecDefnsPass1DataForTycon(_,_,_,_,_,isAtOriginalTyconDefn)) = tyconDefCore
                      let tyconOpt = 
-                         if isAugmentationTyconDefnRepr repr then None 
-                         else Some (TcTyconDefnCore_Phase0_BuildInitialTycon cenv envInitial innerParent tyconDefCore)
+                         if isAtOriginalTyconDefn then 
+                             Some (TcTyconDefnCore_Phase0_BuildInitialTycon cenv envInitial innerParent tyconDefCore)
+                         else 
+                             None 
                      c, tyconOpt) 
                  (fun innerParent synBinds ->               
                     let containerInfo = ModuleOrNamespaceContainerInfo(match innerParent with Parent p -> p | _ -> failwith "unreachable")
@@ -14903,7 +14908,7 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec,withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envinner (origInfo, tyconOpt) -> 
                match origInfo, tyconOpt with 
                | (tyconDefCore,_), Some tycon -> 
-                let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_)) = tyconDefCore
+                let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,_)) = tyconDefCore
                 let (ComponentInfo(_,_, synTyconConstraints,_,_,_, _,_)) = synTyconInfo
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
                 let thisTyconRef = mkLocalTyconRef tycon
@@ -15244,14 +15249,16 @@ module TcDeclarations = begin
                         memberFlags.MemberKind=MemberKind.Constructor 
                     | SynMemberDefn.ImplicitCtor (_,_,spats,_, _) -> isNil spats
                     | _ -> false)
-                    
-            let core = MutRecDefnsPass1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,isIncrClass,implicitCtorSynPats,m), implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor)
+            let repr = SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,isIncrClass,implicitCtorSynPats,m)
+            let isAtOriginalTyconDefn = not (EstablishTypeDefinitionCores.isAugmentationTyconDefnRepr repr)
+            let core = MutRecDefnsPass1DataForTycon(synTyconInfo, repr, implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor,isAtOriginalTyconDefn)
 
             core, members @ extraMembers
 
-        | SynTypeDefnRepr.Simple(r,_) -> 
+        | SynTypeDefnRepr.Simple(repr,_) -> 
             let members = []
-            let core = MutRecDefnsPass1DataForTycon(synTyconInfo,r,implements1,false,false)
+            let isAtOriginalTyconDefn = not (EstablishTypeDefinitionCores.isAugmentationTyconDefnRepr repr)
+            let core = MutRecDefnsPass1DataForTycon(synTyconInfo,repr,implements1,false,false,isAtOriginalTyconDefn)
             core, members @ extraMembers
 
         //| SynTypeDefnRepr.Exception(r) -> 
@@ -15283,14 +15290,14 @@ module TcDeclarations = begin
     //------------------------------------------------------------------------- 
 
     let TcMutRecDefns cenv envInitial parent tpenv (mutRecDefns: MutRecDefnsInitialData,m,scopem) =
+        let inSig = false
         let mutRecDefnsAfterSplit = SplitMutRecDefns cenv mutRecDefns
-        let tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcTypeDefnCores cenv envInitial parent false tpenv (mutRecDefnsAfterSplit,m,scopem)
+        let tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcTypeDefnCores cenv envInitial parent inSig tpenv (mutRecDefnsAfterSplit,m,scopem)
 
         let mutRecDefnsAfterPrep = 
             mutRecDefnsAfterCore 
             |> MutRecShapes.mapTycons (fun ((typeDefnCore, members), tyconOpt, (baseValOpt, safeInitInfo)) -> 
-                       let (MutRecDefnsPass1DataForTycon(synTyconInfo,repr,_,_,_)) = typeDefnCore
-                       let isAtOriginalTyconDefn = not (EstablishTypeDefinitionCores.isAugmentationTyconDefnRepr repr)
+                       let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,isAtOriginalTyconDefn)) = typeDefnCore
                        PrepareTyconMemberDefns tyconOpt isAtOriginalTyconDefn cenv envMutRec (synTyconInfo, baseValOpt, safeInitInfo, members, synTyconInfo.Range, m))
 
         let withBindings,env = TcMutRecBindingDefns cenv envInitial parent m scopem (envMutRec, mutRecDefnsAfterPrep)
@@ -15344,26 +15351,31 @@ module TcDeclarations = begin
 
             let hasSelfReferentialCtor = false
             
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,false,None,m),implements2@implements1,preEstablishedHasDefaultCtor,hasSelfReferentialCtor)
+            let repr = SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,false,None,m)
+            let isAtOriginalTyconDefn = true
+            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, repr,implements2@implements1,preEstablishedHasDefaultCtor,hasSelfReferentialCtor,isAtOriginalTyconDefn)
 
-            tyconCore, (synTyconInfo,true,members@extraMembers)
+            tyconCore, (synTyconInfo,members@extraMembers)
 
         // 'type X with ...' in a signature is always interpreted as an extrinsic extension.
         // Representation-hidden types with members and interfaces are written 'type X = ...' 
         | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _ as r),_) when nonNil extraMembers -> 
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false)
-            tyconCore,  (synTyconInfo,false,extraMembers)
+            let isAtOriginalTyconDefn = false
+            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false, isAtOriginalTyconDefn)
+            tyconCore,  (synTyconInfo,extraMembers)
 
         | SynTypeDefnSigRepr.Simple(r,_) -> 
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false)
-            tyconCore, (synTyconInfo,true,extraMembers) 
+            let isAtOriginalTyconDefn = true
+            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false,isAtOriginalTyconDefn)
+            tyconCore, (synTyconInfo,extraMembers) 
 
     let SplitMutRecSignatures mutRecSigs = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
 
     let private TcTyconSignatureMemberSpecs cenv parent envMutRec mutRecDefns =
         // TODO - this is only checking the tycons in the signatures, need to do the module and let elements to
-        (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun env ((_, (synTyconInfo,isAtOriginalTyconDefn,members)), _, _) -> 
+        (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun env ((tyconCore, (synTyconInfo,members)), _, _) -> 
             let tpenv = emptyUnscopedTyparEnv
+            let (MutRecDefnsPass1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
             let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
             let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv env true m typars cs longPath
 
