@@ -281,7 +281,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <(Ast.SynEnumCase, Ast.SynUnionCase) Choice list> unionTypeRepr
 %type <Ast.SynMemberDefns> tyconDefnAugmentation
 %type <Ast.SynExceptionDefn> exconDefn
-%type <Ast.SynExceptionRepr> exconCore
+%type <Ast.SynExceptionDefnRepr> exconCore
 %type <Ast.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
 %type <Ast.LongIdentWithDots> openDecl
 %type <Ast.LongIdentWithDots> path
@@ -752,8 +752,8 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility exconSpfn
       { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let (ExceptionSig(ExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
-        let ec = (ExceptionSig(ExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
+        let (SynExceptionSig(SynExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
+        let ec = (SynExceptionSig(SynExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
   | OPEN path 
@@ -1011,7 +1011,7 @@ memberSpecFlags:
 /* Part of an exception definition in a signature file */
 exconSpfn: 
   | exconCore opt_classSpfn 
-     { ExceptionSig($1,$2,lhs parseState) }
+     { SynExceptionSig($1,$2,lhs parseState) }
   
 
 /* The optional augmentation on a type definition in a signature */
@@ -1212,9 +1212,9 @@ moduleDefn:
   /* 'exception' definitions */
   | opt_attributes opt_declVisibility exconDefn
       { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let (ExceptionDefn(ExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
+        let (SynExceptionDefn(SynExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
         let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
-        let ec = (ExceptionDefn(ExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
+        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
         [ SynModuleDecl.Exception(ec, f) ] }
 
   /* 'module' definitions */
@@ -2310,7 +2310,7 @@ fieldDecl:
 /* An exception definition */
 exconDefn: 
   | exconCore opt_classDefn 
-     { ExceptionDefn($1,$2, ($1.Range,$2) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
+     { SynExceptionDefn($1,$2, ($1.Range,$2) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
 
 /* Part of an exception definition */
 exceptionAndGrabDoc:
@@ -2319,7 +2319,7 @@ exceptionAndGrabDoc:
 /* Part of an exception definition */
 exconCore: 
   | exceptionAndGrabDoc opt_attributes opt_access exconIntro exconRepr 
-     { ExceptionDefnRepr($2,$4,$5,$1,$3,(match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
+     { SynExceptionDefnRepr($2,$4,$5,$1,$3,(match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
   
 /* Part of an exception definition */
 exconIntro: 

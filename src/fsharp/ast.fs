@@ -1109,6 +1109,8 @@ and
     | TypeAbbrev of ParserDetail * SynType * range
     /// An abstract definition , "type X"
     | None       of range
+    /// An exception definition , "exception E = ..."
+    //| Exception of SynExceptionDefnRepr
     member this.Range =
         match this with
         | Union(_,_,m) 
@@ -1118,6 +1120,7 @@ and
         | LibraryOnlyILAssembly(_,m)
         | TypeAbbrev(_,_,m)
         | None(m) -> m
+        // | Exception t -> t.Range
 
 and SynEnumCases = SynEnumCase list
 
@@ -1238,25 +1241,30 @@ and
 
 /// 'exception E = ... '
 and [<NoEquality; NoComparison>]
-    SynExceptionRepr = 
-    | ExceptionDefnRepr of SynAttributes * SynUnionCase * LongIdent option * PreXmlDoc * SynAccess option * range
-    member this.Range = match this with ExceptionDefnRepr(_,_,_,_,_,m) -> m
+    SynExceptionDefnRepr = 
+    | SynExceptionDefnRepr of SynAttributes * SynUnionCase * LongIdent option * PreXmlDoc * SynAccess option * range
+    member this.Range = match this with SynExceptionDefnRepr(_,_,_,_,_,m) -> m
 
 /// 'exception E = ... with ...'
 and 
     [<NoEquality; NoComparison>]
     SynExceptionDefn = 
-    | ExceptionDefn of SynExceptionRepr * SynMemberDefns * range
+    | SynExceptionDefn of SynExceptionDefnRepr * SynMemberDefns * range
+    member this.Range =
+        match this with
+        | SynExceptionDefn(_,_,m) -> m
 
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynTypeDefnRepr =
     | ObjectModel  of SynTypeDefnKind * SynMemberDefns * range
     | Simple of SynTypeDefnSimpleRepr * range
+    //| Exception of SynExceptionDefnRepr
     member this.Range =
         match this with
         | ObjectModel(_,_,m) -> m
         | Simple(_,m) -> m
+        //| Exception t -> t.Range
 
 and 
     [<NoEquality; NoComparison>]
@@ -1336,7 +1344,7 @@ and SynModuleDecls = SynModuleDecl list
 and 
     [<NoEquality; NoComparison>]
     SynExceptionSig = 
-    | ExceptionSig of SynExceptionRepr * SynMemberSigs * range
+    | SynExceptionSig of SynExceptionDefnRepr * SynMemberSigs * range
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]

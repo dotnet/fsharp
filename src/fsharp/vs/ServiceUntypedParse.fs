@@ -318,7 +318,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                   | SynModuleDecl.Types(tydefs, m) -> 
                       if rangeContainsPos m pos then 
                           for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(ExceptionDefn(ExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
                       if rangeContainsPos m pos then 
                           for m in membDefns do yield! walkMember m
                   | _ ->

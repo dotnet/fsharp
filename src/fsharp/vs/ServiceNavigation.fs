@@ -216,7 +216,7 @@ module NavigationImpl =
                   
             | SynModuleDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
                             
-            | SynModuleDecl.Exception(ExceptionDefn(ExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, _), membDefns, _), m) ->
+            | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, _), membDefns, _), m) ->
                 // Exception declaration
                 let nested = processMembers membDefns |> snd
                 [ createDecl(baseName, id, ExnDecl, iIconGroupException, m, fldspecRange fldspec, nested) ] 
