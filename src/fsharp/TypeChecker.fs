@@ -12487,20 +12487,20 @@ module TyconBindingChecking = begin
 
         let envMutRec, defnsAs =  
             (envMutRec, defnsAs) 
-            ||> MutRecShapes.extendEnvs (fun envCurrent decls -> 
+            ||> MutRecShapes.extendEnvs (fun envForDecls decls -> 
                 let prelimRecValues =  
                     decls |> List.collect (function 
                         | MutRecShape.Tycon (TyconBindingsPassA(_,_,prelimRecValues,_,_,_,_)) -> prelimRecValues 
                         | MutRecShape.Lets binds -> [ for bind in binds -> bind.RecBindingInfo.Val ] 
                         | _ -> [])
-                let envInner = AddLocalVals cenv.tcSink scopem prelimRecValues envCurrent
-                envInner)
+                let envForDeclsUpdated = AddLocalVals cenv.tcSink scopem prelimRecValues envForDecls
+                envForDeclsUpdated)
 
         (envMutRec, defnsAs, uncheckedRecBinds, tpenv)
 
     /// PassB: check each of the bindings, convert from ast to tast and collects type assertions.
     /// Also generalize incrementally.
-    let TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv (envMutRec, defnsAs:MutRecBindingsPassA, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecBindingsPassB * _ * _ =
+    let TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecBindingsPassA, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecBindingsPassB * _ * _ =
 
         let (defnsBs: MutRecBindingsPassB), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
 
@@ -12523,7 +12523,7 @@ module TyconBindingChecking = begin
             // The envForTycon is the environment used for name resolution within the let and member bindings
             // of the type definition. This becomes 'envStatic' and 'envInstance' for the two 
              
-            let initialOuterState = (tpenv,([]: PostGeneralizationRecursiveBinding list),([]: PreGeneralizationRecursiveBinding list),uncheckedRecBindsTable,envMutRec)
+            let initialOuterState = (tpenv,([]: PostGeneralizationRecursiveBinding list),([]: PreGeneralizationRecursiveBinding list),uncheckedRecBindsTable,envInitial)
 
             (initialOuterState,envMutRec,defnsAs) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defnsA -> 
 
@@ -12914,15 +12914,12 @@ module TyconBindingChecking = begin
                 else 
                     None)
 
-        // Re-add the any tycons to get any C#-style extension members
-        let envMutRec = AddLocalTyconRefs true g cenv.amap scopem tcrefsWithCSharpExtensionMembers envMutRec
-
         // PassA: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
         // PassA: also processes their arg patterns - collecting type assertions 
         let (envMutRec, defnsAs, uncheckedRecBinds, tpenv) =  TcMutRecBindings_PassA_CreateRecursiveValuesAndCheckArgumentPatterns cenv scopem tpenv (envMutRec, mutRecDecls)
 
         // PassB: type check pass, convert from ast to tast and collects type assertions, and generalize
-        let defnsBs, generalizedRecBinds, tpenv = TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv (envMutRec, defnsAs, uncheckedRecBinds, scopem)
+        let defnsBs, generalizedRecBinds, tpenv = TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs, uncheckedRecBinds, scopem)
 
 
         let generalizedTyparsForRecursiveBlock = 
@@ -13118,12 +13115,12 @@ let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv,
           
 
       let binds  = 
-          (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envinner tyconData -> 
+          (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPass2DataForTycon(tyconOpt, declKind, tcref, _, _, declaredTyconTypars, _, _, _)) = tyconData
               let obinds = tyconBindingsOfTypeDefn tyconData
               let ibinds  = 
-                      let intfTypes = interfacesFromTypeDefn envinner tyconData
-                      let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envinner.DisplayEnv false (List.map (fun (ity,_,m) -> (ity,m)) intfTypes)
+                      let intfTypes = interfacesFromTypeDefn envForDecls tyconData
+                      let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv false (List.map (fun (ity,_,m) -> (ity,m)) intfTypes)
                       (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
               MutRecDefnsPass2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds))
       
@@ -14852,17 +14849,17 @@ module EstablishTypeDefinitionCores = begin
         // Here we run InferTyconKind and record partial information about the kind of the type constructor. 
         // This means TyconObjModelKind is set, which means isSealedTy, isInterfaceTy etc. give accurate results. 
         let withAttrs = 
-            (envMutRec, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo,tyconOpt) -> 
+            (envMutRec, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo,tyconOpt) -> 
                 let res = 
                     match origInfo, tyconOpt with 
-                    | (tyconDefCore,_), Some tycon -> Some (tycon,TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envinner tyconDefCore tycon)
+                    | (tyconDefCore,_), Some tycon -> Some (tycon,TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envForDecls tyconDefCore tycon)
                     | _ -> None
                 origInfo, res)
             
         // Establish the abbreviations (no constraint checking, because constraints not yet established)
-        (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envinner (origInfo,tyconAndAttrsOpt) -> 
+        (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
             match origInfo, tyconAndAttrsOpt with 
-            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envinner inSig tpenv FirstPass tyconDefCore tycon attrs
+            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envForDecls inSig tpenv FirstPass tyconDefCore tycon attrs
             | _ -> ()) 
 
         // Check for cyclic abbreviations. If this succeeds we can start reducing abbreviations safely.
@@ -14910,10 +14907,10 @@ module EstablishTypeDefinitionCores = begin
                | (tyconDefCore,_), Some tycon -> 
                 let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,_)) = tyconDefCore
                 let (ComponentInfo(_,_, synTyconConstraints,_,_,_, _,_)) = synTyconInfo
-                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
+                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
-                let envinner = MakeInnerEnvForTyconRef cenv envinner thisTyconRef false 
-                try TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envinner tpenv  synTyconConstraints |> ignore
+                let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon thisTyconRef false 
+                try TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envForTycon tpenv  synTyconConstraints |> ignore
                 with e -> errorRecovery e m
                | _ -> ())
 
@@ -14921,13 +14918,13 @@ module EstablishTypeDefinitionCores = begin
 
         // No inferred constraints allowed on declared typars 
         (envMutRec,withEnvs) 
-        ||> MutRecShapes.iterTyconsWithEnv (fun envinner (_, tyconOpt) -> 
-               tyconOpt |> Option.iter (fun tycon -> tycon.Typars(m) |> List.iter (SetTyparRigid cenv.g envinner.DisplayEnv m)))
+        ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (_, tyconOpt) -> 
+               tyconOpt |> Option.iter (fun tycon -> tycon.Typars(m) |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)))
         
         // OK, now recheck the abbreviations, super/interface and explicit constraints types (this time checking constraints)
-        (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envinner (origInfo,tyconAndAttrsOpt) -> 
+        (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
             match origInfo, tyconAndAttrsOpt with 
-            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envinner inSig tpenv SecondPass tyconDefCore tycon attrs
+            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envForDecls inSig tpenv SecondPass tyconDefCore tycon attrs
             | _ -> ()) 
 
         (envMutRec, withAttrs) |> TcTyconDefnCore_Phase3_Phase5_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig SecondPass 
@@ -14937,10 +14934,10 @@ module EstablishTypeDefinitionCores = begin
         // Now do the representations. Each baseValOpt is a residue from the representation which is potentially available when
         // checking the members.
         let withBaseValsAndSafeInitInfos = 
-            (envMutRec,withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo,tyconAndAttrsOpt) -> 
+            (envMutRec,withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
                 let info = 
                     match origInfo, tyconAndAttrsOpt with 
-                    | (tyconDefnCore,_), Some (tycon,attrs) -> TcTyconDefnCore_Phase6_EstablishRepresentation cenv envinner tpenv inSig tyconDefnCore tycon attrs
+                    | (tyconDefnCore,_), Some (tycon,attrs) -> TcTyconDefnCore_Phase6_EstablishRepresentation cenv envForDecls tpenv inSig tyconDefnCore tycon attrs
                     | _ -> None, NoSafeInitInfo 
                 (origInfo, Option.map fst tyconAndAttrsOpt, info))
                 
