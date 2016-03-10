@@ -12264,7 +12264,7 @@ module TyconBindingChecking = begin
 
     /// The collected syntactic input definitions for a single type or type-extension definition
     type TyconBindingsPassA = 
-      | TyconBindingsPassA of Tycon option * Val list * TyconRef * Typar list * TType * TyconBindingPassA list
+      | TyconBindingsPassA of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPassA list
 
     type MutRecBindingPassA = MutRecShape<TyconBindingsPassA, PreCheckingRecursiveBinding list, MutRecDefnsPass2DataForModule * TcEnv> 
 
@@ -12322,15 +12322,15 @@ module TyconBindingChecking = begin
         //    uncheckedBindsRev:   accumulation of unchecked bindings
         let (defnsAs: MutRecBindingsPassA), (tpenv,_,uncheckedBindsRev) =
             let initialOuterState = (tpenv, 0, ([]: PreCheckingRecursiveBinding list))
-            (initialOuterState, envMutRec, mutRecDecls) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDefns defns -> 
+            (initialOuterState, envMutRec, mutRecDecls) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defns -> 
               let (tpenv,recBindIdx,uncheckedBindsRev) = outerState
               match defns with 
               | MutRecShape.Module _ ->  failwith "unreachable"
               | MutRecShape.Lets recBinds -> 
                 let normRecDefns = 
                    [ for (RecDefnBindingInfo(a,b,c,bind)) in recBinds do 
-                       yield NormalizedRecBindingDefn(a,b,c,BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForDefns bind) ]
-                let bindsAndValues,(tpenv,recBindIdx) = ((tpenv,recBindIdx), normRecDefns) ||> List.mapFold (AnalyzeAndMakeAndPublishRecursiveValue ErrorOnOverrides false cenv envForDefns) 
+                       yield NormalizedRecBindingDefn(a,b,c,BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForDecls bind) ]
+                let bindsAndValues,(tpenv,recBindIdx) = ((tpenv,recBindIdx), normRecDefns) ||> List.mapFold (AnalyzeAndMakeAndPublishRecursiveValue ErrorOnOverrides false cenv envForDecls) 
                 let binds = bindsAndValues |> List.map fst |> List.concat
 
                 let defnAs = MutRecShape.Lets binds
@@ -12341,7 +12341,7 @@ module TyconBindingChecking = begin
                 // Class members can access protected members of the implemented type 
                 // Class members can access private members in the typ
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-                let envForTycon = MakeInnerEnvForTyconRef cenv envForDefns tcref isExtrinsic 
+                let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
 
                 // Re-add the type constructor to make it take precedence for record label field resolutions
                 // This does not apply to extension members: in those cases the relationship between the record labels
@@ -12476,7 +12476,7 @@ module TyconBindingChecking = begin
                     | rest -> rest
 
                 let prelimRecValues = [ for x in defnAs do match x with PassAMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
-                let defnAs = MutRecShape.Tycon(TyconBindingsPassA(tyconOpt,prelimRecValues,tcref,copyOfTyconTypars,thisTy,defnAs))
+                let defnAs = MutRecShape.Tycon(TyconBindingsPassA(tyconOpt,declKind,prelimRecValues,tcref,copyOfTyconTypars,thisTy,defnAs))
                 defnAs,(tpenv,recBindIdx,uncheckedBindsRev))
 
         let uncheckedRecBinds = List.rev uncheckedBindsRev
@@ -12490,7 +12490,7 @@ module TyconBindingChecking = begin
             ||> MutRecShapes.extendEnvs (fun envCurrent decls -> 
                 let prelimRecValues =  
                     decls |> List.collect (function 
-                        | MutRecShape.Tycon (TyconBindingsPassA(_,prelimRecValues,_,_,_,_)) -> prelimRecValues 
+                        | MutRecShape.Tycon (TyconBindingsPassA(_,_,prelimRecValues,_,_,_,_)) -> prelimRecValues 
                         | MutRecShape.Lets binds -> [ for bind in binds -> bind.RecBindingInfo.Val ] 
                         | _ -> [])
                 let envInner = AddLocalVals cenv.tcSink scopem prelimRecValues envCurrent
@@ -12525,7 +12525,7 @@ module TyconBindingChecking = begin
              
             let initialOuterState = (tpenv,([]: PostGeneralizationRecursiveBinding list),([]: PreGeneralizationRecursiveBinding list),uncheckedRecBindsTable,envMutRec)
 
-            (initialOuterState,envMutRec,defnsAs) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDefns defnsA -> 
+            (initialOuterState,envMutRec,defnsAs) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defnsA -> 
 
               let (tpenv,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable,envNonRec) = outerState
 
@@ -12535,7 +12535,7 @@ module TyconBindingChecking = begin
                 
                 let defnBs,(tpenv,_,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable) = 
 
-                    let initialInnerState = (tpenv,envForDefns,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
+                    let initialInnerState = (tpenv,envForDecls,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
                     (initialInnerState,binds) ||> List.mapFold  (fun innerState rbind -> 
 
                         let (tpenv,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable) = innerState
@@ -12548,9 +12548,9 @@ module TyconBindingChecking = begin
                 let outerState = (tpenv, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable, envNonRec)
                 MutRecShape.Lets defnBs, outerState
 
-              | MutRecShape.Tycon (TyconBindingsPassA(tyconOpt, _, tcref, copyOfTyconTypars, thisTy, defnAs)) ->
+              | MutRecShape.Tycon (TyconBindingsPassA(tyconOpt, declKind, _, tcref, copyOfTyconTypars, thisTy, defnAs)) ->
                 
-                let envForTycon = envForDefns
+                let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref (declKind = ExtrinsicExtensionBinding) 
                 // Set up the environment so use-before-definition warnings are given, at least 
                 // until we reach a PassAIncrClassCtorJustAfterSuperInit. 
                 let envForTycon = { envForTycon with eCtorInfo = Some (InitialImplicitCtorInfo())  }
@@ -12755,10 +12755,10 @@ module TyconBindingChecking = begin
     // --- Extract field bindings from let-bindings 
     // --- Extract method bindings from let-bindings 
     // --- Extract bindings for implicit constructors
-    let TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envInitial tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecBindingsPassC) =
+    let TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecBindingsPassC) =
 
       //  let (fixupValueExprBinds, methodBinds) = 
-            defnsCs |> MutRecShapes.mapTycons (fun (TyconBindingsPassC(tyconOpt, tcref,defnCs)) -> 
+            (envMutRec, defnsCs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (TyconBindingsPassC(tyconOpt, tcref,defnCs)) -> 
                 match defnCs with 
 
                  
@@ -12799,7 +12799,7 @@ module TyconBindingChecking = begin
                                 | _ -> false)
 
                         if needsSafeStaticInit && hasStaticBindings then
-                            let rfield =  MakeSafeInitField cenv.g envInitial tcref.Range true
+                            let rfield =  MakeSafeInitField cenv.g envForDecls tcref.Range true
                             SafeInitField(mkRecdFieldRef tcref rfield.Name, rfield)
                         else
                             NoSafeInitInfo
@@ -12818,10 +12818,10 @@ module TyconBindingChecking = begin
                             if tcref.IsStructOrEnumTycon then 
                                 mkUnit cenv.g tcref.Range, false,None, defnCs
                             else
-                                let inheritsExpr,_ = TcNewExpr cenv envInitial tpenv cenv.g.obj_ty None true (SynExpr.Const(SynConst.Unit,tcref.Range)) tcref.Range
+                                let inheritsExpr,_ = TcNewExpr cenv envForDecls tpenv cenv.g.obj_ty None true (SynExpr.Const(SynConst.Unit,tcref.Range)) tcref.Range
                                 inheritsExpr,false,None,defnCs
                        
-                    let envForTycon = MakeInnerEnvForTyconRef cenv envInitial tcref false 
+                    let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref false 
 
                     // Compute the cpath used when creating the hidden fields 
                     let cpath = envForTycon.eAccessPath
@@ -12858,7 +12858,7 @@ module TyconBindingChecking = begin
                     let ctorValueExprBindings = 
                         [ (let ctorValueExprBinding = TBind(incrClassCtorLhs.InstanceCtorVal,ctorBodyLambdaExpr,NoSequencePointAtStickyBinding)
                            let rbind = { ValScheme = incrClassCtorLhs.InstanceCtorValScheme ; Binding = ctorValueExprBinding }
-                           FixupLetrecBind cenv envInitial.DisplayEnv generalizedTyparsForRecursiveBlock rbind) ]
+                           FixupLetrecBind cenv envForDecls.DisplayEnv generalizedTyparsForRecursiveBlock rbind) ]
                         @ 
                         ( match cctorBodyLambdaExprOpt with 
                           | None -> []
@@ -12866,7 +12866,7 @@ module TyconBindingChecking = begin
                               [ (let _,cctorVal, cctorValScheme = incrClassCtorLhs.StaticCtorValInfo.Force()
                                  let cctorValueExprBinding = TBind(cctorVal,cctorBodyLambdaExpr,NoSequencePointAtStickyBinding)
                                  let rbind = { ValScheme = cctorValScheme; Binding =  cctorValueExprBinding  }
-                                 FixupLetrecBind cenv envInitial.DisplayEnv generalizedTyparsForRecursiveBlock rbind) ] ) 
+                                 FixupLetrecBind cenv envForDecls.DisplayEnv generalizedTyparsForRecursiveBlock rbind) ] ) 
 
                     // Publish the fields of the representation to the type 
                     localReps.PublishIncrClassFields (cenv, denv, cpath, incrClassCtorLhs, safeStaticInitInfo) (* mutation *)    
@@ -12933,7 +12933,7 @@ module TyconBindingChecking = begin
         // Check the escape condition for all extraGeneralizableTypars.
         // First collect up all the extraGeneralizableTypars.
         let allExtraGeneralizableTypars = 
-            defnsAs |> MutRecShapes.collectTycons |> List.collect (fun (TyconBindingsPassA(_, _, _, copyOfTyconTypars, _, defnAs)) ->
+            defnsAs |> MutRecShapes.collectTycons |> List.collect (fun (TyconBindingsPassA(_, _, _, _, copyOfTyconTypars, _, defnAs)) ->
                 [ yield! copyOfTyconTypars
                   for defnA in defnAs do 
                       match defnA with
@@ -12987,15 +12987,15 @@ module TyconBindingChecking = begin
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
             //printfn "solving unsolvedTyparsInvolvingGeneralizedVariable : %s #%d" tp.DisplayName tp.Stamp
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css envInitial.DisplayEnv tp
+                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css envMutRec.DisplayEnv tp
           
         // Now that we know what we've generalized we can adjust the recursive references 
-        let defnsCs = TcMutRecBindings_PassC_FixupRecursiveReferences cenv (envInitial.DisplayEnv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
+        let defnsCs = TcMutRecBindings_PassC_FixupRecursiveReferences cenv (envMutRec.DisplayEnv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
 
         // --- Extract field bindings from let-bindings 
         // --- Extract method bindings from let-bindings 
         // --- Extract bindings for implicit constructors
-        let defnsDs = TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envInitial tpenv (envInitial.DisplayEnv, generalizedTyparsForRecursiveBlock, defnsCs)
+        let defnsDs = TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (envMutRec.DisplayEnv, generalizedTyparsForRecursiveBlock, defnsCs)
         
         // INITIALIZATION GRAPHS 
         // let binds = EliminateInitializationGraphs cenv.g true envInitial.DisplayEnv fixupValueExprBinds bindsm
@@ -14889,9 +14889,9 @@ module EstablishTypeDefinitionCores = begin
         // Find all the field types in all the structrual types
         let tyconsWithStructuralTypes = 
             (envMutRec,withEnvs) 
-            ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo, tyconOpt) -> 
+            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                    match origInfo, tyconOpt with 
-                   | (typeDefCore,_), Some tycon -> Some (tycon,GetStructuralElementsOfTyconDefn cenv envinner tpenv typeDefCore tycon)
+                   | (typeDefCore,_), Some tycon -> Some (tycon,GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
                    | _ -> None) 
             |> MutRecShapes.collectTycons 
             |> List.choose id
@@ -14900,17 +14900,17 @@ module EstablishTypeDefinitionCores = begin
         let seSet = TyconConstraintInference.InferSetOfTyconsSupportingEquatable cenv envMutRec.DisplayEnv tyconsWithStructuralTypes
 
         (envMutRec,withEnvs) 
-        ||> MutRecShapes.iterTyconsWithEnv (fun envinner (_, tyconOpt) -> 
-               tyconOpt |> Option.iter (AddAugmentationDeclarations.AddGenericHashAndComparisonDeclarations cenv envinner scSet seSet))
+        ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (_, tyconOpt) -> 
+               tyconOpt |> Option.iter (AddAugmentationDeclarations.AddGenericHashAndComparisonDeclarations cenv envForDecls scSet seSet))
 
         // Check and publish the explicit constraints. 
         let checkExplicitConstraints checkCxs = 
-            (envMutRec,withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envinner (origInfo, tyconOpt) -> 
+            (envMutRec,withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                match origInfo, tyconOpt with 
                | (tyconDefCore,_), Some tycon -> 
                 let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,_)) = tyconDefCore
                 let (ComponentInfo(_,_, synTyconConstraints,_,_,_, _,_)) = synTyconInfo
-                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
+                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envinner = MakeInnerEnvForTyconRef cenv envinner thisTyconRef false 
                 try TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envinner tpenv  synTyconConstraints |> ignore
@@ -15373,16 +15373,16 @@ module TcDeclarations = begin
 
     let private TcTyconSignatureMemberSpecs cenv parent envMutRec mutRecDefns =
         // TODO - this is only checking the tycons in the signatures, need to do the module and let elements to
-        (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun env ((tyconCore, (synTyconInfo,members)), _, _) -> 
+        (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls ((tyconCore, (synTyconInfo,members)), _, _) -> 
             let tpenv = emptyUnscopedTyparEnv
             let (MutRecDefnsPass1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
             let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
-            let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv env true m typars cs longPath
+            let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv envForDecls true m typars cs longPath
 
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars env
-            let envinner = MakeInnerEnvForTyconRef cenv envinner tcref (declKind = ExtrinsicExtensionBinding) 
+            let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForDecls
+            let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
 
-            TcTyconMemberSpecs cenv envinner (TyconContainerInfo(parent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)
+            TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(parent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)
 
     let TcTyconSignatures cenv env parent tpenv (tspecs:MutRecSignatureInitialData,m,scopem) =
         let mutRecDefnsAfterSplit = SplitMutRecSignatures tspecs
