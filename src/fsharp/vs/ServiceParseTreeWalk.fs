@@ -455,6 +455,10 @@ module internal AstTraversal =
             let path = TraverseStep.TypeDefn tydef :: path
             [
                 match synTypeDefnRepr with
+                | SynTypeDefnRepr.Exception _ -> 
+                    // This node is generated in TypeChecker.fs, not in the AST.  
+                    // But note exception declarations are missing from this tree walk.
+                    () 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
                     // traverse inherit function is used to capture type specific data required for processing Inherit part
                     let traverseInherit (synType : SynType, range : range) = 

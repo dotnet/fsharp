@@ -44,7 +44,7 @@ namespace (* rec *) Microsoft.VisualStudio.FSharp.ProjectSystem
     open Internal.Utilities.Debug
 
     #mutrec
- 
+
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.

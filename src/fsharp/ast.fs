@@ -1110,7 +1110,7 @@ and
     /// An abstract definition , "type X"
     | None       of range
     /// An exception definition , "exception E = ..."
-    //| Exception of SynExceptionDefnRepr
+    | Exception of SynExceptionDefnRepr
     member this.Range =
         match this with
         | Union(_,_,m) 
@@ -1120,7 +1120,7 @@ and
         | LibraryOnlyILAssembly(_,m)
         | TypeAbbrev(_,_,m)
         | None(m) -> m
-        // | Exception t -> t.Range
+        | Exception t -> t.Range
 
 and SynEnumCases = SynEnumCase list
 
@@ -1259,12 +1259,12 @@ and
     SynTypeDefnRepr =
     | ObjectModel  of SynTypeDefnKind * SynMemberDefns * range
     | Simple of SynTypeDefnSimpleRepr * range
-    //| Exception of SynExceptionDefnRepr
+    | Exception of SynExceptionDefnRepr
     member this.Range =
         match this with
         | ObjectModel(_,_,m) -> m
         | Simple(_,m) -> m
-        //| Exception t -> t.Range
+        | Exception t -> t.Range
 
 and 
     [<NoEquality; NoComparison>]

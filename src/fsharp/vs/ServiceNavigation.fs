@@ -136,9 +136,19 @@ module NavigationImpl =
             | _ -> []
         
         // Process a class declaration or F# type declaration
-        let rec processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, _, _), repr, membDefns, m)) =
+        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, m)) =
+            // Exception declaration
+            [ createDecl(baseName, id, ExnDecl, iIconGroupException, m, fldspecRange fldspec, nested) ] 
+
+        // Process a class declaration or F# type declaration
+        and processExnDefn baseName (SynExceptionDefn(repr, membDefns, _)) =  
+            let nested = processMembers membDefns |> snd
+            processExnDefnRepr baseName nested repr
+
+        and processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, _, _), repr, membDefns, m)) =
             let topMembers = processMembers membDefns |> snd
             match repr with
+            | SynTypeDefnRepr.Exception repr -> processExnDefnRepr baseName [] repr
             | SynTypeDefnRepr.ObjectModel(_, membDefns, mb) ->
                 // F# class declaration
                 let members = processMembers membDefns |> snd
@@ -215,11 +225,7 @@ module NavigationImpl =
                 createDeclLid(baseName, lid, ModuleDecl, iIconGroupModule, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested)::other
                   
             | SynModuleDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
-                            
-            | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, (UnionCase(_, id, fldspec, _, _, _)), _, _, _, _), membDefns, _), m) ->
-                // Exception declaration
-                let nested = processMembers membDefns |> snd
-                [ createDecl(baseName, id, ExnDecl, iIconGroupException, m, fldspecRange fldspec, nested) ] 
+            | SynModuleDecl.Exception (defn,_) -> processExnDefn baseName defn
             | _ -> [] )            
                   
         // Collect all the items  
