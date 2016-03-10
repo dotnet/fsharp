@@ -12,6 +12,13 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
+        /// <summary>Returns a new list that contains the cartesian product of the two input lists.</summary>
+        /// <param name="list1">The first input list.</param>
+        /// <param name="list2">The second input list.</param>
+        /// <returns>The resulting list of pairs.</returns>
+        [<CompiledName("AllPairs")>]
+        val allPairs: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
+
         /// <summary>Returns a new list that contains the elements of the first list
         /// followed by elements of the second.</summary>
         /// <param name="list1">The first input list.</param>

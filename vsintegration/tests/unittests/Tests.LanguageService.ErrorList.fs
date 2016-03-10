@@ -294,7 +294,7 @@ b.Do(1, 1)
                 Assert.AreEqual(1, List.length errors)
                 assertContains errors "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member A.Do : a:int * b:'T -> unit, member A.Do : a:int * b:int -> unit"
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``NoErrorInErrList``() = 
         use _guard = this.UsingNewVS()
         let fileContents1 = """
@@ -328,7 +328,7 @@ b.Do(1, 1)
         TakeCoffeeBreak(this.VS)
         this.VerifyCountAtSpecifiedFile(project,0)
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``NoLevel4Warning``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -557,7 +557,6 @@ but here has type
 
     // In this bug, particular warns were still present after nowarn        
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``NoWarn.Bug5424``() =  
         let fileContent = """
             #nowarn "67" // this type test or downcast will always hold

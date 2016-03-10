@@ -42,7 +42,7 @@ type IncrementalBuild() =
     // It verifies that incremental builder can handle changes to timestamps that happen _before_ the
     // stamp function exists. This ensures there's not a race in the data gathered for tracking file
     // timestamps in parsing.
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public rb.StampUpdate() =
         let path = Path.GetTempFileName()
 

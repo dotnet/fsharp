@@ -43,8 +43,8 @@ if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
 rem to run the 64 bit version of the code set FSC_BASIC_64=FSC_BASIC_64
 set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
 
-if "%REDUCED_RUNTIME%"=="1" (
-    echo REDUCED_RUNTIME set
+if "%SKIP_EXPENSIVE_TESTS%"=="1" (
+    echo SKIP_EXPENSIVE_TESTS set
     
     if not defined PERMUTATIONS (
         powershell.exe %PSH_FLAGS% -command "&{& '%~d0%~p0\PickPermutations.ps1' '%cd%' '%FSC%' '%PERMUTATIONS_LIST%'}" > _perm.txt

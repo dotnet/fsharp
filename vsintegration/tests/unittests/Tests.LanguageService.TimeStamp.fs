@@ -162,7 +162,7 @@ type UsingMSBuild()  =
         AssertNoErrorsOrWarnings(project2)
 
    // FEATURE: When a referenced assembly's timestamp changes the reference is reread.
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Timestamps.ReferenceAssemblyChangeAbsolute``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -208,7 +208,7 @@ type UsingMSBuild()  =
         printfn "Completions=%A\n" completions
             
     // In this bug, relative paths to referenced assemblies weren't seen.
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member public this.``Timestamps.ReferenceAssemblyChangeRelative``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -264,7 +264,7 @@ type UsingMSBuild()  =
 
     // FEATURE: When a referenced project's assembly timestamp changes the reference is reread.
     [<Test>]
-    [<Category("TakesMoreThanFifteenSeconds")>]
+    [<Category("Expensive")>]
     member public this.``Timestamps.ProjectReferenceAssemblyChange``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

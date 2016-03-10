@@ -977,21 +977,23 @@ type UsingMSBuild() as this =
             """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
             "#r \"mscor" "Global Assembly Cache"
 
-    [<Test>]
-    [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
-        let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
-        let marker = "#r \"Microsoft.Vis"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
+    // // Disabled because it seems Microsoft.VisualStudio.QualityTools.Common.dll is no longer always available on CI installs in the same way
+    // // as it used to be.
+    // [<Test;Category("fsx closure"); Category("NO_CI")>] 
+    // member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
+    //     let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
+    //     let marker = "#r \"Microsoft.Vis"
+    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
+    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
-    [<Test>]
-    [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
-        let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-        let marker = "#r \"Microsoft.SqlSe"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
+    // // Disabled because it seems Microsoft.SqlServer.SString.dll is no longer always available on CI installs in the same way
+    //[<Test>]
+    //[<Category("fsx closure")>]
+    //member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
+    //    let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
+    //    let marker = "#r \"Microsoft.SqlSe"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
         
     [<Test>]
     [<Category("fsx closure")>]
@@ -1304,7 +1306,7 @@ type UsingMSBuild() as this =
         
 
     // Compile a script which #loads a source file. The build can't succeed without the loaded file.      
-    [<Test>]
+    [<Test; Category("Expensive")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_2``() =
@@ -1327,7 +1329,7 @@ type UsingMSBuild() as this =
         Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")
         
     // Compile a script which #loads a source file. The build can't succeed without 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     [<Category("fsx closure")>]
     [<Category("fsx compile")>]
     member public this.``Fsx.CompileFsx_3``() =
@@ -1537,8 +1539,7 @@ type UsingMSBuild() as this =
         
         
     /// There was a problem in which synthetic tokens like #load were causing asserts
-    [<Test>]
-    [<Category("PerfCheck")>]
+    [<Test; Category("Expensive")>]
     member public this.``Fsx.SyntheticTokens``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1704,12 +1705,10 @@ type UsingMSBuild() as this =
         Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Test;Category("TypeProvider"); Category("Expensive")>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Test;Category("TypeProvider")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
 

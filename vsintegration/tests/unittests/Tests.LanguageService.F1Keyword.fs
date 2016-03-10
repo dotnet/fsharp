@@ -46,7 +46,6 @@ type UsingMSBuild() =
         ()
         
     [<Test>]
-    [<Category("PerfCheck")>]
     member public this.``NoKeyword.Negative`` () =
         let file =
             [   "let s  = \"System.Con$sole\""

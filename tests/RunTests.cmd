@@ -48,8 +48,7 @@ if /I "%APPVEYOR_CI%" == "1" (
 if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=1
-if "%REDUCED_RUNTIME%" == "1" (
+if "%SKIP_EXPENSIVE_TESTS%" == "1" (
     set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
     set NO_TTAGS=%NO_TTAGS%,Expensive
 )
@@ -186,7 +185,7 @@ set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2" 
 "%NUNIT3_CONSOLE%" --verbose "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work:"%FSCBINPATH%"  --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --result:"%XMLFILE%;format=nunit2"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -196,6 +195,9 @@ set OSARCH=%PROCESSOR_ARCHITECTURE%
 
 set X86_PROGRAMFILES=%ProgramFiles%
 if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
+
+set SYSWOW64=.
+if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 set REGEXE32BIT=reg.exe
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
@@ -295,7 +297,7 @@ set ERRORFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 :COREUNITALL
@@ -307,7 +309,7 @@ set ERRORFILE=%RESULTSDIR%\CoreUnit_all_Error.log
 echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 :COREUNITPORTABLE
@@ -319,7 +321,7 @@ set ERRORFILE=%RESULTSDIR%\CoreUnit_Portable_Error.log
 echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 :COREUNIT_CORECLR
@@ -335,6 +337,7 @@ set CORERUNPATH="%testbinpath%%flavor%%architecturepath%"
 echo "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
      "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
 
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -348,7 +351,7 @@ set ERRORFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Error.log
 echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
 
-call :UPLOAD_XML "%XMLFILE%"
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -360,30 +363,23 @@ set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
 set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
-echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
-     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
+     "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
-call :UPLOAD_XML "%XMLFILE%"
-goto :EOF
-
-:UPLOAD_XML
-
-rem See <http://www.appveyor.com/docs/environment-variables>
-if not defined APPVEYOR goto :EOF
-powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
-
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
 
-:UPLOAD_XML
+:UPLOAD_TEST_RESULTS
 
 rem See <http://www.appveyor.com/docs/environment-variables>
 if not defined APPVEYOR goto :EOF
 
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
-powershell -File Upload-Results.ps1 "%~1"
+echo powershell -File Upload-Results.ps1 "%~1"
+     powershell -File Upload-Results.ps1 "%~1"
 if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
 goto :EOF
 
