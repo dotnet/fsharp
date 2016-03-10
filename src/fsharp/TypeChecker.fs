@@ -15755,9 +15755,33 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
     let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
     let mutRecDefns = 
-      let rec loop dfs : MutRecDefnsInitialData = 
+      let rec loop isNamespace dfs : MutRecDefnsInitialData = 
         [ for def in dfs do 
             match ElimModuleDoBinding def with
+
+              | SynModuleDecl.Types (typeDefs,_) -> 
+                  for typeDef in typeDefs do
+                       yield MutRecShape.Tycon typeDef
+
+              | SynModuleDecl.Let (letrec, binds, m) -> 
+
+                  if isNamespace then CheckLetInNamespace binds m 
+                  else
+                      if letrec then yield MutRecShape.Lets binds
+                      else yield! List.map (List.singleton >> MutRecShape.Lets) binds
+
+              | SynModuleDecl.NestedModule(compInfo,synDefs,_isContinuingModule,_m) -> 
+                  let mutRecDefs = loop false synDefs 
+                  yield MutRecShape.Module (compInfo, mutRecDefs)
+
+              | SynModuleDecl.Open _ ->  failwith "open not allowed in mutrec sections yet"
+                  //let scopem = unionRanges m.EndRange scopem
+                  //let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
+                  //return ((fun e -> e),[]), env, env
+
+              | SynModuleDecl.Attributes _ -> failwith "assembly attributes not allowed in mutrec sections yet"
+                  //let attrs = TcAttributesWithPossibleTargets cenv env AttributeTargets.Top synAttrs
+                  //return ((fun e -> e), attrs), env, env
 
               | SynModuleDecl.ModuleAbbrev _ -> failwith "module abbreviations not allowed in mutrec sections yet"
                   //let env = TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m)
@@ -15769,36 +15793,11 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
               //    let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
               //    yield Choice1Of2 (SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m))
 
-              | SynModuleDecl.Types (typeDefs,_) -> 
-                  for typeDef in typeDefs do
-                       yield MutRecShape.Tycon typeDef
-
-              | SynModuleDecl.Open _ ->  failwith "open not allowed in mutrec sections yet"
-                  //let scopem = unionRanges m.EndRange scopem
-                  //let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
-                  //return ((fun e -> e),[]), env, env
-
-              | SynModuleDecl.Let (letrec, binds, m) -> 
-
-                  match parent with
-                  | ParentNone -> CheckLetInNamespace binds m
-                  | Parent _ -> 
-                      if letrec then yield MutRecShape.Lets binds
-                      else yield! List.map (List.singleton >> MutRecShape.Lets) binds
-
-              | SynModuleDecl.Attributes _ -> failwith "assembly attributes not allowed in mutrec sections yet"
-                  //let attrs = TcAttributesWithPossibleTargets cenv env AttributeTargets.Top synAttrs
-                  //return ((fun e -> e), attrs), env, env
-
               | SynModuleDecl.HashDirective _ -> failwith "assembly attributes not allowed in mutrec sections yet"
-              | SynModuleDecl.NestedModule(compInfo,synDefs,_isContinuingModule,_m) -> 
-                  let mutRecDefs = loop synDefs 
-                  yield MutRecShape.Module (compInfo, mutRecDefs)
-
               | SynModuleDecl.NamespaceFragment _ -> failwith "namespace fragments not allowed in mutrec sections yet"
               | SynModuleDecl.DoExpr _ -> failwith "unreachable"
         ]
-      loop defs
+      loop (match parent with ParentNone -> true | Parent _ -> false) defs
 
     let tpenv = emptyUnscopedTyparEnv // TODO: be more careful about tpenv, preserving old behaviour but not coalescing typars across mutrec definitions
     let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefns cenv envInitial parent tpenv (mutRecDefns,m,scopem)
@@ -15838,8 +15837,8 @@ and TcModuleOrNamespaceElements cenv parent endm env xml defs =
     let! compiledDefs, env, envAtEnd = 
       eventually { 
         match defs with
-        // Hack, "do 0xABBA" indicates a mutrec section
-        | SynModuleDecl.DoExpr (_,SynExpr.Do (SynExpr.Const (SynConst.Int32 0xabba ,_), _), _) :: defs -> 
+        // #rec indicates a mutrec section
+        | SynModuleDecl.HashDirective(ParsedHashDirective(("allow_forward_references_in_this_scope" | "rec" | "mutrec" | "fwdrec" | "allow_forward_references"),[],_),_) :: defs -> 
             return! TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
         | _ -> 
             return! TcModuleOrNamespaceElementsAux cenv parent endm ([], env, env) defs 

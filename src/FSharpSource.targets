@@ -91,7 +91,7 @@
 
   <!-- Flags used to build the bootstrap compiler.		-->
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
