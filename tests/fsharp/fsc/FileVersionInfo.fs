@@ -15,7 +15,7 @@ open System.Reflection
 module FileVersionInfoTest =
 
     [<Test; FSharpSuiteTest()>]
-    let ``should set file version info on generated file`` () = check (processor {
+    let ``should set file version info on generated file`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
@@ -59,7 +59,7 @@ open System.Runtime.InteropServices
         fv.LegalCopyright |> Assert.areEqual "Copyright \u00A9 Compressed Space Transport 2380"
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
         
-        result.OutText 
+        result.StderrText
         |> FscCommand.parseFscOut 
         |> List.choose (function FscCommand.FscOutputLine.Warning(w,e) -> Some w | _ -> None)
         |> Assert.areEqual []

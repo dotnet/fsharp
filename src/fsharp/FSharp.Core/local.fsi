@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics 
@@ -7,6 +7,7 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
 module internal List =
+    val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
     val distinctWithComparer : System.Collections.Generic.IEqualityComparer<'T> -> 'T list -> 'T list
     val distinctByWithComparer : System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
     val init : int -> (int -> 'T) -> 'T list

@@ -1,0 +1,1342 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="lblConditionalCompilationSymbols.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="lblConditionalCompilationSymbols.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="lblConditionalCompilationSymbols.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 27</value>
+  </data>
+  <data name="lblConditionalCompilationSymbols.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 11, 3, 3</value>
+  </data>
+  <data name="lblConditionalCompilationSymbols.Size" type="System.Drawing.Size, System.Drawing">
+    <value>158, 13</value>
+  </data>
+  <data name="lblConditionalCompilationSymbols.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="lblConditionalCompilationSymbols.Text" xml:space="preserve">
+    <value>Conditional compilation s&amp;ymbols:</value>
+  </data>
+  <data name="&gt;&gt;lblConditionalCompilationSymbols.Name" xml:space="preserve">
+    <value>lblConditionalCompilationSymbols</value>
+  </data>
+  <data name="&gt;&gt;lblConditionalCompilationSymbols.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblConditionalCompilationSymbols.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblConditionalCompilationSymbols.ZOrder" xml:space="preserve">
+    <value>24</value>
+  </data>
+  <data name="txtConditionalCompilationSymbols.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtConditionalCompilationSymbols.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 24</value>
+  </data>
+  <data name="txtConditionalCompilationSymbols.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 11, 3, 3</value>
+  </data>
+  <data name="txtConditionalCompilationSymbols.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtConditionalCompilationSymbols.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;txtConditionalCompilationSymbols.Name" xml:space="preserve">
+    <value>txtConditionalCompilationSymbols</value>
+  </data>
+  <data name="&gt;&gt;txtConditionalCompilationSymbols.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtConditionalCompilationSymbols.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtConditionalCompilationSymbols.ZOrder" xml:space="preserve">
+    <value>23</value>
+  </data>
+  <data name="chkDefineDebug.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkDefineDebug.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="chkPrefer32Bit.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkPrefer32Bit.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkPrefer32Bit.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="chkPrefer32Bit.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 149</value>
+  </data>
+  <data name="chkPrefer32Bit.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 0, 3, 1</value>
+  </data>
+  <data name="chkPrefer32Bit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>83, 17</value>
+  </data>
+  <data name="chkPrefer32Bit.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="chkPrefer32Bit.Text" xml:space="preserve">
+    <value>&amp;Prefer 32-bit</value>
+  </data>
+  <data name="&gt;&gt;chkPrefer32Bit.Name" xml:space="preserve">
+    <value>chkPrefer32Bit</value>
+  </data>
+  <data name="&gt;&gt;chkPrefer32Bit.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkPrefer32Bit.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkPrefer32Bit.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="outputTableLayoutPanel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="outputTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="outputTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="outputLineLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="outputLineLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>48, 6</value>
+  </data>
+  <data name="outputLineLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 0, 0, 0</value>
+  </data>
+  <data name="outputLineLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>519, 1</value>
+  </data>
+  <data name="outputLineLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;outputLineLabel.Name" xml:space="preserve">
+    <value>outputLineLabel</value>
+  </data>
+  <data name="&gt;&gt;outputLineLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;outputLineLabel.Parent" xml:space="preserve">
+    <value>outputTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;outputLineLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="outputLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="outputLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="outputLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 0</value>
+  </data>
+  <data name="outputLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>39, 13</value>
+  </data>
+  <data name="outputLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="outputLabel.Text" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="&gt;&gt;outputLabel.Name" xml:space="preserve">
+    <value>outputLabel</value>
+  </data>
+  <data name="&gt;&gt;outputLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;outputLabel.Parent" xml:space="preserve">
+    <value>outputTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;outputLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="outputTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 407</value>
+  </data>
+  <data name="outputTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="outputTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="outputTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 13</value>
+  </data>
+  <data name="outputTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="&gt;&gt;outputTableLayoutPanel.Name" xml:space="preserve">
+    <value>outputTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;outputTableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;outputTableLayoutPanel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;outputTableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="outputTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="outputLineLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="outputLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100" /&gt;&lt;Rows Styles="AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="generalLineLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="generalLineLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>50, 6</value>
+  </data>
+  <data name="generalLineLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 0, 0, 0</value>
+  </data>
+  <data name="generalLineLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>517, 1</value>
+  </data>
+  <data name="generalLineLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;generalLineLabel.Name" xml:space="preserve">
+    <value>generalLineLabel</value>
+  </data>
+  <data name="&gt;&gt;generalLineLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;generalLineLabel.Parent" xml:space="preserve">
+    <value>generalHeaderTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;generalLineLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="generalLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="generalLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="generalLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="generalLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 3, 0</value>
+  </data>
+  <data name="generalLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>44, 13</value>
+  </data>
+  <data name="generalLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="generalLabel.Text" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="&gt;&gt;generalLabel.Name" xml:space="preserve">
+    <value>generalLabel</value>
+  </data>
+  <data name="&gt;&gt;generalLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;generalLabel.Parent" xml:space="preserve">
+    <value>generalHeaderTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;generalLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 13</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;generalHeaderTableLayoutPanel.Name" xml:space="preserve">
+    <value>generalHeaderTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;generalHeaderTableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;generalHeaderTableLayoutPanel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;generalHeaderTableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="generalHeaderTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="generalLineLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="generalLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100" /&gt;&lt;Rows Styles="AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="treatWarningsAsErrorsLineLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="treatWarningsAsErrorsLineLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>126, 6</value>
+  </data>
+  <data name="treatWarningsAsErrorsLineLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 0, 0, 0</value>
+  </data>
+  <data name="treatWarningsAsErrorsLineLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>441, 1</value>
+  </data>
+  <data name="treatWarningsAsErrorsLineLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLineLabel.Name" xml:space="preserve">
+    <value>treatWarningsAsErrorsLineLabel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLineLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLineLabel.Parent" xml:space="preserve">
+    <value>treatWarningsAsErrorsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLineLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 3, 0</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>120, 13</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="treatWarningsAsErrorsLabel.Text" xml:space="preserve">
+    <value>Treat warnings as errors</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLabel.Name" xml:space="preserve">
+    <value>treatWarningsAsErrorsLabel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLabel.Parent" xml:space="preserve">
+    <value>treatWarningsAsErrorsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 306</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 13</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsTableLayoutPanel.Name" xml:space="preserve">
+    <value>treatWarningsAsErrorsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsTableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsTableLayoutPanel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;treatWarningsAsErrorsTableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="treatWarningsAsErrorsTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="treatWarningsAsErrorsLineLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="treatWarningsAsErrorsLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100" /&gt;&lt;Rows Styles="AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>106, 6</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 0, 0, 0</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>461, 1</value>
+  </data>
+  <data name="errorsAndWarningsLineLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLineLabel.Name" xml:space="preserve">
+    <value>errorsAndWarningsLineLabel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLineLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLineLabel.Parent" xml:space="preserve">
+    <value>errorsAndWarningsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLineLabel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="errorsAndWarningsLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="errorsAndWarningsLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="errorsAndWarningsLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="errorsAndWarningsLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="errorsAndWarningsLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 3, 0</value>
+  </data>
+  <data name="errorsAndWarningsLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>100, 13</value>
+  </data>
+  <data name="errorsAndWarningsLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="errorsAndWarningsLabel.Text" xml:space="preserve">
+    <value>Errors and warnings</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLabel.Name" xml:space="preserve">
+    <value>errorsAndWarningsLabel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLabel.Parent" xml:space="preserve">
+    <value>errorsAndWarningsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsLabel.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 224</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 13</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsTableLayoutPanel.Name" xml:space="preserve">
+    <value>errorsAndWarningsTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsTableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsTableLayoutPanel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;errorsAndWarningsTableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="errorsAndWarningsTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="errorsAndWarningsLineLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="errorsAndWarningsLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100" /&gt;&lt;Rows Styles="AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="chkXMLDocumentationFile.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkXMLDocumentationFile.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkXMLDocumentationFile.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="chkXMLDocumentationFile.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 465</value>
+  </data>
+  <data name="chkXMLDocumentationFile.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="chkXMLDocumentationFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>140, 17</value>
+  </data>
+  <data name="chkXMLDocumentationFile.TabIndex" type="System.Int32, mscorlib">
+    <value>23</value>
+  </data>
+  <data name="chkXMLDocumentationFile.Text" xml:space="preserve">
+    <value>&amp;XML documentation file:</value>
+  </data>
+  <data name="&gt;&gt;chkXMLDocumentationFile.Name" xml:space="preserve">
+    <value>chkXMLDocumentationFile</value>
+  </data>
+  <data name="&gt;&gt;chkXMLDocumentationFile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkXMLDocumentationFile.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkXMLDocumentationFile.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="txtXMLDocumentationFile.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtXMLDocumentationFile.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 463</value>
+  </data>
+  <data name="txtXMLDocumentationFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtXMLDocumentationFile.TabIndex" type="System.Int32, mscorlib">
+    <value>24</value>
+  </data>
+  <data name="&gt;&gt;txtXMLDocumentationFile.Name" xml:space="preserve">
+    <value>txtXMLDocumentationFile</value>
+  </data>
+  <data name="&gt;&gt;txtXMLDocumentationFile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtXMLDocumentationFile.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtXMLDocumentationFile.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="btnOutputPathBrowse.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="btnOutputPathBrowse.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="btnOutputPathBrowse.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnOutputPathBrowse.Location" type="System.Drawing.Point, System.Drawing">
+    <value>464, 431</value>
+  </data>
+  <data name="btnOutputPathBrowse.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 11, 0, 3</value>
+  </data>
+  <data name="btnOutputPathBrowse.Size" type="System.Drawing.Size, System.Drawing">
+    <value>103, 23</value>
+  </data>
+  <data name="btnOutputPathBrowse.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="btnOutputPathBrowse.Text" xml:space="preserve">
+    <value>B&amp;rowse...</value>
+  </data>
+  <data name="&gt;&gt;btnOutputPathBrowse.Name" xml:space="preserve">
+    <value>btnOutputPathBrowse</value>
+  </data>
+  <data name="&gt;&gt;btnOutputPathBrowse.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnOutputPathBrowse.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;btnOutputPathBrowse.ZOrder" xml:space="preserve">
+    <value>7</value>
+  </data>
+  <data name="txtOutputPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtOutputPath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 432</value>
+  </data>
+  <data name="txtOutputPath.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 11, 3, 3</value>
+  </data>
+  <data name="txtOutputPath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtOutputPath.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="&gt;&gt;txtOutputPath.Name" xml:space="preserve">
+    <value>txtOutputPath</value>
+  </data>
+  <data name="&gt;&gt;txtOutputPath.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtOutputPath.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtOutputPath.ZOrder" xml:space="preserve">
+    <value>8</value>
+  </data>
+  <data name="lblOutputPath.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="lblOutputPath.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblOutputPath.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="lblOutputPath.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 436</value>
+  </data>
+  <data name="lblOutputPath.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 11, 3, 3</value>
+  </data>
+  <data name="lblOutputPath.Size" type="System.Drawing.Size, System.Drawing">
+    <value>66, 13</value>
+  </data>
+  <data name="lblOutputPath.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="lblOutputPath.Text" xml:space="preserve">
+    <value>&amp;Output path:</value>
+  </data>
+  <data name="&gt;&gt;lblOutputPath.Name" xml:space="preserve">
+    <value>lblOutputPath</value>
+  </data>
+  <data name="&gt;&gt;lblOutputPath.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblOutputPath.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblOutputPath.ZOrder" xml:space="preserve">
+    <value>9</value>
+  </data>
+  <data name="rbWarningAll.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="rbWarningAll.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="rbWarningAll.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="rbWarningAll.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 379</value>
+  </data>
+  <data name="rbWarningAll.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 11</value>
+  </data>
+  <data name="rbWarningAll.Size" type="System.Drawing.Size, System.Drawing">
+    <value>36, 17</value>
+  </data>
+  <data name="rbWarningAll.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="rbWarningAll.Text" xml:space="preserve">
+    <value>A&amp;ll</value>
+  </data>
+  <data name="&gt;&gt;rbWarningAll.Name" xml:space="preserve">
+    <value>rbWarningAll</value>
+  </data>
+  <data name="&gt;&gt;rbWarningAll.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;rbWarningAll.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;rbWarningAll.ZOrder" xml:space="preserve">
+    <value>10</value>
+  </data>
+  <data name="rbWarningSpecific.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="rbWarningSpecific.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="rbWarningSpecific.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="rbWarningSpecific.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 354</value>
+  </data>
+  <data name="rbWarningSpecific.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="rbWarningSpecific.Size" type="System.Drawing.Size, System.Drawing">
+    <value>111, 17</value>
+  </data>
+  <data name="rbWarningSpecific.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="rbWarningSpecific.Text" xml:space="preserve">
+    <value>Specif&amp;ic warnings:</value>
+  </data>
+  <data name="&gt;&gt;rbWarningSpecific.Name" xml:space="preserve">
+    <value>rbWarningSpecific</value>
+  </data>
+  <data name="&gt;&gt;rbWarningSpecific.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;rbWarningSpecific.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;rbWarningSpecific.ZOrder" xml:space="preserve">
+    <value>11</value>
+  </data>
+  <data name="txtSpecificWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtSpecificWarnings.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 353</value>
+  </data>
+  <data name="txtSpecificWarnings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtSpecificWarnings.TabIndex" type="System.Int32, mscorlib">
+    <value>17</value>
+  </data>
+  <data name="&gt;&gt;txtSpecificWarnings.Name" xml:space="preserve">
+    <value>txtSpecificWarnings</value>
+  </data>
+  <data name="&gt;&gt;txtSpecificWarnings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtSpecificWarnings.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtSpecificWarnings.ZOrder" xml:space="preserve">
+    <value>12</value>
+  </data>
+  <data name="rbWarningNone.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="rbWarningNone.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="rbWarningNone.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="rbWarningNone.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 330</value>
+  </data>
+  <data name="rbWarningNone.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 11, 3, 3</value>
+  </data>
+  <data name="rbWarningNone.Size" type="System.Drawing.Size, System.Drawing">
+    <value>51, 17</value>
+  </data>
+  <data name="rbWarningNone.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="rbWarningNone.Text" xml:space="preserve">
+    <value>&amp;None</value>
+  </data>
+  <data name="&gt;&gt;rbWarningNone.Name" xml:space="preserve">
+    <value>rbWarningNone</value>
+  </data>
+  <data name="&gt;&gt;rbWarningNone.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;rbWarningNone.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;rbWarningNone.ZOrder" xml:space="preserve">
+    <value>13</value>
+  </data>
+  <data name="txtSupressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtSupressWarnings.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 275</value>
+  </data>
+  <data name="txtSupressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 11</value>
+  </data>
+  <data name="txtSupressWarnings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtSupressWarnings.TabIndex" type="System.Int32, mscorlib">
+    <value>13</value>
+  </data>
+  <data name="&gt;&gt;txtSupressWarnings.Name" xml:space="preserve">
+    <value>txtSupressWarnings</value>
+  </data>
+  <data name="&gt;&gt;txtSupressWarnings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtSupressWarnings.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtSupressWarnings.ZOrder" xml:space="preserve">
+    <value>14</value>
+  </data>
+  <data name="lblSupressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="lblSupressWarnings.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblSupressWarnings.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="lblSupressWarnings.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 278</value>
+  </data>
+  <data name="lblSupressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 11</value>
+  </data>
+  <data name="lblSupressWarnings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>99, 13</value>
+  </data>
+  <data name="lblSupressWarnings.TabIndex" type="System.Int32, mscorlib">
+    <value>12</value>
+  </data>
+  <data name="lblSupressWarnings.Text" xml:space="preserve">
+    <value>&amp;Suppress warnings:</value>
+  </data>
+  <data name="&gt;&gt;lblSupressWarnings.Name" xml:space="preserve">
+    <value>lblSupressWarnings</value>
+  </data>
+  <data name="&gt;&gt;lblSupressWarnings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblSupressWarnings.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblSupressWarnings.ZOrder" xml:space="preserve">
+    <value>15</value>
+  </data>
+  <data name="cboWarningLevel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="cboWarningLevel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 248</value>
+  </data>
+  <data name="cboWarningLevel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 11, 3, 3</value>
+  </data>
+  <data name="cboWarningLevel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>125, 21</value>
+  </data>
+  <data name="cboWarningLevel.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;cboWarningLevel.Name" xml:space="preserve">
+    <value>cboWarningLevel</value>
+  </data>
+  <data name="&gt;&gt;cboWarningLevel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;cboWarningLevel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;cboWarningLevel.ZOrder" xml:space="preserve">
+    <value>16</value>
+  </data>
+  <data name="lblWarningLevel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="lblWarningLevel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblWarningLevel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="lblWarningLevel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 252</value>
+  </data>
+  <data name="lblWarningLevel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 11, 3, 3</value>
+  </data>
+  <data name="lblWarningLevel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 13</value>
+  </data>
+  <data name="lblWarningLevel.TabIndex" type="System.Int32, mscorlib">
+    <value>10</value>
+  </data>
+  <data name="lblWarningLevel.Text" xml:space="preserve">
+    <value>&amp;Warning level:</value>
+  </data>
+  <data name="&gt;&gt;lblWarningLevel.Name" xml:space="preserve">
+    <value>lblWarningLevel</value>
+  </data>
+  <data name="&gt;&gt;lblWarningLevel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblWarningLevel.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblWarningLevel.ZOrder" xml:space="preserve">
+    <value>17</value>
+  </data>
+  <data name="cboPlatformTarget.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="cboPlatformTarget.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 96</value>
+  </data>
+  <data name="cboPlatformTarget.Size" type="System.Drawing.Size, System.Drawing">
+    <value>125, 21</value>
+  </data>
+  <data name="cboPlatformTarget.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;cboPlatformTarget.Name" xml:space="preserve">
+    <value>cboPlatformTarget</value>
+  </data>
+  <data name="&gt;&gt;cboPlatformTarget.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;cboPlatformTarget.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;cboPlatformTarget.ZOrder" xml:space="preserve">
+    <value>18</value>
+  </data>
+  <data name="chkOptimizeCode.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkOptimizeCode.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkOptimizeCode.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="chkOptimizeCode.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 173</value>
+  </data>
+  <data name="chkOptimizeCode.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="chkOptimizeCode.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 17</value>
+  </data>
+  <data name="chkOptimizeCode.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="chkOptimizeCode.Text" xml:space="preserve">
+    <value>Optimi&amp;ze code</value>
+  </data>
+  <data name="&gt;&gt;chkOptimizeCode.Name" xml:space="preserve">
+    <value>chkOptimizeCode</value>
+  </data>
+  <data name="&gt;&gt;chkOptimizeCode.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkOptimizeCode.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkOptimizeCode.ZOrder" xml:space="preserve">
+    <value>19</value>
+  </data>
+  <data name="chkTailcalls.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkTailcalls.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkTailcalls.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="chkTailcalls.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 196</value>
+  </data>
+  <data name="chkTailcalls.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 11</value>
+  </data>
+  <data name="chkTailcalls.Size" type="System.Drawing.Size, System.Drawing">
+    <value>110, 17</value>
+  </data>
+  <data name="chkTailcalls.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="chkTailcalls.Text" xml:space="preserve">
+    <value>G&amp;enerate tail calls</value>
+  </data>
+  <data name="&gt;&gt;chkTailcalls.Name" xml:space="preserve">
+    <value>chkTailcalls</value>
+  </data>
+  <data name="&gt;&gt;chkTailcalls.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkTailcalls.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkTailcalls.ZOrder" xml:space="preserve">
+    <value>20</value>
+  </data>
+  <data name="chkDefineTrace.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="chkDefineTrace.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="chkDefineTrace.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 73</value>
+  </data>
+  <data name="chkDefineTrace.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="chkDefineTrace.Size" type="System.Drawing.Size, System.Drawing">
+    <value>140, 17</value>
+  </data>
+  <data name="chkDefineTrace.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="chkDefineTrace.Text" xml:space="preserve">
+    <value>Define TR&amp;ACE constant</value>
+  </data>
+  <data name="&gt;&gt;chkDefineTrace.Name" xml:space="preserve">
+    <value>chkDefineTrace</value>
+  </data>
+  <data name="&gt;&gt;chkDefineTrace.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkDefineTrace.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkDefineTrace.ZOrder" xml:space="preserve">
+    <value>21</value>
+  </data>
+  <data name="lblPlatformTarget.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="lblPlatformTarget.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblPlatformTarget.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 100</value>
+  </data>
+  <data name="lblPlatformTarget.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="lblPlatformTarget.Size" type="System.Drawing.Size, System.Drawing">
+    <value>78, 13</value>
+  </data>
+  <data name="lblPlatformTarget.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="lblPlatformTarget.Text" xml:space="preserve">
+    <value>Platform tar&amp;get:</value>
+  </data>
+  <data name="&gt;&gt;lblPlatformTarget.Name" xml:space="preserve">
+    <value>lblPlatformTarget</value>
+  </data>
+  <data name="&gt;&gt;lblPlatformTarget.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblPlatformTarget.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblPlatformTarget.ZOrder" xml:space="preserve">
+    <value>25</value>
+  </data>
+  <data name="txtOtherFlags.Location" type="System.Drawing.Point, System.Drawing">
+    <value>187, 123</value>
+  </data>
+  <data name="txtOtherFlags.Size" type="System.Drawing.Size, System.Drawing">
+    <value>271, 20</value>
+  </data>
+  <data name="txtOtherFlags.TabIndex" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>  
+  <data name="txtOtherFlags.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left, Right</value>
+  </data>
+  <data name="txtOtherFlags.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>  
+  <data name="&gt;&gt;txtOtherFlags.Name" xml:space="preserve">
+    <value>txtOtherFlags</value>
+  </data>
+  <data name="&gt;&gt;txtOtherFlags.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;txtOtherFlags.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;txtOtherFlags.ZOrder" xml:space="preserve">
+    <value>26</value>
+  </data>
+  <data name="lblOtherFlags.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="lblOtherFlags.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="lblOtherFlags.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 123</value>
+  </data>
+  <data name="lblOtherFlags.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="lblOtherFlags.Size" type="System.Drawing.Size, System.Drawing">
+    <value>61, 13</value>
+  </data>
+  <data name="lblOtherFlags.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="lblOtherFlags.Text" xml:space="preserve">
+    <value>Other &amp;flags:</value>
+  </data>
+  <data name="&gt;&gt;lblOtherFlags.Name" xml:space="preserve">
+    <value>lblOtherFlags</value>
+  </data>
+  <data name="&gt;&gt;lblOtherFlags.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblOtherFlags.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;lblOtherFlags.ZOrder" xml:space="preserve">
+    <value>27</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 490</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;overarchingTableLayoutPanel.Name" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;overarchingTableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;overarchingTableLayoutPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;overarchingTableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="overarchingTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="chkPrefer32Bit" Row="7" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="outputTableLayoutPanel" Row="17" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="generalHeaderTableLayoutPanel" Row="0" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="treatWarningsAsErrorsTableLayoutPanel" Row="13" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="errorsAndWarningsTableLayoutPanel" Row="10" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkXMLDocumentationFile" Row="19" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtXMLDocumentationFile" Row="19" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="btnOutputPathBrowse" Row="18" RowSpan="1" Column="2" ColumnSpan="1" /&gt;&lt;Control Name="txtOutputPath" Row="18" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOutputPath" Row="18" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningAll" Row="16" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="rbWarningSpecific" Row="15" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtSpecificWarnings" Row="15" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningNone" Row="14" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtSupressWarnings" Row="12" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblSupressWarnings" Row="12" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboWarningLevel" Row="11" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblWarningLevel" Row="11" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboPlatformTarget" Row="4" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="chkOptimizeCode" Row="8" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkTailcalls" Row="9" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineTrace" Row="3" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineDebug" Row="2" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtConditionalCompilationSymbols" Row="1" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblConditionalCompilationSymbols" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="lblPlatformTarget" Row="4" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtOtherFlags" Row="6" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOtherFlags" Row="6" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,24,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,16,Absolute,20" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="chkDefineDebug.Location" type="System.Drawing.Point, System.Drawing">
+    <value>23, 50</value>
+  </data>
+  <data name="chkDefineDebug.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>23, 3, 3, 3</value>
+  </data>
+  <data name="chkDefineDebug.Size" type="System.Drawing.Size, System.Drawing">
+    <value>142, 17</value>
+  </data>
+  <data name="chkDefineDebug.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="chkDefineDebug.Text" xml:space="preserve">
+    <value>Define DEB&amp;UG constant</value>
+  </data>
+  <data name="&gt;&gt;chkDefineDebug.Name" xml:space="preserve">
+    <value>chkDefineDebug</value>
+  </data>
+  <data name="&gt;&gt;chkDefineDebug.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;chkDefineDebug.Parent" xml:space="preserve">
+    <value>overarchingTableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;chkDefineDebug.ZOrder" xml:space="preserve">
+    <value>22</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
+    <value>567, 490</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>BuildPropPage</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.PropPageUserControlBase, Microsoft.VisualStudio.AppDesigner, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+</root>

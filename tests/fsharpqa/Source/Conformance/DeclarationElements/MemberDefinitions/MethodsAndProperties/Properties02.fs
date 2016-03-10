@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties #RequiresPowerPack 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // Verify write-only properties
 // See also FSHARP1.0:4163
 let mutable globalPt : obj = null

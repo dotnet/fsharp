@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!--This is the file that defines the actual layout and type of the commands. 
+      It is divided in different sections (e.g. command definition, command 
+      placement, ...), with each defining a specific set of properties. 
+      See the comment before each section for more details about how to 
+      use it. -->
+
+  <!--This is the file that defines the IDs for all the commands exposed by VisualStudio.-->
+  <Extern href="stdidcmd.h"/>
+  <!--This header contains the command ids for the menus provided by the shell.-->
+  <Extern href="vsshlids.h"/>
+  <!--Definition of some VSCT specific constants. In this sample we use it for the IDs inside the guidOfficeIcon group.-->
+  <Extern href="msobtnid.h"/>
+
+  <Commands package="guidFSharpProjectPkg">    
+    <!--Inside this section we have different sub-sections: one for the menus, another  
+        for the menu groups, one for the buttons (the actual commands), one for the combos 
+        and the last one for the bitmaps used. Each element is identified by a command id that  
+        is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+        called "command set" and is used to group different command inside a logically related  
+        group; your package should define its own command set in order to avoid collisions  
+        with command ids defined by other packages. -->
+    <!--This is the sub-section that defines the menus and toolbars. -->
+    <!--In this section we can define new menu groups. A menu group is a container for 
+        other menus or buttons (commands); from a visual point of view you can see the 
+        group as the part of a menu contained between two lines. The parent of a group 
+        must be a menu. -->
+    <Groups>
+      <!--To define a menu group we have to specify its ID, the parent menu and its display priority. -->
+      <!--In this case we use as parent menu the Tools menu of VS; its ID is defined in vsshlids.h -->
+      <Group guid="guidFSharpProjectCmdSet" id="CodeFileGroup" priority="0x600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_PROJECT"/>
+      </Group>
+    </Groups>
+    <!--This section defines the elements the user can interact with, like a menu command or a button  
+        or combo box in a toolbar. -->
+    <Buttons>
+      <!--An element inside this section is defined by its ID and must specify a parent group, a display  
+          priority, an image, a type, some visibility flags (optional) and a default text. -->
+      <Button guid="guidFSharpProjectCmdSet" id="cmdidSetAsMain" priority="0x100" type="Button">
+        <Parent guid="guidFSharpProjectCmdSet" id="CodeFileGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>Set as Main</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+  <CommandPlacements>
+    <CommandPlacement guid="guidFSharpProjectCmdSet" id="CodeFileGroup" priority="0x600">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
+    </CommandPlacement>
+  </CommandPlacements>
+
+  <Symbols>
+    <GuidSymbol name="guidFSharpProjectPkg" value="{38F7EBA3-A5C6-4e32-B2C9-B6456F31B129}" />
+    <GuidSymbol name="guidFSharpProjectCmdSet" value="{22EBFCA0-A97A-4ad3-AC19-77BEC7E8C0EB}" >
+      <IDSymbol name="CodeFileGroup" value="0x2001"/>
+      <IDSymbol name="cmdidSetAsMain" value="0x3001"/>
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>
