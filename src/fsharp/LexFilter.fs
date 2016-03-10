@@ -1319,7 +1319,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             | NAMESPACE, GLOBAL when namespaceTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
                 returnToken tokenLexbufState token
-            | (NAMESPACE | DOT), IDENT _ when namespaceTokenPos.Column < tokenStartPos.Column -> 
+            | (NAMESPACE | DOT | REC), (REC | IDENT _) when namespaceTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
                 returnToken tokenLexbufState token
             | IDENT _, DOT when namespaceTokenPos.Column < tokenStartPos.Column -> 
@@ -1348,7 +1348,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                 returnToken tokenLexbufState token
             | MODULE, (PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 returnToken tokenLexbufState token
-            | (MODULE | DOT), IDENT _ when moduleTokenPos.Column < tokenStartPos.Column -> 
+            | (MODULE | DOT | REC), (REC | IDENT _) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
                 returnToken tokenLexbufState token
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column -> 

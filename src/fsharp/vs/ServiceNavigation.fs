@@ -205,7 +205,7 @@ module NavigationImpl =
             | SynModuleDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, ModuleDecl, iIconGroupModule, m, rangeOfLid lid, []) ]
                 
-            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, _, _), decls, _, m) ->                
+            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, _, _), _isRec, decls, _, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
@@ -226,7 +226,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespace(id,isModule,decls,_,_,_,m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, isModule, decls, _, _, _, m)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)

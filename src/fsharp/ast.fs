@@ -1317,7 +1317,7 @@ and
     [<NoEquality; NoComparison;RequireQualifiedAccess>]
     SynModuleDecl =
     | ModuleAbbrev of Ident * LongIdent * range
-    | NestedModule of SynComponentInfo * SynModuleDecls * bool * range
+    | NestedModule of SynComponentInfo * isRec: bool * SynModuleDecls * bool * range
     | Let of bool * SynBinding list * range
     | DoExpr of SequencePointInfoForBinding * SynExpr * range 
     | Types of SynTypeDefn list * range
@@ -1329,14 +1329,14 @@ and
     member d.Range = 
         match d with 
         | SynModuleDecl.ModuleAbbrev(_,_,m) 
-        | SynModuleDecl.NestedModule(_,_,_,m)
+        | SynModuleDecl.NestedModule(_,_,_,_,m)
         | SynModuleDecl.Let(_,_,m) 
         | SynModuleDecl.DoExpr(_,_,m) 
         | SynModuleDecl.Types(_,m)
         | SynModuleDecl.Exception(_,m)
         | SynModuleDecl.Open (_,m)
         | SynModuleDecl.HashDirective (_,m)
-        | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(_,_,_,_,_,_,m)) 
+        | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(_,_,_,_,_,_,_,m)) 
         | SynModuleDecl.Attributes(_,m) -> m
 
 and SynModuleDecls = SynModuleDecl list
@@ -1350,7 +1350,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynModuleSigDecl =
     | ModuleAbbrev      of Ident * LongIdent * range
-    | NestedModule      of SynComponentInfo * SynModuleSigDecls * range
+    | NestedModule      of SynComponentInfo * isRec : bool * SynModuleSigDecls * range
     | Val               of SynValSig * range
     | Types             of SynTypeDefnSig list * range
     | Exception         of SynExceptionSig * range
@@ -1361,29 +1361,29 @@ and
     member d.Range = 
         match d with 
         | SynModuleSigDecl.ModuleAbbrev (_,_,m)
-        | SynModuleSigDecl.NestedModule   (_,_,m)
+        | SynModuleSigDecl.NestedModule (_,_,_,m)
         | SynModuleSigDecl.Val      (_,m)
         | SynModuleSigDecl.Types    (_,m)
         | SynModuleSigDecl.Exception      (_,m)
         | SynModuleSigDecl.Open     (_,m)
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(_,_,_,_,_,_,m)) 
+        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(_,_,_,_,_,_,_,m)) 
         | SynModuleSigDecl.HashDirective     (_,m) -> m
 
 and SynModuleSigDecls = SynModuleSigDecl list
 
-/// SynModuleOrNamespace(lid,isModule,decls,xmlDoc,attribs,SynAccess,m)
+/// SynModuleOrNamespace(lid,isRec,isModule,decls,xmlDoc,attribs,SynAccess,m)
 and 
     [<NoEquality; NoComparison>]
     SynModuleOrNamespace = 
-    | SynModuleOrNamespace of LongIdent * (*isModule:*) bool * SynModuleDecls * PreXmlDoc * SynAttributes * SynAccess option * range 
+    | SynModuleOrNamespace of LongIdent * isRec: bool * isModule: bool * SynModuleDecls * PreXmlDoc * SynAttributes * SynAccess option * range 
     member this.Range =
         match this with
-        | SynModuleOrNamespace(_,_,_,_,_,_,m) -> m
+        | SynModuleOrNamespace(_,_,_,_,_,_,_,m) -> m
 
 and 
     [<NoEquality; NoComparison>]
     SynModuleOrNamespaceSig = 
-    | SynModuleOrNamespaceSig of LongIdent * (*isModule:*) bool * SynModuleSigDecls * PreXmlDoc * SynAttributes * SynAccess option * range 
+    | SynModuleOrNamespaceSig of LongIdent * isRec: bool * isModule: bool * SynModuleSigDecls * PreXmlDoc * SynAttributes * SynAccess option * range 
 
 and [<NoEquality; NoComparison>]
     ParsedHashDirective = 
@@ -1393,13 +1393,13 @@ and [<NoEquality; NoComparison>]
 type ParsedImplFileFragment = 
     | AnonModule of SynModuleDecls * range
     | NamedModule of SynModuleOrNamespace
-    | NamespaceFragment of LongIdent * bool * SynModuleDecls * PreXmlDoc * SynAttributes * range
+    | NamespaceFragment of LongIdent * bool * bool * SynModuleDecls * PreXmlDoc * SynAttributes * range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedSigFileFragment = 
     | AnonModule of SynModuleSigDecls * range
     | NamedModule of SynModuleOrNamespaceSig
-    | NamespaceFragment of LongIdent * bool * SynModuleSigDecls * PreXmlDoc * SynAttributes * range
+    | NamespaceFragment of LongIdent * bool * bool * SynModuleSigDecls * PreXmlDoc * SynAttributes * range
 
 [<NoEquality; NoComparison>]
 type ParsedFsiInteraction =
@@ -1467,8 +1467,8 @@ type ParsedInput =
 
     member inp.Range = 
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(_,_,_,_,_,_,m) :: _),_))
-        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(_,_,_,_,_,_,m) :: _))) -> m
+        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(_,_,_,_,_,_,_,m) :: _),_))
+        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(_,_,_,_,_,_,_,m) :: _))) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput(filename,_,_,_,_,[],_))
         | ParsedInput.SigFile (ParsedSigFileInput(filename,_,_,_,[])) ->
 #if DEBUG      

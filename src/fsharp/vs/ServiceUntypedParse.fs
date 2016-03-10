@@ -312,7 +312,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr false expr
                   | SynModuleDecl.ModuleAbbrev _ -> 
                       ()
-                  | SynModuleDecl.NestedModule(_, decls, _, m) ->                
+                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) ->                
                       if rangeContainsPos m pos then 
                           for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) -> 
@@ -325,7 +325,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       () ] 
                       
             // Collect all the items  
-            let walkModule (SynModuleOrNamespace(_,_,decls,_,_,_,m)) =
+            let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
                 if rangeContainsPos m pos then 
                     [ for d in decls do yield! walkDecl d ]
                 else
