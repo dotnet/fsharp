@@ -2,7 +2,7 @@
 
 #nowarn "40"
 
-namespace (* rec *) Microsoft.VisualStudio.FSharp.ProjectSystem 
+namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem 
 
     open Helpers 
     open System
@@ -42,8 +42,6 @@ namespace (* rec *) Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open Microsoft.Build.BuildEngine
     open Internal.Utilities.Debug
-
-    #mutrec
 
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any

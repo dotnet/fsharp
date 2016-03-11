@@ -3844,12 +3844,18 @@ module MutRecShapes =
        env2, xs2 |> mapModules (fun ((data,_oldEnv : 'Env),newEnv) -> (data,newEnv))
 
    let rec expandTycons f1 xs = 
-       xs |> List.collect (fun elem -> 
+       let preBinds, postBinds = 
+           xs |> List.map (fun elem -> 
+               match elem with 
+               | MutRecShape.Tycon a -> f1 a
+               | _ -> [], [])
+            |> List.unzip
+       [MutRecShape.Lets (List.concat preBinds)] @ 
+       (xs |> List.map (fun elem -> 
            match elem with 
-           | MutRecShape.Tycon a -> [elem; MutRecShape.Lets (f1 a)]
-           | MutRecShape.Open _ -> [elem]
-           | MutRecShape.Lets _ -> [elem]
-           | MutRecShape.Module (c,d) -> [MutRecShape.Module (c, expandTycons f1 d)])
+           | MutRecShape.Module (c,d) -> MutRecShape.Module (c, expandTycons f1 d)
+           | _ -> elem)) @
+       [MutRecShape.Lets (List.concat postBinds)] 
 
    let rec mapFoldWithEnv f1 z env xs = 
        (z,xs) ||> List.mapFold (fun z x ->
@@ -3893,15 +3899,15 @@ type MutRecDataForOpenDecl = MutRecDataForOpenDecl of LongIdent * range
 type MutRecSignatureInitialData = MutRecShape<SynTypeDefnSig, SynBinding list, SynComponentInfo, MutRecDataForOpenDecl > list
 type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForOpenDecl > list
 
-type MutRecDefnsPass1DataForTycon = MutRecDefnsPass1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
-type MutRecDefnsPass1Data = MutRecShape<MutRecDefnsPass1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
+type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForOpenDecl > list
 
-type MutRecDefnsPass2DataForTycon = MutRecDefnsPass2DataForTycon of Tycon option * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK
-type MutRecDefnsPass2DataForModule = MutRecDefnsPass2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
-type MutRecDefnsPass2Data = MutRecShape<MutRecDefnsPass2DataForTycon, RecDefnBindingInfo list,  MutRecDefnsPass2DataForModule * TcEnv, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK
+type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
+type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list,  MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl > list
 
-type MutRecDefnsPass2InfoForTycon = MutRecDefnsPass2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list
-type MutRecDefnsPass2Info = MutRecShape<MutRecDefnsPass2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPass2DataForModule * TcEnv, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list
+type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl > list
 
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -11500,7 +11506,7 @@ module IncrClassChecking = begin
 
     /// Check and elaborate the "left hand side" of the implicit class construction 
     /// syntax.
-    let TcImplictCtorLhsPassA(cenv, env, tpenv, tcref:TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy) =
+    let TcImplictCtorLhs_Phase2A(cenv, env, tpenv, tcref:TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy) =
 
         let baseValOpt = 
             match GetSuperTypeOfType cenv.g cenv.amap m objTy with 
@@ -11854,7 +11860,7 @@ module IncrClassChecking = begin
         /// Fix up the references to the locals, e.g. 
         ///     v -> this.fieldv
         ///     f x -> this.method x
-        member localRep.FixupIncrClassExprPassC thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
+        member localRep.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
                 //dprintfn "Fixup %s" (showL (exprL e))
@@ -11898,14 +11904,14 @@ module IncrClassChecking = begin
                                   IsUnderQuotations=true } expr 
 
 
-    type IncrClassConstructionBindingsPassC =
-      | PassCBindings of IncrClassBindingGroup list
-      | PassCCtorJustAfterSuperInit     
-      | PassCCtorJustAfterLastLet    
+    type IncrClassConstructionBindingsPhase2C =
+      | Phase2CBindings of IncrClassBindingGroup list
+      | Phase2CCtorJustAfterSuperInit     
+      | Phase2CCtorJustAfterLastLet    
 
     /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class, 
     /// generate their initialization expression(s).  
-    let MakeCtorForIncrClassConstructionPassC 
+    let MakeCtorForIncrClassConstructionPhase2C 
                (cenv,
                 env: TcEnv,
                 /// The lhs information about the implicit constructor
@@ -11915,7 +11921,7 @@ module IncrClassChecking = begin
                 /// Should we place a sequence point at the 'inheritedTys call?
                 inheritsIsVisible,
                 /// The declarations
-                decs : IncrClassConstructionBindingsPassC list,
+                decs : IncrClassConstructionBindingsPhase2C list,
                 memberBinds : Binding list,
                 /// Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings 
                 generalizedTyparsForRecursiveBlock,
@@ -11954,10 +11960,10 @@ module IncrClassChecking = begin
              let (staticForcedFieldVars,instanceForcedFieldVars) = 
                  ((emptyFreeVars,emptyFreeVars),decs) ||> List.fold (fun (staticForcedFieldVars,instanceForcedFieldVars) dec -> 
                     match dec with 
-                    | PassCCtorJustAfterLastLet
-                    | PassCCtorJustAfterSuperInit ->  
+                    | Phase2CCtorJustAfterLastLet
+                    | Phase2CCtorJustAfterSuperInit ->  
                         (staticForcedFieldVars,instanceForcedFieldVars)
-                    | PassCBindings decs ->
+                    | Phase2CBindings decs ->
                         ((staticForcedFieldVars,instanceForcedFieldVars),decs) ||> List.fold (fun (staticForcedFieldVars,instanceForcedFieldVars) dec -> 
                             match dec with 
                             | IncrClassBindingGroup(binds,isStatic,_) -> 
@@ -11996,7 +12002,7 @@ module IncrClassChecking = begin
         let TransBind (reps:IncrClassReprInfo) (TBind(v,rhsExpr,spBind)) =
             if v.MustInline then
                 error(Error(FSComp.SR.tcLocalClassBindingsCannotBeInline(),v.Range))
-            let rhsExpr = reps.FixupIncrClassExprPassC (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
+            let rhsExpr = reps.FixupIncrClassExprPhase2C (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
             
             // The initialization of the 'ref cell' variable for 'this' is the only binding which comes prior to the super init
             let isPriorToSuperInit = 
@@ -12046,7 +12052,7 @@ module IncrClassChecking = begin
                         match safeStaticInitInfo with 
                         | SafeInitField (rfref, _) -> 
                             let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt cenv.g m idx, m)
-                            let setExpr = reps.FixupIncrClassExprPassC (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
+                            let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
                             Some setExpr
                         | NoSafeInitInfo -> 
                             None
@@ -12082,7 +12088,7 @@ module IncrClassChecking = begin
                       ([],actions,methodBinds),reps
 
               | IncrClassDo (doExpr,isStatic) -> 
-                  let doExpr = reps.FixupIncrClassExprPassC (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
+                  let doExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
                   let binder = (fun e -> mkSequential SequencePointsAtSeq doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
@@ -12096,13 +12102,13 @@ module IncrClassChecking = begin
         let TransDec (reps:IncrClassReprInfo) dec = 
             match dec with 
             // The call to the base class constructor is done so we can set the ref cell 
-            | PassCCtorJustAfterSuperInit ->  
+            | Phase2CCtorJustAfterSuperInit ->  
                 let binders = 
                     [ match ctorInfo.InstanceCtorSafeThisValOpt with 
                       | None ->  ()
                       | Some v -> 
                         let setExpr = mkRefCellSet cenv.g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
-                        let setExpr = reps.FixupIncrClassExprPassC (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit,binder) ]
@@ -12111,12 +12117,12 @@ module IncrClassChecking = begin
 
             // The last 'let' binding is done so we can set the initialization condition for the collection of object fields
             // which now allows members to be called.
-            | PassCCtorJustAfterLastLet ->  
+            | Phase2CCtorJustAfterLastLet ->  
                 let binders = 
                     [ match ctorInfo.InstanceCtorSafeInitInfo with 
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSet cenv.g (exprForVal m thisVal, rfref, thisTyInst, mkOne cenv.g m, m)
-                        let setExpr = reps.FixupIncrClassExprPassC (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit,binder)  
@@ -12125,7 +12131,7 @@ module IncrClassChecking = begin
 
                 ([],binders,[]),reps
                 
-            | PassCBindings decs -> 
+            | Phase2CBindings decs -> 
                 let initActions, reps = List.mapFold (TransTrueDec false) reps decs 
                 let cctorInitActions, ctorInitActions, methodBinds = List.unzip3 initActions
                 (List.concat cctorInitActions, List.concat ctorInitActions, List.concat methodBinds), reps 
@@ -12185,7 +12191,7 @@ module IncrClassChecking = begin
                 // 
                 // As a result, the most natural way to implement this would be to simply capture arg0  if needed
                 // and access all variables via that. This would be done by rewriting the inheritsExpr as follows:
-                //    let inheritsExpr = reps.FixupIncrClassExprPassC (Some(thisVal)) thisTyInst inheritsExpr
+                //    let inheritsExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) thisTyInst inheritsExpr
                 // However, the rules of IL mean we are not actually allowed to capture arg0 
                 // and store it as a closure field before the base class constructor is called.
                 // 
@@ -12201,7 +12207,7 @@ module IncrClassChecking = begin
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
                         // the super class cosntructor yet.
-                        let ldexpr = reps.FixupIncrClassExprPassC (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
+                        let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
 
                 let spAtSuperInit = (if inheritsIsVisible then SequencePointsAtSeq else SuppressSequencePointOnExprOfSequential)
@@ -12242,84 +12248,84 @@ end
 //   - generalize definitions (fixing up recursive instances)
 //   - build ctor binding
 //   - Yields set of recursive bindings for the ctors and members of the types.
-module TyconBindingChecking = begin 
+module TyconBindingChecking = 
 
     open IncrClassChecking 
 
     /// Represents one element in a type definition, after the first phase    
-    type TyconBindingPassA =
+    type TyconBindingPhase2A =
       /// An entry corresponding to the definition of the implicit constructor for a class
-      | PassAIncrClassCtor     of IncrClassCtorLhs
+      | Phase2AIncrClassCtor     of IncrClassCtorLhs
       /// An 'inherit' declaration in an incremental class
       ///
-      /// PassAInherit (typ,arg,baseValOpt,m)
-      | PassAInherit           of SynType * SynExpr * Val option * range
+      /// Phase2AInherit (typ,arg,baseValOpt,m)
+      | Phase2AInherit           of SynType * SynExpr * Val option * range
       /// A set of value or function definitions in an incremental class
       ///
-      /// PassAIncrClassBindings (tcref,letBinds,isStatic,isRec,m)
-      | PassAIncrClassBindings of TyconRef * Ast.SynBinding list * bool * bool * range
+      /// Phase2AIncrClassBindings (tcref,letBinds,isStatic,isRec,m)
+      | Phase2AIncrClassBindings of TyconRef * Ast.SynBinding list * bool * bool * range
       /// A 'member' definition in a class
-      | PassAMember            of PreCheckingRecursiveBinding
+      | Phase2AMember            of PreCheckingRecursiveBinding
 #if OPEN_IN_TYPE_DECLARATIONS
       /// A dummy declaration, should we ever support 'open' in type definitions
-      | PassAOpen              of LongIdent * range
+      | Phase2AOpen              of LongIdent * range
 #endif
       /// Indicates the super init has just been called, 'this' may now be published
-      | PassAIncrClassCtorJustAfterSuperInit 
+      | Phase2AIncrClassCtorJustAfterSuperInit 
       /// Indicates the last 'field' has been initialized, only 'do' comes after 
-      | PassAIncrClassCtorJustAfterLastLet
+      | Phase2AIncrClassCtorJustAfterLastLet
 
     /// The collected syntactic input definitions for a single type or type-extension definition
-    type TyconBindingsPassA = 
-      | TyconBindingsPassA of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPassA list
+    type TyconBindingsPhase2A = 
+      | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
-    type MutRecBindingPassA = MutRecShape<TyconBindingsPassA, PreCheckingRecursiveBinding list, MutRecDefnsPass2DataForModule * TcEnv, MutRecDataForOpenDecl> 
+    type MutRecBindingPhase2A = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
 
     /// The collected syntactic input definitions for a recursive group of type or type-extension definitions
-    type MutRecBindingsPassA = MutRecBindingPassA list
+    type MutRecBindingsPhase2A = MutRecBindingPhase2A list
 
     /// Represents one element in a type definition, after the second phase
-    type TyconBindingPassB =
-      | PassBIncrClassCtor     of IncrClassCtorLhs * Tast.Binding option 
-      | PassBInherit           of Expr * Val option
+    type TyconBindingPhase2B =
+      | Phase2BIncrClassCtor     of IncrClassCtorLhs * Tast.Binding option 
+      | Phase2BInherit           of Expr * Val option
       /// A set of value of function definitions in a class definition with an implicit consructor.
-      | PassBIncrClassBindings of IncrClassBindingGroup list
-      | PassBMember       of int
+      | Phase2BIncrClassBindings of IncrClassBindingGroup list
+      | Phase2BMember       of int
       /// An intermediate definition that represent the point in an implicit class definition where
       /// the super type has been initialized.
-      | PassBIncrClassCtorJustAfterSuperInit
+      | Phase2BIncrClassCtorJustAfterSuperInit
       /// An intermediate definition that represent the point in an implicit class definition where
       /// the last 'field' has been initialized, i.e. only 'do' and 'member' definitions come after 
       /// this point.
-      | PassBIncrClassCtorJustAfterLastLet
+      | Phase2BIncrClassCtorJustAfterLastLet
 
-    type TyconBindingsPassB = TyconBindingsPassB of Tycon option * TyconRef * TyconBindingPassB list
+    type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
-    type MutRecBindingPassB = MutRecShape<TyconBindingsPassB, int list, MutRecDefnsPass2DataForModule * TcEnv, MutRecDataForOpenDecl> 
+    type MutRecBindingPhase2B = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
 
-    type MutRecBindingsPassB = MutRecBindingPassB list
+    type MutRecBindingsPhase2B = MutRecBindingPhase2B list
 
     /// Represents one element in a type definition, after the third phase
-    type TyconBindingPassC =
-      | PassCIncrClassCtor     of IncrClassCtorLhs * Tast.Binding option 
-      | PassCInherit           of Expr * Val option
-      | PassCIncrClassBindings of IncrClassBindingGroup list
-      | PassCMember            of PreInitializationGraphEliminationBinding
+    type TyconBindingPhase2C =
+      | Phase2CIncrClassCtor     of IncrClassCtorLhs * Tast.Binding option 
+      | Phase2CInherit           of Expr * Val option
+      | Phase2CIncrClassBindings of IncrClassBindingGroup list
+      | Phase2CMember            of PreInitializationGraphEliminationBinding
       // Indicates the last 'field' has been initialized, only 'do' comes after 
-      | PassCIncrClassCtorJustAfterSuperInit     
-      | PassCIncrClassCtorJustAfterLastLet     
+      | Phase2CIncrClassCtorJustAfterSuperInit     
+      | Phase2CIncrClassCtorJustAfterLastLet     
 
-    type TyconBindingsPassC = TyconBindingsPassC of Tycon option * TyconRef * TyconBindingPassC list
+    type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
-    type MutRecBindingPassC = MutRecShape<TyconBindingsPassC, PreInitializationGraphEliminationBinding list, MutRecDefnsPass2DataForModule * TcEnv, MutRecDataForOpenDecl> 
+    type MutRecBindingPhase2C = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
 
-    type MutRecBindingsPassC = MutRecBindingPassC list
+    type MutRecBindingsPhase2C = MutRecBindingPhase2C list
 
 
 
-    // PassA: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
-    // PassA: also processes their arg patterns - collecting type assertions 
-    let TcMutRecBindings_PassA_CreateRecursiveValuesAndCheckArgumentPatterns cenv scopem tpenv (envMutRec, mutRecDecls : MutRecDefnsPass2Info) =
+    // _Phase2A: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
+    // _Phase2A: also processes their arg patterns - collecting type assertions 
+    let TcMutRecBindings__Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns cenv scopem tpenv (envMutRec, mutRecDecls : MutRecDefnsPhase2Info) =
 
         // The basic iteration over the declarations in a single type definition
         // State:
@@ -12327,7 +12333,7 @@ module TyconBindingChecking = begin
         //    recBindIdx:          index of the recursive binding
         //    prelimRecValuesRev:  accumulation of prelim value entries
         //    uncheckedBindsRev:   accumulation of unchecked bindings
-        let (defnsAs: MutRecBindingsPassA), (tpenv,_,uncheckedBindsRev) =
+        let (defnsAs: MutRecBindingsPhase2A), (tpenv,_,uncheckedBindsRev) =
             let initialOuterState = (tpenv, 0, ([]: PreCheckingRecursiveBinding list))
             (initialOuterState, envMutRec, mutRecDecls) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defns -> 
               let (tpenv,recBindIdx,uncheckedBindsRev) = outerState
@@ -12344,7 +12350,7 @@ module TyconBindingChecking = begin
                 let defnAs = MutRecShape.Lets binds
                 defnAs,(tpenv,recBindIdx,List.rev binds @ uncheckedBindsRev)
 
-              | MutRecShape.Tycon (MutRecDefnsPass2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, binds)) ->
+              | MutRecShape.Tycon (MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, binds)) ->
 
                 // Class members can access protected members of the implemented type 
                 // Class members can access private members in the typ
@@ -12379,21 +12385,21 @@ module TyconBindingChecking = begin
                           | SynMemberDefn.ImplicitCtor (vis,attrs,spats,thisIdOpt, m), ContainerInfo(_,Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                               match tcref.TypeOrMeasureKind with TyparKind.Measure -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) | _ -> ()
 
-                              // PassA: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
-                              let incrClassCtorLhs = TcImplictCtorLhsPassA(cenv,envForTycon,tpenv,tcref,vis,attrs,spats,thisIdOpt,baseValOpt,safeInitInfo,m,copyOfTyconTypars,objTy,thisTy)
-                              // PassA: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
+                              // _Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
+                              let incrClassCtorLhs = TcImplictCtorLhs_Phase2A(cenv,envForTycon,tpenv,tcref,vis,attrs,spats,thisIdOpt,baseValOpt,safeInitInfo,m,copyOfTyconTypars,objTy,thisTy)
+                              // _Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
                               let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                               let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
 
-                              [PassAIncrClassCtor incrClassCtorLhs],innerState
+                              [Phase2AIncrClassCtor incrClassCtorLhs],innerState
                               
                           | SynMemberDefn.ImplicitInherit (typ,arg,_baseIdOpt,m),_ ->
                               match tcref.TypeOrMeasureKind with TyparKind.Measure -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) | _ -> ()
-                              // PassA: inherit typ(arg) as base - pass through 
-                              // PassA: pick up baseValOpt! 
+                              // _Phase2A: inherit typ(arg) as base - pass through 
+                              // _Phase2A: pick up baseValOpt! 
                               let baseValOpt = incrClassCtorLhsOpt |> Option.bind (fun x -> x.InstanceCtorBaseValOpt)
                               let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)
-                              [PassAInherit (typ,arg,baseValOpt,m); PassAIncrClassCtorJustAfterSuperInit], innerState
+                              [Phase2AInherit (typ,arg,baseValOpt,m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
                               
                               
 
@@ -12416,12 +12422,12 @@ module TyconBindingChecking = begin
                               if isStatic && isNone incrClassCtorLhsOpt then 
                                   errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(),m))
                               
-                              // PassA: let-bindings - pass through 
+                              // _Phase2A: let-bindings - pass through 
                               let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)     
-                              [PassAIncrClassBindings (tcref,letBinds,isStatic,isRec,m)], innerState
+                              [Phase2AIncrClassBindings (tcref,letBinds,isStatic,isRec,m)], innerState
                               
                           | SynMemberDefn.Member (bind,m),_ ->
-                              // PassA: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
+                              // _Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
                               let (NormalizedBinding(_,_,_,_,_,_,_,valSynData,_,_,_,_)) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
                               let (SynValData(memberFlagsOpt,_,_)) = valSynData 
                               match tcref.TypeOrMeasureKind with
@@ -12437,7 +12443,7 @@ module TyconBindingChecking = begin
                               let rbind = NormalizedRecBindingDefn(containerInfo,newslotsOK,declKind,bind)
                               let overridesOK  = DeclKind.CanOverrideOrImplement(declKind)
                               let (binds,_values),(tpenv,recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForTycon (tpenv,recBindIdx) rbind
-                              let cbinds = [ for rbind in binds -> PassAMember rbind ]
+                              let cbinds = [ for rbind in binds -> Phase2AMember rbind ]
 
                               let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
                               cbinds,innerState
@@ -12445,52 +12451,52 @@ module TyconBindingChecking = begin
 #if OPEN_IN_TYPE_DECLARATIONS
                           | SynMemberDefn.Open (mp,m),_ ->
                               let innerState = (incrClassCtorLhsOpt,env,tpenv,recBindIdx,prelimRecValuesRev,uncheckedBindsRev)
-                              [ PassAOpen (mp,m) ], innerState
+                              [ Phase2AOpen (mp,m) ], innerState
 #endif
                         
                           | _ -> 
                               error(InternalError("Unexpected definition",m)))
 
-                // If no constructor call, insert PassAIncrClassCtorJustAfterSuperInit at start
+                // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
                     match defnAs with 
-                    | (PassAIncrClassCtor _ as b1) :: rest -> 
+                    | (Phase2AIncrClassCtor _ as b1) :: rest -> 
                         let rest = 
-                            if rest |> List.exists (function PassAIncrClassCtorJustAfterSuperInit -> true | _ -> false) then 
+                            if rest |> List.exists (function Phase2AIncrClassCtorJustAfterSuperInit -> true | _ -> false) then 
                                 rest
                             else
-                                PassAIncrClassCtorJustAfterSuperInit :: rest
-                        // Insert PassAIncrClassCtorJustAfterLastLet at the point where local construction is known to have been finished 
+                                Phase2AIncrClassCtorJustAfterSuperInit :: rest
+                        // Insert Phase2AIncrClassCtorJustAfterLastLet at the point where local construction is known to have been finished 
                         let rest = 
                             let isAfter b = 
                                 match b with 
 #if OPEN_IN_TYPE_DECLARATIONS
-                                | PassAOpen _ 
+                                | Phase2AOpen _ 
 #endif
-                                | PassAIncrClassCtor _ | PassAInherit _ | PassAIncrClassCtorJustAfterSuperInit -> false
-                                | PassAIncrClassBindings (_,binds,_,_,_) -> binds |> List.exists (function (Binding (_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
-                                | PassAIncrClassCtorJustAfterLastLet
-                                | PassAMember _ -> true
+                                | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit -> false
+                                | Phase2AIncrClassBindings (_,binds,_,_,_) -> binds |> List.exists (function (Binding (_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
+                                | Phase2AIncrClassCtorJustAfterLastLet
+                                | Phase2AMember _ -> true
                             let restRev = List.rev rest
                             let afterRev = restRev |> Seq.takeWhile isAfter |> Seq.toList
                             let beforeRev = restRev |> Seq.skipWhile isAfter |> Seq.toList
                             
                             [ yield!  List.rev beforeRev
-                              yield PassAIncrClassCtorJustAfterLastLet
+                              yield Phase2AIncrClassCtorJustAfterLastLet
                               yield! List.rev afterRev ]
                         b1 :: rest
 
                     // Cover the case where this is not a type with an implicit constructor.
                     | rest -> rest
 
-                let prelimRecValues = [ for x in defnAs do match x with PassAMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
-                let defnAs = MutRecShape.Tycon(TyconBindingsPassA(tyconOpt,declKind,prelimRecValues,tcref,copyOfTyconTypars,thisTy,defnAs))
+                let prelimRecValues = [ for x in defnAs do match x with Phase2AMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
+                let defnAs = MutRecShape.Tycon(TyconBindingsPhase2A(tyconOpt,declKind,prelimRecValues,tcref,copyOfTyconTypars,thisTy,defnAs))
                 defnAs,(tpenv,recBindIdx,uncheckedBindsRev))
 
         let uncheckedRecBinds = List.rev uncheckedBindsRev
 
         // Updates the types of the modules to contain the inferred contents to far
-        defnsAs |> MutRecShapes.iterModules (fun (MutRecDefnsPass2DataForModule (mtypeAcc, mspec), _) -> 
+        defnsAs |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
 
         let envMutRec, defnsAs =  
@@ -12498,7 +12504,7 @@ module TyconBindingChecking = begin
             ||> MutRecShapes.extendEnvs (fun envForDecls decls -> 
                 let prelimRecValues =  
                     decls |> List.collect (function 
-                        | MutRecShape.Tycon (TyconBindingsPassA(_,_,prelimRecValues,_,_,_,_)) -> prelimRecValues 
+                        | MutRecShape.Tycon (TyconBindingsPhase2A(_,_,prelimRecValues,_,_,_,_)) -> prelimRecValues 
                         | MutRecShape.Lets binds -> [ for bind in binds -> bind.RecBindingInfo.Val ] 
                         | _ -> [])
                 let envForDeclsUpdated = AddLocalVals cenv.tcSink scopem prelimRecValues envForDecls
@@ -12506,11 +12512,11 @@ module TyconBindingChecking = begin
 
         (envMutRec, defnsAs, uncheckedRecBinds, tpenv)
 
-    /// PassB: check each of the bindings, convert from ast to tast and collects type assertions.
+    /// Phase2B: check each of the bindings, convert from ast to tast and collects type assertions.
     /// Also generalize incrementally.
-    let TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecBindingsPassA, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecBindingsPassB * _ * _ =
+    let TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecBindingsPhase2A, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecBindingsPhase2B * _ * _ =
 
-        let (defnsBs: MutRecBindingsPassB), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
+        let (defnsBs: MutRecBindingsPhase2B), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
 
             let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList 
 
@@ -12557,13 +12563,13 @@ module TyconBindingChecking = begin
                 let outerState = (tpenv, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable, envNonRec)
                 MutRecShape.Lets defnBs, outerState
 
-              | MutRecShape.Tycon (TyconBindingsPassA(tyconOpt, declKind, _, tcref, copyOfTyconTypars, thisTy, defnAs)) ->
+              | MutRecShape.Tycon (TyconBindingsPhase2A(tyconOpt, declKind, _, tcref, copyOfTyconTypars, thisTy, defnAs)) ->
                 
                 let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
                 let envForTycon = MakeInnerEnvForTyconRef cenv envForDecls tcref isExtrinsic 
                 let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
                 // Set up the environment so use-before-definition warnings are given, at least 
-                // until we reach a PassAIncrClassCtorJustAfterSuperInit. 
+                // until we reach a Phase2AIncrClassCtorJustAfterSuperInit. 
                 let envForTycon = { envForTycon with eCtorInfo = Some (InitialImplicitCtorInfo())  }
 
                 let reqdThisValTyOpt = Some thisTy
@@ -12584,9 +12590,9 @@ module TyconBindingChecking = begin
                         let (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable) = innerState
 
                         match defnA with
-                        // PassB for the definition of an implicit constructor. Enrich the instance environments
+                        // Phase2B for the definition of an implicit constructor. Enrich the instance environments
                         // with the implicit ctor args.
-                        | PassAIncrClassCtor incrClassCtorLhs ->
+                        | Phase2AIncrClassCtor incrClassCtorLhs ->
 
                             let envInstance = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envInstance
                             let envStatic = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envStatic
@@ -12597,19 +12603,19 @@ module TyconBindingChecking = begin
                             let safeThisValBindOpt = TcLetrecComputeCtorSafeThisValBind cenv incrClassCtorLhs.InstanceCtorSafeThisValOpt
 
                             let innerState = (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
-                            PassBIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt), innerState
+                            Phase2BIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt), innerState
                             
-                        // PassB: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
-                        | PassAInherit (synBaseTy,arg,baseValOpt,m) ->
+                        // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
+                        | Phase2AInherit (synBaseTy,arg,baseValOpt,m) ->
                             let baseTy,tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use envInstance tpenv synBaseTy
                             let inheritsExpr,tpenv = TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec   = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envNonRec   | None -> envNonRec
                             let innerState = (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable)
-                            PassBInherit (inheritsExpr,baseValOpt), innerState
+                            Phase2BInherit (inheritsExpr,baseValOpt), innerState
                             
-                        // PassB: let and let rec value and function definitions
-                        | PassAIncrClassBindings (tcref,binds,isStatic,isRec,bindsm) ->
+                        // Phase2B: let and let rec value and function definitions
+                        | Phase2AIncrClassBindings (tcref,binds,isStatic,isRec,bindsm) ->
                             let envForBinding = if isStatic then envStatic else envInstance
                             let binds,bindRs,env,tpenv = 
                                 if isRec then
@@ -12652,31 +12658,31 @@ module TyconBindingChecking = begin
                             let envInstance = (if isStatic then (binds,envInstance) ||> List.foldBack (fun b e -> AddLocalVal cenv.tcSink scopem b.Var e)  else env)
                             let envStatic = (if isStatic then env else envStatic)
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            PassBIncrClassBindings bindRs,innerState
+                            Phase2BIncrClassBindings bindRs,innerState
                               
-                        | PassAIncrClassCtorJustAfterSuperInit -> 
+                        | Phase2AIncrClassCtorJustAfterSuperInit -> 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            PassBIncrClassCtorJustAfterSuperInit, innerState
+                            Phase2BIncrClassCtorJustAfterSuperInit, innerState
                             
-                        | PassAIncrClassCtorJustAfterLastLet -> 
+                        | Phase2AIncrClassCtorJustAfterLastLet -> 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            PassBIncrClassCtorJustAfterLastLet , innerState
+                            Phase2BIncrClassCtorJustAfterLastLet , innerState
                             
                             
 #if OPEN_IN_TYPE_DECLARATIONS
-                        | PassAOpen(mp,m) -> 
+                        | Phase2AOpen(mp,m) -> 
                             let envInstance = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem envInstance mp
                             let envStatic = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem envStatic mp
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            PassBOpen,innerState
+                            Phase2BOpen,innerState
 #endif
 
 
                         // Note: this path doesn't add anything the environment, because the member is already available off via its type 
                         
-                        | PassAMember rbind ->
+                        | Phase2AMember rbind ->
 
-                            // PassB: Typecheck member binding, generalize them later, when all type constraints are known 
+                            // Phase2B: Typecheck member binding, generalize them later, when all type constraints are known 
                             // static members are checked under envStatic.
                             // envStatic contains class typars and the (ungeneralized) members on the class(es).
                             // envStatic has no instance-variables (local let-bindings or ctor args). 
@@ -12700,9 +12706,9 @@ module TyconBindingChecking = begin
                                 TcLetrecBinding (cenv,envForBinding,scopem,extraGeneralizableTypars,reqdThisValTyOpt) (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable) rbind
                              
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            PassBMember rbind.RecBindingInfo.Index, innerState)
+                            Phase2BMember rbind.RecBindingInfo.Index, innerState)
                 
-                let defnBs = MutRecShape.Tycon (TyconBindingsPassB(tyconOpt, tcref, defnBs))
+                let defnBs = MutRecShape.Tycon (TyconBindingsPhase2B(tyconOpt, tcref, defnBs))
                 let outerState = (tpenv, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable, envNonRec)
                 defnBs, outerState)
 
@@ -12716,47 +12722,47 @@ module TyconBindingChecking = begin
 
     // Choose type scheme implicit constructors and adjust their recursive types.
     // Fixup recursive references to members.
-    let TcMutRecBindings_PassC_FixupRecursiveReferences cenv (denv, defnsBs: MutRecBindingsPassB, generalizedTyparsForRecursiveBlock: Typar list, generalizedRecBinds: PostGeneralizationRecursiveBinding list, scopem) =
+    let TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs: MutRecBindingsPhase2B, generalizedTyparsForRecursiveBlock: Typar list, generalizedRecBinds: PostGeneralizationRecursiveBinding list, scopem) =
         // Build an index ---> binding map
         let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> Map.ofList
 
         defnsBs |> MutRecShapes.mapTyconsAndLets 
 
-            // PassC: Fixup member bindings 
-            (fun (TyconBindingsPassB(tyconOpt, tcref, defnBs)) -> 
+            // Phase2C: Fixup member bindings 
+            (fun (TyconBindingsPhase2B(tyconOpt, tcref, defnBs)) -> 
 
                 let defnCs = 
                     defnBs |> List.map (fun defnB -> 
 
-                        // PassC: Generalise implicit ctor val 
+                        // Phase2C: Generalise implicit ctor val 
                         match defnB with
-                        | PassBIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt) ->
+                        | Phase2BIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt) ->
                             let valscheme = incrClassCtorLhs.InstanceCtorValScheme
                             let valscheme = ChooseCanonicalValSchemeAfterInference cenv.g denv valscheme scopem
                             AdjustRecType cenv incrClassCtorLhs.InstanceCtorVal valscheme
-                            PassCIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt)
+                            Phase2CIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt)
 
-                        | PassBInherit (inheritsExpr,basevOpt) -> 
-                            PassCInherit (inheritsExpr,basevOpt)
+                        | Phase2BInherit (inheritsExpr,basevOpt) -> 
+                            Phase2CInherit (inheritsExpr,basevOpt)
 
-                        | PassBIncrClassBindings bindRs             -> 
-                            PassCIncrClassBindings bindRs
+                        | Phase2BIncrClassBindings bindRs             -> 
+                            Phase2CIncrClassBindings bindRs
 
-                        | PassBIncrClassCtorJustAfterSuperInit -> 
-                            PassCIncrClassCtorJustAfterSuperInit
+                        | Phase2BIncrClassCtorJustAfterSuperInit -> 
+                            Phase2CIncrClassCtorJustAfterSuperInit
 
-                        | PassBIncrClassCtorJustAfterLastLet -> 
-                            PassCIncrClassCtorJustAfterLastLet
+                        | Phase2BIncrClassCtorJustAfterLastLet -> 
+                            Phase2CIncrClassCtorJustAfterLastLet
 
-                        | PassBMember idx  ->
-                            // PassC: Fixup member bindings 
+                        | Phase2BMember idx  ->
+                            // Phase2C: Fixup member bindings 
                             let generalizedBinding = generalizedBindingsMap.[idx] 
                             let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
                             let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock  vxbind
-                            PassCMember pgbrind)
-                TyconBindingsPassC(tyconOpt, tcref,defnCs))
+                            Phase2CMember pgbrind)
+                TyconBindingsPhase2C(tyconOpt, tcref,defnCs))
 
-            // PassC: Fixup let bindings 
+            // Phase2C: Fixup let bindings 
             (fun bindIdxs -> 
                     [ for idx in bindIdxs do 
                         let generalizedBinding = generalizedBindingsMap.[idx] 
@@ -12767,12 +12773,12 @@ module TyconBindingChecking = begin
     // --- Extract field bindings from let-bindings 
     // --- Extract method bindings from let-bindings 
     // --- Extract bindings for implicit constructors
-    let TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecBindingsPassC) =
+    let TcMutRecBindings_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecBindingsPhase2C) =
 
       //  let (fixupValueExprBinds, methodBinds) = 
-            (envMutRec, defnsCs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (TyconBindingsPassC(tyconOpt, tcref,defnCs)) -> 
+            (envMutRec, defnsCs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (TyconBindingsPhase2C(tyconOpt, tcref,defnCs)) -> 
                 match defnCs with 
-                | PassCIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt) :: defnCs -> 
+                | Phase2CIncrClassCtor (incrClassCtorLhs, safeThisValBindOpt) :: defnCs -> 
 
                     // Determine is static fields in this type need to be "protected" against invalid recursive initialization
                     let safeStaticInitInfo = 
@@ -12799,7 +12805,7 @@ module TyconBindingChecking = begin
                         // We only need safe static init checks if there are some static field bindings (actually, we look for non-method bindings)
                         let hasStaticBindings = 
                             defnCs |> List.exists (function 
-                                | PassCIncrClassBindings groups -> 
+                                | Phase2CIncrClassBindings groups -> 
                                     groups |> List.exists (function 
                                         | IncrClassBindingGroup(binds,isStatic,_) -> 
                                             let nonMethodBinds = binds |> List.filter (IncrClassReprInfo.IsMethodRepr cenv >> not) 
@@ -12819,8 +12825,8 @@ module TyconBindingChecking = begin
 
                     // Assumes inherit call immediately follows implicit ctor. Checked by CheckMembersForm 
                     let inheritsExpr,inheritsIsVisible,_,defnCs = 
-                        match defnCs |> List.partition (function PassCInherit _ -> true | _ -> false) with
-                        | [PassCInherit (inheritsExpr,baseValOpt)], defnCs -> 
+                        match defnCs |> List.partition (function Phase2CInherit _ -> true | _ -> false) with
+                        | [Phase2CInherit (inheritsExpr,baseValOpt)], defnCs -> 
                             inheritsExpr,true,baseValOpt,defnCs
 
                         | _ ->
@@ -12837,17 +12843,17 @@ module TyconBindingChecking = begin
 
                     let localDecs  = 
                         defnCs |> List.filter (function 
-                            | PassCIncrClassBindings _ 
-                            | PassCIncrClassCtorJustAfterSuperInit 
-                            | PassCIncrClassCtorJustAfterLastLet -> true 
+                            | Phase2CIncrClassBindings _ 
+                            | Phase2CIncrClassCtorJustAfterSuperInit 
+                            | Phase2CIncrClassCtorJustAfterLastLet -> true 
                             | _ -> false)
-                    let memberBindsWithFixups = defnCs |> List.choose (function PassCMember pgrbind -> Some pgrbind | _ -> None) 
+                    let memberBindsWithFixups = defnCs |> List.choose (function Phase2CMember pgrbind -> Some pgrbind | _ -> None) 
 
                     // Extend localDecs with "let safeThisVal = ref null" if there is a safeThisVal
                     let localDecs  = 
                         match safeThisValBindOpt with 
                         | None -> localDecs 
-                        | Some bind -> PassCIncrClassBindings [IncrClassBindingGroup([bind],false,false)] :: localDecs
+                        | Some bind -> Phase2CIncrClassBindings [IncrClassBindingGroup([bind],false,false)] :: localDecs
                         
                     // Carve out the initialization sequence and decide on the localRep 
                     let ctorBodyLambdaExpr,cctorBodyLambdaExprOpt,methodBinds,localReps = 
@@ -12855,12 +12861,12 @@ module TyconBindingChecking = begin
                         let localDecs = 
                             [ for localDec in localDecs do 
                                   match localDec with 
-                                  | PassCIncrClassBindings(binds) -> yield PassCBindings binds
-                                  | PassCIncrClassCtorJustAfterSuperInit  -> yield PassCCtorJustAfterSuperInit
-                                  | PassCIncrClassCtorJustAfterLastLet -> yield PassCCtorJustAfterLastLet
+                                  | Phase2CIncrClassBindings(binds) -> yield Phase2CBindings binds
+                                  | Phase2CIncrClassCtorJustAfterSuperInit  -> yield Phase2CCtorJustAfterSuperInit
+                                  | Phase2CIncrClassCtorJustAfterLastLet -> yield Phase2CCtorJustAfterLastLet
                                   | _ -> () ]
                         let memberBinds = memberBindsWithFixups |> List.map (fun x -> x.Binding) 
-                        MakeCtorForIncrClassConstructionPassC(cenv,envForTycon,incrClassCtorLhs,inheritsExpr,inheritsIsVisible,localDecs,memberBinds,generalizedTyparsForRecursiveBlock,safeStaticInitInfo)
+                        MakeCtorForIncrClassConstructionPhase2C(cenv,envForTycon,incrClassCtorLhs,inheritsExpr,inheritsIsVisible,localDecs,memberBinds,generalizedTyparsForRecursiveBlock,safeStaticInitInfo)
 
                     // Generate the (value,expr) pairs for the implicit 
                     // object constructor and implicit static initializer 
@@ -12893,7 +12899,7 @@ module TyconBindingChecking = begin
                             // Members have at least as many type parameters as the enclosing class. Just grab the type variables for the type.
                             let thisTyInst = List.map mkTyparTy (List.take (tcref.Typars(v.Range).Length) v.Typars)
                                     
-                            let x = localReps.FixupIncrClassExprPassC thisValOpt safeStaticInitInfo thisTyInst x 
+                            let x = localReps.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo thisTyInst x 
 
                             { pgrbind with Binding = TBind(v,x,spBind) } )
                         
@@ -12901,7 +12907,7 @@ module TyconBindingChecking = begin
                 
                 // Cover the case where this is not a class with an implicit constructor
                 | defnCs -> 
-                    let memberBindsWithFixups = defnCs |> List.choose (function PassCMember pgrbind -> Some pgrbind | _ -> None) 
+                    let memberBindsWithFixups = defnCs |> List.choose (function Phase2CMember pgrbind -> Some pgrbind | _ -> None) 
                     tyconOpt, memberBindsWithFixups,[])
     //        |> List.unzip
 //        let fixupValueExprBinds = List.concat fixupValueExprBinds
@@ -12910,25 +12916,25 @@ module TyconBindingChecking = begin
 
 
     /// Main routine
-    let TcMutRecBindingInfos cenv envInitial tpenv bindsm scopem (envMutRec, mutRecDecls : MutRecDefnsPass2Info) =
+    let TcMutRecBindingInfos cenv envInitial tpenv bindsm scopem (envMutRec, mutRecDecls : MutRecDefnsPhase2Info) =
         let g = cenv.g
         
         // TODO: This needs to be factored into each environment computation
         // TESTING: Test cases where nested modules have C#-style extension members to check they are added to the
         // correct environments.
         let tcrefsWithCSharpExtensionMembers = 
-            mutRecDecls |> MutRecShapes.topTycons |> List.choose (fun (MutRecDefnsPass2InfoForTycon(_,tcref, _, declKind, _)) -> 
+            mutRecDecls |> MutRecShapes.topTycons |> List.choose (fun (MutRecDefnsPhase2InfoForTycon(_,tcref, _, declKind, _)) -> 
                 if TyconRefHasAttribute g scopem g.attrib_ExtensionAttribute tcref && (declKind <> DeclKind.ExtrinsicExtensionBinding) then 
                     Some tcref
                 else 
                     None)
 
-        // PassA: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
-        // PassA: also processes their arg patterns - collecting type assertions 
-        let (envMutRec, defnsAs, uncheckedRecBinds, tpenv) =  TcMutRecBindings_PassA_CreateRecursiveValuesAndCheckArgumentPatterns cenv scopem tpenv (envMutRec, mutRecDecls)
+        // _Phase2A: create member prelimRecValues for "recursive" items, i.e. ctor val and member vals 
+        // _Phase2A: also processes their arg patterns - collecting type assertions 
+        let (envMutRec, defnsAs, uncheckedRecBinds, tpenv) =  TcMutRecBindings__Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns cenv scopem tpenv (envMutRec, mutRecDecls)
 
-        // PassB: type check pass, convert from ast to tast and collects type assertions, and generalize
-        let defnsBs, generalizedRecBinds, tpenv = TcMutRecBindings_PassB_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs, uncheckedRecBinds, scopem)
+        // Phase2B: type check pass, convert from ast to tast and collects type assertions, and generalize
+        let defnsBs, generalizedRecBinds, tpenv = TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs, uncheckedRecBinds, scopem)
 
 
         let generalizedTyparsForRecursiveBlock = 
@@ -12939,11 +12945,11 @@ module TyconBindingChecking = begin
         // Check the escape condition for all extraGeneralizableTypars.
         // First collect up all the extraGeneralizableTypars.
         let allExtraGeneralizableTypars = 
-            defnsAs |> MutRecShapes.collectTycons |> List.collect (fun (TyconBindingsPassA(_, _, _, _, copyOfTyconTypars, _, defnAs)) ->
+            defnsAs |> MutRecShapes.collectTycons |> List.collect (fun (TyconBindingsPhase2A(_, _, _, _, copyOfTyconTypars, _, defnAs)) ->
                 [ yield! copyOfTyconTypars
                   for defnA in defnAs do 
                       match defnA with
-                      | PassAMember rbind -> yield! rbind.RecBindingInfo.EnclosingDeclaredTypars
+                      | Phase2AMember rbind -> yield! rbind.RecBindingInfo.EnclosingDeclaredTypars
                       | _ ->  ()   ])
 
         // Now check they don't escape the overall scope of the recursive set of types
@@ -12965,10 +12971,10 @@ module TyconBindingChecking = begin
              let allTypes = 
                  [ for pgrbind in generalizedRecBinds do 
                       yield pgrbind.RecBindingInfo.Val.Type 
-                   for (TyconBindingsPassB(_tyconOpt, _tcref, defnBs)) in MutRecShapes.collectTycons defnsBs do
+                   for (TyconBindingsPhase2B(_tyconOpt, _tcref, defnBs)) in MutRecShapes.collectTycons defnsBs do
                       for defnB in defnBs do
                         match defnB with
-                        | PassBIncrClassCtor (incrClassCtorLhs, _) ->
+                        | Phase2BIncrClassCtor (incrClassCtorLhs, _) ->
                             yield incrClassCtorLhs.InstanceCtorVal.Type
                         | _ -> 
                             ()
@@ -12996,7 +13002,7 @@ module TyconBindingChecking = begin
                 ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css envMutRec.DisplayEnv tp
           
         // Now that we know what we've generalized we can adjust the recursive references 
-        let defnsCs = TcMutRecBindings_PassC_FixupRecursiveReferences cenv (envMutRec.DisplayEnv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
+        let defnsCs = TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (envMutRec.DisplayEnv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
 
         // --- Extract field bindings from let-bindings 
         // --- Extract method bindings from let-bindings 
@@ -13021,24 +13027,22 @@ module TyconBindingChecking = begin
         let envFinal = AddLocalTyconRefs false g cenv.amap scopem tcrefsWithCSharpExtensionMembers envMutRec
         let envFinal = 
              let ctorVals = 
-                 defnsBs |> MutRecShapes.topTycons |> List.collect (fun (TyconBindingsPassB(_tyconOpt, _tcref, defnBs)) ->
+                 defnsBs |> MutRecShapes.topTycons |> List.collect (fun (TyconBindingsPhase2B(_tyconOpt, _tcref, defnBs)) ->
                     [ for defnB in defnBs do
                         match defnB with
-                        | PassBIncrClassCtor (incrClassCtorLhs, _) -> yield incrClassCtorLhs.InstanceCtorVal
+                        | Phase2BIncrClassCtor (incrClassCtorLhs, _) -> yield incrClassCtorLhs.InstanceCtorVal
                         | _ -> ()  ])
              AddLocalVals cenv.tcSink scopem ctorVals envFinal
 
         defnsEs,envFinal
 
-end
-
 //-------------------------------------------------------------------------
 // The member portions of class defns
 //------------------------------------------------------------------------- 
     
-let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv, mutRecDefns: MutRecDefnsPass2Data) = 
+let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv, mutRecDefns: MutRecDefnsPhase2Data) = 
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
-        let (MutRecDefnsPass2DataForTycon(_, declKind, tcref, _, _, declaredTyconTypars, members, _, _)) = tyconMembersData
+        let (MutRecDefnsPhase2DataForTycon(_, declKind, tcref, _, _, declaredTyconTypars, members, _, _)) = tyconMembersData
         let overridesOK  = DeclKind.CanOverrideOrImplement(declKind)
         members |> List.collect (function 
             | SynMemberDefn.Interface(ity,defnOpt,_) -> 
@@ -13071,7 +13075,7 @@ let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv,
             | _ -> []) 
 
     let interfaceMembersFromTypeDefn tyconMembersData (ity',defn,_) implTySet  = 
-        let (MutRecDefnsPass2DataForTycon(_, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, _, _, newslotsOK)) = tyconMembersData
+        let (MutRecDefnsPhase2DataForTycon(_, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, _, _, newslotsOK)) = tyconMembersData
         let containerInfo = ContainerInfo(parent, Some(MemberOrValContainerInfo(tcref, Some(ity',implTySet), baseValOpt, safeInitInfo, declaredTyconTypars)))
         defn  |> List.choose (fun mem ->
                 match mem with
@@ -13084,7 +13088,7 @@ let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv,
     try
       // Some preliminary checks 
       mutRecDefns |> MutRecShapes.iterTycons (fun tyconData ->
-             let (MutRecDefnsPass2DataForTycon(_, declKind, tcref, _, _, _, members, m, newslotsOK)) = tyconData
+             let (MutRecDefnsPhase2DataForTycon(_, declKind, tcref, _, _, _, members, m, newslotsOK)) = tyconData
              let tcaug = tcref.TypeContents
              if tcaug.tcaug_closed && declKind <> ExtrinsicExtensionBinding then 
                error(InternalError("Intrinsic augmentations of types are only permitted in the same file as the definition of the type",m))
@@ -13100,7 +13104,7 @@ let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv,
                     // The rest should have been removed by splitting, they belong to "core" (they are "shape" of type, not implementation) 
                     | _ -> error(Error(FSComp.SR.tcDeclarationElementNotPermittedInAugmentation(),mem.Range))))
 
-      let tyconBindingsOfTypeDefn (MutRecDefnsPass2DataForTycon(_, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, _, newslotsOK)) = 
+      let tyconBindingsOfTypeDefn (MutRecDefnsPhase2DataForTycon(_, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, _, newslotsOK)) = 
           let containerInfo = ContainerInfo(parent,Some(MemberOrValContainerInfo(tcref, None, baseValOpt, safeInitInfo, declaredTyconTypars)))
           members 
           |> List.choose (fun memb ->
@@ -13125,13 +13129,13 @@ let TcMutRecBindingDefns cenv envInitial parent bindsm scopem (envMutRec: TcEnv,
 
       let binds  = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
-              let (MutRecDefnsPass2DataForTycon(tyconOpt, declKind, tcref, _, _, declaredTyconTypars, _, _, _)) = tyconData
+              let (MutRecDefnsPhase2DataForTycon(tyconOpt, declKind, tcref, _, _, declaredTyconTypars, _, _, _)) = tyconData
               let obinds = tyconBindingsOfTypeDefn tyconData
               let ibinds  = 
                       let intfTypes = interfacesFromTypeDefn envForDecls tyconData
                       let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv false (List.map (fun (ity,_,m) -> (ity,m)) intfTypes)
                       (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
-              MutRecDefnsPass2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds))
+              MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds))
       
       TyconBindingChecking.TcMutRecBindingInfos cenv envInitial tpenv bindsm scopem (envMutRec, binds)
 
@@ -13547,7 +13551,7 @@ let CheckForDuplicateModule _cenv env nm m  =
 
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase0 cenv env parent (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_,_,_,_),_,doc,vis,m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_,_,_,_),_,doc,vis,m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor(m))
         let vis,cpath = ComputeAccessAndCompPath env None m vis parent
@@ -13556,7 +13560,7 @@ module TcExceptionDeclarations =
         CheckForDuplicateConcreteType cenv env id.idText id.idRange
         NewExn cpath id vis (TExnFresh (MakeRecdFieldsTable [])) attrs (doc.ToXmlDoc())
 
-    let TcExnDefnCore_Phase6_EstablishRepresentation cenv env parent (exnc: Entity) (SynExceptionDefnRepr(_,UnionCase(_,_,args,_,_,_),reprIdOpt,_,_,m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation cenv env parent (exnc: Entity) (SynExceptionDefnRepr(_,UnionCase(_,_,args,_,_,_),reprIdOpt,_,_,m)) =
         let args = match args with (UnionCaseFields args) -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(),m))
         let ad = env.eAccessRights
         let id = exnc.Id
@@ -13603,8 +13607,8 @@ module TcExceptionDeclarations =
         args'
 
     let private TcExnDefnCore cenv env parent synExnDefnRepr =
-        let exnc = TcExnDefnCore_Phase0 cenv env parent synExnDefnRepr
-        let args' = TcExnDefnCore_Phase6_EstablishRepresentation cenv env parent exnc synExnDefnRepr
+        let exnc = TcExnDefnCore_Phase1A cenv env parent synExnDefnRepr
+        let args' = TcExnDefnCore_Phase1G_EstablishRepresentation cenv env parent exnc synExnDefnRepr
         exnc.TypeContents.tcaug_super <- Some cenv.g.exn_ty
 
         PublishTypeDefn cenv env exnc
@@ -13629,7 +13633,7 @@ module TcExceptionDeclarations =
         let binds1,exnc = TcExnDefnCore cenv envInitial parent core
         let envMutRec =  AddLocalExnDefn cenv.tcSink scopem exnc (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial)
 
-        let defns = [MutRecShape.Tycon(MutRecDefnsPass2DataForTycon(Some exnc, ModuleOrMemberBinding, (mkLocalEntityRef exnc), None, NoSafeInitInfo, [], aug, m, NoNewSlots))]
+        let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, ModuleOrMemberBinding, (mkLocalEntityRef exnc), None, NoSafeInitInfo, [], aug, m, NoNewSlots))]
         let binds2,env = TcMutRecBindingDefns cenv envInitial parent m scopem (envMutRec, defns)
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
         // Augment types with references to values that implement the pre-baked semantics of the type
@@ -13659,7 +13663,7 @@ module TcExceptionDeclarations =
 /// refer to the types being defined. However a functional version of this
 /// would need to re-implement certain type relations to work over a 
 /// partial representation of types.
-module EstablishTypeDefinitionCores = begin
+module EstablishTypeDefinitionCores = 
  
     /// Compute the mangled name of a type definition. 'doErase' is true for all type definitions except type abbreviations.
     let private ComputeTyconName (longPath: Ident list, doErase:bool, typars: Typars) = 
@@ -13720,7 +13724,7 @@ module EstablishTypeDefinitionCores = begin
     /// Get the component types that make a record, union or struct type.
     ///
     /// Used when determining if a structural type supports structural comparison.
-    let private GetStructuralElementsOfTyconDefn cenv env tpenv (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) tycon = 
+    let private GetStructuralElementsOfTyconDefn cenv env tpenv (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,_,_,_,_)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let m = tycon.Range
         let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) env
@@ -13771,13 +13775,13 @@ module EstablishTypeDefinitionCores = begin
     ///    - computing the mangled name for C
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
-    let private TcTyconDefnCore_Phase0_BuildInitialTycon cenv env parent (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor, _)) = 
+    let private TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor, _)) = 
         let (ComponentInfo(_,synTypars, _,id,doc,preferPostfix, vis,_)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
-          TcExceptionDeclarations.TcExnDefnCore_Phase0 cenv env parent synExnDefnRepr
+          TcExceptionDeclarations.TcExnDefnCore_Phase1A cenv env parent synExnDefnRepr
         | _ ->
         let id = ComputeTyconName (id, (match synTyconRepr with SynTypeDefnSimpleRepr.TypeAbbrev _ -> false | _ -> true), checkedTypars)
 
@@ -13818,7 +13822,7 @@ module EstablishTypeDefinitionCores = begin
     ///
     ///  synTyconInfo: Syntactic AST for the name, attributes etc. of the type constructor
     ///  synTyconRepr: Syntactic AST for the RHS of the type definition
-    let private TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envinner (MutRecDefnsPass1DataForTycon(synTyconInfo,synTyconRepr,_,_,_,_)) (tycon:Tycon) = 
+    let private TcTyconDefnCore_Phase1B_EstablishBasicKind cenv inSig envinner (MutRecDefnsPhase1DataForTycon(synTyconInfo,synTyconRepr,_,_,_,_)) (tycon:Tycon) = 
         let (ComponentInfo(synAttrs,typars, _,_, _, _,_,_)) = synTyconInfo
         let m = tycon.Range
         let id = tycon.Id
@@ -13945,7 +13949,7 @@ module EstablishTypeDefinitionCores = begin
 
 
     /// Check and establish a 'type X = ABC<...>' provided type definition
-    let private TcTyconDefnCore_Phase2_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon:Tycon, rhsType:SynType, tcrefForContainer:TyconRef, theRootType:Tainted<ProvidedType>, checkTypeName, args, m) =
+    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon:Tycon, rhsType:SynType, tcrefForContainer:TyconRef, theRootType:Tainted<ProvidedType>, checkTypeName, args, m) =
 
         let tcref = mkLocalTyconRef tycon
         try 
@@ -14098,7 +14102,7 @@ module EstablishTypeDefinitionCores = begin
     // such as 'isTupleTy' will return reliable results, e.g. isTupleTy on the 
     /// TAST type for 'PairOfInts' will report 'true' 
     //
-    let private TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envinner inSig tpenv pass (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
+    let private TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations cenv envinner inSig tpenv pass (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
         let m = tycon.Range
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
@@ -14132,7 +14136,7 @@ module EstablishTypeDefinitionCores = begin
                 | Some (tcrefForContainer, providedTypeAfterStaticArguments, checkTypeName, args, m) ->
                    // If this is a generative provided type definition then establish the provided type and all its nested types. Only do this on the first pass.
                    if firstPass then 
-                       TcTyconDefnCore_Phase2_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon, rhsType, tcrefForContainer, providedTypeAfterStaticArguments, checkTypeName, args, m)
+                       TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon, rhsType, tcrefForContainer, providedTypeAfterStaticArguments, checkTypeName, args, m)
                 | None -> 
 #else
                   ignore inSig 
@@ -14161,7 +14165,7 @@ module EstablishTypeDefinitionCores = begin
 
     // Third phase: check and publish the supr types. Run twice, once before constraints are established
     // and once after
-    let private TcTyconDefnCore_Phase3_Phase5_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDecls:MutRecShape<(_ * (Tycon * Attribs) option),_,_,_> list) = 
+    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDecls:MutRecShape<(_ * (Tycon * Attribs) option),_,_,_> list) = 
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
 
@@ -14170,7 +14174,7 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec, mutRecDecls) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo,tyconAndAttrsOpt)  -> 
                match origInfo, tyconAndAttrsOpt with 
                | (tyconDefCore,_), Some (tycon, checkedAttrs) ->
-                let (MutRecDefnsPass1DataForTycon(_,synTyconRepr,explicitImplements,_,_,_)) = tyconDefCore
+                let (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,explicitImplements,_,_,_)) = tyconDefCore
                 let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envinner
@@ -14261,7 +14265,7 @@ module EstablishTypeDefinitionCores = begin
            with e -> errorRecovery e m))
 
     /// Establish the fields, dispatch slots and union cases of a type
-    let private TcTyconDefnCore_Phase6_EstablishRepresentation cenv envinner tpenv inSig (MutRecDefnsPass1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
+    let private TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_,synTyconRepr,_,_,_,_)) (tycon:Tycon) (checkedAttrs:Attribs) =
         let m = tycon.Range
         try 
             let id = tycon.Id
@@ -14371,7 +14375,7 @@ module EstablishTypeDefinitionCores = begin
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
                     let parent = Parent (mkLocalTyconRef tycon)
-                    TcExceptionDeclarations.TcExnDefnCore_Phase6_EstablishRepresentation cenv envinner parent tycon synExnDefnRepr |> ignore
+                    TcExceptionDeclarations.TcExnDefnCore_Phase1G_EstablishRepresentation cenv envinner parent tycon synExnDefnRepr |> ignore
                     TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.None _ -> 
@@ -14807,7 +14811,7 @@ module EstablishTypeDefinitionCores = begin
     let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm^FSharpModuleSuffix | _ -> nm)
 
 
-    let TcTyconDefnCore_Phase0_BuildInitialModule cenv envInitial parent compInfo =
+    let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent compInfo =
         let (ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im)) = compInfo 
         let id = ComputeModuleName longPath
         let modAttrs = TcAttributes cenv envInitial AttributeTargets.ModuleDecl attribs 
@@ -14823,21 +14827,21 @@ module EstablishTypeDefinitionCores = begin
         let _envinner, mtypeAcc = MakeInnerEnv envInitial id modKind    
         let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
         let innerParent = Parent (mkLocalModRef mspec)
-        MutRecDefnsPass2DataForModule (mtypeAcc, mspec), innerParent
+        MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), innerParent
     
-    let TcTypeDefnCores cenv envInitial parent inSig tpenv (typeDefCores:MutRecShape<MutRecDefnsPass1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo,_> list, m, scopem) =
+    let TcTypeDefnCores cenv envInitial parent inSig tpenv (typeDefCores:MutRecShape<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo,_> list, m, scopem) =
 
         // First define the type constructors and the abbreviations, if any.  Skip augmentations.
         let withTycons = 
             typeDefCores 
             |> MutRecShapes.mapWithParent 
                  parent 
-                 (fun innerParent modInfo -> TcTyconDefnCore_Phase0_BuildInitialModule cenv envInitial innerParent modInfo) 
+                 (fun innerParent modInfo -> TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial innerParent modInfo) 
                  (fun innerParent ((tyconDefCore,_) as c) -> 
-                     let (MutRecDefnsPass1DataForTycon(_,_,_,_,_,isAtOriginalTyconDefn)) = tyconDefCore
+                     let (MutRecDefnsPhase1DataForTycon(_,_,_,_,_,isAtOriginalTyconDefn)) = tyconDefCore
                      let tyconOpt = 
                          if isAtOriginalTyconDefn then 
-                             Some (TcTyconDefnCore_Phase0_BuildInitialTycon cenv envInitial innerParent tyconDefCore)
+                             Some (TcTyconDefnCore_Phase1A_BuildInitialTycon cenv envInitial innerParent tyconDefCore)
                          else 
                              None 
                      c, tyconOpt) 
@@ -14854,12 +14858,12 @@ module EstablishTypeDefinitionCores = begin
         // they are well-formed (e.g. free of abbreviation cycles - see bug 952) 
         let envMutRec, withEnvs =  
             (envInitial, withTycons) ||> MutRecShapes.computeEnvs 
-              (fun envAbove (MutRecDefnsPass2DataForModule (mtypeAcc, mspec)) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+              (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove decls -> 
 
                 let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpenDecl (mp,m)) -> Some (mp,m) | _ -> None)
                 let tycons =  decls |> List.choose (function MutRecShape.Tycon (_, tyconOpt) -> tyconOpt | _ -> None)
-                let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPass2DataForModule (_, mspec),_) -> Some mspec | _ -> None)
+                let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec),_) -> Some mspec | _ -> None)
 
                 for tycon in tycons do
                     // recheck these in case type is a duplicate in a mutually recursive set
@@ -14877,7 +14881,7 @@ module EstablishTypeDefinitionCores = begin
                 envForDecls)
 
         // Updates the types of the modules to contain the inferred contents so far
-        withEnvs |> MutRecShapes.iterModules (fun (MutRecDefnsPass2DataForModule (mtypeAcc, mspec), _) -> 
+        withEnvs |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
 
 
@@ -14888,14 +14892,14 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo,tyconOpt) -> 
                 let res = 
                     match origInfo, tyconOpt with 
-                    | (tyconDefCore,_), Some tycon -> Some (tycon,TcTyconDefnCore_Phase1_EstablishBasicKind cenv inSig envForDecls tyconDefCore tycon)
+                    | (tyconDefCore,_), Some tycon -> Some (tycon,TcTyconDefnCore_Phase1B_EstablishBasicKind cenv inSig envForDecls tyconDefCore tycon)
                     | _ -> None
                 origInfo, res)
             
         // Establish the abbreviations (no constraint checking, because constraints not yet established)
         (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
             match origInfo, tyconAndAttrsOpt with 
-            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envForDecls inSig tpenv FirstPass tyconDefCore tycon attrs
+            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations cenv envForDecls inSig tpenv FirstPass tyconDefCore tycon attrs
             | _ -> ()) 
 
         // Check for cyclic abbreviations. If this succeeds we can start reducing abbreviations safely.
@@ -14907,7 +14911,7 @@ module EstablishTypeDefinitionCores = begin
         CheckForCyclicAbbreviations tycons
 
         // Establish the super type and interfaces  (no constraint checking, because constraints not yet established)     
-        (envMutRec, withAttrs) |> TcTyconDefnCore_Phase3_Phase5_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig FirstPass 
+        (envMutRec, withAttrs) |> TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig FirstPass 
 
         // REVIEW: we should separate the checking for cyclic hierarchies and cyclic structs
         // REVIEW: this is because in some extreme cases the TcTyparConstraints call below could
@@ -14941,7 +14945,7 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec,withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                match origInfo, tyconOpt with 
                | (tyconDefCore,_), Some tycon -> 
-                let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,_)) = tyconDefCore
+                let (MutRecDefnsPhase1DataForTycon(synTyconInfo,_,_,_,_,_)) = tyconDefCore
                 let (ComponentInfo(_,_, synTyconConstraints,_,_,_, _,_)) = synTyconInfo
                 let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars(m)) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
@@ -14960,10 +14964,10 @@ module EstablishTypeDefinitionCores = begin
         // OK, now recheck the abbreviations, super/interface and explicit constraints types (this time checking constraints)
         (envMutRec, withAttrs) ||>  MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
             match origInfo, tyconAndAttrsOpt with 
-            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase2_Phase4_EstablishAbbreviations cenv envForDecls inSig tpenv SecondPass tyconDefCore tycon attrs
+            | (tyconDefCore, _), Some (tycon,attrs) -> TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations cenv envForDecls inSig tpenv SecondPass tyconDefCore tycon attrs
             | _ -> ()) 
 
-        (envMutRec, withAttrs) |> TcTyconDefnCore_Phase3_Phase5_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig SecondPass 
+        (envMutRec, withAttrs) |> TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig SecondPass 
         checkExplicitConstraints CheckCxs
 
         // Now all the type parameters, abbreviations, constraints and kind information is established.
@@ -14973,7 +14977,7 @@ module EstablishTypeDefinitionCores = begin
             (envMutRec,withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo,tyconAndAttrsOpt) -> 
                 let info = 
                     match origInfo, tyconAndAttrsOpt with 
-                    | (tyconDefnCore,_), Some (tycon,attrs) -> TcTyconDefnCore_Phase6_EstablishRepresentation cenv envForDecls tpenv inSig tyconDefnCore tycon attrs
+                    | (tyconDefnCore,_), Some (tycon,attrs) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig tyconDefnCore tycon attrs
                     | _ -> None, NoSafeInitInfo 
                 (origInfo, Option.map fst tyconAndAttrsOpt, info))
                 
@@ -14981,14 +14985,18 @@ module EstablishTypeDefinitionCores = begin
         // REVIEW: checking for cyclic inheritance is happening too late. See note above.
         CheckForCyclicStructsAndInheritance cenv tycons
 
-        // Reconstruct the environments all over again - this will add the union cases and fields. 
+        // By now we've established the full contents of type definitions apart from their
+        // members and any fields determined by implicit construction.  We know the kinds and 
+        // representations of types and have established them as valid.
+        //
+        // We now reconstruct the active environments all over again - this will add the union cases and fields. 
         let envMutRec, withNewEnvs =  
             (envInitial, withBaseValsAndSafeInitInfos) 
             ||> MutRecShapes.recomputeEnvs 
-                (fun envAbove (MutRecDefnsPass2DataForModule (mtypeAcc, mspec), _) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+                (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
                 (fun envAbove decls -> 
                     let tycons =  decls |> List.choose (function MutRecShape.Tycon (_, tyconOpt, _) -> tyconOpt | _ -> None)
-                    let mspecs = decls |> List.choose (function MutRecShape.Module ((MutRecDefnsPass2DataForModule (_, mspec),_),_) -> Some mspec | _ -> None)
+                    let mspecs = decls |> List.choose (function MutRecShape.Module ((MutRecDefnsPhase2DataForModule (_, mspec),_),_) -> Some mspec | _ -> None)
                     let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpenDecl (mp,m)) -> Some (mp,m) | _ -> None)
                     let envForDecls = (envAbove, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
                     let envForDecls = AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envForDecls
@@ -14996,8 +15004,6 @@ module EstablishTypeDefinitionCores = begin
                     envForDecls)
 
         (tycons, envMutRec, withNewEnvs)
-
-end // module EstablishTypeDefinitionCores
 
 
 module TcDeclarations = begin
@@ -15286,19 +15292,19 @@ module TcDeclarations = begin
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,isIncrClass,implicitCtorSynPats,m)
             let isAtOriginalTyconDefn = not (EstablishTypeDefinitionCores.isAugmentationTyconDefnRepr repr)
-            let core = MutRecDefnsPass1DataForTycon(synTyconInfo, repr, implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor,isAtOriginalTyconDefn)
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, repr, implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor,isAtOriginalTyconDefn)
 
             core, members @ extraMembers
 
         | SynTypeDefnRepr.Simple(repr,_) -> 
             let members = []
             let isAtOriginalTyconDefn = not (EstablishTypeDefinitionCores.isAugmentationTyconDefnRepr repr)
-            let core = MutRecDefnsPass1DataForTycon(synTyconInfo,repr,implements1,false,false,isAtOriginalTyconDefn)
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo,repr,implements1,false,false,isAtOriginalTyconDefn)
             core, members @ extraMembers
 
         | SynTypeDefnRepr.Exception(r) -> 
             let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPass1DataForTycon(synTyconInfo,SynTypeDefnSimpleRepr.Exception r,implements1,false,false,isAtOriginalTyconDefn)
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo,SynTypeDefnSimpleRepr.Exception r,implements1,false,false,isAtOriginalTyconDefn)
             core, extraMembers
 
     let SplitMutRecDefns cenv mutRecDefns = mutRecDefns |> MutRecShapes.mapTycons (SplitTyconDefn cenv)
@@ -15312,7 +15318,7 @@ module TcDeclarations = begin
 
         if nonNil members && tcref.IsTypeAbbrev then errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclm))
 
-        MutRecDefnsPass2DataForTycon(tyconOpt, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, m, newslotsOK)
+        MutRecDefnsPhase2DataForTycon(tyconOpt, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, m, newslotsOK)
 
     //-------------------------------------------------------------------------
     // Bind type definitions - main
@@ -15326,14 +15332,24 @@ module TcDeclarations = begin
         let mutRecDefnsAfterPrep = 
             mutRecDefnsAfterCore 
             |> MutRecShapes.mapTycons (fun ((typeDefnCore, members), tyconOpt, (baseValOpt, safeInitInfo)) -> 
-                       let (MutRecDefnsPass1DataForTycon(synTyconInfo,_,_,_,_,isAtOriginalTyconDefn)) = typeDefnCore
+                       let (MutRecDefnsPhase1DataForTycon(synTyconInfo,_,_,_,_,isAtOriginalTyconDefn)) = typeDefnCore
                        PrepareTyconMemberDefns tyconOpt isAtOriginalTyconDefn cenv envMutRec (synTyconInfo, baseValOpt, safeInitInfo, members, synTyconInfo.Range, m))
 
         let withBindings,env = TcMutRecBindingDefns cenv envInitial parent m scopem (envMutRec, mutRecDefnsAfterPrep)
 
         // Note: generating these bindings must come after generating the members, since some in the case of structs some fields
         // may be added by generating the implicit construction syntax 
-        let withExtraBindings = withBindings |> MutRecShapes.expandTycons (fun (tyconOpt, _) -> match tyconOpt with None -> [] | Some tycon -> AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon @ AddAugmentationDeclarations.AddGenericEqualityBindings cenv env tycon)
+        let withExtraBindings = 
+            withBindings |> MutRecShapes.expandTycons (fun (tyconOpt, _) -> 
+                match tyconOpt with 
+                | None -> [],[] 
+                | Some tycon -> 
+                    // We put the hash/compare bindings before the type definitions and the
+                    // equality bindings after because tha is the order they've always been generated
+                    // in, and there are code generation tests to check that.
+                    let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon 
+                    let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv env tycon
+                    binds, binds3)
 
         // Check for cyclic structs and inheritance all over again, since we may have added some fields to the struct when generating the implicit construction syntax 
         EstablishTypeDefinitionCores.CheckForCyclicStructsAndInheritance cenv tycons
@@ -15382,7 +15398,7 @@ module TcDeclarations = begin
             
             let repr = SynTypeDefnSimpleRepr.General(kind,inherits,slotsigs,fields,isConcrete,false,None,m)
             let isAtOriginalTyconDefn = true
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, repr,implements2@implements1,preEstablishedHasDefaultCtor,hasSelfReferentialCtor,isAtOriginalTyconDefn)
+            let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, repr,implements2@implements1,preEstablishedHasDefaultCtor,hasSelfReferentialCtor,isAtOriginalTyconDefn)
 
             tyconCore, (synTyconInfo,members@extraMembers)
 
@@ -15390,12 +15406,12 @@ module TcDeclarations = begin
         // Representation-hidden types with members and interfaces are written 'type X = ...' 
         | SynTypeDefnSigRepr.Simple((SynTypeDefnSimpleRepr.None _ as r),_) when nonNil extraMembers -> 
             let isAtOriginalTyconDefn = false
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false, isAtOriginalTyconDefn)
+            let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, r, implements1, false, false, isAtOriginalTyconDefn)
             tyconCore,  (synTyconInfo,extraMembers)
 
         | SynTypeDefnSigRepr.Simple(r,_) -> 
             let isAtOriginalTyconDefn = true
-            let tyconCore = MutRecDefnsPass1DataForTycon (synTyconInfo, r, implements1, false, false,isAtOriginalTyconDefn)
+            let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, r, implements1, false, false,isAtOriginalTyconDefn)
             tyconCore, (synTyconInfo,extraMembers) 
 
     let SplitMutRecSignatures mutRecSigs = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
@@ -15404,7 +15420,7 @@ module TcDeclarations = begin
         // TODO - this is only checking the tycons in the signatures, need to do the module and let elements too
         (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls ((tyconCore, (synTyconInfo,members)), _, _) -> 
             let tpenv = emptyUnscopedTyparEnv
-            let (MutRecDefnsPass1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
+            let (MutRecDefnsPhase1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
             let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
             let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv envForDecls true m typars cs longPath
 
@@ -15867,7 +15883,7 @@ and TcMutRecDefsFinish cenv defs m =
     let mods = 
         defs |> List.choose (function 
            | MutRecShape.Tycon _ | MutRecShape.Open _ | MutRecShape.Lets _ -> None
-           | MutRecShape.Module ((MutRecDefnsPass2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
+           | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
                 // Apply the functions for each declaration to build the overall expression-builder 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
