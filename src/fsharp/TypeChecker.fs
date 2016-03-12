@@ -392,7 +392,7 @@ let AddLocalVal tcSink scopem v env =
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
-let AddLocalExnDefn tcSink scopem (exnc:Tycon) env =
+let AddLocalExnDefnAndReport tcSink scopem (exnc:Tycon) env =
     let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv BulkAdd.No nenv (mkLocalEntityRef exnc)) env
     (* Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location *)
     CallEnvSink tcSink (exnc.Range,env.NameEnv,env.eAccessRights)
@@ -400,10 +400,10 @@ let AddLocalExnDefn tcSink scopem (exnc:Tycon) env =
     env
  
 let AddLocalTyconRefs ownDefinition g amap m tcrefs env = 
-     ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) env 
+     env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
 
 let AddLocalTycons g amap m (tycons: Tycon list) env = 
-     AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) env 
+     env |> AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) 
 
 let AddLocalTyconsAndReport tcSink g amap scopem tycons env = 
     let env = AddLocalTycons g amap scopem tycons env
@@ -451,7 +451,7 @@ let AddModuleAbbreviation tcSink scopem id modrefs env =
     CallNameResolutionSink tcSink (id.idRange,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
     env
 
-let AddLocalSubModule tcSink g amap m scopem env (modul:ModuleOrNamespace) =
+let AddLocalSubModuleAndReport tcSink g amap m scopem env (modul:ModuleOrNamespace) =
     let env = ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights nenv (mkLocalModRef modul)) env
     let env = {env with eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems}
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
@@ -12356,9 +12356,7 @@ module MutRecBindingChecking =
                 // Re-add the type constructor to make it take precedence for record label field resolutions
                 // This does not apply to extension members: in those cases the relationship between the record labels
                 // and the type is too extruded
-                let envForTycon = 
-                    if isExtrinsic then envForTycon
-                    else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
+                let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true cenv.g cenv.amap tcref.Range [tcref] envForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
                 let _,copyOfTyconTypars,_,objTy,thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -12893,7 +12891,7 @@ module MutRecBindingChecking =
 
 
     /// Compute the active environments within each nested module.
-    let TcMutRecDefns_ComputeEnvs (cenv: cenv) getTyconOpt scopem m envInitial mutRecShape =
+    let TcMutRecDefns_ComputeEnvs (cenv: cenv) report getTyconOpt scopem m envInitial mutRecShape =
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs 
             (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
             (fun envAbove decls -> 
@@ -12902,9 +12900,10 @@ module MutRecBindingChecking =
                 let tycons =  decls |> List.choose (function MutRecShape.Tycon d -> getTyconOpt d | _ -> None) 
                 let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec),_) -> Some mspec | _ -> None)
 
-                // Add the type definitions, modules and "open" declarations
-                let envForDecls = AddLocalTycons cenv.g cenv.amap scopem tycons envAbove
-                let envForDecls = (envForDecls, mspecs) ||> List.fold (AddLocalSubModule cenv.tcSink cenv.g cenv.amap m scopem)
+                // Add the type definitions, exceptions, modules and "open" declarations
+                let envForDecls = if report then AddLocalTycons cenv.g cenv.amap scopem tycons envAbove else AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envAbove
+                let envForDecls = (envForDecls, tycons) ||> List.fold (fun env tycon -> if tycon.IsExceptionDecl then AddLocalExnDefnAndReport cenv.tcSink scopem tycon env else env)
+                let envForDecls = (envForDecls, mspecs) ||> List.fold (AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem)
                 let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
                 envForDecls)
 
@@ -12926,7 +12925,7 @@ module MutRecBindingChecking =
         // We must open all modules from scratch again because there may be extension methods and/or AutoOpen
         let envMutRec, defnsAs =  
             (envInitial, MutRecShapes.dropEnvs defnsAs) 
-            ||> TcMutRecDefns_ComputeEnvs cenv (fun (TyconBindingsPhase2A(tyconOpt,_,_,_,_,_,_)) -> tyconOpt) scopem scopem 
+            ||> TcMutRecDefns_ComputeEnvs cenv false (fun (TyconBindingsPhase2A(tyconOpt,_,_,_,_,_,_)) -> tyconOpt) scopem scopem 
             ||> MutRecShapes.extendEnvs (fun envForDecls decls -> 
 
                 let prelimRecValues =  
@@ -12942,16 +12941,9 @@ module MutRecBindingChecking =
                         | Phase2AIncrClassCtor (incrClassCtorLhs) -> yield incrClassCtorLhs.InstanceCtorVal
                         | _ -> ()  ])
 
-                let tcrefsWithCSharpExtensionMembers = 
-                    decls |> MutRecShapes.topTycons |> List.choose (fun (TyconBindingsPhase2A(_, declKind, _, tcref, _, _, _)) -> 
-                        if TyconRefHasAttribute g scopem g.attrib_ExtensionAttribute tcref && (declKind <> DeclKind.ExtrinsicExtensionBinding) then Some tcref
-                        else None)
-
-
                 let envForDeclsUpdated = 
                     envForDecls
                     |> AddLocalVals cenv.tcSink scopem prelimRecValues 
-                    |> AddLocalTyconRefs false g cenv.amap scopem tcrefsWithCSharpExtensionMembers 
                     |> AddLocalVals cenv.tcSink scopem ctorVals 
 
                 envForDeclsUpdated)
@@ -13003,7 +12995,7 @@ module MutRecBindingChecking =
                             ()
                   ]
              //printfn "allTypes.Length = %d" allTypes.Length
-             let unsolvedTypars = freeInTypesLeftToRight cenv.g true allTypes
+             let unsolvedTypars = freeInTypesLeftToRight g true allTypes
              //printfn "unsolvedTypars.Length = %d" unsolvedTypars.Length
              //for x in unsolvedTypars do 
              //    printfn "unsolvedTypar : %s #%d" x.DisplayName x.Stamp
@@ -13038,10 +13030,10 @@ module MutRecBindingChecking =
         let defnsEs = 
             defnsDs |> MutRecShapes.map 
                 (fun (tyconOpt, fixupValueExprBinds, methodBinds) -> 
-                    let fixedBinds = EliminateInitializationGraphs cenv.g true denv fixupValueExprBinds bindsm
+                    let fixedBinds = EliminateInitializationGraphs g true denv fixupValueExprBinds bindsm
                     tyconOpt, fixedBinds @ methodBinds)
                 (fun (fixupValueExprBinds) -> 
-                    EliminateInitializationGraphs cenv.g true denv fixupValueExprBinds bindsm)
+                    EliminateInitializationGraphs g true denv fixupValueExprBinds bindsm)
                 id
         
         defnsEs,envMutRec
@@ -13640,18 +13632,18 @@ module TcExceptionDeclarations =
 
     let TcExnDefn cenv envInitial parent (SynExceptionDefn(core,aug,m),scopem) = 
         let binds1,exnc = TcExnDefnCore cenv envInitial parent core
-        let envMutRec =  AddLocalExnDefn cenv.tcSink scopem exnc (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial)
+        let envMutRec =  AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, (mkLocalEntityRef exnc), None, NoSafeInitInfo, [], aug, m, NoNewSlots))]
-        let binds2,env = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRec, defns)
+        let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRec, defns)
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
         // Augment types with references to values that implement the pre-baked semantics of the type
-        let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv env exnc
-        binds1 @ binds2flat @ binds3,exnc,env
+        let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
+        binds1 @ binds2flat @ binds3,exnc,envFinal
 
     let TcExnSignature cenv envInitial parent tpenv (SynExceptionSig(core,aug,_),scopem) = 
         let binds,exnc = TcExnDefnCore cenv envInitial parent core
-        let envMutRec =  AddLocalExnDefn cenv.tcSink scopem exnc (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial)
+        let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem exnc (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial)
         let ecref = mkLocalEntityRef exnc
         let vals,_ = TcTyconMemberSpecs cenv envMutRec (ContainerInfo(parent,Some(MemberOrValContainerInfo(ecref,None,None,NoSafeInitInfo,[])))) ModuleOrMemberBinding tpenv aug
         binds,vals,ecref,envMutRec
@@ -14890,7 +14882,7 @@ module EstablishTypeDefinitionCores =
         // We re-add them to the original environment later on. 
         // We don't report them to the Language Service yet as we don't know if 
         // they are well-formed (e.g. free of abbreviation cycles - see bug 952) 
-        let envMutRecPrelim, withEnvs =  (envInitial, withEntities) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs cenv snd scopem m 
+        let envMutRecPrelim, withEnvs =  (envInitial, withEntities) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs cenv false snd scopem m 
 
         // Updates the types of the modules to contain the inferred contents so far
         withEnvs |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
@@ -15334,7 +15326,7 @@ module TcDeclarations = begin
         // Note: This environment reconstruction doesn't seem necessary. We're about to create Val's for all members,
         // which does require type checking, but no more information than is already available.
         let envMutRecPrelimWithReprs, withEnvs =  
-            (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterPrep) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs cenv (fun (MutRecDefnsPhase2DataForTycon(tyconOpt, _, _, _, _, _, _, _, _, _)) -> tyconOpt)  scopem m 
+            (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterPrep) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs cenv true (fun (MutRecDefnsPhase2DataForTycon(tyconOpt, _, _, _, _, _, _, _, _, _)) -> tyconOpt)  scopem m 
 
         // Check the members and decide on representations for types with implicit constructors.
         let withBindings,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRecPrelimWithReprs, withEnvs)
@@ -15481,7 +15473,7 @@ let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
             let! (mspec,_) = TcModuleOrNamespaceSignature cenv env (id,true,mdefs,xml,attribs,vis,m)
             let scopem = unionRanges m endm
             PublishModuleDefn cenv env mspec; 
-            let env = AddLocalSubModule cenv.tcSink cenv.g cenv.amap m scopem env mspec
+            let env = AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem env mspec
             return env
             
         | SynModuleSigDecl.ModuleAbbrev (id,p,m) -> 
@@ -15725,7 +15717,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
           let mspec = mspecPriorToOuterOrExplicitSig
           let mdef = TMDefRec([],FlatList.empty,[ModuleOrNamespaceBinding(mspecPriorToOuterOrExplicitSig,mexpr)],m)
           PublishModuleDefn cenv env mspec 
-          let env = AddLocalSubModule cenv.tcSink cenv.g cenv.amap m scopem env mspec
+          let env = AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem env mspec
           
           // isContinuingModule is true for all of the following
           //   - the implicit module of a script 
