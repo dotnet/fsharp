@@ -402,6 +402,7 @@ namespace Microsoft.FSharp.Core
         type System.Type with
             member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
             member inline this.IsValueType = this.GetTypeInfo().IsValueType
+            member inline this.IsEnum = this.GetTypeInfo().IsEnum
             member inline this.IsSealed = this.GetTypeInfo().IsSealed
             member inline this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
             member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
@@ -1793,6 +1794,16 @@ namespace Microsoft.FSharp.Core
                                 if x.HasValue then x.Value.GetHashCode ()
                                 else 0
 
+                module EqualityComparerDefault =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Impl<'a> =
+                        interface IEssenceOfEquals<'a> with
+                            member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
+                                System.Collections.Generic.EqualityComparer.Default.Equals (x, y)
+                        interface IEssenceOfGetHashCode<'a> with
+                            member __.Ensorcel (_:IEqualityComparer, x:'a) =
+                                System.Collections.Generic.EqualityComparer.Default.GetHashCode x
+
                 module ValueType =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable> =
@@ -2628,6 +2639,11 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<decimal>    then typeof<EqualsTypes.Decimal>
                     else null
 
+                let enumTypes (t:Type) : Type =
+                    if t.IsEnum
+                    then mos.makeType t typedefof<CommonEqualityTypes.EqualityComparerDefault.Impl<_>>
+                    else null
+
                 let compilerGenerated tyRelation ty =
                     // if we are using the ER comparer, and we are a standard f# record or value type with compiler generated
                     // equality operators, then we can avoid the boxing of IStructuralEquatable and just call the
@@ -2699,6 +2715,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
+                        fun () -> enumTypes ty
                         fun () -> compilerGenerated tyRelation ty
                         fun () -> arrays tyRelation ty
                         fun () -> nullableType ty
@@ -3052,6 +3069,11 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<float32>    then typeof<GetHashCodeTypes.Float32>
                     else null
 
+                let enumTypes (t:Type) : Type =
+                    if t.IsEnum
+                    then mos.makeType t typedefof<CommonEqualityTypes.EqualityComparerDefault.Impl<_>>
+                    else null
+
                 [<Struct;NoComparison;NoEquality>]
                 type GenericHashParamObject<'a> =
                     interface IEssenceOfGetHashCode<'a> with
@@ -3093,6 +3115,7 @@ namespace Microsoft.FSharp.Core
                     mos.takeFirstNonNull [|
                         fun () -> tuples t
                         fun () -> standardTypes t
+                        fun () -> enumTypes t
                         fun () -> arrays t
                         fun () -> nullableType t
                         fun () -> structualEquatable t

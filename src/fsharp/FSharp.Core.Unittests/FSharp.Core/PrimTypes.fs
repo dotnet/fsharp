@@ -683,3 +683,55 @@ type UnboxAndOptionStuff() =
         Assert.IsTrue( not (isNull [| |]))
         Assert.IsTrue( not (isNull ""))
         Assert.IsTrue( not (isNull "1"))
+
+
+type EnumA =
+| A0 = 0
+| A1 = 1
+| A2 = 2
+
+module EnumEqualityTestHelper =
+    let equals<'a when 'a : equality> (lhs:'a) (rhs:'a) =
+        // we are needlessly complex here to avoid the compiler from inlining this function
+        let r = System.Random ()
+        let n = r.Next ()
+        let mutable result = Unchecked.defaultof<_>
+        for i = n to n do
+            result <- lhs = rhs
+        result           
+
+    let equals2<'a when 'a : equality> (lhs:'a) (rhs:'a) =
+        LanguagePrimitives.FastGenericEqualityComparer.Equals (lhs, rhs)
+
+[<TestFixture>]
+type EnumEqualityTest() =
+    [<Test>]
+    member this.EqualityCheck () =
+        Assert.IsTrue  (EnumEqualityTestHelper.equals EnumA.A0 EnumA.A0)
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A0 EnumA.A1)
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A0 EnumA.A2)
+
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A1 EnumA.A0)
+        Assert.IsTrue  (EnumEqualityTestHelper.equals EnumA.A1 EnumA.A1)
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A1 EnumA.A2)
+
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A2 EnumA.A0)
+        Assert.IsFalse (EnumEqualityTestHelper.equals EnumA.A2 EnumA.A1)
+        Assert.IsTrue  (EnumEqualityTestHelper.equals EnumA.A2 EnumA.A2)
+
+    [<Test>]
+    member this.EqualityCheck2 () =
+        Assert.IsTrue  (EnumEqualityTestHelper.equals2 EnumA.A0 EnumA.A0)
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A0 EnumA.A1)
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A0 EnumA.A2)
+
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A1 EnumA.A0)
+        Assert.IsTrue  (EnumEqualityTestHelper.equals2 EnumA.A1 EnumA.A1)
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A1 EnumA.A2)
+
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A2 EnumA.A0)
+        Assert.IsFalse (EnumEqualityTestHelper.equals2 EnumA.A2 EnumA.A1)
+        Assert.IsTrue  (EnumEqualityTestHelper.equals2 EnumA.A2 EnumA.A2)
+
+
+
