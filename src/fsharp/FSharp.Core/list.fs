@@ -616,6 +616,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
 
+        [<CompiledName("AllPairs")>]
+        let allPairs list1 list2 = Microsoft.FSharp.Primitives.Basics.List.allPairs list1 list2
+
         [<CompiledName("CompareWith")>]
         let inline compareWith (comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
             let rec loop list1 list2 =
