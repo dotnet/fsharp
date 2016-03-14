@@ -1552,21 +1552,22 @@ let isClassTy g ty =
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
-let isStructTy g ty = 
-    (isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon) || isTupleStructTy g ty
+let isStructOrEnumTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon
+
+let isStructTy g ty = isStructOrEnumTyconTy g ty
 
 let isRefTy g ty = 
-    not (isStructTy g ty) &&
-        (
-            isUnionTy g ty || 
-            isTupleTy g ty || 
-            isRecdTy g ty || 
-            isILReferenceTy g ty ||
-            isFunTy g ty || 
-            isReprHiddenTy g ty || 
-            isFSharpObjModelRefTy g ty || 
-            isUnitTy g ty
-        )
+    not (isStructOrEnumTyconTy g ty) &&
+    (
+        isUnionTy g ty || 
+        isTupleTy g ty || 
+        isRecdTy g ty || 
+        isILReferenceTy g ty ||
+        isFunTy g ty || 
+        isReprHiddenTy g ty || 
+        isFSharpObjModelRefTy g ty || 
+        isUnitTy g ty
+    )
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
