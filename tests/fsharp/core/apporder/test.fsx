@@ -3,10 +3,6 @@
 module Core_apporder
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 let failures = ref false
 let report_failure (s) = 

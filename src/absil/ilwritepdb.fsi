@@ -61,10 +61,10 @@ val getDebugFileName: string -> string
 
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 val sizeof_IMAGE_DEBUG_DIRECTORY : System.Int32
-val DumpDebugInfo : string -> PdbData -> unit
+val dumpDebugInfo : string -> PdbData -> unit
 
 #if ENABLE_MONO_SUPPORT
-val WriteMdbInfo<'a> : string -> string -> PdbData -> 'a
+val writeMdbInfo<'a> : string -> string -> PdbData -> 'a
 #endif
 
 type idd =
@@ -74,8 +74,8 @@ type idd =
       iddType: int32;
       iddData: byte[]; }
 
-val WritePortablePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> fpdb:string -> info:PdbData -> idd
+val writePortablePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> fpdb:string -> info:PdbData -> idd
 
 #if !FX_NO_PDB_WRITER
-val WritePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> idd
+val writePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> idd
 #endif

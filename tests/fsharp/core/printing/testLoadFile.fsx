@@ -1,7 +1,3 @@
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 let x1 = 1
 let x2 = "hello"

@@ -4,10 +4,6 @@ module Core_genericMeasures
 module Core_genericMeasures =
 #endif
 
-#if CoreClr
-    open coreclrutilities
-#endif
-
     [<AllowNullLiteral>]
     type C<'T> = class end
     

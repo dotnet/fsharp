@@ -118,18 +118,20 @@ module internal FSharpEnvironment =
                 null)
 #endif
 
-    let hasWow6432Node =
-        use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
-        x <> null
-
     let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 
         Option.ofString
             (try 
                 // 64 bit flag is not available <= Win2k
                 let options = 
-                    match hasWow6432Node with
-                    | true  -> KEY_WOW64_32KEY
-                    | false -> KEY_WOW64_DEFAULT
+                    let hasWow6432Node =
+                        use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
+                        x <> null
+                    try
+                        match hasWow6432Node with
+                        | true  -> KEY_WOW64_32KEY
+                        | false -> KEY_WOW64_DEFAULT
+                    with
+                    | _ -> false
 
                 let mutable hkey = UIntPtr.Zero;
                 let pathResult = Marshal.AllocCoTaskMem(maxDataLength);

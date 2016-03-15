@@ -18,10 +18,6 @@ CONTENTS-END-LINE:
 module Core_tlr
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 let failures = ref false
 let report_failure s  = 
   stderr.WriteLine ("NO: test "+s+" failed"); failures := true

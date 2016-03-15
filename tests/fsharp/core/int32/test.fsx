@@ -3,10 +3,6 @@
 module Core_int32
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 
 let failures = ref false

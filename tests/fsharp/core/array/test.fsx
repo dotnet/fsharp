@@ -3,10 +3,6 @@
 module Core_array
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 let mutable failures = []
 let report_failure (s) = 

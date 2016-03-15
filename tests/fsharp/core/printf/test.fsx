@@ -4,10 +4,6 @@
 module Core_printf
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 
 open Printf

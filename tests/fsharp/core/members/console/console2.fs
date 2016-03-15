@@ -2,10 +2,6 @@
 
 module ConsoleApp
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 type ControlEvent = CTRL_C | CTRL_BREAK | CTRL_CLOSE |CTRL_LOGOFF | CTRL_SHUTDOWN 
   with 
      member x.ToInt = 

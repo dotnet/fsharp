@@ -1,9 +1,5 @@
 // #Conformance #Regression 
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 
 // CONTENTS-INDEX-REGEXP = FROM>^\//! <TO 

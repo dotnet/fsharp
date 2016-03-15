@@ -59,10 +59,6 @@ end
 
 namespace global
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 type A = A | B | C
 
 module X  = begin

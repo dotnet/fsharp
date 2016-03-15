@@ -751,16 +751,18 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let getProperty (obj: obj) name =
             let ty = obj.GetType()
 #if FX_ATLEAST_PORTABLE
-            let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
-
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
             if prop <> null then prop.GetValue(obj,[||])
 #if FX_NO_MISSINGMETHODEXCEPTION
             // Profile 7, 47, 78 and 259 raise MissingMemberException
-            else raise (System.MissingMemberException(msg))
+            else 
+                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
+                raise (System.MissingMemberException(msg))
 #else
             // Others raise MissingMethodException
-            else raise (System.MissingMethodException(msg))
+            else 
+                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
+                raise (System.MissingMethodException(msg))
 #endif
 #else
 #if FX_NO_CULTURE_INFO_ARGS

@@ -3,10 +3,6 @@
 module Core_subtype
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 
 let mutable failures = []

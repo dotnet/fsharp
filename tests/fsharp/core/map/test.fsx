@@ -3,10 +3,6 @@
 module Core_map
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 let failures = ref false
 let report_failure () = failures := true

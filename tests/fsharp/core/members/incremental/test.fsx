@@ -1,9 +1,5 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 // CONTENTS-INDEX-REGEXP = FROM>^//! +<TO
 //----------------------------------------------------------------------------
 //CONTENTS-START-LINE: HERE=3 SEP=2

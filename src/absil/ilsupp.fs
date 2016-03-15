@@ -1280,7 +1280,7 @@ let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
 let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
 
 let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
-    let reply = (StrongNameSign.GetPublicKeyForKeyPair kp)
+    let reply = (StrongNameSign.getPublicKeyForKeyPair kp)
     reply
 
 let signerGetPublicKeyForKeyContainer (_kcName:keyContainerName) : pubkey = 
@@ -1290,10 +1290,10 @@ let signerCloseKeyContainer (_kc:keyContainerName) :unit =
     raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
 
 let signerSignatureSize (pk:pubkey) : int = 
-    (StrongNameSign.SignatureSize pk)
+    (StrongNameSign.signatureSize pk)
 
 let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
-    (StrongNameSign.SignFile fileName kp)
+    (StrongNameSign.signFile fileName kp)
 
 let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  
     raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))

@@ -2,10 +2,6 @@
 module Test2
 #nowarn "44"
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 open System.Reflection
 
 let failures = ref false

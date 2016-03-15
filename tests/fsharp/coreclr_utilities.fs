@@ -1,4 +1,5 @@
-module coreclrutilities
+[<AutoOpen>]
+module CoreClrUtilities
 
     open System
     open System.Reflection

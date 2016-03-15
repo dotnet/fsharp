@@ -3,10 +3,6 @@
 module Core_unicode
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 open System.IO
 
 let failures = ref false

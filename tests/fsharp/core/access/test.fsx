@@ -3,10 +3,6 @@
 module Core_access
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 #light
 
 let failures = ref false

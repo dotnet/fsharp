@@ -63,10 +63,14 @@ type PdbMethodData =
 module SequencePoint = 
     let orderBySource sp1 sp2 = 
         let c1 = compare sp1.Document sp2.Document
-        if c1 <> 0 then c1 else 
-        let c1 = compare sp1.Line sp2.Line
-        if c1 <> 0 then c1 else 
-        compare sp1.Column sp2.Column 
+        if c1 <> 0 then 
+            c1 
+        else 
+            let c1 = compare sp1.Line sp2.Line
+            if c1 <> 0 then 
+                c1 
+            else 
+                compare sp1.Column sp2.Column 
         
     let orderByOffset sp1 sp2 = 
         compare sp1.Offset sp2.Offset 
@@ -154,7 +158,7 @@ let sortMethods showTimes info =
     reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
     ()
 
-let GetRowCounts tableRowCounts =
+let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
@@ -194,13 +198,13 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let WritePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) = 
+let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) = 
 
     try FileSystem.FileDelete fpdb with _ -> ()
 
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
-    let externalRowCounts = GetRowCounts info.TableRowCounts
+    let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
         if info.Documents = null then 
             Array.empty<PdbDocumentData>
@@ -371,7 +375,7 @@ let WritePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
-let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
+let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
 
     try FileSystem.FileDelete fpdb with _ -> ()
 
@@ -532,7 +536,7 @@ let createWriter (f:string) =
 //---------------------------------------------------------------------
 // MDB Writer.  Generate debug symbols using the MDB format
 //---------------------------------------------------------------------
-let WriteMdbInfo fmdb f info = 
+let writeMdbInfo fmdb f info = 
     // Note, if we can�t delete it code will fail later
     try FileSystem.FileDelete fmdb with _ -> ()
 
@@ -594,7 +598,7 @@ let WriteMdbInfo fmdb f info =
 //---------------------------------------------------------------------
 open Printf
 
-let DumpDebugInfo (outfile:string) (info:PdbData) = 
+let dumpDebugInfo (outfile:string) (info:PdbData) = 
     use sw = new StreamWriter(new FileStream(outfile + ".debuginfo", FileMode.Create))
 
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome

@@ -1,5 +1,5 @@
 #if CoreClr
-open coreclrutilities
+open CoreClrUtilities
 #endif
 
 #light

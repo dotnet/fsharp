@@ -3,10 +3,6 @@
 module Core_nested
 #endif
 
-#if CoreClr
-open coreclrutilities
-#endif
-
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true
