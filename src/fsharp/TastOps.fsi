@@ -1394,3 +1394,5 @@ val rebuildLinearMatchExpr : (SequencePointInfoForBinding * range * DecisionTree
 val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
 val (|InnerExprPat|) : Expr -> Expr
+
+val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>

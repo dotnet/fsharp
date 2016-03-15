@@ -15663,7 +15663,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
 
       | SynModuleDecl.Exception (edef,m) -> 
           let binds,decl,env = TcExceptionDeclarations.TcExnDefn cenv env parent (edef,scopem)
-          return ((fun e -> TMDefRec([decl], FlatList.ofList binds, [],m) :: e),[]), env, env
+          return ((fun e -> TMDefRec([decl], binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
 
       | SynModuleDecl.Types (typeDefs,m) -> 
           let scopem = unionRanges m scopem
@@ -15694,7 +15694,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo,NoNewSlots,ModuleOrMemberBinding,bind))
                 let binds,env,_ = TcLetrec  WarnOnOverrides cenv env tpenv (binds,m, scopem)
-                return ((fun e -> TMDefRec([],FlatList.ofList binds,[],m) :: e),[]), env, env
+                return ((fun e -> TMDefRec([],binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
               else 
                 let binds,env,_ = TcLetBindings cenv env containerInfo ModuleOrMemberBinding tpenv (binds,m,scopem)
                 return ((fun e -> binds@e),[]), env, env 
@@ -15719,11 +15719,11 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
           CheckForDuplicateModule env id.idText id.idRange
           let vis,_ = ComputeAccessAndCompPath env None id.idRange vis parent
              
-          let! (topAttrsNew, _,ModuleOrNamespaceBinding(mspecPriorToOuterOrExplicitSig,mexpr)),_,envAtEnd =
+          let! (topAttrsNew, _,(mspecPriorToOuterOrExplicitSig,mexpr)),_,envAtEnd =
               TcModuleOrNamespace cenv env (id,isRec,true,mdefs,xml,modAttrs,vis,m)
 
           let mspec = mspecPriorToOuterOrExplicitSig
-          let mdef = TMDefRec([],FlatList.empty,[ModuleOrNamespaceBinding(mspecPriorToOuterOrExplicitSig,mexpr)],m)
+          let mdef = TMDefRec([],[ModuleOrNamespaceBinding.Module(mspecPriorToOuterOrExplicitSig,mexpr)],m)
           PublishModuleDefn cenv env mspec 
           let env = AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem env mspec
           
@@ -15883,20 +15883,22 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
 
 and TcMutRecDefsFinish cenv defs m =
     let tycons = defs |> List.choose (function MutRecShape.Tycon (Some tycon,_) -> Some tycon | _ -> None)
-    let binds = defs |> List.collect (function MutRecShape.Tycon (_,binds) | MutRecShape.Lets binds -> binds | _ -> [])
-    let mods = 
-        defs |> List.choose (function 
-           | MutRecShape.Tycon _ | MutRecShape.Open _ | MutRecShape.Lets _ -> None
-           | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
+    let binds = 
+        defs |> List.collect (function 
+            | MutRecShape.Open _ -> []
+            | MutRecShape.Tycon (_,binds) 
+            | MutRecShape.Lets binds -> 
+                binds |> List.map ModuleOrNamespaceBinding.Binding 
+            | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
                 // Apply the functions for each declaration to build the overall expression-builder 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
                 //let mexpr = TMDefs(List.foldBack (fun (f,_) x -> f x) compiledDefs []) 
                 // Collect up the attributes that are global to the file 
                 //let topAttrsNew = List.foldBack (fun (_,y) x -> y@x) compiledDefs []
-                Some (ModuleOrNamespaceBinding(mspec,mexpr)))
+                [ ModuleOrNamespaceBinding.Module(mspec,mexpr) ])
 
-    TMDefRec(tycons,binds,mods,m)
+    TMDefRec(tycons,binds,m)
 
 and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
   eventually {
@@ -15937,7 +15939,7 @@ and TcModuleOrNamespace cenv env (id,isRec,isModule,defs,xml,modAttrs,vis,m:rang
     // and mutated as we went. Record it in the mspec. 
     mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
 
-    return (topAttrs,mspec,ModuleOrNamespaceBinding(mspec,mexpr)), env, envAtEnd
+    return (topAttrs,mspec,(mspec,mexpr)), env, envAtEnd
  }
 
 

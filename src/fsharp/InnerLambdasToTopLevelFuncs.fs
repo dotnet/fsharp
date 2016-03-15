@@ -1286,10 +1286,9 @@ module Pass4_RewriteAssembly =
     and TransModuleDefs penv z x = List.foldMap (TransModuleDef penv) z x
     and TransModuleDef penv (z: RewriteState) x = 
         match x with 
-        | TMDefRec(tycons,binds,mbinds,m) -> 
-            let z,binds = TransValBindings penv z binds
+        | TMDefRec(tycons,mbinds,m) -> 
             let z,mbinds = TransModuleBindings penv z mbinds
-            z,TMDefRec(tycons,binds,mbinds,m)
+            z,TMDefRec(tycons,mbinds,m)
         | TMDefLet(bind,m)            -> 
             let z,bind = TransValBinding penv z bind
             z,TMDefLet(bind,m)
@@ -1303,9 +1302,14 @@ module Pass4_RewriteAssembly =
             let z,mexpr = TransModuleExpr penv z mexpr
             z,TMAbstract(mexpr)
     and TransModuleBindings penv z binds = List.foldMap (TransModuleBinding penv) z  binds
-    and TransModuleBinding penv z (ModuleOrNamespaceBinding(nm, rhs)) =
-        let z,rhs = TransModuleDef penv z rhs
-        z,ModuleOrNamespaceBinding(nm,rhs)
+    and TransModuleBinding penv z x = 
+        match x with 
+        | ModuleOrNamespaceBinding.Binding bind -> 
+            let z,bind = TransValBinding penv z bind
+            z,ModuleOrNamespaceBinding.Binding bind
+        | ModuleOrNamespaceBinding.Module(nm, rhs) -> 
+            let z,rhs = TransModuleDef penv z rhs
+            z,ModuleOrNamespaceBinding.Module(nm,rhs)
 
     let TransImplFile penv z mv = fmapTImplFile (TransModuleExpr penv) z mv
 

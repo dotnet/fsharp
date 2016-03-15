@@ -172,8 +172,10 @@ type cenv =
 
 let BindVal cenv (v:Val) = 
     //printfn "binding %s..." v.DisplayName
+    let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals.[v.Stamp] <- 1
-    if cenv.reportErrors && 
+    if not alreadyDone &&
+       cenv.reportErrors && 
        not v.HasBeenReferenced && 
        not v.IsCompiledAsTopLevel && 
        not (v.DisplayName.StartsWith("_", System.StringComparison.Ordinal)) && 
@@ -1091,7 +1093,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,e,_) as bind) =
 and CheckBindings cenv env xs = FlatList.iter (CheckBinding cenv env false) xs
 
 // Top binds introduce expression, check they are reraise free.
-let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
+let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
     let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
         cenv.entryPointGiven <- true;
@@ -1215,7 +1217,7 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
 
     CheckBinding cenv env true bind
 
-let CheckTopBindings cenv env binds = FlatList.iter (CheckTopBinding cenv env) binds
+let CheckModuleBindings cenv env binds = FlatList.iter (CheckModuleBinding cenv env) binds
 
 //--------------------------------------------------------------------------
 // check tycons
@@ -1489,15 +1491,14 @@ and CheckNothingAfterEntryPoint cenv m =
 
 and CheckDefnInModule cenv env x = 
     match x with 
-    | TMDefRec(tycons,binds,mspecs,m) -> 
+    | TMDefRec(tycons,mspecs,m) -> 
         CheckNothingAfterEntryPoint cenv m
-        BindVals cenv (valsOfBinds binds)
-        CheckEntityDefns cenv env tycons; 
-        CheckTopBindings cenv env binds;
+        BindVals cenv (allValsOfModDef x |> Seq.toList)
+        CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env) mspecs
     | TMDefLet(bind,m)  -> 
         CheckNothingAfterEntryPoint cenv m
-        CheckTopBinding cenv env bind 
+        CheckModuleBinding cenv env bind 
         BindVal cenv bind.Var
     | TMDefDo(e,m)  -> 
         CheckNothingAfterEntryPoint cenv m
@@ -1506,10 +1507,14 @@ and CheckDefnInModule cenv env x =
     | TMAbstract(def)  -> CheckModuleExpr cenv env def
     | TMDefs(defs) -> CheckDefnsInModule cenv env defs 
 
-and CheckModuleSpec cenv env (ModuleOrNamespaceBinding(mspec, rhs)) = 
-    CheckEntityDefn cenv env mspec;
-    let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
-    CheckDefnInModule cenv env rhs 
+and CheckModuleSpec cenv env x =
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind ->
+        CheckModuleBinding cenv env bind
+    | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
+        CheckEntityDefn cenv env mspec;
+        let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
+        CheckDefnInModule cenv env rhs 
 
 let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu,denv ,mexpr,extraAttribs,isLastCompiland) =
     let cenv = 
