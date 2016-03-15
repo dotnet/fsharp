@@ -1164,10 +1164,12 @@ and
     | ObjectModel of SynTypeDefnKind * SynMemberSigs * range
     /// Indicates the right right-hand-side is a record, union or other simple type. 
     | Simple of SynTypeDefnSimpleRepr * range 
+    | Exception of SynExceptionDefnRepr
     member this.Range =
         match this with
         | ObjectModel(_,_,m) -> m
         | Simple(_,m) -> m
+        | Exception e -> e.Range
 
 and 
     [<NoEquality; NoComparison>]
