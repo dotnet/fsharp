@@ -3370,6 +3370,121 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
     else
         None
 
+//-------------------------------------------------------------------------
+// Mutually recursive shapes
+//------------------------------------------------------------------------- 
+
+/// Represents the shape of a mutually recursive group of declarations including nested modules
+[<RequireQualifiedAccess>]
+type MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> = 
+    | Tycon of 'TypeData
+    | Lets of 'LetsData
+    | Module of 'ModuleData * MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> list
+    | Open of 'OpenData
+
+module MutRecShapes = 
+   let rec map f1 f2 f3 x = 
+       x |> List.map (function 
+           | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 a)
+           | MutRecShape.Lets b -> MutRecShape.Lets (f2 b)
+           | MutRecShape.Module (c,d) -> MutRecShape.Module (f3 c, map f1 f2 f3 d))
+
+
+   let mapTycons f1 xs = map f1 id id xs
+   let mapTyconsAndLets f1 f2 xs = map f1 f2 id xs
+   let mapLets f2 xs = map id f2 id xs
+   let mapModules f1 xs = map id id f1 xs
+
+   let rec mapWithEnv f1 f2 (env: 'Env) x = 
+       x |> List.map (function 
+           | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 env a)
+           | MutRecShape.Lets b -> MutRecShape.Lets (f2 env b)
+           | MutRecShape.Module ((c, env2),d) -> MutRecShape.Module ((c,env2), mapWithEnv f1 f2 env2 d))
+
+   let mapTyconsWithEnv f1 env xs = mapWithEnv f1 (fun _env x -> x) env xs
+
+   let rec mapWithParent parent f1 f2 f3 xs = 
+       xs |> List.map (function 
+           | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.Tycon a -> MutRecShape.Tycon (f2 parent a)
+           | MutRecShape.Lets b -> MutRecShape.Lets (f3 parent b)
+           | MutRecShape.Module (c,d) -> 
+               let c2, parent2 = f1 parent c
+               MutRecShape.Module (c2, mapWithParent parent2 f1 f2 f3 d))
+
+   let rec computeEnvs f1 f2 (env: 'Env) xs = 
+       let env = f2 env xs
+       env, 
+       xs |> List.map (function 
+           | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.Tycon a -> MutRecShape.Tycon a
+           | MutRecShape.Lets b -> MutRecShape.Lets b
+           | MutRecShape.Module (c,ds) -> 
+               let env2 = f1 env c
+               let env3, ds2 = computeEnvs f1 f2 env2 ds
+               MutRecShape.Module ((c,env3), ds2))
+
+   let rec extendEnvs f1 (env: 'Env) xs = 
+       let env = f1 env xs
+       env, 
+       xs |> List.map (function 
+           | MutRecShape.Module ((c,env),ds) -> 
+               let env2, ds2 = extendEnvs f1 env ds
+               MutRecShape.Module ((c,env2), ds2)
+           | x -> x)
+
+   let dropEnvs xs = xs |> mapModules fst
+
+   let rec expandTycons f1 env xs = 
+       let preBinds, postBinds = 
+           xs |> List.map (fun elem -> 
+               match elem with 
+               | MutRecShape.Tycon a -> f1 env a
+               | _ -> [], [])
+            |> List.unzip
+       [MutRecShape.Lets (List.concat preBinds)] @ 
+       (xs |> List.map (fun elem -> 
+           match elem with 
+           | MutRecShape.Module ((c,env2),d) -> MutRecShape.Module ((c,env2), expandTycons f1 env2 d)
+           | _ -> elem)) @
+       [MutRecShape.Lets (List.concat postBinds)] 
+
+   let rec mapFoldWithEnv f1 z env xs = 
+       (z,xs) ||> List.mapFold (fun z x ->
+           match x with
+           | MutRecShape.Module ((c,env2),ds) -> let ds2,z = mapFoldWithEnv f1 z env2 ds in MutRecShape.Module ((c, env2), ds2),z
+           | _ -> let x2,z = f1 z env x in x2, z)
+
+
+   let rec collectTycons x = 
+       x |> List.collect (function 
+           | MutRecShape.Tycon a -> [a]
+           | MutRecShape.Module (_,d) -> collectTycons d
+           | _ -> [])
+
+   let topTycons x = 
+       x |> List.choose (function MutRecShape.Tycon a -> Some a | _ -> None)
+
+   let rec iter f1 f2 f3 f4 x = 
+       x |> List.iter (function 
+           | MutRecShape.Tycon a -> f1 a
+           | MutRecShape.Lets b -> f2 b
+           | MutRecShape.Module (c,d) -> f3 c; iter f1 f2 f3 f4 d
+           | MutRecShape.Open a -> f4 a)
+
+   let iterTycons f1 x = iter f1 ignore ignore ignore  x
+   let iterModules f1 x = iter ignore ignore f1 ignore  x
+
+   let rec iterWithEnv f1 f2 f3 env x = 
+       x |> List.iter (function 
+           | MutRecShape.Tycon a -> f1 env a
+           | MutRecShape.Lets b -> f2 env b
+           | MutRecShape.Module ((_,env),d) -> iterWithEnv f1 f2 f3 env d
+           | MutRecShape.Open a -> f3 env a)
+
+   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
 //-------------------------------------------------------------------------
 // Post-transform initialization graphs using the 'lazy' interpretation.
@@ -3388,12 +3503,20 @@ type PreInitializationGraphEliminationBinding =
       Binding: Tast.Binding }
 
 
-let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithoutLaziness : PreInitializationGraphEliminationBinding list) bindsm =
-    // BEGIN INITIALIZATION GRAPHS 
-    // Check for safety and determine if we need to insert lazy thunks 
-    let fixupsl =  fixupsAndBindingsWithoutLaziness |> List.map (fun b -> b.FixupPoints)
-    let bindsWithoutLaziness =  fixupsAndBindingsWithoutLaziness |> List.map (fun b -> b.Binding)
-    let rvs = bindsWithoutLaziness |> List.map (fun (TBind(v,_,_)) -> mkLocalValRef v) 
+/// Check for safety and determine if we need to insert lazy thunks 
+let EliminateInitializationGraphs 
+      (getTyconBinds: 'TyconDataIn -> PreInitializationGraphEliminationBinding list) 
+      (morphTyconBinds: (PreInitializationGraphEliminationBinding list -> Binding list)  -> 'TyconDataIn -> 'TyconDataOut)
+      (getLetBinds: 'LetDataIn list -> PreInitializationGraphEliminationBinding list) 
+      (morphLetBinds: (PreInitializationGraphEliminationBinding list -> Binding list)  -> 'LetDataIn list -> Binding list)
+      g mustHaveArity denv 
+      (fixupsAndBindingsWithoutLaziness : MutRecShape<_,_,_,_> list) bindsm =
+
+    let recursiveVals = 
+        let hash = ValHash<Val>.Create()
+        let add (pgrbind: PreInitializationGraphEliminationBinding) = let c = pgrbind.Binding.Var in hash.Add(c,c)
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iter (getTyconBinds  >> List.iter add) (getLetBinds >> List.iter add) ignore ignore
+        hash
 
     // The output of the analysis
     let outOfOrder = ref false
@@ -3407,7 +3530,8 @@ let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithout
         | Expr.TyChoose(_,b,_) -> stripChooseAndExpr b
         | e -> e
 
-    let check availIfInOrder boundv expr = 
+    let availIfInOrder = ValHash<_>.Create()
+    let check boundv expr = 
         let strict = function
             | MaybeLazy -> MaybeLazy
             | DefinitelyLazy -> DefinitelyLazy
@@ -3447,7 +3571,7 @@ let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithout
                     List.iter (snd >> List.iter (fun (TObjExprMethod(_,_,_,_,e,_)) ->  CheckExpr (lzy (strict st)) e)) extraImpls
                 
               // Expressions where fixups may be needed 
-            | Expr.Val (v,_,m) -> CheckValSpec st v m
+            | Expr.Val (v,_,m) -> CheckValRef st v m
 
              // Expressions where subparts may be fixable 
             | Expr.Op((TOp.Tuple | TOp.UnionCase _ | TOp.Recd _),_,args,_) -> 
@@ -3487,28 +3611,28 @@ let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithout
 
         and CheckExprOp st op m = 
             match op with 
-            | TOp.LValueOp (_,lvr) -> CheckValSpec (strict st) lvr m
+            | TOp.LValueOp (_,lvr) -> CheckValRef (strict st) lvr m
             | _ -> ()
           
-        and CheckValSpec st v m = 
+        and CheckValRef st (v: ValRef) m = 
             match st with 
             | MaybeLazy -> 
-                if ListSet.contains g.valRefEq v rvs then 
+                if recursiveVals.TryFind v.Deref |> Option.isSome then 
                     warning (RecursiveUseCheckedAtRuntime (denv,v,m)) 
                     if not !reportedEager then 
                       (warning (LetRecCheckedAtRuntime m); reportedEager := true)
                     runtimeChecks := true
 
             | Top | DefinitelyStrict ->
-                if ListSet.contains g.valRefEq v rvs then 
-                    if not (ListSet.contains g.valRefEq v availIfInOrder) then 
+                if recursiveVals.TryFind v.Deref |> Option.isSome then 
+                    if availIfInOrder.TryFind v.Deref |> Option.isNone then 
                         warning (LetRecEvaluatedOutOfOrder (denv,boundv,v,m)) 
                         outOfOrder := true
                         if not !reportedEager then 
                           (warning (LetRecCheckedAtRuntime m); reportedEager := true)
                     definiteDependencies := (boundv,v) :: !definiteDependencies
             | InnerTop -> 
-                if ListSet.contains g.valRefEq v rvs then 
+                if recursiveVals.TryFind v.Deref |> Option.isSome then 
                     directRecursiveData := true
             | DefinitelyLazy -> () 
         and checkDelayed st b = 
@@ -3521,13 +3645,16 @@ let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithout
    
 
     // Check the bindings one by one, each w.r.t. the previously available set of binding
-    ([], bindsWithoutLaziness) ||> List.fold  (fun availIfInOrder (TBind(v,e,_)) -> 
-           check availIfInOrder (mkLocalValRef v) e 
-           (mkLocalValRef v::availIfInOrder))
-      |> ignore
+    begin
+        let checkBind (pgrbind: PreInitializationGraphEliminationBinding) = 
+            let (TBind(v,e,_)) = pgrbind.Binding
+            check (mkLocalValRef v) e 
+            availIfInOrder.Add(v, 1)
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iter (getTyconBinds >> List.iter checkBind) (getLetBinds >> List.iter checkBind) ignore ignore
+    end
     
     // ddg = definiteDependencyGraph 
-    let ddgNodes = bindsWithoutLaziness |> List.map (fun (TBind(v,_,_)) -> mkLocalValRef v) 
+    let ddgNodes = recursiveVals.Values |> Seq.toList |> List.map mkLocalValRef
     let ddg = Graph<ValRef, Stamp>((fun v -> v.Stamp), ddgNodes, !definiteDependencies )
     ddg.IterateCycles (fun path -> error (LetRecUnsound (denv,path,path.Head.Range))) 
 
@@ -3535,38 +3662,41 @@ let EliminateInitializationGraphs g mustHaveArity denv (fixupsAndBindingsWithout
     if !directRecursiveData && requiresLazyBindings then 
         error(Error(FSComp.SR.tcInvalidMixtureOfRecursiveForms(),bindsm))
 
-    let bindsBefore, bindsAfter = 
-      if requiresLazyBindings then 
-          let bindsBeforeL, bindsAfterL = 
-            
-              (fixupsl, bindsWithoutLaziness) 
-              ||> List.map2 (fun (RecursiveUseFixupPoints(fixupPoints)) (TBind(v,e,seqPtOpt)) -> 
-                   match stripChooseAndExpr e with
-                   | Expr.Lambda _ | Expr.TyLambda _ -> 
-                       [mkInvisibleBind v e],[] 
-                   | _ -> 
-                       let ty = v.Type
-                       let m = v.Range
-                       let vty = (mkLazyTy g ty)
+    if requiresLazyBindings then 
+        let morphBinding (pgrbind: PreInitializationGraphEliminationBinding) =
+            let (RecursiveUseFixupPoints(fixupPoints)) = pgrbind.FixupPoints
+            let (TBind(v,e,seqPtOpt)) = pgrbind.Binding
+            match stripChooseAndExpr e with
+            | Expr.Lambda _ | Expr.TyLambda _ -> 
+                [],[mkInvisibleBind v e] 
+            | _ -> 
+                let ty = v.Type
+                let m = v.Range
+                let vty = (mkLazyTy g ty)
 
-                       let fty = (g.unit_ty --> ty)
-                       let flazy,felazy = Tastops.mkCompGenLocal m  v.LogicalName fty 
-                       let frhs = mkUnitDelayLambda g m e
-                       if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g fty [] [] frhs))
+                let fty = (g.unit_ty --> ty)
+                let flazy,felazy = Tastops.mkCompGenLocal m  v.LogicalName fty 
+                let frhs = mkUnitDelayLambda g m e
+                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g fty [] [] frhs))
 
-                       let vlazy,velazy = Tastops.mkCompGenLocal m  v.LogicalName vty 
-                       let vrhs = (mkLazyDelayed g m ty felazy)
+                let vlazy,velazy = Tastops.mkCompGenLocal m  v.LogicalName vty 
+                let vrhs = (mkLazyDelayed g m ty felazy)
                        
-                       if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g vty [] [] vrhs))
-                       fixupPoints |> List.iter (fun (fp,_) -> fp := mkLazyForce g (!fp).Range ty velazy)
+                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g vty [] [] vrhs))
+                fixupPoints |> List.iter (fun (fp,_) -> fp := mkLazyForce g (!fp).Range ty velazy)
 
-                       [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
-                       [mkBind seqPtOpt v (mkLazyForce g m ty velazy)])
-               |> List.unzip
-          List.concat bindsBeforeL, List.concat bindsAfterL
-      else
-          bindsWithoutLaziness,[]
-    bindsBefore @ bindsAfter
+                [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
+                [mkBind seqPtOpt v (mkLazyForce g m ty velazy)]
+
+        let newTopBinds = ResizeArray<_>()
+        let morphBindings pgrbinds = pgrbinds |> List.map morphBinding |> List.unzip |> (fun (a,b) -> newTopBinds.Add (List.concat a); List.concat b)
+
+        let res = fixupsAndBindingsWithoutLaziness |> MutRecShapes.map (morphTyconBinds morphBindings) (morphLetBinds morphBindings) id 
+        if newTopBinds.Count = 0 then res
+        else MutRecShape.Lets (List.concat newTopBinds) :: res
+    else
+        let noMorph (pgrbinds : PreInitializationGraphEliminationBinding list) = pgrbinds |> List.map (fun pgrbind -> pgrbind.Binding) 
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.map (morphTyconBinds noMorph) (morphLetBinds noMorph) id 
 
 //-------------------------------------------------------------------------
 // Check the shape of an object constructor and rewrite calls 
@@ -3779,116 +3909,6 @@ type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option 
 // Additional data structures used by checking recursive bindings
 //------------------------------------------------------------------------- 
 
-[<RequireQualifiedAccess>]
-type MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> = 
-    | Tycon of 'TypeData
-    | Lets of 'LetsData
-    | Module of 'ModuleData * MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> list
-    | Open of 'OpenData
-
-module MutRecShapes = 
-   let rec map f1 f2 f3 x = 
-       x |> List.map (function 
-           | MutRecShape.Open a -> MutRecShape.Open a
-           | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 a)
-           | MutRecShape.Lets b -> MutRecShape.Lets (f2 b)
-           | MutRecShape.Module (c,d) -> MutRecShape.Module (f3 c, map f1 f2 f3 d))
-
-
-   let mapTycons f1 xs = map f1 id id xs
-   let mapTyconsAndLets f1 f2 xs = map f1 f2 id xs
-   let mapLets f2 xs = map id f2 id xs
-   let mapModules f1 xs = map id id f1 xs
-
-   let rec mapWithEnv f1 f2 (env: 'Env) x = 
-       x |> List.map (function 
-           | MutRecShape.Open a -> MutRecShape.Open a
-           | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 env a)
-           | MutRecShape.Lets b -> MutRecShape.Lets (f2 env b)
-           | MutRecShape.Module ((c, env2),d) -> MutRecShape.Module ((c,env2), mapWithEnv f1 f2 env2 d))
-
-   let mapTyconsWithEnv f1 env xs = mapWithEnv f1 (fun _env x -> x) env xs
-
-   let rec mapWithParent parent f1 f2 f3 xs = 
-       xs |> List.map (function 
-           | MutRecShape.Open a -> MutRecShape.Open a
-           | MutRecShape.Tycon a -> MutRecShape.Tycon (f2 parent a)
-           | MutRecShape.Lets b -> MutRecShape.Lets (f3 parent b)
-           | MutRecShape.Module (c,d) -> 
-               let c2, parent2 = f1 parent c
-               MutRecShape.Module (c2, mapWithParent parent2 f1 f2 f3 d))
-
-   let rec computeEnvs f1 f2 (env: 'Env) xs = 
-       let env = f2 env xs
-       env, 
-       xs |> List.map (function 
-           | MutRecShape.Open a -> MutRecShape.Open a
-           | MutRecShape.Tycon a -> MutRecShape.Tycon a
-           | MutRecShape.Lets b -> MutRecShape.Lets b
-           | MutRecShape.Module (c,ds) -> 
-               let env2 = f1 env c
-               let env3, ds2 = computeEnvs f1 f2 env2 ds
-               MutRecShape.Module ((c,env3), ds2))
-
-   let rec extendEnvs f1 (env: 'Env) xs = 
-       let env = f1 env xs
-       env, 
-       xs |> List.map (function 
-           | MutRecShape.Module ((c,env),ds) -> 
-               let env2, ds2 = extendEnvs f1 env ds
-               MutRecShape.Module ((c,env2), ds2)
-           | x -> x)
-
-   let dropEnvs xs = xs |> mapModules fst
-
-   let rec expandTycons f1 env xs = 
-       let preBinds, postBinds = 
-           xs |> List.map (fun elem -> 
-               match elem with 
-               | MutRecShape.Tycon a -> f1 env a
-               | _ -> [], [])
-            |> List.unzip
-       [MutRecShape.Lets (List.concat preBinds)] @ 
-       (xs |> List.map (fun elem -> 
-           match elem with 
-           | MutRecShape.Module ((c,env2),d) -> MutRecShape.Module ((c,env2), expandTycons f1 env2 d)
-           | _ -> elem)) @
-       [MutRecShape.Lets (List.concat postBinds)] 
-
-   let rec mapFoldWithEnv f1 z env xs = 
-       (z,xs) ||> List.mapFold (fun z x ->
-           match x with
-           | MutRecShape.Module ((c,env2),ds) -> let ds2,z = mapFoldWithEnv f1 z env2 ds in MutRecShape.Module ((c, env2), ds2),z
-           | _ -> let x2,z = f1 z env x in x2, z)
-
-
-   let rec collectTycons x = 
-       x |> List.collect (function 
-           | MutRecShape.Tycon a -> [a]
-           | MutRecShape.Module (_,d) -> collectTycons d
-           | _ -> [])
-
-   let topTycons x = 
-       x |> List.choose (function MutRecShape.Tycon a -> Some a | _ -> None)
-
-   let rec iter f1 f2 f3 f4 x = 
-       x |> List.iter (function 
-           | MutRecShape.Tycon a -> f1 a
-           | MutRecShape.Lets b -> f2 b
-           | MutRecShape.Module (c,d) -> f3 c; iter f1 f2 f3 f4 d
-           | MutRecShape.Open a -> f4 a)
-
-   let iterTycons f1 x = iter f1 ignore ignore ignore  x
-   let iterModules f1 x = iter ignore ignore f1 ignore  x
-
-   let rec iterWithEnv f1 f2 f3 env x = 
-       x |> List.iter (function 
-           | MutRecShape.Tycon a -> f1 env a
-           | MutRecShape.Lets b -> f2 env b
-           | MutRecShape.Module ((_,env),d) -> iterWithEnv f1 f2 f3 env d
-           | MutRecShape.Open a -> f3 env a)
-
-   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
 type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * DeclKind * SynBinding
 
@@ -10523,12 +10543,15 @@ and AnalyzeRecursiveDecl (cenv,envinner,tpenv,declKind,synTyparDecls,declaredTyp
             error(Error(FSComp.SR.tcAttributesInvalidInPatterns(),m))
             //analyzeRecursiveDeclPat pat' 
 
-        // This is for the construct
-        //    'let rec x = ... and do ... and y = ...' 
-        // DEPRECATED IN pars.mly 
-        | SynPat.Const (SynConst.Unit, m) -> 
-             let id = ident ("doval",m)
-             analyzeRecursiveDeclPat tpenv (SynPat.Named (SynPat.Wild m, id,false,None,m))
+        // This is for the construct 'let rec x = ... and do ... and y = ...' (DEPRECATED IN pars.mly )
+        //
+        // Also for 
+        //    module rec M = 
+        //        printfn "hello" // side effects in recursive modules
+        //        let x = 1
+        | SynPat.Const (SynConst.Unit, m) | SynPat.Wild m -> 
+             let id = ident (cenv.niceNameGen.FreshCompilerGeneratedName("doval",m),m)
+             analyzeRecursiveDeclPat tpenv (SynPat.Named (SynPat.Wild m, id, false, None, m))
              
         | SynPat.Named (SynPat.Wild _, id,_,vis2,_) -> 
             AnalyzeRecursiveStaticMemberOrValDecl (cenv,envinner,tpenv,declKind,newslotsOK,overridesOK,tcrefContainerInfo,vis1,id,vis2,declaredTypars,memberFlagsOpt,thisIdOpt,bindingAttribs,valSynInfo,ty,bindingRhs,mBinding,flex)
@@ -11129,7 +11152,17 @@ and TcLetrec  overridesOK cenv env tpenv (binds,bindsm,scopem) =
             | [] -> false
             | (rbind :: _) -> DeclKind.MustHaveArity rbind.RecBindingInfo.DeclKind
             
-        EliminateInitializationGraphs cenv.g mustHaveArity env.DisplayEnv bindsWithoutLaziness bindsm
+        let results = 
+           EliminateInitializationGraphs 
+             (fun _ -> failwith "unreachable 2 - no type definitions in recursivve group")
+             (fun _ -> failwith "unreachable 3 - no type definitions in recursivve group")
+             id
+             (fun morpher oldBinds -> morpher oldBinds)
+             cenv.g mustHaveArity env.DisplayEnv [MutRecShape.Lets bindsWithoutLaziness] bindsm
+        match results with 
+        | [MutRecShape.Lets newBinds; MutRecShape.Lets newBinds2] -> newBinds @ newBinds2
+        | [MutRecShape.Lets newBinds] -> newBinds
+        | _ -> failwith "unreachable 4 - gave a Lets shape, expected at most one pre-lets shape back"
     
     // Post letrec env 
     let envbody = AddLocalVals cenv.tcSink scopem prelimRecValues env 
@@ -13025,16 +13058,13 @@ module MutRecBindingChecking =
         let defnsDs = TcMutRecBindings_Phase2D_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs)
         
         // Phase2E - rewrite values to initialization graphs
-        //
-        // TODO: Note that this does initialization graphs in each type independently.
         let defnsEs = 
-            defnsDs |> MutRecShapes.map 
-                (fun (tyconOpt, fixupValueExprBinds, methodBinds) -> 
-                    let fixedBinds = EliminateInitializationGraphs g true denv fixupValueExprBinds bindsm
-                    tyconOpt, fixedBinds @ methodBinds)
-                (fun (fixupValueExprBinds) -> 
-                    EliminateInitializationGraphs g true denv fixupValueExprBinds bindsm)
-                id
+           EliminateInitializationGraphs 
+             p23
+             (fun morpher (tyconOpt,fixupValueExprBinds,methodBinds) -> (tyconOpt, morpher fixupValueExprBinds @ methodBinds))
+             id
+             (fun morpher oldBinds -> morpher oldBinds)
+             g true denv defnsDs bindsm 
         
         defnsEs,envMutRec
 
@@ -15754,7 +15784,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
           let envForNamespace = LocateEnv cenv.topCcu env enclosingNamespacePath
           let envForNamespace = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envForNamespace
 
-          let! mexpr, topAttrs, _, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envForNamespace xml isRec defs
+          let! mexpr, topAttrs, _, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envForNamespace xml (if isModule then false else isRec) defs
           
           let env = 
               if isNil enclosingNamespacePath then 
@@ -15783,32 +15813,21 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
         return ((fun e -> e), []), env, env
  }
  
-and (|MutRecDirective|_|) d = 
-    match d with 
-    | ParsedHashDirective(("allow_forward_references_in_this_scope" | "rec" | "mutrec" | "fwdrec" | "allow_forward_references"),[],_)  -> Some () 
-    | _ -> None
-
-and TcModuleOrNamespaceElementsAux cenv parent endm (defsSoFar, env, envAtEnd) isRec (moreDefs: SynModuleDecl list) =
+and TcModuleOrNamespaceElementsAux cenv parent endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
  eventually {
     match moreDefs with 
-    // rec indicates a mutrec section
-    | defs when isRec ->
-        return! TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
-    // #rec indicates a mutrec section
-    | SynModuleDecl.HashDirective(MutRecDirective,_) :: defs -> 
-        return! TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
-    | (h1 :: t) ->
+    | (firstDef :: otherDefs) ->
         // Lookahead one to find out the scope of the next declaration.
         let scopem = 
-            if isNil t then unionRanges h1.Range endm
-            else unionRanges (List.head t).Range endm
+            if isNil otherDefs then unionRanges firstDef.Range endm
+            else unionRanges (List.head otherDefs).Range endm
 
         // Possibly better:
         //let scopem = unionRanges h1.Range.EndRange endm
         
-        let! h1',env', envAtEnd' = TcModuleOrNamespaceElement cenv parent scopem env h1
+        let! firstDef',env', envAtEnd' = TcModuleOrNamespaceElement cenv parent scopem env firstDef
         // tail recursive 
-        return! TcModuleOrNamespaceElementsAux  cenv parent endm ( (h1' :: defsSoFar), env', envAtEnd') isRec t
+        return! TcModuleOrNamespaceElementsAux  cenv parent endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
     | [] -> 
         return List.rev defsSoFar,env, envAtEnd
  }
@@ -15906,7 +15925,11 @@ and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
     if cenv.compilingCanonicalFslibModuleType then 
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath (xml.ToXmlDoc())
 
-    let! compiledDefs, env, envAtEnd = TcModuleOrNamespaceElementsAux cenv parent endm ([], env, env) isRec defs 
+    let! compiledDefs, env, envAtEnd = 
+          if isRec then 
+              TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
+          else
+              TcModuleOrNamespaceElementsAux cenv parent endm ([], env, env) defs 
 
     // Apply the functions for each declaration to build the overall expression-builder 
     let mexpr = TMDefs(List.foldBack (fun (f,_) x -> f x) compiledDefs []) 
