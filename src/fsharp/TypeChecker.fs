@@ -3444,7 +3444,7 @@ module MutRecShapes =
 
    let dropEnvs xs = xs |> mapModules fst
 
-   let rec expandTycons f1 env xs = 
+   let rec expandTyconsWithEnv f1 env xs = 
        let preBinds, postBinds = 
            xs |> List.map (fun elem -> 
                match elem with 
@@ -3454,7 +3454,7 @@ module MutRecShapes =
        [MutRecShape.Lets (List.concat preBinds)] @ 
        (xs |> List.map (fun elem -> 
            match elem with 
-           | MutRecShape.Module ((c,env2),d) -> MutRecShape.Module ((c,env2), expandTycons f1 env2 d)
+           | MutRecShape.Module ((c,env2),d) -> MutRecShape.Module ((c,env2), expandTyconsWithEnv f1 env2 d)
            | _ -> elem)) @
        [MutRecShape.Lets (List.concat postBinds)] 
 
@@ -13684,7 +13684,7 @@ module TcExceptionDeclarations =
         let binds1,exnc = TcExnDefnCore cenv envInitial parent core
         let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem exnc (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial)
 
-        let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, (mkLocalEntityRef exnc), None, NoSafeInitInfo, [], aug, m, NoNewSlots))]
+        let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots))]
         let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRec, defns)
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
         // Augment types with references to values that implement the pre-baked semantics of the type
@@ -13831,7 +13831,7 @@ module EstablishTypeDefinitionCores =
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
     let private TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor, _)) = 
-        let (ComponentInfo(_,synTypars, _,id,doc,preferPostfix, vis,_)) = synTyconInfo
+        let (ComponentInfo(_, synTypars, _, id, doc, preferPostfix, synVis, _)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
         match synTyconRepr with 
@@ -13843,13 +13843,13 @@ module EstablishTypeDefinitionCores =
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
         CheckForDuplicateConcreteType env id.idText id.idRange
         CheckForDuplicateModule env id.idText id.idRange
-        let vis,cpath = ComputeAccessAndCompPath env None id.idRange vis parent
+        let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis parent
 
         // Establish the visibility of the representation, e.g.
         //   type R = 
         //      private { f:int }
         //      member x.P = x.f + x.f
-        let visOfRepr = 
+        let synVisOfRepr = 
             match synTyconRepr with 
             | SynTypeDefnSimpleRepr.None _ -> None
             | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
@@ -13860,7 +13860,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
          
-        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange visOfRepr parent
+        let visOfRepr,_ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -14879,10 +14879,10 @@ module EstablishTypeDefinitionCores =
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName cenv.g id
 
-        let _envinner, mtypeAcc = MakeInnerEnv envInitial id modKind    
+        let envForDecls, mtypeAcc = MakeInnerEnv envInitial id modKind    
         let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
         let innerParent = Parent (mkLocalModRef mspec)
-        MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), innerParent
+        MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), (innerParent, envForDecls)
     
 
     // Interlude between Phase1D and Phase1E - Check and publish the explicit constraints. 
@@ -14907,23 +14907,23 @@ module EstablishTypeDefinitionCores =
         let withEntities = 
             typeDefCores 
             |> MutRecShapes.mapWithParent 
-                 parent 
+                 (parent, envInitial)
                  // Do this for each module definition, building the initial Entity:
-                 (fun innerParent modInfo -> 
-                     TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial innerParent modInfo) 
+                 (fun (innerParent, envForDecls) modInfo -> 
+                     TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent modInfo) 
 
                  // Do this for each type definition, building the initial Tycon:
-                 (fun innerParent (typeDefCore,tyconMemberInfo) -> 
+                 (fun (innerParent, envForDecls) (typeDefCore,tyconMemberInfo) -> 
                      let (MutRecDefnsPhase1DataForTycon(_,_,_,_,_,isAtOriginalTyconDefn)) = typeDefCore
                      let tyconOpt = 
                          if isAtOriginalTyconDefn then 
-                             Some (TcTyconDefnCore_Phase1A_BuildInitialTycon cenv envInitial innerParent typeDefCore)
+                             Some (TcTyconDefnCore_Phase1A_BuildInitialTycon cenv envForDecls innerParent typeDefCore)
                          else 
                              None 
                      (typeDefCore, tyconMemberInfo, innerParent), tyconOpt) 
 
                  // Do this for each 'let' definition (just package up the data, no processing)
-                 (fun innerParent synBinds ->               
+                 (fun (innerParent,_) synBinds ->               
                     let containerInfo = ModuleOrNamespaceContainerInfo(match innerParent with Parent p -> p | _ -> failwith "unreachable")
                     mkLetInfo containerInfo synBinds)
 
@@ -15396,7 +15396,7 @@ module TcDeclarations = begin
         // Note: generating these bindings must come after generating the members, since some in the case of structs some fields
         // may be added by generating the implicit construction syntax 
         let withExtraBindings = 
-            (envFinal,withBindings) ||> MutRecShapes.expandTycons (fun envForDecls (tyconOpt, _) -> 
+            (envFinal,withBindings) ||> MutRecShapes.expandTyconsWithEnv (fun envForDecls (tyconOpt, _) -> 
                 match tyconOpt with 
                 | None -> [],[] 
                 | Some tycon -> 
