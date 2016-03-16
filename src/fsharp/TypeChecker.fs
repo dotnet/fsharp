@@ -11165,8 +11165,8 @@ and TcLetrec  overridesOK cenv env tpenv (binds,bindsm,scopem) =
             
         let results = 
            EliminateInitializationGraphs 
-             (fun _ -> failwith "unreachable 2 - no type definitions in recursivve group")
-             (fun _ -> failwith "unreachable 3 - no type definitions in recursivve group")
+             (fun _ _ -> failwith "unreachable 2 - no type definitions in recursivve group")
+             (fun _ _ -> failwith "unreachable 3 - no type definitions in recursivve group")
              id
              (fun morpher oldBinds -> morpher oldBinds)
              cenv.g mustHaveArity env.DisplayEnv [MutRecShape.Lets bindsWithoutLaziness] bindsm
