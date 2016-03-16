@@ -13,7 +13,7 @@
     "System.Runtime.InteropServices": "4.1.0-rc2-23911",
     "System.Runtime.InteropServices.PInvoke": "4.0.0-rc2-23911",
     "System.Runtime.Loader": "4.0.0-rc2-23911",
-    "System.Security.Cryptography.Algorithms": "4.0.0-rc2-23911",
+    "System.Security.Cryptography.Algorithms": "4.1.0-rc2-23911",
     "System.Security.Cryptography.Primitives": "4.0.0-rc2-23911",
     "System.Threading.Thread": "4.0.0-rc2-23911",
     "System.Threading.ThreadPool": "4.0.10-rc2-23911",
