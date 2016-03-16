@@ -598,7 +598,7 @@ let writeMdbInfo fmdb f info =
 //---------------------------------------------------------------------
 open Printf
 
-let dumpDebugInfo (outfile:string) (info:PdbData) = 
+let logDebugInfo (outfile:string) (info:PdbData) = 
     use sw = new StreamWriter(new FileStream(outfile + ".debuginfo", FileMode.Create))
 
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome

@@ -4177,7 +4177,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     reportTime showTimes "Writing Image"
 
-    if dumpDebugInfo then dumpDebugInfo outfile pdbData
+    if dumpDebugInfo then logDebugInfo outfile pdbData
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with

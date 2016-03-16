@@ -61,7 +61,7 @@ val getDebugFileName: string -> string
 
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 val sizeof_IMAGE_DEBUG_DIRECTORY : System.Int32
-val dumpDebugInfo : string -> PdbData -> unit
+val logDebugInfo : string -> PdbData -> unit
 
 #if ENABLE_MONO_SUPPORT
 val writeMdbInfo<'a> : string -> string -> PdbData -> 'a

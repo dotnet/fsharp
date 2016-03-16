@@ -131,7 +131,7 @@ module internal FSharpEnvironment =
                         | true  -> KEY_WOW64_32KEY
                         | false -> KEY_WOW64_DEFAULT
                     with
-                    | _ -> false
+                    | _ -> KEY_WOW64_DEFAULT
 
                 let mutable hkey = UIntPtr.Zero;
                 let pathResult = Marshal.AllocCoTaskMem(maxDataLength);

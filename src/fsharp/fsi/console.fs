@@ -133,9 +133,6 @@ module internal Utils =
             | None          -> failwith "Internal Error: cannot bind to method"
             | Some methInfo -> methInfo        
 
-
-#if FX_REDUCED_CONSOLE
-#else
 [<Sealed>]
 type internal Cursor =
     static member ResetTo(top,left) = 
@@ -157,13 +154,9 @@ type internal Anchor =
         let left = inset + (( (p.left - inset) + index) % (Console.BufferWidth - inset))
         let top = p.top + ( (p.left - inset) + index) / (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
-#endif
 
 type internal ReadLineConsole() =
-#if FX_REDUCED_CONSOLE
-#else
     let history = new History()
-#endif
     let mutable complete : (string option * string -> seq<string>) = fun (_s1,_s2) -> Seq.empty
     member x.SetCompletionFunction f = complete <- f
 
@@ -222,10 +215,6 @@ type internal ReadLineConsole() =
 
     static member TabSize = 4;
 
-#if FX_REDUCED_CONSOLE
-    member x.ReadLine() =
-        Console.ReadLine()
-#else
     member x.ReadLine() =
 
         let checkLeftEdge(prompt) = 
@@ -437,5 +426,3 @@ type internal ReadLineConsole() =
            changed := true;
            read() 
         read()
-#endif
-

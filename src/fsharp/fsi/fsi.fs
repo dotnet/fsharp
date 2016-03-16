@@ -680,9 +680,6 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
 type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextReader, outWriter: TextWriter) =
 
     let consoleLooksOperational() =
-#if FX_REDUCED_CONSOLE
-        true 
-#else
         if fsiOptions.ProbeToSeeIfConsoleWorks then 
             try
                 // Probe to see if the console looks functional on this version of .NET
@@ -695,7 +692,6 @@ type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextR
                 false
         else
             true 
-#endif
 
     let consoleOpt =
         // The "console.fs" code does a limited form of "TAB-completion".
@@ -2239,7 +2235,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #endif
     do tcConfigB.useFsiAuxLib <- true
 
-#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+#if TODO_REWORK_ASSEMBLY_LOAD
     do tcConfigB.useMonoResolution<-true
 #else
 #endif

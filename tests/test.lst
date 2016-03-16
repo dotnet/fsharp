@@ -38,7 +38,7 @@ Core03		fsharp\core\interop
 Core03,coreclr		fsharp\core\ilread
 Core03,coreclr		fsharp\core\lazy
 Core03		fsharp\core\letrec
-Core03,		fsharp\core\libtest
+Core03		fsharp\core\libtest
 Core03		fsharp\core\lift
 Core03		fsharp\core\load-script
 Core03		fsharp\core\longnames

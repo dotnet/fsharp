@@ -320,7 +320,7 @@ module internal MSBuildResolver =
              |]    
             
         let assemblies = 
-#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+#if RESHAPED_MSBUILD
             ignore references
             [||]
 #else
@@ -338,7 +338,7 @@ module internal MSBuildResolver =
 #if BUILDING_WITH_LKG
         ignore targetProcessorArchitecture
 #else       
-#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+#if FX_RESHAPED_REFLECTION
 #else
         rar.TargetedRuntimeVersion <- typeof<obj>.Assembly.ImageRuntimeVersion
 #endif
@@ -346,7 +346,7 @@ module internal MSBuildResolver =
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif        
         rar.Assemblies <- 
-#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+#if RESHAPED_MSBUILD
                           [||]
 #else
                           [| for (referenceName,baggage) in references -> 
