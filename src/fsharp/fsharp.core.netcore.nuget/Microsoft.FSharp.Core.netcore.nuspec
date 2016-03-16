@@ -15,7 +15,6 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23911" />
                 <dependency id="NETStandard.Library" version="1.5.0-rc2-23911" />
                 <dependency id="System.Linq.Expressions" version="4.0.11-rc2-23911" />
                 <dependency id="System.Linq.Queryable" version="4.0.1-rc2-23911" />
