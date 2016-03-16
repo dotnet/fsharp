@@ -6,6 +6,7 @@
     "System.Runtime.Loader": "4.0.0-rc2-23911",
     "System.Threading.Thread": "4.0.0-rc2-23911",
     "System.Reflection.Metadata": "1.3.0-rc2-23911",
+    "System.Reflection.TypeExtensions": "4.1.0-rc2-23911",
     "NETStandard.Library": "1.5.0-rc2-23911"
   },
   "runtimes": {
