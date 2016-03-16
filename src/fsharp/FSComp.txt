@@ -1274,4 +1274,5 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3197,tcUnsupportedMutRecDecl,"This declaration is not supported in recursive declaration groups"
 3198,parsInvalidUseOfRec,"Invalid use of 'rec' keyword"
 3199,tcRecImplied,"The 'rec' on this module is implied by an outer 'rec' declaration and is being ignored"
-3200,tcOpenFirstInMutRec,"'open' declarations must come first in a module in a recursive declaration group"
+3200,tcOpenFirstInMutRec,"In a recursive declaration group, 'open' declarations must come first in each module"
+3201,tcModuleAbbrevFirstInMutRec,"In a recursive declaration group, module abbreviations must come after all 'open' declarations and before other declarations"

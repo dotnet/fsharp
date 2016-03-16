@@ -3376,16 +3376,20 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
-type MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> = 
+type MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = 
     | Tycon of 'TypeData
     | Lets of 'LetsData
-    | Module of 'ModuleData * MutRecShape<'TypeData, 'LetsData, 'ModuleData,'OpenData> list
+    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> 
+    | ModuleAbbrev of 'ModuleAbbrevData 
     | Open of 'OpenData
+
+and MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> list
 
 module MutRecShapes = 
    let rec map f1 f2 f3 x = 
        x |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.ModuleAbbrev b -> MutRecShape.ModuleAbbrev b
            | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 a)
            | MutRecShape.Lets b -> MutRecShape.Lets (f2 b)
            | MutRecShape.Module (c,d) -> MutRecShape.Module (f3 c, map f1 f2 f3 d))
@@ -3396,18 +3400,20 @@ module MutRecShapes =
    let mapLets f2 xs = map id f2 id xs
    let mapModules f1 xs = map id id f1 xs
 
-   let rec mapWithEnv f1 f2 (env: 'Env) x = 
+   let rec mapWithEnv fTycon fLets (env: 'Env) x = 
        x |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
-           | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 env a)
-           | MutRecShape.Lets b -> MutRecShape.Lets (f2 env b)
-           | MutRecShape.Module ((c, env2),d) -> MutRecShape.Module ((c,env2), mapWithEnv f1 f2 env2 d))
+           | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
+           | MutRecShape.Tycon a -> MutRecShape.Tycon (fTycon env a)
+           | MutRecShape.Lets b -> MutRecShape.Lets (fLets env b)
+           | MutRecShape.Module ((c, env2),d) -> MutRecShape.Module ((c,env2), mapWithEnv fTycon fLets env2 d))
 
    let mapTyconsWithEnv f1 env xs = mapWithEnv f1 (fun _env x -> x) env xs
 
    let rec mapWithParent parent f1 f2 f3 xs = 
        xs |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
            | MutRecShape.Tycon a -> MutRecShape.Tycon (f2 parent a)
            | MutRecShape.Lets b -> MutRecShape.Lets (f3 parent b)
            | MutRecShape.Module (c,d) -> 
@@ -3419,6 +3425,7 @@ module MutRecShapes =
        env, 
        xs |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
+           | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
            | MutRecShape.Tycon a -> MutRecShape.Tycon a
            | MutRecShape.Lets b -> MutRecShape.Lets b
            | MutRecShape.Module (c,ds) -> 
@@ -3467,24 +3474,27 @@ module MutRecShapes =
    let topTycons x = 
        x |> List.choose (function MutRecShape.Tycon a -> Some a | _ -> None)
 
-   let rec iter f1 f2 f3 f4 x = 
+   let rec iter f1 f2 f3 f4 f5 x = 
        x |> List.iter (function 
            | MutRecShape.Tycon a -> f1 a
            | MutRecShape.Lets b -> f2 b
-           | MutRecShape.Module (c,d) -> f3 c; iter f1 f2 f3 f4 d
-           | MutRecShape.Open a -> f4 a)
+           | MutRecShape.Module (c,d) -> f3 c; iter f1 f2 f3 f4 f5 d
+           | MutRecShape.Open a -> f4 a
+           | MutRecShape.ModuleAbbrev a -> f5 a)
 
-   let iterTycons f1 x = iter f1 ignore ignore ignore  x
-   let iterModules f1 x = iter ignore ignore f1 ignore  x
+   let iterTycons f1 x = iter f1 ignore ignore ignore ignore x
+   let iterTyconsAndLets f1 f2 x = iter f1 f2 ignore ignore ignore x
+   let iterModules f1 x = iter ignore ignore f1 ignore ignore x
 
-   let rec iterWithEnv f1 f2 f3 env x = 
+   let rec iterWithEnv f1 f2 f3 f4 env x = 
        x |> List.iter (function 
            | MutRecShape.Tycon a -> f1 env a
            | MutRecShape.Lets b -> f2 env b
-           | MutRecShape.Module ((_,env),d) -> iterWithEnv f1 f2 f3 env d
-           | MutRecShape.Open a -> f3 env a)
+           | MutRecShape.Module ((_,env),d) -> iterWithEnv f1 f2 f3 f4 env d
+           | MutRecShape.Open a -> f3 env a
+           | MutRecShape.ModuleAbbrev a -> f4 env a)
 
-   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) env xs
+   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
 //-------------------------------------------------------------------------
 // Post-transform initialization graphs using the 'lazy' interpretation.
@@ -3510,12 +3520,12 @@ let EliminateInitializationGraphs
       (getLetBinds: 'LetDataIn list -> PreInitializationGraphEliminationBinding list) 
       (morphLetBinds: (PreInitializationGraphEliminationBinding list -> Binding list)  -> 'LetDataIn list -> Binding list)
       g mustHaveArity denv 
-      (fixupsAndBindingsWithoutLaziness : MutRecShape<_,_,_,_> list) bindsm =
+      (fixupsAndBindingsWithoutLaziness : MutRecShape<_,_,_,_,_> list) bindsm =
 
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
         let add (pgrbind: PreInitializationGraphEliminationBinding) = let c = pgrbind.Binding.Var in hash.Add(c,c)
-        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iter (getTyconBinds  >> List.iter add) (getLetBinds >> List.iter add) ignore ignore
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iterTyconsAndLets (getTyconBinds  >> List.iter add) (getLetBinds >> List.iter add) 
         hash
 
     // The output of the analysis
@@ -3650,7 +3660,7 @@ let EliminateInitializationGraphs
             let (TBind(v,e,_)) = pgrbind.Binding
             check (mkLocalValRef v) e 
             availIfInOrder.Add(v, 1)
-        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iter (getTyconBinds >> List.iter checkBind) (getLetBinds >> List.iter checkBind) ignore ignore
+        fixupsAndBindingsWithoutLaziness |> MutRecShapes.iterTyconsAndLets (getTyconBinds >> List.iter checkBind) (getLetBinds >> List.iter checkBind) 
     end
     
     // ddg = definiteDependencyGraph 
@@ -3912,20 +3922,21 @@ type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option 
 
 type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * DeclKind * SynBinding
 
-type MutRecDataForOpenDecl = MutRecDataForOpenDecl of LongIdent * range
+type MutRecDataForOpen = MutRecDataForOpen of LongIdent * range
+type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
-type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynBinding list, SynComponentInfo, MutRecDataForOpenDecl > list
-type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForOpenDecl > list
+type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
-type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
-type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list,  MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list,  MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list
-type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl > list
+type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -12308,10 +12319,8 @@ module MutRecBindingChecking =
     type TyconBindingsPhase2A = 
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
-    type MutRecBindingPhase2A = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
-
     /// The collected syntactic input definitions for a recursive group of type or type-extension definitions
-    type MutRecBindingsPhase2A = MutRecBindingPhase2A list
+    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen>  list
 
     /// Represents one element in a type definition, after the second phase
     type TyconBindingPhase2B =
@@ -12330,9 +12339,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
-    type MutRecBindingPhase2B = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
-
-    type MutRecBindingsPhase2B = MutRecBindingPhase2B list
+    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
 
     /// Represents one element in a type definition, after the third phase
     type TyconBindingPhase2C =
@@ -12346,9 +12353,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
-    type MutRecBindingPhase2C = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForOpenDecl> 
-
-    type MutRecBindingsPhase2C = MutRecBindingPhase2C list
+    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
 
 
 
@@ -12362,13 +12367,14 @@ module MutRecBindingChecking =
         //    recBindIdx:          index of the recursive binding
         //    prelimRecValuesRev:  accumulation of prelim value entries
         //    uncheckedBindsRev:   accumulation of unchecked bindings
-        let (defnsAs: MutRecBindingsPhase2A), (tpenv,_,uncheckedBindsRev) =
+        let (defnsAs: MutRecDefnsPhase2AData), (tpenv,_,uncheckedBindsRev) =
             let initialOuterState = (tpenv, 0, ([]: PreCheckingRecursiveBinding list))
-            (initialOuterState, envMutRec, mutRecDefns) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defns -> 
+            (initialOuterState, envMutRec, mutRecDefns) |||> MutRecShapes.mapFoldWithEnv (fun outerState envForDecls defn -> 
               let (tpenv,recBindIdx,uncheckedBindsRev) = outerState
-              match defns with 
+              match defn with 
               | MutRecShape.Module _ ->  failwith "unreachable"
               | MutRecShape.Open x ->  MutRecShape.Open x, outerState 
+              | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState 
               | MutRecShape.Lets recBinds -> 
                 let normRecDefns = 
                    [ for (RecDefnBindingInfo(a,b,c,bind)) in recBinds do 
@@ -12526,9 +12532,9 @@ module MutRecBindingChecking =
 
     /// Phase2B: check each of the bindings, convert from ast to tast and collects type assertions.
     /// Also generalize incrementally.
-    let TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecBindingsPhase2A, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecBindingsPhase2B * _ * _ =
+    let TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs:MutRecDefnsPhase2AData, uncheckedRecBinds: PreCheckingRecursiveBinding list, scopem) : MutRecDefnsPhase2BData * _ * _ =
 
-        let (defnsBs: MutRecBindingsPhase2B), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
+        let (defnsBs: MutRecDefnsPhase2BData), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
 
             let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList 
 
@@ -12558,6 +12564,7 @@ module MutRecBindingChecking =
               match defnsA with 
               | MutRecShape.Module _ -> failwith "unreachable"
               | MutRecShape.Open x ->  MutRecShape.Open x, outerState 
+              | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState 
               | MutRecShape.Lets binds ->
                 
                 let defnBs,(tpenv,_,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable) = 
@@ -12734,7 +12741,7 @@ module MutRecBindingChecking =
 
     // Choose type scheme implicit constructors and adjust their recursive types.
     // Fixup recursive references to members.
-    let TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs: MutRecBindingsPhase2B, generalizedTyparsForRecursiveBlock: Typar list, generalizedRecBinds: PostGeneralizationRecursiveBinding list, scopem) =
+    let TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs: MutRecDefnsPhase2BData, generalizedTyparsForRecursiveBlock: Typar list, generalizedRecBinds: PostGeneralizationRecursiveBinding list, scopem) =
         // Build an index ---> binding map
         let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> Map.ofList
 
@@ -12785,7 +12792,7 @@ module MutRecBindingChecking =
     // --- Extract field bindings from let-bindings 
     // --- Extract method bindings from let-bindings 
     // --- Extract bindings for implicit constructors
-    let TcMutRecBindings_Phase2D_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecBindingsPhase2C) =
+    let TcMutRecBindings_Phase2D_ExtractImplicitFieldAndMethodBindings cenv envMutRec tpenv (denv, generalizedTyparsForRecursiveBlock, defnsCs: MutRecDefnsPhase2CData) =
 
       //  let (fixupValueExprBinds, methodBinds) = 
             (envMutRec, defnsCs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (TyconBindingsPhase2C(tyconOpt, tcref,defnCs)) -> 
@@ -12922,6 +12929,18 @@ module MutRecBindingChecking =
                     let memberBindsWithFixups = defnCs |> List.choose (function Phase2CMember pgrbind -> Some pgrbind | _ -> None) 
                     tyconOpt, memberBindsWithFixups,[])
 
+    /// Check a "module X = A.B.C" module abbreviation declaration
+    let TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m) = 
+        let ad = env.eAccessRights
+        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
+        let modrefs = mvvs |> List.map p23 
+        if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
+            errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
+        let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
+        modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
+        let env = (if modrefs.Length > 0 then AddModuleAbbreviation cenv.tcSink scopem id modrefs env else env)
+        env
+
 
     /// Compute the active environments within each nested module.
     let TcMutRecDefns_ComputeEnvs (cenv: cenv) report getTyconOpt scopem m envInitial mutRecShape =
@@ -12929,15 +12948,17 @@ module MutRecBindingChecking =
             (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
             (fun envAbove decls -> 
 
-                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpenDecl (mp,m)) -> Some (mp,m) | _ -> None)
                 let tycons =  decls |> List.choose (function MutRecShape.Tycon d -> getTyconOpt d | _ -> None) 
                 let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec),_) -> Some mspec | _ -> None)
+                let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id,mp,m)) -> Some (id,mp,m) | _ -> None)
+                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (mp,m)) -> Some (mp,m) | _ -> None)
 
                 // Add the type definitions, exceptions, modules and "open" declarations
                 let envForDecls = if report then AddLocalTycons cenv.g cenv.amap scopem tycons envAbove else AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envAbove
                 let envForDecls = (envForDecls, tycons) ||> List.fold (fun env tycon -> if tycon.IsExceptionDecl then AddLocalExnDefnAndReport cenv.tcSink scopem tycon env else env)
                 let envForDecls = (envForDecls, mspecs) ||> List.fold (AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem)
                 let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
+                let envForDecls = (envForDecls, moduleAbbrevs) ||> List.fold (TcModuleAbbrevDecl cenv scopem)
                 envForDecls)
 
     /// Check the members and 'let' definitions in a mutually recursive group of definitions.
@@ -14199,7 +14220,7 @@ module EstablishTypeDefinitionCores =
 
     // Third phase: check and publish the supr types. Run twice, once before constraints are established
     // and once after
-    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns:MutRecShape<(_ * (Tycon * Attribs) option),_,_,_> list) = 
+    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns:MutRecShape<(_ * (Tycon * Attribs) option),_,_,_,_> list) = 
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
 
@@ -14879,7 +14900,7 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-    let TcMutRecDefns_Phase1 cenv envInitial parent inSig tpenv (typeDefCores:MutRecShape<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo,_> list, m, scopem) =
+    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent inSig tpenv (typeDefCores:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>, m, scopem) =
 
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these.  Augmentations are skipped in this phase.
@@ -14904,7 +14925,7 @@ module EstablishTypeDefinitionCores =
                  // Do this for each 'let' definition (just package up the data, no processing)
                  (fun innerParent synBinds ->               
                     let containerInfo = ModuleOrNamespaceContainerInfo(match innerParent with Parent p -> p | _ -> failwith "unreachable")
-                    [ for synBind in synBinds -> RecDefnBindingInfo(containerInfo,NoNewSlots,ModuleOrMemberBinding,synBind) ])
+                    mkLetInfo containerInfo synBinds)
 
         // Phase1AB - Publish modules
         let envTmp, withEnvs =  
@@ -15345,7 +15366,10 @@ module TcDeclarations = begin
     let TcMutRecDefinitions cenv envInitial parent tpenv (mutRecDefns: MutRecDefnsInitialData,m,scopem) =
         let inSig = false
         let mutRecDefnsAfterSplit = SplitMutRecDefns mutRecDefns
-        let tycons, envMutRecPrelim, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 cenv envInitial parent inSig tpenv (mutRecDefnsAfterSplit,m,scopem)
+        let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 
+            EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 
+               (fun containerInfo synBinds -> [ for synBind in synBinds -> RecDefnBindingInfo(containerInfo,NoNewSlots,ModuleOrMemberBinding,synBind) ])
+               cenv envInitial parent inSig tpenv (mutRecDefnsAfterSplit,m,scopem)
 
         let mutRecDefnsAfterPrep = 
             (envMutRecPrelim,mutRecDefnsAfterCore)
@@ -15453,24 +15477,37 @@ module TcDeclarations = begin
 
     let SplitMutRecSignatures mutRecSigs = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
 
-    let private TcTyconSignatureMemberSpecs cenv envMutRec mutRecDefns =
-        // TODO - need to collect the mutually recursive signature declarations when "rec" is used
-        // TODO - this is only checking the tycons in the signatures, need to do the module and let elements too
-        (envMutRec,mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls ((tyconCore, (synTyconInfo,members), innerParent), _, _) -> 
-            let tpenv = emptyUnscopedTyparEnv
-            let (MutRecDefnsPhase1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
-            let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
-            let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv envForDecls true m typars cs longPath
+    let private TcMutRecSignatureDecls_Phase2 cenv scopem envMutRec mutRecDefns =
+        (envMutRec,mutRecDefns) ||> MutRecShapes.mapWithEnv 
+            // Do this for the members in each 'type' declaration 
+            (fun envForDecls ((tyconCore, (synTyconInfo,members), innerParent), _, _) -> 
+                let tpenv = emptyUnscopedTyparEnv
+                let (MutRecDefnsPhase1DataForTycon (_, _, _, _, _, isAtOriginalTyconDefn)) = tyconCore
+                let (ComponentInfo(_,typars,cs,longPath, _, _, _,m)) = synTyconInfo
+                let declKind,tcref,declaredTyconTypars = ComputeTyconDeclKind isAtOriginalTyconDefn cenv envForDecls true m typars cs longPath
 
-            let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForDecls
-            let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
+                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForDecls
+                let envForTycon = MakeInnerEnvForTyconRef cenv envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
 
-            TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)
+                TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)
+            
+            // Do this for each 'val' declaration in a module
+            (fun envForDecls (containerInfo, valSpec) -> 
+                let tpenv = emptyUnscopedTyparEnv
+                let idvs,_ = TcAndPublishValSpec (cenv,envForDecls,containerInfo,ModuleOrMemberBinding,None,tpenv,valSpec)
+                let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs envForDecls
+                env)
+
 
     let TcMutRecSignatureDecls cenv env parent tpenv (tspecs:MutRecSigsInitialData,m,scopem) =
         let mutRecDefnsAfterSplit = SplitMutRecSignatures tspecs
-        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 cenv env parent true tpenv (mutRecDefnsAfterSplit,m,scopem)
-        let _ = TcTyconSignatureMemberSpecs cenv envMutRec mutRecDefnsAfterCore
+        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv env parent true tpenv (mutRecDefnsAfterSplit,m,scopem)
+
+        // Updates the types of the modules to contain the inferred contents to far, which includes values and members
+        mutRecDefnsAfterCore |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
+                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+
+        let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRec mutRecDefnsAfterCore
         envMutRec
 end
 
@@ -15478,7 +15515,7 @@ end
 // Bind module types
 //------------------------------------------------------------------------- 
 
-let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
+let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
   eventually {
     try 
         match e with 
@@ -15579,109 +15616,77 @@ let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
         return env
   }
 
+
 and TcSignatureElements cenv parent endm env xml isRec defs = 
     eventually {
-        // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
+        // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
         if cenv.compilingCanonicalFslibModuleType then 
             ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath (xml.ToXmlDoc())
 
         if isRec then 
             return! TcSignatureElementsMutRec cenv parent endm env defs
         else
+            return! TcSignatureElementsNonMutRec cenv parent endm env defs
+    }
 
-            return! Eventually.fold (TcSignatureElement cenv parent endm) env defs
+and TcSignatureElementsNonMutRec cenv parent endm env defs = 
+    eventually {
+        return! Eventually.fold (TcSignatureElementNonMutRec cenv parent endm) env defs
     }
 
 and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDecl list) =
- eventually {
-    let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
-    let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
+    eventually {
+        let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
+        let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
-    let mutRecDefns = 
-      let rec loop defs : MutRecSigsInitialData = 
-        (true,defs) ||> List.collectFold (fun openOk def -> 
-            match def with 
-            | SynModuleSigDecl.Types (typeSpecs,_) -> 
-                let decls = typeSpecs |> List.map MutRecShape.Tycon
-                decls, false
+        let mutRecDefns = 
+          let rec loop defs : MutRecSigsInitialData = 
+            ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
+                match def with 
+                | SynModuleSigDecl.Types (typeSpecs,_) -> 
+                    let decls = typeSpecs |> List.map MutRecShape.Tycon
+                    decls, (false, false)
 
-            | SynModuleSigDecl.Open (lid,m) -> 
-                  if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpenDecl(lid, m)) ]
-                  decls, openOk
+                | SynModuleSigDecl.Open (lid,m) -> 
+                      if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
+                      let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
+                      decls, (openOk, moduleAbbrevOk)
 
-            | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr,members,_),m) ->
-                  if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
-                  let ( SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_args,_,_,_),_,doc,vis,m)) = exnRepr
-                  let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
-                  decls, openOk
+                | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr,members,_),m) ->
+                      if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
+                      let ( SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_args,_,_,_),_,doc,vis,m)) = exnRepr
+                      let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
+                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
+                      decls, (false, false)
 
-            | d ->  error(Error(FSComp.SR.tcUnsupportedMutRecDecl(),d.Range)))
-          |> fst
-      loop defs
-    return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent emptyUnscopedTyparEnv (mutRecDefns,m,scopem)
- }
-
-(*  // TODO: Note yet doing 'val' bindnigs or nested modules in recursive signatures
-
-            | SynModuleSigDecl.Val (vspec,m) -> 
-                let parentModule = 
+                | SynModuleSigDecl.Val (vspec,_) -> 
                     match parent with 
                     | ParentNone -> error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(),vspec.RangeOfId)) 
-                    | Parent p -> p
-                let containerInfo = ModuleOrNamespaceContainerInfo(parentModule)
-                let idvs,_ = TcAndPublishValSpec (cenv,env,containerInfo,ModuleOrMemberBinding,None,emptyUnscopedTyparEnv,vspec)
-                let scopem = unionRanges m endm
-                let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs env
-                return env
+                    | Parent _ -> ()
+                    let decls = [ MutRecShape.Lets(vspec) ]
+                    decls, (false, false)
 
-            | SynModuleSigDecl.NestedModule(ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im),isRec,mdefs,m) ->
-                let id = ComputeModuleName longPath
-                let vis,_ = ComputeAccessAndCompPath env None im vis parent
-                let! (mspec,_) = TcModuleOrNamespaceSignature cenv env (id,isRec,true,mdefs,xml,attribs,vis,m)
-                let scopem = unionRanges m endm
-                PublishModuleDefn cenv env mspec; 
-                let env = AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem env mspec
-                return env
-            
-            | SynModuleSigDecl.ModuleAbbrev (id,p,m) -> 
-                let ad = env.eAccessRights
-                let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
-                let scopem = unionRanges m endm
-                let modrefs = mvvs |> List.map p23 
-                if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
-                    errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
-                let modrefs = modrefs |> List.filter (fun modref -> not modref.IsNamespace)
-                modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
-            
-                let env = 
-                    if modrefs.Length > 0 then AddModuleAbbreviation cenv.tcSink scopem id modrefs env 
-                    else env
-                return env
+                | SynModuleSigDecl.NestedModule(compInfo,isRec,synDefs,_) ->
+                      if isRec then warning(Error(FSComp.SR.tcRecImplied(),compInfo.Range))
+                      let mutRecDefs = loop synDefs 
+                      let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
+                      decls, (false, false)
 
-            | SynModuleSigDecl.HashDirective _ -> 
-                return env
+                | SynModuleSigDecl.HashDirective _ -> 
+                      [], (openOk, moduleAbbrevOk)
 
-*)
-            
-(*
-              | SynModuleDecl.Let (letrec, binds, m) -> 
-                  if isNamespace then 
-                      CheckLetInNamespace binds m; [], false
-                  else
-                      if letrec then [MutRecShape.Lets binds], false
-                      else List.map (List.singleton >> MutRecShape.Lets) binds, false
+                | SynModuleSigDecl.ModuleAbbrev (id, p, m) ->
+                      if not moduleAbbrevOk then errorR(Error(FSComp.SR.tcModuleAbbrevFirstInMutRec(),m))
+                      let decls = [ MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev(id, p, m)) ]
+                      decls, (false, moduleAbbrevOk)
 
-              | SynModuleDecl.NestedModule(compInfo, isRec, synDefs,_isContinuingModule,m) -> 
-                  if isRec then warning(Error(FSComp.SR.tcRecImplied(),m))
-                  let mutRecDefs = loop false synDefs 
-                  let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
-                  decls, false
+                | SynModuleSigDecl.NamespaceFragment _ ->
+                    error(Error(FSComp.SR.tcUnsupportedMutRecDecl(),def.Range)))
 
-              | SynModuleDecl.Exception (SynExceptionDefn(repr,members,_),_m) -> 
-
-*)
+              |> fst
+          loop defs
+        return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent emptyUnscopedTyparEnv (mutRecDefns,m,scopem)
+    }
 
 
 and TcModuleOrNamespaceSignature cenv env (id:Ident,isRec,isModule,defs,xml,attribs,vis,m) =
@@ -15726,17 +15731,6 @@ and TcModuleOrNamespaceSignatureElements cenv parent env (id,isRec,modKind,defs,
 // Bind definitions within modules
 //------------------------------------------------------------------------- 
 
-let TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m) = 
-    let ad = env.eAccessRights
-    let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad p)
-    let modrefs = mvvs |> List.map p23 
-    if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
-        errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
-    let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
-    modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
-    let env = (if modrefs.Length > 0 then AddModuleAbbreviation cenv.tcSink scopem id modrefs env else env)
-    env
-
 
 let ElimModuleDoBinding bind =
     match bind with 
@@ -15745,7 +15739,7 @@ let ElimModuleDoBinding bind =
         SynModuleDecl.Let(false,[bind2],m)
     | _ -> bind
 
-let TcMutRecDefnsEscapeCheck (binds: MutRecShape<_,_,_,_> list) env = 
+let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_,_,_,_,_>) env = 
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTycons env
     let checkTycon (tycon: Tycon) = 
         if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
@@ -15761,16 +15755,16 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShape<_,_,_,_> list) env =
                 let nm = bind.Var.DisplayName 
                 errorR(Error(FSComp.SR.tcMemberUsedInInvalidWay(nm, nm, nm), bind.Var.Range))
 
-    binds |> MutRecShapes.iter (snd >> checkBinds) checkBinds ignore ignore
+    binds |> MutRecShapes.iterTyconsAndLets (snd >> checkBinds) checkBinds 
 
-let CheckLetInNamespace binds m =
+// ignore solitary '()' expressions and 'do ()' bindings, since these are allowed in namespaces
+// for the purposes of attaching attributes to an assembly, e.g. 
+//   namespace A.B.C
+//     [<assembly : Foo >]
+//     do()
+
+let CheckLetOrDoInNamespace binds m =
     match binds with 
-    // ignore solitary '()' expressions and 'do ()' bindings, since these are allowed in namespaces
-    // for the purposes of attaching attributes to an assembly, e.g. 
-    //   namespace A.B.C
-    //     [<assembly : Foo >]
-    //     do()
-
     | [ Binding (None,(StandaloneExpression | DoBinding),false,false,[],_,_,_,None,(SynExpr.Do (SynExpr.Const (SynConst.Unit,_),_) | SynExpr.Const (SynConst.Unit,_)),_,_) ] ->
         ()
     | [] -> 
@@ -15778,7 +15772,8 @@ let CheckLetInNamespace binds m =
     | _ -> 
         error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(),binds.Head.RangeOfHeadPat)) 
 
-let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((ModuleOrNamespaceExpr list -> ModuleOrNamespaceExpr list) * _) * tcEnv =
+/// The non-mutually recursive case for a declaration
+let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env e = 
   eventually {
     cenv.synArgNameGenerator.Reset()
     let tpenv = emptyUnscopedTyparEnv
@@ -15788,7 +15783,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
       match ElimModuleDoBinding e with 
 
       | SynModuleDecl.ModuleAbbrev (id,p,m) -> 
-          let env = TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m)
+          let env = MutRecBindingChecking.TcModuleAbbrevDecl cenv scopem env (id,p,m)
           return ((fun e -> e), []), env, env
 
       | SynModuleDecl.Exception (edef,m) -> 
@@ -15802,7 +15797,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
           // Check the non-escaping condition as we build the expression on the way back up 
           let exprfWithEscapeCheck e = 
               TcMutRecDefnsEscapeCheck mutRecDefnsChecked env
-              TcMutRecDefsFinish cenv mutRecDefnsChecked m :: e //(tycons,FlatList.ofList binds,[],m) :: e
+              TcMutRecDefsFinish cenv mutRecDefnsChecked m :: e 
 
           return (exprfWithEscapeCheck, []), envAfter, envAfter
 
@@ -15815,7 +15810,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
 
           match parent with
           | ParentNone ->
-                CheckLetInNamespace binds m
+                CheckLetOrDoInNamespace binds m
                 return (id,[]), env, env
 
           | Parent parentModule -> 
@@ -15913,7 +15908,8 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
         return ((fun e -> e), []), env, env
  }
  
-and TcModuleOrNamespaceElementsAux cenv parent endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
+/// The non-mutually recursive case for a sequence of declarations
+and TcModuleOrNamespaceElementsNonMutRec cenv parent endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
  eventually {
     match moreDefs with 
     | (firstDef :: otherDefs) ->
@@ -15925,78 +15921,86 @@ and TcModuleOrNamespaceElementsAux cenv parent endm (defsSoFar, env, envAtEnd) (
         // Possibly better:
         //let scopem = unionRanges h1.Range.EndRange endm
         
-        let! firstDef',env', envAtEnd' = TcModuleOrNamespaceElement cenv parent scopem env firstDef
+        let! firstDef',env', envAtEnd' = TcModuleOrNamespaceElementNonMutRec cenv parent scopem env firstDef
         // tail recursive 
-        return! TcModuleOrNamespaceElementsAux  cenv parent endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
+        return! TcModuleOrNamespaceElementsNonMutRec  cenv parent endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
     | [] -> 
         return List.rev defsSoFar,env, envAtEnd
  }
 
+/// The mutually recursive case for a sequence of declarations (and nested modules)
 and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModuleDecl list) =
  eventually {
 
     let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
-    let mutRecDefns = 
-      let rec loop isNamespace defs : MutRecDefnsInitialData = 
-        (true,defs) ||> List.collectFold (fun openOk def -> 
+    let (mutRecDefns, (_, _, synAttrs)) = 
+      let rec loop isNamespace attrs defs : (MutRecDefnsInitialData * _) = 
+        ((true, true, attrs),defs) ||> List.collectFold (fun (openOk,moduleAbbrevOk,attrs) def -> 
             match ElimModuleDoBinding def with
 
               | SynModuleDecl.Types (typeDefs,_) -> 
                   let decls = typeDefs |> List.map MutRecShape.Tycon
-                  decls, false
+                  decls, (false, false, attrs)
 
               | SynModuleDecl.Let (letrec, binds, m) -> 
-                  if isNamespace then 
-                      CheckLetInNamespace binds m; [], false
-                  else
-                      if letrec then [MutRecShape.Lets binds], false
-                      else List.map (List.singleton >> MutRecShape.Lets) binds, false
+                  let binds = 
+                      if isNamespace then 
+                          CheckLetOrDoInNamespace binds m; []
+                      else
+                          if letrec then [MutRecShape.Lets binds]
+                          else List.map (List.singleton >> MutRecShape.Lets) binds
+                  binds, (false, false, attrs)
 
-              | SynModuleDecl.NestedModule(compInfo, isRec, synDefs,_isContinuingModule,m) -> 
-                  if isRec then warning(Error(FSComp.SR.tcRecImplied(),m))
-                  let mutRecDefs = loop false synDefs 
+              | SynModuleDecl.NestedModule(compInfo, isRec, synDefs,_isContinuingModule,_) -> 
+                  if isRec then warning(Error(FSComp.SR.tcRecImplied(),compInfo.Range))
+                  let mutRecDefs, (_, _, attrs) = loop false attrs synDefs 
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
-                  decls, false
+                  decls, (false, false, attrs)
 
               | SynModuleDecl.Open (LongIdentWithDots(lid,_), m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpenDecl(lid, m)) ]
-                  decls, openOk
+                  let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
+                  decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr,members,_),_m) -> 
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
                   let (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_args,_,_,_),_repr,doc,vis,m)) = repr
                   let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m)) ]
-                  decls, openOk
+                  decls, (false, false, attrs)
 
-              | d ->  error(Error(FSComp.SR.tcUnsupportedMutRecDecl(),d.Range)))
-          |> fst
-              //| SynModuleDecl.Attributes _ -> failwith "assembly attributes not allowed in mutrec sections yet"
-                  //let attrs = TcAttributesWithPossibleTargets cenv env AttributeTargets.Top synAttrs
-                  //return ((fun e -> e), attrs), env, env
+              | SynModuleDecl.HashDirective _ -> 
+                  [ ], (openOk, moduleAbbrevOk, attrs)
 
-              //| SynModuleDecl.ModuleAbbrev _ -> failwith "module abbreviations not allowed in mutrec sections yet"
-                  //let env = TcModuleAbbrevDecl (cenv:cenv) scopem env (id,p,m)
-                  //return ((fun e -> e), []), env, env
+              | SynModuleDecl.Attributes (synAttrs,_) -> 
+                  [ ], (false, false, synAttrs)
 
+              | SynModuleDecl.ModuleAbbrev (id, p, m) ->
+                  if not moduleAbbrevOk then errorR(Error(FSComp.SR.tcModuleAbbrevFirstInMutRec(),m))
+                  let decls = [ MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev(id, p, m)) ]
+                  decls, (false, moduleAbbrevOk, attrs)
 
-              //| SynModuleDecl.HashDirective _ -> failwith "assembly attributes not allowed in mutrec sections yet"
-              //| SynModuleDecl.NamespaceFragment _ -> failwith "namespace fragments not allowed in mutrec sections yet"
-              //| SynModuleDecl.DoExpr _ -> failwith "unreachable"
-      loop (match parent with ParentNone -> true | Parent _ -> false) defs
+              | SynModuleDecl.DoExpr _ -> failwith "unreachable: SynModuleDecl.DoExpr - ElimModuleDoBinding"
+
+              | (SynModuleDecl.NamespaceFragment _ as d) ->  error(Error(FSComp.SR.tcUnsupportedMutRecDecl(),d.Range)))
+
+      loop (match parent with ParentNone -> true | Parent _ -> false) [] defs
 
     let tpenv = emptyUnscopedTyparEnv // TODO: be more careful about tpenv, preserving old behaviour but not coalescing typars across mutrec definitions
     let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent tpenv (mutRecDefns,m,scopem)
+
+    // Check the assembly attributes
+    let attrs = TcAttributesWithPossibleTargets cenv envAfter AttributeTargets.Top synAttrs
+
     // Check the non-escaping condition as we build the expression on the way back up 
     let exprfWithEscapeCheck e = 
         TcMutRecDefnsEscapeCheck mutRecDefnsChecked envInitial
         TcMutRecDefsFinish cenv mutRecDefnsChecked m :: e 
 
     //return List.rev defsSoFar,env, envAtEnd
-    return [(exprfWithEscapeCheck,[])],envAfter, envAfter
+    return [(exprfWithEscapeCheck,attrs)],envAfter, envAfter
 
  }
 
@@ -16005,16 +16009,13 @@ and TcMutRecDefsFinish cenv defs m =
     let binds = 
         defs |> List.collect (function 
             | MutRecShape.Open _ -> []
+            | MutRecShape.ModuleAbbrev _ -> []
             | MutRecShape.Tycon (_,binds) 
             | MutRecShape.Lets binds -> 
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _),mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
-                // Apply the functions for each declaration to build the overall expression-builder 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
-                //let mexpr = TMDefs(List.foldBack (fun (f,_) x -> f x) compiledDefs []) 
-                // Collect up the attributes that are global to the file 
-                //let topAttrsNew = List.foldBack (fun (_,y) x -> y@x) compiledDefs []
                 [ ModuleOrNamespaceBinding.Module(mspec,mexpr) ])
 
     TMDefRec(tycons,binds,m)
@@ -16029,7 +16030,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
           if isRec then 
               TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
           else
-              TcModuleOrNamespaceElementsAux cenv parent endm ([], env, env) defs 
+              TcModuleOrNamespaceElementsNonMutRec cenv parent endm ([], env, env) defs 
 
     // Apply the functions for each declaration to build the overall expression-builder 
     let mexpr = TMDefs(List.foldBack (fun (f,_) x -> f x) compiledDefs []) 
@@ -16318,10 +16319,7 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile  
-       (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) 
-       tcEnv 
-       (ParsedSigFileInput(_,qualNameOfFile,_, _,sigFileFrags)) = 
+let TypeCheckOneSigFile  (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) tcEnv (ParsedSigFileInput(_,qualNameOfFile,_, _,sigFileFrags)) = 
  eventually {     
     let cenv = cenv.Create (g,false,niceNameGen,amap,topCcu,true,false,conditionalDefines,tcSink, (LightweightTcValForUsingInBuildMethodCall g))
     let envinner,mtypeAcc = MakeInitialEnv tcEnv 
