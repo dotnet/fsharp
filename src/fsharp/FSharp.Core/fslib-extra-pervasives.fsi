@@ -268,7 +268,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type IProvidedCustomAttributeNamedArgument =
         abstract ArgumentType: System.Type
         abstract MemberInfo: System.Reflection.MemberInfo
-        abstract MemberName: System.String
         abstract TypedValue: IProvidedCustomAttributeTypedArgument
 
     type IProvidedCustomAttributeData =

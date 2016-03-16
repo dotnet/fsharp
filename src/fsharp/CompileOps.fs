@@ -5056,13 +5056,10 @@ let CheckSimulateException(tcConfig:TcConfig) =
 #if FX_REDUCED_EXCEPTIONS
 #else
     | Some("tc-av") -> raise(System.AccessViolationException())
+    | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
 #endif
     | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
     | Some("tc-dv0") -> raise(System.DivideByZeroException())
-#if FX_REDUCED_EXCEPTIONS
-#else
-    | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
     | Some("tc-oe") -> raise(System.OverflowException())
     | Some("tc-atmm") -> raise(System.ArrayTypeMismatchException())
     | Some("tc-bif") -> raise(System.BadImageFormatException())

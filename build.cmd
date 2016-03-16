@@ -26,9 +26,6 @@ exit /b 1
 
 :ARGUMENTS_OK
 
-set BUILD_CONFIG=Release
-set BUILD_CONFIG_LOWER=release
-
 set BUILD_PROTO=0
 set BUILD_NET40=1
 set BUILD_CORECLR=1

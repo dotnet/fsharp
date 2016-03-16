@@ -2076,12 +2076,6 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     AbortOnError(errorLogger, tcConfig, exiter)
 
-#if !FX_NO_APP_DOMAINS
-    if tcConfig.showLoadedAssemblies then
-        for a in System.AppDomain.CurrentDomain.GetAssemblies() do
-            dprintfn "%s" a.FullName
-#endif
-
     if tcConfig.copyFSharpCore then
         copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
