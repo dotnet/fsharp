@@ -474,60 +474,6 @@
     <Compile Include="..\vs\IncrementalBuild.fs">
       <Link>Driver\IncrementalBuild.fs</Link>
     </Compile>
-    <Compile Include="..\vs\Reactor.fsi">
-      <Link>Service\Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\Reactor.fs">
-      <Link>Service\Reactor.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceLexing.fsi">
-      <Link>Service\ServiceLexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceLexing.fs">
-      <Link>Service\ServiceLexing.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceConstants.fs">
-      <Link>Service\ServiceConstants.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
-      <Link>Service\ServiceParseTreeWalk.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fsi">
-      <Link>Service\ServiceNavigation.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fs">
-      <Link>Service\ServiceNavigation.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
-      <Link>Service\ServiceParamInfoLocations.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
-      <Link>Service\ServiceParamInfoLocations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fsi">
-      <Link>Service\ServiceUntypedParse.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fs">
-      <Link>Service\ServiceUntypedParse.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service\ServiceDeclarations.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service\ServiceDeclarations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\symbols.fsi">
-      <Link>Service\symbols.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\symbols.fs">
-      <Link>Service\symbols.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\service.fsi">
-      <Link>Service\service.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\service.fs">
-      <Link>Service\service.fs</Link>
-    </Compile>
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
