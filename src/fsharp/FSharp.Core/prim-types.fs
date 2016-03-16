@@ -6594,6 +6594,9 @@ namespace Microsoft.FSharp.Core
                                 if !value < m then
                                     value := !value + LanguagePrimitives.GenericOne
                                     true
+                                elif !value = m then 
+                                    value := m + LanguagePrimitives.GenericOne
+                                    false
                                 else false }
 
                     { new IEnumerable<'T> with
