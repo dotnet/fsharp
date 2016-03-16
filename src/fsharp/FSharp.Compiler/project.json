@@ -11,7 +11,6 @@
     "System.Diagnostics.Process": "4.1.0-rc2-23911",
     "System.Diagnostics.TraceSource": "4.0.0-rc2-23911",
     "System.Reflection.Metadata": "1.3.0-rc2-23911",
-    "System.Security.Cryptography.Csp": "4.0.0-rc2-23911",
     "System.Runtime.InteropServices.PInvoke": "4.0.0-rc2-23911",
     "System.Reflection.Emit": "4.0.1-rc2-23911",
     "System.Reflection.Emit.ILGeneration": "4.0.1-rc2-23911",

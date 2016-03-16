@@ -30,7 +30,6 @@
                 <dependency id="System.Runtime.InteropServices.PInvoke" version="4.0.0-rc2-23911" />
                 <dependency id="System.Runtime.Loader" version="4.0.0-rc2-23911" />
                 <dependency id="System.Security.Cryptography.Algorithms" version="4.0.0-rc2-23911" />
-                <dependency id="System.Security.Cryptography.Csp" version="4.0.0-rc2-23911" />
                 <dependency id="System.Security.Cryptography.Primitives" version="4.0.0-rc2-23911" />
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc2-23911" />
                 <dependency id="System.Threading.Thread" version="4.0.0-rc2-23911" />
