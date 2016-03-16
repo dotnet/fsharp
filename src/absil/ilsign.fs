@@ -206,7 +206,7 @@ open System.Runtime.InteropServices
         key
 
     let createSignature (hash:byte[]) (keyBlob:byte[]) keyType =
-        use rsa = new RSACryptoServiceProvider()
+        use rsa = RSA.Create()
         rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
         let signature = rsa.SignHash(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1)
         signature |>Array.rev
@@ -252,7 +252,7 @@ open System.Runtime.InteropServices
 
     // Returns a CLR Format Blob public key
     let GetPublicKeyForKeyPair keyBlob =
-        use rsa = new RSACryptoServiceProvider()
+        use rsa = System.Security.Cryptography.RSA.Create()
         rsa.ImportParameters(RSAParamatersFromBlob keyBlob KeyType.KeyPair)
         let rsaParameters = rsa.ExportParameters(false)
         toCLRKeyBlob rsaParameters CALG_RSA_KEYX

@@ -16,25 +16,24 @@
         <dependencies>
             <group>
                 <dependency id="Microsoft.FSharp.Core.netcore" version="$version$" />
-                <dependency id="NETStandard.Library" version="1.0.0-rc3-23805" />
-                <dependency id="System.Collections.Immutable" version="1.2.0-rc3-23805" />
-                <dependency id="System.Diagnostics.Process" version="4.1.0-rc3-23805" />
-                <dependency id="System.Diagnostics.TraceSource" version="4.0.0-rc3-23805" />
-                <dependency id="System.Linq.Expressions" version="4.0.11-rc3-23805" />
-                <dependency id="System.Linq.Queryable" version="4.0.1-rc3-23805" />
-                <dependency id="System.Net.Requests" version="4.0.11-rc3-23805" />
-                <dependency id="System.Reflection.Emit" version="4.0.1-rc3-23805" />
-                <dependency id="System.Reflection.Emit.ILGeneration" version="4.0.1-rc3-23805" />
-                <dependency id="System.Reflection.Metadata" version="1.2.0-rc3-23805" />
-                <dependency id="System.Runtime.InteropServices" version="4.1.0-rc3-23805" />
-                <dependency id="System.Runtime.InteropServices.PInvoke" version="4.0.0-rc3-23805" />
-                <dependency id="System.Runtime.Loader" version="4.0.0-rc3-23805" />
-                <dependency id="System.Security.Cryptography.Algorithms" version="4.0.0-rc3-23805" />
-                <dependency id="System.Security.Cryptography.Csp" version="4.0.0-rc3-23805" />
-                <dependency id="System.Security.Cryptography.Primitives" version="4.0.0-rc3-23805" />
-                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc3-23805" />
-                <dependency id="System.Threading.Thread" version="4.0.0-rc3-23805" />
-                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc3-23805" />
+                <dependency id="NETStandard.Library" version="1.5.0-rc2-23911" />
+                <dependency id="System.Collections.Immutable" version="1.2.0-rc2-23911" />
+                <dependency id="System.Diagnostics.Process" version="4.1.0-rc2-23911" />
+                <dependency id="System.Diagnostics.TraceSource" version="4.0.0-rc2-23911" />
+                <dependency id="System.Linq.Expressions" version="4.0.11-rc2-23911" />
+                <dependency id="System.Linq.Queryable" version="4.0.1-rc2-23911" />
+                <dependency id="System.Net.Requests" version="4.0.11-rc2-23911" />
+                <dependency id="System.Reflection.Emit" version="4.0.1-rc2-23911" />
+                <dependency id="System.Reflection.Emit.ILGeneration" version="4.0.1-rc2-23911" />
+                <dependency id="System.Reflection.Metadata" version="1.3.0-rc2-23911" />
+                <dependency id="System.Runtime.InteropServices" version="4.1.0-rc2-23911" />
+                <dependency id="System.Runtime.InteropServices.PInvoke" version="4.0.0-rc2-23911" />
+                <dependency id="System.Runtime.Loader" version="4.0.0-rc2-23911" />
+                <dependency id="System.Security.Cryptography.Algorithms" version="4.1.0-rc2-23911" />
+                <dependency id="System.Security.Cryptography.Primitives" version="4.0.0-rc2-23911" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc2-23911" />
+                <dependency id="System.Threading.Thread" version="4.0.0-rc2-23911" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc2-23911" />
             </group>
         </dependencies>
     </metadata>
