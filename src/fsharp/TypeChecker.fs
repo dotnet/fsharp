@@ -15640,7 +15640,7 @@ and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDec
         let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
         let mutRecDefns = 
-          let rec loop defs : MutRecSigsInitialData = 
+          let rec loop isNamespace defs : MutRecSigsInitialData = 
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
                 | SynModuleSigDecl.Types (typeSpecs,_) -> 
@@ -15652,23 +15652,20 @@ and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDec
                       let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
                       decls, (openOk, moduleAbbrevOk)
 
-                | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr,members,_),m) ->
-                      if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
+                | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr,members,_),_) ->
                       let ( SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_args,_,_,_),_,doc,vis,m)) = exnRepr
                       let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
                       decls, (false, false)
 
                 | SynModuleSigDecl.Val (vspec,_) -> 
-                    match parent with 
-                    | ParentNone -> error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(),vspec.RangeOfId)) 
-                    | Parent _ -> ()
+                    if isNamespace then error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(),vspec.RangeOfId)) 
                     let decls = [ MutRecShape.Lets(vspec) ]
                     decls, (false, false)
 
                 | SynModuleSigDecl.NestedModule(compInfo,isRec,synDefs,_) ->
                       if isRec then warning(Error(FSComp.SR.tcRecImplied(),compInfo.Range))
-                      let mutRecDefs = loop synDefs 
+                      let mutRecDefs = loop false synDefs 
                       let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                       decls, (false, false)
 
@@ -15684,7 +15681,7 @@ and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDec
                     error(Error(FSComp.SR.tcUnsupportedMutRecDecl(),def.Range)))
 
               |> fst
-          loop defs
+          loop (match parent with ParentNone -> true | Parent _ -> false) defs
         return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent emptyUnscopedTyparEnv (mutRecDefns,m,scopem)
     }
 
@@ -15965,7 +15962,6 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr,members,_),_m) -> 
-                  if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(),m))
                   let (SynExceptionDefnRepr(synAttrs,UnionCase(_,id,_args,_,_,_),_repr,doc,vis,m)) = repr
                   let compInfo = ComponentInfo(synAttrs,[],[],[id],doc,false,vis,id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m)) ]
