@@ -15,16 +15,17 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc3-23805" />
-                <dependency id="NETStandard.Library" version="1.0.0-rc3-23805" />
-                <dependency id="System.Linq.Expressions" version="4.0.11-rc3-23805" />
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc3-23910" />
+                <dependency id="NETStandard.Library" version="1.5.0-rc3-23910" />
+                <dependency id="System.Linq.Expressions" version="4.0.11-rc3-23910" />
                 <dependency id="System.Linq.Queryable" version="4.0.1-rc3-23805" />
-                <dependency id="System.Reflection.Emit" version="4.0.1-rc3-23805" />
-                <dependency id="System.Runtime.Loader" version="4.0.0-rc3-23805" />
-                <dependency id="System.Net.Requests" version= "4.0.11-rc3-23805" />
-                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc3-23805" />
-                <dependency id="System.Threading.Thread" version="4.0.0-rc3-23805" />
-                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc3-23805" />
+                <dependency id="System.Reflection.Emit" version="4.0.1-rc3-23910" />
+                <dependency id="System.Reflection.TypeExtensions" version="4.1.0-rc3-23910" />
+                <dependency id="System.Runtime.Loader" version="4.0.0-rc3-23910" />
+                <dependency id="System.Net.Requests" version= "4.0.11-rc3-23910" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc3-23910" />
+                <dependency id="System.Threading.Thread" version="4.0.0-rc3-23910" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc3-23910" />
             </group>
         </dependencies>
     </metadata>
