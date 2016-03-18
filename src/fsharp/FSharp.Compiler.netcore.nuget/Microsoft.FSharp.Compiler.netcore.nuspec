@@ -43,7 +43,7 @@
     <files>
         <file src="fsc.exe"                 target="lib/DNXCore50" />
         <file src="FSharp.Compiler.dll"     target="lib/DNXCore50" />
-        <file src="default.win32manifest"   target="lib/DNXCore50" />
+        <file src="default.win32manifest"   target="runtimes/any/native/" />
         <file src="fsi.exe"                 target="lib/DNXCore50" />
         <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/DNXCore50" />
     </files>
