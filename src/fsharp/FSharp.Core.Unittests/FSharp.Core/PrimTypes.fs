@@ -804,22 +804,22 @@ module internal RangeTestsHelpers =
 
 [<TestFixture>]
 type RangeTests() =
-    [<Test>] member this.SByte  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
-    [<Test>] member this.Byte   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
-    [<Test>] member this.Int16  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
-    [<Test>] member this.UInt16 () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
-    [<Test>] member this.Int32  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
-    [<Test>] member this.UInt32 () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
-    [<Test>] member this.Int64  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
-    [<Test>] member this.UInt64 () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+    [<Test>] member __.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
+    [<Test>] member __.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
+    [<Test>] member __.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
+    [<Test>] member __.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
+    [<Test>] member __.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
+    [<Test>] member __.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
+    [<Test>] member __.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
+    [<Test>] member __.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
 
     [<Test>]
-    member this.IntPtr () =
+    member __.``Range.IntPtr`` () =
         if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
         if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
         
     [<Test>]
-    member this.UIntPtr () =
+    member __.``Range.UIntPtr`` () =
         if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
         if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
         
