@@ -688,15 +688,26 @@ type UnboxAndOptionStuff() =
 module internal RangeTestsHelpers =
     // strictly speaking, this is just undefined behaviour, but at some point the F# library decided that
     // it was an exception, so we are ensuring that such behaviour is retained
-    let inline regressionExceptionBeforeStart n = 
-        let sequence = seq { n .. n }
+    let inline regressionExceptionBeforeStartSingleStepRangeEnumerator zero one = 
+        let sequence = seq { zero .. one .. one }
+        let enumerator = sequence.GetEnumerator()
+        enumerator.Current |> ignore
+
+    let inline regressionExceptionBeforeStartVariableStepIntegralRange zero two = 
+        let sequence = seq { zero .. two .. two }
         let enumerator = sequence.GetEnumerator()
         enumerator.Current |> ignore
 
     // strictly speaking, this is just undefined behaviour, but at some point the F# library decided that
     // it was an exception, so we are ensuring that such behaviour is retained
-    let inline regressionExceptionAfterEnd n = 
-        let sequence = seq { n .. n }
+    let inline regressionExceptionAfterEndSingleStepRangeEnumerator zero one = 
+        let sequence = seq { zero .. one .. one }
+        let enumerator = sequence.GetEnumerator()
+        while enumerator.MoveNext () do ignore ()
+        enumerator.Current |> ignore
+
+    let inline regressionExceptionAfterEndVariableStepIntegralRange zero two = 
+        let sequence = seq { zero .. two .. two }
         let enumerator = sequence.GetEnumerator()
         while enumerator.MoveNext () do ignore ()
         enumerator.Current |> ignore
@@ -704,8 +715,10 @@ module internal RangeTestsHelpers =
     let inline exceptions zero one two =
         Assert.Throws (typeof<System.ArgumentException>, (fun () -> [one .. zero .. two] |> List.length |> ignore)) |> ignore
 
-        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionBeforeStart zero)) |> ignore
-        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionAfterEnd zero))    |> ignore
+        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionBeforeStartSingleStepRangeEnumerator zero one)) |> ignore
+        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionBeforeStartVariableStepIntegralRange zero two)) |> ignore
+        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionAfterEndSingleStepRangeEnumerator zero one))    |> ignore
+        Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionAfterEndVariableStepIntegralRange zero two))    |> ignore
 
     let inline common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three) =
         Assert.AreEqual ([min0 ..          min3], [min0; min1; min2; min3])
@@ -724,6 +737,11 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([max0 .. three .. min0], [])
 
         exceptions zero one two
+
+        // tests for singleStepRangeEnumerator, as it only is used if start and/or end are not the
+        // minimum or maximum of the number range and it is counting by 1s
+        Assert.AreEqual ([min1 .. min3], [min1; min2; min3])
+        Assert.AreEqual ([max3 .. max1], [max3; max2; max1])
 
     let inline signed min0 max0 =
         let zero  = LanguagePrimitives.GenericZero
@@ -794,4 +812,15 @@ type RangeTests() =
     [<Test>] member this.UInt32 () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
     [<Test>] member this.Int64  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
     [<Test>] member this.UInt64 () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+
+    [<Test>]
+    member this.IntPtr () =
+        if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
+        if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
+        
+    [<Test>]
+    member this.UIntPtr () =
+        if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
+        if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
+        
 
