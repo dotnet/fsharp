@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+    <ProjectGuid>{C163E892-5BF7-4B59-AA99-B0E8079C67C4}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.Tests.FSharp</AssemblyName>
+    <Name>SystematicUnitTests</Name>
+    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <Reference Include="mscorlib" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.3.0.0\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="PlatformHelpers.fs" />
+    <Compile Include="Commands.fs" />
+    <Compile Include="FSharpTestSuiteTypes.fs" />
+    <Compile Include="..\windowsPlatform.fs">
+      <Link>windowsPlatform.fs</Link>
+    </Compile>
+    <Compile Include="..\config.fs">
+      <Link>config.fs</Link>
+    </Compile>
+    <Compile Include="..\..\src\update.fs">
+      <Link>update.fs</Link>
+    </Compile>
+    <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs" />
+    <Compile Include="nunitConf.fs" />
+    <Compile Include="single-test-build.fs" />
+    <Compile Include="single-test-run.fs" />
+    <Compile Include="single-neg-test.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="core\tests_core.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="optimize\tests_optimize.fs" /> 
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="perf\tests_perf.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="regression\tests_regression.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="tools\tests_tools.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="typecheck\tests_typecheck.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="typeProviders\build-typeprovider-test.fs" />
+    <Compile Include="typeProviders\builtin\copyFSharpDataTypeProviderDLL.fs" />
+    <Compile Include="typeProviders\tests_typeProviders.fs" /> 
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="fsc\ProductVersion.fs" />
+    <Compile Include="fsc\FileVersionInfo.fs" />
+    <Compile Include="fsc\warnings\FS2003\Warning_FS2003.fs" />
+  </ItemGroup>
+</Project>

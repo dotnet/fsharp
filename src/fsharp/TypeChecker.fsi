@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
@@ -24,6 +24,7 @@ open System.Collections.Generic
 type TcEnv =
     member DisplayEnv : DisplayEnv
     member NameEnv : NameResolution.NameResolutionEnv
+    member AccessRights : AccessorDomain
 
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * (CcuThunk * string list * bool) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * CcuThunk * autoOpens: string list * bool -> TcEnv 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.ErrorLogger
 
@@ -38,8 +38,9 @@ let rec findOriginalException err =
 
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
-exception StopProcessing
-
+exception StopProcessingExn of exn option
+let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _ -> None
+let StopProcessing<'T> = StopProcessingExn None
 
 (* common error kinds *)
 exception NumberedError of (int * string) * range with   // int is e.g. 191 in FS0191
@@ -71,6 +72,13 @@ let inline protectAssemblyExploration dflt f =
        f()
      with 
         | UnresolvedPathReferenceNoRange _ -> dflt
+        | _ -> reraise()
+
+let inline protectAssemblyExplorationF dflt f = 
+    try 
+       f()
+     with 
+        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName,path)
         | _ -> reraise()
 
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  = 
@@ -381,7 +389,7 @@ let report f =
 
 let deprecatedWithError s m = errorR(Deprecated(s,m))
 
-// Note: global state, but only for compiling FSHarp.Core.dll
+// Note: global state, but only for compiling FSharp.Core.dll
 let mutable reportLibraryOnlyFeatures = true
 let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly(m))
 let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly(m))

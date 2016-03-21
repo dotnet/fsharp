@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
@@ -6,8 +6,128 @@
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 
 open System
+open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+open FsCheck
+#endif
+
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+[<AutoOpen>]
+module ChoiceUtils =
+
+    // FsCheck driven Async.Choice specification test
+
+    exception ChoiceExn of index:int
+
+    /// represents a child computation of a choice workflow
+    type ChoiceOp =
+        | NoneResultAfter of timeout:int
+        | SomeResultAfter of timeout:int
+        | ExceptionAfter of timeout:int
+
+        member c.Timeout =
+            match c with
+            | NoneResultAfter t -> t
+            | SomeResultAfter t -> t
+            | ExceptionAfter t -> t
+
+    /// represent a choice worfklow
+    type ChoiceWorkflow = ChoiceWorkflow of children:ChoiceOp list * cancelAfter:int option
+
+    /// normalizes random timeout arguments
+    let normalize (ChoiceWorkflow(ops, cancelAfter)) =
+        let ms t = 2000 * (abs t % 15) // timeouts only positive multiples of 2 seconds, up to 30 seconds
+        let mkOp op =
+            match op with
+            | NoneResultAfter t -> NoneResultAfter (ms t)
+            | SomeResultAfter t -> SomeResultAfter (ms t)
+            | ExceptionAfter t -> ExceptionAfter (ms t)
+
+        let ops = ops |> List.map mkOp
+        let cancelAfter = cancelAfter |> Option.map ms
+        ChoiceWorkflow(ops, cancelAfter)
+
+    /// runs specified choice workflow and checks that
+    /// Async.Choice spec is satisfied
+    let runChoice (ChoiceWorkflow(ops, cancelAfter)) =
+        // Step 1. build a choice workflow from the abstract representation
+        let completed = ref 0
+        let returnAfter time f = async {
+            do! Async.Sleep time
+            let _ = Interlocked.Increment completed
+            return f ()
+        }
+
+        let mkOp (index : int) = function
+            | NoneResultAfter t -> returnAfter t (fun () ->  None)
+            | SomeResultAfter t -> returnAfter t (fun () -> Some index)
+            | ExceptionAfter t -> returnAfter t (fun () -> raise (ChoiceExn index))
+
+        let choiceWorkflow = ops |> List.mapi mkOp |> Async.Choice
+
+        // Step 2. run the choice workflow and keep the results
+        let result =
+            let cancellationToken =
+                match cancelAfter with
+                | Some ca -> 
+                    let cts = new CancellationTokenSource()
+                    cts.CancelAfter(ca)
+                    Some cts.Token
+                | None -> None
+
+            try Async.RunSynchronously(choiceWorkflow, ?cancellationToken = cancellationToken) |> Choice1Of2 
+            with e -> Choice2Of2 e
+
+        // Step 3. check that results are up to spec
+        let getMinTime() =
+            seq {
+                yield Int32.MaxValue // "infinity": avoid exceptions if list is empty
+
+                for op in ops do 
+                    match op with
+                    | NoneResultAfter _ -> ()
+                    | op -> yield op.Timeout
+
+                match cancelAfter with Some t -> yield t | None -> ()
+            } |> Seq.min
+
+        let verifyIndex index =
+            if index < 0 || index >= ops.Length then
+                Assert.Fail "Returned choice index is out of bounds."
+        
+        // Step 3a. check that output is up to spec
+        match result with
+        | Choice1Of2 (Some index) ->
+            verifyIndex index
+            match ops.[index] with
+            | SomeResultAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
+            | op -> Assert.Fail <| sprintf "Should be 'Some' but got %A" op
+
+        | Choice1Of2 None ->
+            Assert.True(ops |> List.forall (function NoneResultAfter _ -> true | _ -> false))
+
+        | Choice2Of2 (:? OperationCanceledException) ->
+            match cancelAfter with
+            | None -> Assert.Fail "Got unexpected cancellation exception."
+            | Some ca -> Assert.AreEqual(getMinTime(), ca)
+
+        | Choice2Of2 (ChoiceExn index) ->
+            verifyIndex index
+            match ops.[index] with
+            | ExceptionAfter timeout -> Assert.AreEqual(getMinTime(), timeout)
+            | op -> Assert.Fail <| sprintf "Should be 'Exception' but got %A" op
+
+        | Choice2Of2 e -> Assert.Fail(sprintf "Unexpected exception %O" e)
+
+        // Step 3b. check that nested cancellation happens as expected
+        if not <| List.isEmpty ops then
+            let minTimeout = getMinTime()
+            let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
+            Assert.LessOrEqual(!completed, minTimeoutOps)
+
+#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -50,7 +170,7 @@ type AsyncModule() =
     let dispose(d : #IDisposable) = d.Dispose()
 
     let testErrorAndCancelRace computation = 
-        for _ in 1..100 do
+        for _ in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
             async { cts.Cancel() } 
@@ -171,7 +291,7 @@ type AsyncModule() =
             cts.Cancel()
             sleep(100)
             Assert.IsTrue(isSet())
-        for _i = 1 to 50 do test()
+        for _i = 1 to 3 do test()
 
     [<Test>]
     member this.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
@@ -197,10 +317,10 @@ type AsyncModule() =
             Assert.IsTrue(ok, "Computation should be completed")
             Assert.IsFalse(!cancelledWasCalled, "Cancellation handler should not be called")
 
-        for _i = 1 to 50 do test()
+        for _i = 1 to 3 do test()
 
 
-    [<Test>]
+    [<Test; Category("Expensive")>]
     member this.``Async.AwaitWaitHandle does not leak memory`` () =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
@@ -232,7 +352,7 @@ type AsyncModule() =
             Assert.IsFalse(resource.IsAlive)
         
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
-        for _ in 1..100 do tryToLeak()
+        for _ in 1..10 do tryToLeak()
            
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
@@ -293,6 +413,31 @@ type AsyncModule() =
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
+
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+    [<Test; Category("Expensive")>] // takes 3 minutes!
+    member this.``Async.Choice specification test``() =
+        Check.QuickThrowOnFailure (normalize >> runChoice)
+#endif
+
+    [<Test>]
+    member this.``error on one workflow should cancel all others``() =
+        let counter = 
+            async {
+                let counter = ref 0
+                let job i = async { 
+                    if i = 55 then failwith "boom" 
+                    else 
+                        do! Async.Sleep 1000 
+                        incr counter 
+                }
+
+                let! _ = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch
+                do! Async.Sleep 5000
+                return !counter
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(0, counter)
 
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
@@ -417,7 +562,7 @@ type AsyncModule() =
             try cts.Cancel() with _ -> () 
             System.Threading.Thread.Sleep 1500 
             printfn "====" 
-        for i = 1 to 20 do test()
+        for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
 #endif

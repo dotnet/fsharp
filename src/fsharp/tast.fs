@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
   
 //-------------------------------------------------------------------------
 // Defines the typed abstract syntax trees used throughout the F# compiler.
@@ -35,12 +35,12 @@ open Microsoft.FSharp.Core.CompilerServices
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
 //++GLOBAL MUTABLE STATE
-let newUnique = let i = ref 0L in fun () -> i := !i + 1L; !i
+let newUnique = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 //++GLOBAL MUTABLE STATE
-let newStamp = let i = ref 0L in fun () -> i := !i + 1L; !i
+let newStamp = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
 
 /// A global generator of compiler generated names
 // ++GLOBAL MUTABLE STATE
@@ -471,6 +471,13 @@ type Entity =
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
     member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
 
+#if EXTENSIONTYPING
+    member x.IsStaticInstantiationTycon = 
+        x.IsProvidedErasedTycon &&
+            let _nm,args = PrettyNaming.demangleProvidedTypeName x.LogicalName
+            args.Length > 0 
+#endif
+
     member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
         let nm = x.LogicalName
         let getName () =
@@ -509,6 +516,19 @@ type Entity =
         | _ -> 
 #endif
         x.Data.entity_range
+
+    /// The range in the implementation, adjusted for an item in a signature
+    member x.DefinitionRange = 
+        match x.Data.entity_other_range with 
+        | Some (r, true) -> r
+        | _ -> x.Range
+
+    member x.SigRange = 
+        match x.Data.entity_other_range with 
+        | Some (r, false) -> r
+        | _ -> x.Range
+
+    member x.SetOtherRange m                              = x.Data.entity_other_range <- Some m
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -956,6 +976,11 @@ and
       /// The declaration location for the type constructor 
       entity_range: range
       
+      // MUTABILITY: the signature is adjusted when it is checked
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      mutable entity_other_range: (range * bool) option
+      
       /// The declared accessibility of the representation, not taking signatures into account 
       entity_tycon_repr_accessibility: Accessibility
       
@@ -1278,6 +1303,11 @@ and
       /// Name/range of the case 
       Id: Ident 
 
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      // MUTABILITY: used when propagating signature attributes into the implementation.
+      mutable OtherRangeOpt : (range * bool) option
+
       ///  Indicates the declared visibility of the union constructor, not taking signatures into account 
       Accessibility: Accessibility 
 
@@ -1286,6 +1316,17 @@ and
       mutable Attribs: Attribs }
 
     member uc.Range = uc.Id.idRange
+
+    member uc.DefinitionRange = 
+        match uc.OtherRangeOpt with 
+        | Some (m,true) -> m
+        | _ -> uc.Range 
+
+    member uc.SigRange = 
+        match uc.OtherRangeOpt with 
+        | Some (m,false) -> m
+        | _ -> uc.Range 
+
     member uc.DisplayName = uc.Id.idText
     member uc.RecdFieldsArray = uc.FieldTable.FieldsByIndex 
     member uc.RecdFields = uc.FieldTable.FieldsByIndex |> Array.toList
@@ -1333,7 +1374,12 @@ and
       mutable rfield_fattribs: Attribs 
 
       /// Name/declaration-location of the field 
-      rfield_id: Ident }
+      rfield_id: Ident 
+
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      // MUTABILITY: used when propagating signature attributes into the implementation.
+      mutable rfield_other_range: (range * bool) option }
 
     ///  Indicates the declared visibility of the field, not taking signatures into account 
     member v.Accessibility = v.rfield_access
@@ -1346,6 +1392,16 @@ and
 
     /// Declaration-location of the field 
     member v.Range = v.rfield_id.idRange
+
+    member v.DefinitionRange = 
+        match v.rfield_other_range with 
+        | Some (m, true) -> m
+        | _ -> v.Range 
+
+    member v.SigRange = 
+        match v.rfield_other_range with 
+        | Some (m, false) -> m
+        | _ -> v.Range 
 
     /// Name/declaration-location of the field 
     member v.Id = v.rfield_id
@@ -1656,6 +1712,7 @@ and Construct =
             entity_compiled_name=None
             entity_kind=kind
             entity_range=m
+            entity_other_range=None
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
@@ -1681,6 +1738,7 @@ and Construct =
           { entity_logical_name=id.idText
             entity_compiled_name=None
             entity_range = id.idRange
+            entity_other_range = None
             entity_stamp=stamp
             entity_kind=TyparKind.Type
             entity_modul_contents = mtype
@@ -1997,8 +2055,10 @@ and
     member x.Accessibility              = x.Data.val_access
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
-    /// Updated by mutation when the implementation is matched against the signature. 
-    member x.DefinitionRange            = x.Data.val_defn_range
+    member x.DefinitionRange            =  x.Data.DefinitionRange
+
+    /// Range of the definition (signature) of the value, used by Visual Studio 
+    member x.SigRange            = x.Data.SigRange
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
     member x.LiteralValue               = x.Data.val_const
@@ -2304,7 +2364,7 @@ and
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.Data.val_flags <- x.Data.val_flags.SetIsCompiledAsStaticPropertyWithoutField
     member x.SetValReprInfo info                          = x.Data.val_repr_info <- info
     member x.SetType ty                                  = x.Data.val_type <- ty
-    member x.SetDefnRange m                              = x.Data.val_defn_range <- m
+    member x.SetOtherRange m                              = x.Data.val_other_range <- Some m
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = { Data = nullableSlotEmpty() }
@@ -2335,7 +2395,9 @@ and
     { val_logical_name: string
       val_compiled_name: string option
       val_range: range
-      mutable val_defn_range: range 
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      mutable val_other_range: (range * bool) option 
       mutable val_type: TType
       val_stamp: Stamp 
       /// See vflags section further below for encoding/decodings here 
@@ -2379,6 +2441,15 @@ and
       /// XML documentation signature for the value
       mutable val_xmldocsig : string } 
 
+    member x.DefinitionRange            = 
+        match x.val_other_range with
+        | Some (m,true) -> m
+        | _ -> x.val_range
+
+    member x.SigRange            = 
+        match x.val_other_range with
+        | Some (m,false) -> m
+        | _ -> x.val_range
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     ValMemberInfo = 
@@ -2520,9 +2591,12 @@ and NonLocalEntityRef    =
 #endif
             
     /// Try to link a non-local entity reference to an actual entity
-    member nleref.TryDeref = 
+    member nleref.TryDeref(canError) = 
         let (NonLocalEntityRef(ccu,path)) = nleref 
-        ccu.EnsureDerefable(path)
+        if canError then 
+            ccu.EnsureDerefable(path)
+
+        if ccu.IsUnresolvedReference then None else
 
         match NonLocalEntityRef.TryDerefEntityPath(ccu, path, 0, ccu.Contents)  with
         | Some _ as r -> r
@@ -2567,16 +2641,12 @@ and NonLocalEntityRef    =
 
     /// Dereference the nonlocal reference, and raise an error if this fails.
     member nleref.Deref = 
-        match nleref.TryDeref with 
+        match nleref.TryDeref(canError=true) with 
         | Some res -> res
         | None -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
         
-    /// Try to get the details of the module or namespace fragment referred to by this non-local reference.
-    member nleref.TryModuleOrNamespaceType = 
-        nleref.TryDeref |> Option.map (fun v -> v.ModuleOrNamespaceType) 
-
     /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
     member nleref.ModuleOrNamespaceType = 
         nleref.Deref.ModuleOrNamespaceType
@@ -2596,8 +2666,8 @@ and
     member x.PrivateTarget = x.binding
     member x.ResolvedTarget = x.binding
 
-    member private tcr.Resolve() = 
-        let res = tcr.nlr.TryDeref
+    member private tcr.Resolve(canError) = 
+        let res = tcr.nlr.TryDeref(canError)
         match res with 
         | Some r -> 
              tcr.binding <- nullableSlotFull r 
@@ -2609,7 +2679,7 @@ and
     member tcr.Deref = 
         match box tcr.binding with 
         | null ->
-            tcr.Resolve()
+            tcr.Resolve(canError=true)
             match box tcr.binding with 
             | null -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespaceType, String.concat "." tcr.nlr.EnclosingMangledPath, tcr.nlr.AssemblyName, tcr.nlr.LastItemMangledName))
             | _ -> tcr.binding
@@ -2620,7 +2690,7 @@ and
     member tcr.TryDeref = 
         match box tcr.binding with 
         | null -> 
-            tcr.Resolve()
+            tcr.Resolve(canError=false)
             match box tcr.binding with 
             | null -> None
             | _ -> Some tcr.binding
@@ -2642,6 +2712,12 @@ and
 
     /// Gets the data indicating the compiled representation of a named type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentationForNamedType = x.Deref.CompiledRepresentationForNamedType
+
+    /// The implementation definition location of the namespace, module or type
+    member x.DefinitionRange = x.Deref.DefinitionRange
+
+    /// The signature definition location of the namespace, module or type
+    member x.SigRange = x.Deref.SigRange
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.Deref.LogicalName
@@ -2754,6 +2830,9 @@ and
 
     /// Indicates if the entity is an erased provided type definition
     member x.IsProvidedErasedTycon    = x.Deref.IsProvidedErasedTycon
+
+    /// Indicates if the entity is an erased provided type definition that incorporates a static instantiation (and therefore in some sense compiler generated)
+    member x.IsStaticInstantiationTycon    = x.Deref.IsStaticInstantiationTycon
 
     /// Indicates if the entity is a generated provided type definition, i.e. not erased.
     member x.IsProvidedGeneratedTycon = x.Deref.IsProvidedGeneratedTycon
@@ -2975,9 +3054,9 @@ and
     /// For other values it is just the actual parent.
     member x.ApparentParent             = x.Deref.ApparentParent
 
-    /// Range of the definition (implementation) of the value, used by Visual Studio 
-    /// Updated by mutation when the implementation is matched against the signature. 
     member x.DefinitionRange            = x.Deref.DefinitionRange
+
+    member x.SigRange        = x.Deref.SigRange
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
     member x.LiteralValue               = x.Deref.LiteralValue
@@ -3110,8 +3189,16 @@ and UnionCaseRef =
         match x.TyconRef.GetUnionCaseByName x.CaseName with 
         | Some res -> res
         | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
+
+    member x.TryUnionCase =  x.TyconRef.TryDeref |> Option.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName)
+
     member x.Attribs = x.UnionCase.Attribs
     member x.Range = x.UnionCase.Range
+
+    member x.DefinitionRange = x.UnionCase.DefinitionRange
+
+    member x.SigRange = x.UnionCase.DefinitionRange
+
     member x.Index = 
         try 
            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
@@ -3132,8 +3219,15 @@ and RecdFieldRef =
         match tcref.GetFieldByName id with 
         | Some res -> res
         | None -> error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+
+    member x.TryRecdField =  x.TyconRef.TryDeref |> Option.bind (fun tcref -> tcref.GetFieldByName x.FieldName)
+
     member x.PropertyAttribs = x.RecdField.PropertyAttribs
     member x.Range = x.RecdField.Range
+
+    member x.DefinitionRange = x.RecdField.DefinitionRange
+
+    member x.SigRange = x.RecdField.DefinitionRange
 
     member x.Index =
         let (RFRef(tcref,id)) = x
@@ -3538,7 +3632,7 @@ and Binding =
 and ActivePatternElemRef = 
     | APElemRef of ActivePatternInfo * ValRef * int 
 
-    member x.IsTotalActivePattern = (let (APElemRef(total,_,_)) = x in total)
+    member x.ActivePatternInfo = (let (APElemRef(info,_,_)) = x in info)
     member x.ActivePatternVal = (let (APElemRef(_,vref,_)) = x in vref)
     member x.CaseIndex = (let (APElemRef(_,_,n)) = x in n)
 
@@ -4431,7 +4525,8 @@ let NewUnionCase id nm tys rty attribs docOption access : UnionCase =
       Accessibility=access
       FieldTable = MakeRecdFieldsTable tys
       ReturnType = rty
-      Attribs=attribs } 
+      Attribs=attribs 
+      OtherRangeOpt = None } 
 
 let NewModuleOrNamespaceType mkind tycons vals = 
     ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
@@ -4446,6 +4541,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_logical_name=id.idText
         entity_compiled_name=None
         entity_range=id.idRange
+        entity_other_range=None
         entity_exn_info= repr
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_xmldoc=doc
@@ -4473,7 +4569,8 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_secret = secret
       rfield_xmldoc = docOption 
       rfield_xmldocsig = ""
-      rfield_id=id }
+      rfield_id=id 
+      rfield_other_range = None }
 
     
 let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
@@ -4484,6 +4581,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_compiled_name=None
         entity_kind=kind
         entity_range=m
+        entity_other_range=None
         entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor)
         entity_attribs=[] // fixed up after
         entity_typars=typars
@@ -4524,7 +4622,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
           val_logical_name=logicalName
           val_compiled_name= (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
           val_range=m
-          val_defn_range=m
+          val_other_range=None
           val_defn=None
           val_repr_info= arity
           val_actual_parent= actualParent

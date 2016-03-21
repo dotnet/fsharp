@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TargetFrameworks>
+    <TargetFramework Identifier=".NETFramework" Version="v2.0">
+        <Assembly Version="2.3.0.0" Description="F# 3.0 (FSharp.Core, 2.3.0.0)"/>
+    </TargetFramework>
+    <TargetFramework Identifier=".NETFramework" Version="v4.0">
+        <Assembly Version="4.3.0.0" Description="F# 3.0 (FSharp.Core, 4.3.0.0)"/>
+    </TargetFramework>    
+    <TargetFramework Identifier=".NETFramework" Version="v4.5">
+        <Assembly Version="4.3.0.0" Description="F# 3.0 (FSharp.Core, 4.3.0.0)"/>
+        <Assembly Version="4.3.1.0" Description="F# 3.1 (FSharp.Core, 4.3.1.0)"/>
+        <Assembly Version="4.4.0.0" Description="F# 4.0 (FSharp.Core, 4.4.0.0)"/>
+        <Assembly Version="4.4.1.0" Description="F# 4.1 (FSharp.Core, 4.4.1.0)"/>
+    </TargetFramework>    
+    <TargetFramework Identifier=".NETPortable" Profile="Profile47">
+        <Assembly Version="2.3.5.0" Description="F# 3.0 (FSharp.Core, 2.3.5.0)"/>
+        <Assembly Version="2.3.5.1" Description="F# 3.1 (FSharp.Core, 2.3.5.1)"/>
+        <Assembly Version="3.47.4.0" Description="F# 4.0 (FSharp.Core, 3.47.4.0)"/>
+        <Assembly Version="3.47.41.0" Description="F# 4.1 (FSharp.Core, 3.47.41.0)"/>
+    </TargetFramework>
+    <TargetFramework Identifier=".NETPortable" Profile="Profile7">
+        <Assembly Version="3.3.1.0" Description="F# 3.1 (FSharp.Core, 3.3.1.0)"/>
+        <Assembly Version="3.7.4.0" Description="F# 4.0 (FSharp.Core, 3.7.4.0)"/>
+        <Assembly Version="3.7.41.0" Description="F# 4.1 (FSharp.Core, 3.7.41.0)"/>
+    </TargetFramework>    
+    <TargetFramework Identifier=".NETPortable" Profile="Profile78">
+        <Assembly Version="3.78.3.1" Description="F# 3.1 (FSharp.Core, 3.78.3.1)"/>
+        <Assembly Version="3.78.4.0" Description="F# 4.0 (FSharp.Core, 3.78.4.0)"/>
+        <Assembly Version="3.78.41.0" Description="F# 4.1 (FSharp.Core, 3.78.41.0)"/>
+    </TargetFramework>    
+    <TargetFramework Identifier=".NETPortable" Profile="Profile259">
+        <Assembly Version="3.259.3.1" Description="F# 3.1 (FSharp.Core, 3.259.3.1)"/>
+        <Assembly Version="3.259.4.0" Description="F# 4.0 (FSharp.Core, 3.259.4.0)"/>
+        <Assembly Version="3.259.41.0" Description="F# 4.1 (FSharp.Core, 3.259.41.0)"/>
+    </TargetFramework>    
+</TargetFrameworks>

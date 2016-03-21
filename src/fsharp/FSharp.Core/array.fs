@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -384,7 +384,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let len = array.Length
             let rec loop i = i < len && (f array.[i] || loop (i+1))
-            loop 0
+            len > 0 && loop 0
 
         [<CompiledName("Contains")>]
         let inline contains e (array:'T[]) =
@@ -646,6 +646,18 @@ namespace Microsoft.FSharp.Collections
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1 
             for i = 0 to len1 - 1 do 
                 res.[i] <- (array1.[i],array2.[i],array3.[i])
+            res
+
+        [<CompiledName("AllPairs")>]
+        let allPairs (array1: _[]) (array2: _[]) =
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            let len1 = array1.Length
+            let len2 = array2.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len1 * len2)
+            for i = 0 to len1 - 1 do
+                for j = 0 to len2 - 1 do
+                    res.[i * len2 + j] <- (array1.[i],array2.[j])
             res
 
         [<CompiledName("Unfold")>]

@@ -1,15 +1,14 @@
 lib/debug
 lib/release
 lib/proto
-lib/bootstrap/4.0/*.mdb
-lib/bootstrap/4.0/*.xml
-lib/bootstrap/4.0/fsharpc
-lib/bootstrap/4.0/fsharpi
-lib/bootstrap/4.0/policy*
+lib/bootstrap/4.1/*.mdb
+lib/bootstrap/4.1/*.xml
+lib/bootstrap/4.1/fsharpc
+lib/bootstrap/4.1/fsharpi
+lib/bootstrap/4.1/policy*
 aclocal.m4
 src/*.userprefs
 src/fsharp/FSStrings.resources
-lkg
 packages
 src/fsharp/FSharp.Build/*.resx
 src/fsharp/FSharp.Build-proto/*.resx
@@ -74,6 +73,8 @@ src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
 vsintegration/src/unittests/Unittests.fsi
+tests/*FSharp_Failures.env
+tests/*FSharp_Failures.lst
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
 tests/XFSharpQA_Failures.log.*
@@ -81,10 +82,10 @@ vsintegration/src/vs/FsPkgs/FSharp.Project/FS/FSharp.ProjectSystem.FSharp.fsi
 vsintegration/src/vs/FsPkgs/FSharp.Project/FS/ctofiles/
 tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
-
+tests/fsharpqa/Source/*FSharpQA_Failures.env
+tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.csproj.user
 *.sln.DotSettings.user
-
 *.ide
 *.log
 *.jrs
@@ -93,3 +94,4 @@ tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLi
 *.orig
 *.mdf
 *.ldf
+tests/**/FSharp.Core.dll

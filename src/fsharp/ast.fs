@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Ast
 
@@ -948,7 +948,7 @@ and
     | OptionalVal of Ident * range
     /// ':? type '
     | IsInst of SynType * range
-    /// <@ expr @>, used for active pattern arguments
+    /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of SynExpr * range
 
     /// Deprecated character ranges

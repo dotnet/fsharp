@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations #RequiresPowerPack 
+// #Regression #Conformance #Quotations
 // Regression for FSB 4708
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns

@@ -1,8 +1,10 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Type providers, validation of provided types, etc.
 
 namespace Microsoft.FSharp.Compiler
+
+#if EXTENSIONTYPING
 
 module internal ExtensionTyping =
     open System
@@ -15,7 +17,6 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
     open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
-    open Internal.Utilities.FileSystem
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -83,6 +84,12 @@ module internal ExtensionTyping =
                 raiseError e
         | None -> []
 
+    let StripException (e:exn) =
+        match e with
+        |   :? TargetInvocationException as e -> e.InnerException
+        |   :? TypeInitializationException as e -> e.InnerException
+        |   _ -> e
+
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
     let CreateTypeProvider (typeProviderImplementationType:System.Type, 
@@ -100,12 +107,7 @@ module internal ExtensionTyping =
             try 
                 f ()
             with err ->
-                let strip (e:exn) =
-                    match e with
-                    |   :? TargetInvocationException as e -> e.InnerException
-                    |   :? TypeInitializationException as e -> e.InnerException
-                    |   _ -> e
-                let e = strip (strip err)
+                let e = StripException (StripException err)
                 raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
 
         if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
@@ -404,7 +406,7 @@ module internal ExtensionTyping =
                             let namedArgs = 
                                 a.NamedArguments 
                                 |> Seq.toList 
-                                |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
+                                |> List.map (fun arg -> arg.MemberInfo.Name, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
                             ctorArgs, namedArgs)
 
                   member __.GetHasTypeProviderEditorHideMethodsAttribute provider = 
@@ -520,7 +522,9 @@ module internal ExtensionTyping =
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
                     let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<MethodBase> |], null)  
                     if isNull meth then [| |] else
-                    let paramsAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                    let paramsAsObj = 
+                        try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                        with err -> raise (StripException (StripException err))
                     paramsAsObj :?> ParameterInfo[] 
 
             staticParams |> ProvidedParameterInfo.CreateArray ctxt
@@ -538,7 +542,10 @@ module internal ExtensionTyping =
                     match meth with 
                     | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
-                    let mbAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                    let mbAsObj = 
+                       try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                       with err -> raise (StripException (StripException err))
+
                     match mbAsObj with 
                     | :? MethodBase as mb -> mb
                     | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
@@ -568,6 +575,8 @@ module internal ExtensionTyping =
         member __.IsFamilyAndAssembly = x.IsFamilyAndAssembly
         override __.Equals y = assert false; match y with :? ProvidedFieldInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
+        static member TaintedEquals (pt1:Tainted<ProvidedFieldInfo>, pt2:Tainted<ProvidedFieldInfo>) = 
+           Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 
 
@@ -1218,3 +1227,4 @@ module internal ExtensionTyping =
     let IsGeneratedTypeDirectReference (st: Tainted<ProvidedType>, m) =
         st.PUntaint((fun st -> st.TryGetTyconRef() |> isNone), m)
 
+#endif

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Morphs 
 
@@ -368,10 +368,10 @@ let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)
-let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefs (List.map f m.AsList)
+let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
 
 let morphExpandILTypeDefs f (m:ILTypeDefs) = 
-  mkILTypeDefs (List.foldBack (fun x y -> f x @ y) m.AsList [])
+  mkILTypeDefs (List.collect f m.AsList)
 
 let morphILTypeDefsInILModule typesf m = 
     {m with TypeDefs=typesf m.TypeDefs}

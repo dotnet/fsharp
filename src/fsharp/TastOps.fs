@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
 module internal Microsoft.FSharp.Compiler.Tastops 
@@ -1566,7 +1566,7 @@ let isStructTy g ty =
     (isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon) || isTupleStructTy g ty
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
-// An unmanaged-type is any type that isn’t a reference-type, a type-parameter, or a generic struct-type and
+// An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
 // contains no fields whose type is not an unmanaged-type. In other words, an unmanaged-type is one of the
 // following:
 // - sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool.
@@ -2282,8 +2282,9 @@ module PrettyTypes = begin
     let PrettifyTypes1   g x = PrettifyTypes g (fun f -> f) (fun f -> f) x
     let PrettifyTypes2   g x = PrettifyTypes g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
     let PrettifyTypesN   g x = PrettifyTypes g List.fold List.map   x
+    let PrettifyTypesNN   g x = PrettifyTypes g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
     let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
-    let PrettifyTypesNN1 g x = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (fold1Of2 f),f)) (fun f -> mapTriple (List.map f, List.map (map1Of2  f), f)) x
     let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
 
 end
@@ -4454,7 +4455,7 @@ and remapValData g tmenv d =
         val_type    = ty';
         val_actual_parent = d.val_actual_parent |> remapParentRef tmenv;
         val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
-        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_defn_range topValInfo ty ty' tmenv);
+        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
         val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
 
 and remapParentRef tyenv p =
@@ -6438,7 +6439,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             let suppliedArgs, droppedSuppliedArgs = 
                 List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
 
-            /// THe relevant range for any expressions and applications includes the arguments 
+            /// The relevant range for any expressions and applications includes the arguments 
             let appm = (m,suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
 
             // See if we have 'enough' suppliedArgs. If not, we have to build some lambdas, and,
@@ -6447,9 +6448,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             // is a classic case. Here we generate
             //   let tmp = (effect;4) in 
             //   (fun v -> Seq.take tmp (v :> seq<_>))
-            let buildingLambdas = (suppliedArgs.Length <> curriedNiceNames.Length)
-            //printfn "buildingLambdas = %A" buildingLambdas
-            //printfn "suppliedArgs.Length = %d" suppliedArgs.Length 
+            let buildingLambdas = suppliedArgs.Length <> curriedNiceNames.Length
 
             /// Given a tuple of argument variables that has a tuple type that satisfies the input argument types,
             /// coerce it to a tuple that satisfies the matching coerced argument type(s).
@@ -7144,14 +7143,15 @@ let TryGetActivePatternInfo (vref:ValRef) =
     if logicalName.Length = 0 || logicalName.[0] <> '|' then 
        None 
     else 
-       ActivePatternInfoOfValName vref.CoreDisplayName
+       ActivePatternInfoOfValName vref.CoreDisplayName vref.Range
 
 type ActivePatternElemRef with 
     member x.Name = 
         let (APElemRef(_,vref,n)) = x
         match TryGetActivePatternInfo vref with
         | None -> error(InternalError("not an active pattern name", vref.Range))
-        | Some (APInfo(_,nms)) -> 
+        | Some apinfo -> 
+            let nms = apinfo.ActiveTags
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern refernce", vref.Range));
             List.nth nms n
 
@@ -7176,8 +7176,7 @@ let mkChoiceCaseRef g m n i =
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
 
 type PrettyNaming.ActivePatternInfo with 
-    member x.Names = let (APInfo(_,nms)) = x in nms
-    member x.IsTotal = let (APInfo(total,_)) = x in total
+    member x.Names = x.ActiveTags
 
     member apinfo.ResultType g m rtys = 
         let choicety = mkChoiceTy g m rtys
@@ -7748,86 +7747,120 @@ let (|RangeInt32Step|_|) g expr =
 
     | _ -> None
 
-let (|ExtractTypeOfExpr|_|) g expr = Some (tyOfExpr g expr)
+let (|GetEnumeratorCall|_|) expr =   
+    match expr with   
+    | Expr.Op (TOp.ILCall( _,  _,  _,  _,  _,  _, _, iLMethodRef,  _,  _,  _),_,[Expr.Val(vref,_,_) | Expr.Op(_, _, [Expr.Val(vref, ValUseFlag.NormalValUse, _)], _) ],_) ->  
+        if iLMethodRef.Name = "GetEnumerator" then Some(vref)  
+        else None  
+    | _ -> None  
+
+let (|CompiledForEachExpr|_|) g expr =   
+    match expr with
+    | Let (enumerableVar, enumerableExpr, _,
+           Let (enumeratorVar, GetEnumeratorCall enumerableVar2, enumeratorBind,
+              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _))) 
+                 // Apply correctness conditions to ensure this really is a compiled for-each expression.
+                 when valRefEq g (mkLocalValRef enumerableVar) enumerableVar2 &&
+                      enumerableVar.IsCompilerGenerated &&
+                      enumeratorVar.IsCompilerGenerated &&
+                      (let fvs = (freeInExpr CollectLocals bodyExpr)
+                      not (Zset.contains enumerableVar fvs.FreeLocals) && 
+                      not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
+
+        // Extract useful ranges
+        let m = enumerableExpr.Range
+        let mBody = bodyExpr.Range
+
+        let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,m
+        let spWhileLoop   = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtWhileLoop(spStart)|  _ -> NoSequencePointAtWhileLoop
+        let enumerableTy = tyOfExpr g enumerableExpr
+
+        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (m, mBody, spForLoop, mForLoop, spWhileLoop))
+    | _ -> None  
+             
+
+let (|CompiledInt32RangeForEachExpr|_|) g expr = 
+    match expr with
+    | CompiledForEachExpr g (_, RangeInt32Step g (startExpr, step, finishExpr), elemVar, bodyExpr, ranges) ->
+        Some (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
+        | _ -> None
+    | _ -> None
+
 
 type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
 
 let DetectAndOptimizeForExpression g option expr =
-    match expr with
-    | Let (_, enumerableExpr, _,
-           Let (_, _, enumeratorBind,
-              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _))) ->
+    match option, expr with
+    | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) -> 
 
-      let m = enumerableExpr.Range
-      let mBody = bodyExpr.Range
+           let (m, _mBody, spForLoop, _mForLoop, _spWhileLoop) = ranges
+           mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
 
-      let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,m
-      let spWhileLoop   = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtWhileLoop(spStart)|  _ -> NoSequencePointAtWhileLoop
+    | OptimizeAllForExpressions,CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
-      match option,enumerableExpr with
-      | _,RangeInt32Step g (startExpr, step, finishExpr) ->
-        match step with
-        | -1 | 1  ->
-            mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
-        | _ -> expr
-      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isStringTy g ty ->
-        // type is string, optimize for expression as:
-        //  let $str = enumerable
-        //  for $idx in 0..(str.Length - 1) do
-        //      let elem = str.[idx]
-        //      body elem
+         let (m, mBody, spForLoop, mForLoop, spWhileLoop) = ranges
 
-        let strVar      ,strExpr    = mkCompGenLocal m "str" ty
-        let idxVar      ,idxExpr    = mkCompGenLocal m "idx" g.int32_ty
+         if isStringTy g enumerableTy then
+            // type is string, optimize for expression as:
+            //  let $str = enumerable
+            //  for $idx in 0..(str.Length - 1) do
+            //      let elem = str.[idx]
+            //      body elem
 
-        let lengthExpr              = mkGetStringLength g m strExpr
-        let charExpr                = mkGetStringChar g m strExpr idxExpr
+            let strVar      ,strExpr    = mkCompGenLocal m "str" enumerableTy
+            let idxVar      ,idxExpr    = mkCompGenLocal m "idx" g.int32_ty
 
-        let startExpr               = mkZero g m
-        let finishExpr              = mkDecr g mForLoop lengthExpr
-        let loopItemExpr            = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  // for compat reasons, loop item over string is sometimes object, not char
-        let bodyExpr                = mkCompGenLet mBody elemVar loopItemExpr bodyExpr
-        let forExpr                 = mkFastForLoop g (spForLoop,m,idxVar,startExpr,true,finishExpr,bodyExpr)
-        let expr                    = mkCompGenLet m strVar enumerableExpr forExpr
+            let lengthExpr              = mkGetStringLength g m strExpr
+            let charExpr                = mkGetStringChar g m strExpr idxExpr
 
-        expr
-      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isListTy g ty ->
-        // type is list, optimize for expression as:
-        //  let mutable $currentVar = listExpr
-        //  let mutable $nextVar    = $tailOrNull
-        //  while $guardExpr do
-        //    let i = $headExpr
-        //    bodyExpr ()
-        //    $current   <- $next
-        //    $next      <- $tailOrNull
+            let startExpr               = mkZero g m
+            let finishExpr              = mkDecr g mForLoop lengthExpr
+            let loopItemExpr            = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  // for compat reasons, loop item over string is sometimes object, not char
+            let bodyExpr                = mkCompGenLet mBody elemVar loopItemExpr bodyExpr
+            let forExpr                 = mkFastForLoop g (spForLoop,m,idxVar,startExpr,true,finishExpr,bodyExpr)
+            let expr                    = mkCompGenLet m strVar enumerableExpr forExpr
 
-        let IndexHead                   = 0
-        let IndexTail                   = 1
+            expr
 
-        let currentVar  ,currentExpr    = mkMutableCompGenLocal m "current" ty
-        let nextVar     ,nextExpr       = mkMutableCompGenLocal m "next" ty
-        let elemTy                      = destListTy g ty
+         elif isListTy g enumerableTy then
+            // type is list, optimize for expression as:
+            //  let mutable $currentVar = listExpr
+            //  let mutable $nextVar    = $tailOrNull
+            //  while $guardExpr do
+            //    let i = $headExpr
+            //    bodyExpr ()
+            //    $current   <- $next
+            //    $next      <- $tailOrNull
 
-        let guardExpr                   = mkNonNullTest g m nextExpr
-        let headOrDefaultExpr           = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
-        let tailOrNullExpr              = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
-        let bodyExpr                    =
-            mkCompGenLet m elemVar headOrDefaultExpr
-                (mkCompGenSequential mBody
-                    bodyExpr
+            let IndexHead                   = 0
+            let IndexTail                   = 1
+
+            let currentVar  ,currentExpr    = mkMutableCompGenLocal m "current" enumerableTy
+            let nextVar     ,nextExpr       = mkMutableCompGenLocal m "next" enumerableTy
+            let elemTy                      = destListTy g enumerableTy
+
+            let guardExpr                   = mkNonNullTest g m nextExpr
+            let headOrDefaultExpr           = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
+            let tailOrNullExpr              = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
+            let bodyExpr                    =
+                mkCompGenLet m elemVar headOrDefaultExpr
                     (mkCompGenSequential mBody
-                        (mkValSet mBody (mkLocalValRef currentVar) nextExpr)
-                        (mkValSet mBody (mkLocalValRef nextVar) tailOrNullExpr)
+                        bodyExpr
+                        (mkCompGenSequential mBody
+                            (mkValSet mBody (mkLocalValRef currentVar) nextExpr)
+                            (mkValSet mBody (mkLocalValRef nextVar) tailOrNullExpr)
+                        )
                     )
-                )
-        let whileExpr                   = mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, m)
+            let whileExpr                   = mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, m)
 
-        let expr =
-            mkCompGenLet m currentVar enumerableExpr
-                (mkCompGenLet m nextVar tailOrNullExpr whileExpr)
+            let expr =
+                mkCompGenLet m currentVar enumerableExpr
+                    (mkCompGenLet m nextVar tailOrNullExpr whileExpr)
 
-        expr
-      | _ -> expr
+            expr
+
+         else
+            expr
     | _ -> expr
 
 // Used to remove Expr.Link for inner expressions in pattern matches

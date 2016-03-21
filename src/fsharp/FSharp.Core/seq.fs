@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
@@ -802,6 +802,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract CheckClose: bool
         abstract LastGenerated : 'T
         
+        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member x.MoveNextImpl() = 
              let active = 
                  if redirect then redirectTo
@@ -836,6 +837,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
+
+            //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl() 
                
             member x.Reset() = raise <| new System.NotSupportedException();
@@ -1438,6 +1441,13 @@ namespace Microsoft.FSharp.Collections
                    end;
                    enumeratorR := None)
             (new CachedSeq<_>(cleanup, result) :> seq<_>)
+
+        [<CompiledName("AllPairs")>]
+        let allPairs source1 source2 =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            let cached = cache source2
+            source1 |> collect (fun x -> cached |> map (fun y -> x,y))
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]             
         [<CompiledName("ReadOnly")>]

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 
@@ -676,10 +676,10 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 // Conversion was successful, so read the object file
                 objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) ; 
                 //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
-                System.IO.File.Delete(tempObjFileName)
+                FileSystem.FileDelete(tempObjFileName)
             finally
                 // clean up the temp files
-                List.iter (fun tempResFileName -> System.IO.File.Delete(tempResFileName)) tempResFiles
+                List.iter (fun tempResFileName -> FileSystem.FileDelete(tempResFileName)) tempResFiles
             
         // Part 2: Read the COFF file held in pbUnlinkedResource, spit it out into pResBuffer and apply the COFF fixups
         // pResBuffer will become  the .rsrc section of the PE file
@@ -1090,7 +1090,7 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum. 
 let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
     try
-        use file = new FileStream(url, FileMode.Open, FileAccess.Read, FileShare.Read)
+        use file = FileSystem.FileStreamReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
         let checkSum = md5.ComputeHash(file)
         if (checkSum.Length = hashSizeOfMD5) then

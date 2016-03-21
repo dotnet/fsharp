@@ -10,3 +10,11 @@ neg91.fs(34,13,34,16): typecheck error FS0044: This construct is deprecated. Don
 neg91.fs(44,13,44,16): typecheck error FS3003: Don't touch me
 
 neg91.fs(54,13,54,16): typecheck error FS0057: It was just an experiment!. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.
+
+neg91.fs(63,11,63,27): typecheck error FS3191: This literal pattern does not take arguments
+
+neg91.fs(72,11,72,27): typecheck error FS3191: This literal pattern does not take arguments
+
+neg91.fs(80,11,80,38): typecheck error FS3191: This literal pattern does not take arguments
+
+neg91.fs(90,29,90,32): typecheck error FS3192: Constructors are not permitted as extension members - they must be defined as part of the original definition of the type

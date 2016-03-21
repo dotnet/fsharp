@@ -33,6 +33,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiAnyCPU", "fsharp\fsiAnyC
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Unittests", "fsharp\FSharp.Compiler.Unittests\FSharp.Compiler.Unittests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E49B77EA-64DE-451A-A5E6-A6632FC1F03C}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests", "..\tests\fsharp\FSharp.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpQA.Tests", "..\tests\fsharpqa\Source\FSharpQA.Tests.fsproj", "{21958DEB-133B-4760-A238-1293ED9687EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,8 +87,22 @@ Global
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C163E892-5BF7-4B59-AA99-B0E8079C67C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C163E892-5BF7-4B59-AA99-B0E8079C67C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C163E892-5BF7-4B59-AA99-B0E8079C67C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C163E892-5BF7-4B59-AA99-B0E8079C67C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21958DEB-133B-4760-A238-1293ED9687EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21958DEB-133B-4760-A238-1293ED9687EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{88E2D422-6852-46E3-A740-83E391DC7973} = {E49B77EA-64DE-451A-A5E6-A6632FC1F03C}
+		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5} = {E49B77EA-64DE-451A-A5E6-A6632FC1F03C}
+		{C163E892-5BF7-4B59-AA99-B0E8079C67C4} = {E49B77EA-64DE-451A-A5E6-A6632FC1F03C}
+		{21958DEB-133B-4760-A238-1293ED9687EC} = {E49B77EA-64DE-451A-A5E6-A6632FC1F03C}
 	EndGlobalSection
 EndGlobal

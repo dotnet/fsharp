@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Convert quoted TAST data structures to structures ready for pickling 
 
@@ -40,4 +40,10 @@ type QuotationGenerationScope  =
 val ConvExprPublic : QuotationGenerationScope -> QuotationTranslationEnv -> Expr -> QuotationPickler.ExprData 
 val ConvMethodBase  : QuotationGenerationScope -> QuotationTranslationEnv ->  string * Val  -> QuotationPickler.MethodBaseData
 
+
+val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option
+val (|SimpleArrayLoopUpperBound|_|) : Expr -> unit option
+val (|SimpleArrayLoopBody|_|) : TcGlobals -> Expr -> (Expr * TType * Expr) option
+val (|ObjectInitializationCheck|_|) : TcGlobals -> Expr -> unit option
+val isSplice : TcGlobals -> ValRef -> bool
 

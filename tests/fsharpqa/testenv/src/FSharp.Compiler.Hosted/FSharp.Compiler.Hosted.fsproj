@@ -15,7 +15,7 @@
     <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
     <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
     <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>FSharp.Compiler.Hosted</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

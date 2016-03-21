@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 
 namespace Microsoft.FSharp.Compiler
@@ -26,9 +26,6 @@ module internal MSBuildResolver =
         | CompileTimeLike 
         | RuntimeLike      // Don't allow stubbed-out reference assemblies
         | DesigntimeLike 
-
-#if SILVERLIGHT
-#else
 
     /// Get the Reference Assemblies directory for the .NET Framework on Window
     val DotNetFrameworkReferenceAssembliesRootDirectoryOnWindows : string
@@ -85,4 +82,3 @@ module internal MSBuildResolver =
                 logwarning:(string->string->unit) *
                 logerror:(string->string->unit)
              -> ResolutionResults
-#endif

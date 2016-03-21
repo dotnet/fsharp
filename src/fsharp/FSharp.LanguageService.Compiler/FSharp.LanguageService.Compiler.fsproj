@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
@@ -11,15 +11,10 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.LanguageService.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INTERNALIZED_POWER_PACK;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>EXTENSIBLE_DUMPER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_COMPILER_BACKEND;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_PDB_READER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_PDB_WRITER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -126,12 +121,6 @@
     <Compile Include="..\InternalCollections.fs">
       <Link>Utilities\InternalCollections.fs</Link>
     </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fsi">
-      <Link>Utilities\InternalFileSystemUtils.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fs">
-      <Link>Utilities\InternalFileSystemUtils.fs</Link>
-    </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
     </Compile>
@@ -190,6 +179,18 @@
     <Compile Include="..\..\absil\ilprint.fs">
       <Link>AbsIL\ilprint.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilmorph.fsi">
+      <Link>AbsIL/ilmorph.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilmorph.fs">
+      <Link>AbsIL/ilmorph.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsupp.fsi">
+      <Link>AbsIL/ilsupp.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsupp.fs">
+      <Link>AbsIL/ilsupp.fs</Link>
+    </Compile>
     <Compile Include="ilpars.fs">
       <Link>AbsIL\ilpars.fs</Link>
     </Compile>
@@ -208,6 +209,15 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL/ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwrite.fs">
+      <Link>AbsIL/ilwrite.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilreflect.fs">
+      <Link>AbsIL/ilreflect.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
     </Compile>
@@ -216,6 +226,18 @@
     </Compile>
     <Compile Include="..\..\ilx\ilxsettings.fs">
       <Link>ILXErase\ilxsettings.fs</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseClosures.fsi">
+      <Link>ILXErase/EraseClosures.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseClosures.fs">
+      <Link>ILXErase/EraseClosures.fs</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseUnions.fsi">
+      <Link>ILXErase/EraseUnions.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseUnions.fs">
+      <Link>ILXErase/EraseUnions.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">
       <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -381,6 +403,30 @@
     <Compile Include="..\Optimizer.fs">
       <Link>Optimize\Optimizer.fs</Link>
     </Compile>
+    <Compile Include="..\DetupleArgs.fsi">
+      <Link>Optimize/DetupleArgs.fsi</Link>
+    </Compile>
+    <Compile Include="..\DetupleArgs.fs">
+      <Link>Optimize/DetupleArgs.fs</Link>
+    </Compile>
+    <Compile Include="..\InnerLambdasToTopLevelFuncs.fsi">
+      <Link>Optimize/InnerLambdasToTopLevelFuncs.fsi</Link>
+    </Compile>
+    <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
+      <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
+    </Compile>
+    <Compile Include="..\LowerCallsAndSeqs.fs">
+      <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="..\autobox.fs">
+      <Link>Optimize\autobox.fs</Link>
+    </Compile>
+    <Compile Include="..\IlxGen.fsi">
+      <Link>CodeGen/IlxGen.fsi</Link>
+    </Compile>
+    <Compile Include="..\IlxGen.fs">
+      <Link>CodeGen/IlxGen.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -393,65 +439,71 @@
     <Compile Include="..\CompileOptions.fs">
       <Link>Driver\CompileOptions.fs</Link>
     </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fsi">
-      <Link>Driver\IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\IncrementalBuild.fs">
-      <Link>Driver\IncrementalBuild.fs</Link>
-    </Compile>
     <Compile Include="..\fsc.fsi">
       <Link>Driver\fsc.fsi</Link>
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
+    </Compile>
     <Compile Include="..\vs\Reactor.fsi">
-      <Link>Service\Reactor.fsi</Link>
+      <Link>Service/Reactor.fsi</Link>
     </Compile>
     <Compile Include="..\vs\Reactor.fs">
-      <Link>Service\Reactor.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceLexing.fsi">
-      <Link>Service\ServiceLexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceLexing.fs">
-      <Link>Service\ServiceLexing.fs</Link>
+      <Link>Service/Reactor.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceConstants.fs">
-      <Link>Service\ServiceConstants.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
-      <Link>Service\ServiceParseTreeWalk.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fsi">
-      <Link>Service\ServiceNavigation.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceNavigation.fs">
-      <Link>Service\ServiceNavigation.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
-      <Link>Service\ServiceParamInfoLocations.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
-      <Link>Service\ServiceParamInfoLocations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fsi">
-      <Link>Service\ServiceUntypedParse.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceUntypedParse.fs">
-      <Link>Service\ServiceUntypedParse.fs</Link>
+      <Link>Service/ServiceConstants.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service\ServiceDeclarations.fsi</Link>
+      <Link>Service/ServiceDeclarations.fsi</Link>
     </Compile>
     <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service\ServiceDeclarations.fs</Link>
+      <Link>Service/ServiceDeclarations.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\Symbols.fsi">
+      <Link>Service/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\Symbols.fs">
+      <Link>Service/Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fsi">
+      <Link>Service/ServiceLexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fs">
+      <Link>Service/ServiceLexing.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
+      <Link>Service/ServiceParseTreeWalk.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fsi">
+      <Link>Service/ServiceNavigation.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fs">
+      <Link>Service/ServiceNavigation.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
+      <Link>Service/ServiceParamInfoLocations.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
+      <Link>Service/ServiceParamInfoLocations.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fsi">
+      <Link>Service/ServiceUntypedParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fs">
+      <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
     <Compile Include="..\vs\service.fsi">
-      <Link>Service\service.fsi</Link>
+      <Link>Service/service.fsi</Link>
     </Compile>
     <Compile Include="..\vs\service.fs">
-      <Link>Service\service.fs</Link>
+      <Link>Service/service.fs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

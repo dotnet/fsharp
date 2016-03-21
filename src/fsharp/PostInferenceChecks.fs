@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Implements a set of checks on the TAST for a file that can only be performed after type inference
 /// is complete.
@@ -528,7 +528,7 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(Expr.Val(v,vFlags,_) as f)),fty,tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
         // dprintfn "GOT BASE VAL USE"

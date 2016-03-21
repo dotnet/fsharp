@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // This file is compiled 3(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
@@ -1194,7 +1194,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? bool   as b -> (if b then "true" else "false")
             | :? char   as c -> "\'" + formatChar true c + "\'"
             | _ -> try  let text = obj.ToString()
-                        text
+                        if text = null then "" else text
                    with e ->
                      // If a .ToString() call throws an exception, catch it and use the message as the result.
                      // This may be informative, e.g. division by zero etc...

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
@@ -1011,7 +1011,6 @@ let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) =
   GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
 
 and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
-
 
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
@@ -4496,7 +4495,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             reportTime showTimes "Generate PDB Info"
             
           // Now we have the debug data we can go back and fill in the debug directory in the image 
-            let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
+            let fs2 = FileSystem.FileStreamWriteExistingShim(outfile)
             let os2 = new BinaryWriter(fs2)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
