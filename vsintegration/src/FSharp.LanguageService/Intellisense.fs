@@ -46,6 +46,8 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
                 let span = ss.CreateTrackingSpan(MakeSpan(ss,sl,sc,el,ec), SpanTrackingMode.EdgeInclusive)
                 yield span  |]
 
+    let getParameters (m : FSharpMethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
+
     do assert(methods.Length > 0)
 
     override x.GetColumnOfStartOfLongId() = nwpl.LongIdStartLocation.Column
@@ -60,14 +62,14 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetCount() = methods.Length
 
-    override x.GetDescription(index) = safe index "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
+    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
             
-    override x.GetType(index) = safe index "" (fun m -> m.TypeText)
+    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
 
-    override x.GetParameterCount(index) =  safe index 0 (fun m -> m.Parameters.Length) 
+    override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
-    override x.GetParameterInfo(index, parameter, nameOut, displayOut, descriptionOut) =
-        let name,display = safe index ("","") (fun m -> let p = m.Parameters.[parameter] in p.ParameterName,p.Display )
+    override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName,p.Display )
            
         nameOut <- name
         displayOut <- display
@@ -289,7 +291,8 @@ type internal FSharpIntellisenseInfo
                                     false  // note: textAtOpenParenLocation is not necessarily otherwise "(", for example in "sin 42.0" it is "4"
                             let filteredMethods =
                                 [| for m in methods.Methods do 
-                                        if m.IsStaticArguments = isThisAStaticArgumentsTip then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
+                                        if (isThisAStaticArgumentsTip && m.StaticParameters.Length > 0) ||
+                                           (not isThisAStaticArgumentsTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
                                             yield m |]
                             if filteredMethods.Length <> 0 then
                                 Some (FSharpMethodListForAMethodTip(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip)
