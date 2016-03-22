@@ -241,12 +241,12 @@ type internal FSharpIntellisenseInfo
                      ) = 
         inherit IntellisenseInfo() 
 
-        // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
-        let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
-
         let methodList = 
           if provideMethodList then 
             try
+                // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
+                let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
+
                 // we need some typecheck info, even if stale, in order to look up e.g. method overload types/xmldocs
                 if typedResults.HasFullTypeCheckInfo then 
 
@@ -255,12 +255,12 @@ type internal FSharpIntellisenseInfo
                     | Some nwpl -> 
                         // Note: this may alternatively workaround some parts of 90778 - the real fix for that is to have before-overload-resolution name-sink work correctly.
                         // However it also deals with stale typecheck info that may not have recorded name resolutions for a recently-typed long-id.
-                        let names = Some nwpl.LongId
+                        let names = nwpl.LongId
                         // "names" is a long-id that we can fallback-lookup in the local environment if captured name resolutions finds nothing at the location.
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
-                        let lidEndLine,lidEndCol = Pos.toZ nwpl.LongIdEndLocation 
-                        let methods = typedResults.GetMethodsAlternate(Range.Line.fromZ lidEndLine, lidEndCol, "", names)  |> Async.RunSynchronously
+                        let lidEnd = nwpl.LongIdEndLocation
+                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 

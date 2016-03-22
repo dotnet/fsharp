@@ -3478,7 +3478,7 @@ let WriteOptimizationData (tcGlobals, file, ccu,modulInfo) =
 // Abstraction for project reference
 
 type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyRefs) = 
-    let externalSigAndOptData = ["FSharp.Core";"FSharp.LanguageService.Compiler"]
+    let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes(ilg) = GetAutoOpenAttributes ilg ilModule 
          member __.GetInternalsVisibleToAttributes(ilg) = GetInternalsVisibleToAttributes ilg ilModule 

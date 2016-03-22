@@ -8133,17 +8133,21 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         | (DelayedApp (atomicFlag, arg, mExprAndArg)::otherDelayed) ->
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
 
-        | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed) ->
+        | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
 
 #if EXTENSIONTYPING
-            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndArg, mItem) with 
+            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndTypeArgs, mItem) with 
             | Some minfoAfterStaticArguments ->
 
               // Replace the resolution including the static parameters, plus the extra information about the original method info
               let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
-              CallNameResolutionSinkReplacing cenv.tcSink (mItem,env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
+              CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
 
-              TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+              match otherDelayed with 
+              | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
+                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+              | _ -> 
+                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
 
             | None ->
 #endif
@@ -8152,7 +8156,12 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
             
             // NOTE: This doesn't take instantiation into account
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs,env.NameEnv,item (* ! *), item, ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)                        
-            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+            match otherDelayed with 
+            | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
+                TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+            | _ -> 
+                TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
+
         | _ -> 
 #if EXTENSIONTYPING
             if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then 

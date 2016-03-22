@@ -621,15 +621,13 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,generatedCcu
         let resource = WriteSignatureData (tcConfig,tcGlobals,exportRemapping,generatedCcu,outfile)
         if verbose then dprintf "Generated interface data attribute!\n";
         // REVIEW: need a better test for this
-        let outFileNoExtension = Filename.chopExtension outfile
-        let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
-        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll) && not isIncrementalBuild then 
+        if (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild then 
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
             File.WriteAllBytes(sigDataFileName,resource.Bytes);
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         // The resource gets written to a file for FSharp.Core
         let resources = 
-            [ if not tcGlobals.compilingFslib && not isCompilerServiceDll then 
+            [ if not tcGlobals.compilingFslib then 
                  yield  resource ]
         [sigAttr], resources
       else 
@@ -649,15 +647,13 @@ let EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,data) =
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
         if verbose then dprintn "Generating optimization data attribute...";
         // REVIEW: need a better test for this
-        let outFileNoExtension = Filename.chopExtension outfile
-        let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
-        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
+        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib then 
             let ccu,modulInfo = data
             let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName,bytes);
-        // As with the sigdata file, the optdata gets written to a file for FSharp.Core, FSharp.Compiler.Silverlight and FSharp.LanguageService.Compiler
-        if tcGlobals.compilingFslib || isCompilerServiceDll then 
+        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
+        if tcGlobals.compilingFslib then 
             []
         else
             let (ccu, optData) = 

@@ -528,15 +528,6 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
   <PropertyGroup>
-    <OtherFlags>$(OtherFlags) /warnon:1182 --sig:$(IntermediateOutputPath)\$(AssemblyName).sig</OtherFlags>
-    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>
+    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>
-  <Target Name="CopyToBuiltBin">
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
-  </Target>
 </Project>
