@@ -2924,6 +2924,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if addersAndRemovers.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
 
+#if EXTENSIONTYPING
             // Filter out the ones with mangled names from applying static parameters
             let minfos = 
                 let methsWithStaticParams = 
@@ -2938,19 +2939,9 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
                         not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+#endif
+
             minfos 
-(*
-and TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos: MethInfo list, argsOpt, mExprAndArg, mItem) =
-    match minfos, argsOpt with 
-    | [minfo], Some (args,_) -> 
-        match minfo.ProvidedStaticParameterInfo with 
-        | Some (methBeforeArguments, staticParams) -> 
-            let providedMethAfterStaticArguments = TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArguments, staticParams, args, mExprAndArg)
-            let minfoAfterStaticArguments = ProvidedMeth(cenv.amap,providedMethAfterStaticArguments,minfo.ExtensionMemberPriorityOption,mItem)
-            Some minfoAfterStaticArguments
-        | _ -> None
-    | _ -> None
-*)
 
         else []
     // Partition methods into overload sets

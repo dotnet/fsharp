@@ -3306,7 +3306,7 @@ declExpr:
   | declExpr  INFIX_COMPARE_OP      declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
   | declExpr  DOLLAR                declExpr { mkSynInfix (rhs parseState 2) $1 "$" $3 }
   | declExpr  LESS                  declExpr { mkSynInfix (rhs parseState 2) $1 "<" $3 }
-  | declExpr  LESS                  recover { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("<")); 
+  | declExpr  LESS                  recover { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("<"));  
                                               exprFromParseError (mkSynInfix (rhs parseState 2) $1 "<" (arbExpr("declExprInfix",(rhs parseState 3).StartRange))) }
   | declExpr  GREATER               declExpr { mkSynInfix (rhs parseState 2) $1 ">" $3 }
   | declExpr  INFIX_AT_HAT_OP       declExpr { mkSynInfix (rhs parseState 2) $1 $2 $3 }
