@@ -636,7 +636,7 @@ val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModul
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL : TcImports -> TcEnv -> range -> string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL : TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
@@ -677,7 +677,7 @@ val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * st
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv : string option * range * TcConfig * TcImports * TcGlobals -> TcEnv
+val GetInitialTcEnv : assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv
                 
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs

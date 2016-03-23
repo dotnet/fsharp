@@ -426,7 +426,7 @@ let GetTcImportsFromCommandLine
 
     ReportTime tcConfig "Typecheck"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
-    let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // typecheck 
     let inputs = inputs |> List.map fst

@@ -107,6 +107,7 @@ exception OverrideInIntrinsicAugmentation of range
 exception OverrideInExtrinsicAugmentation of range
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 exception StandardOperatorRedefinitionWarning of string * range
+exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 
 // Identify any security attributes
@@ -422,7 +423,16 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs =
 let AddRootModuleOrNamespaceRefs g amap m env modrefs  = 
     ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefsToNameEnv g amap m true env.eAccessRights nenv modrefs) env 
 
-let AddNonLocalCcu g amap scopem env (ccu:CcuThunk,internalsVisible) = 
+let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisibleToAttributes)  = 
+
+    let internalsVisible = 
+        internalsVisibleToAttributes |> List.exists (fun visibleTo ->             
+            try                    
+                System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
+            with e ->
+                warning(InvalidInternalsVisibleToAssemblyName(visibleTo,ccu.FileName))
+                false)
+
     let env = if internalsVisible then addInternalsAccessibility env ccu else env
     // Compute the top-rooted module or namespace references
     let modrefs = ccu.RootModulesAndNamespaces |> List.map (mkNonLocalCcuRootEntityRef ccu) 
@@ -15544,8 +15554,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | Some _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref]
 
 // Add the CCU and apply the "AutoOpen" attributes
-let AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible) = 
-    let env = AddNonLocalCcu g amap scopem env (ccu,internalsVisible)
+let AddCcuToTcEnv(g,amap,scopem,env,assemblyName,ccu,autoOpens,internalsVisible) = 
+    let env = AddNonLocalCcu g amap scopem env assemblyName (ccu,internalsVisible)
 
     // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
     // "Microsoft" is opened by default in FSharp.Core
@@ -15562,8 +15572,8 @@ let AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible) =
     let env = (env,autoOpens) ||> List.fold (ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap ccu scopem)
     env
 
-let CreateInitialTcEnv(g,amap,scopem,ccus) =
-    List.fold (fun env (ccu,autoOpens,internalsVisible) -> AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible)) (emptyTcEnv g) ccus
+let CreateInitialTcEnv(g,amap,scopem,assemblyName,ccus) =
+    List.fold (fun env (ccu,autoOpens,internalsVisible) -> AddCcuToTcEnv(g,amap,scopem,env,assemblyName,ccu,autoOpens,internalsVisible)) (emptyTcEnv g) ccus
 
 type ConditionalDefines = 
     string list
