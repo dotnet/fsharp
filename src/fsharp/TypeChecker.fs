@@ -4357,10 +4357,9 @@ and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
     | None ->
         List.mapFold (TcTypeOrMeasure None cenv newOk checkCxs occ env) tpenv args
     | Some kinds ->
-        if List.length kinds = List.length args
-        then List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
-        else if kinds.Length = 0
-        then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
+        if List.length kinds = List.length args then 
+            List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
+        elif kinds.Length = 0 then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
 and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
@@ -8432,6 +8431,8 @@ and GetSynMemberApplicationArgs delayed tpenv =
         atomicFlag, None, [arg], otherDelayed, tpenv
     | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, arg, _mExprAndArg) :: otherDelayed ->
         (atomicFlag, Some (tyargs,mTypeArgs), [arg], otherDelayed, tpenv)
+    | DelayedTypeApp(tyargs, mTypeArgs, _) :: otherDelayed ->
+        (ExprAtomicFlag.Atomic, Some (tyargs,mTypeArgs), [], otherDelayed, tpenv)
     | otherDelayed ->
         (ExprAtomicFlag.NonAtomic, None, [], otherDelayed, tpenv)
 
