@@ -2737,6 +2737,12 @@ module Local =
                 | None    -> null
         }
 
+// Used by unit testing to check that invalidation handlers are being disconnected
+module GlobalCountersForInvalidation = 
+    let mutable invalidationHandlersAdded = 0
+    let mutable invalidationHandlersRemoved = 0
+    let GetInvalidationHandlersAdded() = invalidationHandlersAdded
+    let GetInvalidationHandlersRemoved() = invalidationHandlersRemoved
 
 #if FX_NO_LOCAL_FILESYSTEM
 type TypeProviderForNamespaces(namespacesAndTypes : list<(string * list<ProvidedTypeDefinition>)>) =

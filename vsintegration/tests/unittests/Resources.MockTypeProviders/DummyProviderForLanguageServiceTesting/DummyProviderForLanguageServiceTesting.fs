@@ -317,9 +317,9 @@ module TypeProvidersVisibilityChecks =
 
     let addGetProperty name value visibility (ty : ProvidedTypeDefinition) = 
         let prop = ProvidedProperty(name, value.GetType())
-        ty.AddMember prop
         prop.IsStatic <- false
         prop.GetterCode <- fun _ -> Quotations.Expr.Value(value, value.GetType())
+        ty.AddMember prop
         let m = prop.GetGetMethod() :?> ProvidedMethod
         setMethodVisibility m visibility
 
