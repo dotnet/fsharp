@@ -593,7 +593,7 @@ namespace Microsoft.FSharp.Collections
         let inline sum          (list:list<_>) = Seq.sum list
 
         [<CompiledName("SumBy")>]
-        let inline sumBy f     (list:list<_>) = Seq.sumBy f list
+        let inline sumBy (f:'T -> 'U)     (list:list<'T>) = fold (fun s i -> Checked.(+) s (f i)) LanguagePrimitives.GenericZero< 'U > list
 
         [<CompiledName("Max")>]
         let inline max          (list:list<_>) = Seq.max list
