@@ -729,7 +729,7 @@ namespace Microsoft.FSharp.Control
                     )
                     
         let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> FakeUnitValue) =
-#if FX_NO_THREADPOOL
+#if FX_NO_THREAD
                 if not (ThreadPool.QueueUserWorkItem((waitCallbackForQueueWorkItemWithTrampoline trampolineHolder), f |> box)) then
                     failwith "failed to queue user work item"
                 FakeUnit
@@ -2040,10 +2040,10 @@ namespace Microsoft.FSharp.Control
 #if FX_ATLEAST_PORTABLE
                         let invokeMeth = (typeof<Closure<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
-#else                    
+#else
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, "Invoke") :?> 'Delegate
-#endif                        
-                    
+#endif
+
                     // Start listening to events
                     event.AddHandler(del)
 
@@ -2137,7 +2137,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncRead(buffer: byte[],?offset,?count) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
                 protectedPrimitiveWithResync (fun ({ aux = aux } as args) ->
                     TaskHelpers.continueWith(stream.ReadAsync(buffer, offset, count, aux.token), args)
@@ -2161,7 +2161,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncWrite(buffer:byte[], ?offset:int, ?count:int) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
                 protectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
                     TaskHelpers.continueWithUnit(stream.WriteAsync(buffer, offset, count, aux.token), args)

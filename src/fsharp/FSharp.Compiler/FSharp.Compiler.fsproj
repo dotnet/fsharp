@@ -10,6 +10,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler</AssemblyName>
+    <DefineConstants>EXTENSIONTYPING;COMPILER;INCLUDE_METADATA_READER;INCLUDE_METADATA_WRITER;EXTENSIBLE_DUMPER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
@@ -19,7 +21,11 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
+  <!-- References -->
+  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
@@ -30,6 +36,12 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection\reshapedreflection.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Reflection\reshapedmsbuild.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -75,6 +87,12 @@
     <Compile Include="..\FlatList.fs">
       <Link>Utilities\FlatList.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\illib.fs">
       <Link>Utilities\illib.fs</Link>
     </Compile>
@@ -101,12 +119,6 @@
     </Compile>
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fsi">
-      <Link>Utilities\ildiag.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fs">
-      <Link>Utilities\ildiag.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>
@@ -187,6 +199,9 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+      <Link>AbsIL\ilsign.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL\ilsupp.fsi</Link>
     </Compile>
@@ -213,6 +228,12 @@
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fsi">
       <Link>AbsIL\ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fsi">
+      <Link>AbsIL\ilwritepdb.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fs">
+      <Link>AbsIL\ilwritepdb.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>
@@ -447,11 +468,20 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
-    <Compile Include="InternalsVisibleTo.fs">
+    <Compile Include="..\vs\IncrementalBuild.fsi">
+      <Link>Driver\IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fs">
+      <Link>Driver\IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -461,8 +491,14 @@
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.0.0-rc-60301\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
+    <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader\1.0.7\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
+    <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.3.0-beta-23816\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
+    <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0-rc3-23805\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>

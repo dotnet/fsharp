@@ -9,8 +9,6 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 open System.IO
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Core.Printf
 
 val public setDiagnosticsChannel: TextWriter option -> unit
@@ -19,4 +17,3 @@ val public dprintfn: TextWriterFormat<'a> -> 'a
 val public dprintf: TextWriterFormat<'a> -> 'a 
 
 val public dprintn: string -> unit
-

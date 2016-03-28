@@ -2,6 +2,7 @@
 #if Portable
 module Core_nested
 #endif
+
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true

@@ -17,6 +17,7 @@ namespace Microsoft.FSharp.Core
     open System.Collections.Generic
     open System.Diagnostics
     open System.Globalization
+    open System.Reflection
     open System.Text
     
 
@@ -646,6 +647,7 @@ namespace Microsoft.FSharp.Core
     open System.Collections.Generic
     open System.Diagnostics
     open System.Globalization
+    open System.Linq
     open System.Text
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
@@ -1892,7 +1894,12 @@ namespace Microsoft.FSharp.Core
                     if not (interfaceType.IsAssignableFrom objectType) then null
                     else
                         let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
-                        let interfaceMap = objectType.GetInterfaceMap interfaceType
+                        let interfaceMap = 
+#if FX_RESHAPED_REFLECTION
+                            RuntimeReflectionExtensions.GetRuntimeInterfaceMap(objectType.GetTypeInfo(), interfaceType)
+#else
+                            objectType.GetInterfaceMap interfaceType
+#endif
                         let rec findTargetMethod index =
                             if index = interfaceMap.InterfaceMethods.Length then null
                             elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
@@ -1915,8 +1922,15 @@ namespace Microsoft.FSharp.Core
                         | null -> false
                         | _ -> true
 
+                let getCustomAttribute (ty:Type) (attrTy:Type) =
+#if FX_RESHAPED_REFLECTION
+                    CustomAttributeExtensions.GetCustomAttributes(ty.GetTypeInfo(), attrTy, false).FirstOrDefault()
+#else
+                    ty.GetCustomAttribute attrTy
+#endif
+
                 let hasFSharpCompilerGeneratedEquality (ty:Type) =
-                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                    match (getCustomAttribute  ty typeof<CompilationMappingAttribute>) with
                     | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
                         isCompilerGeneratedInterfaceMethod ty (makeEquatableType ty) "Equals" [|ty|]
                         && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
@@ -1924,7 +1938,7 @@ namespace Microsoft.FSharp.Core
                     | _ -> false
 
                 let hasFSharpCompilerGeneratedComparison (ty:Type) =
-                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                    match (getCustomAttribute ty typeof<CompilationMappingAttribute>) with
                     | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
                         isCompilerGeneratedInterfaceMethod ty (makeComparableType ty) "CompareTo" [|ty|]
                         && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralComparable> "CompareTo" [|typeof<obj>; typeof<IComparer>|]
@@ -5396,7 +5410,6 @@ namespace Microsoft.FSharp.Core
               let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
               PrivateListHelpers.setFreshConsTail lastCons l2;
               res
-        
 
         [<CompiledName("Increment")>]
         let incr x = x.contents <- x.contents + 1

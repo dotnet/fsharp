@@ -11,17 +11,20 @@
         fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
         Win32 DLLs and memory mapping dependencies...
         -->
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget Condition=" '$(TargetFramework)'!='coreclr'">x86</PlatformTarget>
+    <PlatformTarget Condition=" '$(TargetFramework)'=='coreclr'">AnyCPU</PlatformTarget>
     <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="FSIstrings.txt">
@@ -29,6 +32,9 @@
     </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>Utilities/assemblyinfo.fsi.exe.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities/InternalCollections.fsi</Link>
@@ -47,7 +53,10 @@
       <Link>fsi.exe.config</Link>
     </None>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+      <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -55,14 +64,11 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Name>FSharp.Compiler.Interactive.Settings</Name>
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
-      <Name>FSharp.Compiler.Server.Shared</Name>
-      <Project>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
@@ -72,6 +78,13 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+    <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
+      <Name>FSharp.Compiler.Server.Shared</Name>
+      <Project>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</Project>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
