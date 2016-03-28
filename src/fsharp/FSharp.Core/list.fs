@@ -590,7 +590,7 @@ namespace Microsoft.FSharp.Collections
         let tryFindIndexBack f list = list |> toArray |> Array.tryFindIndexBack f
 
         [<CompiledName("Sum")>]
-        let inline sum          (list:list<_>) = Seq.sum list
+        let inline sum          (list:list<'T>) = fold Checked.(+) LanguagePrimitives.GenericZero< 'T > list
 
         [<CompiledName("SumBy")>]
         let inline sumBy f     (list:list<_>) = Seq.sumBy f list
