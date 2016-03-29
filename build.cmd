@@ -369,7 +369,10 @@ if '%TEST_COMPILERUNIT%' == '1' (
 )
 if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
+        @echo "BUILD_CONFIG_LOWERCASE : " %BUILD_CONFIG_LOWERCASE%
+        @echo "Test Tags              : " %TEST_TAGS%
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
+        @echo "Finished Runtests"
         @if ERRORLEVEL 1 (
             type testresults\CoreUnit_net40_Error.log 
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
