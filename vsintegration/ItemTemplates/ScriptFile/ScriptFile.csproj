@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);2008</NoWarn>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <CreateVsixContainer>false</CreateVsixContainer>
+	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+	<DebugSymbols>false</DebugSymbols>
+	<DebugType>None</DebugType>
+  </PropertyGroup>
+  <PropertyGroup>
+	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectGuid>{a333b85a-dc23-49b6-9797-b89a7951e92d}</ProjectGuid>
+	<TemplateCategory>ItemTemplates</TemplateCategory>
+    <AssemblyName>ScriptFile</AssemblyName>
+	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+  </PropertyGroup>
+  <Import Project="..\..\src\FSharp.Common.props" />
+  <ItemGroup>
+    <TemplateFiles Include="Template\File.fsx" />
+    <TemplateFiles Include="Template\ScriptFile.vstemplate" />
+  </ItemGroup>
+  
+  <Import Project="..\..\src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+  <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
+	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+  </Target>
+  
+  <Target Name="TemplateProjectOutputGroup" />
+</Project>
