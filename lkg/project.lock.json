@@ -56,10 +56,10 @@
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -67,12 +67,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -106,7 +106,7 @@
           "lib/DNXCore50/fsi.exe": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -1343,10 +1343,10 @@
           "runtime.osx.10.10-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -1354,12 +1354,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -1396,7 +1396,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -1416,10 +1416,6 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
-        },
-        "native": {
-          "runtimes/any/native/FSharp.Core.optdata": {},
-          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -3549,10 +3545,10 @@
           "runtime.ubuntu.14.04-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -3560,12 +3556,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -3602,7 +3598,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -3622,10 +3618,6 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
-        },
-        "native": {
-          "runtimes/any/native/FSharp.Core.optdata": {},
-          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -5758,10 +5750,10 @@
           "runtime.win7-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -5769,12 +5761,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -5811,7 +5803,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -5831,10 +5823,6 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
-        },
-        "native": {
-          "runtimes/any/native/FSharp.Core.optdata": {},
-          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -8075,10 +8063,10 @@
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -8086,12 +8074,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160318",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -8128,7 +8116,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -8148,10 +8136,6 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
-        },
-        "native": {
-          "runtimes/any/native/FSharp.Core.optdata": {},
-          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -10420,19 +10404,19 @@
         "runtime.json"
       ]
     },
-    "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160318": {
-      "sha512": "W4fux69AKxoBolybWiqA4tpwSdCV1o4pc+EpGgxx2kYaTxctdSSIW90Fy6HE1vbsaxYWlOWm7yJMVHnc056dZQ==",
+    "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "sha512": "aQ6snPMiRHzbEIPTmAC7kwdSnFZXCOabun1ZJqw4rQBpoVgyqehHnBglyprLLv2Ju5ZIfCJy2iFkQe8dyMwdqQ==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Compiler.Host.netcore.1.0.0-alpha-160318.nupkg.sha512",
+        "Microsoft.FSharp.Compiler.Host.netcore.1.0.0-alpha-160329.nupkg.sha512",
         "Microsoft.FSharp.Compiler.Host.netcore.nuspec"
       ]
     },
-    "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160318": {
-      "sha512": "P1LSW8TdabLlBzt4HoRCNLojVGRE+sdwxcEuQsHM3Ugj2EQUiCCaF0QDaFHf8iLHjo/NPu/FFgKA2LyJ9N/uQA==",
+    "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "sha512": "T2+mjZCZFGPA2g4qHgny/DJsFT1dY7jQB7LJ8yQD/zGk/X+vlVdD3w9QrAiiZoiotBJVSb9Nfpu5n9uh58XVzA==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Compiler.NetCore.1.0.0-alpha-160318.nupkg.sha512",
+        "Microsoft.FSharp.Compiler.NetCore.1.0.0-alpha-160329.nupkg.sha512",
         "Microsoft.FSharp.Compiler.NetCore.nuspec",
         "lib/DNXCore50/FSharp.Compiler.Interactive.Settings.dll",
         "lib/DNXCore50/FSharp.Compiler.dll",
@@ -10441,15 +10425,17 @@
         "runtimes/any/native/default.win32manifest"
       ]
     },
-    "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160318": {
-      "sha512": "dnWO9QFdteUUByVO/eq2ocB6UfNeliv2EDIopm258/FKZjpJsO7JYA1u0SIM/IdA6FsH8rtl7yEp2eFd/0/D7Q==",
+    "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "sha512": "YzG6f5QqumI7b3QhMVlERG326Ek1UgyfDZT8fpa4ewfotJmd2dLhOsMpXDgDbvrTUpO2bz4ZznZY5LR6pt0H8A==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Core.netcore.1.0.0-alpha-160318.nupkg.sha512",
+        "Microsoft.FSharp.Core.netcore.1.0.0-alpha-160329.nupkg.sha512",
         "Microsoft.FSharp.Core.netcore.nuspec",
+        "content/any/DNXCore50/FSharp.Core.optdata",
+        "content/any/DNXCore50/FSharp.Core.sigdata",
         "lib/DNXCore50/FSharp.Core.dll",
-        "runtimes/any/native/FSharp.Core.optdata",
-        "runtimes/any/native/FSharp.Core.sigdata"
+        "lib/DNXCore50/FSharp.Core.optdata",
+        "lib/DNXCore50/FSharp.Core.sigdata"
       ]
     },
     "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -15997,7 +15983,7 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "Microsoft.FSharp.Compiler.Host.netcore >= 1.0.0-alpha-160318"
+      "Microsoft.FSharp.Compiler.Host.netcore >= 1.0.0-alpha-160329"
     ],
     "DNXCore,Version=v5.0": []
   }

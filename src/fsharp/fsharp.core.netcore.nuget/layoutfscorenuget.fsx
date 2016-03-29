@@ -57,7 +57,7 @@ try
         if not (Directory.Exists(output)) then Directory.CreateDirectory(output) |>ignore
         ()
 
-    let fsharpCompilerFiles =
+    let fsharpCoreFiles =
         seq {
             yield Path.Combine(bindir, "FSharp.Core.dll")
             yield Path.Combine(bindir, "fsharp.core.sigdata")
@@ -67,7 +67,7 @@ try
     //Clean intermediate directoriy
     deleteDirectory(layouts); makeDirectory(layouts)
 
-    fsharpCompilerFiles |> Seq.iter(fun source -> copyFile source layouts)
+    fsharpCoreFiles |> Seq.iter(fun source -> copyFile source layouts)
 
 with e -> printfn "Exception:  %s" e.Message
           printfn "Stacktrace: %s" e.StackTrace

@@ -869,10 +869,12 @@ type Project() =
             File.AppendAllText(srcFile, "bar") ; // 新規bcrogram.fs will be cleaned up by parent call to DoWithTempFile
             project.BuildToOutput("Build", vso) |> ignore // Build the project using vso as the output logger
             let errors = List.filter (fun s -> (new Regex(expectedError)).IsMatch(s)) !outputWindowPaneErrors
-        
+
+            printfn "Errors: %d  ================================" (List.length errors)
             for e in errors do  
                 printfn "Output Window Pane Error: %s" e
-                
+            printfn "==========================================="
+
             // there should be one and only one error for 'bar', located at (1,1)
             AssertEqual (List.length errors) 1
             ()
