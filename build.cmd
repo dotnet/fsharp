@@ -248,7 +248,7 @@ if '%TEST_COMPILERUNIT%' == '1' (
 %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 )
-if '%TEST_COREUNIT%' == '1' (
+if '%TEST_NET40_COREUNIT%' == '1' (
 %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
