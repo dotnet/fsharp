@@ -46,6 +46,10 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
 
+%SN32% -Vr fsc,b03f5f7f11d50a3a
+%SN32% -Vr fsi,b03f5f7f11d50a3a
+%SN32% -Vr FsiAnyCPU,b03f5f7f11d50a3a
+
 %SN32% -Vr FSharp.Compiler,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Editor,b03f5f7f11d50a3a
