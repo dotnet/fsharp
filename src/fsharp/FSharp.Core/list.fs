@@ -596,7 +596,7 @@ namespace Microsoft.FSharp.Collections
         let inline sumBy f     (list:list<_>) = Seq.sumBy f list
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) = Seq.max list
+        let inline max          (list:list<_>) = reduce max list
 
         [<CompiledName("MaxBy")>]
         let inline maxBy f (list:list<_>) = Seq.maxBy f list
