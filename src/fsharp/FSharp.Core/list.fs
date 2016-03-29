@@ -608,7 +608,7 @@ namespace Microsoft.FSharp.Collections
         let inline minBy f (list:list<_>) = Seq.minBy f list
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<_>) = Seq.average list
+        let inline average      (list:list<'T>) = LanguagePrimitives.DivideByInt< 'T > (sum list) list.Length
 
         [<CompiledName("AverageBy")>]
         let inline averageBy f (list:list<_>) = Seq.averageBy f list
