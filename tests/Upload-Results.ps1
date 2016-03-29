@@ -14,6 +14,4 @@ $url = "$env:APPVEYOR_URL/api/testresults/$format/$($env:APPVEYOR_JOB_ID)"
 Write-Output "Uploading results $path to $url"
 
 $wc = New-Object 'System.Net.WebClient'
-echo "$url  : " $url
-echo "$path : " $path
-rem $wc.UploadFile($url, (Resolve-Path $path))
+$wc.UploadFile($url, (Resolve-Path $path))
