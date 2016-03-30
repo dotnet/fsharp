@@ -30,10 +30,10 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="fsharp.core.dll"     target="lib/DNXCore50" />
-        <file src="fsharp.core.sigdata" target="lib/DNXCore50" />
-        <file src="fsharp.core.optdata" target="lib/DNXCore50" />
-        <file src="fsharp.core.sigdata" target="content/any/DNXCore50" />
-        <file src="fsharp.core.optdata" target="content/any/DNXCore50" />
+        <file src="FSharp.Core.dll"     target="lib/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="lib/DNXCore50" />
+        <file src="FSharp.Core.optdata" target="lib/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="content/any/DNXCore50" />
+        <file src="FSharp.Core.optdata" target="content/any/DNXCore50" />
     </files>
 </package>

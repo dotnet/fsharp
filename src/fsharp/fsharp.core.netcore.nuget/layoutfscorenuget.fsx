@@ -60,8 +60,8 @@ try
     let fsharpCoreFiles =
         seq {
             yield Path.Combine(bindir, "FSharp.Core.dll")
-            yield Path.Combine(bindir, "fsharp.core.sigdata")
-            yield Path.Combine(bindir, "fsharp.core.optdata")
+            yield Path.Combine(bindir, "FSharp.Core.sigdata")
+            yield Path.Combine(bindir, "FSharp.Core.optdata")
         }
 
     //Clean intermediate directoriy
