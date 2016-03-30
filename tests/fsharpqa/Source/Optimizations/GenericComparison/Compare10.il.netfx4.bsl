@@ -29,22 +29,20 @@
 }
 .mresource public FSharpSignatureData.Compare10
 {
-  // Offset: 0x00000000 Length: 0x00000AA4
-  // WARNING: managed resource file FSharpSignatureData.Compare10 created
+  // Offset: 0x00000000 Length: 0x00000AAC
 }
 .mresource public FSharpOptimizationData.Compare10
 {
-  // Offset: 0x00000AA8 Length: 0x00000592
-  // WARNING: managed resource file FSharpOptimizationData.Compare10 created
+  // Offset: 0x00000AB0 Length: 0x00000592
 }
 .module Compare10.dll
-// MVID: {56B7C2B8-04BF-1753-A745-0383B8C2B756}
+// MVID: {56DD2366-04BF-1753-A745-03836623DD56}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F70000
+// Image base: 0x00E00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -268,7 +266,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 4,4 : 10,13
+        .line 4,4 : 10,13 'E:\\Documents\\GitHub\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Compare10.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -290,7 +288,7 @@
                  [3] int32 V_3,
                  [4] int32 V_4,
                  [5] int32 V_5)
-        .line 4,4 : 10,13
+        .line 4,4 : 10,13 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Compare10/CompareMicroPerfAndCodeGenerationTests/Key
@@ -440,7 +438,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 4,4 : 10,13
+        .line 4,4 : 10,13 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -832,7 +830,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       14 (0xe)
         .maxstack  8
-        .line 5,5 : 10,26
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -859,7 +857,7 @@
                  [8] class Compare10/CompareMicroPerfAndCodeGenerationTests/Key V_8,
                  [9] class Compare10/CompareMicroPerfAndCodeGenerationTests/Key V_9,
                  [10] int32 V_10)
-        .line 5,5 : 10,26
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
@@ -1047,7 +1045,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 5,5 : 10,26
+        .line 5,5 : 10,26 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -1210,7 +1208,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       21 (0x15)
+        // Code size       23 (0x17)
         .maxstack  4
         .locals init (class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys V_0)
         IL_0000:  nop
@@ -1218,15 +1216,16 @@
         IL_0002:  isinst     Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys
         IL_0007:  stloc.0
         IL_0008:  ldloc.0
-        IL_0009:  brfalse.s  IL_0013
+        IL_0009:  brfalse.s  IL_0015
 
         IL_000b:  ldarg.0
         IL_000c:  ldloc.0
-        IL_000d:  callvirt   instance bool Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
-        IL_0012:  ret
-
-        IL_0013:  ldc.i4.0
+        IL_000d:  tail.
+        IL_000f:  callvirt   instance bool Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::Equals(class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
         IL_0014:  ret
+
+        IL_0015:  ldc.i4.0
+        IL_0016:  ret
       } // end of method KeyWithInnerKeys::Equals
 
       .property instance int32 Tag()
@@ -1266,11 +1265,11 @@
                [1] class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys key1,
                [2] class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys key2,
                [3] int32 i)
-      .line 7,7 : 8,25
+      .line 7,7 : 8,25 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  stloc.0
-      .line 8,8 : 8,65
+      .line 8,8 : 8,65 ''
       IL_0003:  ldc.i4.1
       IL_0004:  ldc.i4.2
       IL_0005:  call       class Compare10/CompareMicroPerfAndCodeGenerationTests/Key Compare10/CompareMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
@@ -1288,7 +1287,7 @@
       IL_001d:  call       class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Compare10/CompareMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                           class [mscorlib]System.Tuple`2<class Compare10/CompareMicroPerfAndCodeGenerationTests/Key,class Compare10/CompareMicroPerfAndCodeGenerationTests/Key>)
       IL_0022:  stloc.1
-      .line 9,9 : 8,65
+      .line 9,9 : 8,65 ''
       IL_0023:  ldc.i4.1
       IL_0024:  ldc.i4.2
       IL_0025:  call       class Compare10/CompareMicroPerfAndCodeGenerationTests/Key Compare10/CompareMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
@@ -1306,12 +1305,12 @@
       IL_003d:  call       class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Compare10/CompareMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                           class [mscorlib]System.Tuple`2<class Compare10/CompareMicroPerfAndCodeGenerationTests/Key,class Compare10/CompareMicroPerfAndCodeGenerationTests/Key>)
       IL_0042:  stloc.2
-      .line 10,10 : 8,32
+      .line 10,10 : 8,32 ''
       IL_0043:  ldc.i4.0
       IL_0044:  stloc.3
       IL_0045:  br.s       IL_0053
 
-      .line 11,11 : 12,34
+      .line 11,11 : 12,34 ''
       IL_0047:  ldloc.1
       IL_0048:  ldloc.2
       IL_0049:  callvirt   instance int32 Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::CompareTo(class Compare10/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys)
@@ -1320,7 +1319,7 @@
       IL_0050:  ldc.i4.1
       IL_0051:  add
       IL_0052:  stloc.3
-      .line 10,10 : 21,29
+      .line 10,10 : 21,29 ''
       IL_0053:  ldloc.3
       IL_0054:  ldc.i4     0x989681
       IL_0059:  blt.s      IL_0047
