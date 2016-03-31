@@ -385,7 +385,7 @@ type TheTests() =
     <OutputType>{0}</OutputType>
     <RootNamespace>Blah</RootNamespace>
     <AssemblyName>Blah</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
   </PropertyGroup>
