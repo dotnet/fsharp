@@ -1,0 +1,19 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectFiles Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
+    <ProjectFiles Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
+    <ProjectFiles Include="src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+    <ProjectFiles Include="src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
+    <ProjectFiles Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
+    <ProjectFiles Include="src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
+    <ProjectFiles Include="src\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj" />
+  </ItemGroup>
+
+  <Import Project="..\src\root.traversal.targets"/>
+</Project>
+

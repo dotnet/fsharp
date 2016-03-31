@@ -102,8 +102,12 @@ For **Debug** this corresponds to these steps, which you can run individually fo
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259
-    msbuild VisualFSharp.sln 
+    msbuild vsintegration/fsharp-vsintegration-src-build.proj
+    msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj
+    msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj
+    msbuild vsintegration/fsharp-vsintegration-deployment-build.proj
     msbuild vsintegration\fsharp-vsintegration-unittests-build.proj 
+    msbuild tests/fsharp/FSharp.Tests.fsproj
     src\update.cmd debug -ngen
     tests\BuildTestTools.cmd debug 
 
@@ -123,38 +127,14 @@ For **Release** this corresponds to these steps, which you can run individually 
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-    msbuild VisualFSharp.sln /p:Configuration=Release
-    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=Release
+    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj  /p:Configuration=Release
+    msbuild tests/fsharp/FSharp.Tests.fsproj /p:Configuration=Release
     src\update.cmd release -ngen
     tests\BuildTestTools.cmd release 
-
-### 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# SDK on the machine
-
-**Note:** Step #2 below will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
-components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
-
-**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
-by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the 
-only way to revert this step.  
-
-**Note:** After you complete the install, the FSharp.Core referenced by your projects will not be updated. If you want to make
-a project that references your updated FSharp.Core, you must explicitly change the ``TargetFSharpCoreVersion`` in the .fsproj
-file to ``4.4.0.5099`` (or a corresponding portable version number with suffix ``5099``).
-
-For **Debug**:
-
-1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
-1. Run ``debug\net40\bin\EnableOpenSource.vsix``
-1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# SDK)
-
-For **Release**:
-
-1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
-1. Run ``release\net40\bin\EnableOpenSource.vsix``
-1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
-
-Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
-
 
 ### Notes on the build
 

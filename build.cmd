@@ -248,7 +248,7 @@ if '%TEST_COMPILERUNIT%' == '1' (
 %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 )
-if '%TEST_COREUNIT%' == '1' (
+if '%TEST_NET40_COREUNIT%' == '1' (
 %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
@@ -268,18 +268,25 @@ if '%TEST_PORTABLE_COREUNIT%' == '1' (
 )
 
 if '%BUILD_VS%' == '1' (
-%_msbuildexe% %msbuildflags% VisualFSharp.sln /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: VS integration src build failed && goto :failure
+
+%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: VS integration project templates build failed && goto :failure
+
+%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: VS integration item templates build failed && goto :failure
+
+%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: VS integration deployment build failed && goto :failure
+
+%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: VS integration unittests build failed && goto :failure
 )
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
 
-REM Remove lingering copies of the OSS FSharp.Core from the GAC
-gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
-
-REM This clobbers the installed F# SDK on the machine
-call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
 pushd tests
 
 @echo on
