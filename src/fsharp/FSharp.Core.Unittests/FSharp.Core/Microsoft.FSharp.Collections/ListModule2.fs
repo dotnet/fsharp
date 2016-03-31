@@ -756,32 +756,6 @@ type ListModule02() =
         ()
     
     [<Test>]
-    member this.ListSumByPerfVsSeqSumByPerf() =
-        let stopWatch = new System.Diagnostics.Stopwatch()
-        let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-        let time1 op a message = 
-            ResetStopWatch()
-            let result = op a
-            printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
-            result
-        
-        let list = [1..1000000] |> List.map (fun i -> (1, 0))
-  
-        let seqSum() =
-            for i in [0..100] do
-                let sum = Seq.sumBy fst list
-                ()
-  
-        let listSum() =
-            for i in [0..100] do
-                let sum = List.sumBy fst list
-                ()
-  
-        time1 seqSum () "Time take for Seq.SumBy"
-  
-        time1 listSum () "Time take for List.SumBy"
-
-    [<Test>]
     member this.Tl() =
         // integer List  
         let resultInt = List.tail [1..10]        
