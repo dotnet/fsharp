@@ -616,7 +616,7 @@ namespace Microsoft.FSharp.Collections
         let inline average      (list:list<'T>) =
             checkNonNull "list" list
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
                 let rec loop xs sum count = 
                     match xs with 
