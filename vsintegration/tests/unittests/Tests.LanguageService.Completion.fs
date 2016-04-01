@@ -4325,7 +4325,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Add an unknown flag followed by the reference to our assembly.
-        let deploymentAssembly = sprintf @"%s\Microsoft.NET\Framework\v2.0.50727\System.Deployment.dll" (System.Environment.GetEnvironmentVariable("windir"))
+        let deploymentAssembly = sprintf @"%s\Microsoft.NET\Framework\v4.0.30319\System.Deployment.dll" (System.Environment.GetEnvironmentVariable("windir"))
         SetOtherFlags(project,"--doo-da -r:" + deploymentAssembly) 
         let completions = AutoCompleteAtCursor(file)
         // Now, make sure the reference added after the erroneous reference is still honored.       

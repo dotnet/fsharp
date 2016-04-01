@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160317"
+    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160329",
   },
   "runtimes": {
     "win7-x86": { },

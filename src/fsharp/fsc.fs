@@ -247,15 +247,6 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
 
     List.rev !allSources
 
-type SaveAndRestoreConsoleEncoding () =
-    let savedOut = System.Console.Out
-
-    interface System.IDisposable with
-        member this.Dispose() = 
-            try 
-                System.Console.SetOut(savedOut)
-            with _ -> ()
-
 type DefaultLoggerProvider() = 
     inherit ErrorLoggerProvider()
     override this.CreateErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter)
@@ -1888,8 +1879,7 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
                     | None -> ()
 #endif
                     if tcConfigB.utf8output then 
-                        let out = new StreamWriter(System.Console.OpenStandardOutput(), Encoding.UTF8)
-                        System.Console.SetOut(out)
+                        Console.OutputEncoding <- Encoding.UTF8
             ),
              (fun tcConfigB -> 
                     // display the banner text, if necessary

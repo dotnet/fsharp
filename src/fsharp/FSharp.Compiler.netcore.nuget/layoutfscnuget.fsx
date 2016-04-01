@@ -64,8 +64,8 @@ try
             yield Path.Combine(bindir, "fsc.exe")
             yield Path.Combine(bindir, "FSharp.Core.dll")
             yield Path.Combine(bindir, "FSharp.Compiler.dll")
-            yield Path.Combine(bindir, "fsharp.core.sigdata")
-            yield Path.Combine(bindir, "fsharp.core.optdata")
+            yield Path.Combine(bindir, "FSharp.Core.sigdata")
+            yield Path.Combine(bindir, "FSharp.Core.optdata")
             yield Path.Combine(bindir, "default.win32manifest")
         }
     

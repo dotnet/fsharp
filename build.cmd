@@ -371,6 +371,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
         @if ERRORLEVEL 1 (
+        @echo "type testresults\CoreUnit_net40_Error.log "
             type testresults\CoreUnit_net40_Error.log 
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
             goto :failure
@@ -390,17 +391,18 @@ if '%TEST_NET40_COREUNIT%' == '0' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
         @if ERRORLEVEL 1 (
             type testresults\CoreUnit_portable47_Error.log 
-            echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS%' failed 
+            echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
             goto :failure
         )
     )
 )
 
 if '%TEST_VS%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG_LOWER% ideunit %TEST_TAGS% 
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% coreunitportable259' failed && goto :failure
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failure
 )
 
+@echo "Finished"
 popd
 goto :eof
 

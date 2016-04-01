@@ -546,13 +546,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
             stopProcessingRecovery e range0; exit 1;
         inputFilesAcc
 
-#if !FX_REDUCED_CONSOLE
     do 
         if tcConfigB.utf8output then
-            let prev = Console.OutputEncoding
             Console.OutputEncoding <- System.Text.Encoding.UTF8
-            System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
-#endif
 
     do 
         let firstArg = 
@@ -2497,6 +2493,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
+    use e = new SaveAndRestoreConsoleEncoding()
 
     let evaluateSession () = 
 #if !FX_REDUCED_CONSOLE
