@@ -608,7 +608,15 @@ namespace Microsoft.FSharp.Collections
         let inline minBy f (list:list<_>) = Seq.minBy f list
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<'T>) = LanguagePrimitives.DivideByInt< 'T > (sum list) list.Length
+        let inline average      (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let rec loop xs sum count = 
+                    match xs with 
+                    | [] -> LanguagePrimitives.DivideByInt sum count
+                    | h::t -> loop t (Checked.(+) sum h) (count + 1)
+                loop list LanguagePrimitives.GenericZero< 'T > 0
 
         [<CompiledName("AverageBy")>]
         let inline averageBy f (list:list<_>) = Seq.averageBy f list
