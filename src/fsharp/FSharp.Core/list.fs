@@ -19,6 +19,11 @@ namespace Microsoft.FSharp.Collections
 
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
+        let inline checkNonNull argName arg = 
+            match box arg with 
+            | null -> nullArg argName 
+            | _ -> ()
+
         [<CompiledName("Length")>]
         let length (list: 'T list) = list.Length
         
@@ -609,6 +614,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Average")>]
         let inline average      (list:list<'T>) =
+            checkNonNull "list" list
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
