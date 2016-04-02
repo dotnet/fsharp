@@ -13790,12 +13790,11 @@ module EstablishTypeDefinitionCores = begin
             if isForcedSuppressRelocate && canAccessFromEverywhere tycon.Accessibility && not cenv.isScript then 
                 errorR(Error(FSComp.SR.tcGeneratedTypesShouldBeInternalOrPrivate(),tcref.Range))
 
-            let isSuppressRelocate = cenv.g.isInteractive || isForcedSuppressRelocate
     
             // Adjust the representation of the container type
             let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment,theRootTypeWithRemapping,
                                                       Import.ImportProvidedType cenv.amap m,
-                                                      isSuppressRelocate, 
+                                                      isForcedSuppressRelocate,
                                                       m=m)
             tycon.Data.entity_tycon_repr <- repr
             // Record the details so we can map System.Type --> TyconRef
@@ -13803,7 +13802,7 @@ module EstablishTypeDefinitionCores = begin
             theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st.RawSystemType)) ; lookupTyconRef.Add(st.RawSystemType, tcref)), m)
 
             // Record the details so we can map System.Type --> ILTypeRef, including the relocation if any
-            if not isSuppressRelocate then 
+            if not isForcedSuppressRelocate then
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
                 theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st.RawSystemType)) ; lookupILTypeRef.Add(st.RawSystemType, ilTgtRootTyRef)), m)
 
@@ -13831,7 +13830,7 @@ module EstablishTypeDefinitionCores = begin
 
                 let nestedTycon = Construct.NewProvidedTycon(resolutionEnvironment, st, 
                                                              Import.ImportProvidedType cenv.amap m, 
-                                                             isSuppressRelocate, 
+                                                             isForcedSuppressRelocate, 
                                                              m=m, cpath=cpath, access = access)
                 eref.ModuleOrNamespaceType.AddProvidedTypeEntity(nestedTycon)
 
@@ -13847,7 +13846,7 @@ module EstablishTypeDefinitionCores = begin
                     st.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st.RawSystemType)) ; lookupILTypeRef.Add(st.RawSystemType, ilTgtTyRef)), m)
 
                     // Record the details so we can build correct ILTypeDefs during static linking rewriting
-                    if not isSuppressRelocate then 
+                    if not isForcedSuppressRelocate then 
                         match provAssemStaticLinkInfoOpt with 
                         | Some provAssemStaticLinkInfo -> provAssemStaticLinkInfo.ILTypeMap.[ilOrigTypeRef] <- ilTgtTyRef
                         | None -> ()
@@ -13865,7 +13864,7 @@ module EstablishTypeDefinitionCores = begin
                 |> Array.toList
 
             let nested = doNestedTypes tcref theRootTypeWithRemapping 
-            if not isSuppressRelocate then 
+            if not isForcedSuppressRelocate then 
 
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
                 match rootProvAssemStaticLinkInfoOpt with 
