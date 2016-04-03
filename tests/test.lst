@@ -28,6 +28,7 @@ Core02		fsharp\core\fsfromcs
 Core02		fsharp\core\fsfromfsviacs
 Core02		fsharp\core\fsiAndModifiers
 Core02		fsharp\core\fsi-reload
+Core02		fsharp\core\fsi-sets
 Core02		fsharp\core\fsi-shadowcopy
 Core02		fsharp\core\genericmeasures
 Core02		fsharp\core\hiding
