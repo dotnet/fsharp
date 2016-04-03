@@ -290,7 +290,7 @@ Misc01			EntryPoint
 Misc01			Globalization
 Misc01,NoMT		Import
 Misc01,NoMT		..\..\..\testsprivate\fsharpqa\Source\InteractiveSession\AssemblyLoading
-Misc01,NoMT		InteractiveSession\Misc
+Misc01,NoMT,,Smoke		InteractiveSession\Misc
 Misc01			Libraries\Control
 Misc01			Libraries\Core\collections
 Misc01			Libraries\Core\ExtraTopLevelOperators
