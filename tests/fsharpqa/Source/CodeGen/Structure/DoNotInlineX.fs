@@ -12,11 +12,12 @@ let fsc =
     if not (String.IsNullOrEmpty(overridePath)) then 
         overridePath 
     else
-        let fsc45 = programFiles + @"\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe"
-        let fsc40 = programFiles + @"\Microsoft F#\v4.0\fsc.exe"
-        let fsc20 = programFiles + @"\FSharp-2.0.0.0\bin\fsc.exe"
-        
-        match ([fsc45; fsc40; fsc20] |> List.tryFind(fun x -> File.Exists(x))) with
+        let fsc41_SxS = Path.Combine(programFiles, @"Microsoft SDKs\F#\4.1\Framework\v4.0\fsc.exe")
+        let fsc40_SxS = Path.Combine(programFiles, @"Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe")
+        let fsc40 = Path.Combine(programFiles, @"Microsoft F#\v4.0\fsc.exe")
+        let fsc20 = Path.Combine(programFiles, @"FSharp-2.0.0.0\bin\fsc.exe")
+
+        match ([fsc41_SxS; fsc40_SxS; fsc40; fsc20] |> List.tryFind(fun x -> File.Exists(x))) with
         | Some(path) -> path
         | None -> "fsc.exe"  // just use what's on the PATH
 

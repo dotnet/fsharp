@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array module
@@ -40,6 +40,34 @@ type ArrayModule() =
         Assert.IsTrue( (d = [| |]) )
         ()
 
+
+    [<Test>]
+    member this.AllPairs() =
+        // integer array
+        let resultInt =  Array.allPairs [|1..3|] [|2..2..6|]
+        if resultInt <> [|(1,2);(1,4);(1,6)
+                          (2,2);(2,4);(2,6)
+                          (3,2);(3,4);(3,6)|] then Assert.Fail()
+
+        // string array
+        let resultStr = Array.allPairs [|"A"; "B"; "C" ; "D" |] [|"a";"b";"c";"d"|]
+        if resultStr <> [|("A","a");("A","b");("A","c");("A","d")
+                          ("B","a");("B","b");("B","c");("B","d")
+                          ("C","a");("C","b");("C","c");("C","d")
+                          ("D","a");("D","b");("D","c");("D","d")|] then Assert.Fail()
+
+        // empty array
+        if Array.allPairs [||]     [||] <> [||]  then Assert.Fail()
+        if Array.allPairs [|1..3|] [||] <> [||]  then Assert.Fail()
+        if Array.allPairs [||] [|1..3|] <> [||]  then Assert.Fail()
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs nullArr nullArr  |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs [||]    nullArr  |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs nullArr [||]     |> ignore)
+
+        ()
 
     [<Test>]
     member this.Append() =

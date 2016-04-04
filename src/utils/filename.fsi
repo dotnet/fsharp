@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Some filename operations.    
 module internal Internal.Utilities.Filename
@@ -22,7 +22,7 @@ val hasExtension: string -> bool
 /// Get the filename of the given path
 val fileNameOfPath: string -> string
 
-/// Get the filename without extenstion of the given path
+/// Get the filename without extension of the given path
 val fileNameWithoutExtension: string -> string
 
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #nowarn "25" // Incomplete match expressions 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
@@ -402,7 +402,9 @@ namespace Microsoft.FSharp.Core
         type System.Type with
             member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
             member inline this.IsValueType = this.GetTypeInfo().IsValueType
+            member inline this.IsSealed = this.GetTypeInfo().IsSealed
             member inline this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
+            member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
             member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
             member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
             member inline this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
@@ -411,7 +413,6 @@ namespace Microsoft.FSharp.Core
     open PrimReflectionAdapters
 
 #endif
-
 
     module BasicInlinedOperations =  
         let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
@@ -719,32 +720,33 @@ namespace Microsoft.FSharp.Core
             // duplicated from above since we're using integers in this section
             let CompilationRepresentationFlags_PermitNull = 8
 
+            let getTypeInfo (ty:Type) =
+                if ty.IsValueType 
+                then TypeNullnessSemantics_NullNever else
+                let mappingAttrs = ty.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
+                if mappingAttrs.Length = 0 
+                then TypeNullnessSemantics_NullIsExtraValue
+                elif ty.Equals(typeof<unit>) then 
+                    TypeNullnessSemantics_NullTrueValue
+                elif typeof<Delegate>.IsAssignableFrom(ty) then 
+                    TypeNullnessSemantics_NullIsExtraValue
+                elif ty.GetCustomAttributes(typeof<AllowNullLiteralAttribute>, false).Length > 0 then
+                    TypeNullnessSemantics_NullIsExtraValue
+                else
+                    let reprAttrs = ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false)
+                    if reprAttrs.Length = 0 then 
+                        TypeNullnessSemantics_NullNotLiked 
+                    else
+                        let reprAttr = get reprAttrs 0
+                        let reprAttr = (# "unbox.any !0" type (CompilationRepresentationAttribute) reprAttr : CompilationRepresentationAttribute #)
+                        if (# "and" reprAttr.Flags CompilationRepresentationFlags_PermitNull : int #) = 0
+                        then TypeNullnessSemantics_NullNotLiked
+                        else TypeNullnessSemantics_NullTrueValue
+
             [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]             
             type TypeInfo<'T>() = 
                // Compute an on-demand per-instantiation static field
-               static let info = 
-                   let ty = typeof<'T>
-                   if ty.IsValueType 
-                   then TypeNullnessSemantics_NullNever else
-                   let mappingAttrs = ty.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
-                   if mappingAttrs.Length = 0 
-                   then TypeNullnessSemantics_NullIsExtraValue
-                   elif ty.Equals(typeof<unit>) then 
-                       TypeNullnessSemantics_NullTrueValue
-                   elif typeof<Delegate>.IsAssignableFrom(ty) then 
-                       TypeNullnessSemantics_NullIsExtraValue
-                   elif ty.GetCustomAttributes(typeof<AllowNullLiteralAttribute>, false).Length > 0 then
-                       TypeNullnessSemantics_NullIsExtraValue
-                   else
-                       let reprAttrs = ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false)
-                       if reprAttrs.Length = 0 then 
-                           TypeNullnessSemantics_NullNotLiked 
-                       else
-                           let reprAttr = get reprAttrs 0
-                           let reprAttr = (# "unbox.any !0" type (CompilationRepresentationAttribute) reprAttr : CompilationRepresentationAttribute #)
-                           if (# "and" reprAttr.Flags CompilationRepresentationFlags_PermitNull : int #) = 0
-                           then TypeNullnessSemantics_NullNotLiked
-                           else TypeNullnessSemantics_NullTrueValue
+               static let info = getTypeInfo typeof<'T>
 
                // Publish the results of that compuation
                static member TypeInfo = info

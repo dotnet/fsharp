@@ -1,0 +1,627 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddToNullProjectError" xml:space="preserve">
+    <value>Failed to add file '{0}' to project as project is null.</value>
+  </data>
+  <data name="Advanced" xml:space="preserve">
+    <value>Advanced</value>
+    <comment>Project Property Page Caption</comment>
+  </data>
+  <data name="ReferenceCouldNotBeAdded" xml:space="preserve">
+    <value>A reference to '{0}' could not be added.</value>
+    <comment>ReferenceCouldNotBeAdded error message</comment>
+  </data>
+  <data name="ReferenceAlreadyExists" xml:space="preserve">
+    <value>A reference to '{0}' could not be added. A reference to the component '{1}' already exists in the project.</value>
+    <comment>ReferenceAlreadyExists error message</comment>
+  </data>
+  <data name="ReferenceWithAssemblyNameAlreadyExists" xml:space="preserve">
+    <value>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</value>
+    <comment>ReferenceAlreadyExists error message</comment>
+  </data>
+  <data name="AttributeLoad" xml:space="preserve">
+    <value>Could not load attribute '{0}' from project file '{1}'.</value>
+  </data>
+  <data name="BuildAction" xml:space="preserve">
+    <value>Build Action</value>
+    <comment>Project Build Property Name</comment>
+  </data>
+  <data name="BuildActionDescription" xml:space="preserve">
+    <value>How the file relates to the build and deployment process</value>
+    <comment>Project Build Property Description</comment>
+  </data>
+  <data name="BuildVerbosity" xml:space="preserve">
+    <value>Verbosity</value>
+  </data>
+  <data name="BuildVerbosityDescription" xml:space="preserve">
+    <value>Specify how much information is included in the build output</value>
+  </data>
+  <data name="cli1" xml:space="preserve">
+    <value>ECMA-335 CLI compatible framework (location must be provided)</value>
+    <comment>Target platform drop down option</comment>
+  </data>
+  <data name="Compile" xml:space="preserve">
+    <value>Compile</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="ConfirmExtensionChange" xml:space="preserve">
+    <value>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</value>
+  </data>
+  <data name="CannotAddFileThatIsOpenInEditor" xml:space="preserve">
+    <value>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</value>
+  </data>
+  <data name="CanNotSaveFileNotOpeneInEditor" xml:space="preserve">
+    <value>Cannot save '{0}' as it is not open in the editor.</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>Content</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="CopyToLocal" xml:space="preserve">
+    <value>Copy Local</value>
+    <comment>File property</comment>
+  </data>
+  <data name="CopyToLocalDescription" xml:space="preserve">
+    <value>Indicates whether the reference will be copied to the output directory.</value>
+  </data>
+  <data name="Detailed" xml:space="preserve">
+    <value>Detailed</value>
+  </data>
+  <data name="Diagnostic" xml:space="preserve">
+    <value>Diagnostic</value>
+  </data>
+  <data name="DirectoryExistError" xml:space="preserve">
+    <value>Directory already exists</value>
+  </data>
+  <data name="EditorViewError" xml:space="preserve">
+    <value>Error opening specified view '{0}' using editor '{1}'</value>
+  </data>
+  <data name="EmbeddedResource" xml:space="preserve">
+    <value>Embedded Resource</value>
+    <comment>Build Action - drop down option</comment>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>error</value>
+  </data>
+  <data name="ErrorInvalidFileName" xml:space="preserve">
+    <value>Files and folders cannot be:
+- Empty strings 
+- System reserved names, including 'CON', 'AUX', PRN', 'COM1' or 'LPT2' 
+- contain only '.'
+- have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</value>
+  </data>
+  <data name="ErrorInvalidProjectName" xml:space="preserve">
+    <value>The name you provided is not a valid project name.</value>
+  </data>
+  <data name="ErrorMsBuildRegistration" xml:space="preserve">
+    <value>MSBuild path not found in registry. Please reinstall to fix the problem.</value>
+  </data>
+  <data name="ErrorSaving" xml:space="preserve">
+    <value>Error Saving File</value>
+  </data>
+  <data name="Exe" xml:space="preserve">
+    <value>Console Application</value>
+  </data>
+  <data name="ExpectedObjectOfType" xml:space="preserve">
+    <value>Expecting object of type {0}.</value>
+  </data>
+  <data name="FailedToRetrieveProperties" xml:space="preserve">
+    <value>Failed to retrieve msbuild property {0} from the project file.</value>
+    <comment>The exception message thrown when getting a property from msbuild fails.</comment>
+  </data>
+  <data name="FileAlreadyExists" xml:space="preserve">
+    <value>A file with the same name '{0}' already exists. Do you want to overwrite it?</value>
+  </data>
+  <data name="FileAlreadyExistsAndCannotBeRenamed" xml:space="preserve">
+    <value>A file with the same name '{0}' already exists.</value>
+  </data>
+  <data name="FileAlreadyExistsCaption" xml:space="preserve">
+    <value>Destination File Exists</value>
+  </data>
+  <data name="FileAlreadyInProject" xml:space="preserve">
+    <value>A file of this name is already part of the project. Do you want to overwrite it?</value>
+  </data>
+  <data name="FileAlreadyInProjectCaption" xml:space="preserve">
+    <value>Destination File Exists</value>
+  </data>
+  <data name="FileCannotBeRenamedToAnExistingFile" xml:space="preserve">
+    <value>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</value>
+  </data>
+  <data name="FileCopyError" xml:space="preserve">
+    <value>Error Copying File</value>
+  </data>
+  <data name="FileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
+  <data name="FileNameCannotContainALeadingPeriod" xml:space="preserve">
+    <value>File and folder names cannot contain a leading period.</value>
+  </data>
+  <data name="FileNameDescription" xml:space="preserve">
+    <value>The name of the file or folder</value>
+  </data>
+  <data name="FolderName" xml:space="preserve">
+    <value>Folder Name</value>
+  </data>
+  <data name="FolderNameDescription" xml:space="preserve">
+    <value>Name of this folder</value>
+  </data>
+  <data name="FullPath" xml:space="preserve">
+    <value>Full Path</value>
+  </data>
+  <data name="FullPathDescription" xml:space="preserve">
+    <value>Location of the file</value>
+  </data>
+  <data name="ItemDoesNotExistInProjectDirectory" xml:space="preserve">
+    <value>The item '{0}' does not exist in the project directory. It may have been moved, renamed or deleted.</value>
+  </data>
+  <data name="LinkedItemsAreNotSupported" xml:space="preserve">
+    <value>Cannot save '{0}' outside the project directory. Linked items are not supported.</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Class Library</value>
+  </data>
+  <data name="Minimal" xml:space="preserve">
+    <value>Minimal</value>
+  </data>
+  <data name="Misc" xml:space="preserve">
+    <value>Misc</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="PasteFailed" xml:space="preserve">
+    <value>Item is not available or corrupted and thus cannot be pasted.</value>
+  </data>
+  <data name="Program" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="ProjectContainsCircularReferences" xml:space="preserve">
+    <value>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </value>
+  </data>
+  <data name="ProjectFile" xml:space="preserve">
+    <value>Project File</value>
+  </data>
+  <data name="ProjectFileDescription" xml:space="preserve">
+    <value>The name of the file containing build, configuration, and other information about the project.</value>
+  </data>
+  <data name="ProjectFolder" xml:space="preserve">
+    <value>Project Folder</value>
+  </data>
+  <data name="ProjectFolderDescription" xml:space="preserve">
+    <value>The absolute location of the project.</value>
+  </data>
+  <data name="Quiet" xml:space="preserve">
+    <value>Quiet</value>
+  </data>
+  <data name="RefName" xml:space="preserve">
+    <value>(Name)</value>
+  </data>
+  <data name="ReferencesNodeName" xml:space="preserve">
+    <value>References</value>
+  </data>
+  <data name="RefNameDescription" xml:space="preserve">
+    <value>Display name of the reference</value>
+  </data>
+  <data name="RenameFolder" xml:space="preserve">
+    <value>Rename directory failed. {0}</value>
+  </data>
+  <data name="RTL" xml:space="preserve">
+    <value>RTL_False</value>
+  </data>
+  <data name="SaveCaption" xml:space="preserve">
+    <value>Save?</value>
+  </data>
+  <data name="SaveModifiedDocuments" xml:space="preserve">
+    <value>Do you want to save modified documents?</value>
+  </data>
+  <data name="SaveOfProjectFileOutsideCurrentDirectory" xml:space="preserve">
+    <value>The project file can only be saved into the project location '{0}'.</value>
+  </data>
+  <data name="StandardEditorViewError" xml:space="preserve">
+    <value>Error opening specified view '{0}' using standard editor.</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="UseOfDeletedItemError" xml:space="preserve">
+    <value>You are trying to use an item that has already been deleted or that does not exist.</value>
+  </data>
+  <data name="v1" xml:space="preserve">
+    <value>Microsoft .Net Framework v1.0</value>
+  </data>
+  <data name="v11" xml:space="preserve">
+    <value>Microsoft .Net Framework v1.1</value>
+  </data>
+  <data name="v2" xml:space="preserve">
+    <value>Microsoft .Net Framework v2.0</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>warning</value>
+  </data>
+  <data name="WinExe" xml:space="preserve">
+    <value>Windows Application</value>
+  </data>
+  <data name="InvalidAutomationObject" xml:space="preserve">
+    <value>Automation object invalid.</value>
+  </data>
+  <data name="CancelQueryEdit" xml:space="preserve">
+    <value>The command you are attempting cannot be completed because the file '{0}' that must be modified cannot be changed. If the file is under source control, you may want to check it out; if the file is read-only on disk, you may want to change its attributes.</value>
+    <comment>MsgBox</comment>
+  </data>
+  <data name="ParameterMustBeAValidGuid" xml:space="preserve">
+    <value>Parameter must be a valid guid.</value>
+    <comment>Error message in the ArgumentException for a  parameter that is not a valid guid.</comment>
+  </data>
+  <data name="InvalidLoggerType" xml:space="preserve">
+    <value>Invalid logger type\nExpected: {0}\nReceived: {1}</value>
+    <comment>Error message thrown for when an  invalid logger type is set.</comment>
+  </data>
+  <data name="InvalidParameter" xml:space="preserve">
+    <value>InvalidParameter</value>
+    <comment>Generic error message for invalid parameters.</comment>
+  </data>
+  <data name="ParameterCannotBeNullOrEmpty" xml:space="preserve">
+    <value>ParameterCannotBeNullOEmpty</value>
+    <comment>Error message for string parameters that cannot be null or empty.</comment>
+  </data>
+  <data name="ParameterMustBeAValidItemId" xml:space="preserve">
+    <value>Parameter must be a valid item identifier.</value>
+    <comment>Error message thrown when an invalid item id is retrieved.</comment>
+  </data>
+  <data name="FileProperties" xml:space="preserve">
+    <value>File Properties</value>
+  </data>
+  <data name="FolderProperties" xml:space="preserve">
+    <value>Folder Properties</value>
+  </data>
+  <data name="ProjectProperties" xml:space="preserve">
+    <value>Project Properties</value>
+  </data>
+  <data name="ReferenceProperties" xml:space="preserve">
+    <value>Reference Properties</value>
+  </data>
+  <data name="FileOrFolderAlreadyExists" xml:space="preserve">
+    <value>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</value>
+  </data>
+  <data name="BuildCaption" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="OutputPath" xml:space="preserve">
+    <value>Output Path</value>
+  </data>
+  <data name="OutputPathDescription" xml:space="preserve">
+    <value>The path to the primary output</value>
+  </data>
+  <data name="PathTooLong" xml:space="preserve">
+    <value>The complete path to '{0}' exceeds the maximum number of characters permitted by the file system.</value>
+  </data>
+  <data name="CustomTool" xml:space="preserve">
+    <value>Custom Tool</value>
+  </data>
+  <data name="CustomToolDescription" xml:space="preserve">
+    <value>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</value>
+  </data>
+  <data name="CustomToolNamespace" xml:space="preserve">
+    <value>Custom Tool Namespace</value>
+  </data>
+  <data name="CustomToolNamespaceDescription" xml:space="preserve">
+    <value>The namespace into which the output of the custom tool is placed.</value>
+  </data>
+  <data name="OutputBuilt" xml:space="preserve">
+    <value>Primary Output</value>
+  </data>
+  <data name="OutputContentFiles" xml:space="preserve">
+    <value>Content Files</value>
+  </data>
+  <data name="OutputDocumentation" xml:space="preserve">
+    <value>Documentation Files</value>
+  </data>
+  <data name="OutputLocalizedResourceDlls" xml:space="preserve">
+    <value>Localized Resources</value>
+  </data>
+  <data name="OutputSourceFiles" xml:space="preserve">
+    <value>Source Files</value>
+  </data>
+  <data name="OutputSymbols" xml:space="preserve">
+    <value>Debug Symbols</value>
+  </data>
+  <data name="OutputXmlSerializer" xml:space="preserve">
+    <value>XML Serialization Assemblies</value>
+  </data>
+  <data name="OutputBuiltDescription" xml:space="preserve">
+    <value>Contains the DLL or EXE built by the project.</value>
+  </data>
+  <data name="OutputContentFilesDescription" xml:space="preserve">
+    <value>Contains all content files in the project.</value>
+  </data>
+  <data name="OutputDocumentationDescription" xml:space="preserve">
+    <value>Contains the XML Documentation files for the project.</value>
+  </data>
+  <data name="OutputLocalizedResourceDllsDescription" xml:space="preserve">
+    <value>Contains the satellite assemblies for each culture's resources.</value>
+  </data>
+  <data name="OutputSourceFilesDescription" xml:space="preserve">
+    <value>Contains all source files in the project.</value>
+  </data>
+  <data name="OutputSymbolsDescription" xml:space="preserve">
+    <value>Contains the debugging files for the project.</value>
+  </data>
+  <data name="OutputXmlSerializerDescription" xml:space="preserve">
+    <value>Contains the XML serialization assemblies for the project.</value>
+  </data>
+  <data name="QueryReloadNestedProject" xml:space="preserve">
+    <value>The project file '{0}' has been modified outside of Visual Studio.  Do you want to reload the project?</value>
+  </data>
+  <data name="NestedProjectFailedToReload" xml:space="preserve">
+    <value>The nested project has failed to reload.</value>
+  </data>
+  <data name="FileOrFolderCannotBeFound" xml:space="preserve">
+    <value>The item '{0}' cannot be found on disk, either because it has been renamed, deleted, or moved to a new location.</value>
+  </data>
+  <data name="ErrorReferenceCouldNotBeAdded" xml:space="preserve">
+    <value>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</value>
+  </data>
+  <data name="DetailsImport" xml:space="preserve">
+    <value>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</value>
+  </data>
+  <data name="DetailsUserImport" xml:space="preserve">
+    <value>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</value>
+  </data>
+  <data name="DetailsItem" xml:space="preserve">
+    <value>One or more items named '{1}' were found in the project file '{0}'. These items normally should not be specified in the project file. They can change the way targets and tasks are executed during project load, and this could have harmful effects.</value>
+  </data>
+  <data name="DetailsProperty" xml:space="preserve">
+    <value>A property named '{1}' was found in the project file '{0}'.  This property normally should not be specified in the project file.  Its value can change the way targets and tasks are executed during project load, and this could have harmful effects.</value>
+  </data>
+  <data name="DetailsUsingTask" xml:space="preserve">
+    <value>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</value>
+  </data>
+  <data name="DetailsTarget" xml:space="preserve">
+    <value>A 'Target' named '{1}' was found in the project file '{0}'.  The tasks within this target could contain arbitrary code and may get executed as soon as the project is loaded in the IDE.</value>
+  </data>
+  <data name="DetailsItemLocation" xml:space="preserve">
+    <value>An item referring to the file '{1}' was found in the project file '{0}'.  Since this file is located within a system directory, root directory, or network share, it could be harmful to write to this file.</value>
+  </data>
+  <data name="ProjectLocationNotTrusted" xml:space="preserve">
+    <value>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</value>
+  </data>
+  <data name="BuildEventError" xml:space="preserve">
+    <value>Exception was thrown during BuildBegin event\n{0}</value>
+  </data>
+  <data name="CopyAlways" xml:space="preserve">
+    <value>Copy always</value>
+    <comment>CopyToOutputDirectory - drop down option</comment>
+  </data>
+  <data name="CopyToOutputDirectory" xml:space="preserve">
+    <value>Copy to Output Directory</value>
+  </data>
+  <data name="CopyToOutputDirectoryDescription" xml:space="preserve">
+    <value>Specifies the source file will be copied to the output directory</value>
+  </data>
+  <data name="CopyIfNewer" xml:space="preserve">
+    <value>Copy if newer</value>
+    <comment>CopyToOutputDirectory - drop down option</comment>
+  </data>
+  <data name="DoNotCopy" xml:space="preserve">
+    <value>Do not copy</value>
+    <comment>CopyToOutputDirectory - drop down option</comment>
+  </data>
+  <data name="SpecificVersion" xml:space="preserve">
+    <value>Specific Version</value>
+  </data>
+  <data name="SpecificVersionDescription" xml:space="preserve">
+    <value>Indicates whether this reference is to a specific version of an assembly.</value>
+  </data>
+  <data name="NoZeroImpactProjects" xml:space="preserve">
+    <value>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</value>
+  </data>
+  <data name="NoWildcardsInProject" xml:space="preserve">
+    <value>"Cannot open F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</value>
+  </data>
+  <data name="CannotAddItemToProjectWithWildcards" xml:space="preserve">
+    <value>"Cannot add file {3} to F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</value>
+  </data>
+  <data name="UpgradeCannotOpenProjectFileForEdit" xml:space="preserve">
+    <value>Cannot open project file for edit.</value>
+  </data>
+  <data name="UpgradeNoNeedToUpgradeAfterCheckout" xml:space="preserve">
+    <value>Project file was checked out and is already upgraded.</value>
+  </data>
+  <data name="CannotStartLibraries" xml:space="preserve">
+    <value>A project with an Output Type of Class Library cannot be started directly.\n\nIn order to debug this project, add an executable project to this solution which references the library project. Set the executable project as the startup project.</value>
+  </data>
+  <data name="InvalidOutputPath" xml:space="preserve">
+    <value>The entered path is not a valid output path</value>
+  </data>
+  <data name="ProjectRefOnlyExeOrDll" xml:space="preserve">
+    <value>The project {0} cannot be referenced. An assembly must have a 'dll' or 'exe' extension in order to be referenced.</value>
+  </data>
+  <data name="CannotBuildWhenBuildInProgress" xml:space="preserve">
+    <value>Cannot start a build, because another build is already in progress.</value>
+  </data>
+  <data name="WorkingDirectoryNotExists" xml:space="preserve">
+    <value>The working directory does not exist:\n'{0}'.</value>
+  </data>
+  <data name="ProjectReferencesDifferentFramework" xml:space="preserve">
+    <value>A reference to library '{0}' cannot be added. This project targets a different framework ({2}) from the current project ({1}).</value>
+  </data>
+  <data name="CannotLoadUnknownTargetFrameworkProject" xml:space="preserve">
+    <value>The project '{0}' is targeting '{1}'; however, the target framework is not installed on the machine.</value>
+  </data>
+  <data name="ProductName" xml:space="preserve">
+    <value>F#</value>
+  </data>
+  <data name="ProjectReferencesHigherVersionWarning" xml:space="preserve">
+    <value>The referenced project '{0}' is targeting a higher framework version ({1}) than this project’s current target framework version ({2}). This may lead to build failures if types from assemblies outside this project’s target framework are used by any project in the dependency chain.</value>
+  </data>
+  <data name="ProjectConversionNotRequired" xml:space="preserve">
+    <value>The project file does not require conversion.</value>
+  </data>
+  <data name="ConversionNotRequired" xml:space="preserve">
+    <value>No Conversion Required</value>
+  </data>
+  <data name="ErrorMakingProjectBackup" xml:space="preserve">
+    <value>Error creating backup of project file: {0}</value>
+  </data>
+  <data name="ProjectBackupSuccessful" xml:space="preserve">
+    <value>Project file successfully backed up as {0}</value>
+  </data>
+  <data name="BackupNameConflict" xml:space="preserve">
+    <value>Backup file name conflict. Renaming file to: {0}</value>
+  </data>
+  <data name="ProjectContainsLinkedFile" xml:space="preserve">
+    <value>Backed up project may not build. Project contains linked file: {0}</value>
+  </data>
+  <data name="ErrorMakingBackup" xml:space="preserve">
+    <value>Failed to backup file as {0}</value>
+  </data>
+  <data name="BackupSuccessful" xml:space="preserve">
+    <value>File successfully backed up as {0}</value>
+  </data>
+  <data name="Identity" xml:space="preserve">
+    <value>Identity</value>
+  </data>
+  <data name="IdentityDescription" xml:space="preserve">
+    <value>Security identity of the referenced assembly.</value>
+  </data>
+  <data name="Path" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="PathDescription" xml:space="preserve">
+    <value>Location of file being referenced.</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="CopyOf" xml:space="preserve">
+    <value>Copy of {0}</value>
+  </data>
+  <data name="CopyOf2" xml:space="preserve">
+    <value>Copy ({0}) of {1}</value>
+  </data>
+
+</root>

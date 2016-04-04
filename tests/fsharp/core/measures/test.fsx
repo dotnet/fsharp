@@ -15,12 +15,13 @@ let test s b = if b then () else report_failure(s)
 #else
 let argv = System.Environment.GetCommandLineArgs() 
 let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
-    let cultureString = argv.[2] in 
-    let culture = new System.Globalization.CultureInfo(cultureString) in 
+  if argv.Length > 2 && argv.[1] = "--culture" then
+    let cultureString = argv.[2]
+    let culture = new System.Globalization.CultureInfo(cultureString)
     stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
     System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
+  else
+    System.Threading.Thread.CurrentThread.CurrentCulture <-  System.Globalization.CultureInfo.InvariantCulture
 
 do SetCulture()    
 #endif
@@ -508,7 +509,8 @@ module MembersTest =
     let s = 2.0f<kg>
     let d = 2.0M<kg>
 
-#if !NetCore
+#if NetCore
+#else
     let tmpCulture = System.Threading.Thread.CurrentThread.CurrentCulture
     System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo("en-US")
     test "f" (f.ToString().Equals("2"))

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -21,6 +21,33 @@ Make sure each method works on:
 
 [<TestFixture>]
 type SeqModule() =
+
+    [<Test>]
+    member this.AllPairs() =
+
+        // integer Seq
+        let resultInt = Seq.allPairs (seq [1..7]) (seq [11..17])
+        let expectedInt =
+            seq { for i in 1..7 do
+                    for j in 11..17 do
+                        yield i, j }
+        VerifySeqsEqual expectedInt resultInt
+
+        // string Seq
+        let resultStr = Seq.allPairs (seq ["str3";"str4"]) (seq ["str1";"str2"])
+        let expectedStr = seq ["str3","str1";"str3","str2";"str4","str1";"str4","str2"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        VerifySeqsEqual Seq.empty <| Seq.allPairs Seq.empty Seq.empty
+        VerifySeqsEqual Seq.empty <| Seq.allPairs { 1..7 } Seq.empty
+        VerifySeqsEqual Seq.empty <| Seq.allPairs Seq.empty { 1..7 }
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.allPairs null null |> ignore)
+        CheckThrowsArgumentNullException(fun() -> Seq.allPairs null (seq [1..7]) |> ignore)
+        CheckThrowsArgumentNullException(fun() -> Seq.allPairs (seq [1..7]) null |> ignore)
+        ()
 
     [<Test>]
     member this.CachedSeq_Clear() =
@@ -260,7 +287,19 @@ type SeqModule() =
         let expectedNullSeq = seq [null;null]
         
         VerifySeqsEqual expectedNullSeq NullSeq
+
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>               
+            for o in strings do ()) 
         
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>
+                :> System.Collections.IEnumerable // without this upcast the for loop throws, so it should with this upcast too
+            for o in strings do ()) 
         
         ()
         

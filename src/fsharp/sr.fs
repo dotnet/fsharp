@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler 
     open Microsoft.FSharp.Core
@@ -86,7 +86,7 @@ namespace Microsoft.FSharp.Compiler
                     b.AppendFormat(messageString, (Array.ofList (List.rev args))) |> ignore
                     box(b.ToString())
                 // REVIEW: For these purposes, this should be a nop, but I'm leaving it
-                // in incase we ever decide to support labels for the error format string
+                // in case we ever decide to support labels for the error format string
                 // E.g., "<name>%s<foo>%d"
                 elif System.Char.IsSurrogatePair(fmt,i) then 
                    capture args ty (i+2)

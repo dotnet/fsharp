@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
@@ -12,7 +12,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
-// set to the proper value at build.fs (BuildFrameworkTcImports)
+// set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
 let parseILGlobals = ref EcmaILGlobals
 
 // -------------------------------------------------------------------- 

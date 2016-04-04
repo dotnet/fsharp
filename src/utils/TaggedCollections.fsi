@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// This namespace contains FSharp.PowerPack extensions for the F# collection types
 namespace Internal.Utilities.Collections.Tagged
@@ -12,7 +12,7 @@ namespace Internal.Utilities.Collections.Tagged
     [<Sealed>]
     type internal Set<'T,'ComparerTag> when 'ComparerTag :> IComparer<'T> =
 
-        /// A useful shortcut for Set.add.  Note this operation prodcues a new set
+        /// A useful shortcut for Set.add.  Note this operation produces a new set
         /// and does not mutate the original set.  The new set will share many storage
         /// nodes with the original.  See the Set module for further operations on sets.
         member Add : 'T -> Set<'T,'ComparerTag>

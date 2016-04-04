@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// <summary>Types and functions related to expression quotations</summary>
 namespace Microsoft.FSharp.Quotations
@@ -146,7 +146,7 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member FieldSet: obj:Expr * fieldInfo:FieldInfo * value:Expr -> Expr 
 
-    /// <summary>Builds an expression that represents the constrution of an F# function value</summary>
+    /// <summary>Builds an expression that represents the construction of an F# function value</summary>
     /// <param name="parameter">The parameter to the function.</param>
     /// <param name="body">The body of the function.</param>
     /// <returns>The resulting expression.</returns>
@@ -159,7 +159,7 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member Let : letVariable:Var * letExpr:Expr * body:Expr -> Expr 
 
-    /// <summary>Builds recursives expressions associated with 'let rec' constructs</summary>
+    /// <summary>Builds recursive expressions associated with 'let rec' constructs</summary>
     /// <param name="bindings">The list of bindings for the let expression.</param>
     /// <param name="body">The sub-expression where the bindings are in scope.</param>
     /// <returns>The resulting expression.</returns>
@@ -402,7 +402,7 @@ type Expr =
     static member RegisterReflectedDefinitions: assembly:Assembly * resource:string * serializedValue:byte[] * referencedTypes:Type[] -> unit
 
     /// <summary>Fetches or creates a new variable with the given name and type from a global pool of shared variables
-    /// indexed by name and type. The type is given by the expicit or inferred type parameter</summary>
+    /// indexed by name and type. The type is given by the explicit or inferred type parameter</summary>
     /// <param name="name">The variable name.</param>
     /// <returns>The created of fetched typed global variable.</returns>
     static member GlobalVar<'T> : name:string -> Expr<'T>
@@ -578,7 +578,7 @@ module Patterns =
     [<CompiledName("QuoteTypedPattern")>]
     val (|QuoteTyped|_|)           : input:Expr -> Expr option 
 
-    /// <summary>An active pattern to recognize expressions that represent sequential exeuction of one expression followed by another</summary>
+    /// <summary>An active pattern to recognize expressions that represent sequential execution of one expression followed by another</summary>
     /// <param name="input">The input expression to match against.</param>
     /// <returns>(Expr * Expr) option</returns>
     [<CompiledName("SequentialPattern")>]
@@ -765,11 +765,11 @@ module DerivedPatterns =
 
     /// <summary>A parameterized active pattern to recognize calls to a specified function or method.
     /// The returned elements are the optional target object (present if the target is an 
-    /// instance method), the generic type instantation (non-empty if the target is a generic
+    /// instance method), the generic type instantiation (non-empty if the target is a generic
     /// instantiation), and the arguments to the function or method.</summary>
     /// <param name="templateParameter">The input template expression to specify the method to call.</param>
     /// <returns>The optional target object (present if the target is an 
-    /// instance method), the generic type instantation (non-empty if the target is a generic
+    /// instance method), the generic type instantiation (non-empty if the target is a generic
     /// instantiation), and the arguments to the function or method.</returns>
     [<CompiledName("SpecificCallPattern")>]
     val (|SpecificCall|_|)  : templateParameter:Expr -> (Expr -> (Expr option * list<Type> * list<Expr>) option)
@@ -792,7 +792,7 @@ module DerivedPatterns =
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]
     val (|PropertySetterWithReflectedDefinition|_|) : propertyInfo:PropertyInfo -> Expr option
 
-/// <summary>Active patterns for traversing, visiting, rebuilding and tranforming expressions in a generic way</summary>
+/// <summary>Active patterns for traversing, visiting, rebuilding and transforming expressions in a generic way</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ExprShape =
 

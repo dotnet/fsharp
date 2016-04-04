@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Internal.Utilities
 open System
@@ -214,10 +214,13 @@ module internal FSharpEnvironment =
                 // Property pages (ApplicationPropPage.vb)
 
                 let key20 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
-#if FX_ATLEAST_45
+#if VS_VERSION_DEV12
+                let key40 = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
+#endif
+#if VS_VERSION_DEV14
                 let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
 #else
-                let key40 = @"Software\Microsoft\FSharp\2.0\Runtime\v4.0"
+                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #endif
                 let key1,key2 = 
                     match FSharpCoreLibRunningVersion with 
@@ -247,7 +250,7 @@ module internal FSharpEnvironment =
 #if FX_ATLEAST_45
 
     // Apply the given function to the registry entry corresponding to the subkey.
-    // The reg key is dispoed at the end of the scope.
+    // The reg key is disposed at the end of the scope.
     let useKey subkey f =
         let key = Registry.LocalMachine.OpenSubKey subkey
         try f key 

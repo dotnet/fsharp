@@ -23,6 +23,8 @@ neg46.fs(48,8,48,34): typecheck error FS0912: This declaration element is not pe
 
 neg46.fs(52,8,52,39): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
+neg46.fs(56,8,56,11): typecheck error FS3192: Constructors are not permitted as extension members - they must be defined as part of the original definition of the type
+
 neg46.fs(56,8,56,11): typecheck error FS0871: Constructors cannot be defined for this type
 
 neg46.fs(56,17,56,20): typecheck error FS0787: The inherited type is not an object model type

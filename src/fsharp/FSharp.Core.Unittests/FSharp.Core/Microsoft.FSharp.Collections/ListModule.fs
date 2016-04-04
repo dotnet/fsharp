@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.List module
@@ -28,6 +28,28 @@ type ListModule() =
         let c : int list   = List.empty<int>
         let d : string list = List.empty<string>
         
+        ()
+
+    [<Test>]
+    member this.AllPairs() =
+        // integer List
+        let resultInt =  List.allPairs [1..3] [2..2..6]
+        Assert.AreEqual([(1,2);(1,4);(1,6)
+                         (2,2);(2,4);(2,6)
+                         (3,2);(3,4);(3,6)], resultInt)
+
+        // string List
+        let resultStr = List.allPairs [2;3;4;5] ["b";"c";"d";"e"]
+        Assert.AreEqual([(2,"b");(2,"c");(2,"d");(2,"e")
+                         (3,"b");(3,"c");(3,"d");(3,"e")
+                         (4,"b");(4,"c");(4,"d");(4,"e")
+                         (5,"b");(5,"c");(5,"d");(5,"e")] , resultStr)
+
+        // empty List
+        let resultEpt = List.allPairs [] []
+        let empTuple:(obj*obj) list = []
+        Assert.AreEqual(empTuple, resultEpt)
+
         ()
 
     [<Test>]
