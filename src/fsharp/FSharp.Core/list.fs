@@ -601,7 +601,15 @@ namespace Microsoft.FSharp.Collections
                 loop list LanguagePrimitives.GenericZero< 'T >
 
         [<CompiledName("SumBy")>]
-        let inline sumBy f     (list:list<_>) = Seq.sumBy f list
+        let inline sumBy (f: 'T -> 'U)     (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let rec loop xs sum = 
+                    match xs with 
+                    | [] -> sum
+                    | h::t -> loop t (Checked.(+) sum (f h))
+                loop list LanguagePrimitives.GenericZero< 'U >
 
         [<CompiledName("Max")>]
         let inline max          (list:list<_>) = Seq.max list
