@@ -235,11 +235,7 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
               | ('h' | 'H') ->
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
-              | 'M' -> 
-                  collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, g.decimal_ty) :: acc) (i+1, relLine, relCol+1)
-
-              | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
+              | ('f' | 'F' | 'e' | 'E' | 'g' | 'G' | 'M') ->
                   collectSpecifierLocation relLine relCol
                   parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
 
