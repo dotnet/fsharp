@@ -602,7 +602,7 @@ namespace Microsoft.FSharp.Collections
         let inline maxBy f (list:list<_>) = Seq.maxBy f list
 
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) = Seq.min list
+        let inline min          (list:list<_>) = reduce min list
 
         [<CompiledName("MinBy")>]
         let inline minBy f (list:list<_>) = Seq.minBy f list
