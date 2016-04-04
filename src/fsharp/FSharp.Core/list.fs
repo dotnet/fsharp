@@ -19,11 +19,6 @@ namespace Microsoft.FSharp.Collections
 
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
-        let inline checkNonNull argName arg = 
-            match box arg with 
-            | null -> nullArg argName 
-            | _ -> ()
-
         [<CompiledName("Length")>]
         let length (list: 'T list) = list.Length
         
@@ -614,7 +609,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Average")>]
         let inline average      (list:list<'T>) =
-            checkNonNull "list" list
             match list with 
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
@@ -625,7 +619,15 @@ namespace Microsoft.FSharp.Collections
                 loop list LanguagePrimitives.GenericZero< 'T > 0
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy f (list:list<_>) = Seq.averageBy f list
+        let inline averageBy (f : 'T -> 'U) (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let rec loop xs sum count = 
+                    match xs with 
+                    | [] -> LanguagePrimitives.DivideByInt sum count
+                    | h::t -> loop t (Checked.(+) sum (f h)) (count + 1)
+                loop list LanguagePrimitives.GenericZero< 'U > 0
 
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
