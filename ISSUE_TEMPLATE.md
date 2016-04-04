@@ -1,35 +1,38 @@
 
-### Description
+#### Description
 
-Please provide a succinct description of your issue.
+Please provide a succinct description of the issue.
 
-### Repro steps
+#### Repro steps
 
-Please provide the steps required to reproduce the problem
+Provide the steps required to reproduce the problem
 
 1. Step A
 
 2. Step B
 
-### Expected behavior
+#### Expected behavior
 
-Please provide a description of the behaviour you expect.
+Provide a description of the expected behaviour.
 
-### Actual behavior
+#### Actual behavior
 
-Please provide a description of the actual behaviour you observe. 
+Provide a description of the actual behaviour observed. 
 
-### Known workarounds
+#### Known workarounds
 
-Please provide a description of any known workarounds.
+Provide a description of any known workarounds.
 
-### Related information 
+#### Related information 
+
+Provide any related information 
 
 * Operating system
 * Branch
 * .NET Runtime, CoreCLR or Mono Version
 * Editing Tools (e.g. Visual Studio Version)
 * Links to F# RFCs or entries on http://fslang.uservoice.com
-
+* Links to performance testing scripts
+* Indications of severity
 
 
