@@ -1,5 +1,4 @@
 
-#### Description
 
 Please provide a succinct description of the issue.
 
