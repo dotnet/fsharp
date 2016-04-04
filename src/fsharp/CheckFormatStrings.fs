@@ -30,7 +30,9 @@ let mkFlexibleFormatTypar m tys dflt =
 
 let mkFlexibleIntFormatTypar g m = 
     mkFlexibleFormatTypar m [ g.byte_ty; g.int16_ty; g.int32_ty; g.int64_ty;  g.sbyte_ty; g.uint16_ty; g.uint32_ty; g.uint64_ty;g.nativeint_ty;g.unativeint_ty; ] g.int_ty
-    
+
+let mkFlexibleDecimalFormatTypar g m =
+    mkFlexibleFormatTypar m [ g.decimal_ty ] g.decimal_ty
     
 let mkFlexibleFloatFormatTypar g m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
@@ -235,7 +237,11 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
               | ('h' | 'H') ->
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
-              | ('f' | 'F' | 'e' | 'E' | 'g' | 'G' | 'M') ->
+              | 'M' ->
+                  collectSpecifierLocation relLine relCol
+                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+
+              | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
                   collectSpecifierLocation relLine relCol
                   parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
 
