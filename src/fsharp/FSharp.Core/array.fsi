@@ -12,6 +12,14 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module Array = 
 
+        /// <summary>Builds a new array that contains the cartesian product of the two input arrays.</summary>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <returns>The resulting array of pairs.</returns>
+        [<CompiledName("AllPairs")>]
+        val allPairs: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+
         /// <summary>Builds a new array that contains the elements of the first array followed by the elements of the second array.</summary>
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>

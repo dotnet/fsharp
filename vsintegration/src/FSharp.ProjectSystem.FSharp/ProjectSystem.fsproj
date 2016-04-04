@@ -26,6 +26,21 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+    <FilesToLocalize Include="$(OutDir)MenusAndCommands.vsct">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\MenusAndCommands.vsct.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\MenusAndCommands.vsct.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+      <Link>FSharp.ProjectSystem.FSharp.dll</Link>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
@@ -129,5 +144,21 @@
   </PropertyGroup>
   <Target Name="BeforeBuild">
     <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" />
+  </Target>
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+  <Target Name="CopyLocalizationResources" BeforeTargets="Localize">
+    <ItemGroup>
+	  <LocalizationResources Include="MenusAndCommands.vsct" />
+	</ItemGroup>
+	<Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
   </Target>
 </Project>
