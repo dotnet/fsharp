@@ -754,7 +754,7 @@ type ListModule02() =
         Assert.AreEqual(38.03M, resultDecimal)
         
         ()
-
+    
     [<Test>]
     member this.Tl() =
         // integer List  
