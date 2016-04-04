@@ -1,6 +1,6 @@
 // #Regression #NoMT #FSI 
 // Enumeration gave error
-//<Expects status="success">Set<string> = set ["1"]</Expects>
+//<Expects status="success"></Expects>
 
 let s1 = Set.ofArray [|"1"|]
 let s2 = Set.ofArray [|"1"|]
