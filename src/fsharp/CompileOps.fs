@@ -3631,6 +3631,13 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | Some(importsBase)-> importsBase.GetDllInfos() @ dllInfos
         | None -> dllInfos
         
+    member tcImports.AllAssemblyResolutions() = 
+        CheckDisposed()
+        let ars = resolutions.GetAssemblyResolutions()
+        match importsBase with 
+        | Some(importsBase)-> importsBase.AllAssemblyResolutions() @ ars
+        | None -> ars
+        
     member tcImports.TryFindDllInfo (m,assemblyName,lookupOnly) =
         CheckDisposed()
         let rec look (t:TcImports) =       
@@ -3966,7 +3973,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                  { resolutionFolder       = tcConfig.implicitIncludeDir
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
-                   referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
+                   referencedAssemblies   = Array.distinct [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |]
                    temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
