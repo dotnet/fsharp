@@ -5,7 +5,7 @@ Please provide a succinct description of your issue.
 
 ### Repro steps
 
-Please provide a the steps required to reproduce the problem
+Please provide the steps required to reproduce the problem
 
 1. Step A
 
@@ -29,7 +29,7 @@ Please provide a description of any known workarounds.
 * Branch
 * .NET Runtime, CoreCLR or Mono Version
 * Editing Tools (e.g. Visual Studio Version)
-* Lins to F# RFCs or entries on http://fslang.uservoice.com
+* Links to F# RFCs or entries on http://fslang.uservoice.com
 
 
 
