@@ -592,7 +592,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sum")>]
         let inline sum          (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> LanguagePrimitives.GenericZero< 'T >
             | _ ->
                 let rec loop xs sum = 
                     match xs with 
@@ -603,7 +603,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SumBy")>]
         let inline sumBy (f: 'T -> 'U)     (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> LanguagePrimitives.GenericZero< 'U >
             | _ ->
                 let rec loop xs sum = 
                     match xs with 
