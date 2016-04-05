@@ -7,6 +7,8 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
+	<MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
+	<MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -15,7 +17,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
-    <DefineConstants>$(DefineConstants);CODE_ANALYSIS;STAMP_OSS_VERSION</DefineConstants>
+    <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
@@ -29,6 +31,14 @@
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkProfile></TargetFrameworkProfile>
   </PropertyGroup>
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -195,5 +205,18 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
 </Project>

@@ -23,6 +23,14 @@
     <BaseAddress>0x06800000</BaseAddress>
   </PropertyGroup>
   <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </FsSrGen>
@@ -553,5 +561,16 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
       <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
     </Copy>
+  </Target>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
   </Target>
 </Project>

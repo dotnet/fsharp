@@ -298,10 +298,9 @@ if '%TEST_COMPILERUNIT%' == '1' (
     %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
     @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 )
-
 if '%TEST_NET40_COREUNIT%' == '1' (
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
 if '%TEST_PORTABLE_COREUNIT%' == '1' (
@@ -326,8 +325,6 @@ if '%BUILD_VS%' == '1' (
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
 
-REM This clobbers the installed F# SDK on the machine
-call vsintegration\update-vsintegration.cmd %BUILD_CONFIG_LOWERCASE%
 pushd tests
 
 @echo on
