@@ -601,20 +601,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MaxBy")>]
         let inline maxBy f (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
             | _ ->
-                let mutable acc = list.Head
-                let mutable accv = f list.Head
-                let rec loop xs = 
+                let rec loop xs acc accv = 
                     match xs with 
-                    | [] -> ()
+                    | [] -> acc
                     | h::t -> let currv = f h
-                              if currv > accv then
-                                acc <- h
-                                accv <- currv
-                              loop t
-                loop list.Tail
-                acc
+                              if currv > accv 
+                              then loop t h currv
+                              else loop t acc accv
+                loop list.Tail list.Head (f list.Head)
             
         [<CompiledName("Min")>]
         let inline min          (list:list<_>) = reduce min list
@@ -624,18 +620,14 @@ namespace Microsoft.FSharp.Collections
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
-                let mutable acc = list.Head
-                let mutable accv = f list.Head
-                let rec loop xs = 
+                let rec loop xs acc accv = 
                     match xs with 
-                    | [] -> ()
+                    | [] -> acc
                     | h::t -> let currv = f h
-                              if currv < accv then
-                                acc <- h
-                                accv <- currv
-                              loop t
-                loop list.Tail
-                acc
+                              if currv < accv 
+                              then loop t h currv
+                              else loop t acc accv
+                loop list.Tail list.Head (f list.Head)
 
         [<CompiledName("Average")>]
         let inline average      (list:list<_>) = Seq.average list
