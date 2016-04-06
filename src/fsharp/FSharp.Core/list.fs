@@ -599,8 +599,23 @@ namespace Microsoft.FSharp.Collections
         let inline max          (list:list<_>) = reduce max list
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy f (list:list<_>) = Seq.maxBy f list
-
+        let inline maxBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let mutable maxt = list.Head
+                let mutable maxu = f list.Head
+                let rec loop xs = 
+                    match xs with 
+                    | [] -> ()
+                    | h::t -> let mu = f h
+                              if mu > maxu then
+                                maxt <- h
+                                maxu <- mu
+                              loop t
+                loop list.Tail
+                maxt
+            
         [<CompiledName("Min")>]
         let inline min          (list:list<_>) = reduce min list
 
