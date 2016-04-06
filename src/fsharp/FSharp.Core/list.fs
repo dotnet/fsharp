@@ -603,18 +603,18 @@ namespace Microsoft.FSharp.Collections
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
-                let mutable maxt = list.Head
-                let mutable maxu = f list.Head
+                let mutable acc = list.Head
+                let mutable accv = f list.Head
                 let rec loop xs = 
                     match xs with 
                     | [] -> ()
-                    | h::t -> let mu = f h
-                              if mu > maxu then
-                                maxt <- h
-                                maxu <- mu
+                    | h::t -> let currv = f h
+                              if currv > accv then
+                                acc <- h
+                                accv <- currv
                               loop t
                 loop list.Tail
-                maxt
+                acc
             
         [<CompiledName("Min")>]
         let inline min          (list:list<_>) = reduce min list
