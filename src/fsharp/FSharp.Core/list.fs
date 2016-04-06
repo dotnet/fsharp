@@ -620,7 +620,22 @@ namespace Microsoft.FSharp.Collections
         let inline min          (list:list<_>) = reduce min list
 
         [<CompiledName("MinBy")>]
-        let inline minBy f (list:list<_>) = Seq.minBy f list
+        let inline minBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let mutable acc = list.Head
+                let mutable accv = f list.Head
+                let rec loop xs = 
+                    match xs with 
+                    | [] -> ()
+                    | h::t -> let currv = f h
+                              if currv < accv then
+                                acc <- h
+                                accv <- currv
+                              loop t
+                loop list.Tail
+                acc
 
         [<CompiledName("Average")>]
         let inline average      (list:list<_>) = Seq.average list
