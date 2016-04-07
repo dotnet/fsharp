@@ -599,53 +599,51 @@ namespace Microsoft.FSharp.Collections
         let inline max          (list:list<_>) =
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            | _ ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(max)
-                let rec loop s xs = 
-                    match xs with 
-                    | [] -> s
-                    | h::t -> loop (f.Invoke(s,h)) t
-                loop list.Head list.Tail
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x > acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MaxBy")>]
         let inline maxBy f (list:list<_>) =
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            | _ ->
-                let rec loop xs acc accv = 
-                    match xs with 
-                    | [] -> acc
-                    | h::t -> let currv = f h
-                              if currv > accv 
-                              then loop t h currv
-                              else loop t acc accv
-                loop list.Tail list.Head (f list.Head)
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv > accv then
+                        acc <- x
+                        accv <- currv
+                acc
             
         [<CompiledName("Min")>]
         let inline min          (list:list<_>) =
             match list with 
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            | _ ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(min)
-                let rec loop s xs = 
-                    match xs with 
-                    | [] -> s
-                    | h::t -> loop (f.Invoke(s,h)) t
-                loop list.Head list.Tail
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x < acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MinBy")>]
         let inline minBy f (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
-            | _ ->
-                let rec loop xs acc accv = 
-                    match xs with 
-                    | [] -> acc
-                    | h::t -> let currv = f h
-                              if currv < accv 
-                              then loop t h currv
-                              else loop t acc accv
-                loop list.Tail list.Head (f list.Head)
+            | [] -> invalidArg "list" "ERROR"
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv < accv then
+                        acc <- x
+                        accv <- currv
+                acc
 
         [<CompiledName("Average")>]
         let inline average      (list:list<_>) = Seq.average list
