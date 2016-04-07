@@ -9169,7 +9169,12 @@ and TcMethodApplication
                                 | ByrefTy cenv.g inst ->
                                     build inst (PassByRef(inst, currDfltVal))
                                 | _ ->
-                                    emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
+                                    match calledArg.CallerInfoInfo with
+                                    | CallerLineNumber when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
+                                        emptyPreBinder,Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                                    | _ ->
+                                        emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
+                                    
                           | WrapperForIDispatch ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
