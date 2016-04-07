@@ -32,6 +32,9 @@
 
 # Redmond suite (RunAll.pl) known failures
 
+fail001		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelNamespace.fs - Desktop)
+fail002		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelModule.fs - Portable)
+fail003		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelNamespace.fs - Portable)
 OS32BIT						Conformance\DeclarationElements\P-invokeDeclarations (CallingConventions01.fs - x64) -- This test is not meant to run on a 32bit OS
 MT402020					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
 MT402040					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
