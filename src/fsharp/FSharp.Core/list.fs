@@ -634,7 +634,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MinBy")>]
         let inline minBy f (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" "ERROR"
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | h::t ->
                 let mutable acc = h
                 let mutable accv = f h
