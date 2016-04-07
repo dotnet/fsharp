@@ -9172,6 +9172,8 @@ and TcMethodApplication
                                     match calledArg.CallerInfoInfo with
                                     | CallerLineNumber when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder,Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                                    | CallerFilePath when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
+                                        emptyPreBinder,Expr.Const(Const.String(mMethExpr.FileName), mMethExpr, currCalledArgTy)
                                     | _ ->
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
@@ -9207,6 +9209,9 @@ and TcMethodApplication
                       | CallerLineNumber when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
                               let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
                               emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[lineExpr],mMethExpr)
+                      | CallerFilePath when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                              let filePathExpr = Expr.Const(Const.String(mMethExpr.FileName), mMethExpr, calledNonOptTy)
+                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[filePathExpr],mMethExpr)
                       | _ -> emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
 
               // Combine the variable allocators (if any)

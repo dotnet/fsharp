@@ -1296,7 +1296,8 @@ type MethInfo =
                 // Note: can't specify caller-side default arguments in F#, by design (default is specified on the callee-side) 
                 let optArgInfo = if isOptArg then CalleeSide else NotOptional
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
-                let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber else NoCallerInfo
+                let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
+                let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber elif isCallerFilePathArg then CallerFilePath else NoCallerInfo
                 (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
 
         | DefaultStructCtor _ -> 

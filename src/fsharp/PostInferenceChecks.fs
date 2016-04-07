@@ -1328,6 +1328,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     | _, NoCallerInfo -> ()
                     | CallerSide(_), CallerLineNumber when (typeEquiv cenv.g cenv.g.int32_ty ty) -> ()
                     | CalleeSide, CallerLineNumber when (isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.int32_ty (destOptionTy cenv.g ty)) -> ()
+                    | CallerSide(_), CallerFilePath when (typeEquiv cenv.g cenv.g.string_ty ty) -> ()
+                    | CalleeSide, CallerFilePath when (isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty)) -> ()
                     | _ -> errorR(Error((1234, "Bogus caller info definition"), m)))
 
         for pinfo in immediateProps do
