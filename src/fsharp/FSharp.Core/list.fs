@@ -596,12 +596,21 @@ namespace Microsoft.FSharp.Collections
         let inline sumBy f     (list:list<_>) = Seq.sumBy f list
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) = reduce max list
+        let inline max          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(max)
+                let rec loop s xs = 
+                    match xs with 
+                    | [] -> s
+                    | h::t -> loop (f.Invoke(s,h)) t
+                loop list.Head list.Tail
 
         [<CompiledName("MaxBy")>]
         let inline maxBy f (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | _ ->
                 let rec loop xs acc accv = 
                     match xs with 
@@ -613,7 +622,16 @@ namespace Microsoft.FSharp.Collections
                 loop list.Tail list.Head (f list.Head)
             
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) = reduce min list
+        let inline min          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | _ ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(min)
+                let rec loop s xs = 
+                    match xs with 
+                    | [] -> s
+                    | h::t -> loop (f.Invoke(s,h)) t
+                loop list.Head list.Tail
 
         [<CompiledName("MinBy")>]
         let inline minBy f (list:list<_>) =
