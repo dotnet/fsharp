@@ -592,24 +592,22 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sum")>]
         let inline sum          (list:list<'T>) =
             match list with 
-            | [] -> LanguagePrimitives.GenericZero< 'T >
-            | _ ->
-                let rec loop xs sum = 
-                    match xs with 
-                    | [] -> sum
-                    | h::t -> loop t (Checked.(+) sum h)
-                loop list LanguagePrimitives.GenericZero< 'T >
+            | [] ->  LanguagePrimitives.GenericZero< 'T >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'T >
+                for x in t do
+                    acc <- Checked.(+) acc x
+                acc
 
         [<CompiledName("SumBy")>]
         let inline sumBy (f: 'T -> 'U)     (list:list<'T>) =
             match list with 
-            | [] -> LanguagePrimitives.GenericZero< 'U >
-            | _ ->
-                let rec loop xs sum = 
-                    match xs with 
-                    | [] -> sum
-                    | h::t -> loop t (Checked.(+) sum (f h))
-                loop list LanguagePrimitives.GenericZero< 'U >
+            | [] ->  LanguagePrimitives.GenericZero< 'U >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'U >
+                for x in t do
+                    acc <- Checked.(+) acc (f x)
+                acc
 
         [<CompiledName("Max")>]
         let inline max          (list:list<_>) = Seq.max list
