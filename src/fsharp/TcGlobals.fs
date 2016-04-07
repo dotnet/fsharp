@@ -300,6 +300,8 @@ type public TcGlobals =
       attrib_PreserveSigAttribute        : BuiltinAttribInfo option
       attrib_MethodImplAttribute         : BuiltinAttribInfo
       attrib_ExtensionAttribute          : BuiltinAttribInfo
+      attrib_CallerLineNumberAttribute   : BuiltinAttribInfo
+
       tcref_System_Collections_Generic_IList               : TyconRef
       tcref_System_Collections_Generic_IReadOnlyList       : TyconRef
       tcref_System_Collections_Generic_ICollection         : TyconRef
@@ -1202,7 +1204,8 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_PreserveSigAttribute    = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.PreserveSigAttribute"
     attrib_MethodImplAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
     attrib_ExtensionAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-    
+    attrib_CallerLineNumberAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
+
     attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
     attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
     attrib_NonSerializedAttribute                 = if ilg.traits.NonSerializedAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.NonSerializedAttribute") else None

@@ -1315,9 +1315,19 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if minfo.NumArgs.Length > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || isByrefTy cenv.g ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
+
+            if minfo.NumArgs.Length = 1 then
+                minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
+                |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                    match (optArgInfo, callerInfoInfo) with
+                    | _, NoCallerInfo
+                    | CallerSide(_), CallerLineNumber when (typeEquiv cenv.g cenv.g.int32_ty ty) -> ()
+                    | CalleeSide, CallerLineNumber when (isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.int32_ty (destOptionTy cenv.g ty)) -> ()
+                    | _ -> errorR(Error((1234, "Bogus caller info definition"), m))
+                 )
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

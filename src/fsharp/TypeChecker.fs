@@ -8680,7 +8680,7 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, _reflArgInfo: ReflectedArgInfo) = 
+    let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, _callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
         not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional 
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
@@ -9040,7 +9040,7 @@ and TcMethodApplication
         if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.EnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CallerTyArgs) 
-                |> List.existsSquared (fun (ParamData(_,_,_,_,_,ty)) ->  
+                |> List.existsSquared (fun (ParamData(_,_,_,_,_,_,ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
             match argsOfAppTy cenv.g finalCalledMethInfo.EnclosingType with 
@@ -9191,13 +9191,18 @@ and TcMethodApplication
                               let wrapper2,rhs = build currCalledArgTy dfltVal2
                               (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr (mkLocalValRef v)
                       build calledArgTy dfltVal
-                  | CalleeSide -> 
+                  | CalleeSide ->
                       let calledNonOptTy = 
                           if isOptionTy cenv.g calledArgTy then 
                               destOptionTy cenv.g calledArgTy 
                           else
                               calledArgTy // should be unreachable
-                      emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
+
+                      match calledArg.CallerInfoInfo with
+                      | CallerLineNumber when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
+                              let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
+                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[lineExpr],mMethExpr)
+                      | _ -> emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
 
               // Combine the variable allocators (if any)
               let wrapper = (wrapper >> wrapper2)
@@ -9207,12 +9212,11 @@ and TcMethodApplication
 
         // Handle optional arguments
         let wrapOptionalArg (assignedArg: AssignedCalledArg<_>) =
-            let (CallerArg(callerArgTy,m,isOptCallerArg,expr)) =  assignedArg.CallerArg
+            let (CallerArg(callerArgTy,m,isOptCallerArg,expr)) = assignedArg.CallerArg
             match assignedArg.CalledArg.OptArgInfo with 
             | NotOptional -> 
                 if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(),m))
                 assignedArg
-
             | _ -> 
                 let expr = 
                     match assignedArg.CalledArg.OptArgInfo with 
