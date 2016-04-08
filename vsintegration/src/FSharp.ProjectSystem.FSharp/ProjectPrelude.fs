@@ -161,8 +161,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     //--------------------------------------------------------------------------------------
     // The Resource Reader
 
-    type internal DummyTypeInThisAssembly = class end
-    
     module internal FSharpSR =
         [<Literal>] 
         let   ProjectReferenceError2 = "ProjectReferenceError2"
@@ -256,7 +254,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let FSharpCoreVersionIsNotLegacyCompatible = "FSharpCoreVersionIsNotLegacyCompatible";
 
 
-        let thisAssembly = typeof<DummyTypeInThisAssembly>.Assembly 
+        type private TypeInThisAssembly = class end
+        let thisAssembly = typeof<TypeInThisAssembly>.Assembly 
 
         let private resources = lazy (new System.Resources.ResourceManager("VSPackage", thisAssembly))
 

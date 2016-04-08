@@ -13,7 +13,7 @@ for /f %%i in ("%FSHARP_HOME%") do set FSHARP_HOME=%%~fi
 
 REM Do we know where fsc.exe is?
 IF DEFINED FSCBinPath goto :FSCBinPathFound
-FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi
+FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi && goto :FSCBinPathFound
 :FSCBinPathFound
 
 SET CLIFLAVOUR=cli\4.5
@@ -140,6 +140,7 @@ IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\csc.exe
 
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\ngen.exe"            SET NGEN=%CORDIR%\ngen.exe
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\al.exe"              SET ALINK=%CORDIR%\al.exe
+IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\sn.exe"              SET SN=%CORDIR%\sn.exe
 
 REM ==
 REM == The logic here is: pick the latest msbuild
@@ -150,6 +151,7 @@ IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORS
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\resgen.exe"          SET RESGEN=%CORSDK%\resgen.exe
 IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\al.exe"              SET ALINK=%CORSDK%\al.exe
+IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\sn.exe"              SET SN=%CORSDK%\sn.exe
 
 IF NOT DEFINED FSC                                            SET FSC=fsc.exe
 IF NOT DEFINED FSI                                            SET FSI=%fsiroot%.exe
@@ -221,6 +223,7 @@ echo MSBUILDTOOLSPATH    =%MSBuildToolsPath%
 echo NGEN                =%ngen%
 echo PEVERIFY            =%PEVERIFY%
 echo RESGEN              =%RESGEN%
+echo SN                  =%SN%
 echo ---------------------------------------------------------------
 
 exit /b 0
@@ -256,12 +259,12 @@ IF /I "%OSARCH%"=="IA64"  set X86_PROGRAMFILES=%ProgramFiles(x86)%
 IF /I "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
 REM == Default VS install locations
-set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
-set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
-set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
-set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
-set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.0
+set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.0
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.0
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.0
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
 set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
 

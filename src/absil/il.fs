@@ -19,10 +19,11 @@ open System.Collections.Concurrent
  
 let logging = false 
 
+let runningOnMono = 
+#if ENABLE_MONO_SUPPORT
 // Officially supported way to detect if we are running on Mono.
 // See http://www.mono-project.com/FAQ:_Technical
 // "How can I detect if am running in Mono?" section
-let runningOnMono = 
     try
         System.Type.GetType("Mono.Runtime") <> null
     with e-> 
@@ -31,7 +32,10 @@ let runningOnMono =
         // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is  
         // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get 
         // their issue fixed but we need to be robust here anyway.
-        false        
+        false  
+#else
+    false
+#endif
 
 let _ = if logging then dprintn "* warning: Il.logging is on"
 
@@ -437,6 +441,34 @@ type AssemblyRefData =
 /// Global state: table of all assembly references keyed by AssemblyRefData
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
+let compareVersions x y =
+    match x,y with 
+    | None, None -> 0
+    | Some _, None -> 1
+    | None, Some _ -> -1
+    | Some(x1,x2,x3,x4), Some(y1,y2,y3,y4) ->
+        if y1>x1 then 1 
+        elif y1<x1 then -1
+        elif y2>x2 then 1 
+        elif y2<x1 then -1
+        elif y3>x3 then 1 
+        elif y3<x1 then -1
+        elif y4>x4 then 1 
+        elif y4<x1 then -1
+        else 0
+
+let isMscorlib data =
+    if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
+    else false
+
+let GetReferenceUnifiedVersion data = 
+    let mutable highest = data.assemRefVersion
+    if not (isMscorlib data) then 
+        for ref in AssemblyRefUniqueStampGenerator.Table do
+            if System.String.Compare(ref.assemRefName, data.assemRefName) = 0 && highest < ref.assemRefVersion then 
+                highest <- ref.assemRefVersion
+    highest
+
 [<Sealed>]
 type ILAssemblyRef(data)  =  
     let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode(data)
@@ -444,7 +476,7 @@ type ILAssemblyRef(data)  =
     member x.Hash=data.assemRefHash
     member x.PublicKey=data.assemRefPublicKeyInfo
     member x.Retargetable=data.assemRefRetargetable  
-    member x.Version=data.assemRefVersion
+    member x.Version=GetReferenceUnifiedVersion data
     member x.Locale=data.assemRefLocale
     member x.UniqueStamp=uniqueStamp
     override x.GetHashCode() = uniqueStamp
@@ -1448,16 +1480,16 @@ let typesOfILParamsRaw (ps:ILParameters) : ILTypes = ps |> ILList.map (fun p -> 
 let typesOfILParamsList (ps:ILParameter list) = ps |> List.map (fun p -> p.Type) 
 
 [<StructuralEquality; StructuralComparison>]
-type ILGenericVariance = 
-    | NonVariant            
-    | CoVariant             
-    | ContraVariant         
+type ILGenericVariance =
+    | NonVariant
+    | CoVariant
+    | ContraVariant
 
 type ILGenericParameterDef =
     { Name: string;
       Constraints: ILTypes;
       Variance: ILGenericVariance; 
-      HasReferenceTypeConstraint: bool;     
+      HasReferenceTypeConstraint: bool;
       CustomAttrs : ILAttributes;
       HasNotNullableValueTypeConstraint: bool;
       HasDefaultConstructorConstraint: bool; }
@@ -4472,20 +4504,18 @@ type ILGlobals with
         | Some res -> res
 
     member this.mkDebuggerStepThroughAttribute() = mkILCustomAttribute this (mkSystemDiagnosticsDebugTypeRef this tname_DebuggerStepThroughAttribute, [], [], [])
-    member this.mkDebuggableAttribute (jitTracking, jitOptimizerDisabled) =
-        mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool jitTracking; ILAttribElem.Bool jitOptimizerDisabled], [])
+    member this.mkDebuggableAttribute (jitOptimizerDisabled) =
+        mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
 
-    member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled,enableEnC) =
+    member this.mkDebuggableAttributeV2(ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
-           [ILAttribElem.Int32( 
-                            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-                              (if jitTracking then 1 else 0) |||  
-                              (if jitOptimizerDisabled then 256 else 0) |||  
-                              (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                              (if enableEnC then 4 else 0))],[])
+           (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
+           [ILAttribElem.Int32( (if jitOptimizerDisabled then 256 else 0) |||  
+                                (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
+                                (if enableEnC then 4 else 0))],[])
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 

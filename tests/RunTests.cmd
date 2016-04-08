@@ -1,4 +1,4 @@
-@echo OFF
+@if "%_echo%"=="" echo off
 setlocal
 
 set FLAVOR=%1
@@ -11,7 +11,7 @@ goto :USAGE
 set NUNITPATH=%~dp0fsharpqa\testenv\bin\nunit\
 if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     pushd %~dp0
-    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    ..\.nuget\nuget.exe restore ..\packages.config -PackagesDirectory ..\packages
     call buildtesttools.cmd %FLAVOR%
     popd
 )
@@ -25,6 +25,10 @@ set _tmp=%3
 if not '%_tmp%' == '' (
     set TTAGS_ARG=-ttags:%_tmp:"=%
     set TTAGS=%_tmp:"=%
+)
+if /I '%_tmp%' == 'coreclr' (
+    set single_threaded=true
+    set permutations=FSC_CORECLR
 )
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
@@ -41,7 +45,7 @@ if /I "%APPVEYOR_CI%" == "1" (
     set NO_TTAGS=%NO_TTAGS%,NO_CI
 )
 
-set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
+if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
 if "%SKIP_EXPENSIVE_TESTS%" == "1" (
@@ -56,6 +60,7 @@ set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
+ECHO FSCBINPATH%
 
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0TestResults
@@ -92,6 +97,15 @@ if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
 )
+
+if /I "%2" == "coreunitall" (
+   goto :COREUNITALL
+)
+
+if /I "%2" == "coreunitportable" (
+   goto :COREUNITPORTABLE
+)
+
 if /I "%2" == "coreunit" (
    set coreunitsuffix=net40
    goto :COREUNIT
@@ -112,6 +126,10 @@ if /I "%2" == "coreunitportable259" (
    set coreunitsuffix=portable259
    goto :COREUNIT
 )
+if /I "%2" == "coreunitcoreclr" (
+   set coreunitsuffix=coreclr
+   goto :COREUNIT_CORECLR
+)
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 REM ----------------------------------------------------------------------------
@@ -120,7 +138,7 @@ REM ----------------------------------------------------------------------------
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable7^|coreunitportable47^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -145,8 +163,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
-     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+echo perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+     perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG% -savelog:all
+)
+if errorlevel 1 (
+  type %RESULTSDIR%\%FAILFILE%
+  exit /b 1
+)
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -186,8 +209,9 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 set PATH=%PATH%;%WINSDKNETFXTOOLS%
 
-IF NOT DEFINED SNEXE32 IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
-IF NOT DEFINED SNEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 set FSC=%FSCBINPATH%\fsc.exe
 set PATH=%FSCBINPATH%;%PATH%
@@ -196,12 +220,12 @@ set FSCVPREVBINPATH=%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0
 set FSCVPREV=%FSCVPREVBINPATH%\fsc.exe
 
 REM == VS-installed paths to FSharp.Core.dll
-set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
-set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
-set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
-set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
-set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.0
+set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.0
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.0
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.0
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
 set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
 
@@ -257,8 +281,8 @@ if errorlevel 1 (
 )
 
 pushd %~dp0fsharpqa\source
-echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
-     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:no %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:no %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
 
 popd
 goto :EOF
@@ -275,7 +299,46 @@ echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
 call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
+goto :EOF
 
+:COREUNITALL
+
+set XMLFILE=%RESULTSDIR%\CoreUnit_all_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CoreUnit_all_Output.log
+set ERRORFILE=%RESULTSDIR%\CoreUnit_all_Error.log
+
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
+goto :EOF
+
+:COREUNITPORTABLE
+
+set XMLFILE=%RESULTSDIR%\CoreUnit_Portable_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CoreUnit_Portable_Output.log
+set ERRORFILE=%RESULTSDIR%\CoreUnit_Portable_Error.log
+
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\portable7\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable47\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable78\bin\FSharp.Core.Unittests.dll" "%FSCBINPATH%\..\..\portable259\bin\FSharp.Core.Unittests.dll"
+
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
+goto :EOF
+
+:COREUNIT_CORECLR
+
+set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
+
+set testbinpath=%~dp0%testbin\
+set architecturepath=\coreclr\win7-x64
+set CORERUNPATH="%testbinpath%%flavor%%architecturepath%"
+
+echo "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
+     "%CORERUNPATH%\corerun.exe" "%testbinpath%%flavor%\coreclr\fsharp.core.unittests\FSharp.Core.Unittests.exe"
+
+call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -290,7 +353,6 @@ echo "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:
      "%NUNIT3_CONSOLE%" --verbose --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%" "%FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll"
 
 call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
-
 goto :EOF
 
 REM ----------------------------------------------------------------------------
@@ -306,21 +368,24 @@ echo "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --r
      "%NUNIT3_CONSOLE%" --verbose --x86 --framework:V4.0 %TTAGS_NUNIT_WHERE% --result:"%XMLFILE%;format=nunit2" --output:"%OUTPUTFILE%" --err:"%ERRORFILE%" --work:"%FSCBINPATH%"  --workers=1 --agents=1 --full "%FSCBINPATH%\VisualFSharp.Unittests.dll"
 popd
 call :UPLOAD_TEST_RESULTS "%XMLFILE%" "%OUTPUTFILE%"  "%ERRORFILE%"
-
 goto :EOF
 
 REM ----------------------------------------------------------------------------
 
 :UPLOAD_TEST_RESULTS
 
-rem See <http://www.appveyor.com/docs/environment-variables>
-if not defined APPVEYOR goto :EOF
-
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
+
+rem See <http://www.appveyor.com/docs/environment-variables>
+if not defined APPVEYOR goto :SKIP_APPVEYOR_UPLOAD
+
 echo powershell -File Upload-Results.ps1 "%~1"
      powershell -File Upload-Results.ps1 "%~1"
-if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
+
+:SKIP_APPVEYOR_UPLOAD
+	 
+if NOT %saved_errorlevel% == 0 exit /b 1
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command

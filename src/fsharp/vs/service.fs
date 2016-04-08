@@ -11,7 +11,6 @@ open System.Text
 open System.Threading
 open System.Runtime
 open System.Collections.Generic
-open System.Security.Permissions
 
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
@@ -2186,7 +2185,11 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
             builder.ImportedCcusInvalidated.Add (fun msg -> 
+#if NO_DEBUG_LOG
+                ignore msg
+#else
                 System.Diagnostics.Debugger.Log(100, "service", sprintf "A build cache entry is being invalidated because of a : %s" msg)
+#endif
                 self.InvalidateConfiguration options)
 
             // Register the callback called just before a file is typechecked by the background builder (without recording
@@ -2532,7 +2535,12 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             // Do we use a "FSharp.Core, 4.3.0.0" reference by default?
             let otherFlags = defaultArg otherFlags [| |]
-            let useMonoResolution = runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+            let useMonoResolution = 
+#if ENABLE_MONO_SUPPORT
+                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+#else
+                true
+#endif
             let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
             let applyCompilerOptions tcConfigB  = 
                 let collect _name = ()

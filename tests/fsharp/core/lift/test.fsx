@@ -2,6 +2,7 @@
 #if Portable
 module Core_lift
 #endif
+
 let failures = ref false
 let report_failure s  = 
   stderr.WriteLine ("NO: test "^s^" failed"); failures := true

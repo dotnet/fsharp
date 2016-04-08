@@ -1,46 +1,46 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
+module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
 
 let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (System.DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Bytes
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+#if FX_NO_CORHOST_SIGNER
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
 open System
 open System.IO
 open System.Text
 open System.Reflection
+
+#if FX_NO_SYMBOLSTORE
+#else
 open System.Diagnostics.SymbolStore
+#endif
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
+#if FX_NO_LINKEDRESOURCES
+#else
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
 let inline ignore _x = ()
 
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
+#endif
 
 let check _action (hresult) = 
   if uint32 hresult >= 0x80000000ul then 
     System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(hresult)
   //printf "action = %s, hresult = 0x%nx \n" action hresult
   
-// Depending on the configuration, we may want to include the output file extension in the name 
-// of the debug symbols file. This function takes output file name and returns debug file name.
-let getDebugFileName outfile = 
-  if IL.runningOnMono then 
-      outfile+".mdb"
-  else 
-      (Filename.chopExtension outfile)+".pdb" 
-
 type PEFileType = X86 | X64
 
 let MAX_PATH = 260
@@ -57,6 +57,8 @@ let bytesToQWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte) , (b4 : 
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n : int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
 
+#if FX_NO_LINKEDRESOURCES
+#else
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
 type IMAGE_FILE_HEADER (m:int16, secs:int16, tds:int32, ptst:int32, nos:int32, soh:int16, c:int16) =
@@ -578,7 +580,6 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
             SaveChunk(bNil, 4 - dwFiller)
             
         !size
-    
 
 let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRVA:int32) (fileType:PEFileType) (outputFilePath:string) = 
     let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
@@ -597,14 +598,13 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             let corSystemDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
             // We'll use the current dir and a random file name rather than System.IO.Path.GetTempFileName
             // to try and prevent the command line invocation string from being > MAX_PATH
-            
-            
+
             let outputFilePaths = 
                 if outputFilePath = "" then 
                     [ FileSystem.GetTempPathShim() ]
                 else
                     [ FileSystem.GetTempPathShim() ; (outputFilePath ^ "\\") ]
-            
+
             // Get a unique random file
             let rec GetUniqueRandomFileName(path) =
                 let tfn =  path ^ System.IO.Path.GetRandomFileName()
@@ -613,17 +613,17 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 else
                     tfn
 
-            
+
             let machine = if 2 = nPEFileType then "X64" else "X86"
             let cmdLineArgsPreamble = sprintf "/NOLOGO /READONLY /MACHINE:%s" machine
-            
+
             let cvtres = corSystemDir^"cvtres.exe "
-            
+
             let createCvtresArgs path =
                 let tempObjFileName = GetUniqueRandomFileName(path)
                 let mutable cmdLineArgs = sprintf "%s \"/Out:%s\"" cmdLineArgsPreamble tempObjFileName
                 let mutable resFiles : string list = []
-                
+
                 for _ulr in unlinkedResources do
                     let tempResFileName = GetUniqueRandomFileName(path)
                     resFiles <- tempResFileName :: resFiles ; 
@@ -631,7 +631,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 let trf = resFiles
                 let cmd = cmdLineArgs
                 cmd,tempObjFileName,trf
-                
+
             let cmdLineArgs,tempObjFileName,tempResFileNames = 
                 let attempts = 
                     outputFilePaths |> 
@@ -643,20 +643,20 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                     | (i,t,f) :: _rest -> i,t,f // use the first one, since they're listed in order of precedence
                 tempResFiles <- files
                 (invoc,tmp,files) 
-                
+
             let cvtresInvocation = cvtres ^ cmdLineArgs
-            
+
             try
                 let mutable iFiles = 0
-                
+
                 for ulr in unlinkedResources do
                     // REVIEW: What can go wrong here?  What happens when the various file calls fail
                     // dump the unlinked resource bytes into the temp file
                     System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr) ;
                     iFiles <- iFiles + 1
-                    
+
                 // call cvtres.exe using the full cmd line string we've generated
-                    
+
                 // check to see if the generated string is too long - if it is, fail with E_FAIL
                 if cvtresInvocation.Length >= MAX_PATH then 
                     System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)              
@@ -667,12 +667,12 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 psi.CreateNoWindow <- true ; // REVIEW: For some reason, this still creates a window unless WindowStyle is set to hidden
                 psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden ;
                 let p = System.Diagnostics.Process.Start(psi)
-                
+
                 // Wait for the process to finish
                 p.WaitForExit()
-                
+
                 check "Process.Start" p.ExitCode // TODO: really need to check against 0
-                
+
                 // Conversion was successful, so read the object file
                 objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) ; 
                 //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
@@ -680,99 +680,96 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             finally
                 // clean up the temp files
                 List.iter (fun tempResFileName -> FileSystem.FileDelete(tempResFileName)) tempResFiles
-            
+
         // Part 2: Read the COFF file held in pbUnlinkedResource, spit it out into pResBuffer and apply the COFF fixups
         // pResBuffer will become  the .rsrc section of the PE file
         if (objBytes = Unchecked.defaultof<byte[]>) then
             System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
 
         let hMod = bytesToIFH objBytes 0
-     
+
         if hMod.SizeOfOptionalHeader <> 0s then
             System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-        
+
         let rsrc01Name = 0x313024637273722eL // ".rsrc$01"
         let rsrc02Name = 0x323024637273722eL // ".rsrc$02"
         let nullHdr = Unchecked.defaultof<IMAGE_SECTION_HEADER> 
         let mutable rsrc01 = nullHdr
         let mutable rsrc02 = nullHdr
-        
+
         for i = 0 to (int)hMod.NumberOfSections do
             let pSection = bytesToISH objBytes (IMAGE_FILE_HEADER.Width + (IMAGE_SECTION_HEADER.Width * i))
             if pSection.Name = rsrc01Name then
                 rsrc01 <- pSection
             else if pSection.Name = rsrc02Name then
                 rsrc02 <- pSection
-                
+
         if (nullHdr = rsrc01) || (nullHdr = rsrc02) then
             // One of the rsrc sections wasn't found
             System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-            
+
         let size = rsrc01.SizeOfRawData + rsrc02.SizeOfRawData
-        
 
         let pResBuffer = Bytes.zeroCreate size
 
         // Copy over the raw data
         Bytes.blit objBytes rsrc01.PointerToRawData pResBuffer 0 rsrc01.SizeOfRawData
-        
+
         // map all the relocs in .rsrc$01 using the reloc and symbol tables in the COFF object
         let symbolTableHead = hMod.PointerToSymbolTable
         let IMAGE_SYM_CLASS_STATIC = 0x3uy
         let IMAGE_SYM_TYPE_NULL = 0x0s
-        
+
         let GetSymbolEntry (buffer : byte[]) (idx : int) =
             bytesToIS buffer (symbolTableHead + (idx * IMAGE_SYMBOL.Width) )
-        
+
         for iReloc = 0 to (int)(rsrc01.NumberOfRelocations - 1s) do
             let pReloc = bytesToIR objBytes (rsrc01.PointerToRelocations + (iReloc * IMAGE_RELOCATION.Width))
             let IdxSymbol = pReloc.SymbolTableIndex
             let pSymbolEntry = GetSymbolEntry objBytes IdxSymbol
-            
+
             // Ensure the symbol entry is valid for a resource
             if ((pSymbolEntry.StorageClass <> IMAGE_SYM_CLASS_STATIC) ||
                 (pSymbolEntry.Type <> IMAGE_SYM_TYPE_NULL) ||
                 (pSymbolEntry.SectionNumber <> 3s)) then
                 System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-                
+
             // Ensure that RVA is a valid address inside rsrc02
             if pSymbolEntry.Value >= rsrc02.SizeOfRawData then
                 // pSymbolEntry.Value is too big
                 System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-                
+
             // store the value
             let vBuff, vSize = dwToBytes (ulLinkedResourceBaseRVA + rsrc01.SizeOfRawData + pSymbolEntry.Value)
             //Bytes.blit objBytes rsrc02.PointerToRawData pResBuffer pReloc.VirtualAddress rsrc02.SizeOfRawData
             Bytes.blit vBuff 0 pResBuffer pReloc.VirtualAddress vSize
         // Copy $02 (resource raw into pResBuffer
         Bytes.blit objBytes rsrc02.PointerToRawData pResBuffer rsrc01.SizeOfRawData  rsrc02.SizeOfRawData
-        
+
         // return the buffer    
         pResBuffer
 
-    
-
 let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) = 
     let mutable nResNodes = 0
-      
+
     let pirdType = bytesToIRD pbLinkedResource 0
     let mutable pirdeType = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
     let nEntries = pirdType.NumberOfNamedEntries + pirdType.NumberOfIdEntries
-      
+
     // determine entry buffer size
     // TODO: coalesce these two loops
     for iEntry = 0 to ((int)nEntries - 1) do
         pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
-        
+
         if pirdeType.DataIsDirectory then
             let nameBase = pirdeType.OffsetToDirectory
             let pirdName = bytesToIRD pbLinkedResource nameBase
             let mutable pirdeName = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
             let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
-            
+
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
                 pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
-                
+
                 if pirdeName.DataIsDirectory then
                     let langBase = pirdeName.OffsetToDirectory
                     let pirdLang = bytesToIRD pbLinkedResource langBase
@@ -783,10 +780,10 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                     nResNodes <- nResNodes + 1 ;
         else
             nResNodes <- nResNodes + 1 ;
-      
+
     let pResNodes : ResFormatNode [] = Array.zeroCreate nResNodes
     nResNodes <- 0 ;
-        
+
       // fill out the entry buffer
     for iEntry = 0 to ((int)nEntries - 1) do
         pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;  
@@ -803,7 +800,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
             for iEntry2 = 0 to ((int)nEntries2 - 1) do
                 pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
                 let dwNameID = pirdeName.Name
-                
+
                 if pirdeName.DataIsDirectory then
                     let langBase = pirdeName.OffsetToDirectory
                     let pirdLang = bytesToIRD pbLinkedResource langBase
@@ -832,31 +829,33 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
                 let rfn = ResFormatNode(dwTypeID, 0, 0, pirdeType.OffsetToData, pbLinkedResource) // REVIEW: I believe these 0s are what's causing the duplicate res naming problems
                 pResNodes.[nResNodes] <- rfn ;
                 nResNodes <- nResNodes + 1 ;
-                  
+
     // Ok, all tree leaves are in ResFormatNode structs, and nResNodes ptrs are in pResNodes
     let mutable size = 0
     if nResNodes <> 0 then
         size <- size + ResFormatHeader.Width ; // sizeof(ResFormatHeader)
         for i = 0 to (nResNodes - 1) do
             size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) ;
-              
+
     let pResBuffer = Bytes.zeroCreate size
-          
+
     if nResNodes <> 0 then
         let mutable resBufferOffset = 0
-           
+
         // Write a dummy header
         let rfh = ResFormatHeader()
         let rfhBytes = rfh.toBytes()
         Bytes.blit rfhBytes 0 pResBuffer 0 ResFormatHeader.Width
         resBufferOffset <- resBufferOffset + ResFormatHeader.Width ;
-         
+
         for i = 0 to (nResNodes - 1) do
             resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset) ;
 
-    pResBuffer                              
-                    
+    pResBuffer
+#endif
 
+#if FX_NO_PDB_WRITER
+#else
 // PDB Writing
 
 [<ComImport; Interface>]
@@ -1009,14 +1008,16 @@ type ISymUnmanagedWriter2 =
 
 type PdbWriter = { symWriter : ISymUnmanagedWriter2 }
 type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* pointer to pDocumentWriter COM object *)
-
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
+#endif
 
+#if FX_NO_PDB_WRITER
+#else
 let pdbInitialize (binaryName:string) (pdbName:string) =
     // collect necessary COM types
     let CorMetaDataDispenser = System.Type.GetTypeFromProgID("CLRMetaData.CorMetaDataDispenser")
@@ -1136,7 +1137,7 @@ let pdbDefineSequencePoints (writer:PdbWriter) (docWriter: PdbDocumentWriter) (p
     let endColumns = (Array.map (fun (_,_,_,_,x) -> x) pts) 
     writer.symWriter.DefineSequencePoints(docWriter.symDocWriter, pts.Length, offsets, lines, columns, endLines, endColumns)
 
-let pdbGetDebugInfo (writer: PdbWriter) = 
+let pdbWriteDebugInfo (writer: PdbWriter) = 
     let mutable iDD = new ImageDebugDirectory()
     let mutable length = 0
     writer.symWriter.GetDebugInfo(&iDD, 0, &length, null)
@@ -1148,8 +1149,11 @@ let pdbGetDebugInfo (writer: PdbWriter) =
       iddMinorVersion = (int32)iDD.MinorVersion;
       iddType = iDD.Type;
       iddData = data}
+#endif
 
 
+#if FX_NO_PDB_WRITER
+#else
 // PDB reading
 type PdbReader  = { symReader: ISymbolReader }
 type PdbDocument  = { symDocument: ISymbolDocument }
@@ -1261,12 +1265,40 @@ let pdbVariableGetSignature (variable:PdbVariable) :  byte[] =
 // the tuple is (AddressKind, AddressField1)
 let pdbVariableGetAddressAttributes (variable:PdbVariable) :  (int32 * int32) = 
     (int32 variable.symVariable.AddressKind,variable.symVariable.AddressField1)
+#endif
 
 // Key signing
 type keyContainerName = string
 type keyPair = byte[]
 type pubkey = byte[]
+type pubkeyOptions = byte[] * bool
 
+#if FX_NO_CORHOST_SIGNER
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerGetPublicKeyForKeyPair (kp:keyPair) : pubkey = 
+    let reply = (StrongNameSign.getPublicKeyForKeyPair kp)
+    reply
+
+let signerGetPublicKeyForKeyContainer (_kcName:keyContainerName) : pubkey = 
+    raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
+ 
+let signerCloseKeyContainer (_kc:keyContainerName) :unit = 
+    raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
+
+let signerSignatureSize (pk:pubkey) : int = 
+    (StrongNameSign.signatureSize pk)
+
+let signerSignFileWithKeyPair (fileName:string) (kp:keyPair) :unit =
+    (StrongNameSign.signFile fileName kp)
+
+let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName) : unit =  
+    raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
+
+#else
 // new mscoree functionality
 // This type represents methods that we don't currently need, so I'm leaving unimplemented
 type UnusedCOMMethod = unit -> unit
@@ -1374,13 +1406,11 @@ let CreateInterface (
                     ([<MarshalAs(UnmanagedType.LPStruct)>] _guid : System.Guid),
                     ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                         ICLRMetaHost byref)) : unit = failwith "CreateInterface"
-    
-let signerOpenPublicKeyFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
-let signerOpenKeyPairFile filePath = 
-    FileSystem.ReadAllBytesShim(filePath)
-  
+
+let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
+let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim(filePath)
+
 let mutable iclrsn : ICLRStrongName option = None
 let getICLRStrongName () =
     match iclrsn with
@@ -1452,3 +1482,4 @@ let signerSignFileWithKeyContainer fileName kcName =
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameSignatureGeneration(fileName, kcName, Unchecked.defaultof<byte[]>, 0u, ppb, &pcb) |> ignore
     iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
+#endif
