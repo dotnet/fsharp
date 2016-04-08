@@ -35,5 +35,7 @@
         <file src="FSharp.Core.optdata" target="lib/DNXCore50" />
         <file src="FSharp.Core.sigdata" target="content/any/DNXCore50" />
         <file src="FSharp.Core.optdata" target="content/any/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="runtimes/any/native/" />
+        <file src="FSharp.Core.optdata" target="runtimes/any/native/" />
     </files>
 </package>

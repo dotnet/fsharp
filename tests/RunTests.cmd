@@ -209,8 +209,9 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 set PATH=%PATH%;%WINSDKNETFXTOOLS%
 
-IF NOT DEFINED SNEXE32 IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
-IF NOT DEFINED SNEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%sn.exe"               set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
+IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%ildasm.exe"           set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 set FSC=%FSCBINPATH%\fsc.exe
 set PATH=%FSCBINPATH%;%PATH%
@@ -280,8 +281,8 @@ if errorlevel 1 (
 )
 
 pushd %~dp0fsharpqa\source
-echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
-     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+echo perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:no %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+     perl %~dp0fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:no %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
 
 popd
 goto :EOF

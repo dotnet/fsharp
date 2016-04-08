@@ -44,7 +44,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+          "System.Reflection.Metadata": "1.2.0-rc3-23811"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -56,10 +56,10 @@
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160406",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -67,12 +67,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160406",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -104,9 +104,15 @@
           "lib/DNXCore50/FSharp.Compiler.dll": {},
           "lib/DNXCore50/fsc.exe": {},
           "lib/DNXCore50/fsi.exe": {}
+        },
+        "runtimeTargets": {
+          "runtimes/any/native/default.win32manifest": {
+            "assetType": "native",
+            "rid": "any"
+          }
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -126,6 +132,16 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
+        },
+        "runtimeTargets": {
+          "runtimes/any/native/FSharp.Core.optdata": {
+            "assetType": "native",
+            "rid": "any"
+          },
+          "runtimes/any/native/FSharp.Core.sigdata": {
+            "assetType": "native",
+            "rid": "any"
+          }
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -376,10 +392,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         }
       },
       "System.Collections.NonGeneric/4.0.1-rc2-23911": {
@@ -803,7 +819,7 @@
           "System.Runtime.Extensions": "4.0.11-rc2-23911"
         },
         "compile": {
-          "ref/portable-net45+win8/System.Numerics.Vectors.dll": {}
+          "ref/netstandard1.1/System.Numerics.Vectors.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Numerics.Vectors.dll": {}
@@ -906,10 +922,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23911": {
@@ -1177,10 +1193,10 @@
           "System.Threading.Tasks": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/_._": {}
+          "lib/netstandard1.0/_._": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll": {}
+          "lib/netstandard1.0/System.Threading.Tasks.Extensions.dll": {}
         }
       },
       "System.Threading.Tasks.Parallel/4.0.1-rc2-23911": {
@@ -1328,7 +1344,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+          "System.Reflection.Metadata": "1.2.0-rc3-23811"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -1343,10 +1359,10 @@
           "runtime.osx.10.10-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160406",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -1354,12 +1370,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160406",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -1396,7 +1412,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -1416,6 +1432,10 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
+        },
+        "native": {
+          "runtimes/any/native/FSharp.Core.optdata": {},
+          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -2435,10 +2455,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         }
       },
       "System.Collections.NonGeneric/4.0.1-rc2-23911": {
@@ -2540,10 +2560,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         }
       },
       "System.Diagnostics.Process/4.1.0-rc2-23911": {
@@ -2916,7 +2936,7 @@
           "System.Runtime.Extensions": "4.0.11-rc2-23911"
         },
         "compile": {
-          "ref/portable-net45+win8/System.Numerics.Vectors.dll": {}
+          "ref/netstandard1.1/System.Numerics.Vectors.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Numerics.Vectors.dll": {}
@@ -3046,10 +3066,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23911": {
@@ -3378,10 +3398,10 @@
           "System.Threading.Tasks": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/_._": {}
+          "lib/netstandard1.0/_._": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll": {}
+          "lib/netstandard1.0/System.Threading.Tasks.Extensions.dll": {}
         }
       },
       "System.Threading.Tasks.Parallel/4.0.1-rc2-23911": {
@@ -3530,7 +3550,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+          "System.Reflection.Metadata": "1.2.0-rc3-23811"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -3545,10 +3565,10 @@
           "runtime.ubuntu.14.04-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160406",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -3556,12 +3576,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160406",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -3598,7 +3618,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -3618,6 +3638,10 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
+        },
+        "native": {
+          "runtimes/any/native/FSharp.Core.optdata": {},
+          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -4640,10 +4664,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         }
       },
       "System.Collections.NonGeneric/4.0.1-rc2-23911": {
@@ -4745,10 +4769,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         }
       },
       "System.Diagnostics.Process/4.1.0-rc2-23911": {
@@ -5121,7 +5145,7 @@
           "System.Runtime.Extensions": "4.0.11-rc2-23911"
         },
         "compile": {
-          "ref/portable-net45+win8/System.Numerics.Vectors.dll": {}
+          "ref/netstandard1.1/System.Numerics.Vectors.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Numerics.Vectors.dll": {}
@@ -5251,10 +5275,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23911": {
@@ -5583,10 +5607,10 @@
           "System.Threading.Tasks": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/_._": {}
+          "lib/netstandard1.0/_._": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll": {}
+          "lib/netstandard1.0/System.Threading.Tasks.Extensions.dll": {}
         }
       },
       "System.Threading.Tasks.Parallel/4.0.1-rc2-23911": {
@@ -5735,7 +5759,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+          "System.Reflection.Metadata": "1.2.0-rc3-23811"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -5750,10 +5774,10 @@
           "runtime.win7-x64.Microsoft.DotNet.CoreHost": "0.0.1-beta-00001"
         }
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160406",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -5761,12 +5785,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160406",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -5803,7 +5827,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -5823,6 +5847,10 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
+        },
+        "native": {
+          "runtimes/any/native/FSharp.Core.optdata": {},
+          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -6910,10 +6938,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         }
       },
       "System.Collections.NonGeneric/4.0.1-rc2-23911": {
@@ -7015,10 +7043,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         }
       },
       "System.Diagnostics.Process/4.1.0-rc2-23911": {
@@ -7381,7 +7409,7 @@
           "System.Runtime.Extensions": "4.0.11-rc2-23911"
         },
         "compile": {
-          "ref/portable-net45+win8/System.Numerics.Vectors.dll": {}
+          "ref/netstandard1.1/System.Numerics.Vectors.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Numerics.Vectors.dll": {}
@@ -7511,10 +7539,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23911": {
@@ -7899,10 +7927,10 @@
           "System.Threading.Tasks": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/_._": {}
+          "lib/netstandard1.0/_._": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll": {}
+          "lib/netstandard1.0/System.Threading.Tasks.Extensions.dll": {}
         }
       },
       "System.Threading.Tasks.Parallel/4.0.1-rc2-23911": {
@@ -8051,7 +8079,7 @@
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "System.Collections.Immutable": "1.1.37",
-          "System.Reflection.Metadata": "1.2.0-rc2-23826"
+          "System.Reflection.Metadata": "1.2.0-rc3-23811"
         },
         "compile": {
           "lib/portable-net45+win8/Microsoft.DiaSymReader.PortablePdb.dll": {}
@@ -8063,10 +8091,10 @@
       "Microsoft.DotNet.CoreHost/0.0.1-beta-00001": {
         "type": "package"
       },
-      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
-          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Compiler.NetCore": "1.0.0-alpha-160406",
           "Microsoft.NETCore": "5.0.1-rc2-23911",
           "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23911",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -8074,12 +8102,12 @@
           "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23911"
         }
       },
-      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.DiaSymReader": "1.0.7",
           "Microsoft.DiaSymReader.PortablePdb": "1.0.0-rc-60301",
-          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160329",
+          "Microsoft.FSharp.Core.netcore": "1.0.0-alpha-160406",
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
           "NETStandard.Library": "1.5.0-rc2-23911",
           "System.Collections.Immutable": "1.2.0-rc2-23911",
@@ -8116,7 +8144,7 @@
           "runtimes/any/native/default.win32manifest": {}
         }
       },
-      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
+      "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
         "type": "package",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911",
@@ -8136,6 +8164,10 @@
         },
         "runtime": {
           "lib/DNXCore50/FSharp.Core.dll": {}
+        },
+        "native": {
+          "runtimes/any/native/FSharp.Core.optdata": {},
+          "runtimes/any/native/FSharp.Core.sigdata": {}
         }
       },
       "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -9216,10 +9248,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Collections.Immutable.dll": {}
+          "lib/netstandard1.0/System.Collections.Immutable.dll": {}
         }
       },
       "System.Collections.NonGeneric/4.0.1-rc2-23911": {
@@ -9321,10 +9353,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wpa81/System.Diagnostics.DiagnosticSource.dll": {}
+          "lib/netstandard1.1/System.Diagnostics.DiagnosticSource.dll": {}
         }
       },
       "System.Diagnostics.Process/4.1.0-rc2-23911": {
@@ -9687,7 +9719,7 @@
           "System.Runtime.Extensions": "4.0.11-rc2-23911"
         },
         "compile": {
-          "ref/portable-net45+win8/System.Numerics.Vectors.dll": {}
+          "ref/netstandard1.1/System.Numerics.Vectors.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Numerics.Vectors.dll": {}
@@ -9817,10 +9849,10 @@
           "System.Threading": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         },
         "runtime": {
-          "lib/portable-net45+win8/System.Reflection.Metadata.dll": {}
+          "lib/netstandard1.1/System.Reflection.Metadata.dll": {}
         }
       },
       "System.Reflection.Primitives/4.0.1-rc2-23911": {
@@ -10205,10 +10237,10 @@
           "System.Threading.Tasks": "4.0.11-rc2-23911"
         },
         "compile": {
-          "lib/portable-net45+win8+wp8+wpa81/_._": {}
+          "lib/netstandard1.0/_._": {}
         },
         "runtime": {
-          "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Extensions.dll": {}
+          "lib/netstandard1.0/System.Threading.Tasks.Extensions.dll": {}
         }
       },
       "System.Threading.Tasks.Parallel/4.0.1-rc2-23911": {
@@ -10384,7 +10416,7 @@
       ]
     },
     "Microsoft.DiaSymReader.PortablePdb/1.0.0-rc-60301": {
-      "sha512": "xgkCQFUZQ73Wpqoyt2C3hvSOEnYEDNsHHfffUs6m+UgycITJCz5F1VBnuIUSb3tJ8Oqr8lNDBoWNzukE6Rr+ug==",
+      "sha512": "kxhV2ONRooXh3bFbOU8DJ9WyOoqFmNYkMWpSAdsa3H9JxmyjbDI/RdKxuqvbczoeBYLrrETXu3Ls3/v+gJp0+w==",
       "type": "package",
       "files": [
         "Microsoft.DiaSymReader.PortablePdb.1.0.0-rc-60301.nupkg.sha512",
@@ -10404,19 +10436,19 @@
         "runtime.json"
       ]
     },
-    "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160329": {
-      "sha512": "aQ6snPMiRHzbEIPTmAC7kwdSnFZXCOabun1ZJqw4rQBpoVgyqehHnBglyprLLv2Ju5ZIfCJy2iFkQe8dyMwdqQ==",
+    "Microsoft.FSharp.Compiler.Host.netcore/1.0.0-alpha-160406": {
+      "sha512": "7kXzo8Qj9x03bIQ+tloBU5K42LzaUuwFWwfUmvQFxhdAX7ujK+Lm/I7hYUbxJ5Uo4V5iTE7gBqaT/CXNc1+wPA==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Compiler.Host.netcore.1.0.0-alpha-160329.nupkg.sha512",
+        "Microsoft.FSharp.Compiler.Host.netcore.1.0.0-alpha-160406.nupkg.sha512",
         "Microsoft.FSharp.Compiler.Host.netcore.nuspec"
       ]
     },
-    "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160329": {
-      "sha512": "T2+mjZCZFGPA2g4qHgny/DJsFT1dY7jQB7LJ8yQD/zGk/X+vlVdD3w9QrAiiZoiotBJVSb9Nfpu5n9uh58XVzA==",
+    "Microsoft.FSharp.Compiler.NetCore/1.0.0-alpha-160406": {
+      "sha512": "7LzGoasoAonpjdDKpq3EnJd1WQKpbuF2dz+kFxnTqUnsFBfjCM6tAQJBkLNgCk1SkRSnRjJzXCYqQFvlf4AXMg==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Compiler.NetCore.1.0.0-alpha-160329.nupkg.sha512",
+        "Microsoft.FSharp.Compiler.NetCore.1.0.0-alpha-160406.nupkg.sha512",
         "Microsoft.FSharp.Compiler.NetCore.nuspec",
         "lib/DNXCore50/FSharp.Compiler.Interactive.Settings.dll",
         "lib/DNXCore50/FSharp.Compiler.dll",
@@ -10425,17 +10457,19 @@
         "runtimes/any/native/default.win32manifest"
       ]
     },
-    "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160329": {
-      "sha512": "YzG6f5QqumI7b3QhMVlERG326Ek1UgyfDZT8fpa4ewfotJmd2dLhOsMpXDgDbvrTUpO2bz4ZznZY5LR6pt0H8A==",
+    "Microsoft.FSharp.Core.netcore/1.0.0-alpha-160406": {
+      "sha512": "KMzfpctIF9xV5/8KgmnC0D9108FAtdJR3wuLrQhArqQNw+dH9Cw1Y4cnZgy3HoSUMj+TsWICmqKR4p1FnaItxA==",
       "type": "package",
       "files": [
-        "Microsoft.FSharp.Core.netcore.1.0.0-alpha-160329.nupkg.sha512",
+        "Microsoft.FSharp.Core.netcore.1.0.0-alpha-160406.nupkg.sha512",
         "Microsoft.FSharp.Core.netcore.nuspec",
         "content/any/DNXCore50/FSharp.Core.optdata",
         "content/any/DNXCore50/FSharp.Core.sigdata",
         "lib/DNXCore50/FSharp.Core.dll",
         "lib/DNXCore50/FSharp.Core.optdata",
-        "lib/DNXCore50/FSharp.Core.sigdata"
+        "lib/DNXCore50/FSharp.Core.sigdata",
+        "runtimes/any/native/FSharp.Core.optdata",
+        "runtimes/any/native/FSharp.Core.sigdata"
       ]
     },
     "Microsoft.NETCore/5.0.1-rc2-23911": {
@@ -15983,8 +16017,10 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "Microsoft.FSharp.Compiler.Host.netcore >= 1.0.0-alpha-160329"
+      "Microsoft.FSharp.Compiler.Host.netcore >= 1.0.0-alpha-160406"
     ],
     "DNXCore,Version=v5.0": []
-  }
+  },
+  "tools": {},
+  "projectFileToolGroups": {}
 }
