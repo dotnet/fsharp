@@ -374,14 +374,18 @@ REM ----------------------------------------------------------------------------
 
 :UPLOAD_TEST_RESULTS
 
-rem See <http://www.appveyor.com/docs/environment-variables>
-if not defined APPVEYOR goto :EOF
-
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
+
+rem See <http://www.appveyor.com/docs/environment-variables>
+if not defined APPVEYOR goto :SKIP_APPVEYOR_UPLOAD
+
 echo powershell -File Upload-Results.ps1 "%~1"
      powershell -File Upload-Results.ps1 "%~1"
-if NOT %saved_errorlevel% == 0 exit /b %saved_errorlevel%
+
+:SKIP_APPVEYOR_UPLOAD
+	 
+if NOT %saved_errorlevel% == 0 exit /b 1
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
