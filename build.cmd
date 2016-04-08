@@ -280,7 +280,7 @@ if '%BUILD_CORECLR%' == '1' (
     @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 
     if '%TEST_CORECLR%' == '1' (
-        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /v:diag
+        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG%
         @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
     )
 )
