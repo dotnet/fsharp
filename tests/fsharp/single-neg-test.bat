@@ -59,6 +59,8 @@ if "%FSC:fscp=X%" == "%FSC%" (
 
     echo Negative typechecker testing: %testname%
     echo "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources%
+    "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% > %testname%.errors
+    "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% 1> %testname%.err1
     "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% 2> %testname%.err
     @if NOT ERRORLEVEL 1 (
         set ERRORMSG=%ERRORMSG% FSC passed unexpectedly for  %sources%;

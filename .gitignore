@@ -32,6 +32,7 @@ Release
 vsdebug
 vsrelease
 Proto
+sign_temp
 .libs
 Makefile
 configure
@@ -73,6 +74,7 @@ src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
 vsintegration/src/unittests/Unittests.fsi
+vsintegration/src/FSharp.ProjectSystem.FSharp/ctofiles/MenusAndCommands.cto
 tests/*FSharp_Failures.env
 tests/*FSharp_Failures.lst
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
@@ -94,4 +96,5 @@ tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.orig
 *.mdf
 *.ldf
+*.cto
 tests/**/FSharp.Core.dll

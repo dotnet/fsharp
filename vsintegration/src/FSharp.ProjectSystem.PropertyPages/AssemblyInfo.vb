@@ -12,8 +12,3 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyProduct("Microsoft\x00ae F#")>
 <Assembly: AssemblyConfiguration("")>
 <Assembly: AssemblyCulture("")>
-
-#if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("15.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("15.0.0.9055")>
-#end if

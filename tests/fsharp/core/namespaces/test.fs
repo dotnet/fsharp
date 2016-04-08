@@ -1,6 +1,4 @@
 // #Conformance #Namespaces #SignatureFiles 
-
-
 namespace Hello.Goodbye
 
 type A = A | B | C

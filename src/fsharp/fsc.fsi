@@ -19,7 +19,7 @@ type ErrorLoggerProvider =
 #if NO_COMPILER_BACKEND
 #else
 
-type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
+type SigningInfo = SigningInfo of (* delaysign:*) bool * (* publicsign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string * isIncrementalBuild: bool -> ILAttribute list * ILResource list
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> SigningInfo
@@ -30,7 +30,11 @@ type ILResource with
     member internal Bytes : byte[]
 
 /// Proccess the given set of command line arguments
+#if FX_LCIDFROMCODEPAGE
 val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
+#else
+val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * argv:string[] -> string list
+#endif
 
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe

@@ -15,9 +15,9 @@ build_script:
 install:
   # by default, all script lines are interpreted as batch
   # The newest version of MSBuild installed will overwrite the older ones.
-  - set PATH=%ProgramFiles(x86)%\MSBuild\15.0\Bin;%PATH%
-  - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
   - set PATH=%ProgramFiles(x86)%\MSBuild\12.0\Bin;%PATH%
+  - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
+  - set PATH=%ProgramFiles(x86)%\MSBuild\15.0\Bin;%PATH%
 
 test: off 
 version: 0.0.1.{build} 

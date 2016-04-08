@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Core.netcore</id>
+        <description>
+            netcore compatible version of the fsharp core library fsharp.core.dll
+            Supported Platforms: - .NET Core (dnxcore50)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group>
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23911" />
+                <dependency id="NETStandard.Library" version="1.5.0-rc2-23911" />
+                <dependency id="System.Linq.Expressions" version="4.0.11-rc2-23911" />
+                <dependency id="System.Linq.Queryable" version="4.0.1-rc2-23805" />
+                <dependency id="System.Reflection.Emit" version="4.0.1-rc2-23911" />
+                <dependency id="System.Reflection.TypeExtensions" version="4.1.0-rc2-23911" />
+                <dependency id="System.Runtime.Loader" version="4.0.0-rc2-23911" />
+                <dependency id="System.Net.Requests" version= "4.0.11-rc2-23911" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc2-23911" />
+                <dependency id="System.Threading.Thread" version="4.0.0-rc2-23911" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc2-23911" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="FSharp.Core.dll"     target="lib/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="lib/DNXCore50" />
+        <file src="FSharp.Core.optdata" target="lib/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="content/any/DNXCore50" />
+        <file src="FSharp.Core.optdata" target="content/any/DNXCore50" />
+        <file src="FSharp.Core.sigdata" target="runtimes/any/native/" />
+        <file src="FSharp.Core.optdata" target="runtimes/any/native/" />
+    </files>
+</package>
