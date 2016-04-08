@@ -65,9 +65,6 @@ Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators
 Core06		fsharp\core\queriesOverIEnumerable
 Core06		fsharp\core\queriesOverIQueryable
-Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
-Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
-Core06		fsharp\core\queriesOverOData
 Core06,CoreQuotes		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
