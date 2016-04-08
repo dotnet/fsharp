@@ -3605,7 +3605,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
     let os = 
-        try  
+        try
+            // Ensure the output directory exists otherwise it will fail
+            let dir = Path.GetDirectoryName(outfile)
+            if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
             new BinaryWriter(FileSystem.FileStreamCreateShim(outfile))
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    

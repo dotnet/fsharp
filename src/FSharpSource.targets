@@ -734,7 +734,7 @@
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
          <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\packages\lkg</FscToolPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\dnxcore50\win7-x64\publish</FscToolPath>
          <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
