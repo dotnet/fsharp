@@ -2184,7 +2184,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                            | :? IOleServiceProvider as x -> x
                            | _ -> null
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
-                Some(new SelectionElementValueChangedListener(sp, root))
+                Some(new SelectionElementValueChangedListener(sp))
 
 #if DESIGNER            
             let mutable vsProjectItem : OAVSProjectItem  = null
@@ -2747,27 +2747,10 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.CreateProjectReferenceNode(selectorData:VSCOMPONENTSELECTORDATA) =
                 (new FSharpProjectReferenceNode(x.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef) :> ProjectReferenceNode)
 
-    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider, projMgr:ProjectNode ) =
+    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
             inherit SelectionListener(serviceProvider)
 
-            override x.OnElementValueChanged(elementid:uint32, varValueOld:obj, _varValueNew:obj) =
-                let mutable hr = VSConstants.S_OK
-                if (elementid = VSConstants.DocumentFrame) then 
-                    let pWindowFrame = varValueOld :?> IVsWindowFrame
-                    if (pWindowFrame <> null) then 
-                        let mutable document : obj = null
-                        // Get the name of the document associated with the old window frame
-                        hr <- pWindowFrame.GetProperty(int32 __VSFPROPID.VSFPROPID_pszMkDocument, &document)
-                        if (ErrorHandler.Succeeded(hr)) then 
-                            let mutable itemid = 0u
-                            let hier = (box projMgr :?> IVsHierarchy)
-                            hr <- hier.ParseCanonicalName((document :?> string), &itemid)
-                            match projMgr.NodeFromItemId(itemid) with 
-                            | :? FSharpFileNode as node -> 
-                                ignore(node)
-                            | _ -> 
-                                ()
-                hr
+            override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
 
 #if DESIGNER
     and [<Guid(GuidList.guidEditorFactoryString)>]
