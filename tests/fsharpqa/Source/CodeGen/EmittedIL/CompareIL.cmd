@@ -12,7 +12,7 @@ IF /I     "%2"=="NetFx40" goto :NetFx4
 IF /I NOT "%2"=="NetFx40" goto :NetFx2
 exit 1
 
-:NetFx4\
+:NetFx4
 ..\..\..\..\testenv\bin\ILComparer.exe "%~n1.il.netfx4.bsl" "%~n1.il"
 exit /b %ERRORLEVEL%
 
