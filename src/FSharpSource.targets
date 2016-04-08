@@ -43,7 +43,8 @@
             <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
             <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
               <PropertyGroup>
-                <StrongNames>false</StrongNames>
+                <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+                <UseOpenSourceSign>false</UseOpenSourceSign>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
