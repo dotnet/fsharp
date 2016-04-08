@@ -12,11 +12,18 @@
    </PropertyGroup>
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
+      <PropertyGroup>
+         <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+         <UseOpenSourceSign>true</UseOpenSourceSign>
+      </PropertyGroup>
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'FsiAnyCPU' or '$(AssemblyName)' == 'FSharp.Data.TypeProviders' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests'" >
-               <PropertyGroup>
+              <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' and ('$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr')">
+                 <IsPortableProfile>true</IsPortableProfile>
+              </PropertyGroup>
+              <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -36,6 +43,8 @@
             <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
             <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
               <PropertyGroup>
+                <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+                <UseOpenSourceSign>false</UseOpenSourceSign>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
@@ -104,10 +113,17 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
+  <!-- Produce portable pdbs -->
+  <PropertyGroup Condition="'$(Configuration)'!='Proto'">
+    <OtherFlags>$(OtherFlags) --debug:full</OtherFlags>
+  </PropertyGroup>
+
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
+    <!-- Disable uwa toolchain nuget package resolve logic. -->
+    <NuGetTargets  Condition="'$(NuGetTargets)' == ''">false</NuGetTargets>
   </PropertyGroup>  
-  
+
   <PropertyGroup>
     <NUnitVersion>3.0.0</NUnitVersion>
     <NUnitFullVersion>3.0.5797.27534</NUnitFullVersion>
@@ -116,8 +132,6 @@
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
-    <FsSrGenVersion>2.0.0</FsSrGenVersion>
-    <FsSrGenBuildTasksVersion>2.0.0</FsSrGenBuildTasksVersion>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -138,6 +152,9 @@
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONDITIONAL_WEAK_TABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>
 
@@ -151,15 +168,76 @@
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);SHADOW_COPY_REFERENCES</DefineConstants>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
+    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
+    <DefineConstants Condition="'$(AssemblyName)'!='FSharp.Core'">$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
+    <DefineConstants>$(DefineConstants);RESHAPED_MSBUILD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_HEAPTERMINATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_REDUCED_EXCEPTIONS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CORHOST_SIGNER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_CONSOLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_DEBUG_LOG</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_WIN_REGISTRY</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_SERVERCODEPAGES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_REDUCED_CONSOLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_THREADABORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);TODO_REWORK_ASSEMBLY_LOAD</DefineConstants>
+    <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
+    <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);I_DONT_KNOW_HOW_TO_DO_THIS_YET</DefineConstants>
+    <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
+    <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>
 
   <!-- Target Portable Profile 47 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">
 
     <DefineConstants>$(DefineConstants);FSHARP_CORE_PORTABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
@@ -201,11 +279,11 @@
     <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);DONT_INCLUDE_DEPRECATED</DefineConstants>
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
@@ -217,8 +295,8 @@
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE7</DefineConstants>
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
@@ -237,9 +315,9 @@
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants> 
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants> 
@@ -253,6 +331,7 @@
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE78</DefineConstants>
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
@@ -275,9 +354,9 @@
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
@@ -288,6 +367,7 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='portable259'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE259</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
@@ -311,9 +391,9 @@
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
@@ -659,11 +739,11 @@
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
          <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\dnxcore50\win7-x64\publish</FscToolPath>
          <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
-    <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259'">
+    <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
       <PropertyGroup>
         <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
       </PropertyGroup>
@@ -711,21 +791,42 @@
   </Choose>
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
-  <!-- Reference an existing FSI.EXE for use from within MSBuild -->
-  <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.$(FsSrGenVersion)\lib\net46</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
-    <FsLexToolExe>fslex.exe</FsLexToolExe>
-    <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-  </PropertyGroup>
+  <!-- Hook up DNX to enable solution refresh of packages -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+    
+    <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
+    <!-- fix this to be not so unfortunate looking -->
+    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00140\lib\</BuildToolsDir>
+
+    <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
+    <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
+
+    <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
+    <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
+
+    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe"</NugetRestoreCommand>
+    <NugetRestoreCommand>$(NugetRestoreCommand) install</NugetRestoreCommand>
+    <NugetRestoreCommand>$(NugetRestoreCommand) -OutputDirectory "$(NuGetPackagesPath)"</NugetRestoreCommand>
+    <NugetRestoreCommand>$(NugetRestoreCommand) -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
+
+    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) restore</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -OutputDirectory "$(NuGetPackagesPath)"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+
+    <!-- Current version of DNX does not support all semantics used in our packages, 
+         so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
+    <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
+  </PropertyGroup>
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsDir)Build.Common.Targets" />
 
   <PropertyGroup>
     <!-- Hook compilation phase to do custom work -->
     <CompileDependsOn>ValidateConfiguration;$(CompileDependsOn);CustomCopyLocalFiles</CompileDependsOn>
     <RootNamespace></RootNamespace>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <EnsureThereAreNoUnusedFsSrGenResources>false</EnsureThereAreNoUnusedFsSrGenResources>
   </PropertyGroup>
 
   <Target Name="ValidateConfiguration">
@@ -733,9 +834,10 @@
             Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
     <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
+            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, coreclr, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
             Condition="! ('$(TargetFramework)' == 'net40' or 
                           '$(TargetFramework)' == 'net20' or 
+                          '$(TargetFramework)' == 'coreclr' or 
                           '$(TargetFramework)' == 'sl5' or 
                           '$(TargetFramework)' == 'sl3-wp' or 
                           '$(TargetFramework)' == 'portable47' or
@@ -744,7 +846,7 @@
                           '$(TargetFramework)' == 'portable259')"/>
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
-        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40'"/>
+        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
         
   </Target>
 
@@ -763,9 +865,9 @@
     </CreateItem>
   </Target>
 
+  <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
   <Import Project="Microbuild.Settings.targets" />
-  <Import Project="..\packages\FSharp.SRGen.Build.Tasks.$(FsSrGenBuildTasksVersion)\content\FSharp.SRGen.targets" />
-  
+
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
       Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">  
@@ -775,7 +877,8 @@
         <CompileBefore Remove="@(CompileBefore)"/>   
     </ItemGroup>
   </Target>
-  <Target Name="BeforeBuild" BeforeTargets="Build">
-    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
+  <Target Name="BeforeBuild" BeforeTargets="Build" Condition="'$(RestorePackages)' == ''">
+    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
+    <Exec Command=".\.nuget\NuGet.exe restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.." Condition="'$(TargetFramework)' == 'coreclr'"/>
   </Target>
 </Project>

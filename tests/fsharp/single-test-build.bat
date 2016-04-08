@@ -3,6 +3,11 @@
 setlocal
 if EXIST build.ok DEL /f /q build.ok
 
+if '%flavor%' == '' ( 
+    set flavor=release
+)
+
+echo PERMUTATIONS='%permutations%'
 call %~d0%~p0..\config.bat
 
 if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
@@ -115,6 +120,47 @@ goto :DOBASIC
 @echo do :SPANISH
 goto :DOBASIC
 
+:FSC_CORECLR
+@Echo do :CORECLR
+rem Build references currently hard coded need a better long term solution
+set platform=win7-x64
+For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
+set command_line_args=
+set command_line_args=%command_line_args% --exec %~d0%~p0..\fsharpqa\testenv\src\deployProj\CompileProj.fsx
+set command_line_args=%command_line_args% --targetPlatformName:DNXCore,Version=v5.0/%platform%
+set command_line_args=%command_line_args% --source:"%~d0%~p0coreclr_utilities.fs" --source:"%sources%" 
+set command_line_args=%command_line_args% --packagesDir:%~d0%~p0..\..\packages 
+set command_line_args=%command_line_args% --projectJsonLock:%~d0%~p0project.lock.json
+set command_line_args=%command_line_args% --fsharpCore:%~d0%~p0..\testbin\%flavor%\coreclr\fsc\%platform%\fsharp.core.dll
+set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
+set command_line_args=%command_line_args% --compilerPath:%~d0%~p0..\testbin\%flavor%\coreclr\fsc\%platform%
+set command_line_args=%command_line_args% --copyCompiler:yes
+set command_line_args=%command_line_args% --verbose:verbose
+if not "%test_keyfile%" == "" (
+    set command_line_args=%command_line_args% --keyfile:%test_keyfile%
+)
+if not "%test_delaysign%" == "" (
+    set command_line_args=%command_line_args% --delaysign:yes
+)
+if not "%test_publicsign%" == "" (
+    set command_line_args=%command_line_args% --publicsign:yes
+)
+if not "%extra_defines%" == "" (
+    set command_line_args=%command_line_args% %extra_defines%
+)
+if "%test_outfile%" == "" (
+    set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
+)
+if not "%test_outfile%" == "" (
+    set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test-%test_outfile%.exe
+)
+
+echo %fsi% %command_line_args%
+%fsi% %command_line_args%
+echo Errorlevel: %errorlevel%
+if ERRORLEVEL 1 goto Error
+goto :EOF
+
 :FSC_BASIC
 @echo do :FSC_BASIC
 :DOBASIC
@@ -143,7 +189,6 @@ goto :EOF
 if exist test-hw.* (
   "%FSC%" %fsc_flags% -o:test-hw.exe -g %sourceshw%
   if ERRORLEVEL 1 goto Error
-
 
   if NOT EXIST dont.run.peverify (
     "%PEVERIFY%" test-hw.exe

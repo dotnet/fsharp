@@ -1775,9 +1775,9 @@ type ILGlobals =
       mutable debuggerTypeProxyAttributeCache : ILAttribute option }
 
       with
-      member mkDebuggableAttribute: bool (* debug tracking *) * bool (* disable JIT optimizations *) -> ILAttribute
-      /// Some commonly used custom attibutes 
-      member mkDebuggableAttributeV2               : bool (* jitTracking *) * bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
+      member mkDebuggableAttribute: bool (* disable JIT optimizations *) -> ILAttribute
+      /// Some commonly used custom attibutes
+      member mkDebuggableAttributeV2               : bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
       member mkCompilerGeneratedAttribute          : unit -> ILAttribute
       member mkDebuggerNonUserCodeAttribute        : unit -> ILAttribute
       member mkDebuggerStepThroughAttribute        : unit -> ILAttribute
@@ -2277,7 +2277,9 @@ type ILPropertyRef =
      member Name: string
      interface System.IComparable
 
+#if ENABLE_MONO_SUPPORT
 val runningOnMono: bool
+#endif
 
 type ILReferences = 
     { AssemblyReferences: ILAssemblyRef list; 
