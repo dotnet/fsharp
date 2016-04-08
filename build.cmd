@@ -90,11 +90,7 @@ if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-<<<<<<< HEAD
-=======
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
->>>>>>> f58fb3a39b78042c324b52a3cf74235fc7ccbb4b
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
@@ -111,11 +107,7 @@ if /i '%ARG%' == 'ci_part1' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-<<<<<<< HEAD
-=======
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
->>>>>>> f58fb3a39b78042c324b52a3cf74235fc7ccbb4b
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
