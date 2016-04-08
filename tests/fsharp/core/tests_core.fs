@@ -1131,7 +1131,6 @@ module ``Load-Script`` =
         // "%FSI%" --nologo < pipescr
         do! ``fsi <`` "--nologo" "pipescr"
         // echo.
-        echo ""
         // echo Test 4=================================================
         echo "Test 4================================================="
         // "%FSI%" usesfsi.fsx
@@ -1322,9 +1321,9 @@ module Members =
         [<Test; FSharpSuiteCodeAndSignaturePermutations("core/members/basics")>]
         let Basics p = check (attempt {
             let { Directory = dir; Config = cfg } = testContext ()
-        
+
             do! SingleTestBuild.singleTestBuild cfg dir p
-        
+
             do! SingleTestRun.singleTestRun cfg dir p
             })
 

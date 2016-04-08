@@ -1,4 +1,4 @@
-@echo off
+@if "%_echo%"=="" echo off
 
 :ARGUMENTS_VALIDATION
 
@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|build^|debug^|release^|compiler^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
+echo build.cmd ^<all^|build^|debug^|release^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
 echo.
 echo No arguments default to 'build' 
 echo.
@@ -28,17 +28,19 @@ exit /b 1
 
 set BUILD_PROTO=0
 set BUILD_NET40=1
+set BUILD_CORECLR=1
 set BUILD_PORTABLE=0
 set BUILD_VS=0
+set BUILD_CONFIG=Release
+set BUILD_CONFIG_LOWERCASE=release
+
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
 set TEST_PORTABLE_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
-set TEST_TAGS=
 set TEST_FSHARPQA_SUITE=0
-set BUILD_CONFIG=Release
-set BUILD_CONFIG_LOWERCASE=release
+set TEST_TAGS=
 
 setlocal enableDelayedExpansion
 set /a counter=0
@@ -48,24 +50,19 @@ for /l %%x in (1 1 9) do (
 )
 setlocal disableDelayedExpansion
 echo.
-echo.
 
 goto :MAIN
 
 :SET_CONFIG
 set ARG=%~1
 
-if "%ARG%" == "1" if "%2" == "" (
-    set ARG=vuild
-)
+if "%ARG%" == "1" if "%2" == "" (set ARG=build)
 
 if "%2" == "" if not "%ARG%" == "build" goto :EOF
 
 echo Parse argument %ARG%
 
-if /i '%ARG%' == 'compiler' (
-    set TEST_COMPILERUNIT=1
-)
+if /i '%ARG%' == 'compiler' (set TEST_COMPILERUNIT=1)
 
 if /i '%ARG%' == 'pcls' (
     set BUILD_PORTABLE=1
@@ -93,12 +90,19 @@ if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+<<<<<<< HEAD
+=======
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
+
+>>>>>>> f58fb3a39b78042c324b52a3cf74235fc7ccbb4b
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_VS=0
+    set TEST_TAGS=
+    set CONF_FSHARPQA_SUITE=Smoke
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
@@ -107,9 +111,16 @@ if /i '%ARG%' == 'ci_part1' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+<<<<<<< HEAD
+=======
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
+
+>>>>>>> f58fb3a39b78042c324b52a3cf74235fc7ccbb4b
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
+    set TEST_CORECLR=1
+    set TEST_TAGS=
     set TEST_VS=1
 )
 
@@ -129,7 +140,6 @@ if /i '%ARG%' == 'smoke' (
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=0
     set TEST_TAGS=Smoke
-
 )
 
 if /i '%ARG%' == 'debug' (
@@ -151,6 +161,7 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_NET40=%BUILD_NET40%
+echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_CONFIG=%BUILD_CONFIG%
@@ -163,6 +174,13 @@ echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo.
+
+REM Remove lingering copies of the OSS FSharp.Core from the GAC
+gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
+
+if "%RestorePackages%"=="" ( 
+    set RestorePackages=true
+)
 
 @echo on
 
@@ -187,90 +205,123 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :fail
 if defined APPVEYOR (
     rem See <http://www.appveyor.com/docs/build-phase>
     if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-	rem HACK HACK HACK
-	set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    rem HACK HACK HACK
+    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
     )
 )
 set msbuildflags=/maxcpucount
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-%_ngenexe% install .\.nuget\NuGet.exe 
+if '%RestorePackages%' == 'true' (
+    %_ngenexe% install .\.nuget\NuGet.exe 
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
-@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
+    @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+)
+
+set DOTNET_HOME  .\packages\dotnet
+
+rem check to see if the dotnet cli tool exists
+set _dotnetexe=.\packages\dotnet\dotnet.exe
+if not exist %_dotnetexe% (
+    echo Error: Could not find %_dotnetexe%.
+    rem do zipfile install nonsense
+    if not exist packages ( md packages )
+    if exist packages\dotnet ( rd packages /s /q )
+    powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
+    @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+    popd
+)
+
+pushd .\lkg & ..\%_dotnetexe% restore &popd
+@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
+@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
+ren fsc.exe fsc.dll
+copy corehost.exe fsc.exe
+popd
+
+rem rename fsi and coreconsole to allow fsi.exe to to start interative
+pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
+ren fsi.exe fsi.dll
+copy corehost.exe fsi.exe
+popd
 
 :: Build Proto
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
-%_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj 
-@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-)
+if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
+
+:: Build
 if '%BUILD_PROTO%' == '1' (
-%_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
-@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+
+    %_ngenexe% install Proto\net40\bin\fsc-proto.exe
+    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_ngenexe% install Proto\net40\bin\fsc-proto.exe
-@if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
-
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%
+%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
+%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
+@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
+
+if '%BUILD_CORECLR%' == '1' (
+    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
+    @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
+    @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
+
+    if '%TEST_CORECLR%' == '1' (
+        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG%
+        @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+    )
+)
+
 if '%BUILD_PORTABLE%' == '1' (
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
-%_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 )
 if '%TEST_NET40_COREUNIT%' == '1' (
-%_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+    %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
 if '%TEST_PORTABLE_COREUNIT%' == '1' (
-%_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
+   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
+   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
 if '%BUILD_VS%' == '1' (
-%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration src build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration project templates build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration item templates build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration deployment build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: VS integration unittests build failed && goto :failure
+    %_msbuildexe% %msbuildflags% VisualFSharp.sln /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 )
 
 @echo on
@@ -284,88 +335,74 @@ call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
-set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
+    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 
-%_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
-@if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
+    %_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\FSharpNunit_Error.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
-    goto :failure
-  )
-set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\FSharpNunit_Error.log
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
+        goto :failure
+    )
+    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%
-@if ERRORLEVEL 1 (
-    type testresults\fsharpqa_failures.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed
-    goto :failure
-  )
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\fsharpqa_failures.log
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed
+        goto :failure
+    )
 )
 
 if '%TEST_COMPILERUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CompilerUnit_net40_Error.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
-    goto :failure
-  )
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\CompilerUnit_net40_Error.log
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
+        goto :failure
+    )
 )
-
 if '%TEST_NET40_COREUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CoreUnit_net40_Error.log 
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
-    goto :failure
-  ) 
+    if '%TEST_PORTABLE_COREUNIT%' == '1' (
+        call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
+        @if ERRORLEVEL 1 (
+        @echo "type testresults\CoreUnit_net40_Error.log "
+            type testresults\CoreUnit_net40_Error.log 
+            echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
+            goto :failure
+        )
+    )
+    if '%TEST_PORTABLE_COREUNIT%' == '0' (
+        call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
+        @if ERRORLEVEL 1 (
+            type testresults\CoreUnit_net40_Error.log 
+            echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
+            goto :failure
+        )
+    )
 )
-
-if '%TEST_PORTABLE_COREUNIT%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CoreUnit_portable47_Error.log 
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable47 %TEST_TAGS%' failed 
-    goto :failure
-  )
-
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CoreUnit_portable7_Error.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable7 %TEST_TAGS%' failed 
-    goto :failure
-  )
-
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CoreUnit_portable78_Error.log 
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable78 %TEST_TAGS%' failed 
-    goto :failure 
-  )
-
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\CoreUnit_portable259_Error.log 
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitportable259 %TEST_TAGS%' failed
-    goto :failure
-  )
+if '%TEST_NET40_COREUNIT%' == '0' (
+    if '%TEST_PORTABLE_COREUNIT%' == '1' (
+        call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
+        @if ERRORLEVEL 1 (
+            type testresults\CoreUnit_portable47_Error.log 
+            echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
+            goto :failure
+        )
+    )
 )
 
 if '%TEST_VS%' == '1' (
-call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
-@if ERRORLEVEL 1 (
-    type testresults\IDEUnit_Error.log
-    echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS%' failed
-    goto :failure
-  )
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failure
 )
 
+@echo "Finished"
 popd
-
 goto :eof
 
 :failure

@@ -11,7 +11,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(DevDivBuild)' == '' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
   <PropertyGroup Condition="'$(DevDivBuild)' == ''">
-    <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == '' and '$(DevDivBuild)' == ''   ">..\..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == '' and '$(DevDivBuild)' == ''   ">..\..</FSharpSourcesRoot>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" ('$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease') and '$(DevDivBuild)' == ''">
