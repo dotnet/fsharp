@@ -11,14 +11,7 @@
     <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj" />
-    <ProjectReference Include="..\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="..\fsharp\Fsc\Fsc.fsproj" />
-    <ProjectReference Include="..\fsharp\Fsc\Fsi.fsproj" />
-  </ItemGroup>
-
-  <Target Name="Build" Inputs="$(ProjectReference)" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
   </Target>
