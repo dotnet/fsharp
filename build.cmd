@@ -55,8 +55,6 @@ echo.
 goto :MAIN
 
 :SET_CONFIG
-rem if no arguments are passed on the command line then use the BUILD_FSC_DEFAULT environment variable to specify default build options
-rem ===================================================================================================================================
 set ARG=%~1
 if "%ARG%" == "1" if "%2" == "" (set ARG=build)
 if "%2" == "" if not "%ARG%" == "build" goto :EOF
@@ -156,6 +154,7 @@ if /i '%ARG%' == 'build' (
     set BUILD_VS=1
 )
 
+rem if no arguments are passed on the command line then use the BUILD_FSC_DEFAULT environment variable to specify default build options
 if /i "%BUILD_FSC_DEFAULT%" == "coreclr" (
     set BUILD_CORECLR=1
 )
