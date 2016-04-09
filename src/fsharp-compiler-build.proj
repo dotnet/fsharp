@@ -20,7 +20,6 @@
     <ProjectFiles Include="fsharp\FSharp.Compiler.Host.netcore.nuget\FSharp.Compiler.Host.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
 
-
   <Import Project="root.traversal.targets"/>
 
   <!-- Insert any customizations for targets here -->

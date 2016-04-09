@@ -6,7 +6,6 @@
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
   </PropertyGroup>
 
-
   <!-- Core library: all frameworks -->
   <ItemGroup>
     <ProjectFiles Include="fsharp\FSharp.Core\FSharp.Core.fsproj"/>
@@ -18,4 +17,3 @@
   <!-- Insert any customizations for targets here -->
 
 </Project>
-
