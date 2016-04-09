@@ -232,7 +232,7 @@ set _dotnetexe=.\packages\dotnet\dotnet.exe
 if '%BUILD_CORECLR%' == '1' (
   rem check to see if the dotnet cli tool exists
   if not exist %_dotnetexe% (
-    echo Error: Could not find %_dotnetexe%.
+    echo Error: Could not find %_dotnetexe%, downloading...
     rem do zipfile install nonsense
     if not exist packages ( md packages )
     if exist packages\dotnet ( rd packages /s /q )
