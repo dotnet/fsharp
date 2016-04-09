@@ -749,7 +749,7 @@
 			</When>
 			<Otherwise>
 				<PropertyGroup>
-					<FscToolPath>..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+					<FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
 				</PropertyGroup>
 			</Otherwise>
 		</Choose>
