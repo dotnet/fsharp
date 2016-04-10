@@ -11,11 +11,7 @@
     <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <Target Name="Build" Inputs="$(ProjectReference)" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscorenuget.fsx --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
   </Target>
