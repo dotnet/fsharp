@@ -36,14 +36,14 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
  
 ###Required Tools for Windows Development and Testing
 
-###Development tools
+####Development tools
 
 For F# 4.0+ development
 
 - [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 - [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 
-###Additional frameworks
+####Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
 - [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
@@ -55,7 +55,7 @@ For F# 4.0+ development
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 
-###Contributing
+####Contributing
 
 Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
