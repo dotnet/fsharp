@@ -37,6 +37,7 @@ set BUILD_CONFIG_LOWERCASE=release
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
+set TEST_CORECLR=0
 set TEST_PORTABLE_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
@@ -49,6 +50,8 @@ for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
     call :SET_CONFIG %%!counter! "!counter!"
 )
+for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
+
 setlocal disableDelayedExpansion
 echo.
 
@@ -154,10 +157,16 @@ if /i '%ARG%' == 'build' (
     set BUILD_VS=1
 )
 
-rem if no arguments are passed on the command line then use the BUILD_FSC_DEFAULT environment variable to specify default build options
-if /i "%BUILD_FSC_DEFAULT%" == "coreclr" (
-    set BUILD_CORECLR=1
+if /i '%ARG%' == 'notests' (
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
 )
+
 
 goto :EOF
 
@@ -334,8 +343,22 @@ if '%TEST_PORTABLE_COREUNIT%' == '1' (
 )
 
 if '%BUILD_VS%' == '1' (
-    %_msbuildexe% %msbuildflags% VisualFSharp.sln /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration src build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration project templates build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration item templates build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration deployment build failed && goto :failure
+
+    if '%TEST_VS%' == '1' (
+        %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+        @if ERRORLEVEL 1 echo Error: VS integration unittests build failed && goto :failure
+    )
 )
 
 @echo on
