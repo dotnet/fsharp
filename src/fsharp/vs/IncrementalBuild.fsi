@@ -14,12 +14,12 @@ open Microsoft.FSharp.Compiler.NameResolution
 
 
 [<RequireQualifiedAccess>]
-type internal FSharpErrorSeverity = 
+type (*internal*) FSharpErrorSeverity = 
     | Warning 
     | Error
 
 [<Class>]
-type internal FSharpErrorInfo = 
+type (*internal*) FSharpErrorInfo = 
     member FileName: string
     member StartLineAlternate:int
     member EndLineAlternate:int

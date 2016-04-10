@@ -7,7 +7,7 @@ open Internal.Utilities.Text.Lexing
 open System.Collections.Generic
 
 [<Sealed>]
-type internal IParseState = 
+type (*internal*) IParseState = 
     /// Get the start and end position for the terminal or non-terminal at a given index matched by the production
     member InputRange: index:int -> Position * Position
     /// Get the end position for the terminal or non-terminal at a given index matched by the production

@@ -81,7 +81,7 @@ type internal FSharpFindDeclResult =
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
-type internal FSharpProjectContext =
+type (*internal*) FSharpProjectContext =
     /// Get the resolution and full contents of the assemblies referenced by the project options
     member GetReferencedAssemblies : unit -> FSharpAssembly list
 
@@ -256,15 +256,15 @@ type internal FSharpCheckFileResults =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
-type internal FSharpCheckProjectResults =
+type (*internal*) FSharpCheckProjectResults =
     /// The errors returned by processing the project
     member Errors : FSharpErrorInfo[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature : FSharpAssemblySignature
 
-    // /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
-    // member AssemblyContents : FSharpAssemblyContents
+    /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
+    member AssemblyContents : FSharpAssemblyContents
 
     /// Get the resolution of the ProjectOptions 
     member ProjectContext : FSharpProjectContext
@@ -283,7 +283,7 @@ type internal FSharpCheckProjectResults =
 type internal UnresolvedReferencesSet 
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
-type internal FSharpProjectOptions = 
+type (*internal*) FSharpProjectOptions = 
     { 
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
@@ -323,7 +323,7 @@ type internal FSharpCheckFileAnswer =
 
 [<Sealed; AutoSerializable(false)>]      
 /// Used to parse and check F# source code.
-type internal FSharpChecker =
+type (*internal*) FSharpChecker =
     /// <summary>
     /// Create an instance of an FSharpChecker.  
     /// </summary>

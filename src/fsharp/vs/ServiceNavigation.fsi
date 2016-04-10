@@ -43,7 +43,7 @@ type internal FSharpNavigationTopLevelDeclaration =
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
-type internal FSharpNavigationItems =
+type (*internal*) FSharpNavigationItems =
     member Declarations : FSharpNavigationTopLevelDeclaration[]
 
 // implementation details used by other code in the compiler    
