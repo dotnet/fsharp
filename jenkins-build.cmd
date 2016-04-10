@@ -9,7 +9,7 @@ if /I "%1" == "/?"      (goto :USAGE)
 set BUILD_PROFILE=%*
 
 if /I "%BUILD_PROFILE%" == "debug" (
-    set BUILD_ARGS=debug  compiler coreclr pcls vs notests
+    set BUILD_ARGS=debug compiler coreclr pcls vs notests
     goto :ARGUMENTS_OK
 )
 if /I "%BUILD_PROFILE%" == "release" (
@@ -30,8 +30,7 @@ exit /b 1
 :ARGUMENTS_OK
 
 rem Do build only for now
-call build.cmd 
-rem call build.cmd %BUILD_ARGS%
+call build.cmd %BUILD_ARGS%
 
 goto :eof
 
