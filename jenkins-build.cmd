@@ -12,15 +12,11 @@ if /I "%BUILD_PROFILE%" == "debug" (
     set BUILD_ARGS=debug  compiler coreclr pcls vs notests
     goto :ARGUMENTS_OK
 )
-if /I "%BUILD_PROFILE%" == "release ci_part1" (
+if /I "%BUILD_PROFILE%" == "release" (
     set BUILD_ARGS=release compiler coreclr pcls vs notests
     goto :ARGUMENTS_OK
 )
 
-if /I "%BUILD_PROFILE%" == "release ci_part2" (
-    set BUILD_ARGS=release  compiler coreclr pcls vs notests
-    goto :ARGUMENTS_OK
-)
 echo '%BUILD_PROFILE%' is not a valid profile
 goto :USAGE
 
