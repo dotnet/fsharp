@@ -15,7 +15,7 @@ def static getBuildJobName(def configuration, def os) {
 }
 
 [true, false].each { isPullRequest ->
-    ['Debug', 'Release ci_part1', 'Release ci_part2'].each { configuration ->
+    ['Debug', 'Release ci_part', 'Release ci_part2'].each { configuration ->
         osList.each { os ->
 
             def lowerConfiguration = configuration.toLowerCase()
@@ -48,11 +48,11 @@ def static getBuildJobName(def configuration, def os) {
 
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
-            
+
             Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+            //Utilities.addArchival(newJob, "${lowerConfiguration}/**")
 
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
