@@ -32,7 +32,7 @@ set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
 set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
-set BUILD_CONFIG=Release
+set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 
 set TEST_COMPILERUNIT=0
@@ -148,7 +148,7 @@ if /i '%ARG%' == 'coreclr' (
 )
 
 if /i '%ARG%' == 'debug' (
-    set BUILD_CONFIG=Debug
+    set BUILD_CONFIG=debug
     set BUILD_CONFIG_LOWERCASE=debug
 )
 
@@ -257,13 +257,13 @@ if not exist %_dotnetexe% (
   @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
   rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
   ren fsc.exe fsc.dll
   copy corehost.exe fsc.exe
   popd
 
   rem rename fsi and coreconsole to allow fsi.exe to to start interative
-  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish 
   ren fsi.exe fsi.dll
   copy corehost.exe fsi.exe
   popd
