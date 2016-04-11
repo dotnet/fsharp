@@ -51,8 +51,8 @@ def static getBuildJobName(def configuration, def os) {
 
             Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
-            Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+            //Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
+            //Utilities.addArchival(newJob, "${lowerConfiguration}/**")
 
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
