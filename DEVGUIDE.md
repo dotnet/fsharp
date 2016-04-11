@@ -106,7 +106,7 @@ For **Debug** this corresponds to these steps, which you can run individually fo
     msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj
     msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj
     msbuild vsintegration/fsharp-vsintegration-deployment-build.proj
-    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj 
+    msbuild vsintegration/fsharp-vsintegration-unittests-build.proj 
     msbuild tests/fsharp/FSharp.Tests.fsproj
     src\update.cmd debug -ngen
     tests\BuildTestTools.cmd debug 
@@ -131,7 +131,7 @@ For **Release** this corresponds to these steps, which you can run individually 
     msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=Release
     msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=Release
     msbuild vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=Release
-    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj  /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-unittests-build.proj  /p:Configuration=Release
     msbuild tests/fsharp/FSharp.Tests.fsproj /p:Configuration=Release
     src\update.cmd release -ngen
     tests\BuildTestTools.cmd release 
