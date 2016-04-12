@@ -1379,12 +1379,12 @@ type UsingMSBuild() as this =
         let fsVersion =
 #if VS_VERSION_DEV12
             "4.3.1.0"
-#else
+#endif
 #if VS_VERSION_DEV14
             "4.4.0.0"
-#else
-            "4.4.1.0"
 #endif
+#if VS_VERSION_DEV15
+            "4.4.1.0"
 #endif
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"

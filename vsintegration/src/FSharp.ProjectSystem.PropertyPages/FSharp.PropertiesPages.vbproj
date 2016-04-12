@@ -5,7 +5,7 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>VisualBasic</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
-	<MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
+	<MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
 	<MicroBuildAssemblyFileLanguage>vb</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>

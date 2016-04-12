@@ -7,7 +7,7 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
-	<MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
+	<MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
 	<MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
