@@ -32,11 +32,12 @@ set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
 set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
-set BUILD_CONFIG=Release
+set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
+set TEST_CORECLR=0
 set TEST_PORTABLE_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
@@ -49,6 +50,8 @@ for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
     call :SET_CONFIG %%!counter! "!counter!"
 )
+for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
+
 setlocal disableDelayedExpansion
 echo.
 
@@ -145,7 +148,7 @@ if /i '%ARG%' == 'coreclr' (
 )
 
 if /i '%ARG%' == 'debug' (
-    set BUILD_CONFIG=Debug
+    set BUILD_CONFIG=debug
     set BUILD_CONFIG_LOWERCASE=debug
 )
 
@@ -154,10 +157,16 @@ if /i '%ARG%' == 'build' (
     set BUILD_VS=1
 )
 
-rem if no arguments are passed on the command line then use the BUILD_FSC_DEFAULT environment variable to specify default build options
-if /i "%BUILD_FSC_DEFAULT%" == "coreclr" (
-    set BUILD_CORECLR=1
+if /i '%ARG%' == 'notests' (
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
 )
+
 
 goto :EOF
 
@@ -248,13 +257,13 @@ if not exist %_dotnetexe% (
   @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
   rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
   ren fsc.exe fsc.dll
   copy corehost.exe fsc.exe
   popd
 
   rem rename fsi and coreconsole to allow fsi.exe to to start interative
-  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish 
   ren fsi.exe fsi.dll
   copy corehost.exe fsi.exe
   popd
@@ -334,8 +343,22 @@ if '%TEST_PORTABLE_COREUNIT%' == '1' (
 )
 
 if '%BUILD_VS%' == '1' (
-    %_msbuildexe% %msbuildflags% VisualFSharp.sln /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration src build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration project templates build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration item templates build failed && goto :failure
+
+    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=%BUILD_CONFIG%
+    @if ERRORLEVEL 1 echo Error: VS integration deployment build failed && goto :failure
+
+    if '%TEST_VS%' == '1' (
+        %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
+        @if ERRORLEVEL 1 echo Error: VS integration unittests build failed && goto :failure
+    )
 )
 
 @echo on
