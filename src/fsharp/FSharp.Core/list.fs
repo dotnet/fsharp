@@ -610,7 +610,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Average")>]
         let inline average      (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | xs ->
                 let mutable sum = LanguagePrimitives.GenericZero< 'T >
                 let mutable count = 0
@@ -622,7 +622,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("AverageBy")>]
         let inline averageBy (f : 'T -> 'U) (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
             | xs ->
                 let mutable sum = LanguagePrimitives.GenericZero< 'U >
                 let mutable count = 0
