@@ -28,7 +28,7 @@ exit /b 1
 
 set BUILD_PROTO=0
 set BUILD_NET40=1
-set BUILD_CORECLR=1
+set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
 set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
@@ -56,9 +56,7 @@ goto :MAIN
 
 :SET_CONFIG
 set ARG=%~1
-
 if "%ARG%" == "1" if "%2" == "" (set ARG=build)
-
 if "%2" == "" if not "%ARG%" == "build" goto :EOF
 
 echo Parse argument %ARG%
@@ -90,6 +88,7 @@ if /i '%ARG%' == 'all' (
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
@@ -105,9 +104,9 @@ if /i '%ARG%' == 'ci' (
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
-
 if /i '%ARG%' == 'ci_part1' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
@@ -139,6 +138,12 @@ if /i '%ARG%' == 'smoke' (
     set TEST_TAGS=Smoke
 )
 
+if /i '%ARG%' == 'coreclr' (
+    REM Smoke tests are a very small quick subset of tests
+
+    set BUILD_CORECLR=1
+)
+
 if /i '%ARG%' == 'debug' (
     set BUILD_CONFIG=Debug
     set BUILD_CONFIG_LOWERCASE=debug
@@ -147,6 +152,11 @@ if /i '%ARG%' == 'debug' (
 if /i '%ARG%' == 'build' (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+)
+
+rem if no arguments are passed on the command line then use the BUILD_FSC_DEFAULT environment variable to specify default build options
+if /i "%BUILD_FSC_DEFAULT%" == "coreclr" (
+    set BUILD_CORECLR=1
 )
 
 goto :EOF
@@ -222,36 +232,37 @@ if '%RestorePackages%' == 'true' (
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
 
-set DOTNET_HOME  .\packages\dotnet
 
-rem check to see if the dotnet cli tool exists
+rem Always do this it installs the dotnet cli and publishes the LKG
+rem ===============================================================
+
+set DOTNET_HOME=.\packages\dotnet
 set _dotnetexe=.\packages\dotnet\dotnet.exe
+rem check to see if the dotnet cli tool exists
 if not exist %_dotnetexe% (
-    echo Error: Could not find %_dotnetexe%.
-    rem do zipfile install nonsense
-    if not exist packages ( md packages )
-    if exist packages\dotnet ( rd packages /s /q )
-    powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
-    @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
-    popd
+  echo Could not find %_dotnetexe%. Do zipfile install
+  if not exist packages ( md packages )
+  if exist packages\dotnet ( rd packages\dotnet /s /q )
+  powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
+  @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+
+  pushd .\lkg & ..\%_dotnetexe% restore &popd
+  @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+  pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
+  @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+  rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
+  ren fsc.exe fsc.dll
+  copy corehost.exe fsc.exe
+  popd
+
+  rem rename fsi and coreconsole to allow fsi.exe to to start interative
+  pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
+  ren fsi.exe fsi.dll
+  copy corehost.exe fsi.exe
+  popd
 )
-
-pushd .\lkg & ..\%_dotnetexe% restore &popd
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
-ren fsc.exe fsc.dll
-copy corehost.exe fsc.exe
-popd
-
-rem rename fsi and coreconsole to allow fsi.exe to to start interative
-pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
-ren fsi.exe fsi.dll
-copy corehost.exe fsi.exe
-popd
 
 :: Build Proto
 if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
