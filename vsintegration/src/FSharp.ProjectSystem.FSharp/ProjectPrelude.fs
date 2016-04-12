@@ -2,32 +2,8 @@
 
 
 //--------------------------------------------------------------------------------------
-// Mock types for F# CodeDom and LanguageService functionality
+// Mock types for F# LanguageService functionality
 
-#if DESIGNER
-namespace FSharp.CodeDom
-    open System
-    
-    /// This is a mock type: we should be loading an F# CodeDom provider here
-    type FSharpProvider() = 
-        member x.AddReference(project:string) = 
-            System.Diagnostics.Debug.Assert(false,"Stub Code!")
-
-namespace Microsoft.VisualStudio.FSharp.ProjectSystem
-    open System
-    open System.CodeDom.Compiler;
-    open Microsoft.VisualStudio;
-    open Microsoft.VisualStudio.Designer.Interfaces;
-    type FSharpCodeModelFactory() = 
-        static member CreateFileCodeModel (item:EnvDTE.ProjectItem, provider:CodeDomProvider, url:string) : EnvDTE.FileCodeModel  = 
-            System.Diagnostics.Debug.Assert(false,"Stub Code!");
-            raise (new NotSupportedException("Microsoft.VisualStudio.FSharp.ProjectSystem: CreateFileCodeModel not yet available"));
-
-        static member CreateProjectCodeModel(item:EnvDTE.Project) : EnvDTE.CodeModel  = 
-            System.Diagnostics.Debug.Assert(false,"Stub Code!");
-            raise (new NotSupportedException("Microsoft.VisualStudio.FSharp.ProjectSystem: CreateFileCodeModel not yet available"));
-#endif
-            
 namespace Microsoft.VisualStudio.FSharp.LanguageService
     open Microsoft.VisualStudio.Shell.Interop
 
@@ -66,14 +42,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Shell.Flavor
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
-#if DESIGNER
-    open Microsoft.Windows.Design.Host
-    open Microsoft.Windows.Design.Model
-    open Microsoft.VisualStudio.Designer.Interfaces
-    open Microsoft.VisualStudio.TextManager.Interop
-    open Microsoft.VisualStudio.Shell.Design.Serialization
-    open Microsoft.VisualStudio.Shell.Design.Serialization.CodeDom
-#endif
     open Microsoft.VisualStudio
     open Microsoft.VisualStudio.FSharp.LanguageService
     open EnvDTE
@@ -330,64 +298,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         | FsxFile = 2
         | FsiFile = 3
         
-#if DESIGNER
-    //--------------------------------------------------------------------------------------
-    // Provider to connect designer tools through to F# code via the F# CodeDom. Alas the
-    // F# CodeDom is not yet complete and can't parse code, which means this won't work.
-    // But if we manage to complete it then it appears we may be able to 
-    // have a designer story of some kind without too much hassle.
-
-    type VSMDFSharpProvider(vsproject:VSLangProj.VSProject) = class
-        let mutable vsproject = vsproject 
-
-        let mutable provider : FSharp.CodeDom.FSharpProvider option  = None
-
-        /// When a reference is added, add it to the provider
-        let onReferenceAdd (reference:VSLangProj.Reference) = 
-            provider.Value.AddReference(reference.Path)
-
-        /// When a reference is added, add it to the provider
-        let onReferenceAddHandler = 
-            VSLangProj._dispReferencesEvents_ReferenceAddedEventHandler(onReferenceAdd)
-
-        /// When a reference is removed/changed, let the provider know
-        let onReferenceRemoveOrChange (reference:VSLangProj.Reference) =
-            // Because our provider only has an AddReference method and no way to
-            // remove them, we end up having to recreate it.
-            provider <- Some(new FSharp.CodeDom.FSharpProvider());
-            if (vsproject.References <> null) then 
-              for (currentReference :VSLangProj.Reference ) in vsproject.References do
-                provider.Value.AddReference(currentReference.Path);
-
-        let onReferenceRemoveHandler = 
-            VSLangProj._dispReferencesEvents_ReferenceRemovedEventHandler(onReferenceRemoveOrChange)
-        let onReferenceChangeHandler = 
-            VSLangProj._dispReferencesEvents_ReferenceChangedEventHandler(onReferenceRemoveOrChange)
-
-        
-        do  if (vsproject= null) then raise <| ArgumentNullException("project");
-
-          // Create the provider
-        do  onReferenceRemoveOrChange(null);
-
-        do  vsproject.Events.ReferencesEvents.add_ReferenceAdded(onReferenceAddHandler);
-        do  vsproject.Events.ReferencesEvents.add_ReferenceRemoved(onReferenceRemoveHandler)
-        do  vsproject.Events.ReferencesEvents.add_ReferenceChanged(onReferenceChangeHandler);
-
-        interface IVSMDCodeDomProvider with 
-            member x.CodeDomProvider = provider.Value  |> box
-
-        interface IDisposable with 
-            member x.Dispose() = 
-              if (vsproject <> null) then 
-                vsproject <- null;
-                vsproject.Events.ReferencesEvents.remove_ReferenceAdded(onReferenceAddHandler)
-                vsproject.Events.ReferencesEvents.remove_ReferenceRemoved(onReferenceRemoveHandler)
-                vsproject.Events.ReferencesEvents.remove_ReferenceChanged(onReferenceChangeHandler)
-        end
-    end // class VSMDFSharpProvider
-#endif
-
     module internal Attributes = 
 #if NO_ASSEM_ATTRS_YET    
         //
