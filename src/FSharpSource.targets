@@ -134,7 +134,7 @@
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
     <FsSrGenVersion>3.0.0</FsSrGenVersion>
     <FsSrGenBuildTasksVersion>3.0.0</FsSrGenBuildTasksVersion>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\FsSrGen.$(FsSrGenVersion)\lib\net46</FsSrGenToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\packages\fssrgen.$(FsSrGenVersion)\lib\net46</FsSrGenToolPath>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
