@@ -21,7 +21,11 @@
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
+  <!-- References -->
+  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -31,6 +35,9 @@
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
+    </Compile>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </FsSrGen>
@@ -40,10 +47,9 @@
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Reflection\reshapedmsbuild.fs</Link>
     </Compile>
-    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -197,6 +203,9 @@
     </Compile>
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL/ilmorph.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+      <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL/ilsupp.fsi</Link>
@@ -491,6 +500,12 @@
     <Compile Include="..\vs\Symbols.fs">
       <Link>Service/Symbols.fs</Link>
     </Compile>
+    <Compile Include="..\vs\Exprs.fsi">
+      <Link>Service/Exprs.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\Exprs.fs">
+      <Link>Service/Exprs.fs</Link>
+    </Compile>
     <Compile Include="..\vs\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>
     </Compile>
@@ -524,8 +539,14 @@
     <Compile Include="..\vs\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
+    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
+      <Link>InternalsVisibleTo.fs</Link>
+    </Compile>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -543,6 +564,8 @@
     <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader\1.0.7\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
     <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.3.0-beta-23816\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
     <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0-rc3-23805\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>

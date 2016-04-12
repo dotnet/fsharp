@@ -14,7 +14,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 
 [<Sealed>]
 /// Represents the results of parsing an F# file
-type internal FSharpParseFileResults = 
+type (*internal*) FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse
     member ParseTree : Ast.ParsedInput option

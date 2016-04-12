@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.IL
+module (*internal*) Microsoft.FSharp.Compiler.AbstractIL.IL
 
 #nowarn "49"
 #nowarn "44" // This construct is deprecated. please use List.item

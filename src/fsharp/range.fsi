@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Range
+module (*internal*) Microsoft.FSharp.Compiler.Range
 
 open System.Text
 open System.Collections.Generic
