@@ -98,3 +98,4 @@ tests/fsharpqa/Source/*FSharpQA_Failures.lst
 *.ldf
 *.cto
 tests/**/FSharp.Core.dll
+project.lock.json
