@@ -14,12 +14,12 @@
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
-    </FilesToLocalize>
+  <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+    <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+    <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+    <HasLceComments>false</HasLceComments>
+    <InProject>false</InProject>
+  </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="FSBuild.txt">
