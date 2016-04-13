@@ -32,11 +32,11 @@ type internal QueueList<'T>(firstElementsIn: FlatList<'T>, lastElementsRevIn:  '
     member internal x.FirstElements = firstElements
     member internal x.LastElements = lastElements()
 
-    /// NOTE: this operation is O(1), unless a push happens, which is rare.
+    /// This operation is O(1), unless a push happens, which is rare.
     member x.AppendOne(y) = QueueList(firstElements, y :: lastElementsRev, numLastElements+1)
     member x.Append(ys:seq<_>) = QueueList(firstElements, (List.rev (Seq.toList ys) @ lastElementsRev), numLastElements+1)
     
-    /// NOTE: this operation is O(n) anyway, so executing ToFlatList() here is OK
+    /// This operation is O(n) anyway, so executing ToFlatList() here is OK
     interface IEnumerable<'T> with 
         member x.GetEnumerator() : IEnumerator<'T> = (x.ToFlatList() :> IEnumerable<_>).GetEnumerator()
     interface IEnumerable with 

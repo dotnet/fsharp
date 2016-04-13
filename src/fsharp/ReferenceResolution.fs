@@ -90,7 +90,7 @@ module internal MSBuildResolver =
 
     /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectoryOnWindows = 
-        // NOTE: that ProgramFilesX86 is correct for both x86 and x64 architectures 
+        // ProgramFilesX86 is correct for both x86 and x64 architectures 
         // (the reference assemblies are always in the 32-bit location, which is PF(x86) on an x64 machine)
         let PF = 
             match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
