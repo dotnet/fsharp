@@ -55,7 +55,7 @@ type Item =
   | ILField of ILFieldInfo
   | Event of EventInfo
   | Property of string * PropInfo list
-  | MethodGroup of string * MethInfo list
+  | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
   | CtorGroup of string * MethInfo list
   | FakeInterfaceCtor of TType
   | DelegateCtor of TType
@@ -261,7 +261,7 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation : range -> unit
@@ -300,6 +300,9 @@ val internal CallEnvSink                : TcResultsSink -> range * NameResolutio
 
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+
+/// Report a specific name resolution at a source range, replacing any previous resolutions
+val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit

@@ -53,7 +53,7 @@ try
 
     let nugetArgs = sprintf "pack %s -BasePath \"%s\" -OutputDirectory \"%s\" -ExcludeEmptyDirectories -prop licenseUrl=\"%s\" -prop version=\"%s\" -prop authors=\"%s\" -prop projectURL=\"%s\" -prop tags=\"%s\" -Verbosity detailed"
                             nuspec
-                            bindir
+                            layouts
                             output
                             licenseUrl
                             version

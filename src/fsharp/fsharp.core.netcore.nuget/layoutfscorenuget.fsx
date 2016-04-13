@@ -62,6 +62,7 @@ try
             yield Path.Combine(bindir, "FSharp.Core.dll")
             yield Path.Combine(bindir, "FSharp.Core.sigdata")
             yield Path.Combine(bindir, "FSharp.Core.optdata")
+            yield Path.Combine( __SOURCE_DIRECTORY__ , "FSharp.Core.runtimeconfig.json")
         }
 
     //Clean intermediate directoriy

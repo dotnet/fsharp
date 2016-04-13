@@ -363,8 +363,9 @@ type UsingMSBuild() as this  =
 
         check code "= this." <|
             fun ci ->
-                AssertCompListContainsAll(ci, ["PublicM"; "PublicProp"; "ProtectedProp"; "ProtectedM"])
-                AssertCompListDoesNotContainAny(ci, ["f"; "PrivateProp"; "PrivateM"])
+                AssertCompListContainsAll(ci, ["PublicM"; "PublicProp"])
+                // The F# compiler never even asks to see protected/private provided members
+                AssertCompListDoesNotContainAny(ci, ["f"; "ProtectedProp"; "ProtectedM"; "PrivateProp"; "PrivateM"])
                 
                
     [<Test>] member public this.``AdjacentToDot_01``() = testAutoCompleteAdjacentToDot ".."
