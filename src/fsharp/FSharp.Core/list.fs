@@ -590,10 +590,24 @@ namespace Microsoft.FSharp.Collections
         let tryFindIndexBack f list = list |> toArray |> Array.tryFindIndexBack f
 
         [<CompiledName("Sum")>]
-        let inline sum          (list:list<_>) = Seq.sum list
+        let inline sum          (list:list<'T>) =
+            match list with 
+            | [] ->  LanguagePrimitives.GenericZero< 'T >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'T >
+                for x in t do
+                    acc <- Checked.(+) acc x
+                acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy f     (list:list<_>) = Seq.sumBy f list
+        let inline sumBy (f: 'T -> 'U)     (list:list<'T>) =
+            match list with 
+            | [] ->  LanguagePrimitives.GenericZero< 'U >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'U >
+                for x in t do
+                    acc <- Checked.(+) acc (f x)
+                acc
 
         [<CompiledName("Max")>]
         let inline max          (list:list<_>) = Seq.max list
