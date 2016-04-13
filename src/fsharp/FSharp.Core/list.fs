@@ -610,16 +610,54 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) = Seq.max list
+        let inline max          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x > acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy f (list:list<_>) = Seq.maxBy f list
-
+        let inline maxBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv > accv then
+                        acc <- x
+                        accv <- currv
+                acc
+            
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) = Seq.min list
+        let inline min          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x < acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MinBy")>]
-        let inline minBy f (list:list<_>) = Seq.minBy f list
+        let inline minBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv < accv then
+                        acc <- x
+                        accv <- currv
+                acc
 
         [<CompiledName("Average")>]
         let inline average      (list:list<'T>) =
