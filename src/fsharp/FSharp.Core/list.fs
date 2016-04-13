@@ -608,10 +608,28 @@ namespace Microsoft.FSharp.Collections
         let inline minBy f (list:list<_>) = Seq.minBy f list
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<_>) = Seq.average list
+        let inline average      (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | xs ->
+                let mutable sum = LanguagePrimitives.GenericZero< 'T >
+                let mutable count = 0
+                for x in xs do
+                    sum <- Checked.(+) sum x
+                    count <- count + 1
+                LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy f (list:list<_>) = Seq.averageBy f list
+        let inline averageBy (f : 'T -> 'U) (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | xs ->
+                let mutable sum = LanguagePrimitives.GenericZero< 'U >
+                let mutable count = 0
+                for x in xs do
+                    sum <- Checked.(+) sum (f x)
+                    count <- count + 1
+                LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
