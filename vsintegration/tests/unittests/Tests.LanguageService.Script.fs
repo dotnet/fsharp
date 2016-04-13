@@ -1638,7 +1638,7 @@ type UsingMSBuild() as this =
         let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
         Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
 
-        let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
+        let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
         let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
         Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
