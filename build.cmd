@@ -28,14 +28,15 @@ exit /b 1
 
 set BUILD_PROTO=0
 set BUILD_NET40=1
-set BUILD_CORECLR=1
+set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
-set BUILD_CONFIG=Release
+set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
+set TEST_CORECLR=0
 set TEST_PORTABLE_COREUNIT=0
 set TEST_VS=0
 set TEST_FSHARP_SUITE=0
@@ -48,6 +49,8 @@ for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
     call :SET_CONFIG %%!counter! "!counter!"
 )
+for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
+
 setlocal disableDelayedExpansion
 echo.
 
@@ -55,9 +58,7 @@ goto :MAIN
 
 :SET_CONFIG
 set ARG=%~1
-
 if "%ARG%" == "1" if "%2" == "" (set ARG=build)
-
 if "%2" == "" if not "%ARG%" == "build" goto :EOF
 
 echo Parse argument %ARG%
@@ -88,6 +89,7 @@ if /i '%ARG%' == 'all' (
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
 
@@ -102,9 +104,9 @@ if /i '%ARG%' == 'ci' (
 )
 
 REM These divide 'ci' into three chunks which can be done in parallel
-
 if /i '%ARG%' == 'ci_part1' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
 
@@ -134,8 +136,14 @@ if /i '%ARG%' == 'smoke' (
     set TEST_TAGS=Smoke
 )
 
+if /i '%ARG%' == 'coreclr' (
+    REM Smoke tests are a very small quick subset of tests
+
+    set BUILD_CORECLR=1
+)
+
 if /i '%ARG%' == 'debug' (
-    set BUILD_CONFIG=Debug
+    set BUILD_CONFIG=debug
     set BUILD_CONFIG_LOWERCASE=debug
 )
 
@@ -143,6 +151,17 @@ if /i '%ARG%' == 'build' (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
 )
+
+if /i '%ARG%' == 'notests' (
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
+)
+
 
 goto :EOF
 
@@ -212,36 +231,37 @@ if '%RestorePackages%' == 'true' (
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
 
-set DOTNET_HOME  .\packages\dotnet
 
-rem check to see if the dotnet cli tool exists
+rem Always do this it installs the dotnet cli and publishes the LKG
+rem ===============================================================
+
+set DOTNET_HOME=.\packages\dotnet
 set _dotnetexe=.\packages\dotnet\dotnet.exe
+rem check to see if the dotnet cli tool exists
 if not exist %_dotnetexe% (
-    echo Error: Could not find %_dotnetexe%.
-    rem do zipfile install nonsense
-    if not exist packages ( md packages )
-    if exist packages\dotnet ( rd packages /s /q )
-    powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
-    @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
-    popd
+  echo Could not find %_dotnetexe%. Do zipfile install
+  if not exist packages ( md packages )
+  if exist packages\dotnet ( rd packages\dotnet /s /q )
+  powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
+  @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+
+  pushd .\lkg & ..\%_dotnetexe% restore &popd
+  @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+  pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
+  @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+  rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
+  ren fsc.exe fsc.dll
+  copy corehost.exe fsc.exe
+  popd
+
+  rem rename fsi and coreconsole to allow fsi.exe to to start interative
+  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish 
+  ren fsi.exe fsi.dll
+  copy corehost.exe fsi.exe
+  popd
 )
-
-pushd .\lkg & ..\%_dotnetexe% restore &popd
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish
-ren fsc.exe fsc.dll
-copy corehost.exe fsc.exe
-popd
-
-rem rename fsi and coreconsole to allow fsi.exe to to start interative
-pushd .\lkg\bin\Debug\dnxcore50\win7-x64\publish 
-ren fsi.exe fsi.dll
-copy corehost.exe fsi.exe
-popd
 
 :: Build Proto
 if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
@@ -255,66 +275,7 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
-@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
-@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
-
-if '%BUILD_CORECLR%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-    @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-    @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
-
-    if '%TEST_CORECLR%' == '1' (
-        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG%
-        @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-    )
-)
-
-if '%BUILD_PORTABLE%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
-)
-
-if '%TEST_COMPILERUNIT%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
-)
-if '%TEST_NET40_COREUNIT%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-)
-
-if '%TEST_PORTABLE_COREUNIT%' == '1' (
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-)
-
-if '%BUILD_VS%' == '1' (
-    %_msbuildexe% %msbuildflags% VisualFSharp.sln /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
-)
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
