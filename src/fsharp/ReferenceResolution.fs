@@ -43,17 +43,17 @@ module internal MSBuildResolver =
     open System.IO
 
     type ResolvedFile = 
-        { /// Item specification
+        { /// Item specification.
           itemSpec:string
-          /// Location that the assembly was resolved from
+          /// Location that the assembly was resolved from.
           resolvedFrom:ResolvedFrom
-          /// The long fusion name of the assembly
+          /// The long fusion name of the assembly.
           fusionName:string
-          /// The version of the assembly (like 4.0.0.0)
+          /// The version of the assembly (like 4.0.0.0).
           version:string
-          /// The name of the redist the assembly was found in
+          /// The name of the redist the assembly was found in.
           redist:string        
-          /// Round-tripped baggage string
+          /// Round-tripped baggage string.
           baggage:string
           }
 
@@ -61,17 +61,17 @@ module internal MSBuildResolver =
 
     /// Reference resolution results. All paths are fully qualified.
     type ResolutionResults = 
-        { /// Paths to primary references
+        { /// Paths to primary references.
           resolvedFiles:ResolvedFile[]
-          /// Paths to dependencies
+          /// Paths to dependencies.
           referenceDependencyPaths:string[]
-          /// Paths to related files (like .xml and .pdb)
+          /// Paths to related files (like .xml and .pdb).
           relatedPaths:string[]
           /// Paths to satellite assemblies used for localization.
           referenceSatellitePaths:string[]
           /// Additional files required to support multi-file assemblies.
           referenceScatterPaths:string[]
-          /// Paths to files that reference resolution recommend be copied to the local directory
+          /// Paths to files that reference resolution recommend be copied to the local directory.
           referenceCopyLocalPaths:string[]
           /// Binding redirects that reference resolution recommends for the app.config file.
           suggestedBindingRedirects:string[] 
@@ -88,9 +88,10 @@ module internal MSBuildResolver =
           }
 
 
-    /// Get the Reference Assemblies directory for the .NET Framework on Window
+    /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectoryOnWindows = 
-        // Note that ProgramFilesX86 is correct for both x86 and x64 architectures (the reference assemblies are always in the 32-bit location, which is PF(x86) on an x64 machine)
+        // NOTE: that ProgramFilesX86 is correct for both x86 and x64 architectures 
+        // (the reference assemblies are always in the 32-bit location, which is PF(x86) on an x64 machine)
         let PF = 
             match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
             | null -> Environment.GetEnvironmentVariable("ProgramFiles")  // if PFx86 is null, then we are 32-bit and just get PF
@@ -416,7 +417,7 @@ module internal MSBuildResolver =
                 outputDirectory, fsharpCoreExplicitDirOrFSharpBinariesDir, explicitIncludeDirs, implicitIncludeDir, frameworkRegistryBase, 
                 assemblyFoldersSuffix, assemblyFoldersConditions, logMessage, logWarning, logError) =
 
-        // The {RawFileName} target is 'dangerous', in the sense that is uses Directory.GetCurrentDirectory() to resolve unrooted file paths.
+        // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
         // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set
         // (which contains e.g. C:\MyDir\MyAssem.dll) and "unrooted" (everything else).  We only allow "rooted" to use {RawFileName}.  Note that
         // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
