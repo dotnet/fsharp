@@ -170,6 +170,8 @@ if DEFINED _UNATTENDEDLOG exit /b 0
 rem first see if we have got msbuild installed
 if exist "%X86_PROGRAMFILES%\MSBuild\15.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\15.0\Bin\
 if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
+if exist "%X86_PROGRAMFILES%\MSBuild\14.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\14.0\Bin\
+if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
 
                         IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\msbuild.exe"         SET MSBuildToolsPath=%CORDIR%
 IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\msbuild.exe" SET MSBuildToolsPath="%CORDIR%\..\V3.5\"

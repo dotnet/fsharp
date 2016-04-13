@@ -15,6 +15,7 @@
     <ProjectGuid>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.VS.FSI</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <UseVsVersion>true</UseVsVersion>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>$(NoWarn);47;75</NoWarn>

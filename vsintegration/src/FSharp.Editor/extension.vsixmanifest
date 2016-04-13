@@ -14,7 +14,7 @@
         <Edition>WDExpress</Edition>
       </VisualStudio>
     </SupportedProducts>
-    <SupportedFrameworkRuntimeEdition MinVersion="4.5" />
+    <SupportedFrameworkRuntimeEdition MinVersion="4.6" />
     <SystemComponent>true</SystemComponent>
   </Identifier>
   <References />

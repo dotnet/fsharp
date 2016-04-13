@@ -19,7 +19,7 @@
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
