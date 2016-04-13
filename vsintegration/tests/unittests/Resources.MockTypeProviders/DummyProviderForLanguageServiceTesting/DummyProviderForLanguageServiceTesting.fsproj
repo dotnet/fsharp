@@ -32,11 +32,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSData.txt" >
+    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSData.txt">
       <Link>FSData.txt</Link>
     </FsSrGen>
-    <Compile Include="TypeProviderEmit.fsi" />
-    <Compile Include="TypeProviderEmit.fs" />
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DummyProviderForLanguageServiceTesting.fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
