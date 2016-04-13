@@ -37,6 +37,9 @@
     </FsSrGen>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
+    <FsSrGen Include="FSData.txt" />
+    <Compile Include="TypeProviderEmit.fsi" />
+    <Compile Include="TypeProviderEmit.fs" />
     <Compile Include="DummyProviderForLanguageServiceTesting.fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
