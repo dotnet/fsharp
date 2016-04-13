@@ -9,11 +9,17 @@ namespace Microsoft.FSharp.Compiler
     open System.IO
     open System.Text
     open System.Reflection 
-    
-    module internal SR =
-        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
 
-        let GetString(name:string) =        
+    module internal SR =
+#if FX_RESHAPED_REFLECTION
+        open System.Reflection
+        type private TypeInThisAssembly = class end
+        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", typeof<TypeInThisAssembly>.GetTypeInfo().Assembly))
+#else
+        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
+#endif
+
+        let GetString(name:string) =
             let s = resources.Force().GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
 #if DEBUG
             if null = s then
@@ -21,26 +27,21 @@ namespace Microsoft.FSharp.Compiler
 #endif
             s
 
-        let GetObject(name:string) =
-            let o = resources.Force().GetObject(name, System.Globalization.CultureInfo.CurrentUICulture)
-#if DEBUG
-            if null = o then
-                System.Diagnostics.Debug.Assert(false, sprintf "**RESOURCE ERROR**: Resource token %s does not exist!" name)
-#endif
-            o
-            
-        
     module internal DiagnosticMessage =
-    
+
         open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
         open Microsoft.FSharp.Reflection
         open System.Reflection
         open Internal.Utilities.StructuredFormat
-  
-        let staticInvokeFlags = BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.Static
+
+#if FX_RESHAPED_REFLECTION
+        open PrimReflectionAdapters
+        open ReflectionAdapters
+#endif
+
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
             FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
-            
+
         let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()  
         let mkFunTy a b = funTyC.MakeGenericType([| a;b |])
 
@@ -69,12 +70,12 @@ namespace Microsoft.FSharp.Compiler
             | 'f'
             | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
             | _ -> failwith "bad format specifier"
-            
+
         // newlines and tabs get converted to strings when read from a resource file
         // this will preserve their original intention    
         let postProcessString (s : string) =
             s.Replace("\\n","\n").Replace("\\t","\t")
-            
+
         let createMessageString (messageString : string) (fmt : Printf.StringFormat<'T>) : 'T = 
             let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
             let len = fmt.Length 
@@ -99,11 +100,11 @@ namespace Microsoft.FSharp.Compiler
                         capture args ty (i+1) 
 
             (unbox (capture [] (typeof<'T>) 0) : 'T)
-    
+
         type ResourceString<'T>(fmtString : string, fmt : Printf.StringFormat<'T>) =
             member a.Format =
                 createMessageString fmtString fmt
-            
+
         let DeclareResourceString ((messageID : string),(fmt : Printf.StringFormat<'T>)) =
             let mutable messageString = SR.GetString(messageID)
 #if DEBUG

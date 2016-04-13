@@ -19,7 +19,7 @@ def static getBuildJobName(def configuration, def os) {
         osList.each { os ->
 
             def lowerConfiguration = configuration.toLowerCase()
-	        
+
             // Calculate job name
             def jobName = getBuildJobName(configuration, os)
 
@@ -45,21 +45,21 @@ def static getBuildJobName(def configuration, def os) {
                     }
                 }
             }
-			
-			// TODO: set to false after tests are fully enabled
-			def skipIfNoTestFiles = true
-            
-			Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
-			Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
-			Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-			Utilities.addArchival(newJob, "${lowerConfiguration}/**")
-			
-			if (isPullRequest) {
-				Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
-			}
-			else {
-				Utilities.addGithubPushTrigger(newJob)
-			}
+
+            // TODO: set to false after tests are fully enabled
+            def skipIfNoTestFiles = true
+
+            Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
+            Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
+            Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
+            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+
+            if (isPullRequest) {
+                Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
+            }
+            else {
+                Utilities.addGithubPushTrigger(newJob)
+            }
         }
     }
 }
