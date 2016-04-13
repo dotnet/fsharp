@@ -115,17 +115,6 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <PropertyGroup>
-    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>
-  </PropertyGroup>
-  <Target Name="CopyToBuiltBin">
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
-  </Target>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
