@@ -31,7 +31,6 @@ set BUILD_NET40=1
 set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
-set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 
@@ -80,7 +79,6 @@ if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_PORTABLE_COREUNIT=1
     set TEST_VS=1
@@ -94,7 +92,6 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -112,7 +109,6 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -125,7 +121,6 @@ if /i '%ARG%' == 'ci_part1' (
 if /i '%ARG%' == 'ci_part2' (
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=1
 )
@@ -180,7 +175,6 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
-echo BUILD_FSHARP_DATA_TYPEPROVIDERS=%BUILD_FSHARP_DATA_TYPEPROVIDERS%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
@@ -285,85 +279,7 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
-@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
-
-%_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
-@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
-
-if '%BUILD_FSHARP_DATA_TYPEPROVIDERS%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-typeproviders-build.proj /p:Configuration=%BUILD_CONFIG%  /p:RestorePackages=%RestorePackages%
-    @if ERRORLEVEL 1 echo Error: type provider build failed && goto :failure
-)
-
-if '%BUILD_CORECLR%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-    @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG% /p:RestorePackages=%RestorePackages%
-    @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
-
-    if '%TEST_CORECLR%' == '1' (
-        %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=%BUILD_CONFIG%
-        @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-    )
-)
-
-if '%BUILD_PORTABLE%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
-)
-
-if '%TEST_COMPILERUNIT%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-compiler-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
-)
-if '%TEST_NET40_COREUNIT%' == '1' (
-    %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-)
-
-if '%TEST_PORTABLE_COREUNIT%' == '1' (
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable7 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable47 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable78 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-
-   %_msbuildexe% %msbuildflags% src/fsharp-library-unittests-build.proj  /p:TargetFramework=portable259 /p:Configuration=%BUILD_CONFIG%
-   @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
-)
-
-if '%BUILD_VS%' == '1' (
-    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-src-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration src build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration project templates build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration item templates build failed && goto :failure
-
-    %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: VS integration deployment build failed && goto :failure
-
-    if '%TEST_VS%' == '1' (
-        %_msbuildexe% %msbuildflags% vsintegration/fsharp-vsintegration-unittests-build.proj /p:Configuration=%BUILD_CONFIG%
-        @if ERRORLEVEL 1 echo Error: VS integration unittests build failed && goto :failure
-    )
-)
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen

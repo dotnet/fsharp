@@ -14,6 +14,6 @@
     "ubuntu.14.04-x64": { }
   },
   "frameworks": {
-    "dnxcore50": { }
+    "netstandard1.5": { }
   }
 }

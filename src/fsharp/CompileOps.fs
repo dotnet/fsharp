@@ -102,7 +102,6 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 exception InternalCommandLineOption of string * range
 exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
 exception HashLoadedScriptConsideredSource of range
-exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 
 let GetRangeOfError(err:PhasedError) = 
@@ -3548,7 +3547,7 @@ let WriteOptimizationData (tcGlobals, file, ccu,modulInfo) =
 // Abstraction for project reference
 
 type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyRefs) = 
-    let externalSigAndOptData = ["FSharp.Core";"FSharp.LanguageService.Compiler"]
+    let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes(ilg) = GetAutoOpenAttributes ilg ilModule 
          member __.GetInternalsVisibleToAttributes(ilg) = GetInternalsVisibleToAttributes ilg ilModule 
@@ -3700,6 +3699,13 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         match importsBase with 
         | Some(importsBase)-> importsBase.GetDllInfos() @ dllInfos
         | None -> dllInfos
+        
+    member tcImports.AllAssemblyResolutions() = 
+        CheckDisposed()
+        let ars = resolutions.GetAssemblyResolutions()
+        match importsBase with 
+        | Some(importsBase)-> importsBase.AllAssemblyResolutions() @ ars
+        | None -> ars
         
     member tcImports.TryFindDllInfo (m,assemblyName,lookupOnly) =
         CheckDisposed()
@@ -4036,7 +4042,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                  { resolutionFolder       = tcConfig.implicitIncludeDir
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
-                   referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
+                   referencedAssemblies   = Array.distinct [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |]
                    temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
@@ -4585,17 +4591,19 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-let RequireDLL (tcImports:TcImports) tcEnv m file = 
-    let RequireResolved = function
-        | ResolvedImportedAssembly(ccuinfo) -> ccuinfo
-        | UnresolvedImportedAssembly(assemblyName) -> error(Error(FSComp.SR.buildCouldNotResolveAssemblyRequiredByFile(assemblyName,file),m))
+let RequireDLL (tcImports:TcImports, tcEnv, thisAssemblyName, m, file) = 
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(AssemblyReference(m,file,None),ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos,ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(resolutions)
-    let ccuinfos = ccuinfos |> List.map RequireResolved
+   
+    let asms = 
+        ccuinfos |> List.map  (function
+            | ResolvedImportedAssembly(asm) -> asm
+            | UnresolvedImportedAssembly(assemblyName) -> error(Error(FSComp.SR.buildCouldNotResolveAssemblyRequiredByFile(assemblyName,file),m)))
+
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let tcEnv = ccuinfos |> List.fold (fun tcEnv ccuinfo -> Tc.AddCcuToTcEnv(g,amap,m,tcEnv,ccuinfo.FSharpViewOfMetadata,ccuinfo.AssemblyAutoOpenAttributes,false)) tcEnv 
-    tcEnv,(dllinfos,ccuinfos)
+    let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> Tc.AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
+    tcEnv,(dllinfos,asms)
 
        
        
@@ -5013,29 +5021,16 @@ type LoadClosure with
 //--------------------------------------------------------------------------
 
 /// Build the initial type checking environment
-let GetInitialTcEnv (assemblyName:string option, initm:range, tcConfig:TcConfig, tcImports:TcImports, tcGlobals)  =    
+let GetInitialTcEnv (thisAssemblyName:string, initm:range, tcConfig:TcConfig, tcImports:TcImports, tcGlobals)  =    
     let initm = initm.StartRange
-
-    let internalsAreVisibleHere (asm:ImportedAssembly) =
-        match assemblyName with
-        | None -> false
-        | Some assemblyName ->
-            let isTargetAssemblyName (visibleTo:string) =             
-                try                    
-                    System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
-                with e ->
-                    warning(InvalidInternalsVisibleToAssemblyName(visibleTo,asm.FSharpViewOfMetadata.FileName))
-                    false
-            let internalsVisibleTos = asm.AssemblyInternalsVisibleToAttributes
-            List.exists isTargetAssemblyName internalsVisibleTos
 
     let ccus = 
         tcImports.GetImportedAssemblies() 
-        |> List.map (fun asm -> asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm |> internalsAreVisibleHere)    
+        |> List.map (fun asm -> asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)    
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals, amap, initm, ccus)
+    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
 
     let tcEnv = 
         if tcConfig.checkOverflow then

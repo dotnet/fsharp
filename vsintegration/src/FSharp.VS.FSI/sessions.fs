@@ -154,25 +154,37 @@ let catchAll (ie: IEvent<_,_>) : IEvent<_> =
     ie.Add(fun x -> try w(x) with err -> ignore(System.Windows.Forms.MessageBox.Show(err.ToString())); ());
     e
 
-let fsiExeName () = if SessionsProperties.useAnyCpuVersion then "fsianycpu.exe" else "fsi.exe"
-let determineFsiRelativePath () =
+let fsiExeName () = 
+    if SessionsProperties.useAnyCpuVersion then "fsiAnyCPU.exe" else "fsi.exe"
+
+// Use the VS-extension-installed development path if available, relative to the location of this assembly
+let determineFsiRelativePath1 () =
+    let thisAssemblyDirectory = typeof<Session>.Assembly.Location |> Path.GetDirectoryName
+    Path.Combine(thisAssemblyDirectory,fsiExeName() )
+
+// This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
+let determineFsiRelativePath2 () =
     let thisAssembly : System.Reflection.Assembly = typeof<Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
     let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
     // Use the quick-development path if available    
     Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
 let determineFsiPath () =    
-    // Use the quick-development path if available
-    let fsiRelativePath       = determineFsiRelativePath()        
-    let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with | Some(s) -> s | None -> ""
-    let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
+    // Choose VS extension path, if it exists (for developers)
+    let fsiRelativePath1 = determineFsiRelativePath1()
+    if  File.Exists fsiRelativePath1 then fsiRelativePath1 else
+
     // Choose relative path, if it exists (for developers), otherwise, the installed path.    
-    if  File.Exists(fsiRelativePath) then
-        fsiRelativePath
-    elif File.Exists(fsiRegistryPath) then
-        fsiRegistryPath
-    else
-        raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
+    let fsiRelativePath2 = determineFsiRelativePath2()
+    if  File.Exists fsiRelativePath2 then fsiRelativePath2 else
+
+    // Try the registry key
+    let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with Some(s) -> s | None -> ""
+    let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
+    if File.Exists(fsiRegistryPath) then fsiRegistryPath else
+
+    // Otherwise give up
+    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
 
 let readLinesAsync (reader: System.IO.StreamReader) trigger =
     let buffer = System.Text.StringBuilder(1024)
