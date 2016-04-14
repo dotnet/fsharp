@@ -16,6 +16,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>VisualFSharp.Salsa</AssemblyName>
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
@@ -56,7 +57,9 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-    <Reference Include="Microsoft.VisualStudio.CommonIDE, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.CommonIDE, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+		<HintPath>$(MSBuildProgramFiles32)\Microsoft Visual Studio $(VisualStudioVersion)\Common7\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
+	</Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />

@@ -596,7 +596,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Catch ex As InvalidCastException
                 '// When all else fails assume dll (so they can edit it)
                 OutputType = VSLangProj.prjOutputType.prjOutputTypeLibrary
-            Catch ex As Reflection.TargetInvocationException
+            Catch ex As System.Reflection.TargetInvocationException
                 ' Property must be missing for this project flavor
                 OutputType = VSLangProj.prjOutputType.prjOutputTypeLibrary
             End Try

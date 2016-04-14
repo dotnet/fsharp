@@ -17,6 +17,7 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
