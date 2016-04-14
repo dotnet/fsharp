@@ -336,7 +336,7 @@ type cenv =
       resolvePath: (ILAssemblyRef -> Choice<string,System.Reflection.Assembly> option) }
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
-// REVIEW: This ought to be an adequate substitute for this whole function, but it needs 
+// This ought to be an adequate substitute for this whole function, but it needs 
 // to be thoroughly tested.
 //    Type.GetType(tref.QualifiedName) 
 // []              ,name -> name
@@ -545,7 +545,7 @@ and convTypeAux cenv emEnv preferCreated typ =
     | ILType.Byref eltType      -> let baseT = convTypeAux cenv emEnv preferCreated eltType |> nonNull "convType: byref eltType"
                                    baseT.MakeByRefType()                               |> nonNull "convType: byref" 
     | ILType.TypeVar tv         -> envGetTyvar emEnv tv                                |> nonNull "convType: tyvar" 
-    // REVIEW: complete the following cases.                                                        
+    // Consider completing the following cases:                                                      
     | ILType.Modified (false, _, modifiedTy)  -> convTypeAux cenv emEnv preferCreated modifiedTy
     | ILType.Modified (true, _, _) -> failwith "convType: modreq"
     | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
