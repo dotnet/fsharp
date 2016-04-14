@@ -91,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="typeProviders\build-typeprovider-test.fs" />
+    <Compile Include="typeProviders\builtin\copyFSharpDataTypeProviderDLL.fs" />
     <Compile Include="typeProviders\tests_typeProviders.fs" /> 
   </ItemGroup>
   <ItemGroup>
