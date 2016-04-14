@@ -21,6 +21,89 @@ let requireVSUltimate cfg = attempt {
             // )
     }
 
+module Builtin =
+
+    module EdmxFile = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/EdmxFile")>]
+        let EdmxFile p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+    module ODataService = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/ODataService")>]
+        let oDataService p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+    module SqlDataConnection = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/SqlDataConnection")>]
+        let sqlDataConnection p = check (attempt {
+            let p = FSC_OPT_PLUS_DEBUG
+            let { Directory = dir; Config = cfg } = testContext ()
+
+            let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+            let fileExists = Commands.fileExists dir >> Option.isSome
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+
+            // IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
+            //     echo Test not supported except on Ultimate
+            //     exit /b 0
+            // )
+            do! requireVSUltimate cfg
+
+            // IF EXIST test.exe (
+            //    echo Running test.exe to warm up SQL
+            //    test.exe > nul 2> nul
+            // )
+            do! if fileExists "test.exe"
+                then
+                    // echo Running test.exe to warm up SQL
+                    // test.exe > nul 2> nul
+                    exec ("."/"test.exe") ""
+                else Success ()
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+    module WsdlService = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/WsdlService")>]
+        let wsdlService p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+
 module DiamondAssembly = 
 
     let build cfg dir = attempt {
