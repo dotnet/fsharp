@@ -105,6 +105,7 @@ if /i '%ARG%' == 'ci' (
 
 REM These divide 'ci' into three chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -119,6 +120,7 @@ if /i '%ARG%' == 'ci_part1' (
 )
 
 if /i '%ARG%' == 'ci_part2' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_PORTABLE=1
     set TEST_FSHARPQA_SUITE=1
