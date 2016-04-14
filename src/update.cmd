@@ -35,61 +35,10 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 
-set SN32="%WINSDKNETFXTOOLS%sn.exe"
-set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
 rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
-%SN32% -Vr FSharp.Core,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Build,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Data.TypeProviders,b03f5f7f11d50a3a
-
-%SN32% -Vr fsc,b03f5f7f11d50a3a
-%SN32% -Vr fsi,b03f5f7f11d50a3a
-%SN32% -Vr FsiAnyCPU,b03f5f7f11d50a3a
-
-%SN32% -Vr FSharp.Compiler,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Editor,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.LanguageService,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-%SN32% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
-%SN32% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
-
-if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Build,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Data.TypeProviders,b03f5f7f11d50a3a
-
-    %SN64% -Vr fsc,b03f5f7f11d50a3a
-    %SN64% -Vr fsi,b03f5f7f11d50a3a
-    %SN64% -Vr FsiAnyCPU,b03f5f7f11d50a3a	
-	
-    %SN64% -Vr FSharp.Compiler,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Editor,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.LanguageService,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-    %SN64% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
-    %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
-)
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen

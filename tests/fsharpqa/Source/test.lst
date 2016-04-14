@@ -7,7 +7,7 @@
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
+CodeGen01,NoMT,CodeGen,AttributeTargets				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct

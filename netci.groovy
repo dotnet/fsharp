@@ -15,10 +15,15 @@ def static getBuildJobName(def configuration, def os) {
 }
 
 [true, false].each { isPullRequest ->
-    ['Debug', 'Release'].each { configuration ->
+    ['Debug', 'ci_part1', 'ci_part2'].each { configuration ->
         osList.each { os ->
 
             def lowerConfiguration = configuration.toLowerCase()
+
+            def outputConfiguration = Configuration
+            if (configuration == 'ci_part1' || configuration == 'ci_part2') {
+                outputConfiguration = Release
+            }
 
             // Calculate job name
             def jobName = getBuildJobName(configuration, os)

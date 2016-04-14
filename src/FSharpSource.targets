@@ -9,13 +9,20 @@
        <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
        <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
        <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
+       <UsePublicSign>true</UsePublicSign>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$UsePublicSign)' == ''">
+     <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+     <UseOpenSourceSign>true</UseOpenSourceSign>
+     <SignType>--delaysign+</SignType>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$UsePublicSign)' != ''">
+     <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+     <UseOpenSourceSign>true</UseOpenSourceSign>
+     <SignType>--publicsign+</SignType>
    </PropertyGroup>
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
-      <PropertyGroup>
-         <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
-         <UseOpenSourceSign>true</UseOpenSourceSign>
-      </PropertyGroup>
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
@@ -24,7 +31,7 @@
                  <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
               <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <OtherFlags>$(OtherFlags) $(SignType) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
@@ -33,7 +40,7 @@
             </When>
             <When Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">
               <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <OtherFlags>$(OtherFlags) $(SignType) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
@@ -51,7 +58,7 @@
             </When>
             <Otherwise>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
-                <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <OtherFlags>$(OtherFlags) $(SignType) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
