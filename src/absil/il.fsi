@@ -1193,7 +1193,6 @@ type ILGenericParameterDef =
 
 type ILGenericParameterDefs = ILGenericParameterDef list
 
-// REVIEW: fold this into ILMethodDef
 [<NoComparison; NoEquality; Sealed>]
 type ILLazyMethodBody = 
     member Contents : MethodBody 
