@@ -32,9 +32,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSData.txt">
-      <Link>FSData.txt</Link>
-    </FsSrGen>
+	<FsSrGen Include="FSData.txt" />
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <FsSrGen Include="FSData.txt" />
