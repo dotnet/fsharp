@@ -91,7 +91,6 @@ For **Debug** this corresponds to these steps, which you can run individually fo
 
     msbuild src/fsharp-library-build.proj
     msbuild src/fsharp-compiler-build.proj
-    msbuild src/fsharp-typeproviders-build.proj
     msbuild src/fsharp-compiler-unittests-build.proj
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
@@ -116,7 +115,6 @@ For **Release** this corresponds to these steps, which you can run individually 
 
     msbuild src/fsharp-library-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-unittests-build.proj  /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
