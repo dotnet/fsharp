@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5041" />
+    <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5042" />
+    <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4015" />
+    <TemplateID>Microsoft.FSharp.Data.SQLDataConnection</TemplateID>
+    <ProjectType>FSharp</ProjectType>
+    <RequiredFrameworkVersion>4.0</RequiredFrameworkVersion>
+    <SortOrder>70</SortOrder>
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    <DefaultName>SQLDataConnection.fs</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <References>
+      <Reference>
+        <Assembly>FSharp.Data.TypeProviders</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Data</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Data.Linq</Assembly>
+      </Reference>
+    </References>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.fs">SqlDataConnection.fs</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

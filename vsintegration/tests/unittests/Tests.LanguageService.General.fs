@@ -175,6 +175,105 @@ type UsingMSBuild() =
         let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
         Assert.AreEqual(1, fsi)
 
+    [<Test>]
+    member public this.``PublicSurfaceArea.DotNetReflectionAndTypeProviders``() =
+        let tp = publicTypesInAsm @"FSharp.Data.TypeProviders.dll"
+        Assert.AreEqual(1, tp)  // the 'DataProviders' type that is decorated with [<TypeProvider>] must be public\
+        let curDir = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
+        let script = """
+open Microsoft.FSharp.Core.CompilerServices
+
+let cfg = new TypeProviderConfig(fun _ -> true)
+cfg.IsInvalidationSupported <- false
+cfg.IsHostedExecution <- false
+cfg.ReferencedAssemblies <- Array.create 0 ""
+cfg.ResolutionFolder <- @"c:\"
+cfg.RuntimeAssembly <- ""
+cfg.TemporaryFolder <- ""
+ 
+let tp = new Microsoft.FSharp.Data.TypeProviders.DesignTime.DataProviders(cfg)
+let ipn = tp :> IProvidedNamespace
+let itp = tp :> ITypeProvider
+
+let types = 
+    [   "ODataService"
+        "WsdlService"
+        "SqlDataConnection"
+        "SqlEntityConnection"
+        "DbmlFile"
+        "EdmxFile"
+        ]
+
+for p in types do
+    printfn "%s" p
+    let pType = ipn.ResolveTypeName(p)
+    let odataStaticArgs = itp.GetStaticParameters(pType)
+    for sa in odataStaticArgs do
+        printfn "    %s:%s" sa.Name sa.ParameterType.Name
+        """
+        let expected = """ODataService
+    ServiceUri:String
+    LocalSchemaFile:String
+    ForceUpdate:Boolean
+    ResolutionFolder:String
+    DataServiceCollection:Boolean
+WsdlService
+    ServiceUri:String
+    LocalSchemaFile:String
+    ForceUpdate:Boolean
+    ResolutionFolder:String
+    MessageContract:Boolean
+    EnableDataBinding:Boolean
+    Serializable:Boolean
+    Async:Boolean
+    CollectionType:String
+SqlDataConnection
+    ConnectionString:String
+    ConnectionStringName:String
+    LocalSchemaFile:String
+    ForceUpdate:Boolean
+    Pluralize:Boolean
+    Views:Boolean
+    Functions:Boolean
+    ConfigFile:String
+    DataDirectory:String
+    ResolutionFolder:String
+    StoredProcedures:Boolean
+    Timeout:Int32
+    ContextTypeName:String
+    Serializable:Boolean
+SqlEntityConnection
+    ConnectionString:String
+    ConnectionStringName:String
+    LocalSchemaFile:String
+    Provider:String
+    EntityContainer:String
+    ConfigFile:String
+    DataDirectory:String
+    ResolutionFolder:String
+    ForceUpdate:Boolean
+    Pluralize:Boolean
+    SuppressForeignKeyProperties:Boolean
+DbmlFile
+    File:String
+    ResolutionFolder:String
+    ContextTypeName:String
+    Serializable:Boolean
+EdmxFile
+    File:String
+    ResolutionFolder:String
+"""
+        File.WriteAllText(Path.Combine(curDir, "tmp.fsx"), script)
+        let psi = System.Diagnostics.ProcessStartInfo(Path.Combine(curDir, "fsi.exe"), "-r:FSharp.Data.TypeProviders.dll tmp.fsx")
+        psi.WorkingDirectory <- curDir
+        psi.RedirectStandardOutput <- true
+        psi.UseShellExecute <- false
+        let p = System.Diagnostics.Process.Start(psi)
+        let out = p.StandardOutput.ReadToEnd()
+        p.WaitForExit()
+        let out = out.Replace("\r\n", "\n")
+        let expected = expected.Replace("\r\n", "\n")
+        Assert.AreEqual(expected, out)
 
     [<Test>]
     member public this.``ReconcileErrors.Test1``() = 
