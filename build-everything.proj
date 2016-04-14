@@ -16,11 +16,7 @@
     <ProjectsWithPortableFramework Include="src/fsharp-library-build.proj"           Condition="'$(BUILD_PORTABLE)'=='1'"/>
     <ProjectsWithPortableFramework Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_PORTABLE_COREUNIT)'=='1'" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectsWithDefaultFramework Include="src/fsharp-typeproviders-build.proj"      Condition="'$(BUILD_FSHARP_DATA_TYPEPROVIDERS)'=='1'" />
-  </ItemGroup>
-
+  
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
