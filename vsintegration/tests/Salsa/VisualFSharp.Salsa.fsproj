@@ -57,8 +57,11 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-    <Reference Include="Microsoft.VisualStudio.CommonIDE, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.CommonIDE">
 		<HintPath>$(MSBuildProgramFiles32)\Microsoft Visual Studio $(VisualStudioVersion)\Common7\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
+	</Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.Internal">
+		<HintPath>$(MSBuildProgramFiles32)\Microsoft Visual Studio $(VisualStudioVersion)\Common7\IDE\PrivateAssemblies\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
 	</Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />

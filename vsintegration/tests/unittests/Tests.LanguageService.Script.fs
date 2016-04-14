@@ -1386,17 +1386,23 @@ type UsingMSBuild() as this =
 #if VS_VERSION_DEV15
             "4.4.1.0"
 #endif
+        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+                             | Some(x) -> x
+                             | None -> failwith "Location of binaries folder cannot be found"
+
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
                     <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
+                        <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
                     <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
+                        <HintPath>%s\\FSharp.Compiler.dll</HintPath>
                     </Reference>
-                </ItemGroup>" fsVersion fsVersion)
+                </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
 
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])

@@ -1375,6 +1375,7 @@ module internal VsMocks =
     let vsTargetFrameworkAssemblies35 = vsTargetFrameworkAssembliesN 0x30005u
     let vsTargetFrameworkAssemblies40 = vsTargetFrameworkAssembliesN 0x40000u
     let vsTargetFrameworkAssemblies45 = vsTargetFrameworkAssembliesN 0x40005u
+    let vsTargetFrameworkAssemblies46 = vsTargetFrameworkAssembliesN 0x40006u
     
     let vsFrameworkMultiTargeting =
         { new IVsFrameworkMultiTargeting with
@@ -1565,6 +1566,11 @@ module internal VsMocks =
         sp.AddService(typeof<SVsTargetFrameworkAssemblies>, box vsTargetFrameworkAssemblies45, false)
         sp.AddService(typeof<SVsFrameworkMultiTargeting>, box vsFrameworkMultiTargeting, false)
         sp, ccn
+    let MakeMockServiceProviderAndConfigChangeNotifier46() =
+        let sp, ccn = MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService()
+        sp.AddService(typeof<SVsTargetFrameworkAssemblies>, box vsTargetFrameworkAssemblies46, false)
+        sp.AddService(typeof<SVsFrameworkMultiTargeting>, box vsFrameworkMultiTargeting, false)
+        sp, ccn
 
     // This is the mock thing that all tests, except the multitargeting tests call.
     // By default, let it use the 4.0 assembly version.
@@ -1601,7 +1607,11 @@ module internal VsActual =
     let vsInstallDir =
 #if VS_VERSION_DEV12
         let key = @"SOFTWARE\Microsoft\VisualStudio\12.0"
-#else
+#endif
+#if VS_VERSION_DEV14
+        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
+#endif
+#if VS_VERSION_DEV15
         let key = @"SOFTWARE\Microsoft\VisualStudio\15.0"
 #endif
         let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
