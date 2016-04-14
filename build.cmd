@@ -278,6 +278,7 @@ if '%BUILD_PROTO%' == '1' (
 )
 
 %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
