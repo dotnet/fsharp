@@ -33,4 +33,6 @@ wedgeAssembly/providedJ.dll
 wedgeAssembly/providedK.dll
 wedgeAssembly/provider.dll
 
+builtin/SqlDataConnection/DataDirectory
+builtin/SqlDataConnection/ExampleResolutionFolder
 
