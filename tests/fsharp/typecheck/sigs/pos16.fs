@@ -46,6 +46,11 @@ module UnitOfMeasurePrintfPositiveTests =
     let _ = sprintf "%g" 1.0M<metre>
     let _ = sprintf "%g" 1.0M<m>
     let _ = sprintf "%g" 1.0M<m/s>
+    
+    let _ = sprintf "%M" 1.0M<meter>
+    let _ = sprintf "%M" 1.0M<metre>
+    let _ = sprintf "%M" 1.0M<m>
+    let _ = sprintf "%M" 1.0M<m/s>
 
 module AllowNullLiteralWithArgumentTest = 
 

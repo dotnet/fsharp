@@ -38,8 +38,6 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
-
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen
 

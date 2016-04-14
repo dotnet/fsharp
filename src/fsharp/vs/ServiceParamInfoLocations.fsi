@@ -16,9 +16,12 @@ type internal FSharpNoteworthyParamInfoLocations =
     member LongIdStartLocation : pos
     member LongIdEndLocation : pos
     member OpenParenLocation : pos
-    member TupleEndLocations : pos[]  // locations of commas and close parenthesis (or, last char of last arg, if no final close parenthesis)
-    member IsThereACloseParen : bool   // false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
-    member NamedParamNames : string[]  // null, or a name if an actual named parameter; f(0,a=4,?b=None) would be [|null;"a";"b"|]
+    /// locations of commas and close parenthesis (or, last char of last arg, if no final close parenthesis)
+    member TupleEndLocations : pos[]  
+    /// false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
+    member IsThereACloseParen : bool   
+    /// empty or a name if an actual named parameter; f(0,a=4,?b=None) would be [|null;"a";"b"|]
+    member NamedParamNames : string[]  
 
     static member Find : pos * Ast.ParsedInput -> FSharpNoteworthyParamInfoLocations option
 

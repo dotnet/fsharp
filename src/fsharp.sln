@@ -27,8 +27,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Server.Shar
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core.Unittests", "fsharp\FSharp.Core.Unittests\FSharp.Core.Unittests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Data.TypeProviders", "fsharp\FSharp.Data.TypeProviders\FSharp.Data.TypeProviders.fsproj", "{CB7D20C4-6506-406D-9144-5342C3595F03}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiAnyCPU", "fsharp\fsiAnyCpu\FsiAnyCPU.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Unittests", "fsharp\FSharp.Compiler.Unittests\FSharp.Compiler.Unittests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
@@ -77,10 +75,6 @@ Global
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88E2D422-6852-46E3-A740-83E391DC7973}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CB7D20C4-6506-406D-9144-5342C3595F03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CB7D20C4-6506-406D-9144-5342C3595F03}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CB7D20C4-6506-406D-9144-5342C3595F03}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CB7D20C4-6506-406D-9144-5342C3595F03}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}.Release|Any CPU.ActiveCfg = Release|x86
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

@@ -39,7 +39,7 @@
       <Link>FSIstrings.txt</Link>
     </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
-      <Link>Utilities/assemblyinfo.fsi.exe.fs</Link>
+      <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection/reshapedreflection.fs</Link>
