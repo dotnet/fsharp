@@ -119,6 +119,13 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\ODataServiceConnection\ODataServiceConnection.csproj">
+      <Project>{17716AF4-D439-4C74-8326-475FB1847DF2}</Project>
+      <Name>ODataServiceConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
     <ProjectReference Include="..\..\ItemTemplates\ScriptFile\ScriptFile.csproj">
       <Project>{A333B85A-DC23-49B6-9797-B89A7951E92D}</Project>
       <Name>ScriptFile</Name>
@@ -133,9 +140,30 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\SqlDataConnection\SqlDataConnection.csproj">
+      <Project>{35E83EDF-CC5A-441D-8949-17AACC463CA4}</Project>
+      <Name>SqlDataConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\SqlEntityConnection\SqlEntityConnection.csproj">
+      <Project>{A2CDA945-EF31-4C37-A063-BD1E2B3938EB}</Project>
+      <Name>SqlEntityConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
     <ProjectReference Include="..\..\ItemTemplates\TextFile\TextFile.csproj">
       <Project>{D11FC318-8F5D-4C8C-9287-AB40A016D13C}</Project>
       <Name>TextFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.csproj">
+      <Project>{7FDF9571-B7DF-4F09-BD5E-12BDDF4FA520}</Project>
+      <Name>WsdlServiceConnection</Name>
       <VSIXSubPath>ItemTemplates</VSIXSubPath>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>

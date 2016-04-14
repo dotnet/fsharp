@@ -7,9 +7,13 @@
   <ItemGroup>
     <ProjectFiles Include="ItemTemplates\AppConfig\AppConfig.csproj" />
     <ProjectFiles Include="ItemTemplates\CodeFile\CodeFile.csproj" />
+    <ProjectFiles Include="ItemTemplates\ODataServiceConnection\ODataServiceConnection.csproj" />
     <ProjectFiles Include="ItemTemplates\ScriptFile\ScriptFile.csproj" />
     <ProjectFiles Include="ItemTemplates\SignatureFile\SignatureFile.csproj" />
+    <ProjectFiles Include="ItemTemplates\SqlDataConnection\SqlDataConnection.csproj" />
+    <ProjectFiles Include="ItemTemplates\SqlEntityConnection\SqlEntityConnection.csproj" />
     <ProjectFiles Include="ItemTemplates\TextFile\TextFile.csproj" />
+    <ProjectFiles Include="ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.csproj" />
     <ProjectFiles Include="ItemTemplates\XMLFile\XMLFile.csproj" />
   </ItemGroup>
 
