@@ -22,7 +22,6 @@ exit /b 1
 :ok
 
 set BINDIR=%~dp0..\%1\net40\bin
-
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
@@ -38,18 +37,3 @@ if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% 
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
-if /i not "%2"=="-ngen" goto :donengen
-
-"%NGEN32%" install "%BINDIR%\fsc.exe" /queue:1
-"%NGEN32%" install "%BINDIR%\fsi.exe" /queue:1
-"%NGEN32%" install "%BINDIR%\FSharp.Build.dll" /queue:1
-"%NGEN32%" executeQueuedItems 1
-
-if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" /queue:1
-    "%NGEN64%" install "%BINDIR%\FSharp.Build.dll" /queue:1
-    "%NGEN64%" executeQueuedItems 1
-)
-
-:donengen

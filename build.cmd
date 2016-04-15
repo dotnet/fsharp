@@ -31,7 +31,6 @@ set BUILD_NET40=1
 set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
-set BUILD_FSHARP_DATA_TYPEPROVIDERS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 
@@ -82,7 +81,6 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
@@ -99,7 +97,6 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -114,11 +111,11 @@ if /i '%ARG%' == 'ci' (
 
 REM These divide 'ci' into three chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -129,6 +126,7 @@ if /i '%ARG%' == 'ci_part1' (
 )
 
 if /i '%ARG%' == 'ci_part2' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -188,7 +186,6 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
-echo BUILD_FSHARP_DATA_TYPEPROVIDERS=%BUILD_FSHARP_DATA_TYPEPROVIDERS%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
@@ -290,6 +287,7 @@ if '%BUILD_PROTO%' == '1' (
 )
 
 %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
