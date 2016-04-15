@@ -52,7 +52,7 @@
   </ItemGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(MSBuildProjectDirectory)\$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
     <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY=True,$(DefineConstants)</DefineConstants>
     <StrongNames>true</StrongNames>
     <SkipSigning>false</SkipSigning>
