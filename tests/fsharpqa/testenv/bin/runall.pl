@@ -3879,7 +3879,7 @@ sub launch_compiler_host
                            0,
                            CREATE_NO_WINDOW,
                            ".")|| die "Error starting compiler server";
-                           
+
     $ENV{HOSTED_COMPILER_PORT} = $compilerServerPort;
   }
 }

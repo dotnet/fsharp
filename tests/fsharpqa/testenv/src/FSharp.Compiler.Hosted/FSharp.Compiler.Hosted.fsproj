@@ -13,8 +13,8 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OpenBuild Condition=" '$(OpenBuild)' == '' ">True</OpenBuild>
     <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
-    <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
-    <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
+    <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --publicsign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
+    <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --publicsign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>FSharp.Compiler.Hosted</Name>
   </PropertyGroup>
