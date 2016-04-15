@@ -1,0 +1,32 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectFiles Include="VisualFSharpVsix\VisualFSharpVsix.csproj"  />
+  </ItemGroup>
+
+  <Target Name="Build">
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Build" Properties="BuildSku=Local" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Build" Properties="BuildSku=Pro" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Build" Properties="BuildSku=Desktop" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Build" Properties="BuildSku=Web" />
+  </Target>
+
+  <Target Name="Rebuild">
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Rebuild" Properties="BuildSku=Local" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Rebuild" Properties="BuildSku=Pro" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Rebuild" Properties="BuildSku=Desktop" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Rebuild" Properties="BuildSku=Web" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Clean" Properties="BuildSku=Local" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Clean" Properties="BuildSku=Pro" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Clean" Properties="BuildSku=Desktop" />
+    <MSBuild Projects="VisualFSharpVsix\VisualFSharpVsix.csproj"  Targets="Clean" Properties="BuildSku=Web" />
+  </Target>
+</Project>
+

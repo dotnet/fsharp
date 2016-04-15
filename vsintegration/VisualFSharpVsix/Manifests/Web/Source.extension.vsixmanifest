@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="WDExpressDeployTemplates..998e13a9-9f80-4bb6-9df9-3a20ae3fe28e" Version="4.0.2" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="WDExpressDeployTemplates..998e13a9-9f80-4bb6-9df9-3a20ae3fe28e" Version="15.4.1.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools Templates</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio Express for Windows Desktop</Description>
   </Metadata>
@@ -13,6 +13,20 @@
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
   </Dependencies>
   <Assets>
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.VS.FSI" Path="|FSharp.VS.FSI|" AssemblyName="|FSHarp.VS.FSI;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Compiler" Path="|FSharp.Compiler|" AssemblyName="|FSharp.Compiler;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Compiler.Server.Shared" Path="|FSharp.Compiler.Server.Shared|" AssemblyName="|FSharp.Compiler.Server.Shared;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Core" Path="|FSharp.Core|" AssemblyName="|FSharp.Core|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.LanguageService.Compiler" Path="|FSharp.LanguageService.Compiler|" AssemblyName="|FSharp.LanguageService.Compiler;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.LanguageService" Path="|FSharp.LanguageService|" AssemblyName="|FSharp.LanguageService;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.LanguageService.Base" Path="|FSharp.LanguageService.Base|" AssemblyName="|FSharp.LanguageService.Base;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" AssemblyName="|ProjectSystem.Base;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.PropertiesPages" Path="|FSharp.PropertiesPages|" AssemblyName="|FSharp.PropertiesPages;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="ProjectSystem" Path="|ProjectSystem|" AssemblyName="|ProjectSystem;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FsiAnyCPU" Path="|FsiAnyCPU|"  AssemblyName="|FsiAnyCPU|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="Fsi" Path="|Fsi|"  AssemblyName="|Fsi|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Compiler.Interactive.Settings" Path="|FSharp.Compiler.Interactive.Settings|" AssemblyName="|FSharp.Compiler.Interactive.Settings;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" d:ProjectName="AppConfig" d:TargetPath="|AppConfig;TemplateProjectOutputGroup|" Path="ItemTemplates" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" d:ProjectName="CodeFile" d:TargetPath="|CodeFile;TemplateProjectOutputGroup|" Path="ItemTemplates" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" d:ProjectName="ODataServiceConnection" d:TargetPath="|ODataServiceConnection;TemplateProjectOutputGroup|" Path="ItemTemplates" d:VsixSubPath="ItemTemplates" />
