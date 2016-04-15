@@ -6,7 +6,7 @@
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
+CodeGen01,NoMT,CodeGen,AttributeTargets				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions
@@ -241,6 +241,27 @@ Conformance08			Conformance\UnitsOfMeasure\WithOOP
 
 NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
 NoHostedCompiler,TypeProviders01			TypeProviders\Attributes
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile
+NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\Diagnostics
+NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\StaticParam
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlDataConnection\FunctionsAndSProc
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlDataConnection\GeneratedSql
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlDataConnection\StaticParams
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlDataConnection\TypeRelocation
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\Diagnostics
+NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\GetDataContext
+
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\StaticParams
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\TypeRelocation
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Diagnostics
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\OutRefParams
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Runtime\dev.virtualearth.net
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Runtime\webservices.amazon.com
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Runtime\www.w3schools.com
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Runtime\www.xignite.com
+NoHostedCompiler,TypeProviders02			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\SimpleDataContext
+
+NoHostedCompiler,TypeProviders03			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\StaticParams
 NoHostedCompiler,TypeProviders03			TypeProviders\Events
 NoHostedCompiler,TypeProviders03			TypeProviders\Fields\Literals
 NoHostedCompiler,TypeProviders03			TypeProviders\Generics

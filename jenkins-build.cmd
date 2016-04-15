@@ -17,6 +17,14 @@ if /I "%BUILD_PROFILE%" == "release" (
     goto :ARGUMENTS_OK
 )
 
+if /I "%BUILD_PROFILE%" == "ci_part1" (
+    set BUILD_ARGS=release ci_part1
+    goto :ARGUMENTS_OK
+)
+if /I "%BUILD_PROFILE%" == "ci_part2" (
+    set BUILD_ARGS=release ci_part2
+    goto :ARGUMENTS_OK
+)
 echo '%BUILD_PROFILE%' is not a valid profile
 goto :USAGE
 

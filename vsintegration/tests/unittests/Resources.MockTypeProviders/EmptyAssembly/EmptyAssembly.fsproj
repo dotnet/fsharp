@@ -32,6 +32,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSData.txt" >
+      <Link>FSData.txt</Link>
+    </FsSrGen>
     <Compile Include="EmptyAssembly.fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

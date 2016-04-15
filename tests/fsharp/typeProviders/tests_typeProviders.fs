@@ -21,6 +21,89 @@ let requireVSUltimate cfg = attempt {
             // )
     }
 
+module Builtin =
+
+    module EdmxFile = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/EdmxFile")>]
+        let EdmxFile p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+    module ODataService = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/ODataService")>]
+        let oDataService p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+    module SqlDataConnection = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/SqlDataConnection")>]
+        let sqlDataConnection p = check (attempt {
+            let p = FSC_OPT_PLUS_DEBUG
+            let { Directory = dir; Config = cfg } = testContext ()
+
+            let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+            let fileExists = Commands.fileExists dir >> Option.isSome
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+
+            // IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
+            //     echo Test not supported except on Ultimate
+            //     exit /b 0
+            // )
+            do! requireVSUltimate cfg
+
+            // IF EXIST test.exe (
+            //    echo Running test.exe to warm up SQL
+            //    test.exe > nul 2> nul
+            // )
+            do! if fileExists "test.exe"
+                then
+                    // echo Running test.exe to warm up SQL
+                    // test.exe > nul 2> nul
+                    exec ("."/"test.exe") ""
+                else Success ()
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+    module WsdlService = 
+
+        [<Test; FSharpSuiteScriptPermutations("typeProviders/builtin/WsdlService")>]
+        let wsdlService p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            //call %~d0%~p0..\copyFSharpDataTypeProviderDLL.cmd
+            do! CopyFSharpDataTypeProviderDLL.copy cfg dir
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
+
+
 module DiamondAssembly = 
 
     let build cfg dir = attempt {
@@ -252,72 +335,72 @@ module HelloWorld =
         })
 
 
-
-module HelloWorldCSharp = 
-
-    let build cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
-        let del = Commands.rm dir
-        let gacutil = Commands.gacutil exec cfg.GACUTIL
-
-        // if EXIST magic.dll del magic.dll
-        del "magic.dll"
-
-        // "%FSC%" --out:magic.dll -a magic.fs --keyfile:magic.snk
-        do! fsc "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
-
-        // REM == If we are running this test on a lab machine, we may not be running from an elev cmd prompt
-        // REM == In that case, ADMIN_PIPE is set to the tool to invoke the command elevated.
-        // IF DEFINED ADMIN_PIPE %ADMIN_PIPE% %GACUTIL% /if magic.dll
-        
-        //REVIEW check ADMIN_PIPE and elevated gac
-        ignore "useless ADMIN_PIPE, test are run as administrator"
-
-        // if EXIST provider.dll del provider.dll
-        del "provider.dll"
-
-        // %CSC% /out:provider.dll /target:library "/r:%FSCOREDLLPATH%" /r:magic.dll provider.cs
-        do! csc """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
-
-        // "%GACUTIL%" /if magic.dll
-        do! gacutil "/if" "magic.dll"
-
-        // "%FSC%" %fsc_flags% /debug+ /r:provider.dll /optimize- test.fsx
-        do! fsc "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
-
-        }
-
-    let run cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
-
-        // "%PEVERIFY%" magic.dll
-        do! peverify "magic.dll"
-
-        // "%PEVERIFY%" provider.dll
-        do! peverify "provider.dll"
-
-        // "%PEVERIFY%" test.exe
-        do! peverify "test.exe"
-
-        // test.exe
-        do! exec ("."/"test.exe") ""
-
-        }
-
-    [<Test; FSharpSuiteTest("typeProviders/helloWorldCSharp")>]
-    let helloWorldCSharp () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        do! build cfg dir
-
-        do! run cfg dir
-                
-        })
+// Test requires admin mode for gacutil ---
+//module HelloWorldCSharp = 
+//
+//    let build cfg dir = attempt {
+//
+//        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+//        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+//        let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
+//        let del = Commands.rm dir
+//        let gacutil = Commands.gacutil exec cfg.GACUTIL
+//
+//        // if EXIST magic.dll del magic.dll
+//        del "magic.dll"
+//
+//        // "%FSC%" --out:magic.dll -a magic.fs --keyfile:magic.snk
+//        do! fsc "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
+//
+//        // REM == If we are running this test on a lab machine, we may not be running from an elev cmd prompt
+//        // REM == In that case, ADMIN_PIPE is set to the tool to invoke the command elevated.
+//        // IF DEFINED ADMIN_PIPE %ADMIN_PIPE% %GACUTIL% /if magic.dll
+//        
+//        //REVIEW check ADMIN_PIPE and elevated gac
+//        ignore "useless ADMIN_PIPE, test are run as administrator"
+//
+//        // if EXIST provider.dll del provider.dll
+//        del "provider.dll"
+//
+//        // %CSC% /out:provider.dll /target:library "/r:%FSCOREDLLPATH%" /r:magic.dll provider.cs
+//        do! csc """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
+//
+//        // "%GACUTIL%" /if magic.dll
+//        do! gacutil "/if" "magic.dll"
+//
+//        // "%FSC%" %fsc_flags% /debug+ /r:provider.dll /optimize- test.fsx
+//        do! fsc "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
+//
+//        }
+//
+//    let run cfg dir = attempt {
+//
+//        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+//        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
+//
+//        // "%PEVERIFY%" magic.dll
+//        do! peverify "magic.dll"
+//
+//        // "%PEVERIFY%" provider.dll
+//        do! peverify "provider.dll"
+//
+//        // "%PEVERIFY%" test.exe
+//        do! peverify "test.exe"
+//
+//        // test.exe
+//        do! exec ("."/"test.exe") ""
+//
+//        }
+//
+//    [<Test; FSharpSuiteTest("typeProviders/helloWorldCSharp")>]
+//    let helloWorldCSharp () = check (attempt {
+//        let { Directory = dir; Config = cfg } = testContext ()
+//
+//        do! build cfg dir
+//
+//        do! run cfg dir
+//                
+//        })
 
 
 
