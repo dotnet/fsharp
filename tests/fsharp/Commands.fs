@@ -83,9 +83,34 @@ let ngen exec (ngenExe: FilePath) assemblies =
     |> Seq.tryHead
     |> function None -> CmdResult.Success | Some res -> res
 
+let mutable hostlock = new Object()
+let mutable hostProcess = null
+let mutable hostPort = ""
+let mutable hostPath = ""
+
+let compilerHost fscPath =
+    if hostProcess = null then
+        lock hostlock (fun () ->
+            if hostProcess = null then
+                hostPath
+                let result = ref None
+                let lastLine = function null -> () | l -> result := Some l
+                let cmdArgs = { RedirectOutput = Some lastLine; RedirectError = None; RedirectInput = None }
+                let p = Process.start cmdArgs hostPath Map.empty "HostedCompilerServer.exe" port
+                if p <> null && hostProcess = null then hostProcess <- p)
+
 let fsc exec (fscExe: FilePath) flags srcFiles =
     // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml
+    if hostProcess = null then
+        let host = Path.Combine(Path.GetDirectoryName(fscExe), 
+        compilerHost hostPath
+
+
+//    if hostProcess = null then 
+        // No hostServer so run the compiler
     exec fscExe (sprintf "%s %s" flags (srcFiles |> Seq.ofList |> String.concat " "))
+//    else
+        // try and access the compiler server
 
 let csc exec cscExe flags srcFiles =
     exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
@@ -115,7 +140,7 @@ let peverify exec peverifyExe flags path =
 
 let createTempDir () =
     let path = Path.GetTempFileName ()
-    File.Delete path
+    File.Delete path    
     Directory.CreateDirectory path |> ignore
     path
 
