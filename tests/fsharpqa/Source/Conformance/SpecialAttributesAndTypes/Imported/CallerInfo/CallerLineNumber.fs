@@ -9,6 +9,6 @@ type MyTy() =
 module Program =
     [<EntryPoint>]
     let main (_:string[]) =
-        match MyTy.GetCallerLineNumber() with
-        | Some(12) -> 0
+        match MyTy.GetCallerLineNumber(), MyTy.GetCallerLineNumber(42) with
+        | Some(12), Some(42) -> 0
         | _ -> 1
