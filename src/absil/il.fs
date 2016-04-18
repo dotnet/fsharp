@@ -169,8 +169,6 @@ let splitTypeNameRight nm =
 // --------------------------------------------------------------------
 
 /// This is used to store event, property and field maps.
-///
-/// Review: this is not such a great data structure.
 type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, lazyItems : Lazy<'Data list>) = 
 
     let quickMap= 
@@ -315,9 +313,9 @@ let sha1HashBytes s = SHA1.sha1HashBytes s
 // THis is because many allocations of these small lists appear in memory logs.
 //
 // The "obviouos" step is to use arrays instead of lists. However, this is routinely and surprisingly disappointing.  
-// As a result, we haven’t enabled the use of arrays: we had expected this change to give a perf gain, 
+// As a result, we haven't enabled the use of arrays: we had expected this change to give a perf gain, 
 // but it does not!  It even gives a small perf loss. We've tried this approach on several other occasions 
-// for other data structures and each time been surprised that there’s no perf gain. It's possible that
+// for other data structures and each time been surprised that there's no perf gain. It's possible that
 // arrays-of-references are just not as fast as we expect here: either the runtime check on assignment 
 // into the array, or some kind of write barrier may be degrading performance. 
 //
@@ -438,7 +436,7 @@ type AssemblyRefData =
       assemRefVersion: ILVersionInfo option;
       assemRefLocale: Locale option; } 
 
-/// Global state: table of all assembly references keyed by AssemblyRefData
+/// Global state: table of all assembly references keyed by AssemblyRefData.
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
 let compareVersions x y =
@@ -612,7 +610,7 @@ and ILArrayShapeStatics() =
     static let singleDimensional = ILArrayShape [(Some 0, None)]    
     static member SingleDimensional = singleDimensional
 
-/// Calling conventions.  These are used in method pointer types.
+/// Calling conventions. These are used in method pointer types.
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
 type ILArgConvention = 
     | Default
@@ -640,7 +638,7 @@ type ILCallingConv =
     static member Instance = ILCallingConvStatics.Instance
     static member Static = ILCallingConvStatics.Static
 
-/// Static storage to amortize the allocation of ILCallingConv.Instance and ILCallingConv.Static
+/// Static storage to amortize the allocation of <c>ILCallingConv.Instance</c> and <c>ILCallingConv.Static</c>.
 and ILCallingConvStatics() = 
     static let instanceCallConv = Callconv(ILThisConvention.Instance,ILArgConvention.Default)
     static let staticCallConv =  Callconv(ILThisConvention.Static,ILArgConvention.Default)
@@ -729,7 +727,7 @@ and
     [<StructuralEquality; StructuralComparison>]
     ILTypeSpec = 
     { tspecTypeRef: ILTypeRef;    
-      /// The type instantiation if the type is generic
+      /// The type instantiation if the type is generic.
       tspecInst: ILGenericArgs }    
     member x.TypeRef=x.tspecTypeRef
     member x.Scope=x.TypeRef.Scope
@@ -1876,8 +1874,6 @@ type ILModuleDef =
 // when clashes occur...
 // -------------------------------------------------------------------- 
 
-
-
 let mkILEmptyGenericParams = ([]: ILGenericParameterDefs)
 let emptyILGenericArgsList = ([ ]: ILType list)
 
@@ -2153,7 +2149,7 @@ let exitsOfCode c = CodeLabels.toList (exitsOfCodeAsSet c)
 /// Finds all labels defined within this code block, seeing through restrictions.
 /// This assumes that labels are unique within the code blocks, even if hidden behind restrictions.
 ///
-// Note: Repeats in the list indicate this invariant is broken.
+/// Repeats in the list indicate this invariant is broken.
 let rec accLabelsOfCode acc c =
     match c with
     | ILBasicBlock bb        -> bb.Label::acc
@@ -2180,9 +2176,9 @@ let labelsOfCode code = accLabelsOfCode [] code
 From the ECMA spec:
 
 There are only two ways to enter a try block from outside its lexical body:
- - Branching to or falling into the try block’s first instruction. The branch may be made using a 37
+ - Branching to or falling into the try block's first instruction. The branch may be made using a 37
 conditional branch, an unconditional branch, or a leave instruction. 38
- - Using a leave instruction from that try’s catch block. In this case, correct CIL code may 39
+ - Using a leave instruction from that try's catch block. In this case, correct CIL code may 39
 branch to any instruction within the try block, not just its first instruction, so long as that 40
 branch target is not protected by yet another try, nested withing the first 
 *)
@@ -2481,7 +2477,7 @@ let tname_RuntimeMethodHandle = "System.RuntimeMethodHandle"
 let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 
 /// Represents the capabilities of target framework profile.
-/// Different profiles may omit some types or contain them in different assemblies
+/// Different profiles may omit some types or contain them in different assemblies.
 type IPrimaryAssemblyTraits = 
     
     abstract TypedReferenceTypeScopeRef : ILScopeRef option
@@ -2589,9 +2585,9 @@ let mkNormalCallconstraint (ty,mspec) = I_callconstraint (Normalcall, ty, mspec,
 let mkNormalNewobj mspec =  I_newobj (mspec, None)
 
 /// Comment on common object cache sizes:
-/// mkLdArg - I can’t imagine any IL method we generate needing more than this
-/// mkLdLoc - I tried 256, and there were LdLoc allocations left, so I upped it o 512. I didn’t check again.
-/// mkStLoc - it should be the same as LdLoc  (where there’s a LdLoc there must be a StLoc)
+/// mkLdArg - I can't imagine any IL method we generate needing more than this
+/// mkLdLoc - I tried 256, and there were LdLoc allocations left, so I upped it o 512. I didn't check again.
+/// mkStLoc - it should be the same as LdLoc  (where there's a LdLoc there must be a StLoc)
 /// mkLdcInt32 - just a guess
 
 let ldargs = [| for i in 0 .. 128 -> I_ldarg (uint16 i) |]
@@ -2912,7 +2908,6 @@ let isILDoubleTy       ty = typ_is_value_mscorlib_typ ty tname_Double
 // Rescoping
 // -------------------------------------------------------------------- 
 
-
 let qrescope_scoref scoref scoref_old = 
     match scoref,scoref_old with 
     | _,ILScopeRef.Local -> Some scoref
@@ -3051,7 +3046,6 @@ type ILFieldSpec with
 // Make a method mbody
 // -------------------------------------------------------------------- 
 
-
 let mkILMethodBody (zeroinit,locals,maxstack,code,tag) = 
   { IsZeroInit=zeroinit;
     MaxStack=maxstack;
@@ -3120,6 +3114,7 @@ let mkILNonGenericEmptyCtor tag superTy =
 // Make a static, top level monomophic method - very useful for
 // creating helper ILMethodDefs for internal use.
 // -------------------------------------------------------------------- 
+
 let mkILStaticMethod (genparams,nm,access,args,ret,impl) = 
     { GenericParams=genparams;
       Name=nm;
@@ -3797,7 +3792,7 @@ let blockForInnerTrySpec (codeOffsetView:CodeOffsetViewOfLabelledItems,
         let newBlock =  maker (tryBlock,clauseEntryLabel,clauseBlock)
         // None of the entries to the clause block are visible outside the 
         // entire try-clause construct, nor the other entries to the try block 
-        // apart from the one at the. top 
+        // apart from the one at the top. 
         let newStarts = CodeLabels.diff remainingBasicBlockStarts (CodeLabels.union tryHiddn (entriesOfCodeAsSet clauseBlock))
         // Now return the new block, the remaining blocks and the new set 
         // of entries. 
@@ -3902,7 +3897,7 @@ let doStructure' (codeOffsetView:CodeOffsetViewOfLabelledItems,
 
             
 // REVIEW: this function shows up on performance traces. If we eliminated the last ILX->IL rewrites from the
-// F# compiler we could get rid of this structured code representation from Abstract IL altogether, and 
+// F# compiler we could get rid of this structured code representation from Abstract IL altogether and 
 // never convert F# code into this form.
 let buildILCode methName lab2pc instrs tryspecs localspecs =
 
@@ -4005,12 +4000,12 @@ let buildILCode methName lab2pc instrs tryspecs localspecs =
         let computeCoveredBlocks ((start_pc,end_pc) as range) (blocks: Zmap<int,((int*int) * ILCode) list> ) =
             // It is assumed that scopes never overlap.
             // locinfo scopes could overlap if there is a bug elsewhere.
-            // If overlaps are discovered, an exception is raised. see NOTE#overlap.
+            // If overlaps are discovered, an exception is raised. see NOTE: #overlap.
             let pcCovered,blocks = popRangeM start_pc (end_pc - 1) blocks
             let coveredBlocks = pcCovered |> List.concat
             // Look for bad input, e.g. overlapping locinfo scopes. 
             let overlapBlocks = List.filter (inside range >> not) coveredBlocks
-            if not (isNil overlapBlocks) then notFound(); (* see NOTE#overlap *)
+            if not (isNil overlapBlocks) then notFound(); (* see NOTE: #overlap *)
             if sanityCheck then (
               let assertIn  block = assert (inside range block)
               let assertOut block = assert (not (inside range block))
@@ -4042,7 +4037,7 @@ let buildILCode methName lab2pc instrs tryspecs localspecs =
             try 
                 doStructure (specs1 @ specs2) (bblocks,bbstartToCodeLabelMap.BasicBlockStartCodeLabels) 
             with :? KeyNotFoundException->
-                // NOTE#overlap.
+                // NOTE: #overlap.
                 // Here, "Not_found" indicates overlapping scopes were found.
                 // Maybe the calling code got the locspecs scopes wrong.
                 // Try recovery by discarding locspec info...
@@ -4223,7 +4218,6 @@ let sigptr_get_serstring_possibly_null  bytes sigptr =
 // Get the public key token from the public key.
 //---------------------------------------------------------------------
 
-
 let mkRefToILAssembly (m: ILAssemblyManifest) = 
     ILAssemblyRef.Create(m.Name, None, (match m.PublicKey with Some k -> Some (PublicKey.KeyAsToken(k)) | None -> None), m.Retargetable, m.Version, m.Locale)
 
@@ -4328,7 +4322,7 @@ let rec encodeCustomAttrElemType x =
           Array.append [| et_SZARRAY |] (encodeCustomAttrElemType elemType)
     | _ ->  failwith "encodeCustomAttrElemType: unrecognized custom element type"
 
-/// Given a custom attribute element, work out the type of the .NET argument for that element
+/// Given a custom attribute element, work out the type of the .NET argument for that element.
 let rec encodeCustomAttrElemTypeForObject x = 
     match x with
     | ILAttribElem.String _  -> [| et_STRING |]
@@ -4519,7 +4513,7 @@ type ILGlobals with
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 
-// Bug 2129. Requests attributes to be added to compiler generated methods 
+// Requests attributes to be added to compiler generated methods.
 let addGeneratedAttrs ilg (attrs: ILAttributes) = 
     let attribs = 
        match ilg.generatedAttribsCache with 
@@ -4542,13 +4536,13 @@ let addFieldNeverAttrs ilg (fdef:ILFieldDef) = {fdef with CustomAttrs = add_neve
 
 
 // PermissionSet is a 'blob' having the following format:
-// • A byte containing a period (.).
-// • A compressed int32 containing the number of attributes encoded in the blob.
-// • An array of attributes each containing the following:
-// o A String, which is the fully-qualified type name of the attribute. (Strings are encoded
-// as a compressed int to indicate the size followed by an array of UTF8 characters.)
-// o A set of properties, encoded as the named arguments to a custom attribute would be (as
-// in §23.3, beginning with NumNamed).
+// - A byte containing a period (.).
+// - A compressed int32 containing the number of attributes encoded in the blob.
+// - An array of attributes each containing the following:
+// - A String, which is the fully-qualified type name of the attribute. (Strings are encoded
+//      as a compressed int to indicate the size followed by an array of UTF8 characters.)
+// - A set of properties, encoded as the named arguments to a custom attribute would be (as
+//      in Â§23.3, beginning with NumNamed).
 let mkPermissionSet (ilg: ILGlobals) (action,attributes: list<(ILTypeRef * (string * ILType * ILAttribElem) list)>) = 
     let bytes = 
         [| yield (byte '.');
@@ -4601,9 +4595,9 @@ type ILTypeSigParser(tstring : string) =
     // mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
     //
     // Note that 
-    //   • Since we're only reading valid IL, we assume that the signature is properly formed
-    //   • For type parameters, if the type is non-local, it will be wrapped in brackets ([])
-    //   • Still needs testing with jagged arrays and byref parameters
+    //   Since we're only reading valid IL, we assume that the signature is properly formed
+    //   For type parameters, if the type is non-local, it will be wrapped in brackets ([])
+    //   Still needs testing with jagged arrays and byref parameters
     member private x.ParseType() =
 
         // Does the type name start with a leading '['?  If so, ignore it

@@ -12,7 +12,7 @@ open System.Collections.Generic
 /// The type doesn't support structural hashing or comparison.
 type internal QueueList<'T>(firstElementsIn: FlatList<'T>, lastElementsRevIn:  'T list, numLastElementsIn: int) = 
     let numFirstElements = firstElementsIn.Length 
-    // Push the lastElementsRev onto the firstElements every so often
+    // Push the lastElementsRev onto the firstElements every so often.
     let push = numLastElementsIn > numFirstElements / 5
     
     // Compute the contents after pushing.
@@ -20,7 +20,7 @@ type internal QueueList<'T>(firstElementsIn: FlatList<'T>, lastElementsRevIn:  '
     let lastElementsRev = if push then [] else lastElementsRevIn
     let numLastElements = if push then 0 else numLastElementsIn
 
-    // Compute the last elements on demand
+    // Compute the last elements on demand.
     let lastElements() = if push then [] else List.rev lastElementsRev
 
     static let empty = QueueList<'T>(FlatList.empty, [], 0)
@@ -32,11 +32,11 @@ type internal QueueList<'T>(firstElementsIn: FlatList<'T>, lastElementsRevIn:  '
     member internal x.FirstElements = firstElements
     member internal x.LastElements = lastElements()
 
-    /// Note this operation is O(1), unless a push happens, which is rare 
+    /// This operation is O(1), unless a push happens, which is rare.
     member x.AppendOne(y) = QueueList(firstElements, y :: lastElementsRev, numLastElements+1)
     member x.Append(ys:seq<_>) = QueueList(firstElements, (List.rev (Seq.toList ys) @ lastElementsRev), numLastElements+1)
     
-    /// Note this operation is O(n) anyway, so executing ToFlatList() here is OK
+    /// This operation is O(n) anyway, so executing ToFlatList() here is OK
     interface IEnumerable<'T> with 
         member x.GetEnumerator() : IEnumerator<'T> = (x.ToFlatList() :> IEnumerable<_>).GetEnumerator()
     interface IEnumerable with 
