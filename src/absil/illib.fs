@@ -387,7 +387,7 @@ module List =
           | _ -> finished <- true
         List.rev r, s
 
-    // note: not tail recursive 
+    // Not tail recursive 
     let rec mapFoldBack f l s = 
         match l with 
         | [] -> ([],s)
@@ -422,14 +422,14 @@ module List =
 
     let singleton x = [x]
 
-    // note: must be tail-recursive 
+    // NOTE: must be tail-recursive 
     let rec private foldMapAux f z l acc =
       match l with
       | []    -> z,List.rev acc
       | x::xs -> let z,x = f z x
                  foldMapAux f z xs (x::acc)
                  
-    // note: must be tail-recursive 
+    // NOTE: must be tail-recursive 
     // REVIEW: systematically eliminate foldMap/mapFold duplication
     let foldMap f z l = foldMapAux f z l []
 
