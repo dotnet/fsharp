@@ -15,7 +15,7 @@ def static getBuildJobName(def configuration, def os) {
 }
 
 [true, false].each { isPullRequest ->
-    ['Debug', 'Release_ci_part1', Release_ci_part2].each { configuration ->
+    ['Debug', 'Release_ci_part1', 'Release_ci_part2'].each { configuration ->
         osList.each { os ->
 
             def lowerConfiguration = configuration.toLowerCase()
