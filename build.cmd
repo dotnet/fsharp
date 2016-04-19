@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|build^|debug^|release^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
+echo build.cmd ^<all^|proto^|build^|debug^|release^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
 echo.
 echo No arguments default to 'build' 
 echo.
@@ -79,11 +79,28 @@ if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_CORECLR=1
+
     set TEST_COMPILERUNIT=1
     set TEST_PORTABLE_COREUNIT=1
+    set TEST_CORECLR=1
     set TEST_VS=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
+)
+
+if /i '%ARG%' == 'proto' (
+    set BUILD_PROTO=1
+    set BUILD_PORTABLE=0
+    set BUILD_VS=0
+    set BUILD_CORECLR=0
+
+    set TEST_COMPILERUNIT=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
 )
 
 REM Same as 'all' but smoke testing only
@@ -139,8 +156,6 @@ if /i '%ARG%' == 'smoke' (
 )
 
 if /i '%ARG%' == 'coreclr' (
-    REM Smoke tests are a very small quick subset of tests
-
     set BUILD_CORECLR=1
 )
 
@@ -163,7 +178,6 @@ if /i '%ARG%' == 'notests' (
     set TEST_FSHARP_SUITE=0
     set TEST_FSHARPQA_SUITE=0
 )
-
 
 goto :EOF
 
@@ -222,7 +236,7 @@ if defined APPVEYOR (
     set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
     )
 )
-set msbuildflags=/maxcpucount
+set msbuildflags=/maxcpucount /nr:false
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
@@ -233,37 +247,33 @@ if '%RestorePackages%' == 'true' (
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
 
+:: Restore the Tools directory
+call %~dp0init-tools.cmd
 
-rem Always do this it installs the dotnet cli and publishes the LKG
-rem ===============================================================
+set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+pushd .\lkg & %_dotnetexe% restore &popd
+@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-set DOTNET_HOME=.\packages\dotnet
-set _dotnetexe=.\packages\dotnet\dotnet.exe
-rem check to see if the dotnet cli tool exists
-if not exist %_dotnetexe% (
-  echo Could not find %_dotnetexe%. Do zipfile install
-  if not exist packages ( md packages )
-  if exist packages\dotnet ( rd packages\dotnet /s /q )
-  powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
-  @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
+pushd .\lkg & %_dotnetexe% publish project.json &popd
+@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
-  pushd .\lkg & ..\%_dotnetexe% restore &popd
-  @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-  pushd .\lkg & ..\%_dotnetexe% publish project.json &popd
-  @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-  rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
-  ren fsc.exe fsc.dll
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
+fc fsc.exe corehost.exe >nul
+@if ERRORLEVEL 1 (
+  copy fsc.exe fsc.dll
   copy corehost.exe fsc.exe
-  popd
-
-  rem rename fsi and coreconsole to allow fsi.exe to to start interative
-  pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish 
-  ren fsi.exe fsi.dll
-  copy corehost.exe fsi.exe
-  popd
 )
+popd
+
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
+fc fsi.exe corehost.exe >nul
+@if ERRORLEVEL 1 (
+  copy fsi.exe fsi.dll
+  copy corehost.exe fsi.exe
+)
+popd
 
 :: Build Proto
 if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
@@ -284,6 +294,8 @@ if '%BUILD_PROTO%' == '1' (
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
 
 pushd tests
+
+if 'TEST_COMPILERUNIT' == '0' and 'TEST_PORTABLE_COREUNIT' == '0' and 'TEST_CORECLR' == '0' and 'TEST_VS' == '0' and 'TEST_FSHARP_SUITE' == '0' and 'TEST_FSHARPQA_SUITE' == '0' goto :finished
 
 @echo on
 call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE% 
@@ -357,6 +369,7 @@ if '%TEST_VS%' == '1' (
     @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failure
 )
 
+:finished
 @echo "Finished"
 popd
 goto :eof
