@@ -202,9 +202,6 @@ echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo.
 
-REM Remove lingering copies of the OSS FSharp.Core from the GAC
-gacutil /u "FSharp.Core, Version=4.4.1.9055, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL"
-
 if "%RestorePackages%"=="" ( 
     set RestorePackages=true
 )
@@ -228,13 +225,16 @@ if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
 
+rem uncomment to use coreclr msbuild not ready yet!!!!
+rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
+          
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
-    rem See <http://www.appveyor.com/docs/build-phase>
-    if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
+   rem See <http://www.appveyor.com/docs/build-phase>
+   if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
     rem HACK HACK HACK
-    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-    )
+   set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+   )
 )
 set msbuildflags=/maxcpucount /nr:false
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
