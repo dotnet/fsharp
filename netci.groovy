@@ -36,7 +36,7 @@ def static getBuildJobName(def configuration, def os) {
                     build_args = "ci_part1"
                 }
                 else {
-                    build_args = "ci_part1"
+                    build_args = "ci_part2"
                 }
             }
 
