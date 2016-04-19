@@ -30,7 +30,7 @@ exit /b 1
 :ARGUMENTS_OK
 
 rem Do build only for now
-call build.cmd %BUILD_ARGS%
+call build.cmd %BUILD_ARGS% coreclr
 
 goto :eof
 
