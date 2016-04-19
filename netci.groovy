@@ -15,7 +15,7 @@ def static getBuildJobName(def configuration, def os) {
 }
 
 [true, false].each { isPullRequest ->
-    ['Debug', 'Release'].each { configuration ->
+    ['Debug', 'Release_ci_part1', Release_ci_part2].each { configuration ->
         osList.each { os ->
 
             def lowerConfiguration = configuration.toLowerCase()
@@ -24,11 +24,26 @@ def static getBuildJobName(def configuration, def os) {
             def jobName = getBuildJobName(configuration, os)
 
             def buildCommand = '';
+
+            def buildFlavor= '';
+            if (configuration == "Debug") {
+                buildFlavor = "Debug"
+                build_args = ""
+            else {
+                buildFlavor = "Release"
+                if (configuration == "Release_ci_part1") {
+                    build_args = "ci_part1"
+                }
+                else {
+                    build_args = "ci_part1"
+                }
+            }
+
             if (os == 'Windows_NT') {
-                buildCommand = ".\\jenkins-build.cmd ${lowerConfiguration}"
+                buildCommand = ".\\build.cmd ${buildFlavor} $(build_args)"
             }
             else {
-                buildCommand = "./jenkins-build.sh ${lowerConfiguration}"
+                buildCommand = "./build.sh ${buildFlavor} $(build_args)"
             }
 
             def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
@@ -52,7 +67,7 @@ def static getBuildJobName(def configuration, def os) {
             Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "${lowerConfiguration}/**")
+            Utilities.addArchival(newJob, "${buildFlavor}/**")
 
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
