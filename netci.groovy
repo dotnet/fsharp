@@ -41,10 +41,10 @@ def static getBuildJobName(def configuration, def os) {
             }
 
             if (os == 'Windows_NT') {
-                buildCommand = ".\\build.cmd ${buildFlavor} $(build_args)"
+                buildCommand = ".\\build.cmd ${buildFlavor} ${build_args}"
             }
             else {
-                buildCommand = "./build.sh ${buildFlavor} $(build_args)"
+                buildCommand = "./build.sh ${buildFlavor} ${build_args}"
             }
 
             def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
