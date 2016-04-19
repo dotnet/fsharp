@@ -14,7 +14,7 @@
     <OpenBuild Condition=" '$(OpenBuild)' == '' ">True</OpenBuild>
     <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
-    <Name>HostedCompilerServer</Name>
+    <Name>ILComparer</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

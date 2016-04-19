@@ -6,7 +6,7 @@
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
+CodeGen01,NoMT,CodeGen,AttributeTargets				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions

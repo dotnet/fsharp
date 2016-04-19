@@ -16,7 +16,6 @@
     <AssemblyName>VisualFSharp.Unittests</AssemblyName>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
-    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">

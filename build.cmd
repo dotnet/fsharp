@@ -77,18 +77,23 @@ if /i '%ARG%' == 'vs' (
 
 if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set TEST_COMPILERUNIT=1
+    set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_VS=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
+    set TEST_CORECLR=1
+    set TEST_VS=1
 )
 
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
@@ -98,6 +103,7 @@ if /i '%ARG%' == 'ci' (
     set TEST_PORTABLE_COREUNIT=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
+    set TEST_CORECLR=1
     set TEST_VS=0
     set TEST_TAGS=
     set CONF_FSHARPQA_SUITE=Smoke
@@ -107,14 +113,14 @@ REM These divide 'ci' into three chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
-    set BUILD_CORECLR=1
+    set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_CORECLR=1
+    set TEST_CORECLR=0
     set TEST_TAGS=
     set TEST_VS=1
 )
@@ -122,7 +128,10 @@ if /i '%ARG%' == 'ci_part1' (
 if /i '%ARG%' == 'ci_part2' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
+    set TEST_CORECLR=1
+    set BUILD_FSHARP_DATA_TYPEPROVIDERS=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=1
 )
@@ -142,6 +151,7 @@ if /i '%ARG%' == 'coreclr' (
     REM Smoke tests are a very small quick subset of tests
 
     set BUILD_CORECLR=1
+    set TEST_CORECLR=1
 )
 
 if /i '%ARG%' == 'debug' (
@@ -163,7 +173,6 @@ if /i '%ARG%' == 'notests' (
     set TEST_FSHARP_SUITE=0
     set TEST_FSHARPQA_SUITE=0
 )
-
 
 goto :EOF
 

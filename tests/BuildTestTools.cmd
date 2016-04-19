@@ -43,9 +43,6 @@ xcopy /Y %~dp0fsharpqa\testenv\src\ILComparer\bin\%1\* %~dp0fsharpqa\testenv\bin
 %_msbuildexe% %~dp0fsharpqa\testenv\src\diff\diff.fsproj /p:Configuration=%1 /t:Build  || goto :error
 xcopy /Y %~dp0fsharpqa\testenv\src\diff\bin\%1\* %~dp0fsharpqa\testenv\bin  || goto :error
 
-%_msbuildexe% %~dp0fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj /p:Configuration=%1 /t:Build  || goto :error
-xcopy /Y %~dp0fsharpqa\testenv\src\HostedCompilerServer\bin\%1\* %~dp0fsharpqa\testenv\bin  || goto :error
-
 %_msbuildexe% %~dp0fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x86  || goto :error
 xcopy /IY %~dp0fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0fsharpqa\testenv\bin\x86  || goto :error
 

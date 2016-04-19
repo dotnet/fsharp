@@ -3872,14 +3872,14 @@ sub launch_compiler_host
   if($ENV{HOSTED_COMPILER} eq "1"){
     if(defined $compilerServerPort){}
     else{ $compilerServerPort = 11000 }
-    my $dirName = dirname(__FILE__);
+    my $dirName = dirname($ENV{FSC});
     Win32::Process::Create($compilerServerProc,
                            "$dirName\\HostedCompilerServer.exe",
                            "HostedCompilerServer.exe $compilerServerPort",
                            0,
                            CREATE_NO_WINDOW,
                            ".")|| die "Error starting compiler server";
-                           
+
     $ENV{HOSTED_COMPILER_PORT} = $compilerServerPort;
   }
 }

@@ -36,7 +36,7 @@ module Process =
             | "" -> exe
             | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
-    let exec cmdArgs (workDir: FilePath) envs (path: FilePath) arguments =
+    let start cmdArgs (workDir: FilePath) envs (path: FilePath) arguments =
 
         let exePath = path |> processExePath workDir
         let processInfo = new ProcessStartInfo(exePath, arguments)
@@ -65,7 +65,7 @@ module Process =
         |> Option.iter (fun _ -> p.StartInfo.RedirectStandardInput <- true)
 
         p.Start() |> ignore
-    
+
         cmdArgs.RedirectOutput |> Option.iter (fun _ -> p.BeginOutputReadLine())
         cmdArgs.RedirectError |> Option.iter (fun _ -> p.BeginErrorReadLine())
 
@@ -78,16 +78,19 @@ module Process =
             inputWriter.Close ()
            } 
            |> Async.Start)
+        p
 
-        p.WaitForExit() 
+    let exec cmdArgs workDir envs path arguments =
+
+        let p = start cmdArgs workDir envs path arguments
+        p.WaitForExit()
 
         match p.ExitCode with
         | 0 -> Success
         | err -> 
+            let exePath = path |> processExePath workDir
             let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" exePath arguments workDir 
             ErrorLevel (msg, err)
-
-
 
 type Result<'S,'F> =
     | Success of 'S

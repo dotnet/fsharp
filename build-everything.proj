@@ -4,6 +4,7 @@
   <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
     <ProjectsWithDefaultFramework Include="src/fsharp-library-build.proj" />
     <ProjectsWithDefaultFramework Include="src/fsharp-compiler-build.proj" />
+    <ProjectsWithDefaultFramework Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
