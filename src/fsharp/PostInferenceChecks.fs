@@ -1326,11 +1326,20 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
                     match (optArgInfo, callerInfoInfo) with
                     | _, NoCallerInfo -> ()
-                    | CallerSide(_), CallerLineNumber when (typeEquiv cenv.g cenv.g.int32_ty ty) -> ()
-                    | CalleeSide, CallerLineNumber when (isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.int32_ty (destOptionTy cenv.g ty)) -> ()
-                    | CallerSide(_), CallerFilePath when (typeEquiv cenv.g cenv.g.string_ty ty) -> ()
-                    | CalleeSide, CallerFilePath when (isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty)) -> ()
-                    | _ -> errorR(Error((1234, "Bogus caller info definition"), m)))
+                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
+                    | CallerSide(_), CallerLineNumber ->
+                        if not (typeEquiv cenv.g cenv.g.int32_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerLineNumber ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.int32_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m))
+                    | CallerSide(_), CallerFilePath ->
+                        if not (typeEquiv cenv.g cenv.g.string_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerFilePath ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m))
+                    | _ -> failwith "impossible")
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

@@ -519,6 +519,13 @@ type CallerInfoInfo =
     | CallerMemberName
     | CallerFilePath
 
+    override x.ToString() =
+        match x with
+        | NoCallerInfo -> "NoCallerInfo"
+        | CallerLineNumber -> "CallerLineNumber"
+        | CallerMemberName -> "CallerMemberName"
+        | CallerFilePath -> "CallerFilePath"
+
 [<RequireQualifiedAccess>]
 type ReflectedArgInfo = 
     | None 
