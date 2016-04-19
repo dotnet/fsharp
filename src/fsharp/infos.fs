@@ -1286,7 +1286,8 @@ type MethInfo =
                  // Note: we get default argument values from VB and other .NET language metadata 
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
-                 let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber else NoCallerInfo
+                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
+                 let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber elif isCallerFilePathArg then CallerFilePath else NoCallerInfo
 
                  yield (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
 
