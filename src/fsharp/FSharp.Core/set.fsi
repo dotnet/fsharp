@@ -184,7 +184,7 @@ namespace Microsoft.FSharp.Collections
         val exists: predicate:('T -> bool) -> set:Set<'T> -> bool
 
         /// <summary>Returns a new collection containing only the elements of the collection
-        /// for which the given predicate returns <c>true</c>.</summary>
+        /// for which the given predicate returns True.</summary>
         /// <param name="predicate">The function to test set elements.</param>
         /// <param name="set">The input set.</param>
         /// <returns>The set containing only the elements for which <c>predicate</c> returns true.</returns>

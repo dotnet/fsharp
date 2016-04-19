@@ -105,29 +105,29 @@ module NameMap =
 //------------------------------------------------------------------------- 
 module Check = 
     
-    /// Throw System.InvalidOperationException() if argument is None.
-    /// If there is a value (e.g. Some(value)) then value is returned.
+    /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
+    /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
     let NotNone argname (arg:'T option) : 'T = 
         match arg with 
         | None -> raise (new System.InvalidOperationException(argname))
         | Some x -> x
 
-    /// Throw System.ArgumentNullException() if argument is null.
+    /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
     let ArgumentNotNull arg argname = 
         match box(arg) with 
         | null -> raise (new System.ArgumentNullException(argname))
         | _ -> ()
        
         
-    /// Throw System.ArgumentNullException() if array argument is null.
-    /// Throw System.ArgumentOutOfRangeException() is array argument is empty.
+    /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
+    /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
     let ArrayArgumentNotNullOrEmpty (arr:'T[]) argname = 
         ArgumentNotNull arr argname
         if (0 = arr.Length) then
             raise (new System.ArgumentOutOfRangeException(argname))
 
-    /// Throw System.ArgumentNullException() if string argument is null.
-    /// Throw System.ArgumentOutOfRangeException() is string argument is empty.
+    /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
+    /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
     let StringArgumentNotNullOrEmpty (s:string) argname = 
         ArgumentNotNull s argname
         if s.Length = 0 then
@@ -402,9 +402,9 @@ let inline cacheOptRef cache f =
 // The bug manifests itself as an ExecutionEngine failure or fast-fail process exit which comes
 // and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.COmpiler.dll'
 // One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
-// loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method
-// basis. For example, one manifestation is that a "print" before calling a method like LexFilter.create gets
-// displayed but the corresponding "print" in the body of that function doesn't get displayed. In between, the NGEN
+// loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method basis.
+// e.g. one manifestation is that a 'print' before calling a method like LexFilter.create gets
+// displayed but the corresponding 'print' in the body of that function doesn't get displayed. In between, the NGEN
 // image loader is performing a whole bunch of fixups of the NGEN code for the body of that method, and also for
 // bodies of methods referred to by that method. That second bit is very important: the fixup causing the crash may
 // be a couple of steps down the dependency chain.
@@ -442,7 +442,7 @@ module internal AsyncUtil =
     open System.Threading
     open Microsoft.FSharp.Control
 
-    /// Represents the reified result of an asynchronous computation
+    /// Represents the reified result of an asynchronous computation.
     [<NoEquality; NoComparison>]
     type AsyncResult<'T>  =
         |   AsyncOk of 'T
@@ -456,7 +456,7 @@ module internal AsyncUtil =
                     | AsyncException exn -> econt exn
                     | AsyncCanceled exn -> ccont exn)
 
-    /// When using .NET 4.0 you can replace this type by Task<'T>
+    /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<Sealed>]
     type AsyncResultCell<'T>() =
         let mutable result = None
@@ -496,7 +496,7 @@ module internal AsyncUtil =
             |   _ ->
                     grabbedConts |> List.iter postOrQueue
 
-        /// Get the reified result
+        /// Get the reified result.
         member private x.AsyncPrimitiveResult =
             Async.FromContinuations(fun (cont,_,_) ->
                 let grabbedResult =
@@ -515,7 +515,7 @@ module internal AsyncUtil =
                 | Some res -> cont res)
                           
 
-        /// Get the result and commit it
+        /// Get the result and Commit(...).
         member x.AsyncResult =
             async { let! res = x.AsyncPrimitiveResult
                     return! AsyncResult.Commit(res) }

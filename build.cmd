@@ -110,6 +110,7 @@ if /i '%ARG%' == 'ci' (
 
 REM These divide 'ci' into three chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
@@ -124,6 +125,7 @@ if /i '%ARG%' == 'ci_part1' (
 )
 
 if /i '%ARG%' == 'ci_part2' (
+    set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
@@ -283,6 +285,7 @@ if '%BUILD_PROTO%' == '1' (
 )
 
 %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
