@@ -29,6 +29,7 @@ def static getBuildJobName(def configuration, def os) {
             if (configuration == "Debug") {
                 buildFlavor = "Debug"
                 build_args = ""
+            }
             else {
                 buildFlavor = "Release"
                 if (configuration == "Release_ci_part1") {
