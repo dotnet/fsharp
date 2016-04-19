@@ -1,4 +1,4 @@
-@if "%_echo%"=="" echo off 
+@if "%_echo%"=="" echo off
 
 :ARGUMENTS_VALIDATION
 
