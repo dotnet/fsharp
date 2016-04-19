@@ -3,7 +3,11 @@ namespace Test
 open System.Runtime.CompilerServices
 open CSharpLib
 
-type MyTy() =
+type MyTy([<CallerFilePath>] ?p0 : string) =
+    let mutable p = p0
+
+    member x.Path with get() = p
+
     static member GetCallerFilePath([<CallerFilePath>] ?path : string) =
         path
 
@@ -17,7 +21,17 @@ module Program =
         
     [<EntryPoint>]
     let main (_:string[]) =
-    
+        let o = MyTy()
+        let o1 = MyTy("42")
+
+        match o.Path with
+        | Some(path) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\CallerFilePath.fs" path -> ()
+        | x -> failwithf "Unexpected: %A" x
+
+        match o1.Path with
+        | Some(path) when matchesPath "42" path -> ()
+        | x -> failwithf "Unexpected: %A" x
+
         match MyTy.GetCallerFilePath() with
         | Some(path) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\CallerFilePath.fs" path -> ()
         | x -> failwithf "Unexpected: %A" x
