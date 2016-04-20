@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="VsProDeployTemplates..9636fc84-1775-4415-9afa-c068d869d8b9" Version="15.4.1.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="VisualFSharp.Pro" Version="15.4.1.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools Templates</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
   </Metadata>
@@ -13,6 +13,7 @@
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
   </Dependencies>
   <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.VS.FSI" Path="|FSharp.VS.FSI|" AssemblyName="|FSHarp.VS.FSI;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Compiler" Path="|FSharp.Compiler|" AssemblyName="|FSharp.Compiler;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="Project" d:ProjectName="FSharp.Compiler.Server.Shared" Path="|FSharp.Compiler.Server.Shared|" AssemblyName="|FSharp.Compiler.Server.Shared;AssemblyName|" />

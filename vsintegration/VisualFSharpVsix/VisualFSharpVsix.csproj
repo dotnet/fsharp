@@ -60,6 +60,10 @@
     <None Include="Manifests\$(BuildSku)\Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
+    <Content Include="RegisterFsharpPackage.pkgdef">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
   <ItemGroup Condition="'$(BuildSku)' == 'Local'">
     <Content Include="EnableOpenSource.pkgdef">
