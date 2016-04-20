@@ -4,16 +4,16 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
     <VSSourcesRoot>..\src</VSSourcesRoot>
-    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">15.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
-    <OldToolsVersion>12.0</OldToolsVersion>
+    <OldToolsVersion>15.0</OldToolsVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <UpgradeBackupLocation />
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -41,35 +41,32 @@
     <DeployExtension>false</DeployExtension>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-	<VSRootSuffix>FSharp</VSRootSuffix>
+    <VSRootSuffix>FSharp</VSRootSuffix>
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <CreateVsixContainer>true</CreateVsixContainer>
     <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
-	<BuildSku Condition="'$(BuildSku)' == ''">Local</BuildSku>
+    <BuildSku Condition="'$(BuildSku)' == ''">Local</BuildSku>
     <RootNamespace>VisualFSharpVsix.$(BuildSku)</RootNamespace>
     <AssemblyName>VisualFSharpVsix.$(BuildSku)</AssemblyName>
-	<OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\vsix\$(BuildSku)</OutputPath>
-	<MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
-	<MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\vsix\$(BuildSku)</OutputPath>
+    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
   </PropertyGroup>
-  
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(DevDivBuild)' == '' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  
   <ItemGroup>
     <None Include="Manifests\$(BuildSku)\Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  
   <ItemGroup Condition="'$(BuildSku)' == 'Local'">
     <Content Include="EnableOpenSource.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
-  
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
       <Visible>False</Visible>
@@ -87,7 +84,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
@@ -310,12 +306,9 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  
   <Import Project="$(VSSourcesRoot)\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
   <Target Name="VerifyBuildSku">
-	<Error Condition="'$(BuildSku)' != 'Local' and '$(BuildSku)' != 'Desktop' and '$(BuildSku)' != 'Pro' and '$(BuildSku)' != 'Web'"
-		   Text="Unsupported BuildSku '$(BuildSku)'" />
+    <Error Condition="'$(BuildSku)' != 'Local' and '$(BuildSku)' != 'Desktop' and '$(BuildSku)' != 'Pro' and '$(BuildSku)' != 'Web'" Text="Unsupported BuildSku '$(BuildSku)'" />
   </Target>
 </Project>
