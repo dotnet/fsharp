@@ -5,11 +5,6 @@ def branch = GithubBranchName
 
 def osList = ['Windows_NT'] //'Ubuntu', 'OSX', 'CentOS7.1'
 
-def machineLabelMap = ['Ubuntu':'ubuntu-doc',
-                       'OSX':'mac',
-                       'Windows_NT':'windows-elevated',
-                       'CentOS7.1' : 'centos-71']
-
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
 }
@@ -49,7 +44,6 @@ def static getBuildJobName(def configuration, def os) {
 
             def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
             def newJob = job(newJobName) {
-                label(machineLabelMap[os])
                 steps {
                     if (os == 'Windows_NT') {
                         // Batch
@@ -65,7 +59,7 @@ def static getBuildJobName(def configuration, def os) {
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
+            Utilities.setMachineAffinity(newJob, os, os == 'Windows_NT' ? 'latest-or-auto-elevated' : 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
@@ -80,3 +74,5 @@ def static getBuildJobName(def configuration, def os) {
         }
     }
 }
+
+JobReport.Report.generateJobReport(out)
