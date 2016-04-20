@@ -68,7 +68,7 @@ def static getBuildJobName(def configuration, def os) {
             Utilities.setMachineAffinity(newJob, os, 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addXUnitDotNETResults(newJob, 'tests/TestResults/**/*_Xml.xml', skipIfNoTestFiles)
-            Utilities.addArchival(newJob, "tests/TestResults/**", "", false, false)
+            Utilities.addArchival(newJob, "tests/TestResults/**/*", "", false, false)
             Utilities.addArchival(newJob, "${buildFlavor}/**")
 
             if (isPullRequest) {
