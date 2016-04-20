@@ -1,4 +1,5 @@
 import jobs.generation.Utilities;
+import jobs.generation.JobReport;
 
 def project = GithubProject
 def branch = GithubBranchName
