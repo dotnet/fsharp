@@ -401,7 +401,7 @@ sub RunCompilerCommand {
                                 Proto    => "tcp",
                                 PeerAddr => "localhost",
                                 PeerPort => $port,
-                            ) or sleep(1);
+                            ) or sleep(30);
             $attempts++;                            
         }
         RunExit(TEST_FAIL, "Unable to connect to hosted compiler \n") unless $remote;
