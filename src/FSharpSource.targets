@@ -11,7 +11,7 @@
        <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
    </PropertyGroup>
    <Choose>
-    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
+    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
          <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
          <UseOpenSourceSign>true</UseOpenSourceSign>

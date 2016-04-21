@@ -50,14 +50,14 @@
     <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
     <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
     <CreateVsixContainer>true</CreateVsixContainer>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSRelease' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
