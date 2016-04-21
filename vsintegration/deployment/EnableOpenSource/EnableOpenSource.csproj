@@ -26,6 +26,7 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <DeployExtension Condition=" '$(HUDSON_COOKIE)' == '' ">False</DeployExtension>   <!-- don't deploy this on jenkins -->
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
   </PropertyGroup>
   <Import Project="..\..\src\FSharp.Common.props" />
