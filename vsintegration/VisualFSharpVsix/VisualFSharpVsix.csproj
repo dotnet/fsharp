@@ -50,7 +50,7 @@
     <BuildSku Condition="'$(BuildSku)' == ''">Local</BuildSku>
     <RootNamespace>VisualFSharpVsix.$(BuildSku)</RootNamespace>
     <AssemblyName>VisualFSharpVsix.$(BuildSku)</AssemblyName>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\vsix\$(BuildSku)</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\setup\$(AssemblyName)</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
