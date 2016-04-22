@@ -77,16 +77,18 @@ if /i '%ARG%' == 'vs' (
 
 if /i '%ARG%' == 'all' (
     set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_CORECLR=1
 
     set TEST_COMPILERUNIT=1
     set TEST_PORTABLE_COREUNIT=1
+s    set TEST_FSHARP_SUITE=1
+    set TEST_FSHARPQA_SUITE=1
     set TEST_CORECLR=1
     set TEST_VS=1
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=1
 )
 
 if /i '%ARG%' == 'proto' (
@@ -106,6 +108,7 @@ if /i '%ARG%' == 'proto' (
 REM Same as 'all' but smoke testing only
 if /i '%ARG%' == 'ci' (
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
@@ -115,6 +118,7 @@ if /i '%ARG%' == 'ci' (
     set TEST_PORTABLE_COREUNIT=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
+    set TEST_CORECLR=1
     set TEST_VS=0
     set TEST_TAGS=
     set CONF_FSHARPQA_SUITE=Smoke
@@ -124,14 +128,14 @@ REM These divide 'ci' into three chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
-    set BUILD_CORECLR=1
+    set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_CORECLR=1
+    set TEST_CORECLR=0
     set TEST_TAGS=
     set TEST_VS=1
 )
@@ -139,7 +143,9 @@ if /i '%ARG%' == 'ci_part1' (
 if /i '%ARG%' == 'ci_part2' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
+    set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
+    set TEST_CORECLR=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=1
 )
@@ -157,6 +163,7 @@ if /i '%ARG%' == 'smoke' (
 
 if /i '%ARG%' == 'coreclr' (
     set BUILD_CORECLR=1
+    set TEST_CORECLR=1
 )
 
 if /i '%ARG%' == 'debug' (
@@ -299,20 +306,20 @@ if 'TEST_COMPILERUNIT' == '0' and 'TEST_PORTABLE_COREUNIT' == '0' and 'TEST_CORE
 
 @echo on
 call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE% 
-@if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%' failed && goto :failure
+@if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%' failed && goto :failed_tests
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
     set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 
     %_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
+    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failed_tests
 
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
     @if ERRORLEVEL 1 (
         type testresults\FSharpNunit_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
-        goto :failure
+        goto :failed_tests
     )
     set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
@@ -322,7 +329,7 @@ if '%TEST_FSHARPQA_SUITE%' == '1' (
     @if ERRORLEVEL 1 (
         type testresults\fsharpqa_failures.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharpqa %TEST_TAGS%' failed
-        goto :failure
+        goto :failed_tests
     )
 )
 
@@ -331,7 +338,7 @@ if '%TEST_COMPILERUNIT%' == '1' (
     @if ERRORLEVEL 1 (
         type testresults\CompilerUnit_net40_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% compilerunit' failed
-        goto :failure
+        goto :failed_tests
     )
 )
 if '%TEST_NET40_COREUNIT%' == '1' (
@@ -341,7 +348,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
         @echo "type testresults\CoreUnit_net40_Error.log "
             type testresults\CoreUnit_net40_Error.log 
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
-            goto :failure
+            goto :failed_tests
         )
     )
     if '%TEST_PORTABLE_COREUNIT%' == '0' (
@@ -349,7 +356,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
         @if ERRORLEVEL 1 (
             type testresults\CoreUnit_net40_Error.log 
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
-            goto :failure
+            goto :failed_tests
         )
     )
 )
@@ -359,20 +366,23 @@ if '%TEST_NET40_COREUNIT%' == '0' (
         @if ERRORLEVEL 1 (
             type testresults\CoreUnit_portable47_Error.log 
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
-            goto :failure
+            goto :failed_tests
         )
     )
 )
 
 if '%TEST_VS%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failure
+    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests
 )
 
 :finished
 @echo "Finished"
 popd
 goto :eof
+
+:failed_tests
+popd
 
 :failure
 exit /b 1
