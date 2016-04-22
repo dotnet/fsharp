@@ -20,6 +20,13 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>$(NoWarn);47;75</NoWarn>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
+	<VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+	<ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+	<GeneratePkgDefFile>true</GeneratePkgDefFile>
+	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
@@ -31,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="VFSIstrings.txt" />
-    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="srProperties.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
@@ -106,6 +113,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
