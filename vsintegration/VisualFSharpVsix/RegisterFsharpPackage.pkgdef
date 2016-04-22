@@ -123,22 +123,9 @@
 "1"="{92EF0900-2251-11D2-B72E-0000F87572EF}" 
 
 [$RootKey$\Packages\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}]
-"InprocServer32"="$System$\mscoree.dll"
-"Class"="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpProjectPackage"
-"Assembly"="FSharp.ProjectSystem.FSharp, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
-"ID"="1"
-"MinEdition"="standard"
 "ProductVersion"="4.1"
 "ProductName"="Visual F#"
 "CompanyName"="Microsoft Corp."
-"VWDExpressId"="3"
-"WDExpressId"="2"
-@="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpProjectPackage"
-
-[$RootKey$\KeyBindingTables\{dee22b65-9761-4a26-8fb2-759b971d6dfc}]
-"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
-"AllowNavKeyBinding"="0"
-@="#6001"
 
 [$RootKey$\Menus]
 "{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"=", 1000.ctmenu, 1"
@@ -185,20 +172,6 @@
 "ThreadingModel"="Both"
 @="Microsoft.VisualStudio.Editors.PropertyPages.FSharpReferencePathsPropPageComClass"
 
-[$RootKey$\ToolsOptionsPages\F# Tools]
-"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
-@="#6000"
-
-[$RootKey$\ToolsOptionsPages\F# Tools\F# Interactive]
-"Keywords"="#6005"
-"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
-"Page"="{4489e9de-6ac1-3cd6-bff8-a904fd0e82d4}"
-@="#6001"
-
-[$RootKey$\AutomationProperties\F# Tools\F# Interactive]
-"Name"="F# Tools.F# Interactive"
-"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
-
 [$RootKey$\Projects\{f2a71f9b-5d33-465a-a702-920d77279786}]
 "DisplayName"="Visual F#"
 "DisplayProjectFileExtensions"="#6002"
@@ -243,14 +216,6 @@
 "Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
 "NotALanguage"="1"
 @="{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}"
-
-[$RootKey$\ToolWindows\{dee22b65-9761-4a26-8fb2-759b971d6dfc}]
-"Name"="Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow"
-"Orientation"="Bottom"
-"Style"="Tabbed"
-"Window"="{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-"Float"="0, 0, 360, 120"
-@="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
 
 [$RootKey$\FontAndColors\FSharpInteractive]
 "Category"="{00CCEE86-3140-4E06-A65A-A92665A40D6F}"  
