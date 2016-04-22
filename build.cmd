@@ -81,11 +81,10 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_CORECLR=1
 
     set TEST_COMPILERUNIT=1
     set TEST_PORTABLE_COREUNIT=1
-s    set TEST_FSHARP_SUITE=1
+    set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1
     set TEST_CORECLR=1
     set TEST_VS=1
