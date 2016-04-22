@@ -20,6 +20,13 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>$(NoWarn);47;75</NoWarn>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
+	<VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+	<ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+	<GeneratePkgDefFile>true</GeneratePkgDefFile>
+	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
@@ -31,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="VFSIstrings.txt" />
-    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="srProperties.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
@@ -65,6 +72,8 @@
     <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition="'$(VisualStudioVersion)' != '12.0'" />
     <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
@@ -106,6 +115,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
