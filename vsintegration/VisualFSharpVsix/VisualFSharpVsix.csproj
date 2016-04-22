@@ -65,11 +65,6 @@
       <IncludeInVSIX>true</IncludeInVSIX>
 	  <Link>RegisterFsharpPackage.pkgdef</Link>
     </Content>
-    <Content Include="$(OutputPath)\FSharp.ProjectSystem.FSharp.pkgdef">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-	  <Link>FSharp.ProjectSystem.FSharp.pkgdef</Link>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
@@ -284,14 +279,14 @@
     <ProjectReference Include="$(VSSourcesRoot)\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
       <Project>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</Project>
       <Name>ProjectSystem.Base</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(VSSourcesRoot)\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj">
       <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
       <Name>ProjectSystem</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
