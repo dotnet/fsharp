@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="15.0" InitialTargets="VerifyBuildSku" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
     <VSSourcesRoot>..\src</VSSourcesRoot>
@@ -42,33 +42,33 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>FSharp</VSRootSuffix>
+    <UseCodebase>true</UseCodebase>
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <CreateVsixContainer>true</CreateVsixContainer>
     <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
-    <BuildSku Condition="'$(BuildSku)' == ''">Local</BuildSku>
-    <RootNamespace>VisualFSharpVsix.$(BuildSku)</RootNamespace>
-    <AssemblyName>VisualFSharpVsix.$(BuildSku)</AssemblyName>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\setup\$(AssemblyName)</OutputPath>
+    <RootNamespace>VisualFSharpVsix</RootNamespace>
+    <AssemblyName>VisualFSharpVsix</AssemblyName>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
   </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(DevDivBuild)' == '' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <ItemGroup>
-    <None Include="Manifests\$(BuildSku)\Source.extension.vsixmanifest">
+    <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
     <Content Include="RegisterFsharpPackage.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
+	  <Link>RegisterFsharpPackage.pkgdef</Link>
     </Content>
-  </ItemGroup>
-  <ItemGroup Condition="'$(BuildSku)' == 'Local'">
-    <Content Include="EnableOpenSource.pkgdef">
+    <Content Include="$(OutputPath)\FSharp.ProjectSystem.FSharp.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
+	  <Link>FSharp.ProjectSystem.FSharp.pkgdef</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -312,7 +312,4 @@
   </ItemGroup>
   <Import Project="$(VSSourcesRoot)\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Target Name="VerifyBuildSku">
-    <Error Condition="'$(BuildSku)' != 'Local' and '$(BuildSku)' != 'Desktop' and '$(BuildSku)' != 'Pro' and '$(BuildSku)' != 'Web'" Text="Unsupported BuildSku '$(BuildSku)'" />
-  </Target>
 </Project>
