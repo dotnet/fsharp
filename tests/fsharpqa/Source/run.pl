@@ -401,10 +401,13 @@ sub RunCompilerCommand {
                                 Proto    => "tcp",
                                 PeerAddr => "localhost",
                                 PeerPort => $port,
-                            ) or sleep(30);
-            $attempts++;                            
+                            ) or sleep(1);
+            $attempts++;
         }
-        RunExit(TEST_FAIL, "Unable to connect to hosted compiler \n") unless $remote;
+        until($remote) {
+            # if we were unable to connect to the hosted compiler try to run the one we built
+            return RunCommand($msg, $cmd);
+        }
         
         my $currDir = getcwd();
 
