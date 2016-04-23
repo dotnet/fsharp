@@ -797,9 +797,6 @@
     
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
-    <!-- fix this to be not so unfortunate looking -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\Tools\</BuildToolsDir>
-
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
 
@@ -820,7 +817,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsDir)Build.Common.Targets" />
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsTaskDir)\Build.Common.Targets" />
 
   <PropertyGroup>
     <!-- Hook compilation phase to do custom work -->
