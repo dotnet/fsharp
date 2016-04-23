@@ -16,7 +16,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <EnsureThereAreNoUnusedFsSrGenResources>False</EnsureThereAreNoUnusedFsSrGenResources>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <CustomOutputPath>true</CustomOutputPath>

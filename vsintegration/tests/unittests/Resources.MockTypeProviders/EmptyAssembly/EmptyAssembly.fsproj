@@ -14,7 +14,6 @@
     <OutputType>Library</OutputType>
     <AssemblyName>EmptyAssembly</AssemblyName>
     <TargetType>LIBRARY</TargetType>
-    <EnsureThereAreNoUnusedFsSrGenResources>False</EnsureThereAreNoUnusedFsSrGenResources>
     <NoWarn>58;75</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
