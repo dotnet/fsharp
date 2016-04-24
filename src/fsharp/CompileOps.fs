@@ -742,8 +742,12 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
           else 
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
-      | UndefinedName(_,k,id,_) -> 
+      | UndefinedName(_,k,id,predictions) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
+          if Set.isEmpty predictions |> not then
+              let filtered = ErrorResolutionHints.FilterPredictions id.idText predictions
+              os.Append(ErrorResolutionHints.FormatPredictions filtered) |> ignore
+          
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
           let _, errs = f(smr, ccuName, s)  
           os.Append(errs) |> ignore  
