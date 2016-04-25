@@ -251,7 +251,7 @@ if not exist %_dotnetexe% (
   echo Could not find %_dotnetexe%. Do zipfile install
   if not exist packages ( md packages )
   if exist packages\dotnet ( rd packages\dotnet /s /q )
-  powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/Latest/dotnet-dev-win-x64.latest.zip packages
+  powershell.exe -executionpolicy unrestricted -command .\scripts\install-dotnetcli.ps1 https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/1.0.0-rc2-002476/dotnet-dev-win-x64.1.0.0-rc2-002476.zip packages
   @if ERRORLEVEL 1 echo Error: fetch dotnetcli failed && goto :failure
 
   pushd .\lkg & ..\%_dotnetexe% restore &popd
