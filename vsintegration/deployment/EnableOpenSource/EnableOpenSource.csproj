@@ -47,8 +47,8 @@
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == ''">..\..\..</FSharpSourcesRoot>
     <!-- Eliminate MSBuild warning due to including FSI.exe which is x86 -->
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-    <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
-    <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == ''">True</DeployExtension>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug' ">
     <StartAction>Program</StartAction>

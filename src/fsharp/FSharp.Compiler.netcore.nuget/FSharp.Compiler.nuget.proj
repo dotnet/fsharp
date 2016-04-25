@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <PkgVersion>$(NuGetPerBuildPreReleaseVersion)</PkgVersion>
+    <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+  </PropertyGroup>
+
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
+  </Target>
+
+  <Target Name="Rebuild"  DependsOnTargets="Build" />
+
+</Project>

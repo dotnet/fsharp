@@ -8,7 +8,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 // Create one global interactive checker instance 
 let checker = FSharpChecker.Create()
 
-let parseAndTypeCheckFileInProject (file, input) = 
+let parseAndCheckScript (file, input) = 
     let checkOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, checkOptions) |> Async.RunSynchronously
     match typedRes with
@@ -44,8 +44,14 @@ let sysLib nm =
         let (++) a b = System.IO.Path.Combine(a,b)
         sysDir ++ nm + ".dll" 
 
+[<AutoOpen>]
+module Helpers = 
+    open System
+    type DummyType = A | B
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<DummyType>.Assembly.CodeBase).LocalPath), p)
+
 let fsCoreDefaultReference() = 
-    UnitTests.TestLib.Utils.Helpers.PathRelativeToTestAssembly "FSharp.Core.dll"
+    PathRelativeToTestAssembly "FSharp.Core.dll"
     // if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
     //    @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll"  
     //else 
@@ -167,5 +173,6 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
              if compGen || not x.IsCompilerGenerated then 
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
+
 
 
