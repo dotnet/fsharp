@@ -1285,9 +1285,20 @@ type MethInfo =
                  let isOutArg = (p.IsOut && not p.IsIn)
                  // Note: we get default argument values from VB and other .NET language metadata 
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
+
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
-                 let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber elif isCallerFilePathArg then CallerFilePath else NoCallerInfo
+
+                 let callerInfoInfo =
+                    match isCallerLineNumberArg, isCallerFilePathArg with
+                    | false, false -> NoCallerInfo
+                    | true, false -> CallerLineNumber
+                    | false, true -> CallerFilePath
+                    | true, true ->
+                        // if multiple caller info attributes are specified, pick the "wrong" one here
+                        // so that we get an error later
+                        if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
+                        else CallerLineNumber
 
                  yield (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
 
@@ -1303,9 +1314,22 @@ type MethInfo =
                 let isOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
                 // Note: can't specify caller-side default arguments in F#, by design (default is specified on the callee-side) 
                 let optArgInfo = if isOptArg then CalleeSide else NotOptional
+                
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
-                let callerInfoInfo = if isCallerLineNumberArg then CallerLineNumber elif isCallerFilePathArg then CallerFilePath else NoCallerInfo
+
+                let callerInfoInfo =
+                    match isCallerLineNumberArg, isCallerFilePathArg with
+                    | false, false -> NoCallerInfo
+                    | true, false -> CallerLineNumber
+                    | false, true -> CallerFilePath
+                    | true, true ->
+                        // if multiple caller info attributes are specified, pick the "wrong" one here
+                        // so that we get an error later
+                        match tryDestOptionTy g ty with
+                        | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
+                        | _ -> CallerLineNumber
+
                 (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
 
         | DefaultStructCtor _ -> 
