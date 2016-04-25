@@ -83,7 +83,10 @@ exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef *
 exception FieldGivenTwice of DisplayEnv * Tast.RecdFieldRef * range
 exception MissingFields of string list * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
-exception UnitTypeExpected of DisplayEnv * TType * bool * range
+exception UnitTypeExpected of DisplayEnv * TType * range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
@@ -725,13 +728,29 @@ let UnifyUnitType cenv denv m ty exprOpt =
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv,ty,m))
-        else
-            let perhapsProp = 
-                typeEquiv cenv.g cenv.g.bool_ty ty &&
+        else        
+            if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
+                warning (UnitTypeExpected (denv,ty,m)) 
+            else
                 match exprOpt with 
-                | Some(Expr.App(Expr.Val(vf,_,_),_,_,[__],_)) when vf.LogicalName = opNameEquals -> true
-                | _ -> false
-            warning (UnitTypeExpected (denv,ty,perhapsProp,m)) 
+                | Some(Expr.App(Expr.Val(vf,_,_),_,_,exprs,_)) when vf.LogicalName = opNameEquals ->
+                    match exprs with 
+                    | Expr.App(Expr.Val(prop,_,_),_,_,Expr.Val(vf,_,_) :: _,_) :: _ ->
+                        let isProperty = 
+                            match prop.MemberInfo with 
+                            | None -> false 
+                            | Some memInfo -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet
+                        
+                        if isProperty then
+                            warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                        else
+                            warning (UnitTypeExpectedWithEquality (denv,ty,m))
+                    | Expr.Op(_,_,Expr.Val(vf,_,_) :: _,_) :: _ -> 
+                        warning (UnitTypeExpectedWithPossiblePropertySetter (denv,ty,vf.LogicalName,m))
+                    | Expr.Val(vf,_,_) :: _ -> 
+                        warning (UnitTypeExpectedWithPossibleAssignment (denv,ty,vf.IsMutable,vf.LogicalName,m))
+                    | _ -> warning (UnitTypeExpectedWithEquality (denv,ty,m))
+                | _ -> warning (UnitTypeExpected (denv,ty,m)) 
         false
     else
         true
@@ -2249,7 +2268,8 @@ module GeneralizationHelpers =
         | Some memberFlags -> 
             match memberFlags.MemberKind with 
             // can't infer extra polymorphism for properties 
-            | MemberKind.PropertyGet  | MemberKind.PropertySet  -> 
+            | MemberKind.PropertyGet 
+            | MemberKind.PropertySet -> 
                  if not (isNil declaredTypars) then 
                      errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(),m))
             | MemberKind.Constructor -> 

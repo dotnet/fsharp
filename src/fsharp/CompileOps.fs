@@ -142,7 +142,10 @@ let GetRangeOfError(err:PhasedError) =
       | TypeIsImplicitlyAbstract m 
       | RequiredButNotSpecified (_,_,_,_,m) 
       | FunctionValueUnexpected (_,_,m)
-      | UnitTypeExpected (_,_,_,m )
+      | UnitTypeExpected (_,_,m)
+      | UnitTypeExpectedWithEquality (_,_,m)
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,_,m)
+      | UnitTypeExpectedWithPossibleAssignment (_,_,_,_,m)
       | UseOfAddressOfOperator m 
       | DeprecatedThreadStaticBindingWarning(m) 
       | NonUniqueInferredAbstractSlot (_,_,_,_,_,m) 
@@ -266,6 +269,9 @@ let GetErrorNumber(err:PhasedError) =
       | UnionPatternsBindDifferentNames _  -> 18
       | UnionCaseWrongArguments  _ -> 19
       | UnitTypeExpected _  -> 20
+      | UnitTypeExpectedWithEquality _  -> 20
+      | UnitTypeExpectedWithPossiblePropertySetter _  -> 20
+      | UnitTypeExpectedWithPossibleAssignment _  -> 20
       | RecursiveUseCheckedAtRuntime  _ -> 21
       | LetRecEvaluatedOutOfOrder  _ -> 22
       | NameClash _ -> 23
@@ -532,8 +538,11 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator","
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning","%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning","")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected","%s")
-let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","")
-let UnitTypeExpected2E() = DeclareResourceString("UnitTypeExpected2","%s")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected","")
+let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality","")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter","%s")
+let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment","%s")
+let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable","%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime","")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1","%s")
 let LetRecUnsound2E() = DeclareResourceString("LetRecUnsound2","%s%s")
@@ -1195,16 +1204,25 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
       | DeprecatedThreadStaticBindingWarning(_) -> 
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
       | FunctionValueUnexpected (denv,ty,_) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
           os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
-      | UnitTypeExpected (denv,ty,perhapsProp,_) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
-          let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
-          if perhapsProp then 
-            os.Append(UnitTypeExpected2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
-          else
-            os.Append(UnitTypeExpected1E().Format) |> ignore
+      | UnitTypeExpected (_,_,_) ->
+          let warningText = UnitTypeExpectedE().Format
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithEquality (_) ->
+          let warningText = UnitTypeExpectedWithEqualityE().Format
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithPossiblePropertySetter (_,_,bindingName,_) ->
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName
+          os.Append warningText |> ignore
+      | UnitTypeExpectedWithPossibleAssignment (_,_,isAlreadyMutable,bindingName,_) ->
+          let warningText = 
+            if isAlreadyMutable then
+                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format bindingName
+            else
+                UnitTypeExpectedWithPossibleAssignmentE().Format bindingName
+          os.Append warningText |> ignore
       | RecursiveUseCheckedAtRuntime  _ -> 
           os.Append(RecursiveUseCheckedAtRuntimeE().Format) |> ignore
       | LetRecUnsound (_,[v],_) ->  
