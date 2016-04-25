@@ -817,7 +817,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsTaskDir)\Build.Common.Targets" />
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(ToolsDir)\Build.Common.Targets" />
 
   <PropertyGroup>
     <!-- Hook compilation phase to do custom work -->
