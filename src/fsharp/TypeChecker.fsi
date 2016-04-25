@@ -26,8 +26,8 @@ type TcEnv =
     member NameEnv : NameResolution.NameResolutionEnv
     member AccessRights : AccessorDomain
 
-val CreateInitialTcEnv : TcGlobals * ImportMap * range * (CcuThunk * string list * bool) list -> TcEnv 
-val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * CcuThunk * autoOpens: string list * bool -> TcEnv 
+val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
+val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
 val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
 
@@ -103,6 +103,7 @@ exception OverrideInExtrinsicAugmentation of range
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 exception StandardOperatorRedefinitionWarning of string * range
 exception ParameterlessStructCtor of range
+exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 val TcFieldInit : range -> ILFieldInit -> Tast.Const
 

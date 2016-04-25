@@ -741,3 +741,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Empty")>]
         let empty<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>.Empty
+
+        [<CompiledName("Count")>]
+        let count (m:Map<_,_>) = m.Count

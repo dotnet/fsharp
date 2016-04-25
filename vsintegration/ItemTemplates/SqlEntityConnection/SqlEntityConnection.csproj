@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);2008</NoWarn>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <CreateVsixContainer>false</CreateVsixContainer>
+	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+	<DebugSymbols>false</DebugSymbols>
+	<DebugType>None</DebugType>
+  </PropertyGroup>
+  <PropertyGroup>
+	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectGuid>{a2cda945-ef31-4c37-a063-bd1e2b3938eb}</ProjectGuid>
+	<TemplateCategory>ItemTemplates</TemplateCategory>
+    <AssemblyName>SqlEntityConnection</AssemblyName>
+	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+  </PropertyGroup>
+  <Import Project="..\..\src\FSharp.Common.props" />
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\SqlEntityConnection.fs">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\SqlEntityConnection.fs.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\SqlEntityConnection.fs.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
+    <TemplateFiles Include="Template\SqlEntityConnection.fs" />
+    <TemplateFiles Include="Template\SqlEntityConnection.vstemplate" />
+  </ItemGroup>
+  
+  <Import Project="..\..\src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+  <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
+	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+  </Target>
+  
+  <Target Name="TemplateProjectOutputGroup" />
+</Project>
