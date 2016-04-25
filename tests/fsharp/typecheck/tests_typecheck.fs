@@ -57,6 +57,13 @@ module Sigs =
 
         // call ..\..\single-neg-test.bat neg91
         do! singleNegTest "neg91"
+            
+        // "%FSC%" %fsc_flags% --target:exe -o:pos23.exe  pos23.fs 
+        do! fsc "%s --target:exe -o:pos23.exe" fsc_flags ["pos23.fs"]
+        // "%PEVERIFY%" pos23.exe
+        do! peverify "pos23.exe"
+        // pos23.exe
+        do! exec ("."/"pos23.exe") ""
 
         // "%FSC%" %fsc_flags% --target:exe -o:pos20.exe  pos20.fs 
         do! fsc "%s --target:exe -o:pos20.exe" fsc_flags ["pos20.fs"]

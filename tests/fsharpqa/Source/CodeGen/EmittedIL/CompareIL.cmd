@@ -1,7 +1,11 @@
 REM == %1 --> assembly
 REM == %2 --> NetFx20|NetFx40 (default is NetFx20) - case insensitive
+REM == %3 --> directory
 
-ildasm /TEXT /LINENUM /NOBAR "%~nx1" >"%~n1.il"
+if not '%3' == '' ( set dll=%3\%~nx1)
+if '%3' == '' ( set dll=%~nx1)
+
+"%ildasm%" /TEXT /LINENUM /NOBAR %dll% >%~n1.il
 IF NOT ERRORLEVEL 0 exit 1
 
 IF /I     "%2"=="NetFx40" goto :NetFx4

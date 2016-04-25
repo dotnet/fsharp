@@ -2475,45 +2475,45 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           // ok, now we're ready to generate 
           if isSuperInit || isSelfInit then 
               CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;
-              
+
           GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs;
-              
+
           // Generate laterArgs (for effects) and save
           LocalScope "callstack" cgbuf (fun scopeMarks ->
-            let whereSaved,eenv = 
-                (eenv,laterArgs) ||> List.mapFold (fun eenv laterArg -> 
-                    // Only save arguments that have effects
-                    if Optimizer.ExprHasEffect cenv.g laterArg then 
-                        let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m cenv.g eenv.tyenv
-                        let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy) scopeMarks
-                        GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
-                        EmitSetLocal cgbuf loc
-                        Choice1Of2 (ilTy,loc),eenv
-                    else
-                        Choice2Of2 laterArg, eenv) 
+                let whereSaved,eenv = 
+                    (eenv,laterArgs) ||> List.mapFold (fun eenv laterArg -> 
+                        // Only save arguments that have effects
+                        if Optimizer.ExprHasEffect cenv.g laterArg then 
+                            let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m cenv.g eenv.tyenv
+                            let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy) scopeMarks
+                            GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
+                            EmitSetLocal cgbuf loc
+                            Choice1Of2 (ilTy,loc),eenv
+                        else
+                            Choice2Of2 laterArg, eenv) 
 
-            let nargs = mspec.FormalArgTypes.Length
-            CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1)))
-                                    (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [(GenType cenv.amap m cenv.g eenv.tyenv actualRetTy)])) callInstr;
+                let nargs = mspec.FormalArgTypes.Length
+                CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1)))
+                                     (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [(GenType cenv.amap m cenv.g eenv.tyenv actualRetTy)])) callInstr;
 
-            // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
-            if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;
+                // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
+                if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;
 
-            // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
-            // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
-            if cenv.opts.generateDebugSymbols && mustGenerateUnitAfterCall && (isTailCall = Normalcall) then 
-                CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ]
+                // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
+                // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
+                if cenv.opts.generateDebugSymbols && mustGenerateUnitAfterCall && (isTailCall = Normalcall) then 
+                    CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ]
 
-            if isNil laterArgs then 
-                assert isNil whereSaved 
-                // Generate the "unit" value if necessary 
-                CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel 
-            else 
-                //printfn "%d EXTRA ARGS IN TOP APP at %s" laterArgs.Length (stringOfRange m)
-                whereSaved |>  List.iter (function 
-                    | Choice1Of2 (ilTy,loc) -> EmitGetLocal cgbuf ilTy loc 
-                    | Choice2Of2 expr -> GenExpr cenv cgbuf eenv SPSuppress expr Continue)
-                GenIndirectCall cenv cgbuf eenv (actualRetTy,[],laterArgs,m) sequel)
+                if isNil laterArgs then 
+                    assert isNil whereSaved 
+                    // Generate the "unit" value if necessary 
+                    CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel 
+                else 
+                    //printfn "%d EXTRA ARGS IN TOP APP at %s" laterArgs.Length (stringOfRange m)
+                    whereSaved |>  List.iter (function 
+                        | Choice1Of2 (ilTy,loc) -> EmitGetLocal cgbuf ilTy loc 
+                        | Choice2Of2 expr -> GenExpr cenv cgbuf eenv SPSuppress expr Continue)
+                    GenIndirectCall cenv cgbuf eenv (actualRetTy,[],laterArgs,m) sequel)
                   
       | _ -> failwith "??"
         

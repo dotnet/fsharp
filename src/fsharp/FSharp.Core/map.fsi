@@ -251,3 +251,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The first key for which the predicate returns true or None if the predicate evaluates to false for each key/value pair.</returns>
         [<CompiledName("TryFindKey")>]
         val tryFindKey: predicate:('Key -> 'T -> bool) -> table:Map<'Key,'T> -> 'Key option
+
+        /// <summary>The number of bindings in the map.</summary>
+        [<CompiledName("Count")>]
+        val count: table:Map<'Key,'T> -> int

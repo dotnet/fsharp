@@ -13,11 +13,17 @@ open Internal.Utilities
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
 module internal ConsoleOptions =
 
+#if NO_WIN_REGISTRY
+  let fixupRequired = false
+#else
   // Bug 4254 was fixed in Dev11 (Net4.5), so this flag tracks making this fix up version specific.
   let fixupRequired = not FSharpEnvironment.IsRunningOnNetFx45OrAbove
-   
+#endif
+
   let fixNonUnicodeSystemConsoleReadKey = ref fixupRequired
   let readKeyFixup (c:char) =
+#if NO_SERVERCODEPAGES
+#else
     if !fixNonUnicodeSystemConsoleReadKey then
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
@@ -32,6 +38,7 @@ module internal ConsoleOptions =
         assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
         c // no fix up
     else
+#endif
       c
 
 type internal Style = Prompt | Out | Error
@@ -126,7 +133,6 @@ module internal Utils =
             | None          -> failwith "Internal Error: cannot bind to method"
             | Some methInfo -> methInfo        
 
-
 [<Sealed>]
 type internal Cursor =
     static member ResetTo(top,left) = 
@@ -148,7 +154,7 @@ type internal Anchor =
         let left = inset + (( (p.left - inset) + index) % (Console.BufferWidth - inset))
         let top = p.top + ( (p.left - inset) + index) / (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
-    
+
 type internal ReadLineConsole() =
     let history = new History()
     let mutable complete : (string option * string -> seq<string>) = fun (_s1,_s2) -> Seq.empty
@@ -285,7 +291,7 @@ type internal ReadLineConsole() =
             (!anchor).PlaceAt(x.Inset,position);
 
         render();
-        
+
         let insertChar(c:char) =
             if (!current = input.Length)  then 
                 current := !current + 1;
@@ -420,4 +426,3 @@ type internal ReadLineConsole() =
            changed := true;
            read() 
         read()
-    

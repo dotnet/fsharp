@@ -107,6 +107,7 @@ exception OverrideInIntrinsicAugmentation of range
 exception OverrideInExtrinsicAugmentation of range
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 exception StandardOperatorRedefinitionWarning of string * range
+exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 
 // Identify any security attributes
@@ -422,7 +423,16 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs =
 let AddRootModuleOrNamespaceRefs g amap m env modrefs  = 
     ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefsToNameEnv g amap m true env.eAccessRights nenv modrefs) env 
 
-let AddNonLocalCcu g amap scopem env (ccu:CcuThunk,internalsVisible) = 
+let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisibleToAttributes)  = 
+
+    let internalsVisible = 
+        internalsVisibleToAttributes |> List.exists (fun visibleTo ->             
+            try                    
+                System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
+            with e ->
+                warning(InvalidInternalsVisibleToAssemblyName(visibleTo,ccu.FileName))
+                false)
+
     let env = if internalsVisible then addInternalsAccessibility env ccu else env
     // Compute the top-rooted module or namespace references
     let modrefs = ccu.RootModulesAndNamespaces |> List.map (mkNonLocalCcuRootEntityRef ccu) 
@@ -724,10 +734,10 @@ type AfterTcOverloadResolution =
           |   AfterOverloadResolution.DoNothing -> 
                   AfterTcOverloadResolution.DoNothing
           |   AfterOverloadResolution.SendToSink(callSink,fallback) ->
-                  AfterTcOverloadResolution.SendToSink ((fun (minfo,_) -> Item.MethodGroup(minfo.LogicalName,[minfo]) |> callSink), fallback)
-          |   AfterOverloadResolution.ReplaceWithOverrideAndSendToSink (Item.MethodGroup(_,overridenMinfos), callSink,fallback) ->
+                  AfterTcOverloadResolution.SendToSink ((fun (minfo,_) -> Item.MethodGroup(minfo.LogicalName,[minfo],None) |> callSink), fallback)
+          |   AfterOverloadResolution.ReplaceWithOverrideAndSendToSink (Item.MethodGroup(_,overridenMinfos,_orig), callSink,fallback) ->
                   AfterTcOverloadResolution.ReplaceWithOverrideAndSendToSink 
-                      ((List.map (fun minfo -> minfo,None) overridenMinfos),(fun (minfo,_) -> Item.MethodGroup(minfo.LogicalName,[minfo]) |> callSink),fallback)
+                      ((overridenMinfos |> List.map (fun minfo -> minfo,None)),(fun (minfo,_) -> Item.MethodGroup(minfo.LogicalName,[minfo],None) |> callSink),fallback)
           |   _ -> error(InternalError("Name resolution does not match overriden for method groups", range0))
     
     static member ForProperties name gettersOrSetters afterOverloadResolution = 
@@ -1735,9 +1745,9 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 let sink =
                     { new ITypecheckResultsSink with
                         member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
-                        member this.NotifyNameResolution(pos, a, b, occurence, denv, nenv, ad, m) = 
+                        member this.NotifyNameResolution(pos, a, b, occurence, denv, nenv, ad, m, replacing) = 
                             if not m.IsSynthetic then
-                                nameResolutions.Add(pos, a, b, occurence, denv, nenv, ad, m)
+                                nameResolutions.Add(pos, a, b, occurence, denv, nenv, ad, m, replacing)
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation _ = ()
                         member this.CurrentSource = None } 
@@ -1746,11 +1756,11 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 MakeSimpleVals cenv env names
     
             if nameResolutions.Count <> 0 then 
-                let (_, _, _, _, _, _, ad, m1) = nameResolutions.[0]
+                let (_, _, _, _, _, _, ad, m1, _replacing) = nameResolutions.[0]
                 // mergedNameEnv - name resolution env that contains all names
                 // mergedRange - union of ranges of names
                 let mergedNameEnv, mergedRange = 
-                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_pos, item, _b, _occurence, _denv, _nenv, _ad, m) ->
+                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_pos, item, _b, _occurence, _denv, _nenv, _ad, m, _) ->
                         // MakeAndPublishVal creates only Item.Value
                         let item = match item with Item.Value(item) -> item | _ -> failwith "impossible"
                         (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
@@ -1758,7 +1768,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 // send notification about mergedNameEnv
                 CallEnvSink cenv.tcSink (mergedRange, mergedNameEnv, ad)
                 // call CallNameResolutionSink for all captured name resolutions using mergedNameEnv
-                for (_, item, b, occurence, denv, _nenv, ad, m) in nameResolutions do
+                for (_, item, b, occurence, denv, _nenv, ad, m, _replacing) in nameResolutions do
                     CallNameResolutionSink cenv.tcSink (m, mergedNameEnv, item, b, occurence, denv,  ad)
 
             values,vspecMap
@@ -4357,10 +4367,9 @@ and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
     | None ->
         List.mapFold (TcTypeOrMeasure None cenv newOk checkCxs occ env) tpenv args
     | Some kinds ->
-        if List.length kinds = List.length args
-        then List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
-        else if kinds.Length = 0
-        then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
+        if List.length kinds = List.length args then 
+            List.mapFold (fun tpenv (arg,kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkCxs occ env tpenv arg) tpenv (List.zip args kinds)
+        elif kinds.Length = 0 then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
 and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
@@ -8125,7 +8134,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
             // call to ResolveLongIdentAsExprAndComputeRange 
             error(Error(FSComp.SR.tcInvalidUseOfTypeName(),mItem))
 
-    | Item.MethodGroup (methodName,minfos) -> 
+    | Item.MethodGroup (methodName,minfos,_) -> 
         // Static method calls Type.Foo(arg1,...,argn) 
         let meths = List.map (fun minfo -> minfo,None) minfos
         let afterTcOverloadResolution = afterOverloadResolution |> AfterTcOverloadResolution.ForMethods
@@ -8133,15 +8142,21 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         | (DelayedApp (atomicFlag, arg, mExprAndArg)::otherDelayed) ->
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
 
-        | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed) ->
+        | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
 
 #if EXTENSIONTYPING
-            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndArg, mItem) with 
+            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndTypeArgs, mItem) with 
             | Some minfoAfterStaticArguments ->
 
-              // // NOTE: This doesn't take instantiation into account
-              // CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs,env.NameEnv,item (* ! *), item, ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)                        
-              TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+              // Replace the resolution including the static parameters, plus the extra information about the original method info
+              let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+              CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
+
+              match otherDelayed with 
+              | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
+                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+              | _ -> 
+                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
 
             | None ->
 #endif
@@ -8150,8 +8165,17 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
             
             // NOTE: This doesn't take instantiation into account
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs,env.NameEnv,item (* ! *), item, ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)                        
-            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+            match otherDelayed with 
+            | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
+                TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [arg] atomicFlag otherDelayed
+            | _ -> 
+                TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
+
         | _ -> 
+#if EXTENSIONTYPING
+            if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then 
+                error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(),mItem))
+#endif
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic delayed 
 
     | Item.CtorGroup(nm,minfos) ->
@@ -8417,6 +8441,8 @@ and GetSynMemberApplicationArgs delayed tpenv =
         atomicFlag, None, [arg], otherDelayed, tpenv
     | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, arg, _mExprAndArg) :: otherDelayed ->
         (atomicFlag, Some (tyargs,mTypeArgs), [arg], otherDelayed, tpenv)
+    | DelayedTypeApp(tyargs, mTypeArgs, _) :: otherDelayed ->
+        (ExprAtomicFlag.Atomic, Some (tyargs,mTypeArgs), [], otherDelayed, tpenv)
     | otherDelayed ->
         (ExprAtomicFlag.NonAtomic, None, [], otherDelayed, tpenv)
 
@@ -8451,7 +8477,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     let delayed = delayRest rest mExprAndItem delayed
 
     match item with
-    | Item.MethodGroup (methodName,minfos) -> 
+    | Item.MethodGroup (methodName,minfos,_) -> 
         let atomicFlag,tyargsOpt,args,delayed,tpenv = GetSynMemberApplicationArgs delayed tpenv 
         let afterTcOverloadResolution = afterOverloadResolution |> AfterTcOverloadResolution.ForMethods
 
@@ -8461,8 +8487,15 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
 #if EXTENSIONTYPING
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with 
-        | Some minfo -> TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfo, None)] afterTcOverloadResolution NormalValUse args atomicFlag delayed 
+        | Some minfoAfterStaticArguments -> 
+            // Replace the resolution including the static parameters, plus the extra information about the original method info
+            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+            CallNameResolutionSinkReplacing cenv.tcSink (mExprAndItem,env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
+
+            TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfoAfterStaticArguments, None)] afterTcOverloadResolution NormalValUse args atomicFlag delayed 
         | None -> 
+        if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then 
+            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(),mItem))
 #endif
 
         let tyargsOpt,tpenv = TcMemberTyArgsOpt cenv env tpenv tyargsOpt
@@ -15532,8 +15565,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | Some _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref]
 
 // Add the CCU and apply the "AutoOpen" attributes
-let AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible) = 
-    let env = AddNonLocalCcu g amap scopem env (ccu,internalsVisible)
+let AddCcuToTcEnv(g,amap,scopem,env,assemblyName,ccu,autoOpens,internalsVisible) = 
+    let env = AddNonLocalCcu g amap scopem env assemblyName (ccu,internalsVisible)
 
     // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
     // "Microsoft" is opened by default in FSharp.Core
@@ -15550,8 +15583,8 @@ let AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible) =
     let env = (env,autoOpens) ||> List.fold (ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap ccu scopem)
     env
 
-let CreateInitialTcEnv(g,amap,scopem,ccus) =
-    List.fold (fun env (ccu,autoOpens,internalsVisible) -> AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible)) (emptyTcEnv g) ccus
+let CreateInitialTcEnv(g,amap,scopem,assemblyName,ccus) =
+    List.fold (fun env (ccu,autoOpens,internalsVisible) -> AddCcuToTcEnv(g,amap,scopem,env,assemblyName,ccu,autoOpens,internalsVisible)) (emptyTcEnv g) ccus
 
 type ConditionalDefines = 
     string list

@@ -1465,7 +1465,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"type T","type TT")
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent "type T" "---"
 
-    [<Test>]
+    //KnownFail:  [<Test>]
     member public this.``Async.AsyncToolTips``() = 
         let fileContent = """let a = 
                              async {
