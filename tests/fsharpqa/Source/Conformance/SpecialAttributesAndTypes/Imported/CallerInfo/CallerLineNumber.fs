@@ -2,8 +2,8 @@ namespace Test
 
 open System.Runtime.CompilerServices
 open CSharpLib
-
-[<MyCallerInfo>]type MyTy() =
+[<MyCallerInfo>]
+type MyTy() =
     static member GetCallerLineNumber([<CallerLineNumber>] ?line : int) =
         line
 
@@ -26,7 +26,16 @@ module Program =
         | (_, 25) -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
         
-        if (typeof<MyTy>.GetCustomAttributes(typeof<MyCallerInfoAttribute>, false).[0] :?> MyCallerInfoAttribute).LineNumber <> 6 then
+        if (typeof<MyTy>.GetCustomAttributes(typeof<MyCallerInfoAttribute>, false).[0] :?> MyCallerInfoAttribute).LineNumber <> 5 then
             failwith "Unexpected C# MyCallerInfoAttribute"
-        
+
+# 345 "qwerty"
+        match CallerInfoTest.AllInfo(123) with
+        | (_, 345) -> ()
+        | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
+# 456 "qwerty"
+        match CallerInfoTest.AllInfo(123) with
+        | (_, 456) -> ()
+        | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
+
         0
