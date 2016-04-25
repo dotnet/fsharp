@@ -17,6 +17,7 @@ namespace Microsoft.FSharp.Core
     open System.Collections.Generic
     open System.Diagnostics
     open System.Globalization
+    open System.Reflection
     open System.Text
     
 
@@ -646,6 +647,7 @@ namespace Microsoft.FSharp.Core
     open System.Collections.Generic
     open System.Diagnostics
     open System.Globalization
+    open System.Linq
     open System.Text
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
@@ -1187,7 +1189,7 @@ namespace Microsoft.FSharp.Core
 
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
             let fsComparerER = GenericComparer(false) 
-                    
+
             /// Compare two values of the same generic type, using "comp".
             //
             // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
@@ -4125,7 +4127,6 @@ namespace Microsoft.FSharp.Core
               let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
               PrivateListHelpers.setFreshConsTail lastCons l2;
               res
-        
 
         [<CompiledName("Increment")>]
         let incr x = x.contents <- x.contents + 1

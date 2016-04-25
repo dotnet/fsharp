@@ -3,7 +3,7 @@
 namespace DummyProviderForLanguageServiceTesting 
 
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.TypeProvider.Emit
+open ProviderImplementation.ProvidedTypes
 open System.Linq.Expressions
 
 // Runtime methods, these are called instead of “erased” methods
@@ -317,9 +317,9 @@ module TypeProvidersVisibilityChecks =
 
     let addGetProperty name value visibility (ty : ProvidedTypeDefinition) = 
         let prop = ProvidedProperty(name, value.GetType())
-        ty.AddMember prop
         prop.IsStatic <- false
         prop.GetterCode <- fun _ -> Quotations.Expr.Value(value, value.GetType())
+        ty.AddMember prop
         let m = prop.GetGetMethod() :?> ProvidedMethod
         setMethodVisibility m visibility
 
@@ -351,7 +351,8 @@ module TypeProvidersVisibilityChecks =
         addMethod "ProtectedM" 5210 (System.Reflection.MethodAttributes.Family) ty
         addMethod "PrivateM" 5310 (System.Reflection.MethodAttributes.Private) ty
         
-        ty.ConvertToGenerated(System.IO.Path.GetTempFileName() + ".dll")
+        let assem = ProvidedAssembly(System.IO.Path.GetTempFileName() + ".dll")
+        assem.AddTypes [ty]
         ty
 
     [<TypeProvider>]
@@ -454,6 +455,44 @@ module RegexTypeProvider =
               | _ -> failwith "unexpected parameter values")) 
 
         do this.AddNamespace(rootNamespace, [regexTy])
+
+module RegexTypeProviderUsingMethod =
+
+    open System.Text.RegularExpressions
+
+    [<TypeProvider>]
+    type public CheckedRegexProvider() as this =
+        inherit TypeProviderForNamespaces()
+
+        // Get the assembly and namespace used to house the provided types
+        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+        let rootNamespace = "Samples.FSharp.RegexTypeProvider"
+        let baseTy = typeof<obj>
+        let staticParams = [ProvidedStaticParameter("pattern1", typeof<string>)]
+
+        let regexTyStatic = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTypedStatic", Some baseTy)
+
+        let meth = ProvidedMethod("IsMatch",[],typeof<int32>,IsStaticMethod=true)
+        do meth.DefineStaticParameters(
+            parameters=staticParams, 
+            instantiationFunction=(fun methName parameterValues ->
+
+              match parameterValues with 
+              | [| :? string as pattern1 |] -> 
+                let isMatch = ProvidedMethod(
+                                methodName = methName, 
+                                parameters = [ProvidedParameter("input", typeof<string>)], 
+                                returnType = typeof<bool>, 
+                                IsStaticMethod = true,
+                                InvokeCode = fun args -> <@@ true @@>) 
+
+                isMatch.AddXmlDoc "Indicates whether the regular expression finds a match in the specified input string"
+                regexTyStatic.AddMember isMatch
+                isMatch
+              | _ -> failwith "unexpected parameter values")) 
+
+        do regexTyStatic.AddMember meth
+        do this.AddNamespace(rootNamespace, [regexTyStatic])
 
 [<assembly:TypeProviderAssembly>]
 do()

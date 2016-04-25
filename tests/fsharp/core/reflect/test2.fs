@@ -2,13 +2,12 @@
 module Test2
 #nowarn "44"
 
+open System.Reflection
+
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
-
-
-
 
 let argv = System.Environment.GetCommandLineArgs() 
 let SetCulture() = 
@@ -27,16 +26,19 @@ open Test
 
 open Microsoft.FSharp.Reflection
 
-
 module NewTests = 
-    
+
     let (|C|) (c:UnionCaseInfo) = c.Name, c.GetFields()
     let (|M|) (c:System.Reflection.MethodInfo) = c.Name, c.MemberType
     let (|P|) (c:System.Reflection.PropertyInfo) = c.Name, c.MemberType
     let (|String|_|) (v:obj) = match v with :? string as s -> Some(s) | _ -> None
     let (|Int|_|) (v:obj) = match v with :? int as s -> Some(s) | _ -> None
-    let showAll = System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic 
-
+    let showAll = 
+#if CoreClr
+        true
+#else
+        System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic 
+#endif
     do test "ncwowe932aq" (FSharpType.IsUnion (typeof<PublicUnionType1>)) 
     do test "ncwowe932aw" (FSharpType.IsUnion (XX("1","2").GetType())) 
     do test "ncwowe932ae" (FSharpType.IsUnion ((XX2 "1").GetType()))
@@ -220,8 +222,6 @@ module NewTests =
         do test "ncqmkee32ao8b" (FSharpValue.PreComputeRecordConstructor(typeof<PublicRecordType3WithCLIMutable<string>>,showAll) [| box "1"; box 1 |] = box {r3b = "1"; r3a = 1 })
         do test "ncqmkee32ao8c" (typeof<PublicRecordType3WithCLIMutable<string>>.GetConstructor([| |]) <> null) 
 
-        
-    
     open System.Reflection
     do printfn "%A" (FSharpType.GetUnionCases (typeof<InternalUnionType1>, showAll))
     do test "qcwowe932a" (match FSharpType.GetUnionCases (typeof<InternalUnionType1>, showAll) with [| C("InternalX",[| _ |]); C("InternalXX",[|_; _|]) |] -> true | _ -> false)

@@ -1150,7 +1150,7 @@ module DispatchSlotChecking =
                     |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)  with
             | [ovd] -> 
                 if not ovd.IsCompilerGenerated then 
-                    let item = Item.MethodGroup(ovd.LogicalName,[dispatchSlot])
+                    let item = Item.MethodGroup(ovd.LogicalName,[dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range,nenv,item,item,ItemOccurence.Implemented,denv,AccessorDomain.AccessibleFromSomewhere)
                 sink |> ignore
                 ()

@@ -188,7 +188,7 @@ type ListModule() =
 
         Assert.AreEqual([null], List.distinct [null])
         let list = new System.Collections.Generic.List<int>()
-        Assert.AreEqual([null, list], List.distinct [null, list])
+        Assert.IsTrue([null, list] = List.distinct [null, list])
 
     [<Test>]
     member this.distinctBy() =
@@ -207,7 +207,7 @@ type ListModule() =
 
         Assert.AreEqual([null], List.distinctBy id [null])
         let list = new System.Collections.Generic.List<int>()
-        Assert.AreEqual([null, list], List.distinctBy id [null, list])
+        Assert.IsTrue([null, list] = List.distinctBy id [null, list])
 
     [<Test>]
     member this.Take() =

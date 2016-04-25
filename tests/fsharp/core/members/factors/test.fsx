@@ -27,9 +27,6 @@ end
 
 open Types
 module ResizeArray = begin
-  /// Maps a ResizeArray to another ResizeArray by application of the function f to every element.
-  let map f (r:ResizeArray<_>) : ResizeArray<_> = r.ConvertAll (fun x -> f x)
-
   /// Iterates the function f for every element of the ResizeArray.
   let iter f (r:ResizeArray<_>) = r.ForEach (fun x -> f x)
 

@@ -7,12 +7,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
 [<Sealed>]
-type FSharpNoteworthyParamInfoLocations(longId : string list, 
-                                        longIdRange: range,
-                                        openParenLocation : pos, 
-                                        tupleEndLocations : pos list, 
-                                        isThereACloseParen : bool, 
-                                        namedParamNames : string list) =
+type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string list) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -43,14 +38,19 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynType.LongIdent _ -> true // NOTE: this is not a static constant, but it is a prefix of incomplete code, e.g. "TP<42,Arg3" is a prefix of "TP<42,Arg3=6>" and Arg3 shows up as a LongId
         | _ -> false
 
-    let rec digOutIdentFromApp synExpr =
+    /// Dig out an identifier from an expression that used in an application
+    let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident(id) -> Some ([id.idText], id.idRange)
-        | SynExpr.LongIdent(_, LongIdentWithDots(lid,_), _, lidRange) -> Some (lid |> List.map textOfId, lidRange)
-        | SynExpr.DotGet(_expr, _dotm, LongIdentWithDots(lid,_), range) -> Some (lid |> List.map textOfId, range)
-        | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromApp synExpr 
+        | SynExpr.LongIdent(_, LongIdentWithDots(lid,_), _, lidRange) 
+        | SynExpr.DotGet(_, _, LongIdentWithDots(lid,_), lidRange) -> Some (pathOfLid lid, lidRange)
+        | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
         | _ -> None
+
+    type FindResult = 
+        | Found of openParen: pos * commasAndCloseParen: (pos * string) list * hasClosedParen: bool
+        | NotFound
 
     let digOutIdentFromStaticArg synType =
         match synType with 
@@ -77,66 +77,65 @@ module internal NoteworthyParamInfoLocationsImpl =
 
     let getTypeName(synType) =
         match synType with
-        | SynType.LongIdent(LongIdentWithDots(ids,_)) -> ids |> List.map textOfId
+        | SynType.LongIdent(LongIdentWithDots(ids,_)) -> ids |> pathOfLid
         | _ -> [""] // TODO type name for other cases, see also unit test named "ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333"
+
+    let handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt : _ option) =
+        let inner = traverseSynExpr synExpr
+        match inner with
+        | None ->
+            if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
+                Found (parenRange.Start, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
+            else
+                NotFound, None
+        | _ -> NotFound, None
 
     // This method returns a tuple, where the second element is
     //     Some(cache)    if the implementation called 'traverseSynExpr expr', then 'cache' is the result of that call
     //     None           otherwise
     // so that callers can avoid recomputing 'traverseSynExpr expr' if it's already been done.  This is very important for perf, 
     // see bug 345385.
-    let rec astFindNoteworthyParamInfoLocationsSynExprExactParen traverseSynExpr pos expr =
-        let handleSingleArg(synExpr, parenRange, rpRangeOpt : _ option) =
-            let inner = traverseSynExpr synExpr
-            match inner with
-            | None ->
-                if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
-                    let r = parenRange.Start, [parenRange.End, getNamedParamName synExpr], rpRangeOpt.IsSome
-                    Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found single arg paren range %+A from %+A" r expr)
-                    Some r, None
-                else
-                    None, None
-            | _ -> None, None
-
+    let rec searchSynArgExpr traverseSynExpr pos expr =
         match expr with 
         | SynExprParen((SynExpr.Tuple(synExprList, commaRanges, _tupleRange) as synExpr), _lpRange, rpRangeOpt, parenRange) -> // tuple argument
             let inner = traverseSynExpr synExpr
             match inner with
             | None ->
                 if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
-                    let r = parenRange.Start, ((synExprList,commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e)), rpRangeOpt.IsSome
+                    let commasAndCloseParen = ((synExprList,commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
+                    let r = Found (parenRange.Start, commasAndCloseParen, rpRangeOpt.IsSome)
                     Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found paren tuple ranges %+A from %+A" r expr)
-                    Some r, None
+                    r, None
                 else
-                    None, None
-            | _ -> None, None
+                    NotFound, None
+            | _ -> NotFound, None
 
         | SynExprParen(SynExprParen(SynExpr.Tuple(_,_,_),_,_,_) as synExpr, _, rpRangeOpt, parenRange) -> // f((x,y)) is special, single tuple arg
-            handleSingleArg(synExpr,parenRange,rpRangeOpt)
+            handleSingleArg traverseSynExpr (pos,synExpr,parenRange,rpRangeOpt)
 
         // dig into multiple parens
         | SynExprParen(SynExprParen(_,_,_,_) as synExpr, _, _, _parenRange) -> 
-            let r,_cacheOpt = astFindNoteworthyParamInfoLocationsSynExprExactParen traverseSynExpr pos synExpr
+            let r,_cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
             r, None
 
         | SynExprParen(synExpr, _lpRange, rpRangeOpt, parenRange) -> // single argument
-            handleSingleArg(synExpr,parenRange,rpRangeOpt)
+            handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
         | SynExpr.ArbitraryAfterError(_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if AstTraversal.rangeContainsPosEdgesExclusive range pos then
-                let r = range.Start, [range.End, null], false  
+                let r = Found (range.Start, [range.End, null], false)
                 Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found ArbitraryAfterError range %+A from %+A" r expr)
-                Some r, None
+                r, None
             else
-                None, None
+                NotFound, None
 
         | SynExpr.Const(SynConst.Unit, unitRange) ->
             if AstTraversal.rangeContainsPosEdgesExclusive unitRange pos then
-                let r = unitRange.Start, [unitRange.End, null], true 
+                let r = Found (unitRange.Start, [unitRange.End, null], true)
                 Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found unit range %+A from %+A" r expr)
-                Some r, None
+                r, None
             else
-                None, None
+                NotFound, None
 
         | e -> 
             let inner = traverseSynExpr e
@@ -144,41 +143,61 @@ module internal NoteworthyParamInfoLocationsImpl =
             | None ->
                 if AstTraversal.rangeContainsPosEdgesExclusive e.Range pos then
                     // any other expression doesn't start with parens, so if it was the target of an App, then it must be a single argument e.g. "f x"
-                    let r = e.Range.Start, [e.Range.End, null], false
-                    Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found non-parenthesized single arg range %+A from %+A" r expr)
-                    Some r, Some inner
+                    Found (e.Range.Start, [e.Range.End, null], false), Some inner
                 else
-                    None, Some inner
-            | _ -> None, Some inner
+                    NotFound, Some inner
+            | _ -> NotFound, Some inner
 
-    let traverseInput(pos,parseTree) : FSharpNoteworthyParamInfoLocations option =
+
+
+    let traverseInput(pos,parseTree) =
 
         AstTraversal.Traverse(pos,parseTree, { new AstTraversal.AstVisitorBase<_>() with
         member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debug locals
             match expr with
-            | SynExpr.New(_, synType, synExpr, _range) -> // TODO walk SynType
-                let constrArgsResult,cacheOpt = astFindNoteworthyParamInfoLocationsSynExprExactParen traverseSynExpr pos synExpr
+
+            // new LID<tyarg1,....,tyargN>(...)  and error recovery of these
+            | SynExpr.New(_, synType, synExpr, _range) -> 
+                let constrArgsResult,cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
                 match constrArgsResult,cacheOpt with
-                | Some(parenLoc,args,isThereACloseParen), _ ->
-                    let typename = getTypeName synType
-                    let r = FSharpNoteworthyParamInfoLocations(typename, synType.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
-                    Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found 'new' call with ranges %+A from %+A" r expr)
-                    Some(r)
-                | None, Some(cache) ->
+                | Found(parenLoc,args,isThereACloseParen), _ ->
+                    let typeName = getTypeName synType
+                    Some (FSharpNoteworthyParamInfoLocations(typeName, synType.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                | NotFound, Some cache ->
                     cache
                 | _ ->
                     traverseSynExpr synExpr
-            | SynExpr.App(_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
+
+            // EXPR<  = error recovery of a form of half-written TypeApp
+            | SynExpr.App(_, _, SynExpr.App(_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
+                // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with
-                | Some(_) -> fResult
+                | Some _ -> fResult
                 | _ ->
-                    let xResult,cacheOpt = astFindNoteworthyParamInfoLocationsSynExprExactParen traverseSynExpr pos synExpr2
+                    let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
+                    if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
+                        // We found it, dig out ident
+                        match digOutIdentFromFuncExpr synExpr with
+                        | Some(lid,lidRange) -> Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, op.idRange.Start, [ wholem.End ], false, []))
+                        | None -> None
+                    else
+                        None
+
+            // EXPR EXPR2
+            | SynExpr.App(_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
+                // Look in the function expression
+                let fResult = traverseSynExpr synExpr
+                match fResult with
+                | Some _ -> fResult
+                | _ ->
+                    // Search the argument
+                    let xResult,cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr2
                     match xResult,cacheOpt with
-                    | Some(parenLoc,args,isThereACloseParen),_ ->
-                        // we found it, dig out ident
-                        match digOutIdentFromApp synExpr with
+                    | Found(parenLoc,args,isThereACloseParen),_ ->
+                        // We found it, dig out ident
+                        match digOutIdentFromFuncExpr synExpr with
                         | Some(lid,lidRange) -> 
                             assert(isInfix = (posLt parenLoc lidRange.End))
                             if isInfix then
@@ -187,28 +206,20 @@ module internal NoteworthyParamInfoLocationsImpl =
                                 Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found apparent infix operator, ignoring dug-out ident from %+A" expr)
                                 None
                             else
-                                let r = FSharpNoteworthyParamInfoLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
-                                Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found app with ranges %+A from %+A" r expr)
-                                Some r
-                        | x ->
-                            ignore(x)
-                            None
-                    | None, Some(cache) -> cache
+                                Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                        | None -> None
+                    | NotFound, Some cache -> cache
                     | _ -> traverseSynExpr synExpr2
 
+            // ID<tyarg1,....,tyargN>  and error recovery of these
             | SynExpr.TypeApp(synExpr, openm, tyArgs, commas, closemOpt, _, wholem) as seta ->
                 match traverseSynExpr synExpr with
                 | Some _ as r -> r
                 | None -> 
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
                     if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
-                        let r = FSharpNoteworthyParamInfoLocations(["dummy"], // TODO synExpr, but LongId?
-                                                             synExpr.Range, 
-                                                             openm.Start, 
-                                                             [ for c in commas -> c.End
-                                                               yield wholem.End ], 
-                                                             closemOpt.IsSome, 
-                                                             tyArgs |> List.map digOutIdentFromStaticArg)
+                        let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
+                        let r = FSharpNoteworthyParamInfoLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
                         Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found SynExpr.TypeApp with ranges %+A from %+A" r seta)
                         Some r
                     else
@@ -222,13 +233,8 @@ module internal NoteworthyParamInfoLocationsImpl =
                 let lidm = lidwd.Range
                 let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
                 if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
-                    let r = FSharpNoteworthyParamInfoLocations(lid |> List.map textOfId, lidm, openm.Start, 
-                                                            [ for c in commas -> c.End
-                                                              yield wholem.End ], 
-                                                            closemOpt.IsSome, 
-                                                            args |> List.map digOutIdentFromStaticArg)
-                    Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found type abbrev ty-app with ranges %+A from %+A" r tyAbbrevRhs)
-                    Some r
+                    let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
+                    Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
                 else
                     None
             | _ ->
@@ -241,15 +247,14 @@ module internal NoteworthyParamInfoLocationsImpl =
                 let inheritm = mkRange m.FileName m.Start m.End 
                 if AstTraversal.rangeContainsPosEdgesExclusive inheritm pos then
                     // inherit ty(expr)    ---   treat it like an application (constructor call)
-                    let xResult,_cacheOpt = astFindNoteworthyParamInfoLocationsSynExprExactParen defaultTraverse pos expr
+                    let xResult,_cacheOpt = searchSynArgExpr defaultTraverse pos expr
                     match xResult with
-                    | Some(parenLoc,args,isThereACloseParen) ->
+                    | Found(parenLoc,args,isThereACloseParen) ->
                         // we found it, dig out ident
-                        let typename = getTypeName ty
-                        let r = FSharpNoteworthyParamInfoLocations(typename, ty.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
-                        Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found app with ranges %+A from %+A" r expr)
+                        let typeName = getTypeName ty
+                        let r = FSharpNoteworthyParamInfoLocations(typeName, ty.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
                         Some r
-                    | _ -> None
+                    | NotFound -> None
                 else None
         })
 

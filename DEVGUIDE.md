@@ -91,7 +91,6 @@ For **Debug** this corresponds to these steps, which you can run individually fo
 
     msbuild src/fsharp-library-build.proj
     msbuild src/fsharp-compiler-build.proj
-    msbuild src/fsharp-typeproviders-build.proj
     msbuild src/fsharp-compiler-unittests-build.proj
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
@@ -106,7 +105,7 @@ For **Debug** this corresponds to these steps, which you can run individually fo
     msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj
     msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj
     msbuild vsintegration/fsharp-vsintegration-deployment-build.proj
-    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj 
+    msbuild vsintegration/fsharp-vsintegration-unittests-build.proj 
     msbuild tests/fsharp/FSharp.Tests.fsproj
     src\update.cmd debug -ngen
     tests\BuildTestTools.cmd debug 
@@ -116,7 +115,6 @@ For **Release** this corresponds to these steps, which you can run individually 
 
     msbuild src/fsharp-library-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-unittests-build.proj  /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
@@ -131,16 +129,46 @@ For **Release** this corresponds to these steps, which you can run individually 
     msbuild vsintegration/fsharp-vsintegration-project-templates-build.proj /p:Configuration=Release
     msbuild vsintegration/fsharp-vsintegration-item-templates-build.proj /p:Configuration=Release
     msbuild vsintegration/fsharp-vsintegration-deployment-build.proj /p:Configuration=Release
-    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj  /p:Configuration=Release
+    msbuild vsintegration/fsharp-vsintegration-unittests-build.proj  /p:Configuration=Release
     msbuild tests/fsharp/FSharp.Tests.fsproj /p:Configuration=Release
     src\update.cmd release -ngen
     tests\BuildTestTools.cmd release 
+
+### 4. [Optional] Install the Visual F# IDE Tools 
+
+**Note:** This step will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
+
+For **Debug**:
+
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
+1. Run ``debug\net40\bin\EnableOpenSource.vsix``
+
+For **Release**:
+
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
+1. Run ``release\net40\bin\EnableOpenSource.vsix``
+
+Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
+
+### 5. [Optional] Clobber the F# SDK on the machine
+
+**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the only way to revert this step.  
+
+For **Debug**:
+
+1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# SDK)
+
+For **Release**:
+
+1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
+
 
 ### Notes on the build
 
 1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
-1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll` and the other tools found in the `lkg` directory.
+1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
  - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
  - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.

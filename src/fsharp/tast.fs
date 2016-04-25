@@ -1681,11 +1681,15 @@ and Construct =
             let isMeasure = 
                 st.PApplyWithProvider((fun (st,provider) -> 
                     let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
+                    let ty = st.RawSystemType
+#if FX_RESHAPED_REFLECTION
+                    let ty = ty.GetTypeInfo()
+#endif
 #if FX_NO_CUSTOMATTRIBUTEDATA
-                    provider.GetMemberCustomAttributesData(st.RawSystemType) 
+                    provider.GetMemberCustomAttributesData(ty) 
 #else
                     ignore provider
-                    st.RawSystemType.GetCustomAttributesData()
+                    ty.GetCustomAttributesData()
 #endif
                         |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
                   .PUntaintNoFailure(fun x -> x)

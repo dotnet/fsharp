@@ -84,7 +84,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.Remove(y) = 
         let mutable res = Unchecked.defaultof<'Value>
         let ok = firstEntries.TryGetValue(y,&res)
-        // Note, if not ok then nothing to remove - nop
+        // NOTE: If not ok then nothing to remove - nop
         if ok then 
             // We drop the FirstEntry. Here we compute the new FirstEntry and residue MoreEntries
             let mutable res = []
@@ -98,7 +98,6 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
                     firstEntries.[y] <- h
                     rest.[y] <- t
                 | _ -> 
-                    // note: broken invariant
                     ()
             else
                 firstEntries.Remove(y) |> ignore 
