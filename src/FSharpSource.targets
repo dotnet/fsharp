@@ -11,7 +11,7 @@
        <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
    </PropertyGroup>
    <Choose>
-    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
+    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
          <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
          <UseOpenSourceSign>true</UseOpenSourceSign>
@@ -231,6 +231,7 @@
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
     <DefineConstants>$(DefineConstants);I_DONT_KNOW_HOW_TO_DO_THIS_YET</DefineConstants>
     <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
+    <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>
 
@@ -796,9 +797,6 @@
     
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
-    <!-- fix this to be not so unfortunate looking -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00140\lib\</BuildToolsDir>
-
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
 
@@ -819,7 +817,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsDir)Build.Common.Targets" />
+  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(ToolsDir)\Build.Common.Targets" />
 
   <PropertyGroup>
     <!-- Hook compilation phase to do custom work -->

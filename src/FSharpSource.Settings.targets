@@ -12,6 +12,8 @@
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
+    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
   </PropertyGroup>
 
@@ -39,25 +41,6 @@
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSDebug' ">
-    <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
-    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DefineConstants Condition="'$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSRelease' ">
-    <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
-    <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
-    <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
-    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler.		-->
