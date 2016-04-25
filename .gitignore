@@ -29,8 +29,6 @@ src/fsharp/FSharp.Compiler/*.userprefs
 src/*.log
 Debug
 Release
-vsdebug
-vsrelease
 Proto
 sign_temp
 .libs

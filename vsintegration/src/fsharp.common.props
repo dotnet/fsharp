@@ -14,11 +14,11 @@
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == '' and '$(DevDivBuild)' == ''   ">..\..</FSharpSourcesRoot>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" ('$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease') and '$(DevDivBuild)' == ''">
+  <PropertyGroup Condition=" ('$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release') and '$(DevDivBuild)' == ''">
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug'">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
