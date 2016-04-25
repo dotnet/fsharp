@@ -90,6 +90,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_VS=1
 
     set TEST_COMPILERUNIT=1
+    set TEST_NET40_COREUNIT=1
     set TEST_PORTABLE_COREUNIT=1
     set TEST_FSHARP_SUITE=1
     set TEST_FSHARPQA_SUITE=1

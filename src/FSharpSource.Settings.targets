@@ -12,6 +12,8 @@
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
+    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
   </PropertyGroup>
 
