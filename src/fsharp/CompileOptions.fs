@@ -750,7 +750,7 @@ let preferreduilangFlag (tcConfigB : TcConfigBuilder) =
                                                    tcConfigB.lcid <- Some(culture.LCID)
                                                | Choice2Of2 () ->
                                                    error(Error(FSComp.SR.optsInvalidPreferredUILang(s),rangeCmdArgs))), None,
-                           Some (FSComp.SR.optsPreferredUILang()))
+                           Some (FSComp.SR.optsPreferredUiLang()))
 
           
 let advancedFlagsBoth tcConfigB =
