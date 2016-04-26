@@ -1293,4 +1293,3 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3196,fsharpCoreNotFoundToBeCopied,"Cannot find FSharp.Core.dll in compiler's directory"
 3197,etMissingStaticArgumentsToMethod,"This provided method requires static parameters"
 3198,optsInvalidPreferredUILang,"The language name '%s' is invalid."
-optsPreferredUILang,"Specify the preferred output language name."
