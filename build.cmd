@@ -238,9 +238,11 @@ if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of V
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
+set _nrswitch=/nr:false
 
 rem uncomment to use coreclr msbuild not ready yet!!!!
 rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
+rem set _nrswitch=
           
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
@@ -250,7 +252,7 @@ if defined APPVEYOR (
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
 )
-set msbuildflags=/maxcpucount /nr:false
+set msbuildflags=/maxcpucount %_nrswitch%
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
@@ -318,10 +320,6 @@ call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
     set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
-
-    %_msbuildexe% %msbuildflags% fsharp\fsharp.tests.fsproj /p:Configuration=%BUILD_CONFIG%
-    @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failed_tests
-
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
     @if ERRORLEVEL 1 (
         type testresults\FSharpNunit_Error.log
