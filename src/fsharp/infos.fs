@@ -524,12 +524,7 @@ type CallerInfoInfo =
     | CallerMemberName
     | CallerFilePath
 
-    override x.ToString() =
-        match x with
-        | NoCallerInfo -> "NoCallerInfo"
-        | CallerLineNumber -> "CallerLineNumber"
-        | CallerMemberName -> "CallerMemberName"
-        | CallerFilePath -> "CallerFilePath"
+    override x.ToString() = sprintf "%+A" x
 
 [<RequireQualifiedAccess>]
 type ReflectedArgInfo = 
