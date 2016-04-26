@@ -5,7 +5,8 @@ namespace Microsoft.FSharp.Core
 module internal SR =
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
-    type TypeInThisAssembly(_dummy : obj) = class end
+    type private TypeInThisAssembly (_dummy:obj) = class end
+    // can't use typeof here.  Because intrinsics are not yet defined.
     let private resources = new System.Resources.ResourceManager("FSCore", TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly)
 #else
     let private resources = new System.Resources.ResourceManager("FSCore", System.Reflection.Assembly.GetExecutingAssembly())

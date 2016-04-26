@@ -12,6 +12,8 @@
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
     <DebugSymbols>true</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
+    <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
   </PropertyGroup>
 
@@ -26,7 +28,7 @@
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking /warnon:3180</OtherFlags>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -39,25 +41,6 @@
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSDebug' ">
-    <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
-    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DefineConstants Condition="'$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSRelease' ">
-    <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
-    <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
-    <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
-    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler.		-->
@@ -83,4 +66,22 @@
     <MSBuildVersionSuffix>core</MSBuildVersionSuffix>
     <MSBuildVersionSuffix Condition="'$(VisualStudioVersion)' == '12.0'">V12.0</MSBuildVersionSuffix>
   </PropertyGroup>
+
+  <PropertyGroup> 
+    <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
+    <NuGetReleaseVersion>1.0.0</NuGetReleaseVersion> 
+    <NuGetPreReleaseVersion>$(NuGetReleaseVersion)-alpha</NuGetPreReleaseVersion> 
+    <NuGetPerBuildPreReleaseVersion Condition="'$(BuildRevision)' != ''">$(NuGetPreReleaseVersion)-$(BuildRevision.Trim())</NuGetPerBuildPreReleaseVersion> 
+  </PropertyGroup> 
+
+  <PropertyGroup>
+    <FsiToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsiToolPath>
+    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
+    <FsiToolExe>fsi.exe</FsiToolExe>
+    <FsLexToolExe>fslex.exe</FsLexToolExe>
+    <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
+  </PropertyGroup>
+
 </Project>

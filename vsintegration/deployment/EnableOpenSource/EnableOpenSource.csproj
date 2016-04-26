@@ -47,17 +47,17 @@
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == ''">..\..\..</FSharpSourcesRoot>
     <!-- Eliminate MSBuild warning due to including FSI.exe which is x86 -->
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-    <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
-    <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == ''">True</DeployExtension>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
     <CreateVsixContainer>true</CreateVsixContainer>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSRelease' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
@@ -149,6 +149,132 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\AppConfig\AppConfig.csproj">
+      <Project>{6BA13AA4-C25F-480F-856B-8E8000299A72}</Project>
+      <Name>AppConfig</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\CodeFile\CodeFile.csproj">
+      <Project>{12AC2813-E895-4AAA-AE6C-94E21DA09F64}</Project>
+      <Name>CodeFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\ODataServiceConnection\ODataServiceConnection.csproj">
+      <Project>{17716AF4-D439-4C74-8326-475FB1847DF2}</Project>
+      <Name>ODataServiceConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\ScriptFile\ScriptFile.csproj">
+      <Project>{A333B85A-DC23-49B6-9797-B89A7951E92D}</Project>
+      <Name>ScriptFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\SignatureFile\SignatureFile.csproj">
+      <Project>{E3FDD4AC-46B6-4B9F-B672-317D1202CC50}</Project>
+      <Name>SignatureFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\SqlDataConnection\SqlDataConnection.csproj">
+      <Project>{35E83EDF-CC5A-441D-8949-17AACC463CA4}</Project>
+      <Name>SqlDataConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\SqlEntityConnection\SqlEntityConnection.csproj">
+      <Project>{A2CDA945-EF31-4C37-A063-BD1E2B3938EB}</Project>
+      <Name>SqlEntityConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\TextFile\TextFile.csproj">
+      <Project>{D11FC318-8F5D-4C8C-9287-AB40A016D13C}</Project>
+      <Name>TextFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\WsdlServiceConnection\WsdlServiceConnection.csproj">
+      <Project>{7FDF9571-B7DF-4F09-BD5E-12BDDF4FA520}</Project>
+      <Name>WsdlServiceConnection</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ItemTemplates\XMLFile\XMLFile.csproj">
+      <Project>{1FB1DD07-06AA-45B4-B5AC-20FF5BEE98B6}</Project>
+      <Name>XMLFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\ConsoleProject\ConsoleProject.csproj">
+      <Project>{604F0DAA-2D33-48DD-B162-EDF0B672803D}</Project>
+      <Name>ConsoleProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\LibraryProject\LibraryProject.csproj">
+      <Project>{01678CDA-A11F-4DEE-9344-2EDF91CF1AE7}</Project>
+      <Name>LibraryProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\NetCoreProject\NetCoreProject.csproj">
+      <Project>{5B739CF3-1116-4EB4-B598-6C16BEA81CE5}</Project>
+      <Name>NetCoreProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\NetCore78Project\NetCore78Project.csproj">
+      <Project>{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}</Project>
+      <Name>NetCore78Project</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\NetCore259Project\NetCore259Project.csproj">
+      <Project>{D9D95330-3626-4199-B7AF-17B8E4AF6D87}</Project>
+      <Name>NetCore259Project</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj">
+      <Project>{DB374A0C-7560-479F-9B21-D37C81F7624F}</Project>
+      <Name>PortableLibraryProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\SilverlightProject\SilverlightProject.csproj">
+      <Project>{15A57828-F9F5-4FB4-8E1E-AE7622A10F70}</Project>
+      <Name>SilverlightProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ProjectTemplates\TutorialProject\TutorialProject.csproj">
+      <Project>{2FACEE44-48BD-40B5-A2EE-B54A0C9BB7C4}</Project>
+      <Name>TutorialProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>

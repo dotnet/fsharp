@@ -7,8 +7,6 @@ let mutable failures = false
 let report_failure () = stderr.WriteLine " NO"; failures <- true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
-
-
 module TestNullIsGeneralizeable = begin
 
    open System.Collections.Generic
