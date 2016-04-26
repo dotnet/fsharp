@@ -8714,7 +8714,7 @@ and TcMethodApplication
     let denv = env.DisplayEnv
 
     let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, _callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
-        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional 
+        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && _callerInfoInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
 
