@@ -29,6 +29,14 @@ module Program =
         if (typeof<MyTy>.GetCustomAttributes(typeof<MyCallerInfoAttribute>, false).[0] :?> MyCallerInfoAttribute).LineNumber <> 5 then
             failwith "Unexpected C# MyCallerInfoAttribute"
 
+        let getCallerLineNumber = CallerInfoTest.LineNumber
+
+        if () |> CallerInfoTest.LineNumber <> 34 then
+            failwith "Unexpected C# CallerLineNumber"
+
+        if getCallerLineNumber () <> 32 then
+            failwith "Unexpected C# CallerLineNumber"
+
 # 345 "qwerty"
         match CallerInfoTest.AllInfo(123) with
         | (_, 345) -> ()
