@@ -860,20 +860,20 @@ type Project() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
         let compileItem = ["新規bcrogram.fs"]
-        let expectedError = "新規bcrogram\.fs\(1,1\): error FS0039: The value or constructor 'bar' is not defined." // expected error
-        
+        let expectedError = "新規bcrogram\.fs\(1,1\): error FS0039: The value or constructor 'bar' is not defined" // expected error
+
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText(compileItem, [], ""))
             use project = TheTests.CreateProjectWithUTF8Output(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "新規bcrogram.fs"
-            File.AppendAllText(srcFile, "bar") ; // 新規bcrogram.fs will be cleaned up by parent call to DoWithTempFile
-            project.BuildToOutput("Build", vso) |> ignore // Build the project using vso as the output logger
-            let errors = List.filter (fun s -> (new Regex(expectedError)).IsMatch(s)) !outputWindowPaneErrors
-        
-            for e in errors do  
-                printfn "Output Window Pane Error: %s" e
-                
+            File.AppendAllText(srcFile, "bar") ;            // 新規bcrogram.fs will be cleaned up by parent call to DoWithTempFile
+            project.BuildToOutput("Build", vso) |> ignore   // Build the project using vso as the output logger
+
+            // The console inserts hard line breaks accumulate the output as a single line then look for the expected output.
+            let output = (!outputWindowPaneErrors |> String.concat "").Replace("\r\n", "")
+            let errors = Regex.IsMatch(output, expectedError, RegexOptions.CultureInvariant)
+
             // there should be one and only one error for 'bar', located at (1,1)
-            AssertEqual (List.length errors) 1
+            AssertEqual errors true
             ()
         )
