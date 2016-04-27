@@ -1538,14 +1538,25 @@ and
       /// table is indexed by both name and generic arity. This means that for generic 
       /// types "List`1", the entry (List,1) will be present.
       member mtyp.TypesByDemangledNameAndArity m = 
-        cacheOptRef tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc:Tycon) -> KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc)  |> List.toArray))
+        cacheOptRef tyconsByDemangledNameAndArityCache (fun () ->
+           let mutable map = LayeredMap.Empty
+           for tc in mtyp.TypeAndExceptionDefinitions do 
+              map <- map.Add(NameArityPair(DemangleGenericTypeName tc.LogicalName, (tc.Typars m).Length), tc)
+           map)
 
       /// Get a table of types defined within this module, namespace or type. The 
       /// table is indexed by both name and, for generic types, also by mangled name.
       member mtyp.TypesByAccessNames = 
-          cacheOptRef tyconsByAccessNamesCache (fun () -> 
-             LayeredMultiMap.Empty.AddAndMarkAsCollapsible  (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc:Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
+          cacheOptRef tyconsByAccessNamesCache (fun () ->
+           let mutable map = LayeredMultiMap.Empty
+           for tc in mtyp.TypeAndExceptionDefinitions do 
+               if IsMangledGenericName tc.LogicalName then 
+                    let dnm = DemangleGenericTypeName tc.LogicalName 
+                    map <- map.Add(tc.LogicalName,tc)
+                    map <- map.Add(dnm,tc)
+                else
+                    map <- map.Add(tc.LogicalName,tc)
+           map)
 
       // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
       member mtyp.TypesByMangledName = 
