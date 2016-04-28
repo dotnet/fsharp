@@ -905,6 +905,8 @@ let testFunc () =
 	let rangeFunc() = (vertRange, horizRange) in	
 	let drawFunc gr t = data |> DrawBarGraph2 gr t (Brushes.Blue) in
 	let panel, pbox = AddGraph form rangeFunc drawFunc false in
+	form.WindowState <- FormWindowState.Minimized;
+	form.ShowInTaskbar <- false;
 	let _ = form.Show() in
 	()
 	
@@ -924,6 +926,8 @@ do timer.Interval <- 2000 (* ms *)
 do timer.add_Tick(new EventHandler(fun _ _ -> mainForm.Close()));;
 do timer.Start();;
 
+do mainForm.WindowState <- FormWindowState.Minimized
+do mainForm.ShowInTaskbar <- false
 do Application.Run(mainForm)
 
 let _ = 
