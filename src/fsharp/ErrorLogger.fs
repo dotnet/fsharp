@@ -14,7 +14,7 @@ open System
 // General error recovery mechanism
 //-----------------------------------------------------------------------
 
-/// Thrown when want to add some range information to some .NET exception
+/// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range
 
 /// Thrown when immediate, local error recovery is not possible. This indicates
@@ -60,7 +60,7 @@ exception Deprecated of string * range
 exception Experimental of string * range
 exception PossibleUnverifiableCode of range
 
-// Range\NoRange Duals
+// Range/NoRange Duals
 exception UnresolvedReferenceNoRange of (*assemblyname*) string 
 exception UnresolvedReferenceError of (*assemblyname*) string * range
 exception UnresolvedPathReferenceNoRange of (*assemblyname*) string * (*path*) string
@@ -107,14 +107,15 @@ let rec AttachRange m (exn:exn) =
 type Exiter = 
     abstract Exit : int -> 'T 
 
-let QuitProcessExiter = 
-    { new Exiter with 
-        member x.Exit(n) =                    
-            try 
-              System.Environment.Exit(n)
-            with _ -> 
-              ()            
-            failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() }
+
+let QuitProcessExiter =  
+    { new Exiter with  
+        member x.Exit(n) =                     
+            try  
+                System.Environment.Exit(n) 
+            with _ ->  
+                ()             
+            failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() } 
 
 /// Closed enumeration of build phases.
 type BuildPhase =
@@ -180,7 +181,7 @@ type PhasedError = { Exception:exn; Phase:BuildPhase } with
     /// Return true if the textual phase given is from the compile part of the build process.
     /// This set needs to be equal to the set of subcategories that the language service can produce. 
     static member IsSubcategoryOfCompile(subcategory:string) =
-        // Beware: This code logic is duplicated in DocumentTask.cs in the language service
+        // This code logic is duplicated in DocumentTask.cs in the language service.
         match subcategory with 
         | BuildPhaseSubcategory.Compile 
         | BuildPhaseSubcategory.Parameter 
@@ -223,7 +224,8 @@ type PhasedError = { Exception:exn; Phase:BuildPhase } with
 [<System.Diagnostics.DebuggerDisplay("{DebugDisplay()}")>]
 type ErrorLogger(nameForDebugging:string) = 
     abstract ErrorCount: int
-    // the purpose of the 'Impl' factoring is so that you can put a breakpoint on the non-Impl code just below, and get a breakpoint for all implementations of error loggers
+    // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
+    // code just below and get a breakpoint for all error logger implementations.
     abstract WarnSinkImpl: PhasedError -> unit
     abstract ErrorSinkImpl: PhasedError -> unit
     member this.WarnSink err = 
@@ -231,7 +233,7 @@ type ErrorLogger(nameForDebugging:string) =
     member this.ErrorSink err =
         this.ErrorSinkImpl err
     member this.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
-    // record the reported error/warning numbers for SQM purpose
+    // Record the reported error/warning numbers for SQM purpose
     abstract ErrorNumbers : int list
     abstract WarningNumbers : int list
     default this.ErrorNumbers = []
@@ -258,7 +260,7 @@ let AssertFalseErrorLogger =
 /// When no errorLogger is installed (on the thread) use this one.
 let uninitializedErrorLoggerFallback = ref AssertFalseErrorLogger
 
-/// Type holds thread-static globals for use by the compile
+/// Type holds thread-static globals for use by the compile.
 type internal CompileThreadStatic =
     [<System.ThreadStatic;DefaultValue>]
     static val mutable private buildPhase  : BuildPhase
@@ -281,8 +283,8 @@ module ErrorLoggerExtensions =
     open System.Reflection
 
     // Instruct the exception not to reset itself when thrown again.
-    // Why don?t we just not catch these in the first place? Because we made the design choice to ask the user to send mail to fsbugs@microsoft.com. 
-    // To achieve this, we need to catch the exception, report the email address and stack trace, and then reraise. 
+    // Design Note: This enables the compiler to prompt the user to send mail to fsbugs@microsoft.com, 
+    // by catching the exception, prompting and then propagating the exception with reraise. 
     let PreserveStackTrace(exn) =
         try 
             let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
@@ -295,6 +297,10 @@ module ErrorLoggerExtensions =
 
     // Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
+#if FX_REDUCED_EXCEPTIONS
+        ignore exn
+        ()
+#else
         match  exn with 
         // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
         | :? System.Reflection.TargetInvocationException -> ()
@@ -306,6 +312,7 @@ module ErrorLoggerExtensions =
             PreserveStackTrace(exn)
             raise exn
         | _ -> ()
+#endif
 
     type ErrorLogger with  
         member x.ErrorR  exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.ErrorSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase))
@@ -319,7 +326,10 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the ErrorSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
+#if FX_REDUCED_EXCEPTIONS
+#else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException),_) ->  ()
+#endif
             | ReportedError _  | WrappedError(ReportedError _,_)  -> ()
             | StopProcessing | WrappedError(StopProcessing,_) -> raise exn
             | _ ->
@@ -370,7 +380,7 @@ let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPha
 let SetThreadErrorLoggerNoUnwind(errorLogger)     = CompileThreadStatic.ErrorLogger <- errorLogger
 let SetUninitializedErrorLoggerFallback errLogger = uninitializedErrorLoggerFallback := errLogger
 
-// Global functions are still used by parser and TAST ops
+// Global functions are still used by parser and TAST ops.
 let errorR  exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 let error   exn = CompileThreadStatic.ErrorLogger.Error exn

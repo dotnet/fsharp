@@ -197,7 +197,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Exists2")>]
         val exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
-        /// <summary>Returns the first element for which the given function returns <c>true</c>.
+        /// <summary>Returns the first element for which the given function returns True.
         /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="list">The input list.</param>
@@ -207,7 +207,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> list:'T list -> 'T
 
-        /// <summary>Returns the last element for which the given function returns <c>true</c>.
+        /// <summary>Returns the last element for which the given function returns True.
         /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="list">The input list.</param>
@@ -548,7 +548,7 @@ namespace Microsoft.FSharp.Collections
         val pairwise: list:'T list -> ('T * 'T) list
 
         /// <summary>Splits the collection into two collections, containing the 
-        /// elements for which the given predicate returns <c>true</c> and <c>false</c>
+        /// elements for which the given predicate returns True and False
         /// respectively. Element order is preserved in both of the created lists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="list">The input list.</param>
@@ -650,7 +650,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         val skip: count:int -> list: 'T list -> 'T list
 
-        /// <summary>Bypasses elements in a list while the given predicate returns <c>true</c>, and then returns
+        /// <summary>Bypasses elements in a list while the given predicate returns True, and then returns
         /// the remaining elements of the list.</summary>
         /// <param name="predicate">A function that evaluates an element of the list to a boolean value.</param>
         /// <param name="list">The input list.</param>
@@ -753,7 +753,7 @@ namespace Microsoft.FSharp.Collections
         val take: count:int -> list:'T list -> 'T list
 
         /// <summary>Returns a list that contains all elements of the original list while the 
-        /// given predicate returns <c>true</c>, and then returns no further elements.</summary>
+        /// given predicate returns True, and then returns no further elements.</summary>
         ///
         /// <param name="predicate">A function that evaluates to false when no more items should be returned.</param>
         /// <param name="list">The input list.</param>
@@ -797,8 +797,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryPick")>]
         val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
-        /// <summary>Returns the first element for which the given function returns <c>true.</c>.
-        /// Return <c>None</c> if no such element exists.</summary>
+        /// <summary>Returns the first element for which the given function returns True.
+        /// Return None if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The first element for which the predicate returns true, or None if
@@ -806,8 +806,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
-        /// <summary>Returns the last element for which the given function returns <c>true.</c>.
-        /// Return <c>None</c> if no such element exists.</summary>
+        /// <summary>Returns the last element for which the given function returns True.
+        /// Return None if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The last element for which the predicate returns true, or None if

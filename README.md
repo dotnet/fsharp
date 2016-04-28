@@ -36,19 +36,14 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
  
 ###Required Tools for Windows Development and Testing
 
-###Development tools
+####Development tools
 
-For F# 3.1.X development
-
-- [Visual Studio 2013](http://www.visualstudio.com/en-us/downloads) + latest updates (or the free [Visual Studio Community Edition](http://www.visualstudio.com/products/visual-studio-community-vs))
-- [Visual Studio 2013 SDK](https://www.microsoft.com/en-us/download/details.aspx?id=40758)
-
-For F# 4.0 development
+For F# 4.0+ development
 
 - [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 - [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 
-###Additional frameworks
+####Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
 - [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
@@ -60,7 +55,7 @@ For F# 4.0 development
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 
-###Contributing
+####Contributing
 
 Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
@@ -70,6 +65,12 @@ How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
 
 If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+
+###Using CI Builds
+
+To install F#, see http://fsharp.org.
+
+To download the bits for the latest CI builds see [these instructions](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds). This includes and ZIPs containing the F# compiler and VSIX installers for the Visual F# IDE Tools.
 
 ###Code Flow to Other Platforms
 

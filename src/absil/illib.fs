@@ -9,12 +9,17 @@ open System.Collections
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 // Logical shift right treating int32 as unsigned integer.
 // Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
-let notlazy v = Lazy.CreateFromValue v
+let notlazy v = Lazy<_>.CreateFromValue v
 
 let isSome x = match x with None -> false | _ -> true
 let isNone x = match x with None -> true | _ -> false
@@ -24,6 +29,20 @@ let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
 let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
 let nonNull msg x = if isNonNull x then x else failwith ("null: " ^ msg) 
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
+
+//---------------------------------------------------------------------
+// Library: ReportTime
+//---------------------------------------------------------------------
+let reportTime =
+    let tFirst = ref None     
+    let tPrev = ref None     
+    fun showTimes descr ->
+        if showTimes then 
+            let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+            let prev = match !tPrev with None -> 0.0 | Some t -> t
+            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
+            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            tPrev := Some t
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -188,6 +207,11 @@ module Option =
 
 
 module List = 
+
+#if FX_RESHAPED_REFLECTION
+    open PrimReflectionAdapters
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
@@ -363,7 +387,7 @@ module List =
           | _ -> finished <- true
         List.rev r, s
 
-    // note: not tail recursive 
+    // Not tail recursive 
     let rec mapFoldBack f l s = 
         match l with 
         | [] -> ([],s)
@@ -398,14 +422,14 @@ module List =
 
     let singleton x = [x]
 
-    // note: must be tail-recursive 
+    // NOTE: must be tail-recursive 
     let rec private foldMapAux f z l acc =
       match l with
       | []    -> z,List.rev acc
       | x::xs -> let z,x = f z x
                  foldMapAux f z xs (x::acc)
                  
-    // note: must be tail-recursive 
+    // NOTE: must be tail-recursive 
     // REVIEW: systematically eliminate foldMap/mapFold duplication
     let foldMap f z l = foldMapAux f z l []
 
@@ -732,6 +756,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
             nItems <- nItems + 1
             idx
     member this.Encode(str)  = encode str
+    member this.Table = encodeTab.Keys
 
 //---------------------------------------------------------------------------
 // memoize tables (all entries cached, never collected)
@@ -965,6 +990,11 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
 module Shim =
 
     open System.IO
+
+#if FX_RESHAPED_REFLECTION
+    open PrimReflectionAdapters
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
     type IFileSystem = 
         abstract ReadAllBytesShim: fileName:string -> byte[] 

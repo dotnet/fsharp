@@ -6,12 +6,12 @@ open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.UnicodeLexing 
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Internal
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.UnicodeLexing
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
@@ -77,7 +77,6 @@ type XmlDocCollector() =
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
 
-    
 type XmlDoc = 
     | XmlDoc of string[]
     static member Empty = XmlDocStatics.Empty
@@ -92,7 +91,7 @@ type XmlDoc =
                 if lineAT = "" then processLines rest
                 else if String.hasPrefix lineAT "<" then lines
                 else ["<summary>"] @     
-                     (lines |> List.map (fun line -> System.Security.SecurityElement.Escape(line))) @
+                     (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape(line))) @
                      ["</summary>"]               
 
         let lines = processLines (Array.toList lines)
@@ -1423,7 +1422,7 @@ type ParsedSigFile =
 let ident (s,r) = new Ident(s,r)
 let textOfId (id:Ident) = id.idText
 let pathOfLid lid = List.map textOfId lid
-let arrPathOfLid lid = Array.ofList (List.map textOfId lid)
+let arrPathOfLid lid = Array.ofList (pathOfLid lid)
 let textOfPath path = String.concat "." path
 let textOfArrPath path = String.concat "." (List.ofArray path)
 let textOfLid lid = textOfPath (pathOfLid lid)

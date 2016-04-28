@@ -1131,7 +1131,6 @@ module ``Load-Script`` =
         // "%FSI%" --nologo < pipescr
         do! ``fsi <`` "--nologo" "pipescr"
         // echo.
-        echo ""
         // echo Test 4=================================================
         echo "Test 4================================================="
         // "%FSI%" usesfsi.fsx
@@ -1322,9 +1321,9 @@ module Members =
         [<Test; FSharpSuiteCodeAndSignaturePermutations("core/members/basics")>]
         let Basics p = check (attempt {
             let { Directory = dir; Config = cfg } = testContext ()
-        
+
             do! SingleTestBuild.singleTestBuild cfg dir p
-        
+
             do! SingleTestRun.singleTestRun cfg dir p
             })
 
@@ -1920,78 +1919,6 @@ module QueriesOverIQueryable =
 
     [<Test; FSharpSuiteTest("core/queriesOverIQueryable")>]
     let queriesOverIQueryable () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        do! build cfg dir
-
-        do! run cfg dir
-                
-        })
-
-
-
-module QueriesOverOData = 
-
-    let build cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
-
-        // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
-        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-
-        // "%PEVERIFY%" test.exe 
-        do! peverify "test.exe"
-
-        // "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fsx
-        do! fsc "%s --optimize -o:test--optimize.exe -g" cfg.fsc_flags ["test.fsx"]
-
-        // "%PEVERIFY%" test--optimize.exe 
-        do! peverify "test--optimize.exe"
-
-        }
-
-    let run cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // REM fsi.exe testing
-        // echo TestC
-        log "TestC"
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile = fileguard "test.ok"
-        // "%FSI%" %fsi_flags% test.fsx
-        do! fsi "%s" cfg.fsi_flags ["test.fsx"]
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-
-        // REM fsc.exe testing
-        // echo TestD
-        log "TestD"
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile2 = fileguard "test.ok"
-        // %CLIX% test.exe
-        do! exec ("."/"test.exe") ""
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile2 |> NUnitConf.checkGuardExists
-
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile3 = fileguard "test.ok"
-        // %CLIX% test--optimize.exe
-        do! exec ("."/"test--optimize.exe") ""
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile3 |> NUnitConf.checkGuardExists
-
-        }
-
-    [<Test; FSharpSuiteTest("core/queriesOverOData")>]
-    let queriesOverOData () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir

@@ -17,7 +17,7 @@ type IlxUnionField =
     new : ILFieldDef -> IlxUnionField
     member Type : ILType
     member Name : string
-    /// The name used for the field in parameter or IL field position
+    /// The name used for the field in parameter or IL field position.
     member LowerName : string 
     member ILField : ILFieldDef
     
@@ -83,15 +83,13 @@ type IlxClosureSpec =
     member Constructor : ILMethodSpec
 
 
-/// IlxClosureApps - i.e. types being applied at a callsite
+/// IlxClosureApps - i.e. types being applied at a callsite.
 type IlxClosureApps = 
     | Apps_tyapp of ILType * IlxClosureApps 
     | Apps_app of ILType * IlxClosureApps 
     | Apps_done of ILType
 
-/// ILX extensions to the instruction set
-///
-
+/// ILX extensions to the instruction set.
 type IlxInstr = 
     | EI_lddata of (* avoidHelpers: *) bool * IlxUnionSpec * int * int
     | EI_isdata of (* avoidHelpers: *) bool * IlxUnionSpec * int
@@ -130,7 +128,7 @@ and IlxUnionInfo =
       cudDebugDisplayAttributes: ILAttribute list;
       cudAlternatives: IlxUnionAlternative[];
       cudNullPermitted: bool;
-      /// Debug info for generated code for classunions 
+      /// Debug info for generated code for classunions.
       cudWhere: ILSourceMarker option;  
     }
 
