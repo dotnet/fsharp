@@ -269,6 +269,8 @@ type TcEnv =
       // Information to enforce special restrictions on valid expressions 
       // for .NET constructors. 
       eCtorInfo : CtorInfo option
+
+      eCallerMemberName : string option
     } 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
     member tenv.NameEnv = tenv.eNameResEnv
@@ -289,7 +291,8 @@ let emptyTcEnv g  =
       eInternalsVisibleCompPaths=[]
       eModuleOrNamespaceTypeAccumulator= ref (NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType=None
-      eCtorInfo=None }
+      eCtorInfo=None
+      eCallerMemberName=None}
 
 //-------------------------------------------------------------------------
 // Helpers related to determining if we're in a constructor and/or a class
@@ -9207,6 +9210,8 @@ and TcMethodApplication
                                         emptyPreBinder,Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
                                     | CallerFilePath when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
                                         emptyPreBinder,Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
+                                    | CallerMemberName when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty && env.eCallerMemberName.IsSome ->
+                                        emptyPreBinder,Expr.Const(Const.String(env.eCallerMemberName.Value), mMethExpr, currCalledArgTy)
                                     | _ ->
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
@@ -9245,6 +9250,9 @@ and TcMethodApplication
                       | CallerFilePath when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
                               let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
                               emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[filePathExpr],mMethExpr)
+                      | CallerMemberName when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty && env.eCallerMemberName.IsSome ->
+                              let memberNameExpr = Expr.Const(Const.String(env.eCallerMemberName.Value), mMethExpr, calledNonOptTy)
+                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[memberNameExpr],mMethExpr)
                       | _ -> emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
 
               // Combine the variable allocators (if any)
@@ -9606,7 +9614,11 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
     match bind with 
 
     | NormalizedBinding(vis,bkind,isInline,isMutable,attrs,doc,_,valSynData,pat,NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr),mBinding,spBind) ->
-        
+        let name = match pat with
+                   | SynPat.Named(_,name,_,_,_) -> Some(name.idText)
+                   | _ -> None
+        let envinner = {envinner with eCallerMemberName = name }
+
         let (SynValData(memberFlagsOpt,valSynInfo,_)) = valSynData 
 
         let attrTgt = DeclKind.AllowedAttribTargets memberFlagsOpt declKind 

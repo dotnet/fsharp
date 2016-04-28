@@ -1339,8 +1339,13 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     | CalleeSide, CallerFilePath ->
                         if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty))) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m))
-                    | _ -> failwith "impossible")
-
+                    | CallerSide(_), CallerMemberName ->
+                        if not (typeEquiv cenv.g cenv.g.string_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerMemberName ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m)))
+            
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName
             let m = (match pinfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
