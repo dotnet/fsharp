@@ -51,6 +51,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Infos.AttributeChecking
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.MethodCalls
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 //-------------------------------------------------------------------------
@@ -1290,7 +1291,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
         let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.EnclosingType] else []) |> List.unzip
-        let callMethInfoOpt, callExpr,callExprTy = TypeRelations.ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
+        let callMethInfoOpt, callExpr,callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
         let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition
@@ -2004,7 +2005,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                                 let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
                                 match NamesOfCalledArgs missingArgs with 
                                 | [] -> (false, "")
-                                | names -> (true, String.concat ";" (List.map textOfId names))
+                                | names -> (true, String.concat ";" (pathOfLid names))
                             else (false, "")
 
                         match suggestNamesForMissingArguments with

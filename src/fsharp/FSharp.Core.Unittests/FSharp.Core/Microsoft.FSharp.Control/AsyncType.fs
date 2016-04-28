@@ -141,7 +141,7 @@ type AsyncType() =
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t : Task<string> =
 #else
         use t : Task<string> =
@@ -155,7 +155,7 @@ type AsyncType() =
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -170,7 +170,7 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -189,7 +189,7 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -214,7 +214,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -236,7 +236,7 @@ type AsyncType() =
     [<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -250,7 +250,7 @@ type AsyncType() =
         
     [<Test>]
     member this.TaskAsyncValueException () =
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -269,7 +269,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t : Task<unit>= 
 #else
         use t : Task<unit>=
@@ -288,7 +288,7 @@ type AsyncType() =
     [<Test>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -303,7 +303,7 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueException () =
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =
@@ -322,7 +322,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
         let t = 
 #else
         use t =

@@ -79,7 +79,7 @@ module SurfaceArea =
     
         // get current fsharp.core
         let asm = 
-            #if portable7 || portable78 || portable259
+            #if portable7 || portable78 || portable259 || coreclr
             typeof<int list>.GetTypeInfo().Assembly
             #else
             typeof<int list>.Assembly
@@ -87,7 +87,7 @@ module SurfaceArea =
         
         // public types only
         let types =
-            #if portable7 || portable78 || portable259
+            #if portable7 || portable78 || portable259 || coreclr
             asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
             #else
             asm.GetExportedTypes()
@@ -96,7 +96,7 @@ module SurfaceArea =
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
             // for System.Runtime-based profiles, need to do lots of manual work
-            #if portable7 || portable78 || portable259
+            #if portable7 || portable78 || portable259 || coreclr
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
                 let cast (info : #MemberInfo) = (t, info :> MemberInfo)
@@ -135,7 +135,6 @@ module SurfaceArea =
         let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
-            
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> normalize
         let expected = expected |> normalize

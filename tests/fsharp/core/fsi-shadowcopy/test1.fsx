@@ -5,7 +5,10 @@ open System;;
 open System.Diagnostics;;
 
 let compiled wait =
-    let c = Process.Start(Environment.GetEnvironmentVariable("FSC"), "Library1.fs --target:library")
+    let psi = ProcessStartInfo(Environment.GetEnvironmentVariable("FSC"), "Library1.fs --target:library")
+    psi.CreateNoWindow <- true
+    psi.UseShellExecute <- false
+    let c = Process.Start(psi)
     c.WaitForExit(wait) |> ignore
     if c.ExitCode = 0 then true else false;;
 

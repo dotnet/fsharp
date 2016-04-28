@@ -16,15 +16,14 @@ call script > out.txt 2>&1
 
 if NOT EXIST out.bsl COPY out.txt
 
-%FSDIFF% out.txt out.bsl > out.diff
-%FSDIFF% z.output.fsi.help.txt z.output.fsi.help.bsl > z.output.fsi.help.diff
+%FSDIFF% out.txt out.bsl normalize > out.diff
+%FSDIFF% z.output.fsi.help.txt z.output.fsi.help.bsl normalize > z.output.fsi.help.diff
 
 echo ======== Differences From ========
 TYPE  out.diff
 echo ========= Differences To =========
 
-
-for /f %%c IN (out.diff do (
+for /f %%c IN (out.diff) do (
   echo NOTE -------------------------------------
   echo NOTE ---------- THERE ARE DIFFs ----------
   echo NOTE -------------------------------------
