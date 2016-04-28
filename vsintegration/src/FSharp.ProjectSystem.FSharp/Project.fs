@@ -38,11 +38,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     
-<<<<<<< HEAD
-=======
-    open Microsoft.VisualStudio
-
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
     open EnvDTE
 
     open Microsoft.Build.BuildEngine
@@ -283,10 +278,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
                 this.RegisterProjectFactory(new FSharpProjectFactory(this))
                 //this.RegisterProjectFactory(new FSharpWPFProjectFactory(this :> IServiceProvider))
-<<<<<<< HEAD
-=======
 
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
                 // was used to ensure the LS has been initialized, because the TypeProviderSecurityGlobals 
                 // global state was needed for e.g. Tools\Options
                 //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
@@ -363,20 +355,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 (project :> ProjectNode)
 
 
-<<<<<<< HEAD
     /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
     /// FSharp projects.
     [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
     type internal WAFSharpProjectFactory() = class end
 
-=======
-    and /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
-        /// FSharp projects.
-        [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
-        internal WAFSharpProjectFactory() = class end
-
-    and 
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
 
     [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
     type internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
@@ -387,12 +370,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             let GUID_MruPage = new Guid("{BF42FC6C-1C43-487F-A524-C2E7BC707479}")
 #endif
             let mutable vsProject : VSLangProj.VSProject = null
-<<<<<<< HEAD
-#if AUTOMATION
-            let mutable codeDomProvider : Microsoft.VisualStudio.Designer.Interfaces.IVSMDCodeDomProvider  = null
-#endif            
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
             let mutable trackDocumentsHandle = 0u
             let mutable addFilesNotification : option<(array<string> -> unit)> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
             
@@ -458,12 +435,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 // The following properties classes are specific to F# so we can use their GUIDs directly
                 this.AddCATIDMapping(typeof<FSharpProjectNodeProperties>, typeof<FSharpProjectNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<FSharpFileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
-<<<<<<< HEAD
-#if AUTOMATION                
-                this.AddCATIDMapping(typeof<OAFSharpFileItem>, typeof<OAFSharpFileItem>.GUID)
-#endif
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
                 // This one we use the same as F# file nodes since both refer to files
                 this.AddCATIDMapping(typeof<FileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
@@ -624,11 +595,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 let documentTracker = this.Site.GetService(typeof<SVsTrackProjectDocuments>) :?> IVsTrackProjectDocuments2
                 documentTracker.AdviseTrackProjectDocumentsEvents(this, &trackDocumentsHandle) |> ignore
 
-<<<<<<< HEAD
-=======
-
-                
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
             /// Returns the outputfilename based on the output type
             member x.OutputFileName = 
                 let assemblyName = this.ProjectMgr.GetProjectProperty(GeneralPropertyPageTag.AssemblyName.ToString(), true)
@@ -638,17 +604,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
                 assemblyName + GetOutputExtension(outputType)
 
-<<<<<<< HEAD
-#if AUTOMATION
-            /// Retreive the CodeDOM provider
-            member this.CodeDomProvider : IVSMDCodeDomProvider =
-                    if (codeDomProvider= null) then 
-                        codeDomProvider <- (new VSMDFSharpProvider(this.VSProject) :> IVSMDCodeDomProvider)
-                    codeDomProvider
-#endif
-
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
             /// Get the VSProject corresponding to this project
             member this.VSProject : VSLangProj.VSProject  = 
                     if (vsProject= null) then 
@@ -830,13 +785,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         typeof<FSharpDebugPropPageComClass>.GUID 
                         typeof<FSharpReferencePathsPropPageComClass>.GUID 
                     |] (VSHiveUtilities.getPriorityExtendedPropertyPages())
-<<<<<<< HEAD
-#if AUTOMATION
-            override x.GetAutomationObject() =
-                new OAFSharpProject(this) |> box
-#endif
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
 
             /// Overriding to provide customization of files on add files.
             /// This will replace tokens in the file with actual value (namespace, class name,...)
@@ -1352,16 +1300,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             
             /// Creates the services exposed by this project.
             member x.CreateServices(serviceType:Type) =
-<<<<<<< HEAD
-#if AUTOMATION
-                if (typeof<SVSMDCodeDomProvider> = serviceType) then 
-                    this.CodeDomProvider |> box
-                else if (typeof<System.CodeDom.Compiler.CodeDomProvider> = serviceType) then 
-                    this.CodeDomProvider.CodeDomProvider
-                else 
-#endif
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
                 if (typeof<VSLangProj.VSProject> = serviceType) then 
                     this.VSProject |> box
                 else if (typeof<EnvDTE.Project> = serviceType) then 
@@ -1689,10 +1627,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     result <- null
                     VSConstants.E_NOTIMPL
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
                     // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
                     // in the registry hive so that more editors can be added without changing this part of the
@@ -2107,16 +2041,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                            | :? IOleServiceProvider as x -> x
                            | _ -> null
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
-<<<<<<< HEAD
-                Some(new SelectionElementValueChangedListener(sp, root))
 
-#if AUTOMATION
-            let mutable vsProjectItem : OAVSProjectItem  = null
-            let mutable automationObject : OAFSharpFileItem  option = None
-#endif
-=======
                 Some(new SelectionElementValueChangedListener(sp))
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
 
             do selectionChangedListener.Value.Init()
                         
@@ -2170,18 +2096,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 with get() = x.ItemNode.GetMetadata(ProjectFileConstants.SubType)
                 and set(value) = x.ItemNode.SetMetadata(ProjectFileConstants.SubType, value)
 
-<<<<<<< HEAD
-#if AUTOMATION
-            member x.VSProjectItem = 
-                    if (null = vsProjectItem) then
-                        vsProjectItem <- new OAVSProjectItem(x)
-                    vsProjectItem
-
-            override x.Object = x.VSProjectItem |> box
-#endif
-
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
             override x.CreatePropertiesObject() =
                 let properties = new FSharpFileNodeProperties(x)
                 (properties :> NodeProperties)
@@ -2204,16 +2118,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 finally
                     base.Dispose(disposing)                
 
-<<<<<<< HEAD
-#if AUTOMATION
-            /// Returns an FSharp FileNode specific object implmenting DTE.ProjectItem
-            override x.GetAutomationObject() =
-                if automationObject.IsNone then
-                    automationObject <- Some(new OAFSharpFileItem((x.ProjectMgr.GetAutomationObject() :?> OAProject), x))
-                automationObject |> box
-#endif
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
             override x.ImageIndex =
                     if (x.IsFormSubType) then 
                         int32 ProjectNode.ImageName.WindowsForm
@@ -2612,21 +2516,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 new(project:ProjectNode, referencedProjectName:string, projectPath:string, projectReference:string) =
                     { inherit ProjectReferenceNode(project, referencedProjectName, projectPath, projectReference) }
 
-<<<<<<< HEAD
-            
-                /// Checks if a reference can be added to the project. 
-                /// It calls base to see if the reference is not already there,
-                /// and that it is not circular reference.
-                /// If the target project is a a FSharp Project we can not add the project reference 
-                /// because this scenario is not supported.
-            
-                /// <param name="errorHandler">The error handler delegate to return</param>
-               /// <returns>false if reference cannot be added, otherwise true</returns>
-                override x.CheckIfCanAddReference() =
-                        base.CheckIfCanAddReference()
-            
-=======
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
                 /// Evaluates all fsharpfilenode children of the project and returns true if anyone has subtype set to Form
             
                 /// <returns>true if a fsharpfilenode with subtype Form is found</returns>
@@ -2663,71 +2552,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.CreateProjectReferenceNode(selectorData:VSCOMPONENTSELECTORDATA) =
                 (new FSharpProjectReferenceNode(x.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef) :> ProjectReferenceNode)
 
-<<<<<<< HEAD
-    type internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider, projMgr:ProjectNode ) =
-            inherit SelectionListener(serviceProvider)
-
-            override x.OnElementValueChanged(elementid:uint32, varValueOld:obj, _varValueNew:obj) =
-                let mutable hr = VSConstants.S_OK
-                if (elementid = VSConstants.DocumentFrame) then 
-                    let pWindowFrame = varValueOld :?> IVsWindowFrame
-                    if (pWindowFrame <> null) then 
-                        let mutable document : obj = null
-                        // Get the name of the document associated with the old window frame
-                        hr <- pWindowFrame.GetProperty(int32 __VSFPROPID.VSFPROPID_pszMkDocument, &document)
-                        if (ErrorHandler.Succeeded(hr)) then 
-                            let mutable itemid = 0u
-                            let hier = (box projMgr :?> IVsHierarchy)
-                            hr <- hier.ParseCanonicalName((document :?> string), &itemid)
-                            match projMgr.NodeFromItemId(itemid) with 
-                            | :? FSharpFileNode as node -> 
-                                ignore(node)
-                            | _ -> 
-                                ()
-                hr
-
-#if AUTOMATION
-
-    /// Add support for automation on fs files.
-    [<ComVisible(true)>]
-    [<Guid("F88F0B48-A3BA-4069-B465-AA4C8F92ECD7")>]
-    type public OAFSharpFileItem(project:OAProject, node:FileNode) = 
-            inherit OAFileItem(project, node) 
-            let mutable codeModel : EnvDTE.FileCodeModel = null
-
-            override this.FileCodeModel : EnvDTE.FileCodeModel  = 
-                match codeModel with 
-                | null -> 
-                    if this.Node = null then null else
-                    if this.Node.OleServiceProvider = null then null else
-                    let sp = new ServiceProvider(this.Node.OleServiceProvider)
-                    match TryGetService2<SVSMDCodeDomProvider,IVSMDCodeDomProvider>(sp :> IServiceProvider)  with
-                    | None -> null
-                    | Some(smdProvider) -> 
-                        let provider = (smdProvider.CodeDomProvider :?> CodeDomProvider)
-                        codeModel <- FSharpCodeModelFactory.CreateFileCodeModel((box this :?> EnvDTE.ProjectItem), provider, this.Node.Url)
-                        codeModel    
-                | _ -> codeModel
-                
-            override this.Open(viewKind: string) : EnvDTE.Window  = 
-              if (String.Compare(viewKind, EnvDTE.Constants.vsViewKindPrimary) = 0) &&
-                  // Get the subtype and decide the viewkind based on the result
-                 ((this.Node :?> FSharpFileNode).IsFormSubType) then 
-                  base.Open(EnvDTE.Constants.vsViewKindDesigner)
-              else
-                  base.Open(viewKind)
-
-    [<ComVisible(true)>]
-    type public OAFSharpProject(fsharpProject:FSharpProjectNode) =
-            inherit OAProject(fsharpProject)
-
-            override x.CodeModel : EnvDTE.CodeModel =
-                FSharpCodeModelFactory.CreateProjectCodeModel(x)
-#endif
-=======
-    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
+    type internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
             inherit SelectionListener(serviceProvider)
 
             override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
 
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
