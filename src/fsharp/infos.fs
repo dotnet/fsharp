@@ -23,9 +23,14 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Core.Printf
+
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
+#endif
+
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 //-------------------------------------------------------------------------
@@ -499,9 +504,12 @@ type OptionalArgInfo =
                         let ty = destByrefTy g ty
                         PassByRef (ty, analyze ty)
                     elif isObjTy g ty then
-                        if   TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute ilParam.CustomAttrs then WrapperForIDispatch
-                        elif TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute ilParam.CustomAttrs then WrapperForIUnknown
-                        else MissingValue
+                        match ilParam.Marshal with
+                        | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant(ILFieldInit.Null)
+                        | _ -> 
+                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute ilParam.CustomAttrs then WrapperForIUnknown
+                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute ilParam.CustomAttrs then WrapperForIDispatch
+                            else MissingValue
                     else 
                         DefaultValue
                 CallerSide (analyze (ImportTypeFromMetadata amap m ilScope ilTypeInst [] ilParam.Type))

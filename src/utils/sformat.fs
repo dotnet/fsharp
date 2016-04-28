@@ -264,6 +264,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         open System
         open System.Reflection
 
+#if FX_RESHAPED_REFLECTION
+        open PrimReflectionAdapters
+        open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
         [<NoEquality; NoComparison>]
         type TypeInfo =
           | TupleType of Type list
@@ -273,7 +278,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           | UnitType
           | ObjectType of Type
 
-             
         let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
         let equivHeadTypes (ty1:Type) (ty2:Type) = 
             isNamedType(ty1) &&
@@ -417,7 +421,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           else str
 
         let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
-        
+
         // An implementation of break stack.
         // Uses mutable state, relying on linear threading of the state.
 
@@ -709,8 +713,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let ty = obj.GetType()
 #if FX_ATLEAST_PORTABLE
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            prop.GetValue(obj,[||])
-#else            
+            if prop <> null then prop.GetValue(obj,[||])
+#if FX_NO_MISSINGMETHODEXCEPTION
+            // Profile 7, 47, 78 and 259 raise MissingMemberException
+            else 
+                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
+                raise (System.MissingMemberException(msg))
+#else
+            // Others raise MissingMethodException
+            else 
+                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
+                raise (System.MissingMethodException(msg))
+#endif
+#else
 #if FX_NO_CULTURE_INFO_ARGS
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
 #else

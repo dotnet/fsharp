@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);2008</NoWarn>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <CreateVsixContainer>false</CreateVsixContainer>
+	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+	<DebugSymbols>false</DebugSymbols>
+	<DebugType>None</DebugType>
+  </PropertyGroup>
+  <PropertyGroup>
+	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectGuid>{5B739CF3-1116-4EB4-B598-6C16BEA81CE5}</ProjectGuid>
+	<TemplateCategory>ProjectTemplates</TemplateCategory>
+    <AssemblyName>NetCoreProject</AssemblyName>
+	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+  </PropertyGroup>
+  <Import Project="..\..\src\FSharp.Common.props" />
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Script.fsx">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+	  <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
+    <TemplateFiles Include="Template\AssemblyInfo.fs" />
+    <TemplateFiles Include="Template\NETCore7PortableLibrary.vstemplate" />
+    <TemplateFiles Include="Template\PortableLibrary.fsproj" />
+    <TemplateFiles Include="Template\PortableLibrary1.fs" />
+    <TemplateFiles Include="Template\Script.fsx" />
+  </ItemGroup>
+  
+  <Import Project="..\..\src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+  <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
+	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+  </Target>
+  
+  <Target Name="TemplateProjectOutputGroup" />
+</Project>

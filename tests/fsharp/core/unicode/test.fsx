@@ -2,12 +2,14 @@
 #if Portable
 module Core_unicode
 #endif
+
+open System.IO
+
 let failures = ref false
 let reportFailure s  = 
   stderr.WriteLine ("NO: "+s); failures := true
 
 (* TEST SUITE FOR UNICODE CHARS *)
-
 
 
 #if NetCore
@@ -33,10 +35,10 @@ let input_byte (x : System.IO.FileStream) =
 let test2925 () = 
   printfn "test2925...";
   (* This writes a file in the standard utf8 encoding.  Probably needs to be adjusted if default encodings differ *)
-  let os = new System.IO.StreamWriter("out1.txt", false, System.Text.Encoding.UTF8) in
+  let os = new System.IO.StreamWriter(new FileStream("out1.txt", FileMode.Create), System.Text.Encoding.UTF8) in
   os.Write "\u00a9"; (* copyright *)
   os.Write "\u2260"; (* not equals *)
-  os.Close();
+  os.Dispose();
   use is1 = System.IO.File.OpenRead "out1.txt" in 
   use is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
@@ -46,8 +48,8 @@ let test2925 () =
       if c1 <> c2 then reportFailure "test3732: file contents differ";
     done;
   with :? System.IO.EndOfStreamException -> 
-    is1.Close();
-    is2.Close();
+    is1.Dispose();
+    is2.Dispose();
     ()
 
 let _ = test2925 ()
@@ -55,10 +57,10 @@ let _ = test2925 ()
 let test2925b () = 
   printfn "test2925b...";
   (* This writes a file in the standard utf8 encoding.  Probably needs to be adjusted if default encodings differ *)
-  let os = new System.IO.StreamWriter("out1.txt", false, System.Text.Encoding.UTF8) in
+  let os = new System.IO.StreamWriter(new FileStream("out1.txt", FileMode.Create), System.Text.Encoding.UTF8) in
   os.Write "\U000000a9"; (* copyright *)
   os.Write "\U00002260"; (* not equals *)
-  os.Close();
+  os.Dispose();
   let is1 = System.IO.File.OpenRead "out1.txt" in 
   let is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
@@ -68,8 +70,8 @@ let test2925b () =
       if c1 <> c2 then reportFailure "test373289: file contents differ";
     done;
   with :? System.IO.EndOfStreamException -> 
-    is1.Close();
-    is2.Close();
+    is1.Dispose();
+    is2.Dispose();
     ()
 
 let _ = test2925b ()
@@ -77,11 +79,11 @@ let _ = test2925b ()
 let test2926 () = 
   printfn "test2926...";
   (* This writes a file in the standard utf8 encoding.  Probably needs to be adjusted if default encodings differ *)
-  let os = new System.IO.StreamWriter("out2.txt", false, System.Text.Encoding.UTF8) in
+  let os = new System.IO.StreamWriter(new FileStream("out2.txt", FileMode.Create), System.Text.Encoding.UTF8) in
   let s = "©≠" in   (* <<<<<  UNICODE STRING for "\u00a9\u2260" HERE!!! *)
   os.Write s;
   Printf.printf "length s = %d\n" (String.length s);
-  os.Close();
+  os.Dispose();
   let is1 = System.IO.File.OpenRead "out2.txt" in 
   let is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
@@ -91,8 +93,8 @@ let test2926 () =
       if c1 <> c2 then reportFailure (sprintf "test37d2392: file contents differ, got '%x', expected '%x'" c1 c2);
     done;
   with :? System.IO.EndOfStreamException -> 
-    is1.Close();
-    is2.Close();
+    is1.Dispose();
+    is2.Dispose();
     ()
 
 let _ = test2926 ()
@@ -109,10 +111,10 @@ let _ = test2927 ()
 let test2928 () = 
   printfn "test2928...";
   (* This writes a file in the default encoding. *)
-  let os = new System.IO.StreamWriter("out3.txt", false, System.Text.Encoding.UTF8) in
+  let os = new System.IO.StreamWriter(new FileStream("out3.txt", FileMode.Create), System.Text.Encoding.UTF8) in
   let s = "©≠" in   (* <<<<<  UNICODE STRING for "\u00a9\u2260" HERE!!! *)
   os.Write s;
-  os.Close()
+  os.Dispose()
 
 
 

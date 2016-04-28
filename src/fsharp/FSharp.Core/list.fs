@@ -590,31 +590,104 @@ namespace Microsoft.FSharp.Collections
         let tryFindIndexBack f list = list |> toArray |> Array.tryFindIndexBack f
 
         [<CompiledName("Sum")>]
-        let inline sum          (list:list<_>) = Seq.sum list
+        let inline sum          (list:list<'T>) =
+            match list with 
+            | [] ->  LanguagePrimitives.GenericZero< 'T >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'T >
+                for x in t do
+                    acc <- Checked.(+) acc x
+                acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy f     (list:list<_>) = Seq.sumBy f list
+        let inline sumBy (f: 'T -> 'U)     (list:list<'T>) =
+            match list with 
+            | [] ->  LanguagePrimitives.GenericZero< 'U >
+            | t ->
+                let mutable acc = LanguagePrimitives.GenericZero< 'U >
+                for x in t do
+                    acc <- Checked.(+) acc (f x)
+                acc
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) = Seq.max list
+        let inline max          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x > acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy f (list:list<_>) = Seq.maxBy f list
-
+        let inline maxBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv > accv then
+                        acc <- x
+                        accv <- currv
+                acc
+            
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) = Seq.min list
+        let inline min          (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                for x in t do
+                    if x < acc then
+                        acc <- x
+                acc
 
         [<CompiledName("MinBy")>]
-        let inline minBy f (list:list<_>) = Seq.minBy f list
+        let inline minBy f (list:list<_>) =
+            match list with 
+            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | h::t ->
+                let mutable acc = h
+                let mutable accv = f h
+                for x in t do
+                    let currv = f x
+                    if currv < accv then
+                        acc <- x
+                        accv <- currv
+                acc
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<_>) = Seq.average list
+        let inline average      (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | xs ->
+                let mutable sum = LanguagePrimitives.GenericZero< 'T >
+                let mutable count = 0
+                for x in xs do
+                    sum <- Checked.(+) sum x
+                    count <- count + 1
+                LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy f (list:list<_>) = Seq.averageBy f list
+        let inline averageBy (f : 'T -> 'U) (list:list<'T>) =
+            match list with 
+            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            | xs ->
+                let mutable sum = LanguagePrimitives.GenericZero< 'U >
+                let mutable count = 0
+                for x in xs do
+                    sum <- Checked.(+) sum (f x)
+                    count <- count + 1
+                LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
+
+        [<CompiledName("AllPairs")>]
+        let allPairs list1 list2 = Microsoft.FSharp.Primitives.Basics.List.allPairs list1 list2
 
         [<CompiledName("CompareWith")>]
         let inline compareWith (comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =

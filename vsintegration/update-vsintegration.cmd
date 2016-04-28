@@ -99,8 +99,6 @@ if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
 REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 
-
-
 rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
 %SN32% -Vr FSharp.Core,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Build,b03f5f7f11d50a3a

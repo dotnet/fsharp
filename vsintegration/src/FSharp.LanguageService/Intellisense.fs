@@ -46,6 +46,8 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
                 let span = ss.CreateTrackingSpan(MakeSpan(ss,sl,sc,el,ec), SpanTrackingMode.EdgeInclusive)
                 yield span  |]
 
+    let getParameters (m : FSharpMethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
+
     do assert(methods.Length > 0)
 
     override x.GetColumnOfStartOfLongId() = nwpl.LongIdStartLocation.Column
@@ -60,14 +62,14 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetCount() = methods.Length
 
-    override x.GetDescription(index) = safe index "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
+    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, m.Description))
             
-    override x.GetType(index) = safe index "" (fun m -> m.TypeText)
+    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
 
-    override x.GetParameterCount(index) =  safe index 0 (fun m -> m.Parameters.Length) 
+    override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
-    override x.GetParameterInfo(index, parameter, nameOut, displayOut, descriptionOut) =
-        let name,display = safe index ("","") (fun m -> let p = m.Parameters.[parameter] in p.ParameterName,p.Display )
+    override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName,p.Display )
            
         nameOut <- name
         displayOut <- display
@@ -239,12 +241,12 @@ type internal FSharpIntellisenseInfo
                      ) = 
         inherit IntellisenseInfo() 
 
-        // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
-        let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
-
         let methodList = 
           if provideMethodList then 
             try
+                // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
+                let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
+
                 // we need some typecheck info, even if stale, in order to look up e.g. method overload types/xmldocs
                 if typedResults.HasFullTypeCheckInfo then 
 
@@ -253,12 +255,12 @@ type internal FSharpIntellisenseInfo
                     | Some nwpl -> 
                         // Note: this may alternatively workaround some parts of 90778 - the real fix for that is to have before-overload-resolution name-sink work correctly.
                         // However it also deals with stale typecheck info that may not have recorded name resolutions for a recently-typed long-id.
-                        let names = Some nwpl.LongId
+                        let names = nwpl.LongId
                         // "names" is a long-id that we can fallback-lookup in the local environment if captured name resolutions finds nothing at the location.
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
-                        let lidEndLine,lidEndCol = Pos.toZ nwpl.LongIdEndLocation 
-                        let methods = typedResults.GetMethodsAlternate(Range.Line.fromZ lidEndLine, lidEndCol, "", names)  |> Async.RunSynchronously
+                        let lidEnd = nwpl.LongIdEndLocation
+                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
@@ -289,7 +291,8 @@ type internal FSharpIntellisenseInfo
                                     false  // note: textAtOpenParenLocation is not necessarily otherwise "(", for example in "sin 42.0" it is "4"
                             let filteredMethods =
                                 [| for m in methods.Methods do 
-                                        if m.IsStaticArguments = isThisAStaticArgumentsTip then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
+                                        if (isThisAStaticArgumentsTip && m.StaticParameters.Length > 0) ||
+                                           (not isThisAStaticArgumentsTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
                                             yield m |]
                             if filteredMethods.Length <> 0 then
                                 Some (FSharpMethodListForAMethodTip(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip)

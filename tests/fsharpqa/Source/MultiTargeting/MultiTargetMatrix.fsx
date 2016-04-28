@@ -25,22 +25,28 @@ module Helpers =
         run compilerPath ["-o:consumer.exe"; "--noframework"; sprintf "\"-r:%s\"" runtime; "-r:author.dll"; source]
 
     let private consumerRunFsi fsiPath source =
+        let localFSharpCore = Path.Combine(Environment.CurrentDirectory, "FSharp.Core.dll")
+        if File.Exists(localFSharpCore) then
+            File.Delete(localFSharpCore)
         run fsiPath ["--exec"; source]
-
-    // runs the consumer EXE, handling binding redirects automatically
-    let private consumerRunExe redirectVer =
-        if File.Exists("consumer.exe.config") then
-            File.Delete("consumer.exe.config")
-
-        let content = File.ReadAllText("consumer.exe.config.txt").Replace("{ver}", redirectVer)
-        File.WriteAllText("consumer.exe.config", content)    
-
-        run "consumer.exe" []
 
     /// gets the version of the assembly at the specified path
     let getVer dllPath =
         let asm = Assembly.ReflectionOnlyLoadFrom(dllPath)
         asm.GetName().Version.ToString()
+
+    // runs the consumer EXE, handling binding redirects automatically
+    let private consumerRunExe consumerRuntime = 
+        if File.Exists("consumer.exe.config") then
+            File.Delete("consumer.exe.config")
+            
+        let redirectVer = getVer consumerRuntime
+        let content = File.ReadAllText("consumer.exe.config.txt").Replace("{ver}", redirectVer)
+        File.WriteAllText("consumer.exe.config", content)
+        
+        File.Copy(consumerRuntime, Path.Combine(Environment.CurrentDirectory, "FSharp.Core.dll"), true)
+
+        run "consumer.exe" []
 
     /// runs through the end-to-end scenario of
     ///  - Author uses [authorComiler] to build DLL targeting [authorRuntime] with source [authorSource]
@@ -49,7 +55,7 @@ module Helpers =
     let testExe authorCompiler authorRuntime consumerCompiler consumerRuntime authorSource consumerSource =
         authorCompile authorCompiler authorRuntime authorSource
         consumerCompile consumerCompiler consumerRuntime consumerSource
-        consumerRunExe (getVer consumerRuntime)
+        consumerRunExe consumerRuntime
 
     /// runs through the end-to-end scenario of
     ///  - Author uses [authorComiler] to build DLL targeting [authorRuntime] with source [authorSource]

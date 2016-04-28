@@ -17,7 +17,6 @@ type EnclosingTypeDefs = ILTypeDef list * ILTypeDef
 let checking = false 
 let notlazy v = Lazy.CreateFromValue v
 
-// REVIEW: Consider removing Post-Dev11 M3
 let mutable morphCustomAttributeData = false
 
 let enablemorphCustomAttributeData() = 

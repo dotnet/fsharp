@@ -32,39 +32,39 @@ module internal MSBuildResolver =
 
     /// Information about a resolved file.
     type ResolvedFile = 
-        { /// Item specification
+        { /// Item specification.
           itemSpec:string
-          /// Location that the assembly was resolved from
+          /// Location that the assembly was resolved from.
           resolvedFrom:ResolvedFrom
-          /// The long fusion name of the assembly
+          /// The long fusion name of the assembly.
           fusionName:string
-          /// The version of the assembly (like 4.0.0.0)
+          /// The version of the assembly (like 4.0.0.0).
           version:string
-          /// The name of the redist the assembly was found in
+          /// The name of the redist the assembly was found in.
           redist:string        
-          /// Round-tripped baggage string
+          /// Round-tripped baggage string.
           baggage:string
         }
     
     /// Reference resolution results. All paths are fully qualified.
     type ResolutionResults = 
-        { /// Paths to primary references
+        { /// Paths to primary references.
           resolvedFiles:ResolvedFile[]
-          /// Paths to dependencies
+          /// Paths to dependencies.
           referenceDependencyPaths:string[]
-          /// Paths to related files (like .xml and .pdb)
+          /// Paths to related files (like .xml and .pdb).
           relatedPaths:string[]
           /// Paths to satellite assemblies used for localization.
           referenceSatellitePaths:string[]
           /// Additional files required to support multi-file assemblies.
           referenceScatterPaths:string[]
-          /// Paths to files that reference resolution recommend be copied to the local directory
+          /// Paths to files that reference resolution recommend be copied to the local directory.
           referenceCopyLocalPaths:string[]
           /// Binding redirects that reference resolution recommends for the app.config file.
           suggestedBindingRedirects:string[] }
     
 
-    /// Perform assembly resolution on the given references
+    /// Perform assembly resolution on the given references.
     val Resolve:
                 resolutionEnvironment: ResolutionEnvironment *
                 references:seq<string (* baggage *) * string> * 

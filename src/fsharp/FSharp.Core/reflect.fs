@@ -3,208 +3,15 @@
 // Reflection on F# values. Analyze an object to see if it the representation
 // of an F# value.
 
-#if FX_RESHAPED_REFLECTION
 
 namespace Microsoft.FSharp.Core
 
 open System
 open System.Reflection
-
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Primitives.Basics
 
-module ReflectionAdapters = 
-
-    [<Flags>]
-    type BindingFlags =
-        | DeclaredOnly = 2
-        | Instance = 4 
-        | Static = 8
-        | Public = 16
-        | NonPublic = 32
-    let inline hasFlag (flag : BindingFlags) f  = (f &&& flag) = flag
-    let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f
-    let isPublicFlag    f    = hasFlag BindingFlags.Public f
-    let isStaticFlag    f    = hasFlag BindingFlags.Static f
-    let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
-    let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
-
-    [<System.Flags>]
-    type TypeCode = 
-        | Int32     = 0
-        | Int64     = 1
-        | Byte      = 2
-        | SByte     = 3
-        | Int16     = 4
-        | UInt16    = 5
-        | UInt32    = 6
-        | UInt64    = 7
-        | Single    = 8
-        | Double    = 9
-        | Decimal   = 10
-        | Other     = 11
-        
-    let isAcceptable bindingFlags isStatic isPublic =
-        // 1. check if member kind (static\instance) was specified in flags
-        ((isStaticFlag bindingFlags && isStatic) || (isInstanceFlag bindingFlags && not isStatic)) && 
-        // 2. check if member accessibility was specified in flags
-        ((isPublicFlag bindingFlags && isPublic) || (isNonPublicFlag bindingFlags && not isPublic))
-    
-    let publicFlags = BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static
-
-    let commit (results : _[]) = 
-        match results with
-        | [||] -> null
-        | [| m |] -> m
-        | _ -> raise (AmbiguousMatchException())
-
-    let canUseAccessor (accessor : MethodInfo) nonPublic = 
-        box accessor <> null && (accessor.IsPublic || nonPublic)
-    
-    open PrimReflectionAdapters
-
-    type System.Type with        
-        member this.GetNestedType (name, bindingFlags) = 
-            // MSDN: http://msdn.microsoft.com/en-us/library/0dcb3ad5.aspx
-            // The following BindingFlags filter flags can be used to define which nested types to include in the search:
-            // You must specify either BindingFlags.Public or BindingFlags.NonPublic to get a return.
-            // Specify BindingFlags.Public to include public nested types in the search.
-            // Specify BindingFlags.NonPublic to include non-public nested types (that is, private, internal, and protected nested types) in the search.
-            // This method returns only the nested types of the current type. It does not search the base classes of the current type. 
-            // To find types that are nested in base classes, you must walk the inheritance hierarchy, calling GetNestedType at each level.
-            let nestedTyOpt =                
-                this.GetTypeInfo().DeclaredNestedTypes
-                |> Seq.tryFind (fun nestedTy -> 
-                    nestedTy.Name = name && (
-                        (isPublicFlag bindingFlags && nestedTy.IsNestedPublic) || 
-                        (isNonPublicFlag bindingFlags && (nestedTy.IsNestedPrivate || nestedTy.IsNestedFamily || nestedTy.IsNestedAssembly || nestedTy.IsNestedFamORAssem || nestedTy.IsNestedFamANDAssem))
-                        )
-                    )
-                |> Option.map (fun ti -> ti.AsType())
-            defaultArg nestedTyOpt null
-        // use different sources based on Declared flag
-        member this.GetMethods(bindingFlags) = 
-            (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredMethods else this.GetRuntimeMethods())
-            |> Seq.filter (fun m -> isAcceptable bindingFlags m.IsStatic m.IsPublic)
-            |> Seq.toArray
-        // use different sources based on Declared flag
-        member this.GetFields(bindingFlags) = 
-            (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredFields else this.GetRuntimeFields())
-            |> Seq.filter (fun f -> isAcceptable bindingFlags f.IsStatic f.IsPublic)
-            |> Seq.toArray
-        // use different sources based on Declared flag
-        member this.GetProperties(?bindingFlags) = 
-            let bindingFlags = defaultArg bindingFlags publicFlags
-            (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredProperties else this.GetRuntimeProperties())
-            |> Seq.filter (fun pi-> 
-                let mi = if pi.GetMethod <> null then pi.GetMethod else pi.SetMethod
-                assert (mi <> null)
-                isAcceptable bindingFlags mi.IsStatic mi.IsPublic
-                )
-            |> Seq.toArray
-        // use different sources based on Declared flag
-        member this.GetMethod(name, ?bindingFlags) =
-            let bindingFlags = defaultArg bindingFlags publicFlags
-            this.GetMethods(bindingFlags)
-            |> Array.filter(fun m -> m.Name = name)
-            |> commit
-        // use different sources based on Declared flag
-        member this.GetProperty(name, bindingFlags) = 
-            this.GetProperties(bindingFlags)
-            |> Array.filter (fun pi -> pi.Name = name)
-            |> commit
-        member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition
-        member this.GetGenericArguments() = 
-            if this.IsGenericTypeDefinition then this.GetTypeInfo().GenericTypeParameters
-            elif this.IsGenericType then this.GenericTypeArguments
-            else [||]
-        member this.BaseType = this.GetTypeInfo().BaseType
-        member this.GetConstructor(parameterTypes : Type[]) = 
-            this.GetTypeInfo().DeclaredConstructors
-            |> Seq.filter (fun ci ->
-                not ci.IsStatic && //exclude type initializer
-                (
-                    let parameters = ci.GetParameters()
-                    (parameters.Length = parameterTypes.Length) &&
-                    (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty) 
-                )
-            )
-            |> Seq.toArray
-            |> commit
-        // MSDN: returns an array of Type objects representing all the interfaces implemented or inherited by the current Type.
-        member this.GetInterfaces() = this.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
-        member this.GetConstructors(?bindingFlags) = 
-            let bindingFlags = defaultArg bindingFlags publicFlags
-            // type initializer will also be included in resultset
-            this.GetTypeInfo().DeclaredConstructors 
-            |> Seq.filter (fun ci -> isAcceptable bindingFlags ci.IsStatic ci.IsPublic)
-            |> Seq.toArray
-        member this.GetMethods() = this.GetMethods(publicFlags)
-        member this.Assembly = this.GetTypeInfo().Assembly
-        member this.IsSubclassOf(otherTy : Type) = this.GetTypeInfo().IsSubclassOf(otherTy)
-        member this.IsEnum = this.GetTypeInfo().IsEnum;
-        member this.GetField(name, bindingFlags) = 
-            this.GetFields(bindingFlags)
-            |> Array.filter (fun fi -> fi.Name = name)
-            |> commit
-        member this.GetProperty(name, propertyType, parameterTypes : Type[]) = 
-            this.GetProperties()
-            |> Array.filter (fun pi ->
-                pi.Name = name &&
-                pi.PropertyType = propertyType &&
-                (
-                    let parameters = pi.GetIndexParameters()
-                    (parameters.Length = parameterTypes.Length) &&
-                    (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty)
-                )
-            )
-            |> commit
-        static member GetTypeCode(ty : Type) = 
-            if   typeof<System.Int32>.Equals ty  then TypeCode.Int32
-            elif typeof<System.Int64>.Equals ty  then TypeCode.Int64
-            elif typeof<System.Byte>.Equals ty   then TypeCode.Byte
-            elif ty = typeof<System.SByte>  then TypeCode.SByte
-            elif ty = typeof<System.Int16>  then TypeCode.Int16
-            elif ty = typeof<System.UInt16> then TypeCode.UInt16
-            elif ty = typeof<System.UInt32> then TypeCode.UInt32
-            elif ty = typeof<System.UInt64> then TypeCode.UInt64
-            elif ty = typeof<System.Single> then TypeCode.Single
-            elif ty = typeof<System.Double> then TypeCode.Double
-            elif ty = typeof<System.Decimal> then TypeCode.Decimal
-            else TypeCode.Other
-
-    type System.Reflection.MemberInfo with
-        member this.GetCustomAttributes(attrTy, inherits) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this, attrTy, inherits) |> Seq.toArray)
-
-    type System.Reflection.MethodInfo with
-        member this.GetCustomAttributes(inherits : bool) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this, inherits) |> Seq.toArray)
-
-    type System.Reflection.PropertyInfo with
-        member this.GetGetMethod(nonPublic) = 
-            let mi = this.GetMethod
-            if canUseAccessor mi nonPublic then mi 
-            else null
-        member this.GetSetMethod(nonPublic) = 
-            let mi = this.SetMethod
-            if canUseAccessor mi nonPublic then mi
-            else null
-    
-    type System.Reflection.Assembly with
-        member this.GetTypes() = 
-            this.DefinedTypes 
-            |> Seq.map (fun ti -> ti.AsType())
-            |> Seq.toArray
-
-    type System.Delegate with
-        static member CreateDelegate(delegateType, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType)
-        static member CreateDelegate(delegateType, obj : obj, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType, obj)            
-
-#endif
-
-namespace Microsoft.FSharp.Reflection 
+namespace Microsoft.FSharp.Reflection
 
 module internal ReflectionUtils = 
 
@@ -236,10 +43,8 @@ module internal Impl =
     let debug = false
 
 #if FX_RESHAPED_REFLECTION
-    
     open PrimReflectionAdapters
     open ReflectionAdapters    
-
 #endif
 
     let getBindingFlags allowAccess = ReflectionUtils.toBindingFlags (defaultArg allowAccess false)
