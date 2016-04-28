@@ -394,14 +394,14 @@ let AddLocalVal tcSink scopem v env =
     env
 
 let AddLocalExnDefn tcSink scopem (exnc:Tycon) env =
-    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv BulkAdd.No nenv (mkLocalEntityRef exnc)) env
+    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv nenv (mkLocalEntityRef exnc)) env
     (* Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location *)
     CallEnvSink tcSink (exnc.Range,env.NameEnv,env.eAccessRights)
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
  
 let AddLocalTyconRefs ownDefinition g amap m tcrefs env = 
-     ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) env 
+     ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv ownDefinition g amap m false nenv tcrefs) env 
 
 let AddLocalTycons g amap m (tycons: Tycon list) env = 
      AddLocalTyconRefs false g amap m (List.map mkLocalTyconRef tycons) env 
@@ -439,7 +439,7 @@ let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisib
     // Compute the top-rooted type definitions
     let tcrefs = ccu.RootTypeAndExceptionDefinitions |> List.map (mkNonLocalCcuRootEntityRef ccu) 
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
-    let env = ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.Yes false g amap scopem true nenv tcrefs) env
+    let env = ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv false g amap scopem true nenv tcrefs) env
     //CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env
 
@@ -449,7 +449,7 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp:ModuleOrNamespa
     // Compute the top-rooted type definitions
     let tcrefs = mtyp.TypeAndExceptionDefinitions |> List.map mkLocalTyconRef
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
-    let env = ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true nenv tcrefs) env
+    let env = ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv false g amap scopem true nenv tcrefs) env
     let env = {env with eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems}
     CallEnvSink tcSink (scopem,env.NameEnv,env.eAccessRights)
     env

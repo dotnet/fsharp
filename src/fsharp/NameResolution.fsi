@@ -106,9 +106,6 @@ type FullyQualifiedFlag =
   | FullyQualified
   | OpenQualified
 
-[<RequireQualifiedAccess>]
-type BulkAdd = Yes | No
-
 /// Lookup patterns in name resolution environment
 val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
 
@@ -125,10 +122,10 @@ val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef
 val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
-val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
+val internal AddTyconRefsToNameEnv                 : bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
-val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
+val internal AddExceptionDeclsToNameEnv            : NameResolutionEnv -> TyconRef -> NameResolutionEnv
 
 /// Add a module abbreviation to the name resolution environment 
 val internal AddModuleAbbrevToNameEnv              : Ident -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
