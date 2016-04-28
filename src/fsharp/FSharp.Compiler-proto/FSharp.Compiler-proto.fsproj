@@ -341,6 +341,15 @@
     <Compile Include="..\TypeRelations.fs">
       <Link>TypeRelations.fs</Link>
     </Compile>
+    <Compile Include="..\SignatureConformance.fs">
+      <Link>Logic\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodOverrides.fs">
+      <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fs">
+      <Link>MethodCalls.fs</Link>
+    </Compile>
     <Compile Include="..\PatternMatchCompilation.fsi">
       <Link>PatternMatchCompilation.fsi</Link>
     </Compile>
