@@ -3442,9 +3442,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 
                 projectInstance.SetProperty("UTFOutput", "true");
 
+#if FX_PREFERRED_UI_LANG
+                // The CoreCLR build of FSC will use the CultureName since lcid doesn't apply very well
+                // so that the errors reported by fsc.exe are in the right locale
+                projectInstance.SetProperty("PREFERREDUILANG", System.Threading.Thread.CurrentThread.CurrentUICulture.Name);
+#else
                 // When building, we need to set the flags for the fsc.exe that we spawned
                 // so that the errors reported by fsc.exe are in the right locale
                 projectInstance.SetProperty("LCID", System.Threading.Thread.CurrentThread.CurrentUICulture.LCID.ToString());
+#endif
 
                 this.BuildProject.ProjectCollection.HostServices.SetNodeAffinity(projectInstance.FullPath, NodeAffinity.InProc);
                 BuildRequestData requestData = new BuildRequestData(projectInstance, targetsToBuild, this.BuildProject.ProjectCollection.HostServices, BuildRequestDataFlags.ReplaceExistingProjectInstance);

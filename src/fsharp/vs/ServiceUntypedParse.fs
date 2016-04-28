@@ -610,7 +610,7 @@ module UntypedParseImpl =
     
     type TS = AstTraversal.TraverseStep
 
-    /// try to determine completion context for the given pair (row, columns)
+    /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option) : CompletionContext option = 
         let parsedInputOpt =
             match untypedParseOpt with
@@ -676,7 +676,7 @@ module UntypedParseImpl =
             | false, false, true -> Struct
             | _ -> Invalid
 
-        let getCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
+        let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
             let success k = Some (Inherit (k, completionPath))
 
@@ -864,7 +864,7 @@ module UntypedParseImpl =
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
-                            | Some (completionPath) -> getCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
+                            | Some (completionPath) -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None }
         AstTraversal.Traverse(pos, pt, walker)
