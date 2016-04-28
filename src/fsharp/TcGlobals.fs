@@ -302,6 +302,7 @@ type public TcGlobals =
       attrib_ExtensionAttribute          : BuiltinAttribInfo
       attrib_CallerLineNumberAttribute   : BuiltinAttribInfo
       attrib_CallerFilePathAttribute     : BuiltinAttribInfo
+      attrib_CallerMemberNameAttribute   : BuiltinAttribInfo
 
       tcref_System_Collections_Generic_IList               : TyconRef
       tcref_System_Collections_Generic_IReadOnlyList       : TyconRef
@@ -1207,6 +1208,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_ExtensionAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
     attrib_CallerLineNumberAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
     attrib_CallerFilePathAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
+    attrib_CallerMemberNameAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
 
     attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
     attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"

@@ -1288,13 +1288,15 @@ type MethInfo =
 
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
+                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
 
                  let callerInfoInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg with
-                    | false, false -> NoCallerInfo
-                    | true, false -> CallerLineNumber
-                    | false, true -> CallerFilePath
-                    | true, true ->
+                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+                    | false, false, false -> NoCallerInfo
+                    | true, false, false -> CallerLineNumber
+                    | false, true, false -> CallerFilePath
+                    | false, false, true -> CallerMemberName
+                    | _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
@@ -1317,13 +1319,15 @@ type MethInfo =
                 
                 let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
+                let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
 
                 let callerInfoInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg with
-                    | false, false -> NoCallerInfo
-                    | true, false -> CallerLineNumber
-                    | false, true -> CallerFilePath
-                    | true, true ->
+                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+                    | false, false, false -> NoCallerInfo
+                    | true, false, false -> CallerLineNumber
+                    | false, true, false -> CallerFilePath
+                    | false, false, true -> CallerMemberName
+                    | _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         match tryDestOptionTy g ty with
