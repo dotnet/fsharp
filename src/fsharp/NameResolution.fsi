@@ -3,17 +3,17 @@
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Import
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.PrettyNaming
-
-
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
@@ -410,4 +410,4 @@ type ResolveCompletionTargets =
     | SettablePropertiesAndFields
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
-val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> Infos.AccessorDomain -> bool -> TType -> Item list
+val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
