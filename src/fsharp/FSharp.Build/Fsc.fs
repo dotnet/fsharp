@@ -354,11 +354,11 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
         | _ ->
             let sources = sources|>Array.map(fun i->i.ItemSpec)
-            let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
+            let baseCallDelegate = new Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
             try 
                 let ret = 
                     (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
-                                                [| box baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
+                                                [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
                                                 System.Globalization.CultureInfo.InvariantCulture)
                 unbox ret
             with 
