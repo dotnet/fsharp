@@ -32,6 +32,8 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Infos.AttributeChecking
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.MethodCalls
+open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
