@@ -1353,7 +1353,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 result
             
             // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1370,7 +1370,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
                 if actuallyBuild then
-                    compile.Invoke(0)
+                    compile.Invoke()
                 else
                     0
             

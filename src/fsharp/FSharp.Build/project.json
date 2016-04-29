@@ -1,0 +1,20 @@
+{ 
+   "dependencies": { 
+     "Microsoft.Build": "0.1.0-preview-00022", 
+     "Microsoft.Build.Framework": "0.1.0-preview-00022", 
+     "Microsoft.Build.Tasks.Core": "0.1.0-preview-00022", 
+     "Microsoft.Build.Utilities.Core": "0.1.0-preview-00022", 
+     "Microsoft.NETCore.Platforms": "1.0.1-rc2-23911", 
+     "Microsoft.Win32.Registry": { 
+      "version": "4.0.0-rc2-23923", 
+      "exclude": "Compile" 
+    }, 
+    "System.AppContext": "4.1.0-rc2-23911",
+    "System.Diagnostics.Tools": "4.0.1-rc2-23911",
+  }, 
+  "frameworks": { 
+    "dnxcore50": {
+        "imports": "portable-net45+win8"
+    } 
+  } 
+} 

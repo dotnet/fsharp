@@ -291,6 +291,10 @@ fc fsi.exe corehost.exe >nul
 )
 popd
 
+rem copy targestfile into tools directory ... temporary fix until packaging complete.
+copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+
 :: Build Proto
 if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
 
