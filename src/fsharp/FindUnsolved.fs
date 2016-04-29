@@ -231,7 +231,7 @@ and accModuleOrNamespaceDefs cenv env x = List.iter (accModuleOrNamespaceDef cen
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(tycons,mbinds,_m) -> 
+    | TMDefRec(_,tycons,mbinds,_m) -> 
         accTycons cenv env tycons; 
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind,_m)  -> accBind cenv env bind 

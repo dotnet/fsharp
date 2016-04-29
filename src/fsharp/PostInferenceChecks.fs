@@ -1491,9 +1491,9 @@ and CheckNothingAfterEntryPoint cenv m =
 
 and CheckDefnInModule cenv env x = 
     match x with 
-    | TMDefRec(tycons,mspecs,m) -> 
+    | TMDefRec(isRec,tycons,mspecs,m) -> 
         CheckNothingAfterEntryPoint cenv m
-        BindVals cenv (allValsOfModDef x |> Seq.toList)
+        if isRec then BindVals cenv (allValsOfModDef x |> Seq.toList)
         CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env) mspecs
     | TMDefLet(bind,m)  -> 
@@ -1510,6 +1510,7 @@ and CheckDefnInModule cenv env x =
 and CheckModuleSpec cenv env x =
     match x with 
     | ModuleOrNamespaceBinding.Binding bind ->
+        BindVals cenv (valsOfBinds [bind])
         CheckModuleBinding cenv env bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec;
