@@ -11,21 +11,21 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.NameResolution
+open Microsoft.FSharp.Compiler.PrettyNaming
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.NameResolution
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -550,6 +550,102 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
 //-------------------------------------------------------------------------
 // Build method calls.
 //------------------------------------------------------------------------- 
+
+//-------------------------------------------------------------------------
+// Build calls 
+//------------------------------------------------------------------------- 
+
+
+/// Build an expression node that is a call to a .NET method. 
+let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst direct args = 
+    let valu = isStructTy g minfo.ApparentEnclosingType
+    let ctor = minfo.IsConstructor
+    if minfo.IsClassConstructor then 
+        error (InternalError (minfo.ILName+": cannot call a class constructor",m))
+    let useCallvirt = 
+        not valu && not direct && minfo.IsVirtual
+    let isProtected = minfo.IsProtectedAccessibility
+    let ilMethRef = minfo.ILMethodRef
+    let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
+    let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
+    let retTy = (if not ctor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
+    let isDllImport = minfo.IsDllImport g
+    Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,isDllImport,ilMethRef,minfo.DeclaringTypeInst,minst,retTy),[],args,m),
+    exprTy
+
+/// Build a call to the System.Object constructor taking no arguments,
+let BuildObjCtorCall g m =
+    let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object,[])).MethodRef
+    Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,true,ilMethRef,[],[],[g.obj_ty]),[],[],m)
+
+
+/// Build a call to an F# method.
+///
+/// Consume the arguments in chunks and build applications.  This copes with various F# calling signatures
+/// all of which ultimately become 'methods'.
+///
+/// QUERY: this looks overly complex considering that we are doing a fundamentally simple 
+/// thing here. 
+let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
+    let arities =  (arityOfVal vref.Deref).AritiesOfArgs
+    
+    let args3,(leftover,retTy) = 
+        ((args,vexprty), arities) ||> List.mapFold (fun (args,fty) arity -> 
+            match arity,args with 
+            | (0|1),[] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
+            | 0,(arg::argst)-> 
+                warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL ";") (List.map exprL args))),m));
+                arg, (argst, rangeOfFunTy g fty)
+            | 1,(arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
+            | 1,[] -> error(InternalError("expected additional arguments here",m))
+            | _ -> 
+                if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length,m));
+                let tupargs,argst = List.chop arity args
+                let tuptys = tupargs |> List.map (tyOfExpr g) 
+                (mkTupled g m tupargs tuptys),
+                (argst, rangeOfFunTy g fty) )
+    if not leftover.IsEmpty then error(InternalError("Unexpected "+string(leftover.Length)+" remaining arguments in method application",m))
+    mkApps g ((vexp,vexprty),[],args3,m), 
+    retTy
+    
+/// Build a call to an F# method.
+let BuildFSharpMethodCall g m (typ,vref:ValRef) valUseFlags minst args =
+    let vexp = Expr.Val (vref,valUseFlags,m)
+    let vexpty = vref.Type
+    let tpsorig,tau =  vref.TypeScheme
+    let vtinst = argsOfAppTy g typ @ minst
+    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch",m))
+    let expr = mkTyAppExpr m (vexp,vexpty) vtinst
+    let exprty = instType (mkTyparInst tpsorig vtinst) tau
+    BuildFSharpMethodApp g m vref expr exprty args
+    
+
+/// Make a call to a method info. Used by the optimizer and code generator to build 
+/// calls to the type-directed solutions to member constraints.
+let MakeMethInfoCall amap m minfo minst args =
+    let valUseFlags = NormalValUse // correct unless if we allow wild trait constraints like "T has a ctor and can be used as a parent class" 
+    match minfo with 
+    | ILMeth(g,ilminfo,_) -> 
+        let direct = not minfo.IsVirtual
+        let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
+        BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
+    | FSMeth(g,typ,vref,_) -> 
+        BuildFSharpMethodCall g m (typ,vref) valUseFlags minst args |> fst
+    | DefaultStructCtor(_,typ) -> 
+       mkDefault (m,typ)
+#if EXTENSIONTYPING
+    | ProvidedMeth(amap,mi,_,m) -> 
+        let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
+        let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
+        let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
+        let valu = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
+        let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
+        let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
+        let ilReturnTys = Option.toList (minfo.GetCompiledReturnTy(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
+        // REVIEW: Should we allow protected calls?
+        Expr.Op(TOp.ILCall(false,false, valu, isConstructor,valUseFlags,isProp,false,ilMethodRef,actualTypeInst,actualMethInst, ilReturnTys),[],args,m)
+
+#endif
 
 #if EXTENSIONTYPING
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
