@@ -15820,7 +15820,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env e =
 
       | SynModuleDecl.Exception (edef,m) -> 
           let binds,decl,env = TcExceptionDeclarations.TcExnDefn cenv env parent (edef,scopem)
-          return ((fun e -> TMDefRec([decl], binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
+          return ((fun e -> TMDefRec(true,[decl], binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
 
       | SynModuleDecl.Types (typeDefs,m) -> 
           let scopem = unionRanges m scopem
@@ -15851,7 +15851,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env e =
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo,NoNewSlots,ModuleOrMemberBinding,bind))
                 let binds,env,_ = TcLetrec  WarnOnOverrides cenv env tpenv (binds,m, scopem)
-                return ((fun e -> TMDefRec([],binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
+                return ((fun e -> TMDefRec(true,[],binds |> List.map ModuleOrNamespaceBinding.Binding,m) :: e),[]), env, env
               else 
                 let binds,env,_ = TcLetBindings cenv env containerInfo ModuleOrMemberBinding tpenv (binds,m,scopem)
                 return ((fun e -> binds@e),[]), env, env 
@@ -15880,7 +15880,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env e =
               TcModuleOrNamespace cenv env (id,isRec,true,mdefs,xml,modAttrs,vis,m)
 
           let mspec = mspecPriorToOuterOrExplicitSig
-          let mdef = TMDefRec([],[ModuleOrNamespaceBinding.Module(mspecPriorToOuterOrExplicitSig,mexpr)],m)
+          let mdef = TMDefRec(false,[],[ModuleOrNamespaceBinding.Module(mspecPriorToOuterOrExplicitSig,mexpr)],m)
           PublishModuleDefn cenv env mspec 
           let env = AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem env mspec
           
@@ -16049,7 +16049,7 @@ and TcMutRecDefsFinish cenv defs m =
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
                 [ ModuleOrNamespaceBinding.Module(mspec,mexpr) ])
 
-    TMDefRec(tycons,binds,m)
+    TMDefRec(true,tycons,binds,m)
 
 and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
   eventually {

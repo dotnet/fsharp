@@ -967,7 +967,7 @@ let rec AddBindingsForModuleDefs allocVal (cloc:CompileLocation) eenv  mdefs =
 
 and AddBindingsForModuleDef allocVal cloc eenv x = 
     match x with 
-    | TMDefRec(tycons,mbinds,_) -> 
+    | TMDefRec(_isRec,tycons,mbinds,_) -> 
         (* Virtual don't have 'let' bindings and must be added to the environment *)
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
         let eenv = List.foldBack (AddBindingsForModule allocVal cloc) mbinds eenv
@@ -5650,7 +5650,7 @@ and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv  mdefs =
     
 and GenModuleDef cenv (cgbuf:CodeGenBuffer) qname lazyInitInfo eenv  x = 
     match x with 
-    | TMDefRec(tycons,mbinds,m) -> 
+    | TMDefRec(_isRec,tycons,mbinds,m) -> 
         tycons |> List.iter (fun tc -> 
             if tc.IsExceptionDecl 
             then GenExnDef cenv cgbuf.mgbuf eenv m tc 

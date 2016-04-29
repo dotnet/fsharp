@@ -3128,11 +3128,11 @@ and OptimizeModuleExpr cenv env x =
 
             let rec elimModDef x =                  
                 match x with 
-                | TMDefRec(tycons,mbinds,m) -> 
+                | TMDefRec(isRec,tycons,mbinds,m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
-                    TMDefRec(tycons,mbinds,m)
+                    TMDefRec(isRec,tycons,mbinds,m)
                 | TMDefLet(bind,m)  -> 
-                    if Zset.contains bind.Var deadSet then TMDefRec([],[],m) else x
+                    if Zset.contains bind.Var deadSet then TMDefRec(false,[],[],m) else x
                 | TMDefDo _  -> x
                 | TMDefs(defs) -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ ->  x 
@@ -3157,8 +3157,8 @@ and mkValBind (bind:Binding) info =
 
 and OptimizeModuleDef cenv (env,bindInfosColl) x = 
     match x with 
-    | TMDefRec(tycons,mbinds,m) -> 
-        let env = BindInternalValsToUnknown cenv (allValsOfModDef x) env
+    | TMDefRec(isRec,tycons,mbinds,m) -> 
+        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
         let mbindInfos,(env,bindInfosColl) = OptimizeModuleBindings cenv (env,bindInfosColl) mbinds
         let mbinds,minfos = List.unzip mbindInfos
         let binds = minfos |> List.choose (function Choice1Of2 (x,_) -> Some x | _ -> None)
@@ -3167,7 +3167,7 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
 
         
           (* REVIEW: Eliminate let bindings on the way back up *)
-        (TMDefRec(tycons,mbinds,m),
+        (TMDefRec(isRec,tycons,mbinds,m),
          notlazy { ValInfos= ValInfos(FlatList.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos); 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}),
          (env,bindInfosColl)
