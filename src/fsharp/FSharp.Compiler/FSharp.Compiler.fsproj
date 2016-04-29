@@ -369,6 +369,15 @@
     <Compile Include="..\infos.fs">
       <Link>Logic\infos.fs</Link>
     </Compile>
+    <Compile Include="..\AccessibilityLogic.fs">
+      <Link>Logic\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\AttributeChecking.fs">
+      <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\InfoReader.fs">
+      <Link>Logic\InfoReader.fs</Link>
+    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>Logic\NicePrint.fs</Link>
     </Compile>
