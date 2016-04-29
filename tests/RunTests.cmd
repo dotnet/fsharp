@@ -89,7 +89,7 @@ del /Q "%CONV_V2_TO_V3_CMD_TEMPFILE%"
 
 setlocal DisableDelayedExpansion
 
-if /I "%2" == "fsharp" (goto :FSHARP)
+if /I "%2" == "fsharp" (goto :FSHARP_NUNIT)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
 if /I "%2" == "fsharpqadowntarget" (goto :FSHARPQA)
 if /I "%2" == "fsharpqaredirect" (goto :FSHARPQA)
@@ -141,36 +141,6 @@ echo.
 echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable7^|coreunitportable47^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
-
-REM ----------------------------------------------------------------------------
-
-:FSHARP
-
-if not '%FSHARP_TEST_SUITE_USE_NUNIT_RUNNER%' == '' (
-    goto :FSHARP_NUNIT
-)
-
-set RESULTFILE=FSharp_Results.log
-set FAILFILE=FSharp_Failures.log
-set FAILENV=FSharp_Failures
-
-rem Hosted compiler not supported for FSHARP suite
-set HOSTED_COMPILER=
-
-where.exe perl > NUL 2> NUL
-if errorlevel 1 (
-  echo Error: perl is not in the PATH
-  exit /b 1
-)
-
-echo perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
-     perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG% -savelog:all
-)
-if errorlevel 1 (
-  type %RESULTSDIR%\%FAILFILE%
-  exit /b 1
-)
-goto :EOF
 
 REM ----------------------------------------------------------------------------
 
