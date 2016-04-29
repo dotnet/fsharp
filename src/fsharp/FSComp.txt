@@ -1291,8 +1291,5 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3194,optsResponseFileNotFound,"Response file '%s' not found in '%s'"
 3195,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"
 3196,fsharpCoreNotFoundToBeCopied,"Cannot find FSharp.Core.dll in compiler's directory"
-<<<<<<< HEAD
 tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a reference tuple"
-=======
 3197,etMissingStaticArgumentsToMethod,"This provided method requires static parameters"
->>>>>>> 580da22232240847a9ee2a076a80c815959b1457
