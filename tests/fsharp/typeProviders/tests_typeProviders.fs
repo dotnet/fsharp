@@ -21,6 +21,13 @@ let requireVSUltimate cfg = attempt {
             // )
     }
 
+let requireENCulture () = attempt {
+    do! match System.Threading.Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName with
+        | "en" -> Success
+        | c ->
+            NUnitConf.skip (sprintf "Test not supported except en Culture, was %s" c)
+    }
+
 module DiamondAssembly = 
 
     let build cfg dir = attempt {
@@ -360,6 +367,8 @@ module NegTests =
     [<Test; TestCaseSource("testData")>]
     let negTests name = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
+
+        do! requireENCulture ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Commands.fsc exec cfg.FSC
