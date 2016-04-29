@@ -32,27 +32,28 @@ module internal Microsoft.FSharp.Compiler.ConstraintSolver
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AttributeChecking
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.MethodCalls
+open Microsoft.FSharp.Compiler.PrettyNaming
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Infos.AttributeChecking
 open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.MethodCalls
-open Microsoft.FSharp.Compiler.PrettyNaming
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -2540,7 +2541,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 let wrap,h' = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
             else        
-                ResultD (Some (Infos.MakeMethInfoCall amap m minfo methArgTys argExprs ))
+                ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
 
         | Choice2Of4 (tinst,rfref,isSet) -> 
             let res = 
