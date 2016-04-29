@@ -1990,32 +1990,32 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
        | ApplicationDefinition = 4
        | Page = 5
        | Resource  = 6
-       
+
     and public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
         inherit PropertyDescriptor(prop)
-        
+
         override this.DisplayName = SR.BuildAction
-        
+
         override this.ComponentType = typeof<FSharpFileNodeProperties>
-        
+
         override this.PropertyType = typeof<VSLangProj.prjBuildAction>
-        
+
         override this.IsReadOnly = false
-        
+
         override this.GetEditor(editorBaseType : Type) = this.CreateInstance(editorBaseType)
-        
+
         override this.Converter = null
-        
+
         override this.CanResetValue(o : obj) = prop.CanResetValue(o)
-        
+
         override this.GetValue (o : obj) =
             prop.GetValue(o)
-            
+
         override this.SetValue (o : obj, value : obj) =
             prop.SetValue(o, value)
-        
+
         override this.ResetValue (o : obj) = prop.ResetValue(o)
-        
+
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
     and 
