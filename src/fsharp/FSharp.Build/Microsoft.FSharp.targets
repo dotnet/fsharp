@@ -201,14 +201,15 @@ this file.
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
 
-  <!--
-      ============================================================
-                                          GenerateTargetFrameworkMonikerAttribute
+        <!--
+            ============================================================
+            GenerateTargetFrameworkMonikerAttribute
 
-      Emit the target framework moniker attribute as  a code fragment into a temporary source file for the compiler.
+            Emit the target framework moniker attribute as  a code 
+            fragment into a temporary source file for the compiler.
 
-      ============================================================
-      -->
+            ============================================================
+        -->
 
     <Target Name="GenerateTargetFrameworkMonikerAttribute" BeforeTargets="BeforeCompile" DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths" Inputs="$(MSBuildThisFileFullPath)" Outputs="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(GenerateTargetFrameworkAttribute)' == 'true'">
 
