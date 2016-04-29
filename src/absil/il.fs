@@ -10,9 +10,9 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent

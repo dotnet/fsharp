@@ -7,12 +7,12 @@
 module internal Microsoft.FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities
+
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
-
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast

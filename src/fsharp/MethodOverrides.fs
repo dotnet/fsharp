@@ -12,19 +12,19 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.NameResolution
+open Microsoft.FSharp.Compiler.PrettyNaming
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TypeRelations
 
 //-------------------------------------------------------------------------
