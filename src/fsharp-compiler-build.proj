@@ -8,8 +8,9 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net20' or 
                          '$(TargetFramework)' == 'net40' or
                          '$(TargetFramework)' == 'coreclr' ">
-    <ProjectFiles Include="fsharp\FSharp.Build\FSharp.Build.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
-    <ProjectFiles Include="fsharp\FSharp.Compiler\FSharp.Compiler.fsproj"/>
+
+    <ProjectFiles Include="fsharp\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectFiles Include="fsharp\FSharp.Compiler\FSharp.Compiler.fsproj" />
     <ProjectFiles Include="fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
     <ProjectFiles Include="fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectFiles Include="fsharp\Fsc\Fsc.fsproj" />
