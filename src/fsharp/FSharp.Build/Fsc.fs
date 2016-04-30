@@ -17,6 +17,10 @@ open Internal.Utilities
 do()
 
 
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
 type FscCommandLineBuilder() =
     // In addition to generating a command-line that will be handed to cmd.exe, we also generate
     // an array of individual arguments.  The former needs to be quoted (and cmd.exe will strip the
@@ -347,18 +351,14 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     override fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         let host = box fsc.HostObject
         match host with
-        | null ->
-            base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+        | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
         | _ ->
             let sources = sources|>Array.map(fun i->i.ItemSpec)
-            let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
-            // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
-            // figure out how to pass an F# function object via reflection.  
-            let baseCallDelegate = new System.Converter<int,int>(baseCall)
+            let baseCallDelegate = new Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
             try 
                 let ret = 
                     (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
-                                                [| box baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
+                                                [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
                                                 System.Globalization.CultureInfo.InvariantCulture)
                 unbox ret
             with 
@@ -368,7 +368,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             | e ->
                 System.Diagnostics.Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
                 reraise()
-           
+ 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FscCommandLineBuilder()
         

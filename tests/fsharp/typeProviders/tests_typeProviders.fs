@@ -7,19 +7,9 @@ open NUnit.Framework
 open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
+open FSharpTestSuiteAsserts
 
 let testContext = FSharpTestSuite.testContext
-
-let requireVSUltimate cfg = attempt {
-    do! match cfg.INSTALL_SKU with
-        | Some (Ultimate) -> Success
-        | x ->
-            // IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
-            //     echo Test not supported except on Ultimate
-            NUnitConf.skip (sprintf "Test not supported except on Ultimate, was %A" x)
-            //     exit /b 0
-            // )
-    }
 
 module DiamondAssembly = 
 
@@ -360,6 +350,8 @@ module NegTests =
     [<Test; TestCaseSource("testData")>]
     let negTests name = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
+
+        do! requireENCulture ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Commands.fsc exec cfg.FSC
