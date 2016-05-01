@@ -33,7 +33,7 @@ open Microsoft.FSharp.Compiler.IlxGen
 #endif
 
 #if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.ReflectionAdapters
+open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 module Attributes = 

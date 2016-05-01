@@ -60,7 +60,7 @@ set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
-ECHO FSCBINPATH%
+ECHO %FSCBINPATH%
 
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0TestResults

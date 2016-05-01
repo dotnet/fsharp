@@ -12,15 +12,13 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 
 let lexeme (lexbuf : LexBuffer<char>) = new System.String(lexbuf.Lexeme)
 
-let unexpectedChar lexbuf =
-  dprintf "Unexpected character '%s'" (lexeme lexbuf);
+let unexpectedChar _lexbuf =
   raise Parsing.RecoverableParseError ;;
 
 // -------------------------------------------------------------------- 
