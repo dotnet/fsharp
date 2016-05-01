@@ -56,3 +56,11 @@ fsi-reload/load1.exe
 fsi-reload/load2.exe
 
 quotesInMultipleModules/module2-staticlink.exe
+
+load-script/out.stderr.txt
+load-script/out.stdout.txt
+
+members/basics/tmptest.exe
+members/basics/tmptest.fs
+members/basics/tmptest.fsi
+members/basics/tmptest1.exe

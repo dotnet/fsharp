@@ -6,8 +6,12 @@ module internal Microsoft.FSharp.Compiler.TypeChecker
 
 #nowarn "44" // This construct is deprecated. please use List.item
 
+open System
+open System.Collections.Generic
+
 open Internal.Utilities
 open Internal.Utilities.Collections
+
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -25,18 +29,18 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.PatternMatchCompilation
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Infos.AttributeChecking
+open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.MethodCalls
+open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open System
-open System.Collections.Generic
+open Microsoft.FSharp.Compiler.InfoReader
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
