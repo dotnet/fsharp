@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.NativeInterop
 
-#nowarn "44";;
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
