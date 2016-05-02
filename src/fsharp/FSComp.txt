@@ -13,6 +13,8 @@ undefinedNameRecordLabelOrNamespace,"The record label or namespace '%s' is not d
 undefinedNameRecordLabel,"The record label '%s' is not defined"
 undefinedNameTypeParameter,"The type parameter '%s' is not defined"
 undefinedNamePatternDiscriminator,"The pattern discriminator '%s' is not defined"
+missingElseBranch,"You have not supplied the \"else\" case for this expression. If / then is an expression and so it must always return a result of the same type in all cases. This expression was expected to have type '%s' but here has type '%s'."
+elseBranchHasWrongType,"All branches of an if / else expression must return the same type. This expression was expected to have type '%s' but here has type '%s'."
 buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type arguments, but here is given %d type argument(s)"
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"
 204,buildInvalidVersionString,"Invalid version string '%s'"
