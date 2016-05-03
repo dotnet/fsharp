@@ -118,7 +118,7 @@ let GetRangeOfError(err:PhasedError) =
       | IndentationProblem(_,m)
       | ErrorFromAddingTypeEquation(_,_,_,_,_,_,m) 
       | ErrorFromApplyingDefault(_,_,_,_,_,m) 
-      | ErrorsFromAddingSubsumptionConstraint(_,_,_,_,_,m) 
+      | ErrorsFromAddingSubsumptionConstraint(_,_,_,_,_,_,m)
       | FunctionExpected(_,_,m)
       | BakedInMemberConstraintName(_,m)
       | StandardOperatorRedefinitionWarning(_,m)
@@ -369,6 +369,7 @@ let GetErrorNumber(err:PhasedError) =
 #if EXTENSIONTYPING
       | :? TypeProviderError as e -> e.Number
 #endif
+      | ErrorsFromAddingSubsumptionConstraint (_,_,_,_,_,ContextInfo.DowncastUsedInsteadOfUpcast _,_) -> fst (FSComp.SR.considerUpcast("",""))
       | _ -> 193
    GetFromException err.Exception
    
@@ -413,9 +414,9 @@ let SplitRelatedErrors(err:PhasedError) =
       | ErrorFromApplyingDefault(g,denv,tp,defaultType,e,m) ->  
           let e,related = SplitRelatedException e
           ErrorFromApplyingDefault(g,denv,tp,defaultType,e.Exception,m)|>ToPhased, related
-      | ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e,m) ->  
+      | ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e,contextInfo,m) ->  
           let e,related = SplitRelatedException e
-          ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e.Exception,m)|>ToPhased, related
+          ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e.Exception,contextInfo,m)|>ToPhased, related
       | ErrorFromAddingConstraint(x,e,m) ->  
           let e,related = SplitRelatedException e
           ErrorFromAddingConstraint(x,e.Exception,m)|>ToPhased, related
@@ -662,13 +663,23 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           os.Append(ErrorFromApplyingDefault1E().Format defaultType) |> ignore
           OutputExceptionR os e
           os.Append(ErrorFromApplyingDefault2E().Format) |> ignore
-      | ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e,_) ->  
-          if not (typeEquiv g t1 t2) then (
-              let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-              if t1 <> (t2 + tpcs) then 
-                  os.Append(ErrorsFromAddingSubsumptionConstraintE().Format t2 t1 tpcs) |> ignore
-          )
-          OutputExceptionR os e
+      | ErrorsFromAddingSubsumptionConstraint(g,denv,t1,t2,e,contextInfo,_) ->
+          match contextInfo with
+          | ContextInfo.DowncastUsedInsteadOfUpcast isOperator -> 
+              let t1,t2,_ = NicePrint.minimalStringsOfTwoTypes denv t1 t2
+              if isOperator then
+                  os.Append(FSComp.SR.considerUpcastOperator(t1,t2) |> snd) |> ignore
+              else
+                  os.Append(FSComp.SR.considerUpcast(t1,t2) |> snd) |> ignore
+          | _ ->
+              if not (typeEquiv g t1 t2) then
+                  let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
+                  if t1 <> (t2 + tpcs) then 
+                      os.Append(ErrorsFromAddingSubsumptionConstraintE().Format t2 t1 tpcs) |> ignore
+                  else
+                      OutputExceptionR os e
+              else
+                  OutputExceptionR os e
       | UpperCaseIdentifierInPattern(_) -> 
           os.Append(UpperCaseIdentifierInPatternE().Format) |> ignore
       | NotUpperCaseConstructor(_) -> 
