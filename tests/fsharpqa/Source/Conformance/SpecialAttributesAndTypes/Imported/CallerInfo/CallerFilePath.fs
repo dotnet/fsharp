@@ -49,17 +49,17 @@ module Program =
         | x -> failwithf "Unexpected: %A" x
         
         match CallerInfoTest.AllInfo(21) with
-        | (path, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\CallerFilePath.fs" path -> ()
+        | (path, _, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\CallerFilePath.fs" path -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
 # 345 "qwerty1"
         match CallerInfoTest.AllInfo(123) with
-        | (path, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\qwerty1" path -> ()
+        | (path, _, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\qwerty1" path -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
 # 456 "qwerty2"
         match CallerInfoTest.AllInfo(123) with
-        | (path, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\qwerty2" path -> ()
+        | (path, _, _) when matchesPath "Conformance\\SpecialAttributesAndTypes\\Imported\\CallerInfo\\qwerty2" path -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
         0
