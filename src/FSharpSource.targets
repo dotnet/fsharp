@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <PropertyGroup>
-       <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
-       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.1.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.1.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-   </PropertyGroup>
-   <Choose>
+  <PropertyGroup>
+    <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
+    <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.1.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.1.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
+  </PropertyGroup>
+  <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
          <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
@@ -77,6 +77,8 @@
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
         <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
+        <SkipSigning>true</SkipSigning>             <!-- Skip using the ,net toolset to generate signing . -->
+        <UseOpenSourceSign>true</UseOpenSourceSign>
         <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
         <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
         <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
@@ -731,17 +733,17 @@
   <!-- Build with prototype compiler (location is given by settings below). The output is the final bootstrapped compiler -->
   <PropertyGroup Condition=" '$(BuildWith)' == ''">
     <FSharpTargetsDir>$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin</FSharpTargetsDir>
-
     <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin</FscToolPath>
-    <FscToolExe>fsc-proto.exe</FscToolExe>
+<!--    <FscToolExe>fsc-proto.exe</FscToolExe>  -->
     <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
   </PropertyGroup>
 
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
-         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\dnxcore50\win7-x64\publish</FscToolPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)'=='coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)'=='net40'">..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\release\dnxcore50\win7-x64\publish</FscToolPath>
          <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
