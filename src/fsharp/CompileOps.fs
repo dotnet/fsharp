@@ -2723,8 +2723,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles:string list) = 
         let n = sourceFiles.Length in 
-        sourceFiles |> List.mapi (fun i _ -> (i = n-1) && tcConfig.target.IsExe)
-            
+        sourceFiles |> List.mapi (fun i _ -> (i = n-1) )
+
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member tcConfig.ClrRoot = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)

@@ -66,7 +66,7 @@ try
     
     //Clean intermediate directoriy
     deleteDirectory(layouts); makeDirectory(layouts)
-    fsharpCompilerFiles |> Seq.iter(fun source -> copyFile source layouts)
+    fsharpBuildFiles |> Seq.iter(fun source -> copyFile source layouts)
 
 with e -> printfn "Exception:  %s" e.Message
           printfn "Stacktrace: %s" e.StackTrace

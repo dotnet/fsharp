@@ -9,7 +9,8 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ProjectGuid>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType Condition=" '$(TargetFramework)' != 'coreclr'">Exe</OutputType>
+    <OutputType Condition=" '$(TargetFramework)' == 'coreclr'">Library</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>FsiAnyCPU</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>

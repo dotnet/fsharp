@@ -332,24 +332,14 @@ rem ===============
 @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 %_dotnetexe% publish .\lkg\project.json --no-build --configuration release
 @if ERRORLEVEL 1 echo Error: dotnet publish failed && goto :failure
-
-rem ===================================
-rem publish the support files for proto
-rem ===================================
-%_dotnetexe% restore .\Proto\project.json
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-%_dotnetexe% publish .\Proto\project.json --no-build --configuration release -o .\Proto\coreclr
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
 pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
-fc fsc.exe corehost.exe >nul
-@if ERRORLEVEL 1 (
-  copy fsc.exe fsc.dll
-  copy corehost.exe fsc.exe
-)
+remfc fsc.exe corehost.exe >nul
+rem@if ERRORLEVEL 1 (
+rem  copy fsc.exe fsc.dll
+rem  copy corehost.exe fsc.exe
+rem )
 popd
-
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
 pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
 fc fsi.exe corehost.exe >nul
@@ -359,18 +349,31 @@ fc fsi.exe corehost.exe >nul
 )
 popd
 
-rem copy targestfile into tools directory ... temporary fix until packaging complete.
+rem ===================================
+rem publish the support files for proto
+rem ===================================
+%_dotnetexe% restore .\Proto\project.json
+@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+%_dotnetexe% publish .\Proto\project.json  --no-build --configuration release
+@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+rem pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
+copy corehost.exe fsc.exe
+copy corehost.exe fsi.exe
+
+rem copy targestfile into tools directory ... temporary fix until packaging complete
 copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
 copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
 
 :: Build Proto
-if NOT EXIST Proto\coreclr\bin\fsc.exe (set BUILD_PROTO=1)
+if NOT EXIST Proto\bin\fsc.dll (set BUILD_PROTO=1)
 
 :: Build
 if '%BUILD_PROTO%' == '1' (
     %_dotnetexe% restore
     @if ERRORLEVEL 1 echo Error: %_dotnetexe% restore    failed  && goto :failure
-    %_dotnetexe% publish src\fsharp\Fsc\project.json -o Proto\coreclr\bin
+    %_dotnetexe% publish src\fsharp\Fsc\project.json -o Proto\bin
     @if ERRORLEVEL 1 echo Error: %_dotnetexe% publish src\fsharp\Fsc\project.json -o Proto\coreclr\bin    failed  && goto :failure
 )
 
