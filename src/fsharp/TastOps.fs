@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
-module internal Microsoft.FSharp.Compiler.Tastops 
-
-#nowarn "44" // This construct is deprecated. please use List.item
+module internal Microsoft.FSharp.Compiler.Tastops
 
 open System.Collections.Generic 
 open Internal.Utilities
@@ -5095,7 +5093,7 @@ let rec tyOfExpr g e =
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
-        | TOp.TupleFieldGet(i) -> List.nth tinst i
+        | TOp.TupleFieldGet(i) -> List.item i tinst
         | TOp.Tuple -> mkTupleTy tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
@@ -6765,8 +6763,9 @@ let typarEnc _g (gtpsType,gtpsMethod) typar =
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
 let rec typeEnc g (gtpsType,gtpsMethod) ty = 
-    if verbose then  dprintf "--> typeEnc";
-    match (stripTyEqns g ty) with 
+    if verbose then dprintf "--> typeEnc"
+    let stripped = stripTyEqnsAndMeasureEqns g ty
+    match stripped with 
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
     | _ when isArrayTy g ty   -> 
@@ -7156,8 +7155,8 @@ type ActivePatternElemRef with
         | None -> error(InternalError("not an active pattern name", vref.Range))
         | Some apinfo -> 
             let nms = apinfo.ActiveTags
-            if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern refernce", vref.Range));
-            List.nth nms n
+            if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
+            List.item n nms
 
 let mkChoiceTyconRef g m n = 
      match n with 
