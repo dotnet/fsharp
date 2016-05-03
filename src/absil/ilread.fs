@@ -8,7 +8,6 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
-#nowarn "44" // This construct is deprecated. please use List.item
 
 open System
 open System.IO
@@ -2040,8 +2039,8 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         let lobounds, sigptr = sigptrFold sigptrGetZInt32 numLoBounded bytes sigptr
         let shape = 
             let dim i =
-              (if i <  numLoBounded then Some (List.nth lobounds i) else None),
-              (if i <  numSized then Some (List.nth sizes i) else None)
+              (if i <  numLoBounded then Some (List.item i lobounds) else None),
+              (if i <  numSized then Some (List.item i sizes) else None)
             ILArrayShape (Array.toList (Array.init rank dim))
         mkILArrTy (typ, shape), sigptr
         
