@@ -30,18 +30,28 @@ There are various qualifiers:
     build.cmd release         -- build release (the default)
     build.cmd debug           -- build debug instead of release
 
+    build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
+
     build.cmd compiler        -- build/tests only the compiler (not the Visual F# IDE Tools)
     build.cmd vs              -- build/tests the Visual F# IDE Tools
     build.cmd pcls            -- build/tests the PCL FSharp.Core libraries
 
     build.cmd build           -- build, do not test
-    build.cmd smoke           -- build, run smoke tests
     build.cmd ci              -- build, run the same tests as CI 
     build.cmd all             -- build, run all tests
+    build.cmd notests         -- turn off testing (used in conjunction with other options)
+
+    build.cmd test-smoke      -- build, run smoke tests
+    build.cmd test-coreunit   -- build, run FSharp.Core tests
+    build.cmd test-coreclr    -- build, run CoreCLR tests
+    build.cmd test-pcls       -- build, run PCL tests
+    build.cmd test-fsharp     -- build, run tests\fsharp suite
+    build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite
+    build.cmd test-vs         -- build, run Visual F# IDE Tools unit tests
 
 Combinations are also allowed:
 
-    build.cmd debug,compiler,smoke   -- build the debug compiler and run smoke tests
+    build.cmd debug,compiler,notests   -- build the debug compiler and run smoke tests
 
 After you build the first time you can open and use this solution:
 
@@ -91,7 +101,6 @@ For **Debug** this corresponds to these steps, which you can run individually fo
 
     msbuild src/fsharp-library-build.proj
     msbuild src/fsharp-compiler-build.proj
-    msbuild src/fsharp-typeproviders-build.proj
     msbuild src/fsharp-compiler-unittests-build.proj
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
@@ -116,7 +125,6 @@ For **Release** this corresponds to these steps, which you can run individually 
 
     msbuild src/fsharp-library-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
     msbuild src/fsharp-compiler-unittests-build.proj  /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
     msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release

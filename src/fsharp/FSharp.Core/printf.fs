@@ -42,11 +42,10 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
-#if FX_RESHAPED_REFLECTION
 
+#if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
-
 #endif
 
     open System.IO
