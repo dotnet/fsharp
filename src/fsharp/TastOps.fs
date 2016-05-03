@@ -6761,8 +6761,9 @@ let typarEnc _g (gtpsType,gtpsMethod) typar =
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
 let rec typeEnc g (gtpsType,gtpsMethod) ty = 
-    if verbose then  dprintf "--> typeEnc";
-    match (stripTyEqns g ty) with 
+    if verbose then dprintf "--> typeEnc"
+    let stripped = stripTyEqnsAndMeasureEqns g ty
+    match stripped with 
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
     | _ when isArrayTy g ty   -> 
