@@ -133,7 +133,7 @@ let maxFileIndex = pown32 fileIndexBitCount
 // WARNING: Global Mutable State, holding a mapping between integers and filenames
 let fileIndexTable = new FileIndexTable()
 
-// Note if we exceed the maximum number of files we'll start to report incorrect file names
+// If we exceed the maximum number of files we'll start to report incorrect file names
 let fileIndexOfFile f = fileIndexTable.FileToIndex(f) % maxFileIndex 
 let fileOfFileIndex n = fileIndexTable.IndexToFile(n)
 
@@ -189,7 +189,7 @@ let posEq (p1:pos) (p2:pos) = (p1.Line = p2.Line &&  p1.Column = p2.Column)
 let posGeq p1 p2 = posEq p1 p2 || posGt p1 p2
 let posLt p1 p2 = posGt p2 p1
 
-// Note, this is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
+// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
 let unionRanges (m1:range) (m2:range) = 
     if m1.FileIndex <> m2.FileIndex then m2 else
     let b = 
