@@ -354,14 +354,12 @@ call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
     @if ERRORLEVEL 1 (
         type testresults\FSharpNunit_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
         goto :failed_tests
     )
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (
