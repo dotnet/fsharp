@@ -314,6 +314,21 @@ type internal FSharpViewFilter(mgr:CodeWindowManager,view:IVsTextView) =
 
         
 [<Guid(FSharpConstants.languageServiceGuidString)>]
+
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
+
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fs", 97)>]
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsi", 97)>]
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsx", 97)>]
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsscript", 97)>]
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".ml", 97)>]
+[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".mli", 97)>]
+
 type internal FSharpLanguageService() as fls = 
     inherit LanguageService() 
     

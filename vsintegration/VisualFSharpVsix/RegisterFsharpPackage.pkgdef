@@ -7,22 +7,6 @@
 ".fsx"="VisualStudio.fsx.15.0"
 ".fsproj"="VisualStudio.Launcher.fsproj.15.0"
 
-[$RootKey$\Editors\{8B382828-6202-11d1-8870-0000F87579D2}\Extensions]
-"fs"="97"
-"fsi"="97"
-"fsscript"="97"
-"fsx"="97"
-"ml"="97"
-"mli"="97"
-
-[$RootKey$\Languages\File Extensions]
-".fs"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-".fsi"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-".fsscript"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-".fsx"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-".ml"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-".mli"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-
 [$RootKey$\Services\{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}]
 "Name"="F#"
 @="{871d2a70-12a2-4e42-9440-425dd92a4116}"
