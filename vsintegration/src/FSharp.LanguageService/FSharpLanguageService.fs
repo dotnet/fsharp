@@ -28,9 +28,11 @@ module internal FSharpCommonConstants =
 
 
 module internal FSharpConstants = 
+    [<Literal>]
     let fsharpLanguageName = "F#"
 
     // These are the IDs from fslangservice.dll
+    [<Literal>]
     let packageGuidString               = "871D2A70-12A2-4e42-9440-425DD92A4116"
     [<Literal>]
     let languageServiceGuidString       = FSharpCommonConstants.languageServiceGuidString
