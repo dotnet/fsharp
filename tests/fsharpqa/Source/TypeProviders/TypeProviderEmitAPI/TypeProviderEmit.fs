@@ -808,7 +808,7 @@ type ProvidedTypeDefinition(container:TypeContainer,className : string, baseType
     /// Emit the given provided type definitions into an assembly and adjust 'Assembly' property of all type definitions to return that
     /// assembly.
     member this.ConvertToGenerated (assemblyFileName: string, ?reportAssemblyElements) = 
-        if this.IsErased then invalidOp ("The provided type "+this.Name+"is marked as erased and cannot be converted to a generated type. Set 'IsErased' to false on the ProvidedTypeDefinition")
+        if this.IsErased then invalidOp ("The provided type "+this.Name+" is marked as erased and cannot be converted to a generated type. Set 'IsErased' to false on the ProvidedTypeDefinition")
         let typeDefinitions = [this]
         let theElementsLazy = 
            lazy 
