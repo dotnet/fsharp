@@ -23,24 +23,6 @@
 ".ml"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
 ".mli"="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
 
-[$RootKey$\Languages\Language Services\F#]
-"Package"="{871d2a70-12a2-4e42-9440-425dd92a4116}"
-"LangResID"="100"
-"MatchBracesAtCaret"="1"
-"ShowCompletion"="1"
-"CodeSenseDelay"="100"
-"ShowMatchingBrace"="1"
-"MatchBraces"="1"
-"EnableAsyncCompletion"="1"
-"QuickInfo"="1"
-"DefaultToInsertSpaces"="1"
-"CodeSense"="1"
-"Default to Non Hot URLs"="1"
-"EnableCommenting"="1"
-"ShowSmartIndent"="1"
-"ShowBraceCompletion"="1"
-@="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
-
 [$RootKey$\Services\{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}]
 "Name"="F#"
 @="{871d2a70-12a2-4e42-9440-425dd92a4116}"

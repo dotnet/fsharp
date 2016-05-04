@@ -167,27 +167,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     //    FSharpProjectFactory
     //    ....
 
-    type (* start of very large set of mutually recursive OO types *)
-
-(*
-See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools" Value="#6000" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools\F# Interactive" Value="#6001" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-    <Registry Name="Page" Value="{4489e9de-6ac1-3cd6-bff8-a904fd0e82d4}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\AutomationProperties\F# Tools\F# Interactive">
-    <Registry Name="Name" Value="F# Tools.F# Interactive" Type="string" />
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-*)
+    type
         [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
-                            (* NOTE: search for FSHARP-TOOLS-INTERACTIVE-LINK *)                            
-                            (* NOTE: the cat/sub-cat names appear in an error message in sessions.ml, fix up any changes there *)
                             "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                             6000s,      6001s,              // resource id for localisation of the above
                             true)>]                         // true = supports automation
