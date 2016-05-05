@@ -24,7 +24,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TypeRelations
 

@@ -8,7 +8,6 @@ open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 

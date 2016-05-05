@@ -91,8 +91,6 @@ namespace System.Threading
 
 namespace Microsoft.FSharp.Control
 
-    #nowarn "44" // This construct is deprecated. This method will be removed in the next version of F# and may no longer be used. Consider using Async.RunWithContinuations
-
     open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators

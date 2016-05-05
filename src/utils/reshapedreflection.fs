@@ -48,6 +48,7 @@ module internal ReflectionAdapters =
     let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 #endif
 
+#if !FX_HAS_TYPECODE
     [<System.Flags>]
     type TypeCode = 
         | Int32     = 0
@@ -61,7 +62,8 @@ module internal ReflectionAdapters =
         | Single    = 8
         | Double    = 9
         | Decimal   = 10
-        | Other     = 11
+        | Object    = 11
+#endif
 
     let isAcceptable bindingFlags isStatic isPublic =
         // 1. check if member kind (static\instance) was specified in flags
@@ -232,6 +234,7 @@ module internal ReflectionAdapters =
                 )
             )
             |> commit
+
         static member GetTypeCode(ty : Type) = 
             if   typeof<System.Int32>.Equals ty  then TypeCode.Int32
             elif typeof<System.Int64>.Equals ty  then TypeCode.Int64
@@ -244,7 +247,8 @@ module internal ReflectionAdapters =
             elif ty = typeof<System.Single> then TypeCode.Single
             elif ty = typeof<System.Double> then TypeCode.Double
             elif ty = typeof<System.Decimal> then TypeCode.Decimal
-            else TypeCode.Other
+            else TypeCode.Object
+
         member this.Module =
             this.GetTypeInfo().Module
 
