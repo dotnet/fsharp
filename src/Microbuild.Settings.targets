@@ -163,15 +163,18 @@
     </Task>
   </UsingTask>
   
-  <Target Name="LocalizeTemplateProjects" AfterTargets="Localize">
+  <Target Name="LocalizeTemplateProjects" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true'">
+	<PropertyGroup>
+		<Languages Condition="'$(Languages)' == ''">ENU</Languages>
+	</PropertyGroup>
+	
     <LocalizeTemplateProjectsTask
 	  OutDir="$(OutDir)"
 	  TemplateCategory="$(TemplateCategory)"
 	  AssemblyName="$(AssemblyName)"
 	  TemplateFiles="@(TemplateFiles)"
 	  LocalizedFiles="@(FilesToLocalize)"
-	  LocLanguages="$(Languages)"
-	  Condition="'$(GenerateLocalizedTemplates)' == 'true' and '$(Languages)' != ''" />
+	  LocLanguages="$(Languages)" />
   </Target>
   
   <Target Name="GenerateAssemblyFileVersion" BeforeTargets="CoreCompile">
