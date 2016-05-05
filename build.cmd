@@ -34,7 +34,6 @@ set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
-set BUILD_LOG=con
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
@@ -80,7 +79,6 @@ if /i '%ARG%' == 'vs' (
 
 if /i '%ARG%' == 'diag' (
     set BUILD_DIAG=/v:diag
-    set BUILD_LOG=fsharp_build_log.log
 )
 
 if /i '%ARG%' == 'all' (
@@ -342,8 +340,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% >%BUILD_LOG%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
