@@ -65,9 +65,6 @@ Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators
 Core06		fsharp\core\queriesOverIEnumerable
 Core06		fsharp\core\queriesOverIQueryable
-Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
-Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
-Core06		fsharp\core\queriesOverOData
 Core06,CoreQuotes		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
@@ -148,12 +145,6 @@ Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
 TypeProviders01		fsharp\typeProviders\helloWorld
-TypeProviders01		..\testsprivate\fsharp\typeProviders\builtin\DbmlFile
-TypeProviders01		fsharp\typeProviders\builtin\EdmxFile
-TypeProviders01		fsharp\typeProviders\builtin\ODataService
-TypeProviders01		fsharp\typeProviders\builtin\SqlDataConnection
-TypeProviders01		fsharp\typeProviders\builtin\SqlEntityConnection
-TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp

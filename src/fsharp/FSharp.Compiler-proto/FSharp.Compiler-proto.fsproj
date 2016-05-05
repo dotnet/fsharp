@@ -323,6 +323,15 @@
     <Compile Include="..\infos.fs">
       <Link>infos.fs</Link>
     </Compile>
+    <Compile Include="..\AccessibilityLogic.fs">
+      <Link>Logic\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\AttributeChecking.fs">
+      <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\InfoReader.fs">
+      <Link>Logic\InfoReader.fs</Link>
+    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>NicePrint.fs</Link>
     </Compile>
@@ -340,6 +349,15 @@
     </Compile>
     <Compile Include="..\TypeRelations.fs">
       <Link>TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="..\SignatureConformance.fs">
+      <Link>Logic\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodOverrides.fs">
+      <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fs">
+      <Link>MethodCalls.fs</Link>
     </Compile>
     <Compile Include="..\PatternMatchCompilation.fsi">
       <Link>PatternMatchCompilation.fsi</Link>

@@ -1334,7 +1334,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 result
             
             // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1351,7 +1351,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
                 if actuallyBuild then
-                    compile.Invoke(0)
+                    compile.Invoke()
                 else
                     0
             
@@ -1971,32 +1971,32 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
        | ApplicationDefinition = 4
        | Page = 5
        | Resource  = 6
-       
+
     and public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
         inherit PropertyDescriptor(prop)
-        
+
         override this.DisplayName = SR.BuildAction
-        
+
         override this.ComponentType = typeof<FSharpFileNodeProperties>
-        
+
         override this.PropertyType = typeof<VSLangProj.prjBuildAction>
-        
+
         override this.IsReadOnly = false
-        
+
         override this.GetEditor(editorBaseType : Type) = this.CreateInstance(editorBaseType)
-        
+
         override this.Converter = null
-        
+
         override this.CanResetValue(o : obj) = prop.CanResetValue(o)
-        
+
         override this.GetValue (o : obj) =
             prop.GetValue(o)
-            
+
         override this.SetValue (o : obj, value : obj) =
             prop.SetValue(o, value)
-        
+
         override this.ResetValue (o : obj) = prop.ResetValue(o)
-        
+
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
     and 

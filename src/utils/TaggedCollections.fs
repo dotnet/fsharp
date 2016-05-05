@@ -711,9 +711,6 @@ namespace Internal.Utilities.Collections.Tagged
 #if ONE 
         | MapOne of 'Key * 'T
 #endif
-        // Note: performance rumour has it that the data held in this node should be
-        // exactly one cache line. It is currently ~7 words. Thus it might be better to
-        // move to a n-way tree.
         | MapNode of 'Key * 'T * MapTree<'Key,'T> *  MapTree<'Key,'T> * int
 
 

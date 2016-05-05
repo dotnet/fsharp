@@ -43,6 +43,17 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>FSharp</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
+    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == ''">True</DeployExtension>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix FSharp /log</StartArguments>
+    <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
+    <CreateVsixContainer>true</CreateVsixContainer>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <CreateVsixContainer>true</CreateVsixContainer>

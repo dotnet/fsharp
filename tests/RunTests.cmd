@@ -60,7 +60,7 @@ set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
-ECHO FSCBINPATH%
+ECHO %FSCBINPATH%
 
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0TestResults
@@ -236,7 +236,6 @@ if exist "%FSCBinPath%\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTAB
 if exist "%FSCBinPath%\..\..\portable7\bin\FSharp.Core.dll" set FSCOREDLLNETCOREPATH=%FSCBinPath%\..\..\portable7\bin
 IF exist "%FSCBinPath%\..\..\portable78\bin\FSharp.Core.dll" set FSCOREDLLNETCORE78PATH=%FSCBinPath%\..\..\portable78\bin
 IF exist "%FSCBinPath%\..\..\portable259\bin\FSharp.Core.dll" set FSCOREDLLNETCORE259PATH=%FSCBinPath%\..\..\portable259\bin
-if exist "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
 
 set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
 set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
@@ -244,7 +243,6 @@ set FSCOREDLLPORTABLEPATH=%FSCOREDLLPORTABLEPATH%\FSharp.Core.dll
 set FSCOREDLLNETCOREPATH=%FSCOREDLLNETCOREPATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE78PATH=%FSCOREDLLNETCORE78PATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
-set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
 set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
 
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i

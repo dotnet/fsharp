@@ -57,7 +57,7 @@ type internal Trace private() =
         if String.IsNullOrEmpty(Trace.threadName) then sprintf "(id=%d)" Thread.CurrentThread.ManagedThreadId
         else sprintf "(id=%d,name=%s)" Thread.CurrentThread.ManagedThreadId Trace.threadName
         
-    /// Report the elapsed time since start
+    /// Report the elapsed time since start.
     static member private ElapsedTime(start) = 
         let elapsed : TimeSpan = (DateTime.Now-start)
         sprintf "%A ms" elapsed.TotalMilliseconds
@@ -82,7 +82,7 @@ type internal Trace private() =
             else if not(current.Contains(threadName)) then Trace.threadName <- current^","^threadName
         | None -> ()
 
-    /// Base implementation of the call function
+    /// Base implementation of the call function.
     static member private CallImpl(loggingClass,functionName,descriptionFunc,threadName:string option) : IDisposable = 
         #if DEBUG
         if Trace.ShouldLog(loggingClass) then 
@@ -127,9 +127,9 @@ type internal Trace private() =
             noopDisposable : IDisposable  
         #endif                                       
                 
-    /// Log a method as its called.
+    /// Log a method as it's called.
     static member Call(loggingClass:string,functionName:string,descriptionFunc:unit->string) = Trace.CallImpl(loggingClass,functionName,descriptionFunc,None)
-    /// Log a method as its called. Expected always to be called on the same thread which will be named 'threadName'
+    /// Log a method as it's called. Expected always to be called on the same thread which will be named 'threadName'.
     static member CallByThreadNamed(loggingClass:string,functionName:string,threadName:string,descriptionFunc:unit->string) = Trace.CallImpl(loggingClass,functionName,descriptionFunc,Some(threadName))
     /// Log a message by logging class.
     static member PrintLine(loggingClass:string, messageFunc:unit->string) = 

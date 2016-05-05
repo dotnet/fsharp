@@ -62,7 +62,7 @@ module TableNames =
 
     let UserStrings           = TableName 0x70 (* Special encoding of embedded UserString tokens - See 1.9 Partition III *) 
 
-/// Which tables are sorted and by which column 
+/// Which tables are sorted and by which column. 
 //
 // Sorted bit-vector as stored by CLR V1: 00fa 0133 0002 0000 
 // But what does this mean?  The ECMA spec does not say! 
