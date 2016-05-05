@@ -5,9 +5,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="VisualFSharpVsix\VisualFSharpVsix.csproj"  />
+	<PkgDefProjects Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
+	<PkgDefProjects Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
+	<PkgDefProjects Include="src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+	<PkgDefProjects Include="src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
+	<PkgDefProjects Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
+	<PkgDefProjects Include="src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
+	<PkgDefProjects Include="src\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj" />
+	<PkgDefProjects Include="..\src\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj" />
+	
+    <VsixProjects Include="VisualFSharpVsix\VisualFSharpVsix.csproj" />
   </ItemGroup>
 
-  <Import Project="..\src\root.traversal.targets"/>
+  <Target Name="Build">
+    <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>
-
