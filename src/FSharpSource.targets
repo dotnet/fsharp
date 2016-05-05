@@ -190,6 +190,7 @@
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_HAS_TYPECODE</DefineConstants>
     <DefineConstants Condition=" '$(FX_NO_LOADER)' != 'true' ">$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
     <DefineConstants>$(DefineConstants);RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>

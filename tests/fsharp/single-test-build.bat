@@ -127,7 +127,7 @@ set platform=win7-x64
 For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
 set command_line_args=
 set command_line_args=%command_line_args% --exec %~d0%~p0..\fsharpqa\testenv\src\deployProj\CompileProj.fsx
-set command_line_args=%command_line_args% --targetPlatformName:DNXCore,Version=v5.0/%platform%
+set command_line_args=%command_line_args% --targetPlatformName:.NETStandard,Version=v1.5/%platform%
 set command_line_args=%command_line_args% --source:"%~d0%~p0coreclr_utilities.fs" --source:"%sources%" 
 set command_line_args=%command_line_args% --packagesDir:%~d0%~p0..\..\packages 
 set command_line_args=%command_line_args% --projectJsonLock:%~d0%~p0project.lock.json
