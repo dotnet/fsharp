@@ -21,7 +21,6 @@ let pretty () = true
 // Pretty printing
 // --------------------------------------------------------------------
 
-
 let tyvar_generator = 
   let i = ref 0 
   fun n -> 
@@ -529,7 +528,7 @@ let rec goutput_apps env os =  function
       output_string os "--> "; 
       goutput_typ env os ty
 
-/// utilities to help print out short forms of instructions
+/// Print the short form of instructions
 let output_short_u16 os (x:uint16) =
      if int x < 256 then (output_string os ".s "; output_u16 os x)
      else (output_string os " "; output_u16 os x)

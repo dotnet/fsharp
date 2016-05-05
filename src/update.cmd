@@ -8,15 +8,11 @@ setlocal
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
-if /i "%1" == "vsdebug" goto :ok
-if /i "%1" == "vsrelease" goto :ok
 
 echo adding required strong name verification skipping, and NGening built binaries
 echo Usage:
 echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]
-echo    update.cmd vsdebug [-ngen]
-echo    update.cmd vsrelease [-ngen]
 exit /b 1
 
 :ok
@@ -45,7 +41,6 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.Build,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.Data.TypeProviders,b03f5f7f11d50a3a
 
 %SN32% -Vr fsc,b03f5f7f11d50a3a
 %SN32% -Vr fsi,b03f5f7f11d50a3a
@@ -70,7 +65,6 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Build,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.Data.TypeProviders,b03f5f7f11d50a3a
 
     %SN64% -Vr fsc,b03f5f7f11d50a3a
     %SN64% -Vr fsi,b03f5f7f11d50a3a

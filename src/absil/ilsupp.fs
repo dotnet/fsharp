@@ -784,7 +784,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
     let pResNodes : ResFormatNode [] = Array.zeroCreate nResNodes
     nResNodes <- 0 ;
 
-      // fill out the entry buffer
+    // fill out the entry buffer
     for iEntry = 0 to ((int)nEntries - 1) do
         pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;  
         let dwTypeID = pirdeType.Name
@@ -1099,7 +1099,7 @@ let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
     with _ -> ()
 
 let pdbDefineDocument (writer:PdbWriter) (url:string) = 
-     //3F5162F8-07C6-11D3-9053-00C04FA302A1
+    //3F5162F8-07C6-11D3-9053-00C04FA302A1
     //let mutable corSymLanguageTypeCSharp = System.Guid(0x3F5162F8u, 0x07C6us, 0x11D3us, 0x90uy, 0x53uy, 0x00uy, 0xC0uy, 0x4Fuy, 0xA3uy, 0x02uy, 0xA1uy)
     let mutable corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
     let mutable corSymLanguageVendorMicrosoft = System.Guid(0x994b45c4u, 0xe6e9us, 0x11d2us, 0x90uy, 0x3fuy, 0x00uy, 0xc0uy, 0x4fuy, 0xa3uy, 0x02uy, 0xa1uy)
@@ -1184,7 +1184,7 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
         if IntPtr.Zero <> importerPtr then
           Marshal.Release(importerPtr) |> ignore
 
-// Note, the symbol reader's finalize method will clean up any unmanaged resources.
+// The symbol reader's finalize method will clean up any unmanaged resources.
 // If file locks persist, we may want to manually invoke finalize
 let pdbReadClose (_reader:PdbReader) : unit = ()
 
@@ -1262,7 +1262,7 @@ let pdbVariableGetName (variable:PdbVariable) : string =
 let pdbVariableGetSignature (variable:PdbVariable) :  byte[] = 
     variable.symVariable.GetSignature()
 
-// the tuple is (AddressKind, AddressField1)
+// The tuple is (AddressKind, AddressField1)
 let pdbVariableGetAddressAttributes (variable:PdbVariable) :  (int32 * int32) = 
     (int32 variable.symVariable.AddressKind,variable.symVariable.AddressField1)
 #endif
@@ -1299,7 +1299,7 @@ let signerSignFileWithKeyContainer (_fileName:string) (_kcName:keyContainerName)
     raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
 
 #else
-// new mscoree functionality
+// New mscoree functionality
 // This type represents methods that we don't currently need, so I'm leaving unimplemented
 type UnusedCOMMethod = unit -> unit
 [<System.Security.SecurityCritical; Interface>]
@@ -1310,17 +1310,17 @@ type ICLRMetaHost =
         [<In; MarshalAs(UnmanagedType.LPWStr)>] version : string *
         [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId : System.Guid -> [<MarshalAs(UnmanagedType.Interface)>] System.Object
             
-    // Note, methods that we don't need are stubbed out for now...
+    // Methods that we don't need are stubbed out for now...
     abstract GetVersionFromFile : UnusedCOMMethod
     abstract EnumerateInstalledRuntimes : UnusedCOMMethod
     abstract EnumerateLoadedRuntimes : UnusedCOMMethod
     abstract Reserved01 : UnusedCOMMethod
 
-// Note, We don't currently support ComConversionLoss
+// We don't currently support ComConversionLoss
 [<System.Security.SecurityCritical; Interface>]
 [<ComImport; ComConversionLoss; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("9FD93CCF-3280-4391-B3A9-96E1CDE77C8D")>]
 type ICLRStrongName =
-    // Note, methods that we don't need are stubbed out for now...
+    // Methods that we don't need are stubbed out for now...
     abstract GetHashFromAssemblyFile : UnusedCOMMethod
     abstract GetHashFromAssemblyFileW : UnusedCOMMethod
     abstract GetHashFromBlob : UnusedCOMMethod
