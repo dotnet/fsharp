@@ -7,26 +7,29 @@ open System
 open System.Text
 open System.IO
 open System.Collections.Generic
+open System.Runtime.CompilerServices
+
 open Internal.Utilities
 open Internal.Utilities.Text
-open Microsoft.FSharp.Compiler 
+open Internal.Utilities.Collections
+open Internal.Utilities.Filename
+
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.SR
 open Microsoft.FSharp.Compiler.DiagnosticMessage
-
-module Tc = Microsoft.FSharp.Compiler.TypeChecker
-
-open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -38,17 +41,17 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.MSBuildResolver
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.SignatureConformance
+open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Internal.Utilities.Collections
-open Internal.Utilities.Filename
 open Microsoft.FSharp.Compiler.Import
+
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
-open System.Runtime.CompilerServices
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -4602,7 +4605,7 @@ let RequireDLL (tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> Tc.AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
+    let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
        
@@ -5030,11 +5033,11 @@ let GetInitialTcEnv (thisAssemblyName:string, initm:range, tcConfig:TcConfig, tc
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
+    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
 
     let tcEnv = 
         if tcConfig.checkOverflow then
-            Tc.TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
+            TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
         else
             tcEnv
     tcEnv
@@ -5162,7 +5165,7 @@ let TypeCheckOneInputEventually
 
                 // Typecheck the signature file 
                 let! (tcEnvAtEnd,tcEnv,smodulTypeRoot) = 
-                    Tc.TypeCheckOneSigFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcState.tcsTcSigEnv file
+                    TypeCheckOneSigFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcState.tcsTcSigEnv file
 
                 let rootSigs = Zmap.add qualNameOfFile  smodulTypeRoot rootSigs
 
@@ -5192,7 +5195,7 @@ let TypeCheckOneInputEventually
 
                 // Typecheck the implementation file 
                 let! topAttrs,implFile,tcEnvAtEnd = 
-                    Tc.TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
                 let hadSig = isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
@@ -5204,12 +5207,12 @@ let TypeCheckOneInputEventually
                 let m = qualNameOfFile.Range
 
                 // Add the implementation as to the implementation env
-                let tcImplEnv = Tc.AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+                let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
 
                 // Add the implementation as to the signature env (unless it had an explicit signature)
                 let tcSigEnv = 
                     if hadSig then tcState.tcsTcSigEnv 
-                    else Tc.AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
+                    else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
                 
                 // Open the prefixPath for fsi.exe (tcImplEnv)
                 let tcImplEnv = 

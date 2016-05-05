@@ -4,10 +4,12 @@
 /// with generalization at appropriate points.
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
-#nowarn "44" // This construct is deprecated. please use List.item
+open System
+open System.Collections.Generic
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -25,18 +27,18 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.PatternMatchCompilation
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Infos.AttributeChecking
+open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.MethodCalls
+open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open System
-open System.Collections.Generic
+open Microsoft.FSharp.Compiler.InfoReader
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1934,7 +1936,7 @@ let TcUnionCaseOrExnField cenv (env: TcEnv) ty1 m c n funcs =
       | _ -> error(Error(FSComp.SR.tcUnknownUnion(),m))
     if n >= List.length argtys then 
       error (UnionCaseWrongNumberOfArgs(env.DisplayEnv,List.length argtys,n,m))
-    let ty2 = List.nth argtys n
+    let ty2 = List.item n argtys
     mkf,ty2
 
 //-------------------------------------------------------------------------
@@ -4904,7 +4906,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
 
             if idx >= activePatResTys.Length then error(Error(FSComp.SR.tcInvalidIndexIntoActivePatternArray(),m))
-            let argty = List.nth activePatResTys idx 
+            let argty = List.item idx activePatResTys
                 
             let arg',(tpenv,names,takenNames) = TcPat warnOnUpper cenv env None vFlags (tpenv,names,takenNames) argty patarg
             
@@ -6805,7 +6807,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | None -> false
         | Some argInfos ->
             i < argInfos.Length && 
-            let (_,argInfo) = List.nth argInfos i
+            let (_,argInfo) = List.item i argInfos
             HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs
 
 
@@ -8050,14 +8052,14 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                             let isSpecialCaseForBackwardCompatibility = 
                                 if currentIndex = SEEN_NAMED_ARGUMENT then false
                                 else
-                                match stripTyEqns cenv.g (List.nth argtys currentIndex) with
+                                match stripTyEqns cenv.g (List.item currentIndex argtys) with
                                 | TType_app(tcref, _) -> tyconRefEq cenv.g cenv.g.bool_tcr tcref || tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref
                                 | TType_var(_) -> true
                                 | _ -> false
 
                             if isSpecialCaseForBackwardCompatibility then
                                 assert (box fittedArgs.[currentIndex] = null)
-                                fittedArgs.[currentIndex] <- List.nth args currentIndex // grab original argument, not item from the list of named parametere
+                                fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parametere
                                 currentIndex <- currentIndex + 1
                             else
                                 let caseName = 

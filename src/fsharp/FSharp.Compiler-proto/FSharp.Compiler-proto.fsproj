@@ -323,6 +323,15 @@
     <Compile Include="..\infos.fs">
       <Link>infos.fs</Link>
     </Compile>
+    <Compile Include="..\AccessibilityLogic.fs">
+      <Link>Logic\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\AttributeChecking.fs">
+      <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\InfoReader.fs">
+      <Link>Logic\InfoReader.fs</Link>
+    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>NicePrint.fs</Link>
     </Compile>
@@ -340,6 +349,15 @@
     </Compile>
     <Compile Include="..\TypeRelations.fs">
       <Link>TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="..\SignatureConformance.fs">
+      <Link>Logic\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodOverrides.fs">
+      <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fs">
+      <Link>MethodCalls.fs</Link>
     </Compile>
     <Compile Include="..\PatternMatchCompilation.fsi">
       <Link>PatternMatchCompilation.fsi</Link>
@@ -443,13 +461,13 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.3.20160301.3\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
+    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.0.0-rc-60301\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
     <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.7\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
     <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.3.0-beta-23816\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
     <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0-rc3-23805\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
