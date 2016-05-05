@@ -44,13 +44,21 @@ module internal Salsa =
             { new System.IDisposable with
                     member this.Dispose() = actuallyBuild <- true }
         member th.Results = capturedFlags, capturedSources
+#if FX_NO_CONVERTER
         member th.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
+#else
+        member th.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+#endif
             use t = Trace.Call("MSBuild", "Compile", fun _ -> "Host compile invoke by Fsc task")
             Trace.PrintLine("MSBuild", fun _ -> sprintf "flags=%A" flags)
             capturedFlags <- flags 
             capturedSources <- sources
             if actuallyBuild then
+#if FX_NO_CONVERTER
                 compile.Invoke()
+#else
+                compile.Invoke(0)
+#endif
             else
                 0         
         interface ITaskHost
