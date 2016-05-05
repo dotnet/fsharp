@@ -1577,7 +1577,6 @@ module internal Parser =
                         None
                     else 
                         let isLastCompiland = 
-                            tcConfig.target.IsExe && 
                             projectSourceFiles.Length >= 1 && 
                             System.String.Compare(projectSourceFiles.[projectSourceFiles.Length-1],mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
                         let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
