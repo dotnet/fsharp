@@ -67,6 +67,7 @@
     </Compile>
     <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs" />
     <Compile Include="nunitConf.fs" />
+    <Compile Include="FSharpTestSuiteAsserts.fs" />
     <Compile Include="single-test-build.fs" />
     <Compile Include="single-test-run.fs" />
     <Compile Include="single-neg-test.fs" />

@@ -1922,7 +1922,7 @@ type AssemblyGenerator(assemblyFileName) =
             and nestedType (tb:TypeBuilder)  (ntd : Type) = 
                 match ntd with 
                 | :? ProvidedTypeDefinition as pntd -> 
-                    if pntd.IsErased then invalidOp ("The nested provided type "+pntd.Name+"is marked as erased and cannot be converted to a generated type. Set 'IsErased' to false on the ProvidedTypeDefinition")
+                    if pntd.IsErased then invalidOp ("The nested provided type "+pntd.Name+" is marked as erased and cannot be converted to a generated type. Set 'IsErased' to false on the ProvidedTypeDefinition")
                     // Adjust the attributes - we're codegen'ing this type as nested
                     let attributes = adjustTypeAttributes ntd.Attributes true
                     let ntb = tb.DefineNestedType(pntd.Name,attr=attributes)

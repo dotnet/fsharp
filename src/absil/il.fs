@@ -3,16 +3,15 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 #nowarn "49"
-#nowarn "44" // This construct is deprecated. please use List.item
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
 
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -348,7 +347,9 @@ module ILList =
     let inline isEmpty (x:ILList<_>) = x.Length <> 0
     let inline toArray (x:ILList<_>) =  x
     let inline ofArray (x:'T[]) =  x
-    let inline nth n (x:'T[]) =  x.[n]
+    [<System.Obsolete("please use IList.item")>]
+    let inline nth n (x:'T[]) = x.[n]
+    let inline item n (x:'T[]) = x.[n]
     let inline toList (x:ILList<_>) =  Array.toList x
     let inline ofList (x:'T list)  = Array.ofList x
     let inline lengthsEqAndForall2 f x1 x2 = Array.lengthsEqAndForall2 f x1 x2
@@ -372,7 +373,9 @@ module ILList =
     let inline ofArray (x:'T[]) =  List.ofArray x
     let inline iter f (x:'T list) =  List.iter f x
     let inline iteri f (x:'T list) =  List.iteri f x
-    let inline nth (x:'T list) n =  List.nth x n
+    [<System.Obsolete("please use IList.item")>]
+    let inline nth (x:'T list) n =  List.item n x
+    let inline item n (x:'T list) =  List.item n x
     let inline toList (x:ILList<_>) =  x
     let inline ofList (x:'T list)  = x
     let inline lengthsEqAndForall2 f x1 x2 = List.lengthsEqAndForall2 f x1 x2
@@ -395,7 +398,9 @@ module ILList =
     let inline iter f (x:ILList<'T>) =  ThreeList.iter f x
     let inline iteri f (x:ILList<'T>) =  ThreeList.iteri f x
     let inline toList (x:ILList<_>) =  ThreeList.toList x
+    [<System.Obsolete("please use IList.item")>]
     let inline nth (x:ILList<'T>) n =  ThreeList.nth x n
+    let inline item n (x:ILList<'T>) =  ThreeList.nth n x
     let inline ofList (x:'T list)  = ThreeList.ofList x
     let inline lengthsEqAndForall2 f x1 x2 = ThreeList.lengthsEqAndForall2 f x1 x2
     let inline init n f = ThreeList.init n f
@@ -3001,7 +3006,7 @@ and instILTypeAux numFree (inst:ILGenericArgs) typ =
         if v - numFree >= top then 
             ILType.TypeVar (uint16 (v - top)) 
         else 
-            ILList.nth inst (v - numFree)
+            ILList.item (v - numFree) inst
     | x -> x
     
 and instILGenericArgsAux numFree inst i = ILList.map (instILTypeAux numFree inst) i
