@@ -281,7 +281,6 @@ namespace Microsoft.FSharp.Control
     #nowarn "40"
     #nowarn "21"
     #nowarn "47"
-    #nowarn "44" // This construct is deprecated. 
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
     #nowarn "67" // This type test or downcast will always hold
     #nowarn "864" // IObservable.Subscribe
