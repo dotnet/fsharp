@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
