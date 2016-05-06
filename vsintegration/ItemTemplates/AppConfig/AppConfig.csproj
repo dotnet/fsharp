@@ -29,5 +29,4 @@
   <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
     <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>
-  <Target Name="TemplateProjectOutputGroup" />
 </Project>
