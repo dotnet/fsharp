@@ -1,6 +1,6 @@
 // #Regression #Diagnostics 
 // Regression test for FSHARP1.0:6135
-//<Expects status="error" span="(11,5-11,43)" id="FS0027">This value is not mutable$</Expects>
+//<Expects status="error" span="(11,5-11,43)" id="FS0027">This value is not mutable. If you intend to mutate this value, declare it using the mutable keyword, e.g. 'let mutable m_cts = expression'.</Expects>
 
 
 open System.Threading
