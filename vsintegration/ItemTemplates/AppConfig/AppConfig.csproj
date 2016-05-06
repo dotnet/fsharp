@@ -9,6 +9,7 @@
     <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
+	<IsPackage>true</IsPackage>
   </PropertyGroup>
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
