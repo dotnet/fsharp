@@ -44,8 +44,8 @@
     <VSRootSuffix>FSharp</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
-    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != ''">False</DeployExtension>
-    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == ''">True</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">True</DeployExtension>
     <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
