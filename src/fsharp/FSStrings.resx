@@ -970,7 +970,7 @@
     <value>This rule will never be matched</value>
   </data>
   <data name="ValNotMutable" xml:space="preserve">
-    <value>This value is not mutable. If you intend to mutate this value, declare it using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
+    <value>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
   </data>
   <data name="ValNotLocal" xml:space="preserve">
     <value>This value is not local</value>
