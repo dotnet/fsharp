@@ -3,7 +3,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\v4.0\Microsoft.Portable.Common.targets" />
-  <Import Project=".\Microsoft.FSharp{BuildSuffix}.Targets" />
+  <Import Project=".\Microsoft.FSharp.Targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.targets" />
   
 </Project>

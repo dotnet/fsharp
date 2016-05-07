@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <PropertyGroup>
-       <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
-       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.1.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.1.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-   </PropertyGroup>
-   <Choose>
+  <PropertyGroup>
+    <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
+    <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.1.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.1.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
+  </PropertyGroup>
+  <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
          <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
@@ -77,6 +77,8 @@
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
         <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
+        <SkipSigning>true</SkipSigning>             <!-- Skip using the ,net toolset to generate signing . -->
+        <UseOpenSourceSign>true</UseOpenSourceSign>
         <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
         <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
         <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
@@ -132,30 +134,6 @@
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
-  </PropertyGroup>
-
-  <!-- v2.0-specific flags -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='net20'">
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_2_0</DefineConstants>
-    <DefineConstants>$(DefineConstants);RUNTIME</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_MONITOR_REPORTS_LOCKTAKEN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONDITIONAL_WEAK_TABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
-    <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
@@ -403,392 +381,36 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
-  <!-- Target Silverlight 3.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='sl3'">
-    <TargetFrameworkVersion>v3.0</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
-    <SilverlightApplication>false</SilverlightApplication>
-    <SilverlightVersion>v3.0</SilverlightVersion>
-  </PropertyGroup>
-
-  <!-- Target Silverlight 4.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='sl4'">
-    <DefineConstants>$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ISIN_ON_PARAMETER_INFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <SilverlightVersion>v4.0</SilverlightVersion>
-  </PropertyGroup>
-
-  <!-- Target Silverlight 5.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='sl5'">
-    <DefineConstants>$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_SILVERLIGHT_50</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);DONT_INCLUDE_DEPRECATED</DefineConstants>
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <DefineConstants>$(DefineConstants);TARGET_SILVERLIGHT_5_0</DefineConstants>
-    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
-    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
-    <SilverlightVersion>v5.0</SilverlightVersion>
-    <FrameworkRegistryBase>Software\Microsoft\Microsoft SDKs\$(TargetFrameworkIdentifier)</FrameworkRegistryBase>
-    <AssemblySearchPaths>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\Framework\Silverlight\v5.0</AssemblySearchPaths>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='sl3-wp'">
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>WindowsPhone</TargetFrameworkProfile>
-    <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
-    <DefineConstants>$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_REQUESTS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <Tailcalls>false</Tailcalls>
-    <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
-    <!-- It would be better to use MSBuild resolution here, but the TargetFrameworkIdentifier etc. aren't set up quite correctly as yet -->
-    <OtherFlags>$(OtherFlags) --simpleresolution -r:"C:\Program Files\Reference Assemblies\Microsoft\Framework\Silverlight\v4.0\Profile\WindowsPhone\mscorlib.dll" </OtherFlags>
-  </PropertyGroup>
-
-  <!-- Target CompactFramework 2.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='net20-cf'">
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
-    <TargetFrameworkIdentifier>CompactFramework</TargetFrameworkIdentifier>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_COMPACT_FRAMEWORK_20</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPACT_FRAMEWORK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_DISPLAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_DYNAMIC_INVOKE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_DYNAMIC_METHOD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_MINIMAL_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYNC_CONTEXT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD_STATIC</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_GET_HASH_CODE_HELPER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LOGN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRING_SPLIT_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CREATE_DELEGATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_REQUESTS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONDITIONAL_WEAK_TABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants)</DefineConstants>
-    <!-- It would be better to use MSBuild resolution here, but the TargetFrameworkIdentifier etc. aren't set up quite correctly as yet -->
-    <OtherFlags>$(OtherFlags) --simpleresolution -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v2.0\WindowsCE\mscorlib.dll"  -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v2.0\WindowsCE\System.dll"</OtherFlags>
-  </PropertyGroup>
-
-  <!-- Target XNA 4.0 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='XNA\4.0'">
-    <DefineConstants>$(DefineConstants);XNA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULE_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_REQUESTS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LINQ</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Target CompactFramework 3.5 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='net35-cf'">
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkIdentifier>CompactFramework</TargetFrameworkIdentifier>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_COMPACT_FRAMEWORK_35</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPACT_FRAMEWORK</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_DISPLAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_DYNAMIC_INVOKE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_MINIMAL_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_OPERATION_CANCELLED</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYNC_CONTEXT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD_STATIC</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_GET_HASH_CODE_HELPER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LOGN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRING_SPLIT_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CREATE_DELEGATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_REQUESTS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD</DefineConstants>
-    <!-- Turn off MSbuild resolution for the compiler, since it runs as a .NET 2.0 process and .NET 2.0 MSBuild resolution think then can't load CompactFramework 3.5 assemblies -->
-    <OtherFlags>$(OtherFlags) --simpleresolution -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE\mscorlib.dll"  -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE\System.dll"</OtherFlags>
-  </PropertyGroup>
-
-  <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). The output compiler has suffix "-proto" -->
-  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' == 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
-    <OutputPath>$(FSharpSourcesRoot)\..\vs\$(protoCLIDir)\bin</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' != 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
+  <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). -->
+  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp'">
+    <OutputPath>$(FSharpSourcesRoot)\..\Proto\bin\release\netstandard1.5\publish</OutputPath>
   </PropertyGroup>
 
   <!-- Build with prototype compiler (location is given by settings below). The output is the final bootstrapped compiler -->
   <PropertyGroup Condition=" '$(BuildWith)' == ''">
-    <FSharpTargetsDir>$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin</FSharpTargetsDir>
-
-    <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin</FscToolPath>
-    <FscToolExe>fsc-proto.exe</FscToolExe>
+    <FSharpTargetsDir>$(FSharpSourcesRoot)\..\Proto\bin</FSharpTargetsDir>
+    <FscToolPath>$(FSharpSourcesRoot)\..\Proto\bin</FscToolPath>
     <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
   </PropertyGroup>
 
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
-         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\dnxcore50\win7-x64\publish</FscToolPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)' == 'coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)' != 'coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\release\dnxcore50\win7-x64\publish</FscToolPath>
          <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
       <PropertyGroup>
-        <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="'$(TargetFramework)'=='sl3' or '$(TargetFramework)'=='sl4' or '$(TargetFramework)'=='sl5' or '$(TargetFramework)'=='sl5-compiler'">
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\Silverlight\$(SilverlightVersion)\FSharpSource.Silverlight.Common.targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="'$(BuildWith)' == '' AND '$(ProjectLanguage)' == 'FSharp'">
-      <PropertyGroup>
-        <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.FSharp-proto.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.1\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0\FSharp.Core.dll</FSCoreLKGPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll</FSCoreLKGPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll</FSCoreLKGPath>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll</FSCoreLKGPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll</FSCoreLKGPath>
+         <FSharpTargetsPath>..\Tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)' == 'coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
+         <FSharpTargetsPath Condition="'$(TargetFramework)' != 'coreclr'">..\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>

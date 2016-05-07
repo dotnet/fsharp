@@ -5,8 +5,8 @@
     <!-- Tail calls on, even in debug -->
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <!-- For .NET 2.0 use a 2.0 proto compiler, otherwise use a 4.0 proto compiler -->
-    <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
+    <!-- Unless otherwise specified otherwise, use the coreclr compiler -->
+    <protoCLIDir Condition="'$(protoCLIDir)' == ''">coreclr</protoCLIDir>
     <LkgVersion>14.0.23413.0</LkgVersion>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
@@ -46,8 +46,13 @@
 
   <!-- Flags used to build the bootstrap compiler.		-->
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <TargetFramework>coreclr</TargetFramework>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <BuildWith>LKG</BuildWith>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup>
