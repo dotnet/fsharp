@@ -1580,8 +1580,8 @@ module internal Parser =
                             projectSourceFiles.Length >= 1 && 
                             System.String.Compare(projectSourceFiles.[projectSourceFiles.Length-1],mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
                         let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
-
-                        let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,(isLastCompiland,false))
+                        let isExe = tcConfig.target.IsExe
+                        let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,(isLastCompiland,isExe))
                         Some parseResult
                   with e -> 
                     errHandler.ErrorLogger.ErrorR(e)
