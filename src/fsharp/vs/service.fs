@@ -1581,7 +1581,7 @@ module internal Parser =
                             System.String.Compare(projectSourceFiles.[projectSourceFiles.Length-1],mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
                         let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
 
-                        let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,isLastCompiland)
+                        let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,(isLastCompiland,false))
                         Some parseResult
                   with e -> 
                     errHandler.ErrorLogger.ErrorR(e)
