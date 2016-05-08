@@ -9626,10 +9626,15 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
     match bind with 
 
     | NormalizedBinding(vis,bkind,isInline,isMutable,attrs,doc,_,valSynData,pat,NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr),mBinding,spBind) ->
-        let name = match pat with
-                   | SynPat.Named(_,name,_,_,_) -> Some(name.idText)
-                   | _ -> None
-        let envinner = {envinner with eCallerMemberName = name }
+        let callerName =
+            match declKind, bkind, pat with
+            | ExpressionBinding, _, _ -> envinner.eCallerMemberName
+            | _, _, SynPat.Named(_,name,_,_,_) -> Some(name.idText)
+            | ClassLetBinding, DoBinding, _ -> Some(".ctor")
+            | ModuleOrMemberBinding, StandaloneExpression, _ -> Some(".cctor")
+            | _, _, _ -> envinner.eCallerMemberName
+
+        let envinner = {envinner with eCallerMemberName = callerName }
 
         let (SynValData(memberFlagsOpt,valSynInfo,_)) = valSynData 
 
