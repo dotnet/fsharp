@@ -347,8 +347,7 @@
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).vsix" />
       <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
+         <Authenticode>VsixSHA2</Authenticode>
       </FilesToSign>
     </ItemGroup>
   </Target>
