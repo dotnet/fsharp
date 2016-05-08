@@ -102,7 +102,7 @@ if /i '%ARG%' == 'all' (
 if /i '%ARG%' == 'microbuild' (
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_CORECLR=1
+    set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=1
