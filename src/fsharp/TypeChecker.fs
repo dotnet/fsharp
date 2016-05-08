@@ -9207,18 +9207,13 @@ and TcMethodApplication
                                 | ByrefTy cenv.g inst ->
                                     build inst (PassByRef(inst, currDfltVal))
                                 | _ ->
-                                    match calledArg.CallerInfoInfo with
-                                    | CallerLineNumber when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
+                                    match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                                    | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder,Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
-                                    | CallerFilePath when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
+                                    | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
                                         emptyPreBinder,Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
-                                    | CallerMemberName when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
-                                        let name = match env.eCallerMemberName with
-                                                   | Some(name) -> name
-                                                   | None ->
-                                                       warning(Error(FSComp.SR.tcNoCallerMemberName(), mMethExpr))
-                                                       System.String.Empty
-                                        emptyPreBinder,Expr.Const(Const.String(name), mMethExpr, currCalledArgTy)
+                                    | CallerMemberName, Some(callerName) when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
+                                        emptyPreBinder,Expr.Const(Const.String(callerName), mMethExpr, currCalledArgTy)
                                     | _ ->
                                         emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                                     
@@ -9250,22 +9245,18 @@ and TcMethodApplication
                           else
                               calledArgTy // should be unreachable
 
-                      match calledArg.CallerInfoInfo with
-                      | CallerLineNumber when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
-                              let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
-                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[lineExpr],mMethExpr)
-                      | CallerFilePath when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                              let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
-                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[filePathExpr],mMethExpr)
-                      | CallerMemberName when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
-                              let name = match env.eCallerMemberName with
-                                         | Some(name) -> name
-                                         | None ->
-                                             warning(Error(FSComp.SR.tcNoCallerMemberName(), mMethExpr))
-                                             System.String.Empty
-                              let memberNameExpr = Expr.Const(Const.String(name), mMethExpr, calledNonOptTy)
-                              emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[memberNameExpr],mMethExpr)
-                      | _ -> emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
+                      match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                      | CallerLineNumber, _ when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
+                          let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[lineExpr],mMethExpr)
+                      | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                          let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[filePathExpr],mMethExpr)
+                      | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                          let memberNameExpr = Expr.Const(Const.String(callerName), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[memberNameExpr],mMethExpr)
+                      | _ ->
+                          emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
 
               // Combine the variable allocators (if any)
               let wrapper = (wrapper >> wrapper2)
