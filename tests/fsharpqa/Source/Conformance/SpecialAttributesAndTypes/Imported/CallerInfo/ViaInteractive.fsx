@@ -24,7 +24,7 @@ if MyTy.GetCallerLineNumber() <> Some(23) then
     failwith "Unexpected F# CallerLineNumber"
 
 match CallerInfoTest.AllInfo(21) with
-| (path, 26, "") when matchesPath checkPath path -> ()
+| (path, 26, ".cctor") when matchesPath checkPath path -> ()
 | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
 #q

@@ -29,9 +29,9 @@ module Program =
         let getCallerLineNumber = CallerInfoTest.MemberName
 
         if () |> CallerInfoTest.MemberName <> "main" then
-            failwith "Unexpected C# CallerLineNumber"
+            failwith "Unexpected C# CallerMemberName"
 
-        if getCallerLineNumber () <> "getCallerLineNumber" then
-            failwith "Unexpected C# CallerLineNumber"
+        if getCallerLineNumber () <> "main" then
+            failwith "Unexpected C# CallerMemberName"
 
         0
