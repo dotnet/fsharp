@@ -10,6 +10,7 @@
 	<DebugSymbols>false</DebugSymbols>
 	<DebugType>None</DebugType>
 	<IsPackage>true</IsPackage>
+    <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>
 	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
