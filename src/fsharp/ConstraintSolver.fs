@@ -115,16 +115,26 @@ let FreshenMethInfo m (minfo:MethInfo) =
 // Subsumption of types: solve/record subtyping constraints
 //------------------------------------------------------------------------- 
 
+[<RequireQualifiedAccess>] 
+/// Information about the context of a type equation.
+type ContextInfo =
+/// No context was given.
+| NoContext
+/// The type equation comes from an omitted else branch.
+| OmittedElseBranch
+/// The type equation comes from an else branch that might have different type than the corresponding if branch.
+| ElseBranchWithDifferentType
+
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of DisplayEnv * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation of DisplayEnv * TType * TType * range  * range 
+exception ConstraintSolverTypesNotInEqualityRelation of DisplayEnv * TType * TType * range * range 
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range  * range 
 exception ConstraintSolverMissingConstraint of DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
 exception ConstraintSolverError of string * range * range
 exception ConstraintSolverRelatedInformation of string option * range * exn 
 
 exception ErrorFromApplyingDefault of TcGlobals * DisplayEnv * Tast.Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation of TcGlobals * DisplayEnv * TType * TType * exn * range
+exception ErrorFromAddingTypeEquation of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorsFromAddingSubsumptionConstraint of TcGlobals * DisplayEnv * TType * TType * exn * range
 exception ErrorFromAddingConstraint of  DisplayEnv * exn * range
 exception PossibleOverload of DisplayEnv * string * exn * range
@@ -1912,9 +1922,9 @@ and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m tr
     TryD (fun () -> SolveTypSubsumesTypKeepAbbrevs csenv ndeep m trace ty1 ty2)
          (fun res -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,m)))
 
-and private SolveTypEqualsTypWithReport (csenv:ConstraintSolverEnv) ndeep  m trace ty1 ty2 = 
+and private SolveTypEqualsTypWithReport contextInfo (csenv:ConstraintSolverEnv) ndeep  m trace ty1 ty2 = 
     TryD (fun () -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m trace ty1 ty2)
-         (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,m)))
+         (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,contextInfo,m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv:ConstraintSolverEnv)
@@ -1936,10 +1946,10 @@ and ArgsMustSubsumeOrConvert
         CompleteD)
 
 and MustUnify csenv ndeep trace ty1 ty2 = 
-    SolveTypEqualsTypWithReport csenv ndeep csenv.m trace ty1 ty2
+    SolveTypEqualsTypWithReport ContextInfo.NoContext csenv ndeep csenv.m trace ty1 ty2
 
 and MustUnifyInsideUndo csenv ndeep trace ty1 ty2 = 
-    SolveTypEqualsTypWithReport csenv ndeep csenv.m (WithTrace trace) ty1 ty2
+    SolveTypEqualsTypWithReport ContextInfo.NoContext csenv ndeep csenv.m (WithTrace trace) ty1 ty2
 
 and ArgsMustSubsumeOrConvertInsideUndo (csenv:ConstraintSolverEnv) ndeep trace isConstraint calledArg (CallerArg(callerArgTy,m,_,_) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
@@ -2392,8 +2402,8 @@ let EliminateConstraintsForGeneralizedTypars csenv trace (generalizedTypars: Typ
 // No error recovery here : we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType denv css m ty1 ty2 = 
-    SolveTypEqualsTypWithReport (MakeConstraintSolverEnv css m denv) 0 m NoTrace ty1 ty2
+let AddCxTypeEqualsType contextInfo denv css m ty1 ty2 = 
+    SolveTypEqualsTypWithReport contextInfo (MakeConstraintSolverEnv css m denv) 0 m NoTrace ty1 ty2
     |> RaiseOperationResult
 
 let UndoIfFailed f =

@@ -116,7 +116,7 @@ let GetRangeOfError(err:PhasedError) =
 #endif
       | ReservedKeyword(_,m)
       | IndentationProblem(_,m)
-      | ErrorFromAddingTypeEquation(_,_,_,_,_,m) 
+      | ErrorFromAddingTypeEquation(_,_,_,_,_,_,m) 
       | ErrorFromApplyingDefault(_,_,_,_,_,m) 
       | ErrorsFromAddingSubsumptionConstraint(_,_,_,_,_,m) 
       | FunctionExpected(_,_,m)
@@ -202,7 +202,7 @@ let GetRangeOfError(err:PhasedError) =
       | ConstraintSolverTupleDiffLengths(_,_,_,m,_) 
       | ConstraintSolverInfiniteTypes(_,_,_,m,_) 
       | ConstraintSolverMissingConstraint(_,_,_,m,_) 
-      | ConstraintSolverTypesNotInEqualityRelation(_,_,_,m,_) 
+      | ConstraintSolverTypesNotInEqualityRelation(_,_,_,m,_)
       | ConstraintSolverError(_,m,_) 
       | ConstraintSolverTypesNotInSubsumptionRelation(_,_,_,m,_) 
       | ConstraintSolverRelatedInformation(_,m,_) 
@@ -407,9 +407,9 @@ let SplitRelatedErrors(err:PhasedError) =
       | ConstraintSolverRelatedInformation(fopt,m2,e) -> 
           let e,related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt,m2,e.Exception)|>ToPhased, related
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,m) ->
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,specializedMessageF,m) ->
           let e,related = SplitRelatedException e
-          ErrorFromAddingTypeEquation(g,denv,t1,t2,e.Exception,m)|>ToPhased, related
+          ErrorFromAddingTypeEquation(g,denv,t1,t2,e.Exception,specializedMessageF,m)|>ToPhased, related
       | ErrorFromApplyingDefault(g,denv,tp,defaultType,e,m) ->  
           let e,related = SplitRelatedException e
           ErrorFromApplyingDefault(g,denv,tp,defaultType,e.Exception,m)|>ToPhased, related
@@ -614,7 +614,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
       | ConstraintSolverTypesNotInEqualityRelation(denv,(TType_measure _ as t1),(TType_measure _ as t2),m,m2) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constrants)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2)  |> ignore
+          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
           (if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m))  |> ignore)
       | ConstraintSolverTypesNotInEqualityRelation(denv,t1,t2,m,m2) -> 
@@ -638,14 +638,18 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           | ConstraintSolverError _ -> OutputExceptionR os e
           | _ -> ()
           fopt |> Option.iter (Printf.bprintf os " %s")
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,ConstraintSolverTypesNotInEqualityRelation(_, t1', t2',_ ,_ ),_) 
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,ConstraintSolverTypesNotInEqualityRelation(_, t1', t2',_ ,_ ),contextInfo,_) 
          when typeEquiv g t1 t1'
-         &&   typeEquiv g t2 t2' ->  
+         &&   typeEquiv g t2 t2' ->
           let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
-      | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _) as e),_)  ->  
+          match contextInfo with
+          | ContextInfo.OmittedElseBranch -> os.Append(FSComp.SR.missingElseBranch(t1,t2)) |> ignore
+          | ContextInfo.ElseBranchWithDifferentType -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | ContextInfo.NoContext ->
+              os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
+      | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _) as e), _, _)  ->  
           OutputExceptionR os e
-      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,_) ->
+      | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,_,_) ->
           if not (typeEquiv g t1 t2) then (
               let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
               if t1<>t2 + tpcs then os.Append(ErrorFromAddingTypeEquation2E().Format t1 t2 tpcs) |> ignore
