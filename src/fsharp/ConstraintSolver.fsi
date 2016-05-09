@@ -47,6 +47,16 @@ val FreshenTypars : range -> Typars -> TType list
 
 val FreshenMethInfo : range -> MethInfo -> TType list
 
+[<RequireQualifiedAccess>] 
+/// Information about the context of a type equation.
+type ContextInfo =
+/// No context was given.
+| NoContext
+/// The type equation comes from an omitted else branch.
+| OmittedElseBranch
+/// The type equation comes from an else branch that might have different type than the corresponding if branch.
+| ElseBranchWithDifferentType
+
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range
@@ -55,7 +65,7 @@ exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * 
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * range
+exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * range
 exception ErrorFromAddingConstraint                     of DisplayEnv * exn * range
 exception UnresolvedConversionOperator                  of DisplayEnv * TType * TType * range
@@ -93,7 +103,7 @@ val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTr
 val CheckDeclaredTypars                       : DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
 val AddConstraint                             : ConstraintSolverEnv -> int -> Range.range -> OptionalTrace -> Typar -> TyparConstraint -> OperationResult<unit>
-val AddCxTypeEqualsType                       : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+val AddCxTypeEqualsType                       : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 val AddCxTypeEqualsTypeUndoIfFailed           : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeMustSubsumeType                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
