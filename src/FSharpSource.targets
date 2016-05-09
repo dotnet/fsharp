@@ -383,7 +383,7 @@
 
   <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). -->
   <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp'">
-    <OutputPath>$(FSharpSourcesRoot)\..\Proto\bin\release\netstandard1.5\publish</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\Proto\bin</OutputPath>
   </PropertyGroup>
 
   <!-- Build with prototype compiler (location is given by settings below). The output is the final bootstrapped compiler -->
@@ -398,7 +398,7 @@
       <PropertyGroup>
          <FSharpTargetsPath Condition="'$(TargetFramework)' == 'coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
          <FSharpTargetsPath Condition="'$(TargetFramework)' != 'coreclr'">..\tools\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\release\dnxcore50\win7-x64\publish</FscToolPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin</FscToolPath>
          <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>

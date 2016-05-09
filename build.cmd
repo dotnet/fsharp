@@ -300,12 +300,13 @@ set _nrswitch=/nr:false
 rem uncomment to use coreclr msbuild not ready yet!!!!
 rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
 rem set _nrswitch=
-          
+
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
    rem See <http://www.appveyor.com/docs/build-phase>
    if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-    rem HACK HACK HACK
+
+   rem HACK HACK HACK
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
 )
@@ -328,53 +329,49 @@ set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 rem ===============
 rem publish the lkg
 rem ===============
-%_dotnetexe% restore .\lkg\project.json
+%_dotnetexe% restore .\lkg\project.json --configfile ..\.nuget\nuget.config
 @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-%_dotnetexe% publish .\lkg\project.json --no-build --configuration release
-@if ERRORLEVEL 1 echo Error: dotnet publish failed && goto :failure
+%_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64 -o lkg\bin
+@if ERRORLEVEL 1 echo Error: %_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64 failed && goto :failure
+
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
-remfc fsc.exe corehost.exe >nul
-rem@if ERRORLEVEL 1 (
-rem  copy fsc.exe fsc.dll
-rem  copy corehost.exe fsc.exe
-rem )
-popd
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
+pushd .\lkg\bin
+fc fsc.exe corehost.exe >nul
+@if ERRORLEVEL 1 (
+  copy fsc.exe fsc.dll
+  copy corehost.exe fsc.exe
+)
 fc fsi.exe corehost.exe >nul
 @if ERRORLEVEL 1 (
   copy fsi.exe fsi.dll
   copy corehost.exe fsi.exe
 )
+
 popd
 
-rem ===================================
-rem publish the support files for proto
-rem ===================================
-%_dotnetexe% restore .\Proto\project.json
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-%_dotnetexe% publish .\Proto\project.json  --no-build --configuration release
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-rem pushd .\lkg\bin\release\dnxcore50\win7-x64\publish
-copy corehost.exe fsc.exe
-copy corehost.exe fsi.exe
-
-rem copy targestfile into tools directory ... temporary fix until packaging complete
+rem copy targetfile into tools directory ... temporary fix until packaging complete
 copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
 copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+copy lkg\FSharp-14.0.23413.0\bin\fsharp.core.dll tools\fsharp.core.dll
+copy lkg\FSharp-14.0.23413.0\bin\fsharp.build.dll tools\fsharp.build.dll
+
+echo on
 
 :: Build Proto
 if NOT EXIST Proto\bin\fsc.dll (set BUILD_PROTO=1)
 
 :: Build
 if '%BUILD_PROTO%' == '1' (
-    %_dotnetexe% restore
-    @if ERRORLEVEL 1 echo Error: %_dotnetexe% restore    failed  && goto :failure
-    %_dotnetexe% publish src\fsharp\Fsc\project.json -o Proto\bin
-    @if ERRORLEVEL 1 echo Error: %_dotnetexe% publish src\fsharp\Fsc\project.json -o Proto\coreclr\bin    failed  && goto :failure
+    %_dotnetexe% restore  .\Proto\project.json --configfile ..\.nuget\nuget.config
+    @if ERRORLEVEL 1 echo Error:     %_dotnetexe% restore  --configfile ..\.nuget\nuget.config .\Proto\project.json failed  && goto :failure
+
+    %_dotnetexe% publish .\Proto\project.json --no-build --configuration release -f .NETStandard,Version=v1.5 -r win7-x64 -o Proto\bin
+    @if ERRORLEVEL 1 echo Error: %_dotnetexe% publish src\fsharp\Fsc\project.json --no-build --configuration release -f .NETStandard,Version=v1.5 -r win7-x64 -o Proto\bin    failed  && goto :failure
+
+    pushd .\Proto\bin
+    copy corehost.exe fsc.exe
+    copy corehost.exe fsi.exe
+    popd
 )
 
 echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
