@@ -554,7 +554,7 @@ let MatchIncomplete2E() = DeclareResourceString("MatchIncomplete2","%s")
 let MatchIncomplete3E() = DeclareResourceString("MatchIncomplete3","%s")
 let MatchIncomplete4E() = DeclareResourceString("MatchIncomplete4","")
 let RuleNeverMatchedE() = DeclareResourceString("RuleNeverMatched","")
-let ValNotMutableE() = DeclareResourceString("ValNotMutable","")
+let ValNotMutableE() = DeclareResourceString("ValNotMutable","%s")
 let ValNotLocalE() = DeclareResourceString("ValNotLocal","")
 let Obsolete1E() = DeclareResourceString("Obsolete1","")
 let Obsolete2E() = DeclareResourceString("Obsolete2","%s")
@@ -1215,7 +1215,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           if isComp then 
               os.Append(MatchIncomplete4E().Format) |> ignore
       | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore
-      | ValNotMutable _ -> os.Append(ValNotMutableE().Format) |> ignore
+      | ValNotMutable(_,valRef,_) -> os.Append(ValNotMutableE().Format(valRef.DisplayName)) |> ignore
       | ValNotLocal _ -> os.Append(ValNotLocalE().Format) |> ignore
       | ObsoleteError (s, _) 
       | ObsoleteWarning (s, _) -> 
