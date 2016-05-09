@@ -60,7 +60,7 @@ def static getBuildJobName(def configuration, def os) {
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            Utilities.setMachineAffinity(newJob, os, os == 'Windows_NT' ? 'latest-or-auto-elevated' : 'latest-or-auto')
+            Utilities.setMachineAffinity(newJob, os, os == 'Windows_NT' ? 'latest-dev15' : 'latest-or-auto')
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
             Utilities.addArchival(newJob, "${buildFlavor}/**")
