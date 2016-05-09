@@ -2731,7 +2731,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles:string list) = 
         let n = sourceFiles.Length in 
-        sourceFiles |> List.mapi (fun i _ -> (i = n-1) && tcConfig.target.IsExe)
+        (sourceFiles |> List.mapi (fun i _ -> (i = n-1)),  tcConfig.target.IsExe)
             
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member tcConfig.ClrRoot = 
@@ -3209,7 +3209,8 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
         SynModuleOrNamespace(lid,isModule,decls,xmlDoc,attribs,access,m)
 
     | ParsedImplFileFragment.AnonModule (defs,m)-> 
-        if not isLastCompiland && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
+        let isLast, isExe = isLastCompiland 
+        if not (isLast && isExe ) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
             errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
         let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespace(modname,true,defs,PreXmlDoc.Empty,[],None,m)
@@ -3232,7 +3233,8 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
         SynModuleOrNamespaceSig(lid,isModule,decls,xmlDoc,attribs,access,m)
 
     | ParsedSigFileFragment.AnonModule (defs,m) -> 
-        if not isLastCompiland && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
+        let isLast, isExe = isLastCompiland
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
             errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
         let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespaceSig(modname,true,defs,PreXmlDoc.Empty,[],None,m)
@@ -4810,7 +4812,7 @@ module private ScriptPreprocessClosure =
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
         let lexbuf = UnicodeLexing.StringAsLexbuf source 
         
-        let isLastCompiland = IsScript filename // The root compiland is last in the list of compilands.
+        let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig,lexResourceManager,defines,lexbuf,filename,isLastCompiland,errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
@@ -4916,13 +4918,13 @@ module private ScriptPreprocessClosure =
         closureDirectives |> List.map FindClosure |> List.concat, !tcConfig
         
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(rootFilename,closureDirectives,tcConfig,codeContext) = 
+    let GetLoadClosure(rootFilename,closureDirectives,(tcConfig:TcConfig),codeContext) = 
     
         // Mark the last file as isLastCompiland. closureDirectives is currently reversed.
         let closureDirectives =
             match closureDirectives with
             | ClosedSourceFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns)::rest -> 
-                ClosedSourceFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,true))),errs,warns,nowarns)::rest
+                ClosedSourceFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)::rest
             | x -> x
 
         // Get all source files.
