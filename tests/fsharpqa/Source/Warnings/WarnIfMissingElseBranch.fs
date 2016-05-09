@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" span="(6,4)" id="FS0001">You have not supplied the "else" case for this expression. If / then is an expression and so it must always return a result of the same type in all cases.</Expects>
+//<Expects status="Error" span="(6,19)" id="FS0001">The 'if' expression is missing an 'else' branch. The 'then' branch has type 'string'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</Expects>
 
 let x = 10
 let y =

@@ -128,7 +128,7 @@ but given a
     B list    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an if / else expression must return the same type. This expression was expected to have type 'B' but here has type 'C'.
+neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return the same type. This expression was expected to have type 'B' but here has type 'C'.
 
 neg20.fs(87,54,87,61): typecheck error FS0001: This expression was expected to have type
     B    
