@@ -653,14 +653,20 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
-let UnifyTupleType cenv denv m ty ps = 
+let UnifyTupleType contextInfo cenv denv m ty ps = 
     let ptys = 
         if isTupleTy cenv.g ty then 
             let ptys = destTupleTy cenv.g ty
             if (List.length ps) = (List.length ptys) then ptys 
             else NewInferenceTypes ps
         else NewInferenceTypes ps
-    AddCxTypeEqualsType ContextInfo.NoContext denv cenv.css m ty (TType_tuple ptys)
+
+    let contextInfo =
+        match contextInfo with
+        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
+        | _ -> contextInfo
+
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple ptys)
     ptys
 
 /// Optimized unification routine that avoids creating new inference 
@@ -4700,7 +4706,7 @@ and TcSimplePats cenv optArgsOK  checkCxs ty env (tpenv,names,takenNames:Set<_>)
         [v],(tpenv,names,takenNames)
 
     | SynSimplePats.SimplePats (ps,m) -> 
-        let ptys = UnifyTupleType cenv env.DisplayEnv m ty ps
+        let ptys = UnifyTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
         let ps',(tpenv,names,takenNames) = List.mapFold (fun tpenv (ty,e) -> TcSimplePat optArgsOK checkCxs cenv ty env tpenv e) (tpenv,names,takenNames) (List.zip ptys ps)
         ps',(tpenv,names,takenNames)
 
@@ -5392,7 +5398,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         mkLazyDelayed cenv.g m ety (mkUnitDelayLambda cenv.g m e'), tpenv
 
     | SynExpr.Tuple (args,_,m) -> 
-        let argtys = UnifyTupleType cenv env.DisplayEnv m overallTy args
+        let argtys = UnifyTupleType env.eContextInfo cenv env.DisplayEnv m overallTy args
         // No subsumption at tuple construction
         let flexes = argtys |> List.map (fun _ -> false)
         let args',tpenv = TcExprs cenv env m tpenv flexes argtys args
@@ -5932,7 +5938,8 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
 
     // Type check and generalize the supplied bindings 
     let fldsList,tpenv = 
-        (tpenv,fldsList) ||> List.mapFold (fun tpenv (fname,fexpr,fty,flex) -> 
+        let env = { env with eContextInfo = ContextInfo.RecordFields }
+        (tpenv,fldsList) ||> List.mapFold (fun tpenv (fname,fexpr,fty,flex) ->
               let fieldExpr,tpenv = TcExprFlex cenv flex fty env tpenv fexpr
               (fname,fieldExpr),tpenv)
               
