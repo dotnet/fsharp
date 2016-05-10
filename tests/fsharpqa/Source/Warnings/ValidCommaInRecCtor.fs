@@ -1,4 +1,4 @@
-//<Expects status="Success""></Expects>
+//<Expects status="Success"></Expects>
 
 type Person = { Name : string * bool * bool }
 let Age = 22
