@@ -95,3 +95,4 @@ ossreadme*.txt
 *.ldf
 *.cto
 project.lock.json
+Tools/

@@ -9,4 +9,4 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.InfoReader
 
 val testFlagMemberBody : bool ref
-val CheckTopImpl : TcGlobals * Import.ImportMap * bool * InfoReader * Tast.CompilationPath list * Tast.CcuThunk * Tastops.DisplayEnv * Tast.ModuleOrNamespaceExprWithSig * Tast.Attribs * bool -> bool
+val CheckTopImpl : TcGlobals * Import.ImportMap * bool * InfoReader * Tast.CompilationPath list * Tast.CcuThunk * Tastops.DisplayEnv * Tast.ModuleOrNamespaceExprWithSig * Tast.Attribs * (bool * bool) -> bool

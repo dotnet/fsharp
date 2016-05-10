@@ -412,7 +412,20 @@ if '%TEST_NET40_COREUNIT%' == '0' (
         )
     )
 )
-
+if '%TEST_CORECLR%' == '1' (
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\CoreUnit_portable47_Error.log 
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp coreclr
+    @if ERRORLEVEL 1 (
+        type testresults\CoreUnit_portable47_Error.log 
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+)
 if '%TEST_VS%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
     @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests

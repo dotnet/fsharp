@@ -3027,11 +3027,12 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
     // Now the main compilation step 
     GenModule cenv  m
 
-    // Fetch out some of the results  
+    // .exe files have a .entrypoint instruction.  Do not write it to the entrypoint when writing  dll.
     let entryPointToken = 
         match cenv.entrypoint with 
         | Some (epHere,tok) -> 
-            getUncodedToken (if epHere then TableNames.Method else TableNames.File) tok 
+            if isDll then 0x0
+            else getUncodedToken (if epHere then TableNames.Method else TableNames.File) tok 
         | None -> 
             if not isDll then dprintn "warning: no entrypoint specified in executable binary"
             0x0
