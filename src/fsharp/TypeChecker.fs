@@ -232,7 +232,7 @@ type UngeneralizableItem(computeFreeTyvars : (unit -> FreeTyvars)) =
     member item.WillNeverHaveFreeTypars = willNeverHaveFreeTypars
     member item.CachedFreeLocalTycons = cachedFreeLocalTycons 
     member item.CachedFreeTraitSolutions = cachedFreeTraitSolutions
-      
+ 
 [<NoEquality; NoComparison>]
 type TcEnv =
     { /// Name resolution information 
@@ -263,7 +263,10 @@ type TcEnv =
       eInternalsVisibleCompPaths: CompilationPath list // internals under these should be accessible
 
       /// Mutable accumulator for the current module type 
-      eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref 
+      eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
+
+      /// Context information for type checker
+      eContextInfo : ContextInfo 
 
       /// Here Some tcref indicates we can access protected members in all super types 
       eFamilyType: TyconRef option 
@@ -289,6 +292,7 @@ let emptyTcEnv g  =
       eAccessPath=cpath // dummy 
       eAccessRights=computeAccessRights cpath [] None // compute this field 
       eInternalsVisibleCompPaths=[]
+      eContextInfo=ContextInfo.NoContext
       eModuleOrNamespaceTypeAccumulator= ref (NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType=None
       eCtorInfo=None }
@@ -550,9 +554,7 @@ let CopyAndFixupTypars m rigid tpsorig =
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
 
 let UnifyTypes cenv (env: TcEnv) m expectedTy actualTy = 
-    ConstraintSolver.AddCxTypeEqualsType env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g expectedTy) (tryNormalizeMeasureInType cenv.g actualTy)
-
-
+    ConstraintSolver.AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g expectedTy) (tryNormalizeMeasureInType cenv.g actualTy)
 
 //-------------------------------------------------------------------------
 // Generate references to the module being generated - used for
@@ -658,7 +660,7 @@ let UnifyTupleType cenv denv m ty ps =
             if (List.length ps) = (List.length ptys) then ptys 
             else NewInferenceTypes ps
         else NewInferenceTypes ps
-    AddCxTypeEqualsType denv cenv.css m ty (TType_tuple ptys)
+    AddCxTypeEqualsType ContextInfo.NoContext denv cenv.css m ty (TType_tuple ptys)
     ptys
 
 /// Optimized unification routine that avoids creating new inference 
@@ -5570,14 +5572,20 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
           TcStmtThatCantBeCtorBody cenv env tpenv e1
 
     | SynExpr.IfThenElse (e1,e2,e3opt,spIfToThen,isRecovery,mIfToThen,m) ->
-        let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1  
-        (if isNone e3opt && not isRecovery then UnifyTypes cenv env m overallTy cenv.g.unit_ty)
-        let e2',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+        let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
+        let e2',tpenv =
+            if not isRecovery && isNone e3opt then
+                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch } 
+                UnifyTypes cenv env m cenv.g.unit_ty overallTy
+                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+            else
+                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
         let e3',sp2,tpenv = 
             match e3opt with 
-            | None -> 
+            | None ->
                 mkUnit cenv.g mIfToThen,SuppressSequencePointAtTarget, tpenv // the fake 'unit' value gets exactly the same range as spIfToThen
             | Some e3 -> 
+                let env = { env with eContextInfo = ContextInfo.ElseBranchWithDifferentType } 
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv
