@@ -8,9 +8,6 @@ call %~d0%~p0..\..\..\config.bat
 "%PEVERIFY%" "%FSCOREDLLPATH%"
 @if ERRORLEVEL 1 goto Error
 
-"%PEVERIFY%" "%FSCOREDLL20PATH%"
-@if ERRORLEVEL 1 goto Error
-
 "%PEVERIFY%" "%FSCOREDLLPORTABLEPATH%"
 @if ERRORLEVEL 1 goto Error
 
