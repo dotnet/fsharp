@@ -56,6 +56,10 @@ type ContextInfo =
 | OmittedElseBranch
 /// The type equation comes from an else branch that might have different type than the corresponding if branch.
 | ElseBranchWithDifferentType
+/// The type equation comes from the verification of record fields.
+| RecordFields
+/// The type equation comes from the verification of a tuple in record fields.
+| TupleInRecordFields
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of DisplayEnv * TType * TType * range * range
