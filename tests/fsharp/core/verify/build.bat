@@ -8,18 +8,6 @@ call %~d0%~p0..\..\..\config.bat
 "%PEVERIFY%" "%FSCOREDLLPATH%"
 @if ERRORLEVEL 1 goto Error
 
-"%PEVERIFY%" "%FSCOREDLLPORTABLEPATH%"
-@if ERRORLEVEL 1 goto Error
-
-"%PEVERIFY%" "%FSCOREDLLNETCOREPATH%"
-@if ERRORLEVEL 1 goto Error
-
-"%PEVERIFY%" "%FSCOREDLLNETCORE78PATH%"
-@if ERRORLEVEL 1 goto Error
-
-"%PEVERIFY%" "%FSCOREDLLNETCORE259PATH%"
-@if ERRORLEVEL 1 goto Error
-
 "%PEVERIFY%" "%FSCBinPath%\FSharp.Build.dll"
 @if ERRORLEVEL 1 goto Error
 

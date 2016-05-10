@@ -123,11 +123,11 @@ let private GetFSLibPaths env osArch fscBinPath =
 // REM === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
 // REM === 
 let private SetFSCBinPath45 () =
-    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
-    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
+    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
+    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
     // IF EXIST "%FSCBinPath%" goto :EOF
     let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\4.0\Runtime\v4.0" "" with
+    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\4.1\Runtime\v4.0" "" with
     | Some (:? string as d) when directoryExists d -> Some d
     | Some _ | None -> None
 
