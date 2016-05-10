@@ -3,7 +3,7 @@
     <metadata>
         <id>Microsoft.FSharp.Build.netcore</id>
         <description>
-            netcore compatible version of the fsharp buildtask microsoft.fsharp.build.dll
+            netcore compatible version of the fsharp buildtask fsharp.build.dll
             Supported Platforms: - .NET Core (.netstandard1.5)
         </description>
         <language>en-US</language>
@@ -19,13 +19,12 @@
                 <dependency id="Microsoft.Build" version="0.1.0-preview-00022" />
                 <dependency id="Microsoft.Build.Framework" version="0.1.0-preview-00022" />
                 <dependency id="Microsoft.Build.Tasks.Core" version="0.1.0-preview-00022" />
-                <dependency id="Microsoft.Build" version="0.1.0-preview-00022" />
                 <dependency id="Microsoft.Win32.Registry" version="4.0.0-rc2-23923" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="Microsoft.FSharp.Build.dll" target="lib" />
+        <file src="FSharp.Build.dll" target="lib" />
         <file src="Microsoft.FSharp.targets" target="lib" />
         <file src="Microsoft.Portable.FSharp.targets" target="lib" />
     </files>

@@ -15,6 +15,7 @@
     <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
     <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
+    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
   </PropertyGroup>
 
@@ -53,12 +54,12 @@
     <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <BuildWith>LKG</BuildWith>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
+    <OutputPath Condition="'$(OutputPath)' == ''">bin\</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'!='Proto'">
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
-    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
   </PropertyGroup>
 
   <PropertyGroup>

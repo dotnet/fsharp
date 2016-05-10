@@ -6576,8 +6576,8 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                                 mkLdarg 2us;
                                 mkNormalCall (mkILCtorMethSpecForTy (cenv.g.ilg.typ_Exception,[serializationInfoType; cenv.g.ilg.typ_StreamingContext])) ]
                            ,None))
-                
-#if BE_SECURITY_TRANSPARENT
+
+#if FX_NOT_GETOBJECT_DATA
             [ilCtorDefForSerialziation]
 #else
             let getObjectDataMethodForSerialization = 

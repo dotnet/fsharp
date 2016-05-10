@@ -59,7 +59,7 @@ try
 
     let fsharpBuildFiles =
         seq {
-            yield Path.Combine(bindir, "Microsoft.FSharp.Build.dll")
+            yield Path.Combine(bindir, "FSharp.Build.dll")
             yield Path.Combine(bindir, "Microsoft.FSharp.targets")
             yield Path.Combine(bindir, "Microsoft.Portable.FSharp.targets")
         }

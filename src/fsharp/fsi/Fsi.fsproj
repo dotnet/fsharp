@@ -14,8 +14,8 @@
     <PlatformTarget Condition=" '$(TargetFramework)'!='coreclr'">x86</PlatformTarget>
     <PlatformTarget Condition=" '$(TargetFramework)'=='coreclr'">AnyCPU</PlatformTarget>
     <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
-    <OutputType Condition=" '$(TargetFramework)' != 'coreclr'">Exe</OutputType>
-    <OutputType Condition=" '$(TargetFramework)' == 'coreclr'">Library</OutputType>
+    <OutputType>Exe</OutputType>
+    <TargetExt Condition="'$(Configuration)'=='Proto'">.dll</TargetExt>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>

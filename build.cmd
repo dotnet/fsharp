@@ -163,6 +163,13 @@ if /i '%ARG%' == 'coreclr' (
     set TEST_CORECLR=1
 )
 
+if /i '%ARG%' == 'net40' (
+    set BUILD_NET40=1
+    set BUILD_TEST_TOOLS=1
+    set TEST_COMPILERUNIT=1
+    set TEST_NET40_COREUNIT=1
+)
+
 if /i '%ARG%' == 'debug' (
     set BUILD_CONFIG=debug
     set BUILD_CONFIG_LOWERCASE=debug
@@ -355,8 +362,6 @@ copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.P
 copy lkg\FSharp-14.0.23413.0\bin\fsharp.core.dll tools\fsharp.core.dll
 copy lkg\FSharp-14.0.23413.0\bin\fsharp.build.dll tools\fsharp.build.dll
 
-echo on
-
 :: Build Proto
 if NOT EXIST Proto\bin\fsc.dll (set BUILD_PROTO=1)
 
@@ -379,7 +384,7 @@ echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_
 @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
 
 @echo on
-call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
+REM call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
 
 pushd tests
 
