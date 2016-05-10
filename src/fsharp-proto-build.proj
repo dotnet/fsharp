@@ -8,9 +8,9 @@
 
   <!-- Define all ProjectFiles here -->
   <ItemGroup>
-    <ProjectFiles Include="fsharp\FSharp.Build-proto\FSharp.Build-proto.fsproj"/>
-    <ProjectFiles Include="fsharp\FSharp.Compiler-proto\FSharp.Compiler-proto.fsproj"/>
-    <ProjectFiles Include="fsharp\Fsc-proto\Fsc-proto.fsproj"/>
+    <ProjectFiles Include="fsharp\FSharp.Build\FSharp.Build.fsproj"/>
+    <ProjectFiles Include="fsharp\FSharp.Compiler\FSharp.Compiler.fsproj"/>
+    <ProjectFiles Include="fsharp\Fsc\Fsc.fsproj"/>
   </ItemGroup>
 
 

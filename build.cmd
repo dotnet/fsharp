@@ -333,16 +333,16 @@ call %~dp0init-tools.cmd
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
-rem ===============
-rem publish the lkg
-rem ===============
+rem ============================
+rem publish the lkg / crossgen
+rem ============================
 %_dotnetexe% restore .\lkg\project.json --configfile ..\.nuget\nuget.config
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
-%_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64 -o lkg\bin
-@if ERRORLEVEL 1 echo Error: %_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64 failed && goto :failure
+@if ERRORLEVEL 1 echo Error: %_dotnetexe% restore .\lkg\project.json --configfile ..\.nuget\nuget.config   failed  && goto :failure
+%_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64 -o Tools\lkg
+@if ERRORLEVEL 1 echo Error: %_dotnetexe% publish .\lkg\project.json --no-build --configuration release -f dnxcore50 -r win7-x64  -o tools\lkg   failed && goto :failure
 
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin
+rem rename fsc and corehost.exe to allow fsc.exe to to start compiler
+pushd .\Tools\lkg
 fc fsc.exe corehost.exe >nul
 @if ERRORLEVEL 1 (
   copy fsc.exe fsc.dll
@@ -353,7 +353,6 @@ fc fsi.exe corehost.exe >nul
   copy fsi.exe fsi.dll
   copy corehost.exe fsi.exe
 )
-
 popd
 
 rem copy targetfile into tools directory ... temporary fix until packaging complete

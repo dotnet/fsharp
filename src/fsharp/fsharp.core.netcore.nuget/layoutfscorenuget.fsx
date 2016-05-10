@@ -2,6 +2,8 @@
 //
 // Layout the nuget package for the fsharp compiler
 //=========================================================================================
+
+#r "System.IO.dll"
 open System.IO
 
 try

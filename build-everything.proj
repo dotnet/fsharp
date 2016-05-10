@@ -43,17 +43,17 @@
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Build" BuildInParallel="false" Properties="Configuration=Proto" />
-    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
+    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Build"   BuildInParallel="false" Properties="Configuration=Proto" />
+    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Build"   BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Build"   BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
   </Target>
 
   <Target Name="Rebuild">
-    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Rebuild" BuildInParallel="true" Properties="Configuration=Proto" />
+    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=Proto" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
@@ -62,11 +62,11 @@
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Clean" BuildInParallel="true" Properties="Configuration=Proto" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
+    <MSBuild Projects="@(ProjectsWithProtoFramework)"    Targets="Clean"   BuildInParallel="true"  Properties="Configuration=Proto" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Clean"   BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
   </Target>
 </Project>
