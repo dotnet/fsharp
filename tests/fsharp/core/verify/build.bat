@@ -5,9 +5,6 @@ if EXIST build.ok DEL /f /q build.ok
 
 call %~d0%~p0..\..\..\config.bat
 
-"%PEVERIFY%" "%FSCOREDLLPATH%"
-@if ERRORLEVEL 1 goto Error
-
 "%PEVERIFY%" "%FSCBinPath%\FSharp.Build.dll"
 @if ERRORLEVEL 1 goto Error
 
@@ -29,9 +26,6 @@ REM Use /MD because this contains some P/Invoke code
 
 REM == Calc correct path to FSharp.Core.dll no matter what arch we are on
 call :SetFSCoreXMLPath "%FSCOREDLLPATH%"
-
-%CLIX% xmlverify.exe "%FSHARPCOREXML%"
-@if ERRORLEVEL 1 goto Error
 
 :Ok
 echo Passed fsharp %~f0 ok.
