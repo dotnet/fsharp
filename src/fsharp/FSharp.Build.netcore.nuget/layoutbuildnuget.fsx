@@ -2,8 +2,6 @@
 //
 // Layout the nuget package for the fsharp compiler
 //=========================================================================================
-
-#r "System.IO.dll"
 open System.IO
 
 try
@@ -22,7 +20,7 @@ try
         if (e.MoveNext()) then Some e.Current
         else None
 
-    let usage = @"usage: layoutfscorenuget.fsx -nuspec:<nuspec-path> --binaries:<binaries-dir>"
+    let usage = @"usage: layoutfcsnuget.fsx -nuspec:<nuspec-path> --binaries:<binaries-dir>"
 
     let Arguments = fsi.CommandLineArgs |> Seq.skip 1
     
@@ -54,23 +52,21 @@ try
     let deleteDirectory (output) =
         if (Directory.Exists(output)) then Directory.Delete(output, true) |>ignore
         ()
-
+    
     let makeDirectory (output) =
         if not (Directory.Exists(output)) then Directory.CreateDirectory(output) |>ignore
         ()
 
-    let fsharpCoreFiles =
+    let fsharpBuildFiles =
         seq {
-            yield Path.Combine(bindir, "FSharp.Core.dll")
-            yield Path.Combine(bindir, "FSharp.Core.sigdata")
-            yield Path.Combine(bindir, "FSharp.Core.optdata")
-            yield Path.Combine( __SOURCE_DIRECTORY__ , "FSharp.Core.runtimeconfig.json")
+            yield Path.Combine(bindir, "FSharp.Build.dll")
+            yield Path.Combine(bindir, "Microsoft.FSharp.targets")
+            yield Path.Combine(bindir, "Microsoft.Portable.FSharp.targets")
         }
-
+    
     //Clean intermediate directoriy
     deleteDirectory(layouts); makeDirectory(layouts)
-
-    fsharpCoreFiles |> Seq.iter(fun source -> copyFile source layouts)
+    fsharpBuildFiles |> Seq.iter(fun source -> copyFile source layouts)
 
 with e -> printfn "Exception:  %s" e.Message
           printfn "Stacktrace: %s" e.StackTrace

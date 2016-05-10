@@ -27,7 +27,7 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
-NoHostedCompiler,CodeGen01,NoMT,EmittedIL_TypeProviders		CodeGen\EmittedIL\TypeProviders
+#  NoHostedCompiler,CodeGen01,NoMT,EmittedIL_TypeProviders		CodeGen\EmittedIL\TypeProviders                     #removed for now ildasm now prints out non deterministic text.
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 

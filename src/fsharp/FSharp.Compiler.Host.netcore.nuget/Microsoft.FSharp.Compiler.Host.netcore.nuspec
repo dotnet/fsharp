@@ -20,7 +20,6 @@
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23911" />
                 <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.2-rc2-23911" />
                 <dependency id="Microsoft.NETCore" version="5.0.1-rc2-23911" />
-                <dependency id="Microsoft.NETCore.ConsoleHost" version="1.0.0-rc2-23911" />
                 <dependency id="Microsoft.NETCore.Windows.ApiSets" version="1.0.1-rc2-23911" />
                 <dependency id="Microsoft.FSharp.Compiler.NetCore" version="$version$" />
             </group>

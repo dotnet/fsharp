@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Build.netcore</id>
+        <description>
+            netcore compatible version of the fsharp buildtask fsharp.build.dll
+            Supported Platforms: - .NET Core (.netstandard1.5)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group targetFramework="dnxcore50">
+                <dependency id="Microsoft.FSharp.Core.netcore" version="$version$" />
+                <dependency id="Microsoft.Build" version="0.1.0-preview-00022" />
+                <dependency id="Microsoft.Build.Framework" version="0.1.0-preview-00022" />
+                <dependency id="Microsoft.Build.Tasks.Core" version="0.1.0-preview-00022" />
+                <dependency id="Microsoft.Win32.Registry" version="4.0.0-rc2-23923" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="FSharp.Build.dll" target="lib" />
+        <file src="Microsoft.FSharp.targets" target="lib" />
+        <file src="Microsoft.Portable.FSharp.targets" target="lib" />
+    </files>
+</package>
