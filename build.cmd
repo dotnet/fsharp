@@ -102,10 +102,19 @@ if /i '%ARG%' == 'all' (
 if /i '%ARG%' == 'microbuild' (
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_CORECLR=1
+    set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=1
+    
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
+    set SKIP_EXPENSIVE_TESTS=1
 )
 
 if /i '%ARG%' == 'proto' (
