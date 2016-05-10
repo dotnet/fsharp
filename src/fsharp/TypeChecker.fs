@@ -5591,7 +5591,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             | None ->
                 mkUnit cenv.g mIfToThen,SuppressSequencePointAtTarget, tpenv // the fake 'unit' value gets exactly the same range as spIfToThen
             | Some e3 -> 
-                let env = { env with eContextInfo = ContextInfo.ElseBranchWithDifferentType } 
+                let env = { env with eContextInfo = ContextInfo.ElseBranch } 
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv
