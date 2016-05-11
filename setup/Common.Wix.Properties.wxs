@@ -39,7 +39,6 @@
 			<Directory Id="VS15_ROOT_FOLDER" Name="VS15_ROOT_FOLDER">
 				<Directory Id="VS15_Common7" Name="Common7">
 					<Directory Id="VS15_Common7_IDE" Name="IDE">
-						<Directory Id="VS15_Common7_IDE_PrivateAssemblies" Name="PrivateAssemblies" />
 						<Directory Id="VS15_Common7_IDE_PublicAssemblies" Name="PublicAssemblies" />
 					</Directory>
 				</Directory>
