@@ -3,9 +3,14 @@ namespace Test
 open System.Runtime.CompilerServices
 open CSharpLib
 
-type MyTy() =
+type MyTy() =   
     static member GetCallerMemberName([<CallerMemberName>] ?memberName : string) =
         memberName
+    
+    static member GetCallerMemberNameProperty
+        with get () = MyTy.GetCallerMemberName()
+        
+    member val GetCallerMemberNameProperty1 = MyTy.GetCallerMemberName() with get, set
 
 module Program =
     [<EntryPoint>]
@@ -15,7 +20,13 @@ module Program =
         
         if MyTy.GetCallerMemberName("foo") <> Some("foo") then
             failwith "Unexpected F# CallerMemberName"
+                
+        if MyTy.GetCallerMemberNameProperty <> Some("GetCallerMemberNameProperty") then
+            failwith "Unexpected F# CallerMemberName"
             
+        if MyTy().GetCallerMemberNameProperty1 <> Some("GetCallerMemberNameProperty1") then
+            failwith "Unexpected F# CallerMemberName"
+                
         if CallerInfoTest.MemberName() <> "main" then
             failwith "Unexpected C# CallerMemberName"
             
