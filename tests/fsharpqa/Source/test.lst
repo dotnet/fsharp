@@ -27,7 +27,6 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
-NoHostedCompiler,CodeGen01,NoMT,EmittedIL_TypeProviders		CodeGen\EmittedIL\TypeProviders
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
@@ -237,28 +236,6 @@ Conformance08			Conformance\UnitsOfMeasure\Parenthesis
 Conformance08			Conformance\UnitsOfMeasure\Parsing
 Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
-
-
-NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
-NoHostedCompiler,TypeProviders01			TypeProviders\Attributes
-NoHostedCompiler,TypeProviders03			TypeProviders\Events
-NoHostedCompiler,TypeProviders03			TypeProviders\Fields\Literals
-NoHostedCompiler,TypeProviders03			TypeProviders\Generics
-NoHostedCompiler,TypeProviders03			TypeProviders\Inheritance
-NoHostedCompiler,TypeProviders03			TypeProviders\Interfaces\Erased
-NoHostedCompiler,TypeProviders03			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\Linq101Samples
-NoHostedCompiler,TypeProviders03			TypeProviders\Methods
-NoHostedCompiler,TypeProviders03			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\Misc
-NoHostedCompiler,TypeProviders03			TypeProviders\Namespaces
-
-NoHostedCompiler,TypeProviders04			TypeProviders\Properties\Instance
-NoHostedCompiler,TypeProviders04			TypeProviders\Properties\Static
-NoHostedCompiler,TypeProviders04			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\QuerySql2DotNetTypes
-NoHostedCompiler,TypeProviders04			TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic
-NoHostedCompiler,TypeProviders04			TypeProviders\RuntimeDesignTimeAssembly\Negative
-NoHostedCompiler,TypeProviders04			TypeProviders\StaticParams
-NoHostedCompiler,TypeProviders04			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\WsdlDotNetTypes
-
 
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
