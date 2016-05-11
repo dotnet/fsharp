@@ -28,17 +28,6 @@ if exist "%VS120COMNTOOLS%" set VisualStudioVersion=12.0
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :eof
 
-if '%VisualStudioVersion%' == '15.0' (
-	if exist "%ProgramFiles(x86)%\Microsoft SDKs\F#\4.1\Framework\v4.0\fsi.exe" set _fsiexe="%ProgramFiles(x86)%\Microsoft SDKs\F#\4.1\Framework\v4.0\fsi.exe"
-)
-
-if '%VisualStudioVersion%' == '14.0' (
-	if exist "%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsi.exe" set _fsiexe="%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v4.0\fsi.exe"
-)
-
-if '%VisualStudioVersion%' == '12.0' (
-	if exist "%ProgramFiles(x86)%\Microsoft SDKs\F#\3.1\Framework\v4.0\fsi.exe" set _fsiexe="%ProgramFiles(x86)%\Microsoft SDKs\F#\3.1\Framework\v4.0\fsi.exe"
-)
 
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
@@ -69,6 +58,8 @@ echo set NUNITPATH=%~dp0%..\packages\NUnit.Console.3.0.0\tools\
 set NUNITPATH=%~dp0%..\packages\NUnit.Console.3.0.0\tools\
 echo if not exist "%NUNITPATH%" 
 
+set _fsiexe="%~dp0..\%1\net40\bin\fsi.exe"
+  
 if '%BUILD_CORECLR%' == '1' (
 
   if not exist "%NUNITPATH%" (
