@@ -352,11 +352,11 @@
     </ItemGroup>
   </Target>
   
-  <Target Name="CopyVsixToSetupFolder" AfterTargets="SignFiles">
+  <Target Name="CopyVsixToInsertionFolder" AfterTargets="SignFiles">
   	<ItemGroup>
   		<VsixPath Include="$(OutDir)$(AssemblyName).vsix" />
   	</ItemGroup>
   
-  	<Copy SourceFiles="@(VsixPath)" DestinationFiles="@(VsixPath->'$(FSharpSourcesRoot)\..\$(Configuration)\setup\%(Filename)%(Extension)')" />
+  	<Copy SourceFiles="@(VsixPath)" DestinationFiles="@(VsixPath->'$(FSharpSourcesRoot)\..\$(Configuration)\insertion\%(Filename)%(Extension)')" />
   </Target>
 </Project>

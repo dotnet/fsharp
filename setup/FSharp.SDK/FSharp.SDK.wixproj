@@ -62,4 +62,12 @@
   <Target Name="CheckLangExists" BeforeTargets="Compile">
 	<Error Condition="'$(Lang)' == ''" Text="A 'Lang' property must be passed to the project to attach the correct localization assemblies" />
   </Target>
+
+  <Target Name="CopyMsiToInsertionFolder" AfterTargets="SignFiles">
+  	<ItemGroup>
+  		<MsiPath Include="$(OutDir)$(OutputName).msi" />
+  	</ItemGroup>
+  
+  	<Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\insertion\$(Lang)\%(Filename)%(Extension)')" />
+  </Target>
 </Project>
