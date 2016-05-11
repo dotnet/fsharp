@@ -396,7 +396,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '0' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_net40_Error.log 
+            type testresults\CoreUnit_Portable_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
             goto :failed_tests
         )
@@ -406,7 +406,7 @@ if '%TEST_NET40_COREUNIT%' == '0' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_portable47_Error.log 
+            type testresults\CoreUnit_all_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
             goto :failed_tests
         )
@@ -415,13 +415,13 @@ if '%TEST_NET40_COREUNIT%' == '0' (
 if '%TEST_CORECLR%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\CoreUnit_portable47_Error.log 
+        type testresults\CoreUnit_coreclr_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
         goto :failed_tests
     )
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp coreclr
     @if ERRORLEVEL 1 (
-        type testresults\CoreUnit_portable47_Error.log 
+        type testresults\FSharp_Failures.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
         goto :failed_tests
     )
