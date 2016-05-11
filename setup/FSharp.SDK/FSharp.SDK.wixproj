@@ -46,7 +46,6 @@
     <Compile Include="component-groups\Redist_ManagedFiles.wxs" />
     <Compile Include="component-groups\Compiler_SDK.wxs" />
     <Compile Include="component-groups\Compiler_OtherResources.wxs" />
-    <Compile Include="component-groups\Compiler_PrivateAssemblies.wxs" />
     <Compile Include="component-groups\Compiler_PublicAssemblies.wxs" />
     <Compile Include="component-groups\Langpack_ManagedFiles.wxs" />
   </ItemGroup>

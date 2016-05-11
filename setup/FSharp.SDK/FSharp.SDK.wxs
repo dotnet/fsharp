@@ -29,7 +29,6 @@
 
 			<ComponentGroupRef Id="Compiler_SDK" />
 			<ComponentGroupRef Id="Compiler_OtherResources" />
-			<ComponentGroupRef Id="Compiler_PrivateAssemblies" />
 			<ComponentGroupRef Id="Compiler_PublicAssemblies" />
 		</Feature>
 		
