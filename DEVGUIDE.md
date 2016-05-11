@@ -151,13 +151,13 @@ components installed into Visual Studio 15.  You can revert this step by disabli
 
 For **Debug**:
 
-1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
-1. Run ``debug\net40\bin\EnableOpenSource.vsix``
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `Visual F# Tools` is installed, select Uninstall
+1. Run ``debug\net40\bin\VisualFSharpVsix.vsix``
 
 For **Release**:
 
-1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
-1. Run ``release\net40\bin\EnableOpenSource.vsix``
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `Visual F# Tools` is installed, select Uninstall
+1. Run ``release\net40\bin\VisualFSharpVsix.vsix``
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
 
