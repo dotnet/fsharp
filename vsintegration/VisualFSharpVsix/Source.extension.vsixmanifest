@@ -23,6 +23,7 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.Compiler.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Editor.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.ProjectSystem.PropertyPages.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Compiler.Server.Shared.pkgdef" />
 	
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\SilverlightProject.zip" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCoreProject.zip" />
