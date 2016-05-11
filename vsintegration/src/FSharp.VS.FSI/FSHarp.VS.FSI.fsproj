@@ -5,7 +5,7 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
-    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <Name>FSharp.VS.FSI</Name>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
