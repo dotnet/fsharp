@@ -45,6 +45,7 @@
       <HasLceComments>false</HasLceComments>
 	  <InProject>false</InProject>
       <Link>FSharp.ProjectSystem.FSharp.dll</Link>
+      <Parser>210</Parser>
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
