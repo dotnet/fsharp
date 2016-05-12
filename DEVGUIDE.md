@@ -32,6 +32,7 @@ There are various qualifiers:
 
     build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
 
+    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools)
     build.cmd compiler        -- build/tests only the compiler (not the Visual F# IDE Tools)
     build.cmd vs              -- build/tests the Visual F# IDE Tools
     build.cmd pcls            -- build/tests the PCL FSharp.Core libraries
