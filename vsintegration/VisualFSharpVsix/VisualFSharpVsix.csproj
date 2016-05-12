@@ -5,7 +5,9 @@
     <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
     <VSSourcesRoot>..\src</VSSourcesRoot>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">15.0</VisualStudioVersion>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <FileUpgradeFlags>
     </FileUpgradeFlags>

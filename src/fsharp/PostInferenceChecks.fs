@@ -167,7 +167,7 @@ type cenv =
       denv: DisplayEnv; 
       viewCcu : CcuThunk;
       reportErrors: bool;
-      isLastCompiland : bool;
+      isLastCompiland : bool*bool;
       // outputs
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
@@ -1097,7 +1097,8 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
     let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
         cenv.entryPointGiven <- true;
-        if not cenv.isLastCompiland && cenv.reportErrors  then 
+        let isLastCompiland = fst cenv.isLastCompiland
+        if not isLastCompiland && cenv.reportErrors  then 
             errorR(Error(FSComp.SR.chkEntryPointUsage(), v.Range)) 
 
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition
@@ -1513,7 +1514,7 @@ and CheckModuleSpec cenv env (ModuleOrNamespaceBinding(mspec, rhs)) =
     let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
     CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu,denv ,mexpr,extraAttribs,isLastCompiland) =
+let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu,denv ,mexpr,extraAttribs,(isLastCompiland:bool*bool)) =
     let cenv = 
         { g =g ; 
           reportErrors=reportErrors; 
