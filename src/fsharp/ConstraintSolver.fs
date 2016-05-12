@@ -122,8 +122,8 @@ type ContextInfo =
 | NoContext
 /// The type equation comes from an omitted else branch.
 | OmittedElseBranch
-/// The type equation comes from an else branch that might have different type than the corresponding if branch.
-| ElseBranchWithDifferentType
+/// The type equation comes from checking an else branch.
+| ElseBranch
 /// The type equation comes from the verification of record fields.
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
