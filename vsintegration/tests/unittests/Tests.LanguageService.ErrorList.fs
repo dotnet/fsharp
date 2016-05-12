@@ -179,14 +179,14 @@ let g (t : T) = t.Count()
         let expectedMessages =
             [
         "Possible overload: 'new : bool -> X'. Type constraint mismatch. The type 
-    float    
+    'float'    
 is not compatible with type
-    bool    
+    'bool'    
 The type 'float' is not compatible with the type 'bool'."
         "Possible overload: 'new : int -> X'. Type constraint mismatch. The type 
-    float    
+    'float'    
 is not compatible with type
-    int    
+    'int'    
 The type 'float' is not compatible with the type 'int'."
             ]
             |> List.map (fun s -> s.Replace("\r\n", "\n"))
