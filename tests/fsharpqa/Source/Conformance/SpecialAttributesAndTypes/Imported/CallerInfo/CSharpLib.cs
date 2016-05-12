@@ -36,4 +36,14 @@ namespace CSharpLib
             LineNumber = lineNumber;
         }
     }
+
+    public class MyCallerMemberNameAttribute : Attribute
+    {
+        public string MemberName { get; set; }
+
+        public MyCallerMemberNameAttribute([CallerMemberName] string member = "dflt")
+        {
+            MemberName = member;
+        }
+    }
 }
