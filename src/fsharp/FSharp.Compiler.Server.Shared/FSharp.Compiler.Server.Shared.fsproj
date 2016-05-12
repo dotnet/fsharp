@@ -11,13 +11,13 @@
     <ProjectGuid>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-	<VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
-	<ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
-	<GeneratePkgDefFile>true</GeneratePkgDefFile>
-	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>

@@ -20,13 +20,13 @@
     <NoWarn>$(NoWarn);75</NoWarn>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
-	<VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
-	<ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
-	<GeneratePkgDefFile>true</GeneratePkgDefFile>
-	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />

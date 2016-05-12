@@ -30,20 +30,20 @@
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkProfile></TargetFrameworkProfile>
-	<VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
-	<ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
-	<GeneratePkgDefFile>true</GeneratePkgDefFile>
-	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />

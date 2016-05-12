@@ -6,18 +6,18 @@
     <NoWarn>$(NoWarn);2008</NoWarn>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <CreateVsixContainer>false</CreateVsixContainer>
-	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
-	<DebugSymbols>false</DebugSymbols>
-	<DebugType>None</DebugType>
-	<IsPackage>true</IsPackage>
+    <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+    <IsPackage>true</IsPackage>
     <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>
-	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{604F0DAA-2D33-48DD-B162-EDF0B672803D}</ProjectGuid>
-	<TemplateCategory>ProjectTemplates</TemplateCategory>
+    <TemplateCategory>ProjectTemplates</TemplateCategory>
     <AssemblyName>ConsoleProject</AssemblyName>
-	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
   </PropertyGroup>
   <Import Project="..\..\src\FSharp.Common.props" />
   <ItemGroup>
@@ -25,13 +25,13 @@
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Program.fs">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Program.fs.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Program.fs.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +46,6 @@
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
   <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
-	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>
 </Project>

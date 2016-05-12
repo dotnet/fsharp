@@ -28,8 +28,8 @@
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
-	<GeneratePkgDefFile>true</GeneratePkgDefFile>
-	<IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <ItemGroup>
@@ -37,13 +37,13 @@
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
     <FilesToLocalize Include="$(OutDir)MenusAndCommands.vsct">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\MenusAndCommands.vsct.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\MenusAndCommands.vsct.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
       <Link>FSharp.ProjectSystem.FSharp.dll</Link>
       <Parser>210</Parser>
     </FilesToLocalize>
@@ -90,11 +90,11 @@
     <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
     <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-		<HintPath>$(VS150COMNTOOLS)\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
-	</Reference>
+        <HintPath>$(VS150COMNTOOLS)\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion)">
-		<HintPath>$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll</HintPath>
-	</Reference>
+        <HintPath>$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -170,8 +170,8 @@
   </Target>
   <Target Name="CopyLocalizationResources" BeforeTargets="Localize">
     <ItemGroup>
-	  <LocalizationResources Include="MenusAndCommands.vsct" />
-	</ItemGroup>
-	<Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
+      <LocalizationResources Include="MenusAndCommands.vsct" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
   </Target>
 </Project>

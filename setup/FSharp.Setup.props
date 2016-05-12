@@ -5,9 +5,9 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProductVersion>3.10</ProductVersion>
     <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
-	<WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
-	<FSharpCoreRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Core.Redist.1.0.0</FSharpCoreRedistDir>
-	<FSharpTypeProvidersRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.1.0.0</FSharpTypeProvidersRedistDir>
+    <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
+    <FSharpCoreRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Core.Redist.1.0.0</FSharpCoreRedistDir>
+    <FSharpTypeProvidersRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.1.0.0</FSharpTypeProvidersRedistDir>
   </PropertyGroup>
   <PropertyGroup>
     <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
@@ -15,9 +15,9 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
   </PropertyGroup>
   <PropertyGroup>
-	<BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
+    <BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-	<OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>
-	<OutputPath Condition="'$(Lang)' != ''">$(BinariesDir)\setup\$(Lang)</OutputPath>
+    <OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>
+    <OutputPath Condition="'$(Lang)' != ''">$(BinariesDir)\setup\$(Lang)</OutputPath>
   </PropertyGroup>
 </Project>
