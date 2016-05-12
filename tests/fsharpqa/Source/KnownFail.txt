@@ -76,13 +76,6 @@ MT402020					Optimizations\AssemblyBoundary (InlineWithPrivateValuesStruct) --Ha
 !CURRENTUICULTURE1033		Printing (LazyValues02NetFx4.fsx) -- Testcase not fully loc
 !CURRENTUICULTURE1033		Printing (LazyValues03NetFx4.fsx) -- Testcase not fully loc
 CHK							Stress (2766.fs) -- failed
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq01.fs) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq02.fs) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_ManyErrors01.fsx) -- DevDiv:311454
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NNN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NYN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YNN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YYN) -- Testcase not fully loc
 
 # IDE unit test known failures
 

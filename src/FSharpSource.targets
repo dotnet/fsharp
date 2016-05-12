@@ -36,7 +36,7 @@
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
@@ -152,7 +152,7 @@
     <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);SHADOW_COPY_REFERENCES</DefineConstants>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
@@ -211,7 +211,7 @@
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
-    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v5.0</TargetFrameworkVersion>
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
@@ -270,7 +270,7 @@
     <DefineConstants>$(DefineConstants);FX_NOT_GETOBJECT_DATA</DefineConstants>
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   
    <!-- Target Portable Profile 7 -->
@@ -307,7 +307,7 @@
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants> 
     <TargetingNetCorePortable>true</TargetingNetCorePortable>
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>    
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>    
   </PropertyGroup>
 
   <!-- Target Portable Profile 78 -->
@@ -345,7 +345,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <!-- Target Portable Profile 259 -->
@@ -383,7 +383,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). -->
