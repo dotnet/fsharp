@@ -1327,6 +1327,15 @@ module Members =
             do! SingleTestRun.singleTestRun cfg dir p
             })
 
+        [<Test; FSharpSuiteScriptPermutations("core/members/basics-hw-mutrec")>]
+        let BasicsHwMutrec p = check (attempt {
+            let { Directory = dir; Config = cfg } = testContext ()
+        
+            do! SingleTestBuild.singleTestBuild cfg dir p
+        
+            do! SingleTestRun.singleTestRun cfg dir p
+            })
+
     module Ctree = 
 
         [<Test; FSharpSuiteScriptPermutations("core/members/ctree")>]
