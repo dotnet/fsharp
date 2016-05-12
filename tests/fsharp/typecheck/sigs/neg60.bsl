@@ -58,9 +58,9 @@ neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refe
 neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(65,19,65,38): typecheck error FS0001: This expression was expected to have type
-    bool    
+    'bool'    
 but here has type
-    unit    
+    'unit'    
 
 neg60.fs(71,36,71,40): typecheck error FS0043: The type 'System.Nullable<int>' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'.
 
