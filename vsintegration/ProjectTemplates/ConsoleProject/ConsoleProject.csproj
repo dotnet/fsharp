@@ -10,7 +10,6 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
     <IsPackage>true</IsPackage>
-    <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
@@ -18,6 +17,7 @@
     <TemplateCategory>ProjectTemplates</TemplateCategory>
     <AssemblyName>ConsoleProject</AssemblyName>
     <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
   </PropertyGroup>
   <Import Project="..\..\src\FSharp.Common.props" />
   <ItemGroup>
