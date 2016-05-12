@@ -6,18 +6,18 @@
     <NoWarn>$(NoWarn);2008</NoWarn>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <CreateVsixContainer>false</CreateVsixContainer>
-	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
-	<DebugSymbols>false</DebugSymbols>
-	<DebugType>None</DebugType>
-	<IsPackage>true</IsPackage>
+    <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+    <IsPackage>true</IsPackage>
     <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>
-	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{1fb1dd07-06aa-45b4-b5ac-20ff5bee98b6}</ProjectGuid>
-	<TemplateCategory>ItemTemplates</TemplateCategory>
+    <TemplateCategory>ItemTemplates</TemplateCategory>
     <AssemblyName>XMLFile</AssemblyName>
-	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
   </PropertyGroup>
   <Import Project="..\..\src\FSharp.Common.props" />
   <ItemGroup>
@@ -29,6 +29,6 @@
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
   <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
-	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>
 </Project>

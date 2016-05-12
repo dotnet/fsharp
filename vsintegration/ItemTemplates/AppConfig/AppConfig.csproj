@@ -9,7 +9,7 @@
     <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
-	<IsPackage>true</IsPackage>
+    <IsPackage>true</IsPackage>
     <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>

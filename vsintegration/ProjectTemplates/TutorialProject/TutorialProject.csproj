@@ -6,18 +6,18 @@
     <NoWarn>$(NoWarn);2008</NoWarn>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <CreateVsixContainer>false</CreateVsixContainer>
-	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
-	<DebugSymbols>false</DebugSymbols>
-	<DebugType>None</DebugType>
-	<IsPackage>true</IsPackage>
+    <SkipCopyBuildProduct>true</SkipCopyBuildProduct>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+    <IsPackage>true</IsPackage>
     <Configuration>Template</Configuration>
   </PropertyGroup>
   <PropertyGroup>
-	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{2FACEE44-48BD-40B5-A2EE-B54A0C9BB7C4}</ProjectGuid>
-	<TemplateCategory>ProjectTemplates</TemplateCategory>
+    <TemplateCategory>ProjectTemplates</TemplateCategory>
     <AssemblyName>TutorialProject</AssemblyName>
-	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
   </PropertyGroup>
   <Import Project="..\..\src\FSharp.Common.props" />
   <ItemGroup>
@@ -25,7 +25,7 @@
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
@@ -38,6 +38,6 @@
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
   <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
-	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>
 </Project>
