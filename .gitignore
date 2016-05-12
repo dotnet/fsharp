@@ -96,3 +96,4 @@ ossreadme*.txt
 *.cto
 project.lock.json
 Tools/
+Backup/

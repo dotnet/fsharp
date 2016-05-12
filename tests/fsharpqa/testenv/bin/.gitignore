@@ -1,4 +1,5 @@
 /FSharp.Compiler.*
+/Microsoft.Build.*
 /FSharp.Core.*
 /HostedCompilerServer.*
 /ILComparer.*
