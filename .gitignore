@@ -97,3 +97,4 @@ ossreadme*.txt
 *.vstman
 project.lock.json
 Tools/
+Backup/
