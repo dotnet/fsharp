@@ -1,14 +1,14 @@
 
 neg22.fs(13,17,13,23): typecheck error FS0001: Type mismatch. Expecting a
-    float<kg>    
+    'float<kg>'    
 but given a
-    float<m>    
+    'float<m>'    
 The unit of measure 'kg' does not match the unit of measure 'm'
 
 neg22.fs(15,17,15,24): typecheck error FS0001: Type mismatch. Expecting a
-    float<m>    
+    'float<m>'    
 but given a
-    float<kg>    
+    'float<kg>'    
 The unit of measure 'm' does not match the unit of measure 'kg'
 
 neg22.fs(16,20,16,28): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable 'v has been constrained to be measure 'kg'.
@@ -16,9 +16,9 @@ neg22.fs(16,20,16,28): typecheck error FS0064: This construct causes code to be 
 neg22.fs(16,22,16,28): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable 'u has been constrained to be measure 'm'.
 
 neg22.fs(17,20,17,29): typecheck error FS0001: Type mismatch. Expecting a
-    float<m>    
+    'float<m>'    
 but given a
-    float<kg>    
+    'float<kg>'    
 The unit of measure 'm' does not match the unit of measure 'kg'
 
 neg22.fs(28,12,28,18): typecheck error FS0957: The declared type parameters for this type extension do not match the declared type parameters on the original type 'LibGen<_>'

@@ -441,9 +441,9 @@ type staticInInterface =
         // but here as you can see it's give (int * int)
         let fileContent = """ type foo = N1.T< const 42,2>"""
         let expectedStr = """This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    int    """
+    'int'    """
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
