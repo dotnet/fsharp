@@ -248,45 +248,6 @@ type References() =
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
     [<Test>]
-    member public this.``ReferenceResolution.NonFxAssembly.SeveralCandidates``() =
-        let fsharp4300, fsharp4310 = 
-            let root = Path.Combine(FSharpSDKHelper.FSharpReferenceAssembliesLocation, FSharpSDKHelper.NETFramework, FSharpSDKHelper.v40)
-            Path.Combine(root, "4.3.0.0", "FSharp.Core.dll"),Path.Combine(root, "4.3.1.0", "FSharp.Core.dll")
-        
-        this.ReferenceResolutionHelper
-            (
-                AddReferenceDialogTab.DotNetTab, 
-                fsharp4300,  
-                @"<Reference Include=""FSharp.Core, Version=4\.3\.0\.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"" />",
-                "v4.5",
-                []
-            )
-        this.ReferenceResolutionHelper
-            (
-                AddReferenceDialogTab.DotNetTab, 
-                fsharp4310,  
-                @"<Reference Include=""FSharp.Core, Version=4\.3\.1\.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"" />",
-                "v4.5",
-                []
-            )
-        this.ReferenceResolutionHelper
-            (
-                AddReferenceDialogTab.BrowseTab, 
-                fsharp4300,  
-                @"4\.3\.0\.0\\FSharp\.Core\.dll</HintPath>", 
-                "v4.5",
-                []
-            )
-        this.ReferenceResolutionHelper
-            (
-                AddReferenceDialogTab.BrowseTab, 
-                fsharp4310,  
-                @"4\.3\.1\.0\\FSharp\.Core\.dll</HintPath>", 
-                "v4.5",
-                []
-            )
-
-    [<Test>]
     member public this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
         match Net20AssemExPath() with
         | Some(net20) ->
