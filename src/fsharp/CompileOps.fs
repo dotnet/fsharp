@@ -200,7 +200,7 @@ let GetRangeOfError(err:PhasedError) =
       | NonVirtualAugmentationOnNullValuedType(m)
       | NonRigidTypar(_,_,_,_,_,m)
       | ConstraintSolverTupleDiffLengths(_,_,_,m,_) 
-      | ConstraintSolverInfiniteTypes(_,_,_,m,_) 
+      | ConstraintSolverInfiniteTypes(_,_,_,_,m,_) 
       | ConstraintSolverMissingConstraint(_,_,_,m,_) 
       | ConstraintSolverTypesNotInEqualityRelation(_,_,_,m,_)
       | ConstraintSolverError(_,m,_) 
@@ -602,10 +602,18 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
           (if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore)
-      | ConstraintSolverInfiniteTypes(denv,t1,t2,m,m2) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+      | ConstraintSolverInfiniteTypes(contextInfo,denv,t1,t2,m,m2) ->
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           os.Append(ConstraintSolverInfiniteTypesE().Format t1 t2)  |> ignore
+
+          match contextInfo with
+          | ContextInfo.ReturnInComputationExpression ->
+            os.Append(" " + FSComp.SR.returnUsedInsteadOfReturnBang()) |> ignore
+          | ContextInfo.YieldInComputationExpression ->
+            os.Append(" " + FSComp.SR.yieldUsedInsteadOfYieldBang()) |> ignore
+          | _ -> ()
+
           (if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore )
       | ConstraintSolverMissingConstraint(denv,tpr,tpc,m,m2) -> 
