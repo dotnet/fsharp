@@ -1326,6 +1326,10 @@ type MethInfo =
                     | true, false, false -> CallerLineNumber
                     | false, true, false -> CallerFilePath
                     | false, false, true -> CallerMemberName
+                    | false, true, true -> match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
+                                           | Some(Attrib(_,_,_,_,_,_,callerMemberNameAttributeRange)) -> warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                                                                                                         CallerFilePath
+                                           | _ -> failwith "Impossible"
                     | _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
