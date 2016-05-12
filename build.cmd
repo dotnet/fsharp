@@ -34,7 +34,6 @@ set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
-set BUILD_LOG=con
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
@@ -80,7 +79,6 @@ if /i '%ARG%' == 'vs' (
 
 if /i '%ARG%' == 'diag' (
     set BUILD_DIAG=/v:diag
-    set BUILD_LOG=fsharp_build_log.log
 )
 
 if /i '%ARG%' == 'all' (
@@ -255,6 +253,10 @@ if "%RestorePackages%"=="" (
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
@@ -338,8 +340,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% >%BUILD_LOG%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
@@ -394,7 +396,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '0' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_net40_Error.log 
+            type testresults\CoreUnit_Portable_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
             goto :failed_tests
         )
@@ -404,7 +406,7 @@ if '%TEST_NET40_COREUNIT%' == '0' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_portable47_Error.log 
+            type testresults\CoreUnit_all_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
             goto :failed_tests
         )
@@ -413,13 +415,13 @@ if '%TEST_NET40_COREUNIT%' == '0' (
 if '%TEST_CORECLR%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\CoreUnit_portable47_Error.log 
+        type testresults\CoreUnit_coreclr_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
         goto :failed_tests
     )
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp coreclr
     @if ERRORLEVEL 1 (
-        type testresults\CoreUnit_portable47_Error.log 
+        type testresults\FSharp_Failures.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
         goto :failed_tests
     )

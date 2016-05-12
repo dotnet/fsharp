@@ -255,7 +255,8 @@ module internal FSharpEnvironment =
 #endif
 #if VS_VERSION_DEV14
                 let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#else
+#endif
+#if VS_VERSION_DEV15
                 let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #endif
                 let key1,key2 = 
