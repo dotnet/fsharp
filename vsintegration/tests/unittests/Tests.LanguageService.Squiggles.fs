@@ -385,9 +385,9 @@ type X() =
             marker = "(*Marker*)",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
                                "This expression was expected to have type\n"+
-                               "    string    \n"+
+                               "    'string'    \n"+
                                "but here has type\n"+
-                               "    int    "),
+                               "    'int'    "),
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])   
 
     
