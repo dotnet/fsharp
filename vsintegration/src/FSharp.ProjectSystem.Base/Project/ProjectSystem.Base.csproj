@@ -5,9 +5,10 @@
     <FSharpSourcesRoot>..\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
-	<MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
-	<MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
