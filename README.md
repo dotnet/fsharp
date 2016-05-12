@@ -38,10 +38,15 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
 
 ####Development tools
 
-For F# 4.0+ development
+For F# 4.0 development
 
 - [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 - [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+
+For F# 4.1 development
+
+- [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
+- [Visual Studio 15 SDK](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
 
 ####Additional frameworks
 
@@ -50,6 +55,7 @@ For F# 4.0+ development
 - [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
 - [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
 - [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 - [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
