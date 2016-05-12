@@ -9,7 +9,7 @@ IF ERRORLEVEL 1 (
 )
 
 
-SET LINK_EXE=%VS140COMNTOOLS%\..\..\VC\bin\link.exe
+SET LINK_EXE=%VS150COMNTOOLS%\..\..\VC\bin\link.exe
 
 REM %1 -- assembly to check
 REM %2 -- expected value ("yes" or "no")

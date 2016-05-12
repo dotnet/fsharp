@@ -6,9 +6,7 @@
 /// into the compiler.  This lets the compiler perform particular optimizations
 /// for these types and values, for example emitting optimized calls for
 /// comparison and hashing functions.  
-module internal Microsoft.FSharp.Compiler.TcGlobals 
-
-#nowarn "44" // This construct is deprecated. please use List.item
+module internal Microsoft.FSharp.Compiler.TcGlobals
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
@@ -1303,8 +1301,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
              |> List.map (fun (nm,tcr) -> 
                    let ty = mkNonGenericTy tcr 
                    nm, mkSysTyconRef sys nm, (fun _ -> ty)) 
+
         let entries2 =
-            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.nth tinst 0) (List.nth tinst 1))
+            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.item tinst 0) (List.item tinst 1))
               "Tuple`2",       ref_tuple2_tcr, decodeTupleTy tupInfoRef
               "Tuple`3",       ref_tuple3_tcr, decodeTupleTy tupInfoRef
               "Tuple`4",       ref_tuple4_tcr, decodeTupleTy tupInfoRef
@@ -1319,6 +1318,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
               "StructTuple`6",       struct_tuple6_tcr, decodeTupleTy tupInfoStruct
               "StructTuple`7",       struct_tuple7_tcr, decodeTupleTy tupInfoStruct
               "StructTuple`8",       struct_tuple8_tcr, decodeTupleTy tupInfoStruct] 
+
         let entries = (entries1 @ entries2)
         
         if compilingFslib then 
