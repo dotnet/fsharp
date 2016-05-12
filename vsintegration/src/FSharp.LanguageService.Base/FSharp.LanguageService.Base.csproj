@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
-	<MicroBuildAssemblyVersion>14.4.1.0</MicroBuildAssemblyVersion>
+	<MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
 	<MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
@@ -20,7 +20,7 @@
     <UseVsVersion>true</UseVsVersion>
     <NoWarn>$(NoWarn);3001,3002,3003</NoWarn>
     <DefineConstants>$(DefineConstants);UITHREAD_FOR_LANGUAGESERVICE</DefineConstants>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>

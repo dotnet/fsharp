@@ -69,10 +69,10 @@ open FSharpTestSuiteTypes
 let visualStudioVersion () =
 
     let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-    let keys = hklm32.OpenSubKey(@"Software\Microsoft\VisualStudio\14.0\Setup").GetSubKeyNames()
+    let keys = hklm32.OpenSubKey(@"Software\Microsoft\VisualStudio\15.0\Setup").GetSubKeyNames()
     let findstr r = Array.exists (fun t -> Regex.IsMatch(t, r)) keys
 
-    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Express .* for Windows Desktop" > NUL
+    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Express .* for Windows Desktop" > NUL
     // if NOT ERRORLEVEL 1 (
     //     set INSTALL_SKU=DESKTOP_EXPRESS
     //     goto :done_SKU
@@ -80,7 +80,7 @@ let visualStudioVersion () =
     if findstr "Express .* for Windows Desktop"
     then Some INSTALL_SKU.DesktopExpress
     
-    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Express .* for Web" > NUL
+    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Express .* for Web" > NUL
     // if NOT ERRORLEVEL 1 (
     //     set INSTALL_SKU=WEB_EXPRESS
     //     goto :done_SKU
@@ -88,7 +88,7 @@ let visualStudioVersion () =
     elif findstr "Express .* for Web"
     then Some INSTALL_SKU.WebExpress
 
-    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Ultimate" > NUL
+    // reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Ultimate" > NUL
     // if NOT ERRORLEVEL 1 (
     //     set INSTALL_SKU=ULTIMATE
     //     goto :done_SKU
