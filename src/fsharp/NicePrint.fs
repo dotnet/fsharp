@@ -6,8 +6,6 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
-#nowarn "44" // This construct is deprecated. please use List.item
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
@@ -188,7 +186,7 @@ module private PrintIL =
         | ILType.Ptr t
         | ILType.Byref t            -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t  -> layoutILCallingSignature denv ilTyparSubst None t
-        | ILType.TypeVar n            -> List.nth ilTyparSubst (int n)
+        | ILType.TypeVar n          -> List.item (int n) ilTyparSubst
         | ILType.Modified (_, _, t) -> layoutILType denv ilTyparSubst t // Just recurse through them to the contained ILType
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.

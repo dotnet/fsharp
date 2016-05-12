@@ -2499,24 +2499,6 @@ module Verify =
         let peverify' = Commands.peverify exec cfg.PEVERIFY
         let getfullpath = Commands.getfullpath dir
 
-        // "%PEVERIFY%" "%FSCOREDLLPATH%"
-        do! peverify cfg.FSCOREDLLPATH
-
-        // "%PEVERIFY%" "%FSCOREDLL20PATH%"
-        do! peverify cfg.FSCOREDLL20PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLPORTABLEPATH%"
-        do! peverify cfg.FSCOREDLLPORTABLEPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCOREPATH%"
-        do! peverify cfg.FSCOREDLLNETCOREPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE78PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE78PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE259PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE259PATH
-
         // "%PEVERIFY%" "%FSCBinPath%\FSharp.Build.dll"
         do! peverify (cfg.FSCBinPath/"FSharp.Build.dll")
 
@@ -2535,14 +2517,4 @@ module Verify =
 
         // "%PEVERIFY%" xmlverify.exe
         do! peverify "xmlverify.exe"
-
-        // REM == Calc correct path to FSharp.Core.dll no matter what arch we are on
-        // call :SetFSCoreXMLPath "%FSCOREDLLPATH%"
-        // :SetFSCoreXMLPath
-        // set FSHARPCOREXML=%~dpn1.xml
-        let FSharpCoreXml = Path.ChangeExtension(cfg.FSCOREDLLPATH, ".xml") |> getfullpath
-
-        // %CLIX% xmlverify.exe "%FSHARPCOREXML%"
-        do! exec ("."/"xmlverify.exe") FSharpCoreXml
-                
         })

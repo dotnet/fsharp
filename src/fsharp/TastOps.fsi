@@ -609,7 +609,7 @@ type DisplayEnv =
       showConstraintTyparAnnotations:bool;
       abbreviateAdditionalConstraints: bool;
       showTyparDefaultConstraints: bool
-      g: TcGlobals 
+      g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout:(Val -> layout option) }
     member SetOpenPaths: string list list -> DisplayEnv

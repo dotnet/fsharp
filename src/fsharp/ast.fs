@@ -1455,7 +1455,7 @@ type QualifiedNameOfFile =
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput = 
-    | ParsedImplFileInput of string * (*isScript: *) bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * bool
+    | ParsedImplFileInput of string * (*isScript: *) bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * (bool * bool)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput = 

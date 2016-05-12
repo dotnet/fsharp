@@ -4,8 +4,6 @@ namespace Internal.Utilities.Collections
 open System
 open System.Collections.Generic
 
-#nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
-
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T : not struct> =
    | Strong of 'T
