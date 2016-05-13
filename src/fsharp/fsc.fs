@@ -1854,8 +1854,9 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
-                Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
-                Some(1033)
+                let enCulture = new CultureInfo("en-US")
+                Thread.CurrentThread.CurrentUICulture <- enCulture
+                Some(enCulture.LCID)
         else
             None
 #endif
