@@ -4832,8 +4832,8 @@ type ILReferences =
       ModuleReferences: ILModuleRef list; }
 
 type ILReferencesAccumulator = 
-    { refsA: Hashset<ILAssemblyRef>; 
-      refsM: Hashset<ILModuleRef>; }
+    { refsA: HashSet<ILAssemblyRef>; 
+      refsM: HashSet<ILModuleRef>; }
 
 let emptyILRefs = 
   { AssemblyReferences=[];
@@ -5049,11 +5049,12 @@ and refs_of_manifest s m =
 
 let computeILRefs modul = 
     let s = 
-      { refsA = Hashset.create 10; 
-        refsM = Hashset.create 5; }
+      { refsA = Hashset.create(); 
+        refsM = Hashset.create(); }
+
     refs_of_modul s modul;
-    { AssemblyReferences = Hashset.fold (fun x acc -> x::acc) s.refsA [];
-      ModuleReferences =  Hashset.fold (fun x acc -> x::acc) s.refsM [] }
+    { AssemblyReferences = Seq.fold (fun acc x -> x::acc) [] s.refsA
+      ModuleReferences =  Seq.fold (fun acc x -> x::acc) [] s.refsM }
 
 let tspan = System.TimeSpan(System.DateTime.Now.Ticks - System.DateTime(2000,1,1).Ticks)
 

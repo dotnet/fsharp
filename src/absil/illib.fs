@@ -509,19 +509,11 @@ module Dictionary =
         l |> List.iter (fun (k,v) -> dict.Add(k,v))
         dict
 
-
-// FUTURE CLEANUP: remove this adhoc collection
-type Hashset<'T> = Dictionary<'T,int>
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Hashset = 
-    let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
-    let add (t: Hashset<'T>) x = if not (t.ContainsKey x) then t.[x] <- 0
-    let fold f (t:Hashset<'T>) acc = Seq.fold (fun z (KeyValue(x,_)) -> f x z) acc t 
-    let ofList l = 
-        let t = new Hashset<'T>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun x -> t.[x] <- 0)
-        t
+    let create () = new HashSet<'T>(HashIdentity.Structural)
+    let add (t: HashSet<'T>) x = t.Add(x) |> ignore
+    let ofList (l: 'T list) = new HashSet<'T>(l,HashIdentity.Structural)
         
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
