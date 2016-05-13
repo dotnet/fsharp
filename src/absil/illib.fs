@@ -508,12 +508,6 @@ module Dictionary =
         let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
         l |> List.iter (fun (k,v) -> dict.Add(k,v))
         dict
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Hashset = 
-    let create () = new HashSet<'T>(HashIdentity.Structural)
-    let add (t: HashSet<'T>) x = t.Add(x) |> ignore
-    let ofList (l: 'T list) = new HashSet<'T>(l,HashIdentity.Structural)
         
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()

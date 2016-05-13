@@ -4840,8 +4840,8 @@ let emptyILRefs =
     ModuleReferences = []; }
 
 (* Now find references. *)
-let refs_of_assref s x = Hashset.add s.refsA x
-let refs_of_modref s x = Hashset.add s.refsM x
+let refs_of_assref (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
+let refs_of_modref (s:ILReferencesAccumulator) x = s.refsM.Add x |> ignore
     
 let refs_of_scoref s x = 
     match x with 
@@ -5049,8 +5049,8 @@ and refs_of_manifest s m =
 
 let computeILRefs modul = 
     let s = 
-      { refsA = Hashset.create(); 
-        refsM = Hashset.create(); }
+      { refsA = HashSet<_>(HashIdentity.Structural) 
+        refsM = HashSet<_>(HashIdentity.Structural) }
 
     refs_of_modul s modul;
     { AssemblyReferences = Seq.fold (fun acc x -> x::acc) [] s.refsA

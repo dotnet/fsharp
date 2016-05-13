@@ -1228,7 +1228,7 @@ let CompilePatternBasic
     
     // Report unused targets 
     if warnOnUnused then 
-        let used = accTargetsOfDecisionTree dtree [] |> Hashset.ofList
+        let used = HashSet<_>(accTargetsOfDecisionTree dtree [],HashIdentity.Structural)
 
         clausesL |> List.iteri (fun i c ->  
             if not (used.Contains i) then warning (RuleNeverMatched c.Range)) 
