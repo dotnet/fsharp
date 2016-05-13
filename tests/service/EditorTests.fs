@@ -624,14 +624,14 @@ let ``Test TPProject errors`` () =
     errorMessages |> shouldEqual
         [(15, 47, 15, 48, "Expected type argument or static argument");
          (6, 8, 6, 32, "This provided method requires static parameters");
-         (7, 39, 7, 42, "This expression was expected to have type    string    but here has type    unit    ");
-         (8, 40, 8, 43, "This expression was expected to have type    string    but here has type    unit    ");
-         (9, 40, 9, 49, "This expression was expected to have type    string    but here has type    unit    ");
+         (7, 39, 7, 42, "This expression was expected to have type    'string'    but here has type    'unit'    ");
+         (8, 40, 8, 43, "This expression was expected to have type    'string'    but here has type    'unit'    ");
+         (9, 40, 9, 49, "This expression was expected to have type    'string'    but here has type    'unit'    ");
          (11, 8, 11, 35, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (12, 8, 12, 41, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
-         (14, 46, 14, 50, "This expression was expected to have type    string    but here has type    unit    ");
+         (14, 46, 14, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ");
          (15, 33, 15, 38, "No static parameter exists with name ''");
-         (16, 40, 16, 50, "This expression was expected to have type    string    but here has type    unit    ")]
+         (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
 let internal extractToolTipText (FSharpToolTipText(els)) = 
     [ for e in els do 

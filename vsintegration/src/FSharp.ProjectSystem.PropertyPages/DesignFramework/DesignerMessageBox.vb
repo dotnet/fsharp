@@ -76,7 +76,7 @@ Namespace Microsoft.VisualStudio.Editors.DesignerFramework
             End If
 
             'Pull out the original exception from target invocation exceptions (happen during serialization, etc.)
-            If TypeOf ex Is Reflection.TargetInvocationException Then
+            If TypeOf ex Is System.Reflection.TargetInvocationException Then
                 ex = ex.InnerException
             End If
 
