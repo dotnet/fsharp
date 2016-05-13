@@ -344,15 +344,15 @@ rem ============================
 
 rem rename fsc and corehost.exe to allow fsc.exe to to start compiler
 pushd .\Tools\lkg
-fc fsc.exe corehost.exe >nul
+fc fsc.exe coreconsole.exe >nul
 @if ERRORLEVEL 1 (
   copy fsc.exe fsc.dll
-  copy corehost.exe fsc.exe
+  copy coreconsole.exe fsc.exe
 )
-fc fsi.exe corehost.exe >nul
+fc fsi.exe coreconsole.exe >nul
 @if ERRORLEVEL 1 (
   copy fsi.exe fsi.dll
-  copy corehost.exe fsi.exe
+  copy coreconsole.exe fsi.exe
 )
 popd
 
@@ -374,8 +374,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: %_dotnetexe% publish src\fsharp\Fsc\project.json --no-build --configuration release -f .NETStandard,Version=v1.5 -r win7-x64 -o Proto\bin    failed  && goto :failure
 
     pushd .\Proto\bin
-    copy corehost.exe fsc.exe
-    copy corehost.exe fsi.exe
+    copy coreconsole.exe fsc.exe
+    copy coreconsole.exe fsi.exe
     popd
 )
 
