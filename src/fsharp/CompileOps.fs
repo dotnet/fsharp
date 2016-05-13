@@ -644,8 +644,11 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
           | ContextInfo.OmittedElseBranch -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
-          | ContextInfo.ElseBranchWithDifferentType -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
-          | ContextInfo.NoContext -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
+          | ContextInfo.ElseBranch -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | ContextInfo.TupleInRecordFields -> 
+                os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
+                os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore                
+          | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
       | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _) as e), _, _)  ->  
           OutputExceptionR os e
       | ErrorFromAddingTypeEquation(g,denv,t1,t2,e,_,_) ->
