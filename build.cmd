@@ -79,7 +79,7 @@ if /i '%ARG%' == 'vs' (
 )
 
 if /i '%ARG%' == 'diag' (
-    set BUILD_DIAG=/v:diag
+    set BUILD_DIAG=/v:detailed
     set BUILD_LOG=fsharp_build_log.log
 )
 
