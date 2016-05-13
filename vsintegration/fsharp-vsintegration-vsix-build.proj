@@ -5,6 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <TemplatesProjects Include="fsharp-vsintegration-item-templates-build.proj" />
+    <TemplatesProjects Include="fsharp-vsintegration-project-templates-build.proj" />
+    
     <PkgDefProjects Include="..\src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
     <PkgDefProjects Include="..\src\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj" />
     <PkgDefProjects Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
@@ -19,7 +22,8 @@
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(TemplatesProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />    
     <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
     
     <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);ShippingSku=Desktop" />
