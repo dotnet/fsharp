@@ -527,13 +527,6 @@ module Lazy =
     let force (x: Lazy<'T>) = x.Force()
 
 //---------------------------------------------------
-// Lists as sets. This is almost always a bad data structure and should be eliminated from the compiler.  
-
-module ListSet =
-    let insert e l =
-        if List.mem e l then l else e::l
-
-//---------------------------------------------------
 // Misc
 
 /// Get an initialization hole 
