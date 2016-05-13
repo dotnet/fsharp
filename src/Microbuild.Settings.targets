@@ -163,13 +163,25 @@
     </Task>
   </UsingTask>
   
-  <Target Name="LocalizeTemplateProjects" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true'">
+  <!-- In case of a microbuild, depend on 'Localize' target to use the localized resources -->
+  <Target Name="LocalizeTemplateProjectsInMicrobuild" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true' and '$(Languages)' != '' and '@(FilesToLocalize)' != ''">
+    <LocalizeTemplateProjectsTask
+      OutDir="$(OutputPath)"
+      TemplateCategory="$(TemplateCategory)"
+      AssemblyName="$(AssemblyName)"
+      TemplateFiles="@(TemplateFiles)"
+      LocalizedFiles="@(FilesToLocalize)"
+      LocLanguages="$(Languages)" />
+  </Target>
+  
+  <!-- In case of a local build, depend on the build target to use the native resources -->
+  <Target Name="LocalizeTemplateProjectsLocally" AfterTargets="Build" Condition="'$(GenerateLocalizedTemplates)' == 'true' and ('$(Languages)' == '' or '@(FilesToLocalize)' == '')">
     <PropertyGroup>
         <Languages Condition="'$(Languages)' == ''">ENU</Languages>
     </PropertyGroup>
     
     <LocalizeTemplateProjectsTask
-      OutDir="$(OutDir)"
+      OutDir="$(OutputPath)"
       TemplateCategory="$(TemplateCategory)"
       AssemblyName="$(AssemblyName)"
       TemplateFiles="@(TemplateFiles)"
