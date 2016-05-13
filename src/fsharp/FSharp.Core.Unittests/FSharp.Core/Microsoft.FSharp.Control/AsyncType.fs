@@ -249,7 +249,7 @@ type AsyncType() =
         Async.RunSynchronously(a, 1000) |> Assert.IsTrue        
 
     [<Test>]
-    member this.TaskCancellation () =
+    member this.AwaitTaskCancellation () =
         let test() = async {
             let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
