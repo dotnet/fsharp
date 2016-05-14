@@ -503,6 +503,14 @@ namespace Microsoft.FSharp.Collections
                MapTree.largestMapStackTrace <- System.Diagnostics.StackTrace().ToString()
 #endif
             new Map<'Key,'Value>(comparer,MapTree.add comparer k v tree)
+
+
+        member m.AddRange(elements:seq<KeyValuePair<'Key,'Value>>) : Map<'Key,'Value> = 
+           let mutable tree' = tree
+           for kv in elements do
+               tree' <- MapTree.add comparer kv.Key kv.Value tree' 
+           new Map<_,_>(comparer,tree')
+
 #if FX_NO_DEBUG_DISPLAYS
 #else
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -668,6 +676,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Add")>]
         let add k v (m:Map<_,_>) = m.Add(k,v)
+
+        [<CompiledName("AddRange")>]
+        let addRange elements (m:Map<_,_>) = m.AddRange(elements)
 
         [<CompiledName("Find")>]
         let find k (m:Map<_,_>) = m.[k]

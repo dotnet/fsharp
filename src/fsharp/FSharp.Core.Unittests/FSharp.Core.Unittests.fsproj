@@ -102,6 +102,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />    
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />

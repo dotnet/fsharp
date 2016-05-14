@@ -969,7 +969,12 @@ type Map<'Key,'Value when 'Key : comparison> with
 
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
     member x.Elements = [ for kvp in x -> kvp ]
-    member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+    member x.AddAndMarkAsCollapsible (kvs: _[])   = 
+#if BUILDING_WITH_LKG    
+            (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+#else
+            x.AddRange(kvs)
+#endif
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
     member x.MarkAsCollapsible ()  = x
 
