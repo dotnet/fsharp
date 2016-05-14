@@ -252,6 +252,8 @@ if "%RestorePackages%"=="" (
 
 @echo on
 
+call src\update.cmd signonly
+
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
