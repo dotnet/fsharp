@@ -282,8 +282,6 @@ if "%RestorePackages%"=="" (
     set RestorePackages=true
 )
 
-@echo on
-
 call src\update.cmd signonly
 
 :: Check prerequisites
@@ -307,6 +305,11 @@ if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
 set _nrswitch=/nr:false
+
+rem lkg FSI needs binding redirects on Dev15
+if '%VisualStudioVersion%' == '15.0' (copy lkg\FSharp-14.0.23413.0\bin\fsi.exe.d15.config lkg\FSharp-14.0.23413.0\bin\fsi.exe.config)
+if '%VisualStudioVersion%' == '14.0' (copy lkg\FSharp-14.0.23413.0\bin\fsi.exe.d14.config lkg\FSharp-14.0.23413.0\bin\fsi.exe.config)
+
 
 rem uncomment to use coreclr msbuild not ready yet!!!!
 rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
