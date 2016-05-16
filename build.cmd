@@ -80,7 +80,8 @@ if /i '%ARG%' == 'vs' (
 )
 
 if /i '%ARG%' == 'diag' (
-    set BUILD_DIAG=/v:diag
+    set BUILD_DIAG=/v:detailed
+    if not defined APPVEYOR ( set BUILD_LOG=fsharp_build_log.log )
 )
 
 if /i '%ARG%' == 'all' (
@@ -282,6 +283,8 @@ if "%RestorePackages%"=="" (
 )
 
 @echo on
+
+call src\update.cmd signonly
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
