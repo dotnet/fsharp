@@ -532,6 +532,11 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
   
+  <!-- crossgen Proto build -->
+  <Target Name="CrossGenProto"  Condition="'$(Configuration)'=='proto'">
+    <Exec Command="$(MSBuildThisFileDirectory)..\..\..\Proto\cg_fsharp.compiler.dll.bat" WorkingDirectory="$(MSBuildThisFileDirectory)..\..\..\Proto"/>
+  </Target>
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

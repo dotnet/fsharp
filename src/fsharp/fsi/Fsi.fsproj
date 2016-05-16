@@ -10,12 +10,12 @@
     <!--
         fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
         Win32 DLLs and memory mapping dependencies...
-        -->
+    -->
     <PlatformTarget Condition=" '$(TargetFramework)'!='coreclr'">x86</PlatformTarget>
     <PlatformTarget Condition=" '$(TargetFramework)'=='coreclr'">AnyCPU</PlatformTarget>
     <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <TargetExt Condition="'$(Configuration)'=='Proto'">.dll</TargetExt>
+    <TargetExt Condition="'$(Configuration)' == 'Proto'">.dll</TargetExt>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
@@ -96,7 +96,14 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
+  
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <!-- crossgen Proto build -->
+  <Target Name="CrossGenProto"  Condition="'$(Configuration)' == 'proto'" AfterTargets = "CopyFilesToOutputDirectory" >
+    <Exec Command="$(MSBuildThisFileDirectory)..\..\..\Proto\cg_fsi.dll.bat" WorkingDirectory="$(MSBuildThisFileDirectory)..\..\..\Proto"/>
+  </Target>
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />

@@ -365,6 +365,12 @@ copy lkg\FSharp-14.0.23413.0\bin\fsharp.build.dll tools\fsharp.build.dll
 :: Build Proto
 if NOT EXIST Proto\bin\fsc.dll (set BUILD_PROTO=1)
 
+
+rem The buildtools currently do not deploy crossgen to the tools directory it should.  Note "1.0.2-rc2-24027"
+if NOT EXIST Tools\crossgen.exe (
+    copy packages\runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR\1.0.2-rc2-24027\tools\crossgen.exe Tools
+)
+
 :: Build
 if '%BUILD_PROTO%' == '1' (
     %_dotnetexe% restore  .\Proto\project.json --configfile ..\.nuget\nuget.config

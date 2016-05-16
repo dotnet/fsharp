@@ -50,4 +50,10 @@
       </ProjectReference>
     </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <!-- crossgen Proto build -->
+  <Target Name="CrossGenProto"  Condition="'$(Configuration)' == 'proto'">
+    <Exec Command="$(MSBuildThisFileDirectory)..\..\..\Proto\cg_fsharp.compiler.Interactive.Settings.dll.bat" WorkingDirectory="$(MSBuildThisFileDirectory)..\..\..\Proto"/>
+  </Target>
+
 </Project>
