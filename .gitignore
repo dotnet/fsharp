@@ -3,12 +3,6 @@
 /src/*.userprefs
 /src/fsharp/FSStrings.resources
 /src/fsharp/FSharp.Build/*.resx
-/src/fsharp/FSharp.Build-proto/*.resx
-/src/fsharp/FSharp.Build-proto/*.resources
-/src/fsharp/FSharp.Compiler-proto/*.resx
-/src/fsharp/FSharp.Compiler-proto/*.resources
-/src/fsharp/FSharp.Compiler-proto/*.sln
-/src/fsharp/FSharp.Compiler-proto/*.userprefs
 /src/fsharp/fsi/*.resx
 /src/fsharp/FSharp.Compiler.Interactive.Settings/*.resx
 /src/fsharp/FSharp.Compiler.Server.Shared/*.resx
@@ -28,15 +22,6 @@
 /src/fsharp/FSharp.Compiler/pplex.fs
 /src/fsharp/FSharp.Compiler/pppars.fs
 /src/fsharp/FSharp.Compiler/pppars.fsi
-/src/fsharp/FSharp.Compiler-proto/illex.fs
-/src/fsharp/FSharp.Compiler-proto/ilpars.fs
-/src/fsharp/FSharp.Compiler-proto/ilpars.fsi
-/src/fsharp/FSharp.Compiler-proto/lex.fs
-/src/fsharp/FSharp.Compiler-proto/pars.fs
-/src/fsharp/FSharp.Compiler-proto/pars.fsi
-/src/fsharp/FSharp.Compiler-proto/pplex.fs
-/src/fsharp/FSharp.Compiler-proto/pppars.fs
-/src/fsharp/FSharp.Compiler-proto/pppars.fsi
 /src/fsharp/FSharp.LanguageService.Compiler/illex.*
 /src/fsharp/FSharp.LanguageService.Compiler/ilpars.*
 /src/fsharp/FSharp.LanguageService.Compiler/lex.*
@@ -68,7 +53,7 @@ lib/bootstrap/4.1/policy*
 aclocal.m4
 Debug
 Release
-Proto
+Proto/bin
 sign_temp
 .libs
 Makefile

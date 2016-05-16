@@ -1,0 +1,4 @@
+
+pushd bin
+call "%~dp0cg.bat" /in fsharp.core.dll  /Trusted_Platform_Assemblies .\System.Runtime.dll;.\System.Threading.Tasks.dll;.\System.Linq.dll;.\System.Reflection.dll;.\System.Linq.Expressions.dll;.\System.Reflection.TypeExtensions.dll;.\System.Net.Requests.dll;.\System.IO.dll;.\System.Reflection.Primitives.dll;.\System.Globalization.dll;.\System.Collections.dll;.\System.Diagnostics.Debug.dll;.\System.Resources.ResourceManager.dll;.\System.Runtime.Extensions.dll;.\System.Threading.dll;.\System.Threading.ThreadPool.dll;.\System.Console.dll;.\System.Reflection.Extensions.dll;.\System.Linq.Queryable.dll;.\System.Collections.Concurrent.dll;.\System.Threading.Thread.dll;.\System.Threading.Timer.dll;.\System.Text.RegularExpressions.dll;.\System.Text.Encoding.dll;.\System.Runtime.Numerics.dll;.\System.Threading.Tasks.Parallel.dll;
+popd
