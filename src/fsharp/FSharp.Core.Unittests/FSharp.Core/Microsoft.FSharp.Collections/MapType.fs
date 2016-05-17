@@ -223,6 +223,19 @@ type MapType() =
         let e  = Map.empty<int,string>
         let ae = e.Add(1,"Monday")
         Assert.AreEqual(ae.[1], "Monday")
+        
+    member this.AddRange() =
+    
+        let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
+        let b = a.AddRange[KeyValuePair(4,16)]
+        Assert.AreEqual(b.[4], 16)
+        Assert.AreEqual(b.[2], 4)
+    
+        let e  = Map.empty<int,string>
+        let ae = e.AddRange[KeyValuePair(1,"Monday"); KeyValuePair(2,"Tuesday")]
+        Assert.AreEqual(ae.[1], "Monday")
+        Assert.AreEqual(ae.[2], "Tuesday")
+    
     
     [<Test>]
     member this.ContainsKey() =

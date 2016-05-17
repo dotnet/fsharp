@@ -8,6 +8,7 @@ namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+open System.Collections.Generic
 
 (*
 [Test Strategy]
@@ -62,6 +63,44 @@ type MapModule() =
         
          
         ()
+       
+    [<Test>]
+    member this.AddRange() =
+        // add empty seq
+        let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
+        let newValueMap = Map.addRange Seq.empty valueKeyMap        
+        Assert.AreEqual(newValueMap.[2], "b")
+
+        // value keys
+        let resultValueMap = Map.addRange [KeyValuePair(1,"a"); KeyValuePair(3,"f")] valueKeyMap
+        Assert.AreEqual(resultValueMap.[1], "a")
+        Assert.AreEqual(resultValueMap.[3], "f")
+        
+        // reference keys
+        let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
+        let resultRefMap = Map.addRange [KeyValuePair("", 0)] refMap
+        Assert.AreEqual(resultRefMap.[""] , 0)
+        
+        // empty Map
+        let eptMap = Map.empty
+        let resultEpt = Map.addRange [KeyValuePair(1,"a"); KeyValuePair(-1,"b")] eptMap
+        Assert.AreEqual(resultEpt.[1], "a")
+        Assert.AreEqual(resultEpt.[-1], "b")
+        
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.addRange [KeyValuePair(7, "seven")] oeleMap
+        Assert.AreEqual(resultOele.[7], "seven")     
+        
+        // extra test for add -- add some key which already exit in the Map
+        let extMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
+        let resultExt = Map.addRange [KeyValuePair(2,"dup")] extMap
+        Assert.AreEqual(resultExt.[2], "dup")   
+        
+         
+        ()
+
+  
 
     [<Test>]
     member this.Exists() =

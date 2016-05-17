@@ -22,6 +22,11 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting map.</returns>
         member Add: key:'Key * value:'Value -> Map<'Key,'Value>
 
+        /// <summary>Returns a new map with the bindings added to the given map.
+        /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
+        /// <returns>The resulting map.</returns>
+        member AddRange: elements: seq<KeyValuePair<'Key,'Value>> -> Map<'Key,'Value>
+
         /// <summary>Returns true if there are no bindings in the map.</summary>
         member IsEmpty: bool
 
@@ -76,6 +81,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting map.</returns>
         [<CompiledName("Add")>]
         val add: key:'Key -> value:'T -> table:Map<'Key,'T> -> Map<'Key,'T>
+
+        /// <summary>Returns a new map with the bindings added to the given map.
+        /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
+        /// <param name="elements">The input keys and values.</param>
+        /// <param name="table">The input map.</param>
+        /// <returns>The resulting map.</returns>
+        [<CompiledName("AddRange")>]
+        val addRange: elements: seq<KeyValuePair<'Key,'T>> -> table:Map<'Key,'T> -> Map<'Key,'T>
 
         /// <summary>Returns a new map made from the given bindings.</summary>
         /// <param name="elements">The input list of key/value pairs.</param>
