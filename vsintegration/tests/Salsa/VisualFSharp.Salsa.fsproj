@@ -41,7 +41,7 @@
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
@@ -58,10 +58,12 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.CommonIDE">
-		<HintPath>$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
+		<HintPath Condition="'VisualStudioVersion' == '14.0'">$(VS140COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
+		<HintPath Condition="'VisualStudioVersion' == '15.0'">$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
 	</Reference>
     <Reference Include="Microsoft.VisualStudio.Text.Internal">
-		<HintPath>$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
+		<HintPath Condition="'VisualStudioVersion' == '14.0'">$(VS140COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
+		<HintPath Condition="'VisualStudioVersion' == '15.0'">$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
 	</Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />

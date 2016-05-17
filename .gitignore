@@ -81,5 +81,6 @@ ossreadme*.txt
 *.cto
 project.lock.json
 lkg/bin
+lkg/FSharp-14.0.23413.0/bin/Fsi.exe.config
 Tools/
 Backup/
