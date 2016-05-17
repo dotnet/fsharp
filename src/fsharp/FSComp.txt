@@ -412,7 +412,7 @@ parsConsiderUsingSeparateRecordType,"Consider using a separate record type inste
 584,parsSuccessivePatternsShouldBeSpacedOrTupled,"Successive patterns should be separated by spaces or tupled"
 586,parsNoMatchingInForLet,"No matching 'in' found for this 'let'"
 587,parsErrorInReturnForLetIncorrectIndentation,"Error in the return expression for this 'let'. Possible incorrect indentation."
-588,parsExpectedStatementAfterLet,"Block following this '%s' is unfinished. Expect an expression."
+588,parsExpectedExpressionAfterLet,"The block following this '%s' is unfinished. Every code block is an expression and must have a result. '%s' cannot be the final code element in a block. Consider giving this block an explicit result."
 589,parsIncompleteIf,"Incomplete conditional. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'."
 590,parsAssertIsNotFirstClassValue,"'assert' may not be used as a first class value. Use 'assert <expr>' instead."
 594,parsIdentifierExpected,"Identifier expected"
