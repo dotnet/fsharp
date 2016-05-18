@@ -94,9 +94,10 @@ let ChooseFreeVarNames takenNames ts =
           chooseName names (t,Some(match nOpt with None ->  0 | Some n -> (n+1)))
         else
           let names = Zset.add tn names
-          names,tn
+          tn,names
+
     let names    = Zset.empty String.order |> Zset.addList takenNames
-    let _names,ts = List.foldMap chooseName names tns
+    let ts,_names = List.mapFold chooseName names tns
     ts
 
 let ilxgenGlobalNng = NiceNameGenerator ()
