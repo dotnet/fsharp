@@ -121,19 +121,6 @@ module Array =
             acc <- s'
         res, acc
 
-
-    // REVIEW: systematically eliminate foldMap/mapFold duplication. 
-    // They only differ by the tuple returned by the function.
-    let foldMap f s l = 
-        let mutable acc = s
-        let n = Array.length l
-        let mutable res = Array.zeroCreate n
-        for i = 0 to n - 1 do
-            let s',h' = f acc l.[i]
-            res.[i] <- h'
-            acc <- s'
-        acc, res
-
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
               member __.Compare(xs,ys) = 
@@ -192,13 +179,6 @@ module Option =
         match opt with 
         | None -> dflt()
         | res -> res
-
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f z l = 
-        match l with 
-        | None   -> z,None
-        | Some x -> let z,x = f z x
-                    z,Some x
 
     let fold f z x = 
         match x with 
@@ -420,18 +400,7 @@ module List =
       let l, s = mapFold f s l
       List.concat l, s
 
-    let singleton x = [x]
-
-    // NOTE: must be tail-recursive 
-    let rec private foldMapAux f z l acc =
-      match l with
-      | []    -> z,List.rev acc
-      | x::xs -> let z,x = f z x
-                 foldMapAux f z xs (x::acc)
-                 
-    // NOTE: must be tail-recursive 
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f z l = foldMapAux f z l []
+    let singleton x = [x]              
 
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
@@ -595,14 +564,6 @@ module FlatList =
             let  arr,acc = Array.mapFold f acc x.array
             FlatList(arr),acc
 
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f acc (x:FlatList<_>) = 
-        match x.array with
-        | null -> 
-            acc,FlatList.Empty
-        | arr -> 
-            let  acc,arr = Array.foldMap f acc x.array
-            acc,FlatList(arr)
 #endif
 #if FLAT_LIST_AS_LIST
 
@@ -614,7 +575,6 @@ module FlatList =
     let order eltOrder = List.order eltOrder 
     let mapq f (x:FlatList<_>) = List.mapq f x
     let mapFold f acc (x:FlatList<_>) =  List.mapFold f acc x
-    let foldMap f acc (x:FlatList<_>) =  List.foldMap f acc x
 
 #endif
 
@@ -624,7 +584,6 @@ module FlatList =
     let order eltOrder = Array.order eltOrder 
     let mapq f x = Array.mapq f x
     let mapFold f acc x =  Array.mapFold f acc x
-    let foldMap f acc x =  Array.foldMap f acc x
 #endif
 
 
