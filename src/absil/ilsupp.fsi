@@ -31,7 +31,7 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
-#if FX_NO_LINKEDRESOURCES
+#if FX_NO_LINKEDRESOURCES && FX_NO_WIN32RES
 #else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 #endif
@@ -45,8 +45,9 @@ type PEFileType = X86 | X64
 #if FX_NO_LINKEDRESOURCES
 #else
 val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
-val unlinkResource: int32 -> byte[] -> byte[]
 #endif
+
+val unlinkResource: int32 -> byte[] -> byte[]
 
 #if FX_NO_PDB_WRITER
 #else
