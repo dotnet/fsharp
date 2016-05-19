@@ -38,7 +38,7 @@ type UsingMSBuild()  =
                 override x.ToString() = ""
             let Main() =
                 let x = MyType()"""
-        let expectedStr = "Block following this 'let' is unfinished"
+        let expectedStr = "The block following this 'let' is unfinished. Every code block is an expression and must have a result. 'let' cannot be the final code element in a block. Consider giving this block an explicit result."
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
     // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
@@ -50,7 +50,7 @@ type UsingMSBuild()  =
                 override x.ToString() = ""
             let Main() =
                 use x = MyType()"""
-        let expectedStr = "Block following this 'use' is unfinished"
+        let expectedStr = "The block following this 'use' is unfinished. Every code block is an expression and must have a result. 'use' cannot be the final code element in a block. Consider giving this block an explicit result."
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
     [<Test>]

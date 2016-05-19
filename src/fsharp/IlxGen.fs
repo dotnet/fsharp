@@ -6,8 +6,6 @@
 
 module internal Microsoft.FSharp.Compiler.IlxGen
 
-#nowarn "44" // This construct is deprecated. please use List.item
-
 open System.IO
 open System.Collections.Generic
 open Internal.Utilities
@@ -96,9 +94,10 @@ let ChooseFreeVarNames takenNames ts =
           chooseName names (t,Some(match nOpt with None ->  0 | Some n -> (n+1)))
         else
           let names = Zset.add tn names
-          names,tn
+          tn,names
+
     let names    = Zset.empty String.order |> Zset.addList takenNames
-    let _names,ts = List.foldMap chooseName names tns
+    let ts,_names = List.mapFold chooseName names tns
     ts
 
 let ilxgenGlobalNng = NiceNameGenerator ()
@@ -2143,7 +2142,7 @@ and GenGetExnField cenv cgbuf eenv (e,ecref,fieldNum,m) sequel =
     let typ = GenExnType cenv.amap m cenv.g eenv.tyenv ecref
     CG.EmitInstrs cgbuf (pop 0) Push0 [ I_castclass typ];
 
-    let fld = List.nth (exnc.TrueInstanceFieldsAsList) fieldNum
+    let fld = List.item fieldNum exnc.TrueInstanceFieldsAsList
     let ftyp = GenType cenv.amap m cenv.g eenv.tyenv fld.FormalType
 
     let mspec = mkILNonGenericInstanceMethSpecInTy (typ,"get_" + fld.Name, [], ftyp)
@@ -2156,7 +2155,7 @@ and GenSetExnField cenv cgbuf eenv (e,ecref,fieldNum,e2,m) sequel =
     let exnc = stripExnEqns ecref
     let typ = GenExnType cenv.amap m cenv.g eenv.tyenv ecref
     CG.EmitInstrs cgbuf (pop 0) Push0 [ I_castclass typ ];
-    let fld = List.nth (exnc.TrueInstanceFieldsAsList) fieldNum
+    let fld = List.item fieldNum exnc.TrueInstanceFieldsAsList
     let ftyp = GenType cenv.amap m cenv.g eenv.tyenv fld.FormalType
     let ilFieldName = ComputeFieldName exnc fld
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue;

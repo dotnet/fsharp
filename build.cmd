@@ -34,7 +34,6 @@ set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
-set BUILD_LOG=con
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
@@ -44,6 +43,7 @@ set TEST_VS=0
 set TEST_FSHARP_SUITE=0
 set TEST_FSHARPQA_SUITE=0
 set TEST_TAGS=
+set SKIP_EXPENSIVE_TESTS=1
 
 setlocal enableDelayedExpansion
 set /a counter=0
@@ -78,8 +78,8 @@ if /i '%ARG%' == 'vs' (
 )
 
 if /i '%ARG%' == 'diag' (
-    set BUILD_DIAG=/v:diag
-    set BUILD_LOG=fsharp_build_log.log
+    set BUILD_DIAG=/v:detailed
+    if not defined APPVEYOR ( set BUILD_LOG=fsharp_build_log.log )
 )
 
 if /i '%ARG%' == 'all' (
@@ -96,20 +96,12 @@ if /i '%ARG%' == 'all' (
     set TEST_FSHARPQA_SUITE=1
     set TEST_CORECLR=1
     set TEST_VS=1
+
+    set SKIP_EXPENSIVE_TESTS=0
 )
 
 if /i '%ARG%' == 'proto' (
     set BUILD_PROTO=1
-    set BUILD_PORTABLE=0
-    set BUILD_VS=0
-    set BUILD_CORECLR=0
-
-    set TEST_COMPILERUNIT=0
-    set TEST_PORTABLE_COREUNIT=0
-    set TEST_CORECLR=0
-    set TEST_VS=0
-    set TEST_FSHARP_SUITE=0
-    set TEST_FSHARPQA_SUITE=0
 )
 
 REM Same as 'all' but smoke testing only
@@ -157,17 +149,6 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_FSHARP_SUITE=1
 )
 
-if /i '%ARG%' == 'smoke' (
-    REM Smoke tests are a very small quick subset of tests
-
-    set SKIP_EXPENSIVE_TESTS=1
-    set TEST_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=0
-    set TEST_TAGS=Smoke
-)
-
 if /i '%ARG%' == 'coreclr' (
     set BUILD_CORECLR=1
     set TEST_CORECLR=1
@@ -191,6 +172,52 @@ if /i '%ARG%' == 'notests' (
     set TEST_VS=0
     set TEST_FSHARP_SUITE=0
     set TEST_FSHARPQA_SUITE=0
+    set SKIP_EXPENSIVE_TESTS=1
+)
+
+if /i '%ARG%' == 'test-smoke' (
+    REM Smoke tests are a very small quick subset of tests
+
+    set SKIP_EXPENSIVE_TESTS=1
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_FSHARP_SUITE=1
+    set TEST_FSHARPQA_SUITE=0
+    set TEST_TAGS=Smoke
+)
+
+if /i '%ARG%' == 'test-fsharpqa' (
+    set BUILD_NET40=1
+    set TEST_FSHARPQA_SUITE=1
+)
+
+if /i '%ARG%' == 'test-compilerunit' (
+    set BUILD_NET40=1
+    set TEST_COMPILERUNIT=1
+)
+
+if /i '%ARG%' == 'test-coreunit' (
+    set BUILD_NET40=1
+    set TEST_NET40_COREUNIT=1
+)
+
+if /i '%ARG%' == 'test-coreclr' (
+    set BUILD_CORECLR=1
+    set TEST_CORECLR=1
+)
+
+if /i '%ARG%' == 'test-pcls' (
+    set BUILD_PORTABLE=1
+    set TEST_PORTABLE_COREUNIT=1
+)
+
+if /i '%ARG%' == 'test-vs' (
+    set BUILD_VS=1
+    set TEST_VS=1
+)
+
+if /i '%ARG%' == 'test-fsharp' (
+    set TEST_FSHARP_SUITE=1
 )
 
 goto :EOF
@@ -201,6 +228,7 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 
 echo Build/Tests configuration:
 echo.
+echo BUILD_PROTO=%BUILD_PROTO%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
@@ -209,11 +237,13 @@ echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
 echo TEST_COMPILERUNIT=%TEST_COMPILERUNIT%
+echo TEST_NET40_COREUNIT=%TEST_NET40_COREUNIT%
 echo TEST_PORTABLE_COREUNIT=%TEST_PORTABLE_COREUNIT%
 echo TEST_VS=%TEST_VS%
 echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
+echo SKIP_EXPENSIVE_TESTS=%SKIP_EXPENSIVE_TESTS%
 echo.
 
 if "%RestorePackages%"=="" ( 
@@ -222,7 +252,13 @@ if "%RestorePackages%"=="" (
 
 @echo on
 
+call src\update.cmd signonly
+
 :: Check prerequisites
+if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
@@ -291,6 +327,10 @@ fc fsi.exe corehost.exe >nul
 )
 popd
 
+rem copy targestfile into tools directory ... temporary fix until packaging complete.
+copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+
 :: Build Proto
 if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
 
@@ -303,8 +343,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% >%BUILD_LOG%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG%' failed && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen
@@ -359,7 +399,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
     if '%TEST_PORTABLE_COREUNIT%' == '0' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_net40_Error.log 
+            type testresults\CoreUnit_Portable_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunit' failed 
             goto :failed_tests
         )
@@ -369,13 +409,26 @@ if '%TEST_NET40_COREUNIT%' == '0' (
     if '%TEST_PORTABLE_COREUNIT%' == '1' (
         call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS% 
         @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_portable47_Error.log 
+            type testresults\CoreUnit_all_Error.log
             echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitall %TEST_TAGS%' failed 
             goto :failed_tests
         )
     )
 )
-
+if '%TEST_CORECLR%' == '1' (
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\CoreUnit_coreclr_Error.log
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+    call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp coreclr
+    @if ERRORLEVEL 1 (
+        type testresults\FSharp_Failures.log
+        echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+)
 if '%TEST_VS%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
     @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests

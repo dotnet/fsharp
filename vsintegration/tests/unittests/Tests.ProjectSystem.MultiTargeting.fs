@@ -30,8 +30,8 @@ type MultiTargeting() =
         let dirName = Path.GetDirectoryName(projFile)
         let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
         let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
-        let refLibPath = Path.Combine(libDirName, "FSharp.Core.Unittests.dll")
-        File.Copy(Path.Combine(codeBase, "FSharp.Core.Unittests.dll"), refLibPath)
+        let refLibPath = Path.Combine(libDirName, "VisualFSharp.Unittests.dll")
+        File.Copy(Path.Combine(codeBase, "VisualFSharp.Unittests.dll"), refLibPath)
         File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferencesAndOtherFlags([], [refLibPath], [], null, "", "v4.0"))
         refLibPath
 

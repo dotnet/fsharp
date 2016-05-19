@@ -42,11 +42,10 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
-#if FX_RESHAPED_REFLECTION
 
+#if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
-
 #endif
 
     open System.IO
@@ -1325,9 +1324,9 @@ module Printf =
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
 
     [<CompiledName("PrintFormatToStringThen")>]
-    let ksprintf continutation (format : StringFormat<'T, 'Result>) : 'T = 
+    let ksprintf continuation (format : StringFormat<'T, 'Result>) : 'T = 
         doPrintf format (fun n -> 
-            StringPrintfEnv(continutation, n) :> PrintfEnv<_, _, _>
+            StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
