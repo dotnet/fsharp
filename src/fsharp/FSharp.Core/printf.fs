@@ -1324,9 +1324,9 @@ module Printf =
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
 
     [<CompiledName("PrintFormatToStringThen")>]
-    let ksprintf continutation (format : StringFormat<'T, 'Result>) : 'T = 
+    let ksprintf continuation (format : StringFormat<'T, 'Result>) : 'T = 
         doPrintf format (fun n -> 
-            StringPrintfEnv(continutation, n) :> PrintfEnv<_, _, _>
+            StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThen")>]

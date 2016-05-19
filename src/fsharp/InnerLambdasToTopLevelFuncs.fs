@@ -782,14 +782,13 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
            dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL  unpack))
 
        // result 
-       carrierMaps,
        (fc, { ep_etps   = Zset.elements reqdTypars;
               ep_aenvs  = aenvs;
               ep_pack   = pack;
-              ep_unpack = FlatList.ofList unpack})
+              ep_unpack = FlatList.ofList unpack}),carrierMaps
   
    let carriedMaps = Zmap.empty fclassOrder
-   let _carriedMaps,envPacks = List.foldMap packEnv carriedMaps declist   (* List.foldMap in dec order *)
+   let envPacks,_carriedMaps = List.mapFold packEnv carriedMaps declist   (* List.mapFold in dec order *)
    let envPacks = Zmap.ofList fclassOrder envPacks
    envPacks
 
@@ -914,7 +913,7 @@ module Pass4_RewriteAssembly =
 
     let EnterMustInline b z f = 
         let orig = z.rws_mustinline
-        let z',x = f (if b then {z with rws_mustinline = true } else z)
+        let x,z' = f (if b then {z with rws_mustinline = true } else z)
         {z' with rws_mustinline = orig },x
 
     /// extract PreDecs (iff at top-level) 
@@ -924,10 +923,10 @@ module Pass4_RewriteAssembly =
         if z.rws_innerLevel=0 then
           // at top-level, extract preDecs 
           let preDecs = fringeTR z.rws_preDecs
-          {z with rws_preDecs=emptyTR}, preDecs
+          preDecs,{z with rws_preDecs=emptyTR}
         else 
           // not yet top-level, keep decs 
-          z,[]
+          [],z
 
     /// pop and set preDecs  as "LiftedDeclaration tree" 
     let PopPreDecs z     = {z with rws_preDecs=emptyTR},z.rws_preDecs
@@ -1106,7 +1105,7 @@ module Pass4_RewriteAssembly =
     /// At applications, fixup calls  if they are arity-met instances of TLR.
     /// At free vals,    fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
-    let rec TransExpr (penv: RewriteContext) z expr =
+    let rec TransExpr (penv: RewriteContext) (z:RewriteState) expr : Expr * RewriteState =
         match expr with
         // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms *)
         | Expr.LetRec _ | Expr.Let    _ | Expr.Sequential _ -> 
@@ -1117,18 +1116,18 @@ module Pass4_RewriteAssembly =
         //     - patch it.
         | Expr.App (f,fty,tys,args,m) ->
            // pass over f,args subexprs 
-           let z,f      = TransExpr penv z f
-           let z,args = List.foldMap (TransExpr penv) z args
+           let f,z      = TransExpr penv z f
+           let args,z = List.mapFold (TransExpr penv) z args
            // match app, and fixup if needed 
            let f,fty,tys,args,m = destApp (f,fty,tys,args,m)
            let expr = TransApp penv (f,fty,tys,args,m)
-           z,expr
+           expr,z
 
         | Expr.Val (v,_,m) ->
            // consider this a trivial app 
            let fx,fty = expr,v.Type
            let expr = TransApp penv (fx,fty,[],[],m)
-           z,expr
+           expr,z
 
         // reclink - suppress 
         | Expr.Link r ->
@@ -1136,70 +1135,73 @@ module Pass4_RewriteAssembly =
 
         // ilobj - has implicit lambda exprs and recursive/base references 
         | Expr.Obj (_,ty,basev,basecall,overrides,iimpls,m) ->
-            let z,basecall  = TransExpr penv                            z basecall 
-            let z,overrides = List.foldMap (TransMethod penv)                  z overrides
-            let z,iimpls    = List.foldMap (fmap2Of2 (List.foldMap (TransMethod penv))) z iimpls   
+            let basecall,z  = TransExpr penv                            z basecall
+            let overrides,z = List.mapFold (TransMethod penv)                  z overrides            
+            let (iimpls:(TType*ObjExprMethod list)list),(z:RewriteState)    = 
+                List.mapFold (fun z (tType,objExprs) -> 
+                    let objExprs',z' = List.mapFold (TransMethod penv) z objExprs
+                    (tType,objExprs'),z') z iimpls   
             let expr = Expr.Obj(newUnique(),ty,basev,basecall,overrides,iimpls,m)
-            let z,pds = ExtractPreDecs z
-            z,WrapPreDecs m pds expr (* if TopLevel, lift preDecs over the ilobj expr *)
+            let pds,z = ExtractPreDecs z
+            WrapPreDecs m pds expr,z (* if TopLevel, lift preDecs over the ilobj expr *)
 
         // lambda, tlambda - explicit lambda terms 
         | Expr.Lambda(_,ctorThisValOpt,baseValOpt,argvs,body,m,rty) ->
             let z = EnterInner z
-            let z,body = TransExpr penv z body
+            let body,z = TransExpr penv z body
             let z = ExitInner z
-            let z,pds = ExtractPreDecs z
-            z,WrapPreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body,rty))
+            let pds,z = ExtractPreDecs z
+            WrapPreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body,rty)),z
 
         | Expr.TyLambda(_,argtyvs,body,m,rty) ->
             let z = EnterInner z
-            let z,body = TransExpr penv z body
+            let body,z = TransExpr penv z body
             let z = ExitInner z
-            let z,pds = ExtractPreDecs z
-            z,WrapPreDecs m pds (mkTypeLambda m argtyvs (body,rty))
+            let pds,z = ExtractPreDecs z
+            WrapPreDecs m pds (mkTypeLambda m argtyvs (body,rty)),z
 
         /// Lifting TLR out over constructs (disabled)
         /// Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
         | Expr.Match(spBind,exprm,dtree,targets,m,ty) ->
             let targets = Array.toList targets
-            let z,dtree   = TransDecisionTree penv z dtree
-            let z,targets = List.foldMap (TransDecisionTreeTarget penv) z targets
+            let dtree,z   = TransDecisionTree penv z dtree
+            let targets,z = List.mapFold (TransDecisionTreeTarget penv) z targets
             // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs 
-            let z,pds = ExtractPreDecs z
-            z,WrapPreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets)
+            let pds,z = ExtractPreDecs z
+            WrapPreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets),z
 
         // all others - below - rewrite structurally - so boiler plate code after this point... 
-        | Expr.Const _ -> z,expr (* constant wrt Val *)
+        | Expr.Const _ -> expr,z (* constant wrt Val *)
         | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
-            let z,argExprs = List.foldMap (TransExpr penv) z argExprs
-            z,Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty)
+            let argExprs,z = List.mapFold (TransExpr penv) z argExprs
+            Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
         | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
-            z,Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty)
+            Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty),z
         | Expr.Op (c,tyargs,args,m) -> 
-            let z,args = List.foldMap (TransExpr penv) z args
-            z,Expr.Op(c,tyargs,args,m)
+            let args,z = List.mapFold (TransExpr penv) z args
+            Expr.Op(c,tyargs,args,m),z
         | Expr.StaticOptimization (constraints,e2,e3,m) ->
-            let z,e2 = TransExpr penv z e2
-            let z,e3 = TransExpr penv z e3
-            z,Expr.StaticOptimization(constraints,e2,e3,m)
+            let e2,z = TransExpr penv z e2
+            let e3,z = TransExpr penv z e3
+            Expr.StaticOptimization(constraints,e2,e3,m),z
         | Expr.TyChoose (_,_,m) -> 
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
 
     /// Walk over linear structured terms in tail-recursive loop, using a continuation 
     /// to represent the rebuild-the-term stack 
-    and TransLinearExpr penv z expr contf =
+    and TransLinearExpr penv z expr (contf: Expr * RewriteState -> Expr * RewriteState) =
         match expr with 
         | Expr.Sequential (e1,e2,dir,spSeq,m) -> 
-            let z,e1 = TransExpr penv z e1
-            TransLinearExpr penv z e2 (contf << (fun (z,e2) ->  
-                z,Expr.Sequential(e1,e2,dir,spSeq,m)))
+            let e1,z = TransExpr penv z e1
+            TransLinearExpr penv z e2 (contf << (fun (e2,z) ->  
+                Expr.Sequential(e1,e2,dir,spSeq,m),z))
 
          // letrec - pass_recbinds does the work 
          | Expr.LetRec (binds,e,m,_) ->
              let z = EnterInner z
              // For letrec, preDecs from RHS must mutually recurse with those from the bindings 
              let z,pdsPrior    = PopPreDecs z
-             let z,binds       = FlatList.foldMap (TransBindingRhs penv) z binds
+             let binds,z       = FlatList.mapFold (TransBindingRhs penv) z binds
              let z,pdsRhs      = PopPreDecs z
              let binds,rebinds = TransBindings   IsRec penv binds
              let z,binds       = LiftTopBinds IsRec penv z   binds (* factor Top* repr binds *)
@@ -1207,110 +1209,112 @@ module Pass4_RewriteAssembly =
              let z,pdsBind     = PopPreDecs z
              let z             = SetPreDecs z (TreeNode [pdsPrior;RecursivePreDecs pdsBind pdsRhs])
              let z = ExitInner z
-             let z,pds = ExtractPreDecs z
+             let pds,z = ExtractPreDecs z
              // tailcall
-             TransLinearExpr penv z e (contf << (fun (z,e) -> 
+             TransLinearExpr penv z e (contf << (fun (e,z) -> 
                  let e = mkLetsFromBindings m rebinds e
-                 z,WrapPreDecs m pds (Expr.LetRec (binds,e,m,NewFreeVarsCache()))))
+                 WrapPreDecs m pds (Expr.LetRec (binds,e,m,NewFreeVarsCache())),z))
 
          // let - can consider the mu-let bindings as mu-letrec bindings - so like as above 
          | Expr.Let    (bind,e,m,_) ->
 
              // For let, preDecs from RHS go before those of bindings, which is collection order 
-             let z,bind       = TransBindingRhs penv z bind
+             let bind,z       = TransBindingRhs penv z bind
              let binds,rebinds = TransBindings   NotRec penv (FlatList.one bind)
              // factor Top* repr binds 
              let z,binds       = LiftTopBinds NotRec penv z   binds  
              let z,rebinds     = LiftTopBinds NotRec penv z rebinds
              // any lifted PreDecs from binding, if so wrap them... 
-             let z,pds = ExtractPreDecs z
+             let pds,z = ExtractPreDecs z
              // tailcall
-             TransLinearExpr penv z e (contf << (fun (z,e) -> 
+             TransLinearExpr penv z e (contf << (fun (e,z) -> 
                  let e = mkLetsFromBindings m rebinds e
-                 z,WrapPreDecs m pds (mkLetsFromBindings m binds e)))
+                 WrapPreDecs m pds (mkLetsFromBindings m binds e),z))
 
          | LinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty) ->
-             let z,dtree = TransDecisionTree penv z dtree
-             let z,tg1 = TransDecisionTreeTarget penv z tg1
+             let dtree,z = TransDecisionTree penv z dtree
+             let tg1,z = TransDecisionTreeTarget penv z tg1
              // tailcall
-             TransLinearExpr penv z e2 (contf << (fun (z,e2) ->
-                 z,rebuildLinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty)))
+             TransLinearExpr penv z e2 (contf << (fun (e2,z) ->
+                 rebuildLinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty),z))
 
          | _ -> 
             contf (TransExpr penv z expr)
       
-    and TransMethod penv z (TObjExprMethod(slotsig,attribs,tps,vs,e,m)) =
+    and TransMethod penv (z:RewriteState) (TObjExprMethod(slotsig,attribs,tps,vs,e,m)) =
         let z = EnterInner z 
-        let z,e = TransExpr penv z e
+        let e,z = TransExpr penv z e
         let z = ExitInner z 
-        z,TObjExprMethod(slotsig,attribs,tps,vs,e,m)
+        TObjExprMethod(slotsig,attribs,tps,vs,e,m),z
 
-    and TransBindingRhs penv z (TBind(v,e,letSeqPtOpt)) = 
+    and TransBindingRhs penv z (TBind(v,e,letSeqPtOpt)) : Binding * RewriteState = 
         let mustInline = v.MustInline
         let z,e = EnterMustInline mustInline z (fun z -> TransExpr penv z e)
-        z,TBind (v,e,letSeqPtOpt)
+        TBind (v,e,letSeqPtOpt),z
 
-    and TransDecisionTree penv z x =
+    and TransDecisionTree penv z x : DecisionTree * RewriteState =
        match x with 
        | TDSuccess (es,n) -> 
-           let z,es = FlatList.foldMap (TransExpr penv) z es
-           z,TDSuccess(es,n)
+           let es,z = FlatList.mapFold (TransExpr penv) z es
+           TDSuccess(es,n),z
        | TDBind (bind,rest) -> 
-           let z,bind       = TransBindingRhs penv z bind
-           let z,rest = TransDecisionTree penv z rest
-           z,TDBind(bind,rest)
+           let bind,z       = TransBindingRhs penv z bind
+           let rest,z = TransDecisionTree penv z rest
+           TDBind(bind,rest),z
        | TDSwitch (e,cases,dflt,m) ->
-           let z,e = TransExpr penv z e
+           let e,z = TransExpr penv z e
            let TransDecisionTreeCase penv z (TCase (discrim,dtree)) =
-               let z,dtree = TransDecisionTree penv z dtree
-               z,TCase(discrim,dtree)
+               let dtree,z = TransDecisionTree penv z dtree
+               TCase(discrim,dtree),z
           
-           let z,cases = List.foldMap (TransDecisionTreeCase penv) z cases
-           let z,dflt  = Option.foldMap (TransDecisionTree penv)      z dflt
-           z,TDSwitch (e,cases,dflt,m)
+           let cases,z = List.mapFold (TransDecisionTreeCase penv) z cases
+           let dflt,z  = Option.mapFold (TransDecisionTree penv)      z dflt
+           TDSwitch (e,cases,dflt,m),z
 
     and TransDecisionTreeTarget penv z (TTarget(vs,e,spTarget)) =
         let z = EnterInner z 
-        let z,e = TransExpr penv z e
+        let e,z = TransExpr penv z e
         let z = ExitInner z
-        z,TTarget(vs,e,spTarget)
+        TTarget(vs,e,spTarget),z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind 
-    and TransValBindings penv z binds = FlatList.foldMap (TransValBinding penv) z  binds
+    and TransValBindings penv z binds = FlatList.mapFold (TransValBinding penv) z  binds
     and TransModuleExpr penv z x = 
         match x with  
         | ModuleOrNamespaceExprWithSig(mty,def,m) ->  
-            let z,def = TransModuleDef penv z def
-            z,ModuleOrNamespaceExprWithSig(mty,def,m)
+            let def,z = TransModuleDef penv z def
+            ModuleOrNamespaceExprWithSig(mty,def,m),z
         
-    and TransModuleDefs penv z x = List.foldMap (TransModuleDef penv) z x
-    and TransModuleDef penv (z: RewriteState) x = 
+    and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
+    and TransModuleDef penv (z: RewriteState) x : ModuleOrNamespaceExpr * RewriteState = 
         match x with 
         | TMDefRec(tycons,binds,mbinds,m) -> 
-            let z,binds = TransValBindings penv z binds
-            let z,mbinds = TransModuleBindings penv z mbinds
-            z,TMDefRec(tycons,binds,mbinds,m)
+            let binds,z = TransValBindings penv z binds
+            let mbinds,z = TransModuleBindings penv z mbinds
+            TMDefRec(tycons,binds,mbinds,m),z
         | TMDefLet(bind,m)            -> 
-            let z,bind = TransValBinding penv z bind
-            z,TMDefLet(bind,m)
+            let bind,z = TransValBinding penv z bind
+            TMDefLet(bind,m),z
         | TMDefDo(e,m)            -> 
-            let z,_bind = TransExpr penv z e
-            z,TMDefDo(e,m)
+            let _bind,z = TransExpr penv z e
+            TMDefDo(e,m),z
         | TMDefs(defs)   -> 
-            let z,defs = TransModuleDefs penv z defs
-            z,TMDefs(defs)
+            let defs,z = TransModuleDefs penv z defs
+            TMDefs(defs),z
         | TMAbstract(mexpr) -> 
-            let z,mexpr = TransModuleExpr penv z mexpr
-            z,TMAbstract(mexpr)
-    and TransModuleBindings penv z binds = List.foldMap (TransModuleBinding penv) z  binds
+            let mexpr,z = TransModuleExpr penv z mexpr
+            TMAbstract(mexpr),z
+    and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
     and TransModuleBinding penv z (ModuleOrNamespaceBinding(nm, rhs)) =
-        let z,rhs = TransModuleDef penv z rhs
-        z,ModuleOrNamespaceBinding(nm,rhs)
+        let rhs,z = TransModuleDef penv z rhs
+        ModuleOrNamespaceBinding(nm,rhs),z
 
-    let TransImplFile penv z mv = fmapTImplFile (TransModuleExpr penv) z mv
+    let TransImplFile penv z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) =        
+        let moduleExpr,z = TransModuleExpr penv z moduleExpr
+        TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript),z
 
     let TransAssembly penv z (TAssembly(mvs)) = 
-        let _z,mvs = List.foldMap (TransImplFile penv) z mvs 
+        let mvs,_z = List.mapFold (TransImplFile penv) z mvs 
         TAssembly(mvs)
 
 //-------------------------------------------------------------------------
@@ -1338,7 +1342,7 @@ let MakeTLRDecisions ccu g expr =
 
       // pass4: rewrite 
       if verboseTLR then dprintf "TransExpr(rw)------\n";
-      let _,expr = 
+      let expr,_ = 
           let penv : Pass4_RewriteAssembly.RewriteContext = 
               {ccu=ccu; g=g; tlrS=tlrS; topValS=topValS; arityM=arityM; fclassM=fclassM; recShortCallS=recShortCallS; envPackM=envPackM; fHatM=fHatM}
           let z = Pass4_RewriteAssembly.rewriteState0

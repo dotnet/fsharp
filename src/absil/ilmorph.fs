@@ -44,32 +44,26 @@ let bblock_instr2instr f bb =
     {bb with Instructions=res}
 
 // This is quite performance critical 
-let nonNil x = match x with [] -> false | _ -> true
 let bblock_instr2instrs f bb = 
-  let instrs = bb.Instructions 
-  let codebuf = ref (Array.zeroCreate (Array.length instrs)) 
-  let codebuf_size = ref 0 
-  for i = 0 to Array.length instrs - 1 do 
-    let instr = instrs.[i] 
-    let instrs = f instr 
-    let curr = ref instrs 
-    while nonNil !curr do
-        match !curr with 
-        | instr2::t ->  
-            let sz = !codebuf_size 
-            let old_buf_size = Array.length !codebuf 
-            let new_size = sz + 1 
-            if new_size > old_buf_size then begin
-              let old = !codebuf 
+    let instrs = bb.Instructions 
+    let mutable codebuf = Array.zeroCreate (Array.length instrs) 
+    let mutable codebuf_size = 0 
+    for instr in instrs do 
+        let instrs : list<_> = f instr
+        for instr2 in instrs do
+            let sz = codebuf_size 
+            let old_buf_size = Array.length codebuf 
+            let new_size = sz + 1
+            if new_size > old_buf_size then
+              let old = codebuf 
               let new' = Array.zeroCreate (max new_size (old_buf_size * 4)) 
-              Array.blit old 0 new' 0 sz;
-              codebuf := new';
-            end;
-            (!codebuf).[sz] <- instr2;
-            incr codebuf_size;
-            curr := t;
-        | [] -> ()
-  {bb with Instructions = Array.sub !codebuf 0 !codebuf_size}
+              Array.blit old 0 new' 0 sz
+              codebuf <- new'
+              
+            codebuf.[sz] <- instr2
+            codebuf_size <- codebuf_size + 1 
+          
+    {bb with Instructions = Array.sub codebuf 0 codebuf_size}
 
 // Map each instruction in a basic block to a more complicated block that 
 // may involve internal branching, but which will still have one entry 
