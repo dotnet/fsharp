@@ -25,8 +25,8 @@ open System.Reflection
 #if !FX_NO_WINFORMS
 open System.Windows.Forms
 #endif
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -34,24 +34,26 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter 
 open Microsoft.FSharp.Compiler.Interactive.Settings
 open Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.CompileOptions
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.IlxGen
-open Microsoft.FSharp.Compiler.Range
+
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Optimizer
-open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.InfoReader
+open Microsoft.FSharp.Compiler.IlxGen
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.Optimizer
 open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.TypeChecker
+open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.Tastops
+open Microsoft.FSharp.Compiler.TcGlobals
 
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
@@ -766,7 +768,7 @@ let internal WithImplicitHome (tcConfigB, dir) f =
 /// A single instance of this object is created per interactive session.
 type internal FsiDynamicCompiler
                        (timeReporter : FsiTimeReporter, 
-                        tcConfigB, 
+                        tcConfigB: TcConfigBuilder, 
                         tcLockObject : obj, 
                         errorLogger: ErrorLoggerThatStopsOnFirstError, 
                         outWriter: TextWriter,
@@ -795,7 +797,7 @@ type internal FsiDynamicCompiler
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())    
 
     /// Add attributes 
-    let CreateModuleFragment (tcConfigB, assemblyName, codegenResults) =
+    let CreateModuleFragment (tcConfigB: TcConfigBuilder, assemblyName, codegenResults) =
         if !progress then fprintfn fsiConsoleOutput.Out "Creating main module...";
         let mainModule = mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfigB.target assemblyName) (tcConfigB.target = Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule 
@@ -962,7 +964,7 @@ type internal FsiDynamicCompiler
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
-        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],true (* isLastCompiland *) ))
+        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput = ProcessInputs (istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
@@ -1080,7 +1082,7 @@ type internal FsiDynamicCompiler
               |> List.map (fun (filename, input)-> 
                     let parsedInput = 
                         match input with 
-                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],filename,true,errorLogger,(*retryLocked*)false)
+                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],filename,(true,false),errorLogger,(*retryLocked*)false)
                         | _-> input
                     filename, parsedInput)
               |> List.unzip
@@ -1131,10 +1133,10 @@ type internal FsiIntellisenseProvider(tcGlobals, tcImports: TcImports) =
         let tcState = istate.tcState (* folded through now? *)
 
         let amap = tcImports.GetImportMap()
-        let infoReader = new Infos.InfoReader(tcGlobals,amap)
+        let infoReader = new InfoReader(tcGlobals,amap)
         let ncenv = new NameResolution.NameResolver(tcGlobals,amap,infoReader,NameResolution.FakeInstantiationGenerator)
         // Note: for the accessor domain we should use (AccessRightsOfEnv tcState.TcEnvFromImpls)
-        let ad = Infos.AccessibleFromSomeFSharpCode
+        let ad = AccessibleFromSomeFSharpCode
         let nItems = NameResolution.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName) 
         let names  = names |> List.filter (fun (name:string) -> name.StartsWith(stem,StringComparison.Ordinal)) 

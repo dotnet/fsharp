@@ -30,18 +30,29 @@ There are various qualifiers:
     build.cmd release         -- build release (the default)
     build.cmd debug           -- build debug instead of release
 
+    build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
+
+    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools)
     build.cmd compiler        -- build/tests only the compiler (not the Visual F# IDE Tools)
     build.cmd vs              -- build/tests the Visual F# IDE Tools
     build.cmd pcls            -- build/tests the PCL FSharp.Core libraries
 
     build.cmd build           -- build, do not test
-    build.cmd smoke           -- build, run smoke tests
     build.cmd ci              -- build, run the same tests as CI 
     build.cmd all             -- build, run all tests
+    build.cmd notests         -- turn off testing (used in conjunction with other options)
+
+    build.cmd test-smoke      -- build, run smoke tests
+    build.cmd test-coreunit   -- build, run FSharp.Core tests
+    build.cmd test-coreclr    -- build, run CoreCLR tests
+    build.cmd test-pcls       -- build, run PCL tests
+    build.cmd test-fsharp     -- build, run tests\fsharp suite
+    build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite
+    build.cmd test-vs         -- build, run Visual F# IDE Tools unit tests
 
 Combinations are also allowed:
 
-    build.cmd debug,compiler,smoke   -- build the debug compiler and run smoke tests
+    build.cmd debug,compiler,notests   -- build the debug compiler and run smoke tests
 
 After you build the first time you can open and use this solution:
 
@@ -136,8 +147,8 @@ For **Release** this corresponds to these steps, which you can run individually 
 
 ### 4. [Optional] Install the Visual F# IDE Tools 
 
-**Note:** This step will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
-components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
+**Note:** This step will install a VSIX extension into Visual Studio 15 that changes the Visual F# IDE Tools 
+components installed into Visual Studio 15.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**:
 
@@ -153,7 +164,7 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
 
 ### 5. [Optional] Clobber the F# SDK on the machine
 
-**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the only way to revert this step.  
+**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 15 is currently the only way to revert this step.  
 
 For **Debug**:
 
@@ -162,7 +173,6 @@ For **Debug**:
 For **Release**:
 
 1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
-
 
 ### Notes on the build
 

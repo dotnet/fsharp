@@ -1351,9 +1351,13 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 Trace.PrintLine("ProjectSystem", fun _ -> sprintf "Called InvokeMsBuild(%s), result: %A" target result)
 #endif
                 result
-            
+
             // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
+#if FX_NO_CONVERTER
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
+#else
             member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+#endif
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1370,10 +1374,14 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
                 if actuallyBuild then
+#if FX_NO_CONVERTER
+                    compile.Invoke()
+#else
                     compile.Invoke(0)
+#endif
                 else
                     0
-            
+
             // returns an array of all "foo"s of form: <Compile Include="foo"/>
             member private x.ComputeCompileItems() =
                 FSharpProjectNode.ComputeCompileItems(x.BuildProject, x.ProjectFolder)
@@ -1990,32 +1998,32 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
        | ApplicationDefinition = 4
        | Page = 5
        | Resource  = 6
-       
+
     and public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
         inherit PropertyDescriptor(prop)
-        
+
         override this.DisplayName = SR.BuildAction
-        
+
         override this.ComponentType = typeof<FSharpFileNodeProperties>
-        
+
         override this.PropertyType = typeof<VSLangProj.prjBuildAction>
-        
+
         override this.IsReadOnly = false
-        
+
         override this.GetEditor(editorBaseType : Type) = this.CreateInstance(editorBaseType)
-        
+
         override this.Converter = null
-        
+
         override this.CanResetValue(o : obj) = prop.CanResetValue(o)
-        
+
         override this.GetValue (o : obj) =
             prop.GetValue(o)
-            
+
         override this.SetValue (o : obj, value : obj) =
             prop.SetValue(o, value)
-        
+
         override this.ResetValue (o : obj) = prop.ResetValue(o)
-        
+
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
     and 

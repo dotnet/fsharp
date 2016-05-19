@@ -98,28 +98,11 @@ module ``656`` =
         do! peverify "pack.exe"
         }
 
-    let run cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile = fileguard "test.ok"
-
-        // %CLIX% pack.exe
-        do! exec ("."/"pack.exe") ""
-
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-        }
-
     [<Test; FSharpSuiteTest("regression/656")>]
     let ``656`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir
-
-        do! run cfg dir
                 
         })
 

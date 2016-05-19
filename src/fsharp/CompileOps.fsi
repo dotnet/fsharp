@@ -67,7 +67,7 @@ val ComputeQualifiedNameOfFileFromUniquePath : range * string list -> Ast.Qualif
 
 val PrependPathToInput : Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
-val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland: bool -> Ast.ParsedInput
+val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
 //----------------------------------------------------------------------------
 // Error and warnings
@@ -511,7 +511,7 @@ type TcConfig =
     /// Get the loaded sources that exist and issue a warning for the ones that don't
     member GetAvailableLoadedSources : unit -> (range*string) list
     
-    member ComputeCanContainEntryPoint : sourceFiles:string list -> bool list 
+    member ComputeCanContainEntryPoint : sourceFiles:string list -> bool list *bool 
 
     /// File system query based on TcConfig settings
     member ResolveSourceFile : range * string * string -> string
@@ -682,7 +682,7 @@ val DefaultBasicReferencesForOutOfProjectSources : string list
 //--------------------------------------------------------------------------
 
 /// Parse one input file
-val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: bool * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
+val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: (bool * bool) * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
 
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state

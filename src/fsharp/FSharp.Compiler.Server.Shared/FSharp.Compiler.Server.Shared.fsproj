@@ -11,7 +11,6 @@
     <ProjectGuid>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InternalsVisibleTo.fs" />

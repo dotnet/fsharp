@@ -7,19 +7,9 @@ open NUnit.Framework
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
+open FSharpTestSuiteAsserts
 
 let testContext = FSharpTestSuite.testContext
-
-let requireVSUltimate cfg = attempt {
-    do! match cfg.INSTALL_SKU with
-        | Some (Ultimate) -> Success
-        | x ->
-            // IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
-            //     echo Test not supported except on Ultimate
-            NUnitConf.skip (sprintf "Test not supported except on Ultimate, was %A" x)
-            //     exit /b 0
-            // )
-    }
 
 module Access =
     [<Test; FSharpSuiteScriptPermutations("core/access")>]
@@ -667,7 +657,6 @@ module Printing =
     // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
     // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
     [<Test>]
-    [<SetCulture("en-US"); SetUICulture("en-US")>] //not enough
     [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.stdout.txt", "z.output.test.default.stdout.bsl", "z.output.test.default.stderr.txt", "z.output.test.default.stderr.bsl")>]
     [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.stdout.txt", "z.output.test.1000.stdout.bsl", "z.output.test.1000.stderr.txt", "z.output.test.1000.stderr.bsl")>]
     [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize200.fsx", "z.output.test.200.stdout.txt", "z.output.test.200.stdout.bsl", "z.output.test.200.stderr.txt", "z.output.test.200.stderr.bsl")>]
@@ -675,6 +664,8 @@ module Printing =
     [<FSharpSuiteTestCase("core/printing", "--quiet", "z.output.test.quiet.stdout.txt", "z.output.test.quiet.stdout.bsl", "z.output.test.quiet.stderr.txt", "z.output.test.quiet.stderr.bsl")>]
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
+
+        do! requireENCulture ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
@@ -2508,24 +2499,6 @@ module Verify =
         let peverify' = Commands.peverify exec cfg.PEVERIFY
         let getfullpath = Commands.getfullpath dir
 
-        // "%PEVERIFY%" "%FSCOREDLLPATH%"
-        do! peverify cfg.FSCOREDLLPATH
-
-        // "%PEVERIFY%" "%FSCOREDLL20PATH%"
-        do! peverify cfg.FSCOREDLL20PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLPORTABLEPATH%"
-        do! peverify cfg.FSCOREDLLPORTABLEPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCOREPATH%"
-        do! peverify cfg.FSCOREDLLNETCOREPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE78PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE78PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE259PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE259PATH
-
         // "%PEVERIFY%" "%FSCBinPath%\FSharp.Build.dll"
         do! peverify (cfg.FSCBinPath/"FSharp.Build.dll")
 
@@ -2544,14 +2517,4 @@ module Verify =
 
         // "%PEVERIFY%" xmlverify.exe
         do! peverify "xmlverify.exe"
-
-        // REM == Calc correct path to FSharp.Core.dll no matter what arch we are on
-        // call :SetFSCoreXMLPath "%FSCOREDLLPATH%"
-        // :SetFSCoreXMLPath
-        // set FSHARPCOREXML=%~dpn1.xml
-        let FSharpCoreXml = Path.ChangeExtension(cfg.FSCOREDLLPATH, ".xml") |> getfullpath
-
-        // %CLIX% xmlverify.exe "%FSHARPCOREXML%"
-        do! exec ("."/"xmlverify.exe") FSharpCoreXml
-                
         })
