@@ -4,17 +4,17 @@
   <Identifier Id="FSharp.Editor">
     <Name>Microsoft Visual FSharp Editor Extensions</Name>
     <Author>Microsoft Corporation</Author>
-    <Version>14.0</Version>
+    <Version>15.0</Version>
     <Description>Microsoft Visual FSharp Editor Extensions</Description>
     <Locale>1033</Locale>
     <SupportedProducts>
-      <VisualStudio Version="14.0">
+      <VisualStudio Version="15.0">
         <Edition>Pro</Edition>
         <Edition>VWDExpress</Edition>
         <Edition>WDExpress</Edition>
       </VisualStudio>
     </SupportedProducts>
-    <SupportedFrameworkRuntimeEdition MinVersion="4.5" />
+    <SupportedFrameworkRuntimeEdition MinVersion="4.6" />
     <SystemComponent>true</SystemComponent>
   </Identifier>
   <References />

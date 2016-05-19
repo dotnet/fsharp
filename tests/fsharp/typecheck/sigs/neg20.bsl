@@ -1,202 +1,199 @@
 
 neg20.fs(30,28,30,31): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(31,32,31,35): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(32,28,32,31): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(32,32,32,35): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(34,24,34,27): typecheck error FS0001: This expression was expected to have type
-    obj    
+    'obj'    
 but here has type
-    string    
+    'string'    
 
 neg20.fs(35,24,35,27): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(43,15,43,18): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(44,19,44,22): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(45,15,45,18): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(45,19,45,22): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(47,11,47,14): typecheck error FS0001: This expression was expected to have type
-    obj    
+    'obj'    
 but here has type
-    string    
+    'string'    
 
 neg20.fs(48,11,48,14): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(52,24,52,31): typecheck error FS0001: This expression was expected to have type
-    A    
+    'A'    
 but here has type
-    B    
+    'B'    
 
 neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to have type
-    System.ValueType    
+    'System.ValueType'    
 but here has type
-    int    
+    'int'    
 
 neg20.fs(60,26,60,33): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    A    
+    'A'    
 
 neg20.fs(61,27,61,35): typecheck error FS0001: This expression was expected to have type
-    B1    
+    'B1'    
 but here has type
-    B2    
+    'B2'    
 
 neg20.fs(62,26,62,33): typecheck error FS0001: This expression was expected to have type
-    C    
+    'C'    
 but here has type
-    B    
+    'B'    
 
 neg20.fs(66,25,66,32): typecheck error FS0001: This expression was expected to have type
-    A    
+    'A'    
 but here has type
-    B    
+    'B'    
 
 neg20.fs(67,27,67,34): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    C    
+    'C'    
 
 neg20.fs(70,31,70,38): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    C    
+    'C'    
 
 neg20.fs(71,34,71,42): typecheck error FS0001: Type mismatch. Expecting a
-    A list    
+    'A list'    
 but given a
-    B list    
+    'B list'    
 The type 'A' does not match the type 'B'
 
 neg20.fs(75,30,75,37): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    C    
+    'C'    
 
 neg20.fs(76,34,76,43): typecheck error FS0001: Type mismatch. Expecting a
-    A list    
+    'A list'    
 but given a
-    B list    
+    'B list'    
 The type 'A' does not match the type 'B'
 
 neg20.fs(80,23,80,39): typecheck error FS0193: Type constraint mismatch. The type 
-    C list    
+    'C list'    
 is not compatible with type
-    seq<B>    
-The type 'C list' is not compatible with the type 'seq<B>'
+    'seq<B>'    
+
 
 neg20.fs(81,34,81,43): typecheck error FS0001: Type mismatch. Expecting a
-    A list    
+    'A list'    
 but given a
-    B list    
+    'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: This expression was expected to have type
-    B    
-but here has type
-    C    
+neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return the same type. This expression was expected to have type 'B' but here has type 'C'.
 
 neg20.fs(87,54,87,61): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    C    
+    'C'    
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
-    A    
+    'A'    
 but here has type
-    B    
+    'B'    
 
 neg20.fs(96,26,96,33): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    A    
+    'A'    
 
 neg20.fs(97,26,97,33): typecheck error FS0001: This expression was expected to have type
-    A    
+    'A'    
 but here has type
-    B    
+    'B'    
 
 neg20.fs(99,26,99,33): typecheck error FS0001: This expression was expected to have type
-    B    
+    'B'    
 but here has type
-    A    
+    'A'    
 
 neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
-    B * B -> 'a    
+    'B * B -> 'a'    
 but given a
-    A * A -> Data    
+    'A * A -> Data'    
 The type 'B' does not match the type 'A'
 
 neg20.fs(109,12,109,16): typecheck error FS0001: Type mismatch. Expecting a
-    A * B -> 'a    
+    'A * B -> 'a'    
 but given a
-    A * A -> Data    
+    'A * A -> Data'    
 The type 'B' does not match the type 'A'
 
 neg20.fs(110,12,110,16): typecheck error FS0001: Type mismatch. Expecting a
-    B * A -> 'a    
+    'B * A -> 'a'    
 but given a
-    A * A -> Data    
+    'A * A -> Data'    
 The type 'B' does not match the type 'A'
 
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to have type
-    obj    
+    'obj'    
 but here has type
-    string    
+    'string'    
 
 neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'. The available overloads are shown below (or in the Error List window).
 neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static member C.OM3 : x:'b * y:int -> int'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    int    
-The type 'obj' is not compatible with the type 'int'.
+    'int'    
+.
 neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static member C.OM3 : x:'b * y:'b -> int'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    'a    
-The type 'obj' is not compatible with the type ''a'.
+    ''a'    
+.
 
 neg20.fs(152,13,152,23): typecheck error FS0033: The type 'Test.BadNumberOfGenericParameters.C<_>' expects 1 type argument(s) but is given 2
 
@@ -228,57 +225,57 @@ neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructo
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
 neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    int    
-The type 'obj' is not compatible with the type 'int'.
+    'int'    
+.
 neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    int []    
-The type 'obj' is not compatible with the type 'int []'.
+    'int []'    
+.
 
 neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
-    unit    
+    'unit'    
 but here has type
-    string    
+    'string'    
 
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    int    
+    'int'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
-    int    
+    'int'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
 neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    string    
-The type 'obj' is not compatible with the type 'string'.
+    'string'    
+.
 neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
-    obj    
+    'obj'    
 is not compatible with type
-    string []    
-The type 'obj' is not compatible with the type 'string []'.
+    'string []'    
+.
 
 neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
-    unit    
+    'unit'    
 but here has type
-    string    
+    'string'    
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    obj    
+    'obj'    
 
 neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for use on this language element
 

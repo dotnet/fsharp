@@ -5,8 +5,8 @@
 //<Expects id="FS0039" status="error" span="(56,7-56,11)">The field, constructor or member 'Home' is not defined</Expects>
 //<Expects id="FS0366" status="error" span="(60,6-62,8)">No implementation was given for 'abstract member I_002\.Me : 'a -> int'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'\.</Expects>
 //<Expects id="FS0366" status="error" span="(60,6-62,8)">No implementation was given for 'abstract member I_002\.Me : 'a -> int'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'\.</Expects>
-//<Expects id="FS0001" status="error" span="(64,24-64,32)">This expression was expected to have type.    int    .but here has type.    string</Expects>
-//<Expects id="FS0001" status="error" span="(65,24-65,30)">This expression was expected to have type.    int    .but here has type.    char</Expects>
+//<Expects id="FS0001" status="error" span="(64,24-64,32)">This expression was expected to have type.    'int'    .but here has type.    'string'</Expects>
+//<Expects id="FS0001" status="error" span="(65,24-65,30)">This expression was expected to have type.    'int'    .but here has type.    'char'</Expects>
 
 //Interface - empty
 type I_000<'a> =
