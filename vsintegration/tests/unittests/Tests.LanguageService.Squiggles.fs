@@ -500,7 +500,7 @@ type X() =
         let errors = GetErrors(proj)
         let desiredError = errors |> List.tryFind (fun e -> e.Message = "Unexpected floating point literal in pattern. Expected identifier, '(', '(*)' or other token.")
         match desiredError with
-        | None -> Assert.Fail("did not find expected error")
+        | None -> Assert.Fail(sprintf "did not find expected error in %A" errors)
         | Some(e) -> 
             Assert.IsTrue(e.Context = TextSpan(iStartLine=5, iStartIndex=31, iEndLine=5, iEndIndex=34), "error had wrong location")   
   
