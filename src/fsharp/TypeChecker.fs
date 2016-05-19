@@ -4460,9 +4460,9 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
             | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),v,_) -> (Some id, v)
             | v -> (None, v))
     let unnamedArgs = args |> Seq.takeWhile (fst >> isNone) |> Seq.toArray |> Array.map snd
-    let otherArgs = args |> Seq.skipWhile (fst >> isNone) |> Seq.toList
-    let namedArgs = otherArgs |> Seq.takeWhile (fst >> isSome) |> Seq.toList |> List.map (map1Of2 Option.get)
-    let otherArgs = otherArgs |> Seq.skipWhile (fst >> isSome) |> Seq.toList
+    let otherArgs = args |> List.skipWhile (fst >> isNone)
+    let namedArgs = otherArgs |> List.takeWhile (fst >> isSome) |> List.map (map1Of2 Option.get)
+    let otherArgs = otherArgs |> List.skipWhile (fst >> isSome)
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
     for (n,_) in namedArgs do
@@ -12382,8 +12382,8 @@ module TyconBindingChecking = begin
                                 | PassAIncrClassCtorJustAfterLastLet
                                 | PassAMember _ -> true
                             let restRev = List.rev rest
-                            let afterRev = restRev |> Seq.takeWhile isAfter |> Seq.toList
-                            let beforeRev = restRev |> Seq.skipWhile isAfter |> Seq.toList
+                            let afterRev = restRev |> List.takeWhile isAfter
+                            let beforeRev = restRev |> List.skipWhile isAfter
                             
                             [ yield!  List.rev beforeRev
                               yield PassAIncrClassCtorJustAfterLastLet

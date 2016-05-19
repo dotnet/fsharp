@@ -2793,8 +2793,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         |> List.map resolveLoadedSource 
         |> List.filter Option.isSome 
         |> List.map Option.get                
-        |> Seq.distinct
-        |> Seq.toList        
+        |> List.distinct     
 
     /// A closed set of assemblies where, for any subset S:
     ///    -  the TcImports object built for S (and thus the F# Compiler CCUs for the assemblies in S) 
