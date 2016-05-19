@@ -921,7 +921,7 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k
-    member x.Values = contents.Values |> Seq.concat
+    member x.Values = contents.Values |> List.concat
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 
 [<AutoOpen>]

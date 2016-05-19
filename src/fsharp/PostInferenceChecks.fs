@@ -958,7 +958,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
 
     // Check for violations of allowMultiple = false
     let duplicates = 
-        tcrefs 
+        tcrefs
         |> Seq.groupBy (fun (tcref,_) -> tcref.Stamp) 
         |> Seq.map (fun (_,elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_,count) -> count > 1) 
