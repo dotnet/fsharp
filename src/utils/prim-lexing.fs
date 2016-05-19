@@ -184,9 +184,9 @@ namespace Internal.Utilities.Text.Lexing
                     if lexBuffer.IsPastEndOfStream then failwith "End of file on lexing stream";
                     lexBuffer.IsPastEndOfStream <- true;
                     //printf "state %d --> %d on eof\n" state snew;
-                    scanUntilSentinel(lexBuffer,snew)
+                    scanUntilSentinel lexBuffer snew
             else 
-                scanUntilSentinel(lexBuffer, state)
+                scanUntilSentinel lexBuffer state
 
         let onAccept (lexBuffer:LexBuffer<char>,a) = 
             lexBuffer.LexemeLength <- lexBuffer.BufferScanLength;
@@ -201,7 +201,7 @@ namespace Internal.Utilities.Text.Lexing
         let numUnicodeCategories = 30 
         let numLowUnicodeChars = 128 
         let numSpecificUnicodeChars = (trans.[0].Length - 1 - numLowUnicodeChars - numUnicodeCategories)/2
-        let lookupUnicodeCharacters (state,inp) = 
+        let lookupUnicodeCharacters state inp =
             let inpAsInt = int inp
             // Is it a fast ASCII character?
             if inpAsInt < numLowUnicodeChars then 
@@ -235,7 +235,7 @@ namespace Internal.Utilities.Text.Lexing
                 loop 0
         let eofPos    = numLowUnicodeChars + 2*numSpecificUnicodeChars + numUnicodeCategories 
         
-        let rec scanUntilSentinel(lexBuffer,state) =
+        let rec scanUntilSentinel lexBuffer state =
             // Return an endOfScan after consuming the input 
             let a = int accept.[state] 
             if a <> sentinel then 
@@ -251,14 +251,14 @@ namespace Internal.Utilities.Text.Lexing
                 let inp = lexBuffer.Buffer.[lexBuffer.BufferScanPos]
                 
                 // Find the new state
-                let snew = lookupUnicodeCharacters (state,inp)
+                let snew = lookupUnicodeCharacters state inp
 
                 if snew = sentinel then 
                     lexBuffer.EndOfScan()
                 else 
                     lexBuffer.BufferScanLength <- lexBuffer.BufferScanLength + 1;
                     //printf "state %d --> %d on '%c' (%d)\n" s snew (char inp) inp;
-                    scanUntilSentinel(lexBuffer,snew)
+                    scanUntilSentinel lexBuffer snew
                           
         // Each row for the Unicode table has format 
         //      128 entries for ASCII characters
@@ -268,6 +268,6 @@ namespace Internal.Utilities.Text.Lexing
 
         member tables.Interpret(initialState,lexBuffer : LexBuffer<char>) = 
             startInterpret(lexBuffer)
-            scanUntilSentinel(lexBuffer, initialState)
+            scanUntilSentinel lexBuffer initialState
 
         static member Create(trans,accept) = new UnicodeTables(trans,accept)
