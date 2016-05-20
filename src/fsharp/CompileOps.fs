@@ -392,7 +392,7 @@ let GetWarningLevel err =
 
 let warningOn err level specificWarnOn = 
     let n = GetErrorNumber err
-    List.mem n specificWarnOn ||
+    List.contains n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
     match n with 
     | 1182 -> false // chkUnusedValue - off by default
@@ -2338,7 +2338,7 @@ type TcConfigBuilder =
                 if not exists then warning(Error(FSComp.SR.buildSearchDirectoryNotFound(absolutePath),m));         
                 exists
             | None -> false
-        if ok && not (List.mem absolutePath tcConfigB.includes) then 
+        if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
            
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
@@ -2351,7 +2351,7 @@ type TcConfigBuilder =
                 | None ->
                     // File doesn't exist in the paths. Assume it will be in the load-ed from directory.
                     ComputeMakePathAbsolute pathLoadedFrom path
-            if not (List.mem path (List.map snd tcConfigB.loadedSources)) then 
+            if not (List.contains path (List.map snd tcConfigB.loadedSources)) then 
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,path)
                 
 
@@ -3086,13 +3086,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
 let ReportWarning (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list) err = 
     let n = GetErrorNumber err
-    warningOn err globalWarnLevel specificWarnOn && not (List.mem n specificWarnOff)
+    warningOn err globalWarnLevel specificWarnOn && not (List.contains n specificWarnOff)
 
 let ReportWarningAsError (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list, specificWarnAsError : int list, specificWarnAsWarn : int list, globalWarnAsError : bool) err =
     warningOn err globalWarnLevel specificWarnOn &&
-    not (List.mem (GetErrorNumber err) specificWarnAsWarn) &&
-    ((globalWarnAsError && not (List.mem (GetErrorNumber err) specificWarnOff)) ||
-     List.mem (GetErrorNumber err) specificWarnAsError)
+    not (List.contains (GetErrorNumber err) specificWarnAsWarn) &&
+    ((globalWarnAsError && not (List.contains (GetErrorNumber err) specificWarnOff)) ||
+     List.contains (GetErrorNumber err) specificWarnAsError)
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
