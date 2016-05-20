@@ -100,13 +100,6 @@ module Array =
                 i <- i + 1
             if eq then inp else res
 
-    let forall2 f (arr1:'T array) (arr2:'T array) =
-        let len1 = arr1.Length 
-        let len2 = arr2.Length 
-        if len1 <> len2 then invalidArg "Array.forall2" "len1"
-        let rec loop i = (i >= len1) || (f arr1.[i] arr2.[i] && loop (i+1))
-        loop 0
-
     let lengthsEqAndForall2 p l1 l2 = 
         Array.length l1 = Array.length l2 &&
         Array.forall2 p l1 l2
