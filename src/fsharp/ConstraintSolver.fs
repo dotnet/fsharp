@@ -654,7 +654,7 @@ let CheckWarnIfRigid (csenv:ConstraintSolverEnv) ty1 (r:Typar) ty =
 /// Propagate all effects of adding this constraint, e.g. to solve other variables 
 let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 trace ty1 ty =
     let m = csenv.m
-    let denv = csenv.DisplayEnv
+    
     DepthCheck ndeep m  ++ (fun () -> 
     match ty1 with 
     | TType_var r | TType_measure (MeasureVar r) ->
@@ -662,7 +662,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 trace ty1 ty =
       if typeEquiv csenv.g ty1 ty then CompleteD else
 
       // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/Microsoft/visualfsharp/issues/1170
-      if occursCheck csenv.g r ty then ErrorD (ConstraintSolverInfiniteTypes(csenv.eContextInfo,denv,ty1,ty,m,m2)) else
+      if occursCheck csenv.g r ty then ErrorD (ConstraintSolverInfiniteTypes(csenv.eContextInfo,csenv.DisplayEnv,ty1,ty,m,m2)) else
 
       // Note: warn _and_ continue! 
       CheckWarnIfRigid csenv ty1 r ty ++ (fun () ->
