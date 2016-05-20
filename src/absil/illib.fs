@@ -352,19 +352,14 @@ module List =
     let mem x l = contains x l
 
     // must be tail recursive 
-    let mapFold f s l = 
+    let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
         // microbenchmark suggested this implementation is faster than the simpler recursive one, and this function is called a lot
         let mutable s = s
         let mutable r = []
-        let mutable l = l
-        let mutable finished = false
-        while not finished do
-          match l with
-          | x::xs -> let x',s' = f s x
-                     s <- s'
-                     r <- x' :: r
-                     l <- xs
-          | _ -> finished <- true
+        for x in l do
+            let x',s' = f s x
+            s <- s'
+            r <- x' :: r
         List.rev r, s
 
     // Not tail recursive 
