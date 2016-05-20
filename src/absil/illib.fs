@@ -85,8 +85,6 @@ module Order =
 
 module Array = 
 
-    let take n xs = xs |> Seq.take n |> Array.ofSeq
-
     let mapq f inp =
         match inp with
         | [| |] -> inp

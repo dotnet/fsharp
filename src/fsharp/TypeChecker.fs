@@ -9457,16 +9457,16 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
-    // Before we check the argume, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
+    // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
     begin
         if lambdaPropagationInfoForArg.Length > 0 then 
             let allOverloadsAreFuncOrMismatchForThisArg = 
                 lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
 
             if allOverloadsAreFuncOrMismatchForThisArg then 
-              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some r | _ -> None)
+              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
               if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
-                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy List.length |> List.length
+                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
           
                 if prefixOfLambdaArgsForEachOverload.Length > 0 then 
