@@ -383,8 +383,6 @@ module List =
       let l, s = mapFold f s l
       List.concat l, s
 
-    let singleton x = [x]              
-
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
     let toArraySquared xss = xss |> List.map List.toArray |> List.toArray
