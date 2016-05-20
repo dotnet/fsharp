@@ -696,13 +696,22 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) = 
      let pri = NextExtensionMethodPriority()
      let mty = modref.ModuleOrNamespaceType
-     let tycons = mty.TypeAndExceptionDefinitions 
+     
+     let mutable state = { nenv with eDisplayEnv = nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
+     
+     for exnc in mty.ExceptionDefinitions do
+        let tcref = modref.NestedTyconRef exnc
+        if IsEntityAccessible amap m ad tcref then 
+            state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
 
-     let exncs = mty.ExceptionDefinitions
-     let nenv = { nenv with eDisplayEnv= nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
-     let tcrefs = tycons |> List.map modref.NestedTyconRef |> List.filter (IsEntityAccessible amap m ad) 
-     let exrefs = exncs |> List.map modref.NestedTyconRef |> List.filter (IsEntityAccessible amap m ad) 
-     let nenv = (nenv,exrefs) ||> List.fold (AddExceptionDeclsToNameEnv BulkAdd.Yes)
+     let nenv = state
+     
+     let tcrefs = 
+        mty.TypeAndExceptionDefinitions 
+        |> List.choose (fun tycon -> 
+            let tcref = modref.NestedTyconRef tycon
+            if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
+
      let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
      let vrefs = 
          mty.AllValsAndMembers.ToFlatList() 
@@ -722,7 +731,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 //    open M1
 // 
 // The list contains [M1b; M1a]
-and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs = 
+and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs =
    (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref)
 
 /// Add a single modules or namespace to the name resolution environment
