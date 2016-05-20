@@ -339,14 +339,10 @@ module List =
         | [] -> false
         | ((h,_)::t) -> x = h || memAssoc x t
 
-    let rec contains x l = match l with [] -> false | h::t -> x = h || contains x t
-
     let rec memq x l = 
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
-
-    let mem x l = contains x l
 
     // must be tail recursive 
     let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
