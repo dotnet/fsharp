@@ -767,12 +767,10 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     | _  -> localAbortD
 
 and SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = 
-   let denv = csenv.DisplayEnv
-   
    // Back out of expansions of type abbreviations to give improved error messages. 
    // Note: any "normalization" of equations on type variables must respect the trace parameter
    TryD (fun () -> SolveTypEqualsTyp csenv ndeep m2 trace ty1 ty2)
-        (function LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInEqualityRelation(denv,ty1,ty2,csenv.m,m2))
+        (function LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInEqualityRelation(csenv.DisplayEnv,ty1,ty2,csenv.m,m2))
                 | err -> ErrorD err)
 
 and SolveTypEqualsTypEqns csenv ndeep m2 trace origl1 origl2 = 
