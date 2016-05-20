@@ -325,9 +325,6 @@ module List =
     module FrontAndBack = 
         let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
 
-    let replicate x n = 
-        Array.toList (Array.create x n)
-
     let range n m = [ n .. m ]
 
     let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
@@ -381,9 +378,6 @@ module List =
     let rec until p l = match l with [] -> [] | h::t -> if p h then [] else h :: until p t 
 
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
-
-    let rec private repeatAux n x acc = if n <= 0 then acc else repeatAux (n-1) x (x::acc)
-    let repeat n x = repeatAux n x []
 
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function

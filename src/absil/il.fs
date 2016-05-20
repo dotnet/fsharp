@@ -4641,7 +4641,7 @@ type ILTypeSigParser(tstring : string) =
                     step()
                 drop()
 
-                Some(ILArrayShape(List.repeat rank (Some 0, None)))
+                Some(ILArrayShape(List.replicate rank (Some 0, None)))
             else
                 None
 
