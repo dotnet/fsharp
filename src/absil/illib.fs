@@ -319,9 +319,7 @@ module List =
                       | x::xs,y::ys -> let cxy = eltOrder.Compare(x,y)
                                        if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
-
-
-    let rec last l = match l with [] -> failwith "last" | [h] -> h | _::t -> last t
+    
     module FrontAndBack = 
         let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
 
