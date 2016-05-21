@@ -308,10 +308,10 @@ module DispatchSlotChecking =
 
                     | [ overrideBy ] -> 
                         if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
+                            noimpl()
+                        else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                        else
-                            noimpl()
                         
                     | _ -> 
                         fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot),m))
