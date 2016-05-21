@@ -1225,12 +1225,12 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
               let calledMethGroup = 
                   minfos 
                     // curried members may not be used to satisfy constraints
-                    |> List.filter (fun minfo -> not minfo.IsCurried) 
-                    |> List.map (fun minfo -> 
-                      let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty,m,false,dummyExpr))
-                      let minst = FreshenMethInfo m minfo
-                      let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                      CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None))
+                    |> List.choose (fun minfo ->
+                          if minfo.IsCurried then None else
+                          let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty,m,false,dummyExpr))
+                          let minst = FreshenMethInfo m minfo
+                          let objtys = minfo.GetObjArgTypes(amap, m, minst)
+                          Some(CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None)))
 
               let methOverloadResult,errors = 
                   CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep true (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
@@ -1803,8 +1803,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
         CompleteD
     elif
         GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
-        |> List.filter (IsMethInfoAccessible amap m AccessibleFromEverywhere)   
-        |> List.exists (fun x -> x.IsNullary)
+        |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
            then 
        if (isAppTy g ty && HasFSharpAttribute g g.attrib_AbstractClassAttribute (tcrefOfAppTy g ty).Attribs) then 
          ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv typ),m,m2))
