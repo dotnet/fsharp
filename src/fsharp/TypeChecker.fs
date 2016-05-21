@@ -5913,7 +5913,7 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
 // TcRecordConstruction
 //------------------------------------------------------------------------- 
   
-// Check a record consutrction expression 
+// Check a record construction expression 
 and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let tcref = tcrefOfAppTy cenv.g objTy
     let tycon = tcref.Deref
@@ -5953,9 +5953,10 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
                // Effect order - mutable fields may get modified by other bindings... 
                let fieldNameUnbound nom = List.forall (fun (name,_) -> name <> nom) fldsList
                fspecs 
-               |> List.filter (fun rfld -> rfld.Name |> fieldNameUnbound)
-               |> List.filter (fun f -> not f.IsZeroInit)
-               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef fspec,tinst,m))
+               |> List.choose (fun rfld -> 
+                    if fieldNameUnbound rfld.Name && not rfld.IsZeroInit 
+                    then Some(rfld.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef rfld,tinst,m))
+                    else None)
 
     let fldsList = fldsList @ oldFldsList
 
@@ -6683,34 +6684,36 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
     let customOperationMethods = 
         AllMethInfosOfTypeInScope cenv.infoReader env.NameEnv (None,ad) IgnoreOverrides mBuilderVal builderTy
-        |> List.filter (IsMethInfoAccessible cenv.amap mBuilderVal ad) 
         |> List.choose (fun methInfo -> 
-                let nameSearch = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
-                                 (fun _ -> None) // We do not respect this attribute for provided methods
+                if IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo then
+                    let nameSearch = 
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                     (fun _ -> None) // We do not respect this attribute for IL methods
+                                     (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
+                                     (fun _ -> None) // We do not respect this attribute for provided methods
 
-                let joinConditionWord =
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
-                                 (fun _ -> None) // We do not respect this attribute for provided methods
-                let flagSearch (propName:string) = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                 (fun _ -> None) // We do not respect this attribute for IL methods
-                                 (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
-                                 (fun _ -> None)// We do not respect this attribute for provided methods
-                let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
-                let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
-                let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
-                let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
-                let isLikeJoin = defaultArg (flagSearch "IsLikeJoin" ) false
-                let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin" ) false
+                    let joinConditionWord =
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                     (fun _ -> None) // We do not respect this attribute for IL methods
+                                     (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
+                                     (fun _ -> None) // We do not respect this attribute for provided methods
+                    let flagSearch (propName:string) = 
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                     (fun _ -> None) // We do not respect this attribute for IL methods
+                                     (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
+                                     (fun _ -> None)// We do not respect this attribute for provided methods
+                    let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
+                    let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
+                    let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
+                    let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
+                    let isLikeJoin = defaultArg (flagSearch "IsLikeJoin" ) false
+                    let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin" ) false
 
-                match nameSearch with  
-                | None -> None
-                | Some nm -> Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
+                    match nameSearch with  
+                    | None -> None
+                    | Some nm -> Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo)
+                else
+                    None)
 
     let customOperationMethodsIndexedByKeyword = 
         customOperationMethods
@@ -8847,9 +8850,8 @@ and TcMethodApplication
 
     let GenerateMatchingSimpleArgumentTypes (calledMeth:MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-        curriedMethodArgAttribs 
-        |> List.map (List.filter isSimpleFormalArg)
-        |> List.map (NewInferenceTypes)
+        curriedMethodArgAttribs
+        |> List.map (fun args -> List.filter isSimpleFormalArg args |> NewInferenceTypes)
 
     let UnifyMatchingSimpleArgumentTypes exprTy (calledMeth:MethInfo) =
         let curriedArgTys = GenerateMatchingSimpleArgumentTypes calledMeth
@@ -9043,8 +9045,7 @@ and TcMethodApplication
                         let resultMinfo = result.Method
                         let overridingInfo =
                             overriding
-                            |> List.filter (fun (minfo,_) -> minfo.IsVirtual)
-                            |> List.tryFind (fun (minfo,_) -> MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 resultMinfo minfo)
+                            |> List.tryFind (fun (minfo,_) -> minfo.IsVirtual && MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 resultMinfo minfo)
                         match overridingInfo with
                         |   Some r -> r |> callSink
                         |   None -> (result.Method,result.AssociatedPropertyInfo) |> callSink
@@ -11341,7 +11342,7 @@ let TcOpenDecl tcSink g amap m scopem env (longId : Ident list)  =
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve env amap longId)
 
     // validate opened namespace names
-    longId |> List.filter (fun id -> id.idText <> MangledGlobalName) |> List.iter (CheckNamespaceModuleOrTypeName g)
+    longId |> List.iter (fun id -> if id.idText <> MangledGlobalName then CheckNamespaceModuleOrTypeName g id)
 
     let IsPartiallyQualifiedNamespace (modref: ModuleOrNamespaceRef) = 
         let (CompPath(_,p)) = modref.CompilationPath 
@@ -12674,9 +12675,8 @@ module TyconBindingChecking = begin
                             defnCs |> List.exists (function 
                                 | PassCIncrClassBindings groups -> 
                                     groups |> List.exists (function 
-                                        | IncrClassBindingGroup(binds,isStatic,_) -> 
-                                            let nonMethodBinds = binds |> List.filter (IncrClassReprInfo.IsMethodRepr cenv >> not) 
-                                            isStatic && not nonMethodBinds.IsEmpty 
+                                        | IncrClassBindingGroup(binds,isStatic,_) ->
+                                            isStatic && (binds |> List.exists (IncrClassReprInfo.IsMethodRepr cenv >> not)) 
                                         | _ -> false) 
                                 | _ -> false)
 
@@ -14201,14 +14201,15 @@ module EstablishTypeDefinitionCores = begin
             let writeFakeRecordFieldsToSink (fields:RecdField list) =
                 let nenv = envinner.NameEnv
                 // Record fields should be visible from IntelliSense, so add fake names for them (similarly to "let a = ..")
-                for fspec in (fields |> List.filter (fun fspec -> not fspec.IsCompilerGenerated)) do
-                    let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
-                    let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
-                    // Name resolution gives better info for tooltips
-                    let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
-                    CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
-                    // Environment is needed for completions
-                    CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
+                for fspec in fields do
+                    if not fspec.IsCompilerGenerated then
+                        let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
+                        let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
+                        // Name resolution gives better info for tooltips
+                        let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
+                        CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
+                        // Environment is needed for completions
+                        CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
 
             // Notify the Language Service about constructors in discriminated union declaration
             let writeFakeUnionCtorsToSink (unionCases: UnionCase list) = 
