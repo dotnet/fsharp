@@ -2153,7 +2153,7 @@ module GeneralizationHelpers =
 
     let CanonicalizePartialInferenceProblem (cenv,denv,m) tps =
         // Canonicalize constraints prior to generalization 
-        let csenv = (MakeConstraintSolverEnv cenv.css m denv)
+        let csenv = (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv)
         TryD (fun () -> ConstraintSolver.CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
              (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m))) 
         |> RaiseOperationResult
@@ -2200,7 +2200,7 @@ module GeneralizationHelpers =
         generalizedTypars |> List.iter (SetTyparRigid cenv.g denv m)
         
         // Generalization removes constraints related to generalized type variables
-        let csenv = MakeConstraintSolverEnv cenv.css m denv
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv
         EliminateConstraintsForGeneralizedTypars csenv NoTrace generalizedTypars
         
         generalizedTypars
@@ -3887,7 +3887,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
     | WhereTyparDefaultsToType(tp,ty,m) ->
         let ty',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
-        let csenv = (MakeConstraintSolverEnv cenv.css m env.DisplayEnv)
+        let csenv = (MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv)
         AddConstraint csenv 0 m NoTrace tp' (TyparConstraint.DefaultsTo(ridx,ty',m)) |> CommitOperationResult
         tpenv
 
@@ -5092,7 +5092,7 @@ and TcPatterns warnOnUpper cenv env vFlags s argtys args =
 and solveTypAsError cenv denv m ty =
     let ty2 = NewErrorType ()
     assert((destTyparTy cenv.g ty2).IsFromError)
-    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
+    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
 
 and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
     // This function is motivated by cases like
@@ -7636,6 +7636,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         let mBuilderVal = mBuilderVal.MakeSynthetic()
         SynExpr.Lambda (false,false,SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)],mBuilderVal), runExpr, mBuilderVal)
 
+    let env =
+        match comp with     
+        | SynExpr.YieldOrReturn ((true,_),_,_) -> { env with eContextInfo = ContextInfo.YieldInComputationExpression }
+        | SynExpr.YieldOrReturn ((_,true),_,_) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
+        | _  -> env
+
     let lambdaExpr ,tpenv= TcExpr cenv (builderTy --> overallTy) env tpenv lambdaExpr
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr = mkApps cenv.g ((lambdaExpr,tyOfExpr cenv.g lambdaExpr),[],[interpExpr],mBuilderVal)
@@ -7648,7 +7654,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 /// and helpers rather than to the builder methods (there is actually no builder for 'seq' in the library). 
 /// These are later detected by state machine compilation. 
 ///
-/// Also "ienumerable extraction" is performaed on arguments to "for".
+/// Also "ienumerable extraction" is performed on arguments to "for".
 and TcSequenceExpression cenv env tpenv comp overallTy m = 
 
         let mkDelayedExpr (coreExpr:Expr) = 
@@ -8924,7 +8930,7 @@ and TcMethodApplication
                     yield makeOneCalledMeth (minfo,pinfoOpt,false) ]
 
         let uniquelyResolved = 
-            let csenv = MakeConstraintSolverEnv cenv.css mMethExpr denv
+            let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
             let res = UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
             match res with
             |   ErrorResult _ -> afterTcOverloadResolution.OnOverloadResolutionFailure()
@@ -9010,7 +9016,7 @@ and TcMethodApplication
                 CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
-        let csenv = MakeConstraintSolverEnv cenv.css mMethExpr denv
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
         
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity 
         // about the possible target of the call. 
@@ -15637,7 +15643,7 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
                         | TyparConstraint.DefaultsTo(priority2,ty2,m) when priority2 = priority -> 
                             let ty1 = mkTyparTy tp
                             if not tp.IsSolved  && not (typeEquiv cenv.g ty1 ty2) then
-                                let csenv = MakeConstraintSolverEnv cenv.css m denvAtEnd
+                                let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denvAtEnd
                                 TryD (fun () -> ConstraintSolver.SolveTyparEqualsTyp csenv 0 m NoTrace ty1 ty2)
                                       (fun e -> solveTypAsError cenv denvAtEnd m ty1
                                                 ErrorD(ErrorFromApplyingDefault(g,denvAtEnd,tp,ty2,e,m)))
