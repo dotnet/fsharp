@@ -17,6 +17,8 @@ missingElseBranch,"The 'if' expression is missing an 'else' branch. The 'then' b
 elseBranchHasWrongType,"All branches of an 'if' expression must return the same type. This expression was expected to have type '%s' but here has type '%s'."
 commaInsteadOfSemicolonInRecord,"A ';' is used to separate field values in records. Consider replacing ',' with ';'."
 buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type arguments, but here is given %d type argument(s)"
+returnUsedInsteadOfReturnBang,"Consider using 'return!' instead of 'return'."
+yieldUsedInsteadOfYieldBang,"Consider using 'yield!' instead of 'yield'."
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"
 204,buildInvalidVersionString,"Invalid version string '%s'"
 205,buildInvalidVersionFile,"Invalid version file '%s'"

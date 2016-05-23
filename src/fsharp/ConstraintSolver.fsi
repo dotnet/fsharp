@@ -60,13 +60,17 @@ type ContextInfo =
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
 | TupleInRecordFields
+/// The type equation comes from a return in a computation expression.
+| ReturnInComputationExpression
+/// The type equation comes from a yield in a computation expression.
+| YieldInComputationExpression
 /// The type equation comes from a runtime type test.
 | RuntimeTypeTest of bool
 /// The type equation comes from an downcast where a upcast could be used.
 | DowncastUsedInsteadOfUpcast of bool
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
-exception ConstraintSolverInfiniteTypes                 of DisplayEnv * TType * TType * range * range
+exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
@@ -92,7 +96,7 @@ type ConstraintSolverEnv
 
 val BakedInTraitConstraintNames : string list
 
-val MakeConstraintSolverEnv : ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
+val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
 type Trace = Trace of (unit -> unit) list ref
 
