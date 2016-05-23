@@ -2306,14 +2306,12 @@ and OptimizeVal cenv env expr (v:ValRef,m) =
 // Attempt to replace an application of a value by an alternative value.
 //------------------------------------------------------------------------- 
 
-and StripToNominalTyconRef cenv ty = 
-    if isAppTy cenv.g ty then destAppTy cenv.g ty 
-    elif isTupleTy cenv.g ty then 
-        let tyargs = destTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g tyargs, tyargs 
-    else failwith "StripToNominalTyconRef: unreachable" 
+and StripToNominalTyconRef cenv ty =
+    match stripTyEqns cenv.g ty with
+    | TType_app(tcref,tinst) -> tcref,tinst
+    | TType_tuple(tyargs) -> mkCompiledTupleTyconRef cenv.g tyargs, tyargs 
+    | _ -> failwith "StripToNominalTyconRef: unreachable" 
       
-
 and CanDevirtualizeApplication cenv v vref ty args  = 
      valRefEq cenv.g v vref
      && not (isUnitTy cenv.g ty)

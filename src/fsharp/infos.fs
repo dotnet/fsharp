@@ -49,14 +49,19 @@ let CanImportILType scoref amap m ilty =
 //------------------------------------------------------------------------- 
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
-let isExnDeclTy g typ = 
-    isAppTy g typ && (tcrefOfAppTy g typ).IsExceptionDecl
+let isExnDeclTy g typ =
+    match stripTyEqns g typ with
+    | TType_app(tcref,_) -> tcref.IsExceptionDecl
+    | _ -> false
     
 /// Get the base type of a type, taking into account type instantiations. Return None if the
 /// type has no base type.
 let GetSuperTypeOfType g amap m typ = 
 #if EXTENSIONTYPING
-    let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
+    let typ =
+        match stripTyEqns g typ with
+        | TType_app(tcref,_) when tcref.IsProvided -> stripTyEqns g typ 
+        | _ -> stripTyEqnsAndMeasureEqns g typ
 #else
     let typ = stripTyEqns g typ 
 #endif
@@ -102,17 +107,18 @@ type SkipUnrefInterfaces = Yes | No
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m typ = 
     let itys = 
-        if isAppTy g typ then
-            let tcref,tinst = destAppTy g typ
+        match stripTyEqns g typ with
+        | TType_app(tcref,tinst) ->
             if tcref.IsMeasureableReprTycon then             
                 [ match tcref.TypeReprInfo with 
                   | TMeasureableRepr reprTy -> 
                        for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do 
-                          if isAppTy g ity then 
-                              let itcref = tcrefOfAppTy g ity
+                          match stripTyEqns g ity with
+                          | TType_app(itcref,_) ->
                               if not (tyconRefEq g itcref g.system_GenericIComparable_tcref) && 
                                  not (tyconRefEq g itcref g.system_GenericIEquatable_tcref)  then 
                                    yield ity
+                          | _ -> ()
                   | _ -> ()
                   yield mkAppTy g.system_GenericIComparable_tcref [typ] 
                   yield mkAppTy g.system_GenericIEquatable_tcref [typ]]
@@ -138,7 +144,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m typ =
 
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g typ)) 
-        else 
+        | _ ->
             []
         
     // .NET array types are considered to implement IList<T>
@@ -157,22 +163,24 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m typ acc = 
     let rec loop ndeep typ ((visitedTycon,visited:TyconRefMultiMap<_>,acc) as state) =
-
-        let seenThisTycon = isAppTy g typ && Set.contains (tcrefOfAppTy g typ).Stamp visitedTycon 
+        let stripped = stripTyEqns g typ
+        let seenThisTycon = 
+            match stripped with
+            | TType_app(tcref,_) -> Set.contains tcref.Stamp visitedTycon 
+            | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && List.exists (typeEquiv g typ) (visited.Find (tcrefOfAppTy g typ)) then state else
+        if seenThisTycon && List.exists (typeEquiv g typ) (visited.Find (match stripped with | TType_app(tcref,_) -> tcref | _ -> failwith "FoldHierarchyOfTypeAux")) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
 
         let state = 
-            if isAppTy g typ then 
-                let tcref = tcrefOfAppTy g typ
+            match stripped with
+            | TType_app(tcref,_) ->
                 let visitedTycon = Set.add tcref.Stamp visitedTycon 
                 visitedTycon, visited.Add (tcref,typ), acc
-            else
-                state
+            | _ -> state
 
         if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType typ)),m)); (visitedTycon,visited,acc)) else
         let visitedTycon,visited,acc = 
@@ -256,15 +264,19 @@ let AllInterfacesOfType g amap m allowMultiIntfInst ty =
     AllSuperTypesOfType g amap m allowMultiIntfInst ty |> List.filter (isInterfaceTy g)
 
 /// Check if two types have the same nominal head type
-let HaveSameHeadType g ty1 ty2 = 
-    isAppTy g ty1 && isAppTy g ty2 &&
-    tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2)
+let HaveSameHeadType g ty1 ty2 =
+    match stripTyEqns g ty1 with
+    | TType_app(tcref1,_) -> 
+        match stripTyEqns g ty2 with
+        | TType_app(tcref2,_) ->  tyconRefEq g tcref1 tcref2
+        | _ -> false
+    | _ -> false
 
 /// Check if a type has a particular head type
 let HasHeadType g tcref ty2 = 
-        isAppTy g ty2 &&
-        tyconRefEq g tcref (tcrefOfAppTy g ty2)
-        
+    match stripTyEqns g ty2 with
+    | TType_app(tcref2,_) -> tyconRefEq g tcref tcref2
+    | _ -> false
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 let ExistsSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor = 
@@ -430,9 +442,11 @@ let private AnalyzeTypeOfMemberVal isCSharpExt g (typ,vref:ValRef) =
     if isCSharpExt || vref.IsExtensionMember then 
         [],memberAllTypars,retTy,[]
     else
-        let parentTyArgs = argsOfAppTy g typ
-        let memberParentTypars,memberMethodTypars = List.chop parentTyArgs.Length memberAllTypars
-        memberParentTypars,memberMethodTypars,retTy,parentTyArgs
+        match stripTyEqns g typ with
+        | TType_app(_,parentTyArgs) ->
+            let memberParentTypars,memberMethodTypars = List.chop parentTyArgs.Length memberAllTypars
+            memberParentTypars,memberMethodTypars,retTy,parentTyArgs
+        | _ -> failwith "AnalyzeTypeOfMemberVal"
 
 /// Get the object type for a member value which is an extension method  (C#-style or F#-style)
 let private GetObjTypeOfInstanceExtensionMethod g (vref:ValRef) = 
@@ -641,13 +655,12 @@ type ILTypeInfo =
     member x.FormalTypars m = x.TyconRef.Typars m
 
     static member FromType g ty = 
-        if isILAppTy g ty then 
-            let tcref,tinst = destAppTy g ty
+        match stripTyEqns g ty with
+        | TType_app(tcref,tinst) when tcref.IsILTycon ->
             let scoref,enc,tdef = tcref.ILTyconInfo
             let tref = mkRefForNestedILTypeDef scoref (enc,tdef)
             ILTypeInfo(tcref,tref,tinst,tdef)
-        else 
-            failwith "ILTypeInfo.FromType"
+        | _ -> failwith "ILTypeInfo.FromType"
 
 //-------------------------------------------------------------------------
 // ILMethInfo

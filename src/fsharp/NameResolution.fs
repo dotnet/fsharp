@@ -1046,9 +1046,9 @@ let MakeNestedType (ncenv:NameResolver) (tinst:TType list) m (tcrefNested:TyconR
 /// Get all the accessible nested types of an existing type.
 let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, checkForGenerated, m) typ =
     let g = ncenv.g
-    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
-        if isAppTy g typ then 
-            let tcref,tinst = destAppTy g typ
+    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ ->
+        match stripTyEqns g typ with
+        | TType_app(tcref,tinst) ->
             let tycon = tcref.Deref
             let mty = tycon.ModuleOrNamespaceType
             // No dotting through type generators to get to a nested type!
@@ -1077,7 +1077,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
                     mty.TypesByAccessNames.Values
                         |> List.map (tcref.NestedTyconRef >> MakeNestedType ncenv tinst m)
                         |> List.filter (IsTypeAccessible g ncenv.amap m ad)
-        else [])
+        | _ -> [])
 
 //-------------------------------------------------------------------------
 // Report environments to visual studio. We stuff intermediary results 
@@ -1648,11 +1648,14 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
                 if (isStructTy g typ && not(ctorInfos |> List.exists (fun x -> x.IsNullary))) then 
                     [DefaultStructCtor(g,typ)] 
                 else []
-            if (isNil defaultStructCtorInfo && isNil ctorInfos) || not (isAppTy g typ) then 
+            if isNil defaultStructCtorInfo && isNil ctorInfos then 
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
-            else 
-                let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
-                success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g typ).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
+            else
+                match stripTyEqns g typ with 
+                | TType_app(tcref,_) -> 
+                    let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
+                    success (resInfo,Item.MakeCtorGroup (tcref.LogicalName, (defaultStructCtorInfo@ctorInfos)))
+                | _ -> raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
 let ResolveObjectConstructor (ncenv:NameResolver) edenv m ad typ = 
@@ -1695,11 +1698,11 @@ let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     
     let extMemsFromHierarchy = 
         infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
-             if (isAppTy g typ) then 
-                let tcref = tcrefOfAppTy g typ
+            match stripTyEqns g typ with 
+            | TType_app(tcref,_) ->
                 let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
                 SelectPropInfosFromExtMembers (infoReader,ad,optFilter) typ m extMemInfos
-             else [])
+            | _ -> [])
 
     let extMemsDangling = SelectPropInfosFromExtMembers  (infoReader,ad,optFilter) typ m nenv.eUnindexedExtensionMembers 
     extMemsDangling @ extMemsFromHierarchy
@@ -1758,11 +1761,11 @@ let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     let extMemsFromHierarchy = 
         infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
             let g = infoReader.g
-            if (isAppTy g typ) then 
-                let tcref = tcrefOfAppTy g typ
+            match stripTyEqns g typ with 
+            | TType_app(tcref,_) ->
                 let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
                 SelectMethInfosFromExtMembers infoReader optFilter typ  m extValRefs
-            else [])
+            | _ -> [])
     extMemsDangling @ extMemsFromHierarchy
 
 /// Get all the available methods of a type (both intrinsic and extension)
@@ -1786,13 +1789,12 @@ type LookupKind =
 
 /// Try to find a union case of a type, with the given name
 let TryFindUnionCaseOfType g typ nm =
-    if isAppTy g typ then 
-        let tcref,tinst = destAppTy g typ
+    match stripTyEqns g typ with
+    | TType_app(tcref,tinst) ->
         match tcref.GetUnionCaseByName nm with 
         | None -> None
         | Some ucase -> Some(UnionCaseInfo(tinst,tcref.MakeNestedUnionCaseRef ucase))
-    else 
-        None
+    | _ -> None
 
 let CoreDisplayName(pinfo:PropInfo) =   
     match pinfo with
@@ -1902,7 +1904,10 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
         
 and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad lid findFlag typeNameResInfo typs = 
     typs |> CollectResults (fun typ -> 
-        let resInfo = if isAppTy ncenv.g typ then resInfo.AddEntity(id.idRange,tcrefOfAppTy ncenv.g typ) else resInfo
+        let resInfo = 
+            match stripTyEqns ncenv.g typ with 
+            | TType_app(tcref,_) -> resInfo.AddEntity(id.idRange,tcref)
+            | _ -> resInfo
         ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typ 
         |> AtMostOneResult m) 
 
@@ -2273,8 +2278,10 @@ let ResolvePatternLongIdent sink (ncenv:NameResolver) warnOnUpper newDef m ad ne
 // X.ListEnumerator // does not resolve
 //
 let ResolveNestedTypeThroughAbbreviation (ncenv:NameResolver) (tcref: TyconRef) m =
-    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty && isAppTy ncenv.g tcref.TypeAbbrev.Value && isNil (argsOfAppTy ncenv.g tcref.TypeAbbrev.Value) then 
-        tcrefOfAppTy ncenv.g tcref.TypeAbbrev.Value
+    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty then
+        match stripTyEqns ncenv.g tcref.TypeAbbrev.Value with 
+        | TType_app(tcref,tinst) when isNil tinst -> tcref
+        | _ -> tcref
     else
         tcref
 
@@ -2738,7 +2745,10 @@ let ItemOfTyconRef ncenv m (x:TyconRef) =
     Item.Types (x.DisplayName,[FreshenTycon ncenv m x])
 
 let ItemOfTy g x = 
-    let nm = if isAppTy g x then (tcrefOfAppTy g x).DisplayName else "?"
+    let nm = 
+        match stripTyEqns g x with 
+        | TType_app(tcref,_) -> tcref.DisplayName 
+        | _ -> "?"
     Item.Types (nm,[x])
 
 // Filter out 'PrivateImplementationDetail' classes 
@@ -2790,11 +2800,13 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
 
     let ucinfos = 
-        if completionTargets.ResolveAll && statics  && isAppTy g typ then 
-            let tc,tinst = destAppTy g typ
-            tc.UnionCasesAsRefList 
-            |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-            |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+        if completionTargets.ResolveAll && statics then 
+            match stripTyEqns g typ with
+            | TType_app(tcref,tinst) ->
+                tcref.UnionCasesAsRefList 
+                |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+                |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+            | _ -> []
         else []
 
     let einfos = 

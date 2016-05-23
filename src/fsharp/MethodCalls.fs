@@ -652,8 +652,8 @@ let MakeMethInfoCall amap m minfo minst args =
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name),m)
     let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType),m))
-    if isAppTy amap.g declaringType then 
-        let declaringEntity = tcrefOfAppTy amap.g declaringType
+    match stripTyEqns amap.g declaringType with
+    | TType_app(declaringEntity,_) ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
             | true,vref -> Some vref
@@ -666,8 +666,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:rang
             | _ -> None
         else
             None
-    else
-        None
+    | _ -> None
 #endif
         
 
@@ -729,10 +728,14 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             | None -> 
                 let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
                 let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
-                let actualTypeInst = 
-                    if isTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g (destTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
-                    elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
-                    else minfo.DeclaringTypeInst
+                let actualTypeInst =
+                    match stripTyEqns g enclTy with
+                    | TType_tuple(l)  ->
+                        match stripTyEqns g (mkCompiledTupleTy g l) with
+                        | TType_app(_,tinst) -> tinst // provided expressions can include method calls that get properties of tuple types
+                        | _ -> failwith "BuildMethodCall"
+                    | TType_fun(tyv,tau) -> [ tyv; tau ]  // provided expressions can call Invoke
+                    | _ -> minfo.DeclaringTypeInst
                 let actualMethInst = minst
                 let retTy = (if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
                 let noTailCall = false

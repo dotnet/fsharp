@@ -840,29 +840,35 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // 'a[] :> IReadOnlyList<'b>   ---> 'a = 'b  
         // 'a[] :> IReadOnlyCollection<'b>   ---> 'a = 'b  
         // Note we don't support co-variance on array types nor 
-        // the special .NET conversions for these types 
-        if 
-            (isArray1DTy g ty2 &&  
-             isAppTy g ty1 && 
-             (let tcr1 = tcrefOfAppTy g ty1
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
-              tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable)) then
+        // the special .NET conversions for these types
+        match stripTyEqns g ty1 with
+        | TType_app(tcr1,tinst) ->
+            if (isArray1DTy g ty2 &&
+                 (tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IList || 
+                  tyconRefEq g tcr1 g.tcref_System_Collections_Generic_ICollection || 
+                  tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyList || 
+                  tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IReadOnlyCollection || 
+                  tyconRefEq g tcr1 g.tcref_System_Collections_Generic_IEnumerable)) then
 
-          let _,tinst = destAppTy g ty1
-          match tinst with 
-          | [ty1arg] -> 
-              let ty2arg = destArrayTy g ty2
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ty1arg  ty2arg
-          | _ -> error(InternalError("destArrayTy",m));
+              match tinst with 
+              | [ty1arg] -> 
+                  let ty2arg = destArrayTy g ty2
+                  SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ty1arg  ty2arg
+              | _ -> error(InternalError("destArrayTy",m));
 
-        // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
-        // first interface or super-class C supported by D which 
-        // may feasibly convert to Head. 
+            // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
+            // first interface or super-class C supported by D which 
+            // may feasibly convert to Head. 
 
-        else 
+            else 
+                match (FindUniqueFeasibleSupertype g amap m ty1 ty2) with 
+                | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv,ty1,ty2,m,m2))
+                | Some t -> SolveTypSubsumesTyp csenv ndeep m2 trace ty1 t
+        | _ ->
+            // D<inst> :> Head<_> --> C<inst'> :> Head<_> for the 
+            // first interface or super-class C supported by D which 
+            // may feasibly convert to Head. 
+
             match (FindUniqueFeasibleSupertype g amap m ty1 ty2) with 
             | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv,ty1,ty2,m,m2))
             | Some t -> SolveTypSubsumesTyp csenv ndeep m2 trace ty1 t
@@ -1641,12 +1647,14 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let m = csenv.m
     let amap = csenv.amap
     let denv = csenv.DisplayEnv
-    if isTyparTy g ty then 
+    let stripped = stripTyEqns g ty
+    match stripped with
+    | TType_var _ ->
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SupportsComparison(m))
     // Check it isn't ruled out by the user
-    elif isAppTy g ty && HasFSharpAttribute g g.attrib_NoComparisonAttribute (tcrefOfAppTy g ty).Attribs then
+    | TType_app(tcref,_) when HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs ->
         ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison1(NicePrint.minimalStringOfType denv ty),m,m2))
-    else        
+    | _ ->
         match ty with 
         | SpecialComparableHeadType g tinst -> 
             tinst |> IterateD (SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace)
@@ -1656,22 +1664,23 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
               ExistsSameHeadTypeInHierarchy g amap m2 ty g.mk_IStructuralComparable_ty   then 
 
                // The type is comparable because it implements IComparable
-                if isAppTy g ty then 
-                    let tcref,tinst = destAppTy g ty 
+                match stripped with
+                | TType_app(tcref,tinst) ->
                     // Check the (possibly inferred) structural dependencies
                     (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
                         if tp.ComparisonConditionalOn then 
                             SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                         else 
                             CompleteD) 
-                else
+                | _ ->
                     CompleteD
 
            // Give a good error for structural types excluded from the comparison relation because of their fields
-           elif (isAppTy g ty && 
-                 let tcref = tcrefOfAppTy g ty 
-                 AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
-                 isNone tcref.GeneratedCompareToWithComparerValues) then
+           elif (match stripped with
+                 | TType_app(tcref,_) ->
+                     AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
+                     isNone tcref.GeneratedCompareToWithComparerValues
+                 | _ -> false) then
  
                ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison3(NicePrint.minimalStringOfType denv ty),m,m2))
 
@@ -1682,11 +1691,13 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
     let m = csenv.m
     let denv = csenv.DisplayEnv
-    if isTyparTy g ty then 
+    let stripped = stripTyEqns g ty
+    match stripped with
+    | TType_var _ ->
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SupportsEquality(m))
-    elif isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
+    | TType_app(tcref,_) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
         ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality1(NicePrint.minimalStringOfType denv ty),m,m2))
-    else 
+    | _ -> 
         match ty with 
         | SpecialEquatableHeadType g tinst -> 
             tinst |> IterateD (SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace)
@@ -1694,9 +1705,8 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality2(NicePrint.minimalStringOfType denv ty),m,m2))
         | _ -> 
            // The type is equatable because it has Object.Equals(...)
-           if isAppTy g ty then 
-               let tcref,tinst = destAppTy g ty 
-
+           match stripped with
+           | TType_app(tcref,tinst) ->
                // Give a good error for structural types excluded from the equality relation because of their fields
                if (AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
                    isNone tcref.GeneratedHashAndEqualsWithComparerValues) then
@@ -1710,7 +1720,7 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
                            SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
                        else 
                            CompleteD) 
-           else
+           | _ ->
                CompleteD
            
 and SolveTypIsEnum (csenv:ConstraintSolverEnv) ndeep m2 trace ty underlying =
@@ -1754,10 +1764,11 @@ and SolveTypIsNonNullableValueType (csenv:ConstraintSolverEnv) ndeep m2 trace ty
             return! AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.IsNonNullableStruct(m))
         else
             let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-            if isStructTy g underlyingTy then
-                if tyconRefEq g g.system_Nullable_tcref (tcrefOfAppTy g underlyingTy) then
+            match stripTyEqns g underlyingTy with
+            | TType_app(tcref,_) when tcref.Deref.IsStructOrEnumTycon ->
+                if tyconRefEq g g.system_Nullable_tcref tcref then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(),m,m))
-            else
+            | _ ->
                 return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty),m,m2))
     }            
 
@@ -1806,17 +1817,17 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
         |> List.filter (IsMethInfoAccessible amap m AccessibleFromEverywhere)   
         |> List.exists (fun x -> x.IsNullary)
            then 
-       if (isAppTy g ty && HasFSharpAttribute g g.attrib_AbstractClassAttribute (tcrefOfAppTy g ty).Attribs) then 
+       match stripTyEqns g ty with
+       | TType_app(tcref,_) when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
          ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv typ),m,m2))
-       else
+       | _ ->
          CompleteD
-    elif isAppTy g ty && 
-        (
-            let tcref = tcrefOfAppTy g ty
-            tcref.PreEstablishedHasDefaultConstructor || 
-            // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
-            (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs)
-        )
+    elif (match stripTyEqns g ty with
+          | TType_app(tcref,_) -> 
+                tcref.PreEstablishedHasDefaultConstructor || 
+                // F# 3.1 feature: records with CLIMutable attribute should satisfy 'default constructor' constraint
+                (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs)
+          | _ -> false)
         then
         CompleteD
     else 
@@ -2221,8 +2232,8 @@ and ResolveOverloading
                     // Func<_> is always considered better than any other delegate type
                     let c = 
                         (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
-                            match tryDestAppTy csenv.g ty1 with 
-                            | Some tcref1 -> 
+                            match stripTyEqns g ty1 with
+                            | TType_app(tcref1,_) -> 
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
@@ -2523,15 +2534,17 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
               | Some sln ->
                   match sln with 
                   | ILMethSln(typ,extOpt,mref,minst) ->
-                       let tcref,_tinst = destAppTy g typ
-                       let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
-                       let ilMethInfo =
-                           match extOpt with 
-                           | None -> MethInfo.CreateILMeth(amap,m,typ,mdef)
-                           | Some ilActualTypeRef -> 
-                               let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
-                               MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
-                       Choice1Of4 (ilMethInfo,minst)
+                       match stripTyEqns g typ with
+                       | TType_app(tcref,_) -> 
+                           let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
+                           let ilMethInfo =
+                               match extOpt with 
+                               | None -> MethInfo.CreateILMeth(amap,m,typ,mdef)
+                               | Some ilActualTypeRef -> 
+                                   let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
+                                   MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
+                           Choice1Of4 (ilMethInfo,minst)
+                       | _ -> failwith "no appTy"
                   | FSMethSln(typ, vref,minst) ->
                        Choice1Of4  (FSMeth(g,typ,vref,None),minst)
                   | FSRecdFieldSln(tinst,rfref,isSetProp) ->
