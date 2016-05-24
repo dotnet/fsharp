@@ -1443,7 +1443,10 @@ let MakeAndPublishBaseVal cenv env baseIdOpt ty =
 
 let InstanceMembersNeedSafeInitCheck cenv m thisTy = 
     ExistsInEntireHierarchyOfType 
-        (fun ty -> not(isStructTy cenv.g ty) && isAppTy cenv.g ty && (tcrefOfAppTy cenv.g ty).HasSelfReferentialConstructor)
+        (fun ty -> 
+           match stripTyEqns cenv.g ty with 
+           | TType_app(tcref,_) -> not(tcref.Deref.IsStructOrEnumTycon) && tcref.HasSelfReferentialConstructor
+           | _ -> false)
         cenv.g 
         cenv.amap
         m 
@@ -4229,10 +4232,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
     | SynType.LongIdentApp (ltyp,LongIdentWithDots(longId,_),_,args,_commas,_,m) -> 
         let ad = env.eAccessRights
         let ltyp,tpenv = TcType cenv newOk checkCxs occ env tpenv ltyp
-        if not (isAppTy cenv.g ltyp) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))
-        let tcref,tinst = destAppTy cenv.g ltyp
-        let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
-        TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
+        match stripTyEqns cenv.g ltyp with
+        | TType_app(tcref,tinst) ->
+            let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
+        | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))        
 
     | SynType.Tuple(args,m) ->   
         let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
@@ -5270,9 +5274,11 @@ and TcExprs cenv env m tpenv flexes argtys args =
          TcExprFlex cenv flex ty env tpenv e)
 
 and CheckSuperInit cenv objTy m = 
-        // Check the type is not abstract
-        if isAppTy cenv.g objTy && (let tcref = tcrefOfAppTy cenv.g objTy in isAbstractTycon tcref.Deref) then 
-            errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
+    // Check the type is not abstract
+    match stripTyEqns cenv.g objTy with
+    | TType_app(tcref,_) when isAbstractTycon tcref.Deref ->
+        errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
+    | _ -> ()
         
 
 //-------------------------------------------------------------------------
@@ -5747,12 +5753,10 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             FoldPrimaryHierarchyOfType (fun typ acc -> 
                 match acc with
                 | None ->
-                    let isNominal = isAppTy cenv.g typ
-                    if isNominal then 
-                        let tcref = tcrefOfAppTy cenv.g typ
-                        TryFindTyconRefStringAttribute cenv.g mWholeExpr cenv.g.attrib_DefaultMemberAttribute tcref 
-
-                     else
+                    match stripTyEqns cenv.g typ with 
+                    | TType_app(tcref,_) ->
+                        TryFindTyconRefStringAttribute cenv.g mWholeExpr cenv.g.attrib_DefaultMemberAttribute tcref
+                    | _ ->
                         match AllPropInfosOfTypeInScope cenv.infoReader env.NameEnv (Some("Item"), ad) IgnoreOverrides mWholeExpr typ with
                         | [] -> None
                         | _ -> Some "Item"
@@ -5915,9 +5919,12 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
   
 // Check a record consutrction expression 
 and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
-    let tcref = tcrefOfAppTy cenv.g objTy
+    let tcref,tinst = 
+        match stripTyEqns cenv.g objTy with
+        | TType_app(tcref,tinst) ->  tcref,tinst
+        | _ -> failwith "TcRecordConstruction"
+
     let tycon = tcref.Deref
-    let tinst = argsOfAppTy cenv.g objTy
     UnifyTypes cenv env m overallTy objTy
 
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor 
@@ -6205,124 +6212,127 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy,argopt,binds,extraImpls,mNew
     let mObjTy = synObjTy.Range
 
     let objTy,tpenv = TcType cenv NewTyparsOK  CheckCxs ItemOccurence.UseInType  env tpenv synObjTy
-    if not (isAppTy cenv.g objTy) then error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(),mNewExpr))
-    if not (isRecdTy cenv.g objTy) && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(),mNewExpr))
+    match stripTyEqns cenv.g objTy with 
+    | TType_app(tcref,_) -> 
+        if not tcref.IsRecordTycon && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then 
+          errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(),mNewExpr))
     
-    CheckSuperType cenv objTy synObjTy.Range 
+        CheckSuperType cenv objTy synObjTy.Range 
 
-    // Add the object type to the ungeneralizable items 
-    let env = {env with eUngeneralizableItems =  addFreeItemOfTy objTy env.eUngeneralizableItems   } 
+        // Add the object type to the ungeneralizable items 
+        let env = {env with eUngeneralizableItems =  addFreeItemOfTy objTy env.eUngeneralizableItems   } 
        
-    // Object expression members can access protected members of the implemented type 
-    let env = EnterFamilyRegion (tcrefOfAppTy cenv.g objTy) env
-    let ad = env.eAccessRights
+        // Object expression members can access protected members of the implemented type 
+        let env = EnterFamilyRegion tcref env
+        let ad = env.eAccessRights
     
-    if // record construction ?
-       (isRecdTy cenv.g objTy) || 
-       // object construction?
-       (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && isNone argopt) then  
+        if // record construction ?
+           (isRecdTy cenv.g objTy) || 
+           // object construction?
+           (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && isNone argopt) then  
 
-        if isSome argopt then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(),mWholeExpr))
-        if nonNil extraImpls then error(Error(FSComp.SR.tcNoInterfaceImplementationForConstructionExpression(),mNewExpr))
-        if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env <> 1 then 
-            error(Error(FSComp.SR.tcObjectConstructionCanOnlyBeUsedInClassTypes(),mNewExpr))
-        let fldsList = 
-            binds |> List.map (fun b -> 
-                match BindingNormalization.NormalizeBinding ObjExprBinding cenv env b with 
-                | NormalizedBinding (_,_,_,_,[],_,_,_,SynPat.Named(SynPat.Wild _, id,_,_,_),NormalizedBindingRhs(_,_,rhsExpr),_,_) -> id.idText,rhsExpr
-                | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(),b.RangeOfBindingSansRhs)))
+            if isSome argopt then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(),mWholeExpr))
+            if nonNil extraImpls then error(Error(FSComp.SR.tcNoInterfaceImplementationForConstructionExpression(),mNewExpr))
+            if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env <> 1 then 
+                error(Error(FSComp.SR.tcObjectConstructionCanOnlyBeUsedInClassTypes(),mNewExpr))
+            let fldsList = 
+                binds |> List.map (fun b -> 
+                    match BindingNormalization.NormalizeBinding ObjExprBinding cenv env b with 
+                    | NormalizedBinding (_,_,_,_,[],_,_,_,SynPat.Named(SynPat.Wild _, id,_,_,_),NormalizedBindingRhs(_,_,rhsExpr),_,_) -> id.idText,rhsExpr
+                    | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(),b.RangeOfBindingSansRhs)))
         
-        TcRecordConstruction cenv overallTy env tpenv None objTy fldsList mWholeExpr
-    else
-        let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
+            TcRecordConstruction cenv overallTy env tpenv None objTy fldsList mWholeExpr
+        else
+            let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
-        if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env = 1 then 
-            error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(),mNewExpr))
+            if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env = 1 then 
+                error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(),mNewExpr))
 
-      // Work out the type of any interfaces to implement 
-        let extraImpls,tpenv = 
-          (tpenv , extraImpls) ||> List.mapFold (fun tpenv (InterfaceImpl(synIntfTy,overrides,m)) -> 
-              let intfTy,tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
-              if not (isInterfaceTy cenv.g intfTy) then
-                error(Error(FSComp.SR.tcExpectedInterfaceType(),m))
-              if isErasedType cenv.g intfTy then
-                  errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(),m))
-              (m,intfTy,overrides),tpenv)
+          // Work out the type of any interfaces to implement 
+            let extraImpls,tpenv = 
+              (tpenv , extraImpls) ||> List.mapFold (fun tpenv (InterfaceImpl(synIntfTy,overrides,m)) -> 
+                  let intfTy,tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
+                  if not (isInterfaceTy cenv.g intfTy) then
+                    error(Error(FSComp.SR.tcExpectedInterfaceType(),m))
+                  if isErasedType cenv.g intfTy then
+                      errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(),m))
+                  (m,intfTy,overrides),tpenv)
 
-        let realObjTy = (if isObjTy cenv.g objTy && nonNil extraImpls then (p23 (List.head extraImpls)) else objTy)
-        UnifyTypes cenv env mWholeExpr overallTy realObjTy
+            let realObjTy = (if isObjTy cenv.g objTy && nonNil extraImpls then (p23 (List.head extraImpls)) else objTy)
+            UnifyTypes cenv env mWholeExpr overallTy realObjTy
 
-        let ctorCall,baseIdOpt,tpenv =
-            match item,argopt with 
-            | Item.CtorGroup(methodName,minfos),Some (arg,baseIdOpt) -> 
-                let meths = minfos |> List.map (fun minfo -> minfo,None) 
-                let afterTcOverloadResolution = AfterTcOverloadResolution.ForNewConstructors cenv.tcSink env synObjTy.Range methodName minfos
-                let ad = env.eAccessRights
+            let ctorCall,baseIdOpt,tpenv =
+                match item,argopt with 
+                | Item.CtorGroup(methodName,minfos),Some (arg,baseIdOpt) -> 
+                    let meths = minfos |> List.map (fun minfo -> minfo,None) 
+                    let afterTcOverloadResolution = AfterTcOverloadResolution.ForNewConstructors cenv.tcSink env synObjTy.Range methodName minfos
+                    let ad = env.eAccessRights
 
-                let expr,tpenv = TcMethodApplicationThen cenv env objTy None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterTcOverloadResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic [] 
-                // The 'base' value is always bound
-                let baseIdOpt = (match baseIdOpt with None -> Some(ident("base",mObjTy)) | Some id -> Some(id))
-                expr,baseIdOpt,tpenv
-            | Item.FakeInterfaceCtor intfTy,None -> 
-                UnifyTypes cenv env mWholeExpr objTy intfTy
-                let expr = BuildObjCtorCall cenv.g mWholeExpr
-                expr,None,tpenv
-            | Item.FakeInterfaceCtor _,Some _ -> 
-                error(Error(FSComp.SR.tcConstructorForInterfacesDoNotTakeArguments(),mNewExpr))
-            | Item.CtorGroup _,None -> 
-                error(Error(FSComp.SR.tcConstructorRequiresArguments(),mNewExpr))
-            | _ -> error(Error(FSComp.SR.tcNewRequiresObjectConstructor(),mNewExpr))
+                    let expr,tpenv = TcMethodApplicationThen cenv env objTy None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterTcOverloadResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic [] 
+                    // The 'base' value is always bound
+                    let baseIdOpt = (match baseIdOpt with None -> Some(ident("base",mObjTy)) | Some id -> Some(id))
+                    expr,baseIdOpt,tpenv
+                | Item.FakeInterfaceCtor intfTy,None -> 
+                    UnifyTypes cenv env mWholeExpr objTy intfTy
+                    let expr = BuildObjCtorCall cenv.g mWholeExpr
+                    expr,None,tpenv
+                | Item.FakeInterfaceCtor _,Some _ -> 
+                    error(Error(FSComp.SR.tcConstructorForInterfacesDoNotTakeArguments(),mNewExpr))
+                | Item.CtorGroup _,None -> 
+                    error(Error(FSComp.SR.tcConstructorRequiresArguments(),mNewExpr))
+                | _ -> error(Error(FSComp.SR.tcNewRequiresObjectConstructor(),mNewExpr))
 
-        let baseValOpt = MakeAndPublishBaseVal cenv env baseIdOpt objTy
-        let env = Option.foldBack (AddLocalVal cenv.tcSink mNewExpr) baseValOpt env
-        
-        
-        let impls = (mWholeExpr,objTy,binds) :: extraImpls
+            let baseValOpt = MakeAndPublishBaseVal cenv env baseIdOpt objTy
+            let env = Option.foldBack (AddLocalVal cenv.tcSink mNewExpr) baseValOpt env
         
         
-        // 1. collect all the relevant abstract slots for each type we have to implement 
+            let impls = (mWholeExpr,objTy,binds) :: extraImpls
         
-        let overridesAndVirts,tpenv = ComputeObjectExprOverrides cenv env tpenv impls
+        
+            // 1. collect all the relevant abstract slots for each type we have to implement 
+        
+            let overridesAndVirts,tpenv = ComputeObjectExprOverrides cenv env tpenv impls
 
     
-        overridesAndVirts |> List.iter (fun (m,implty,dispatchSlots,dispatchSlotsKeyed,availPriorOverrides,overrides) -> 
-            let overrideSpecs = overrides |> List.map fst
+            overridesAndVirts |> List.iter (fun (m,implty,dispatchSlots,dispatchSlotsKeyed,availPriorOverrides,overrides) -> 
+                let overrideSpecs = overrides |> List.map fst
 
-            DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, cenv.g, cenv.amap, true, implty, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
+                DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, cenv.g, cenv.amap, true, implty, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.g, cenv.amap, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
+                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.g, cenv.amap, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
         
-        // 6c. create the specs of overrides 
-        let allTypeImpls = 
-          overridesAndVirts |> List.map (fun (m,implty,_,dispatchSlotsKeyed,_,overrides) -> 
-              let overrides' = 
-                  [ for overrideMeth in overrides do 
-                        let (Override(_,_, id,(mtps,_),_,_,isFakeEventProperty,_) as ovinfo),(_, thisVal, methodVars, bindingAttribs, bindingBody) = overrideMeth
-                        if not isFakeEventProperty then 
-                            let searchForOverride = 
-                                dispatchSlotsKeyed 
-                                |> NameMultiMap.find id.idText 
-                                |> List.tryPick (fun (RequiredSlot(virt,_)) -> 
-                                     if DispatchSlotChecking.IsExactMatch cenv.g cenv.amap m virt ovinfo then 
-                                         Some virt 
-                                     else 
-                                         None)
+            // 6c. create the specs of overrides 
+            let allTypeImpls = 
+              overridesAndVirts |> List.map (fun (m,implty,_,dispatchSlotsKeyed,_,overrides) -> 
+                  let overrides' = 
+                      [ for overrideMeth in overrides do 
+                            let (Override(_,_, id,(mtps,_),_,_,isFakeEventProperty,_) as ovinfo),(_, thisVal, methodVars, bindingAttribs, bindingBody) = overrideMeth
+                            if not isFakeEventProperty then 
+                                let searchForOverride = 
+                                    dispatchSlotsKeyed 
+                                    |> NameMultiMap.find id.idText 
+                                    |> List.tryPick (fun (RequiredSlot(virt,_)) -> 
+                                         if DispatchSlotChecking.IsExactMatch cenv.g cenv.amap m virt ovinfo then 
+                                             Some virt 
+                                         else 
+                                             None)
 
-                            let overridden = 
-                                match searchForOverride with 
-                                | Some x -> x
-                                | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(),synObjTy.Range))
+                                let overridden = 
+                                    match searchForOverride with 
+                                    | Some x -> x
+                                    | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(),synObjTy.Range))
 
-                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal]::methodVars, bindingBody, id.idRange) ]
-              (implty,overrides'))
+                                yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal]::methodVars, bindingBody, id.idRange) ]
+                  (implty,overrides'))
             
-        let (objTy',overrides') = allTypeImpls.Head
-        let extraImpls = allTypeImpls.Tail
+            let (objTy',overrides') = allTypeImpls.Head
+            let extraImpls = allTypeImpls.Tail
         
-        // 7. Build the implementation 
-        let expr = mkObjExpr(objTy', baseValOpt, ctorCall, overrides',extraImpls,mWholeExpr)
-        let expr = mkCoerceIfNeeded cenv.g realObjTy objTy' expr
-        expr,tpenv
+            // 7. Build the implementation 
+            let expr = mkObjExpr(objTy', baseValOpt, ctorCall, overrides',extraImpls,mWholeExpr)
+            let expr = mkCoerceIfNeeded cenv.g realObjTy objTy' expr
+            expr,tpenv
+        | _ -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(),mNewExpr))
 
 
 
@@ -13012,8 +13022,10 @@ let TcTyconMemberDefns cenv env parent bindsm scopem tyconDefnMembers =
 
 module AddAugmentationDeclarations = begin
     let tcaug_has_nominal_interface g (tcaug: TyconAugmentation) tcref =
-        tcaug.tcaug_interfaces |> List.exists (fun (x,_,_) -> 
-            isAppTy g x && tyconRefEq g (tcrefOfAppTy g x) tcref)
+        tcaug.tcaug_interfaces |> List.exists (fun (x,_,_) ->
+            match stripTyEqns g x with 
+            | TType_app(tcref',_) -> tyconRefEq g tcref' tcref
+            | _ -> false)
 
         
     let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet:Set<Stamp>) (tycon:Tycon) =
@@ -13182,9 +13194,8 @@ module TyconConstraintInference = begin
 
                     // Otherwise its a nominal type
                     | _ -> 
-
-                        if isAppTy g ty then 
-                            let tcref,tinst = destAppTy g ty 
+                        match stripTyEqns g ty with
+                        | TType_app(tcref,tinst) ->
                             // Check the basic requirement - IComparable/IStructuralComparable or assumed-comparable
                             (if initialAssumedTycons.Contains tcref.Stamp then 
                                 assumedTycons.Contains tcref.Stamp
@@ -13201,8 +13212,7 @@ module TyconConstraintInference = begin
                                     checkIfFieldTypeSupportsComparison  tycon ty 
                                 else 
                                     true) 
-                        else
-                            false
+                        | _ -> false
 
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
@@ -13307,8 +13317,8 @@ module TyconConstraintInference = begin
                         false
                     | _ -> 
                         // Check the basic requirement - any types except those eliminated
-                        if isAppTy g ty then
-                            let tcref,tinst = destAppTy g ty
+                        match stripTyEqns g ty with
+                        | TType_app(tcref,tinst) ->
                             (if initialAssumedTycons.Contains tcref.Stamp then 
                                 assumedTycons.Contains tcref.Stamp
                              elif AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref then
@@ -13325,8 +13335,7 @@ module TyconConstraintInference = begin
                                      checkIfFieldTypeSupportsEquality  tycon ty 
                                  else 
                                      true) 
-                        else
-                            false
+                        |_ -> false
 
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
@@ -14568,10 +14577,9 @@ module EstablishTypeDefinitionCores = begin
                     (tycon,tycon2)::acc
                 else acc // note: all edges added are (tycon,_)
             let insertEdgeToType  ty     acc = 
-                if isAppTy cenv.g ty then // guard against possible earlier failure
-                    insertEdgeToTycon (tyconOfAppTy cenv.g ty) acc
-                else
-                    acc
+                match stripTyEqns cenv.g ty with // guard against possible earlier failure
+                | TType_app(tcref,_) -> insertEdgeToTycon tcref.Deref acc
+                | _ -> acc
 
             // collect edges from an a struct field (which is struct-contained in tycon)
             let rec accStructField (structTycon:Tycon) structTyInst (fspec:RecdField) (doneTypes,acc)  =

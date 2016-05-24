@@ -430,8 +430,12 @@ module DispatchSlotChecking =
             // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 
                 impliedTys 
-                |> List.filter (isInterfaceTy g) 
-                |> List.map (fun ty -> tcrefOfAppTy g ty, ()) 
+                |> List.choose (fun ty -> 
+                    if isInterfaceTy g ty then
+                        match stripTyEqns g ty with 
+                        | TType_app(tcref,_) -> Some(tcref, ())
+                        | _ -> failwith "GetSlotImplSets"
+                    else None) 
                 |> TyconRefMap.OfList 
             
             // Is a member an abstract slot of one of the implied interface types?

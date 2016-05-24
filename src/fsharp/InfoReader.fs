@@ -70,9 +70,10 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
-        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            if not (isAppTy g typ) then []
-            else SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) (tcrefOfAppTy g typ)
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            match stripTyEqns g typ with
+            | TType_app(tcref,_) -> SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) tcref
+            | _ -> []
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
 
@@ -145,14 +146,14 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pd -> ILProp(g,ILPropInfo(tinfo,pd))) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-            if not (isAppTy g typ) then []
-            else
+            match stripTyEqns g typ with
+            | TType_app(tcref,_) -> 
                 let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
                 SelectImmediateMemberVals g None
                            (fun membInfo vref -> propCollector.Collect(membInfo,vref); None)
-                           (tcrefOfAppTy g typ) |> ignore
+                           tcref |> ignore
                 propCollector.Close()
+            | _ -> []
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
@@ -230,9 +231,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
 
     /// Get the F#-declared record fields or class 'val' fields of a type
     let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =
-        match tryDestAppTy g typ with 
-        | None -> []
-        | Some tcref -> 
+        match stripTyEqns g typ with
+        | TType_app(tcref,_) ->
             // Note;secret fields are not allowed in lookups here, as we're only looking
             // up user-visible fields in name resolution.
             match optFilter with
@@ -244,6 +244,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                 [ for fdef in tcref.AllFieldsArray do
                     if not fdef.IsCompilerGenerated then
                         yield MakeRecdFieldInfo g typ tcref fdef ]
+        | _ -> []
 
 
     /// The primitive reader for the method info sets up a hierarchy
@@ -385,13 +386,13 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         | flds ->
             // multiple fields with the same name can come from different classes,
             // so filter them by the given type name
-            match tryDestAppTy g typ with 
-            | None -> None
-            | Some tcref ->
+            match stripTyEqns g typ with
+            | TType_app(tcref,_) ->             
                 match flds |> List.filter (fun rfinfo -> tyconRefEq g tcref rfinfo.TyconRef) with
                 | [] -> None
                 | [single] -> Some single
                 | _ -> failwith "unexpected multiple fields with same name" // Because it should have been already reported as duplicate fields
+            | _ -> None
 
     /// Try and find an item with the given name in a type.
     member x.TryFindNamedItemOfType (nm,ad,m,typ) =
@@ -414,7 +415,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
 let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
     let g = infoReader.g
     let amap = infoReader.amap 
-    if isAppTy g ty then
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> 
         match metadataOfTy g ty with 
 #if EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
@@ -429,15 +431,14 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
             |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            let tcref = tcrefOfAppTy g ty
             tcref.MembersOfFSharpTyconByName 
             |> NameMultiMap.find ".ctor"
             |> List.choose(fun vref -> 
                 match vref.MemberInfo with 
                 | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
                 | _ -> None) 
-            |> List.map (fun x -> FSMeth(g,ty,x,None)) 
-    else []
+            |> List.map (fun x -> FSMeth(g,ty,x,None))
+    | _ -> []
     
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy

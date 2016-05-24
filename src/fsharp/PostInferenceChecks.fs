@@ -441,7 +441,11 @@ let CheckNoReraise cenv freesOpt (body:Expr) =
 let is_splice g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref 
 
 let CheckMultipleInterfaceInstantiations cenv interfaces m = 
-    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
+    let keyf ty = 
+        match stripTyEqns cenv.g ty with 
+        | TType_app(tcref,_) -> tcref.Stamp
+        | _ -> failwith "CheckMultipleInterfaceInstantiations"
+
     let table = interfaces |> MultiMap.initBy keyf
     let firstInterfaceWithMultipleGenericInstantiations = 
         interfaces |> List.tryPick (fun typ1 -> 
@@ -549,8 +553,8 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
           when not virt && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
-        match tryDestAppTy cenv.g baseVal.Type with
-        | Some tcref when tcref.IsILTycon ->
+        match stripTyEqns cenv.g baseVal.Type with
+        | TType_app(tcref,_) when tcref.IsILTycon ->
             try
                 // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
                 // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare

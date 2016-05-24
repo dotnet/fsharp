@@ -702,15 +702,15 @@ let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
 let mkAppTy tcref tyargs = TType_app(tcref,tyargs)
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref,tyargs)
-let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
-let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> tcref,tinst | _ -> failwith "destAppTy") 
+
+let isAppTy   g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false)
+let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> tcref,tinst | _ -> failwith "destAppTy")
 let tcrefOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> Some tcref | _ -> None) 
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
 let (|TupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tys) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_,tinst) -> tinst | _ -> []) 
-let tyconOfAppTy   g ty = (tcrefOfAppTy g ty).Deref
 
 
 let tryNiceEntityRefOfTy  ty = 
@@ -736,11 +736,10 @@ let (|ByrefTy|_|) g ty =
     | AppTy g (tcr,[tyarg]) when tyconRefEq g tcr g.byref_tcr -> Some tyarg
     | _ -> None
 
-let mkInstForAppTy g typ = 
-    if isAppTy g typ then 
-      let tcref,tinst = destAppTy g typ
-      mkTyconRefInst tcref tinst
-    else []
+let mkInstForAppTy g typ =
+    match stripTyEqns g typ with
+    | TType_app(tcref,tinst) -> mkTyconRefInst tcref tinst
+    | _ -> []
 
 let domainOfFunTy g ty = fst(destFunTy g ty)
 let rangeOfFunTy  g ty = snd(destFunTy g ty)
@@ -1426,16 +1425,20 @@ let rankOfArrayTyconRef g tcr =
 //------------------------------------------------------------------------- 
 
 let destArrayTy (g:TcGlobals) ty =
-    let _,tinst = destAppTy g ty
-    match tinst with 
-    | [ty] -> ty
-    | _ -> failwith "destArrayTy";
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) ->
+        match tinst with 
+        | [ty] -> ty
+        | _ -> failwith "destArrayTy"
+    | _ -> failwith "destArrayTy"     
 
 let destListTy (g:TcGlobals) ty =
-    let _,tinst = destAppTy g ty
-    match tinst with
-    | [ty] -> ty
-    | _ -> failwith "destListTy";
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) ->
+        match tinst with
+        | [ty] -> ty
+        | _ -> failwith "destListTy"
+    | _ -> failwith "destListTy"
 
 let isTypeConstructorEqualToOptional g tcOpt tc = 
     match tcOpt with
@@ -1488,11 +1491,11 @@ let metadataOfTy g ty =
     | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
     | _ -> 
 #endif
-    if isILAppTy g ty then 
-       let tcref,_ = destAppTy g ty
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) when tcref.IsILTycon ->
        let scoref,_,tdef = tcref.ILTyconInfo
        ILTypeMetadata (scoref,tdef)
-    else 
+    | _ ->
        FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 
 
@@ -1512,18 +1515,33 @@ let isILInterfaceTycon (tycon:Tycon) =
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Interface)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> false
 
-let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
+let rankOfArrayTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> rankOfArrayTyconRef g tcref
+    | _ -> failwith "rankOfArrayTy"
 
-let isFSharpObjModelRefTy g ty = 
-    isFSharpObjModelTy g ty && 
-    let tcr,_ = destAppTy g ty
-    match tcr.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-    | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
-    | TTyconStruct | TTyconEnum -> false
+let isFSharpObjModelRefTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) when tcref.IsFSharpObjectModelTycon ->     
+        match tcref.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
+        | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
+        | TTyconStruct | TTyconEnum -> false
+    | _ -> false
 
-let isFSharpClassTy     g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpClassTycon
-let isFSharpStructTy    g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpStructOrEnumTycon
-let isFSharpInterfaceTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsFSharpInterfaceTycon
+let isFSharpClassTy     g ty = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tcref.Deref.IsFSharpClassTycon
+    | _ -> false
+
+let isFSharpStructTy    g ty = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tcref.Deref.IsFSharpStructOrEnumTycon
+    | _ -> false
+
+let isFSharpInterfaceTy g ty = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tcref.Deref.IsFSharpInterfaceTycon
+    | _ -> false
 
 let isDelegateTy g ty = 
     match metadataOfTy g ty with 
@@ -1531,8 +1549,10 @@ let isDelegateTy g ty =
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        isAppTy g ty && (tyconOfAppTy g ty).IsFSharpDelegateTycon
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        match stripTyEqns g ty with
+        | TType_app(tcref,_) -> tcref.Deref.IsFSharpDelegateTycon
+        | _ -> false
 
 let isInterfaceTy g ty = 
     match metadataOfTy g ty with 
@@ -1561,7 +1581,9 @@ let isRefTy g ty =
     isUnitTy g ty
 
 let isStructTy g ty = 
-    (isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon) || isTupleStructTy g ty
+    (match stripTyEqns g ty with
+     | TType_app(tcref,_) -> tcref.Deref.IsStructOrEnumTycon
+     | _ -> false) || isTupleStructTy g ty
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
@@ -1574,8 +1596,8 @@ let isStructTy g ty =
 // [Note: Constructed types and type-parameters are never unmanaged-types. end note]
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    if isAppTy g ty then
-        let tcref = tcrefOfAppTy g ty
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) ->
         let isEq tcref2  = tyconRefEq g tcref tcref2 
         if          isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
                     isEq g.sbyte_tcr || isEq g.byte_tcr || 
@@ -1597,7 +1619,7 @@ let rec isUnmanagedTy g ty =
                 | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
                 | _ -> false // generic structs are never 
             else false
-    else
+    | _ ->
         false
 
 let isInterfaceTycon x = 
@@ -1605,10 +1627,10 @@ let isInterfaceTycon x =
 
 let isInterfaceTyconRef (tcref: TyconRef) = isInterfaceTycon tcref.Deref
 
-let isEnumTy g ty = 
-    match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tcref.IsEnumTycon
+let isEnumTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tcref.IsEnumTycon
+    | _ -> false
 
 let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_,_,parentFormalTypars,methFormalTypars,_,formalRetTy)) = 
     let methTyInst = mkTyparInst methFormalTypars methTyInst
@@ -1619,9 +1641,11 @@ let slotSigHasVoidReturnTy (TSlotSig(_,_,_,_,_,formalRetTy)) =
     isNone formalRetTy 
 
 let returnTyOfMethod g (TObjExprMethod((TSlotSig(_,parentTy,_,_,_,_) as ss),_,methFormalTypars,_,_,_)) =
-    let tinst = argsOfAppTy g parentTy
-    let methTyInst = generalizeTypars methFormalTypars
-    actualReturnTyOfSlotSig tinst methTyInst ss
+    match stripTyEqns g parentTy with
+    | TType_app(_,tinst) -> 
+        let methTyInst = generalizeTypars methFormalTypars
+        actualReturnTyOfSlotSig tinst methTyInst ss
+    | _ -> failwith "returnTyOfMethod"
 
 /// Is the type 'abstract' in C#-speak
 let isAbstractTycon (tycon:Tycon) = 
@@ -2646,14 +2670,20 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 // List and reference types...
 //------------------------------------------------------------------------- 
 
-let destByrefTy g ty   = if isByrefTy g ty then List.head (argsOfAppTy g ty) else failwith "destByrefTy: not a byref type"
+let destByrefTy g ty   = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,tinst) when tyconRefEq g g.byref_tcr tcref -> List.head tinst
+    | _ -> failwith "destByrefTy: not a byref type"
 
-let isRefCellTy g ty   = 
-    match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.refcell_tcr_canon tcref
+let isRefCellTy g ty = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tyconRefEq g g.refcell_tcr_canon tcref    
+    | _ -> false
 
-let destRefCellTy g ty = if isRefCellTy g ty then List.head (argsOfAppTy g ty) else failwith "destRefCellTy: not a ref type"
+let destRefCellTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref,tinst) when tyconRefEq g g.refcell_tcr_canon tcref -> List.head tinst
+    | _ -> failwith "destRefCellTy: not a ref type"
 
 let StripSelfRefCell(g:TcGlobals,baseOrThisInfo:ValBaseOrThisInfo,tau: TType) : TType =
     if baseOrThisInfo = CtorThisVal && isRefCellTy g tau 
@@ -2671,34 +2701,46 @@ let mkOptionTy g ty = TType_app (g.option_tcr_nice, [ty])
 let mkListTy g ty = TType_app (g.list_tcr_nice, [ty])
 
 let isOptionTy g ty = 
-    match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.option_tcr_canon tcref
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tyconRefEq g g.option_tcr_canon tcref
+    | _ -> false
 
 let tryDestOptionTy g ty = 
-    match argsOfAppTy g ty with 
-    | [ty1]  when isOptionTy g ty  -> Some ty1
-    | _ -> None
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) -> 
+        match tinst with 
+        | [ty1] when isOptionTy g ty  -> Some ty1
+        | _ -> None
+    | _ ->  failwith "tryDestOptionTy: not an appType"
 
-let destOptionTy g ty = 
-    match tryDestOptionTy g ty with 
-    | Some ty -> ty
-    | None -> failwith "destOptionTy: not an option type"
+let destOptionTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) -> 
+        match tinst with 
+        | [ty1] when isOptionTy g ty  -> ty1
+        | _ -> failwith "destOptionTy: not an option type"
+    | _ ->  failwith "destOptionTy: not an appType"
 
-let isLinqExpressionTy g ty = 
-    match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
+let isLinqExpressionTy g ty =
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tyconRefEq g g.system_LinqExpression_tcref tcref
+    | _ -> false
 
 let tryDestLinqExpressionTy g ty = 
-    match argsOfAppTy g ty with 
-    | [ty1]  when isLinqExpressionTy g ty  -> Some ty1
-    | _ -> None
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) -> 
+        match tinst with 
+        | [ty1] when isLinqExpressionTy g ty  -> Some ty1
+        | _ -> None
+    | _ ->  failwith "tryDestLinqExpressionTy: not an appType"
 
 let destLinqExpressionTy g ty = 
-    match tryDestLinqExpressionTy g ty with 
-    | Some ty -> ty
-    | None -> failwith "destLinqExpressionTy: not an expression type"
+    match stripTyEqns g ty with
+    | TType_app(_,tinst) -> 
+        match tinst with 
+        | [ty1] when isLinqExpressionTy g ty  -> ty1
+        | _ -> failwith "destLinqExpressionTy: not an expression type"
+    | _ ->  failwith "destLinqExpressionTy: not an appType"
 
 let mkNoneCase g = mkUnionCaseRef g.option_tcr_canon "None"
 let mkSomeCase g = mkUnionCaseRef g.option_tcr_canon "Some"
@@ -4283,7 +4325,6 @@ let InferArityOfExprBinding g (v:Val) e =
 
 let underlyingTypeOfEnumTy g typ = 
     assert(isEnumTy g typ)
-    let tycon = tyconOfAppTy g typ
     match metadataOfTy g typ with 
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
@@ -4306,7 +4347,12 @@ let underlyingTypeOfEnumTy g typ =
         | "System.Char" -> g.char_ty
         | "System.Boolean" -> g.bool_ty
         | _ -> g.int32_ty
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        let tycon =
+            match stripTyEqns g typ with
+            | TType_app(tcref,_) -> tcref.Deref
+            | _ -> failwith "no tycon available"
+
         match tycon.GetFieldByName "value__" with 
         | Some rf -> rf.FormalType
         | None ->  error(InternalError("no 'value__' field found for enumeration type "^tycon.LogicalName,tycon.Range))
@@ -4361,9 +4407,9 @@ let decideStaticOptimizationConstraint g c =
        checkTypes a b
     | TTyconIsStruct a -> 
        let a = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g a)
-       match tryDestAppTy g a with 
-       | Some tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
-       | None -> StaticOptimizationAnswer.Unknown
+       match stripTyEqns g a with
+       | TType_app(tcref1,_) -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
+       | _ -> StaticOptimizationAnswer.Unknown
             
 let rec DecideStaticOptimizations g cs = 
     match cs with 
@@ -5329,12 +5375,12 @@ type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
 let isRecdOrStuctTyImmutable g ty =
-    match tryDestAppTy g ty with 
-    | None -> false
-    | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
-      tyconRefEq g tcref g.decimal_tcr ||
-      tyconRefEq g tcref g.date_tcr
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> 
+        not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
+        tyconRefEq g tcref g.decimal_tcr ||
+        tyconRefEq g tcref g.date_tcr    
+    | _ -> false
 
 // We can take the address of values of struct type even if the value is immutable
 // under certain conditions
@@ -5722,13 +5768,19 @@ let mkMinusOne g  m =  mkInt g m (-1)
 
 let destInt32 = function Expr.Const(Const.Int32 n,_,_) -> Some n | _ -> None
 
-let isIDelegateEventType g ty     = isAppTy g ty && tyconRefEq g g.fslib_IDelegateEvent_tcr (tcrefOfAppTy g ty)
+let isIDelegateEventType g ty     = 
+    match stripTyEqns g ty with
+    | TType_app(tcref,_) -> tyconRefEq g g.fslib_IDelegateEvent_tcr (tcref)
+    | _ -> false
+
 let destIDelegateEventType g ty   = 
-    if isIDelegateEventType g ty then 
-        match argsOfAppTy g ty with 
+    match stripTyEqns g ty with
+    | TType_app(tcref,tinst) when tyconRefEq g g.fslib_IDelegateEvent_tcr (tcref) ->
+        match tinst with 
         | [ty1] -> ty1
         | _ -> failwith "destIDelegateEventType: internal error"
-    else failwith "destIDelegateEventType: not an IDelegateEvent type"
+    | _ -> failwith "destIDelegateEventType: not an IDelegateEvent type"
+
 let mkIEventType g ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2])
 let mkIObservableType g ty1 = TType_app (g.tcref_IObservable, [ty1])
 let mkIObserverType g ty1 = TType_app (g.tcref_IObserver, [ty1])
@@ -5826,19 +5878,20 @@ let permuteExprList (sigma:int[]) (exprs: Expr list) (typ: TType list) (names:st
 /// We still need to sort by index. 
 let mkRecordExpr g (lnk,tcref,tinst,rfrefs:RecdFieldRef list,args,m) =  
     // Remove any abbreviations 
-    let tcref,tinst = destAppTy g (mkAppTy tcref tinst)
+    match stripTyEqns g (mkAppTy tcref tinst) with
+    | TType_app(tcref,tinst) ->    
+        let rfrefsArray = rfrefs |> List.mapi (fun i x -> (i,x)) |> Array.ofList
+        rfrefsArray |> Array.sortInPlaceBy (fun (_,r) -> r.Index) ;
+        let sigma = Array.create rfrefsArray.Length -1
+        Array.iteri (fun j (i,_) -> 
+            if sigma.[i] <> -1 then error(InternalError("bad permutation",m));
+            sigma.[i] <- j)  rfrefsArray;
     
-    let rfrefsArray = rfrefs |> List.mapi (fun i x -> (i,x)) |> Array.ofList
-    rfrefsArray |> Array.sortInPlaceBy (fun (_,r) -> r.Index) ;
-    let sigma = Array.create rfrefsArray.Length -1
-    Array.iteri (fun j (i,_) -> 
-        if sigma.[i] <> -1 then error(InternalError("bad permutation",m));
-        sigma.[i] <- j)  rfrefsArray;
-    
-    let argTyps     = List.map (fun rfref  -> actualTyOfRecdFieldRef rfref tinst) rfrefs
-    let names       = rfrefs |> List.map (fun rfref -> rfref.FieldName)
-    let binds,args  = permuteExprList sigma args argTyps names
-    mkLetsBind m binds (Expr.Op (TOp.Recd(lnk,tcref),tinst,args,m))
+        let argTyps     = List.map (fun rfref  -> actualTyOfRecdFieldRef rfref tinst) rfrefs
+        let names       = rfrefs |> List.map (fun rfref -> rfref.FieldName)
+        let binds,args  = permuteExprList sigma args argTyps names
+        mkLetsBind m binds (Expr.Op (TOp.Recd(lnk,tcref),tinst,args,m))
+    | _ -> failwith "mkRecordExpr"
   
 
 //-------------------------------------------------------------------------
@@ -6760,25 +6813,27 @@ let typarEnc _g (gtpsType,gtpsMethod) typar =
 
 let rec typeEnc g (gtpsType,gtpsMethod) ty = 
     if verbose then dprintf "--> typeEnc"
-    let stripped = stripTyEqnsAndMeasureEqns g ty
+    let stripped = stripTyEqnsAndMeasureEqns g ty               
     match stripped with 
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
-    | _ when isArrayTy g ty   -> 
-        let tcref,tinst = destAppTy g ty
-        let arraySuffix = 
-            match rankOfArrayTyconRef g tcref with
-            // The easy case
-            | 1 -> "[]"
-            // REVIEW
-            // In fact IL supports 3 kinds of multidimensional arrays, and each kind of array has its own xmldoc spec.
-            // We don't support all these, and instead always pull xmldocs for 0-based-arbitrary-length ("0:") multidimensional arrays.
-            // This is probably the 99% case anyway.
-            | 2 -> "[0:,0:]"
-            | 3 -> "[0:,0:,0:]"
-            | 4 -> "[0:,0:,0:,0:]"
-            | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
-        typeEnc g (gtpsType,gtpsMethod) (List.head tinst) ^ arraySuffix
+    | _ when isArrayTy g ty   ->
+        match stripTyEqns g ty with
+        | TType_app(tcref,tinst) -> 
+            let arraySuffix = 
+                match rankOfArrayTyconRef g tcref with
+                // The easy case
+                | 1 -> "[]"
+                // REVIEW
+                // In fact IL supports 3 kinds of multidimensional arrays, and each kind of array has its own xmldoc spec.
+                // We don't support all these, and instead always pull xmldocs for 0-based-arbitrary-length ("0:") multidimensional arrays.
+                // This is probably the 99% case anyway.
+                | 2 -> "[0:,0:]"
+                | 3 -> "[0:,0:,0:]"
+                | 4 -> "[0:,0:,0:,0:]"
+                | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
+            typeEnc g (gtpsType,gtpsMethod) (List.head tinst) ^ arraySuffix
+        | _ -> failwith "typeEnc"
     | TType_ucase (UCRef(tcref,_),tinst)   
     | TType_app (tcref,tinst)   -> 
         if tyconRefEq g g.byref_tcr tcref then
@@ -6926,16 +6981,21 @@ let TypeNullNever g ty =
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(false))
+        match stripTyEqns g ty with
+        | TType_app(tcref,_) -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some(false)
+        | _ -> true
     elif TypeNullNever g ty then 
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
+        match stripTyEqns g ty with
+        | TType_app(tcref,_) -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some(true)
+        | _ -> false
 
-let TypeNullIsTrueValue g ty = 
-    (isAppTy g ty && IsUnionTypeWithNullAsTrueValue g (tyconOfAppTy g ty))  ||
-    (isUnitTy g ty)
+let TypeNullIsTrueValue g ty =    
+    (match stripTyEqns g ty with
+     | TType_app(tcref,_) -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
+     | _ -> false) || isUnitTy g ty
 
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
@@ -6950,8 +7010,8 @@ let rec TypeHasDefaultValue g m ty =
     TypeSatisfiesNullConstraint g m ty  
     || (isStructTy g ty &&
         // Is it an F# struct type?
-        (if isFSharpStructTy g ty then 
-            let tcref,tinst = destAppTy g ty 
+        match stripTyEqns g ty with
+        | TType_app(tcref,tinst) when tcref.Deref.IsFSharpStructOrEnumTycon ->
             let flds = 
                 // Note this includes fields implied by the use of the implicit class construction syntax
                 tcref.AllInstanceFieldsAsList
@@ -6959,27 +7019,28 @@ let rec TypeHasDefaultValue g m ty =
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some(false)))
 
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
-         elif isTupleStructTy g ty then 
-            destTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
-         else
-            // All struct types defined in other .NET languages have a DefaultValue regardless of their
-            // instantiation
-            true))
+        | _ ->
+             if isTupleStructTy g ty then 
+                destTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+             else
+                // All struct types defined in other .NET languages have a DefaultValue regardless of their
+                // instantiation
+                true)
 
 
 let (|SpecialComparableHeadType|_|) g ty =           
     if isTupleTy g ty then 
         Some (destTupleTy g ty) 
-    elif isAppTy g ty then 
-        let tcref,tinst = destAppTy g ty 
-        if isArrayTyconRef g tcref ||
-           tyconRefEq g tcref g.system_UIntPtr_tcref ||
-           tyconRefEq g tcref g.system_IntPtr_tcref then
-             Some tinst 
-        else 
-            None
     else
-        None
+        match stripTyEqns g ty with
+        | TType_app(tcref,tinst) ->
+            if isArrayTyconRef g tcref ||
+               tyconRefEq g tcref g.system_UIntPtr_tcref ||
+               tyconRefEq g tcref g.system_IntPtr_tcref then
+                 Some tinst 
+            else 
+                None
+        | _ -> None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
@@ -7080,20 +7141,21 @@ let isSealedTy g ty =
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
     | ILTypeMetadata (_,td) -> td.IsSealed
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-       if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
-          let tcref,_ = destAppTy g ty
-          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true))
-       else 
-          // All other F# types, array, byref, tuple types are sealed
-          true
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        match stripTyEqns g ty with
+        | TType_app(tcref,_) when tcref.Deref.IsFSharpInterfaceTycon || tcref.Deref.IsFSharpClassTycon ->
+            TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true)
+        | _ ->
+            // All other F# types, array, byref, tuple types are sealed
+            true
    
 let isComInteropTy g ty =
-    let tcr,_ = destAppTy g ty
-    match g.attrib_ComImportAttribute with
-    | None -> false
-    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
+    match stripTyEqns g ty with
+    | TType_app(tcr,_) -> 
+        match g.attrib_ComImportAttribute with
+        | None -> false
+        | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
+    | _ -> failwith "isComInteropTy"
   
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 

@@ -1250,9 +1250,11 @@ module InfoMemberPrinting =
         let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
         if minfo.IsExtensionMember then  
           bprintf os "(%s) " (FSComp.SR.typeInfoExtension())
-        if isAppTy amap.g minfo.EnclosingType then 
-            outputTyconRef denv os (tcrefOfAppTy amap.g minfo.EnclosingType)
-        else
+
+        match stripTyEqns amap.g minfo.EnclosingType with
+        | TType_app(tcref,_) ->
+            outputTyconRef denv os tcref
+        | _ ->
             outputTy denv os minfo.EnclosingType
         if minfo.IsConstructor then  
           bprintf os "("

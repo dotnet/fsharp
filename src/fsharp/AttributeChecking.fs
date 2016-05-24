@@ -434,24 +434,23 @@ let MethInfoIsUnseen g m typ minfo =
 
     let isUnseenByHidingAttribute = 
 #if EXTENSIONTYPING
-        not (isObjTy g typ) &&
-        isAppTy g typ &&
-        isObjTy g minfo.EnclosingType &&
-        let tcref = tcrefOfAppTy g typ 
-        match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
-            info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
-        | _ -> 
-        // This attribute check is done by name to ensure compilation doesn't take a dependency 
-        // on Microsoft.FSharp.Core.CompilerServices.TypeProviderEditorHideMethodsAttribute.
-        //
-        // We are only interested in filtering out the method on System.Object, so it is sufficient
-        // just to look at the attributes on IL methods.
-        if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
-        else 
-            false
+        match stripTyEqns g typ with
+        | TType_app(tcref,_) when not (tyconRefEq g g.system_Object_tcref tcref) && isObjTy g minfo.EnclosingType ->        
+            match tcref.TypeReprInfo with 
+            | TProvidedTypeExtensionPoint info -> 
+                info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
+            | _ -> 
+            // This attribute check is done by name to ensure compilation doesn't take a dependency 
+            // on Microsoft.FSharp.Core.CompilerServices.TypeProviderEditorHideMethodsAttribute.
+            //
+            // We are only interested in filtering out the method on System.Object, so it is sufficient
+            // just to look at the attributes on IL methods.
+            if tcref.IsILTycon then 
+                    tcref.ILTyconRawMetadata.CustomAttrs.AsList 
+                    |> List.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+            else 
+                false
+        | _ -> false
 #else
         typ |> ignore
         false

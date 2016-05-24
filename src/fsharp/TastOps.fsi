@@ -396,7 +396,6 @@ val isProvenUnionCaseTy : TType -> bool
 val isAppTy        : TcGlobals -> TType -> bool
 val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
-val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst

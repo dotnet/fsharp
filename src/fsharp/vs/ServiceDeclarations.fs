@@ -494,8 +494,12 @@ module internal ItemDescriptionsImpl =
             // In this case just bail out and assume items are not equal
             protectAssemblyExploration false (fun () -> 
               let equalTypes(ty1, ty2) =
-                  if isAppTy g ty1 && isAppTy g ty2 then tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2) 
-                  else typeEquiv g ty1 ty2
+                  match stripTyEqns g ty1 with 
+                  | TType_app(tcref1,_) ->
+                      match stripTyEqns g ty2 with 
+                      | TType_app(tcref2,_) -> tyconRefEq g tcref1 tcref2
+                      | _ -> typeEquiv g ty1 ty2
+                  | _ -> typeEquiv g ty1 ty2
               match item1,item2 with 
               | Wrap(Item.DelegateCtor(ty1)), Wrap(Item.DelegateCtor(ty2)) -> equalTypes(ty1, ty2)
               | Wrap(Item.Types(dn1,[ty1])), Wrap(Item.Types(dn2,[ty2])) -> 
@@ -537,8 +541,9 @@ module internal ItemDescriptionsImpl =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | Wrap(ItemWhereTypIsPreferred ty) -> 
-                  if isAppTy g ty then hash (tcrefOfAppTy g ty).Stamp
-                  else 1010
+                  match stripTyEqns g ty with
+                  | TType_app(tcref,_) -> hash tcref.Stamp
+                  | _ -> 1010
               | Wrap(Item.ILField(ILFieldInfo(_, fld))) -> 
                   System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
               | Wrap(Item.TypeVar (nm,_tp)) -> hash nm
@@ -577,15 +582,15 @@ module internal ItemDescriptionsImpl =
         protectAssemblyExploration true (fun () -> 
          match item with 
          | Item.Types(it, [ty]) -> 
-             g.suppressed_types |> List.forall (fun supp -> 
-                if isAppTy g ty then 
+             g.suppressed_types |> List.forall (fun supp ->
+                match stripTyEqns g ty with
+                | TType_app(tcr1,_) -> 
                   // check if they are the same logical type (after removing all abbreviations)
-                  let tcr1 = tcrefOfAppTy g ty
                   let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
                   not(tyconRefEq g tcr1 tcr2 && 
                       // check the display name is precisely the one we're suppressing
                       it = supp.DisplayName)
-                else true ) 
+                | _ -> true ) 
          | _ -> true ))
     
     let SimplerDisplayEnv denv _isDecl = 
@@ -1156,13 +1161,13 @@ module internal ItemDescriptionsImpl =
          
          /// Find the glyph for the given type representation.
          let rec TypToGlyph(typ) = 
-            if isAppTy denv.g typ then 
-                let tcref = tcrefOfAppTy denv.g typ
-                tcref.TypeReprInfo |> ReprToGlyph 
-            elif isTupleTy denv.g typ then iIconGroupStruct
-            elif isFunction denv.g typ then iIconGroupDelegate
-            elif isTyparTy denv.g typ then iIconGroupStruct
-            else iIconGroupTypedef
+            match stripTyEqns denv.g typ with
+            | TType_app(tcref,_) -> tcref.TypeReprInfo |> ReprToGlyph 
+            | TType_tuple _ -> iIconGroupStruct
+            | TType_var _ -> iIconGroupStruct
+            | _ ->
+                if isFunction denv.g typ then iIconGroupDelegate
+                else iIconGroupTypedef
 
             
          /// Find the glyph for the given value representation.
