@@ -6685,35 +6685,33 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     let customOperationMethods = 
         AllMethInfosOfTypeInScope cenv.infoReader env.NameEnv (None,ad) IgnoreOverrides mBuilderVal builderTy
         |> List.choose (fun methInfo -> 
-                if IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo then
-                    let nameSearch = 
-                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                     (fun _ -> None) // We do not respect this attribute for IL methods
-                                     (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
-                                     (fun _ -> None) // We do not respect this attribute for provided methods
+                if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
+                let nameSearch = 
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                 (fun _ -> None) // We do not respect this attribute for IL methods
+                                 (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
+                                 (fun _ -> None) // We do not respect this attribute for provided methods
 
-                    let joinConditionWord =
-                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                     (fun _ -> None) // We do not respect this attribute for IL methods
-                                     (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
-                                     (fun _ -> None) // We do not respect this attribute for provided methods
-                    let flagSearch (propName:string) = 
-                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
-                                     (fun _ -> None) // We do not respect this attribute for IL methods
-                                     (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
-                                     (fun _ -> None)// We do not respect this attribute for provided methods
-                    let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
-                    let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
-                    let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
-                    let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
-                    let isLikeJoin = defaultArg (flagSearch "IsLikeJoin" ) false
-                    let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin" ) false
+                let joinConditionWord =
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                 (fun _ -> None) // We do not respect this attribute for IL methods
+                                 (function (Attrib(_,_,_,ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s),_,_,_)) -> Some s | _ -> None)
+                                 (fun _ -> None) // We do not respect this attribute for provided methods
+                let flagSearch (propName:string) = 
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                                 (fun _ -> None) // We do not respect this attribute for IL methods
+                                 (function (Attrib(_,_,_,ExtractAttribNamedArg propName (AttribBoolArg b),_,_,_)) -> Some b | _ -> None)
+                                 (fun _ -> None)// We do not respect this attribute for provided methods
+                let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
+                let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
+                let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
+                let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
+                let isLikeJoin = defaultArg (flagSearch "IsLikeJoin" ) false
+                let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin" ) false
 
-                    match nameSearch with  
-                    | None -> None
-                    | Some nm -> Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo)
-                else
-                    None)
+                match nameSearch with  
+                | None -> None
+                | Some nm -> Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
     let customOperationMethodsIndexedByKeyword = 
         customOperationMethods
@@ -8851,7 +8849,7 @@ and TcMethodApplication
     let GenerateMatchingSimpleArgumentTypes (calledMeth:MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
         curriedMethodArgAttribs
-        |> List.map (fun args -> List.filter isSimpleFormalArg args |> NewInferenceTypes)
+        |> List.map (List.filter isSimpleFormalArg >> NewInferenceTypes)
 
     let UnifyMatchingSimpleArgumentTypes exprTy (calledMeth:MethInfo) =
         let curriedArgTys = GenerateMatchingSimpleArgumentTypes calledMeth
@@ -11342,7 +11340,9 @@ let TcOpenDecl tcSink g amap m scopem env (longId : Ident list)  =
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve env amap longId)
 
     // validate opened namespace names
-    longId |> List.iter (fun id -> if id.idText <> MangledGlobalName then CheckNamespaceModuleOrTypeName g id)
+    for id in longId do
+        if id.idText <> MangledGlobalName then
+            CheckNamespaceModuleOrTypeName g id
 
     let IsPartiallyQualifiedNamespace (modref: ModuleOrNamespaceRef) = 
         let (CompPath(_,p)) = modref.CompilationPath 
