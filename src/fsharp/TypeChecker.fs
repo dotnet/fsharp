@@ -5141,16 +5141,13 @@ and TcExprFlex cenv flex ty (env: TcEnv) tpenv (e: SynExpr) =
     
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
-
-    let m = expr.Range
-
     // Start an error recovery handler 
     // Note the try/catch can lead to tail-recursion problems for iterated constructs, e.g. let... in... 
     // So be careful! 
     try 
         TcExprNoRecover cenv ty env tpenv expr 
     with e -> 
-
+        let m = expr.Range
         // Error recovery - return some rubbish expression, but replace/annotate 
         // the type of the current expression with a type variable that indicates an error 
         errorRecovery e m 
