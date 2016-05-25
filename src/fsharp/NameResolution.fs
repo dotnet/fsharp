@@ -694,34 +694,33 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 
 /// Add the contents of a module or namespace to the name resolution environment
 and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) = 
-     let pri = NextExtensionMethodPriority()
-     let mty = modref.ModuleOrNamespaceType
+    let pri = NextExtensionMethodPriority()
+    let mty = modref.ModuleOrNamespaceType
      
-     let mutable state = { nenv with eDisplayEnv = nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
+    let nenv =
+        let mutable state = { nenv with eDisplayEnv = nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
      
-     for exnc in mty.ExceptionDefinitions do
-        let tcref = modref.NestedTyconRef exnc
-        if IsEntityAccessible amap m ad tcref then 
-            state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
+        for exnc in mty.ExceptionDefinitions do
+           let tcref = modref.NestedTyconRef exnc
+           if IsEntityAccessible amap m ad tcref then 
+               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
 
-     let nenv = state
-     
-     let tcrefs = 
-        mty.TypeAndExceptionDefinitions 
-        |> List.choose (fun tycon -> 
-            let tcref = modref.NestedTyconRef tycon
-            if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
+        state
 
-     let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
-     let vrefs = 
-         mty.AllValsAndMembers.ToFlatList() 
-         |> FlatList.choose (fun x -> 
-             if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x 
-             else None)
-         |> FlatList.toArray
-     let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
-     let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
-     nenv
+    let tcrefs = 
+       mty.TypeAndExceptionDefinitions 
+       |> List.choose (fun tycon -> 
+           let tcref = modref.NestedTyconRef tycon
+           if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
+
+    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
+    let vrefs = 
+        mty.AllValsAndMembers.ToFlatList() 
+        |> FlatList.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
+        |> FlatList.toArray
+    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+    let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
+    nenv
 
 /// Add a set of modules or namespaces to the name resolution environment
 //
