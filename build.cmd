@@ -302,11 +302,11 @@ if '%RestorePackages%' == 'true' (
 :: Restore the Tools directory
 call %~dp0init-tools.cmd
 
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
-pushd .\lkg & %_dotnetexe% restore &popd
+set /P _dotnetexe=<%~dp0Tools\DOTNET_INSTALLED_PATH.txt
+pushd .\lkg & "%_dotnetexe%" restore &popd
 @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-pushd .\lkg & %_dotnetexe% publish project.json &popd
+pushd .\lkg & "%_dotnetexe%" publish project.json &popd
 @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler

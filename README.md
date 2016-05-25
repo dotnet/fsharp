@@ -57,6 +57,7 @@ For F# 4.1 development
 ####Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
+- [.NET Core SDK Preview 1](https://www.microsoft.com/net/core)
 - [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
 - [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
 - [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
