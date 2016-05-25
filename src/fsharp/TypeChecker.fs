@@ -2878,7 +2878,7 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
     let conditionalCallDefineOpt = TryFindMethInfoStringAttribute cenv.g m cenv.g.attrib_ConditionalAttribute minfo 
 
     match conditionalCallDefineOpt with 
-    | Some(d) when not (List.mem d cenv.conditionalDefines) -> 
+    | Some(d) when not (List.contains d cenv.conditionalDefines) -> 
 
         // Methods marked with 'Conditional' must return 'unit' 
         UnifyTypes cenv env m cenv.g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
@@ -5643,7 +5643,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.TraitCall(tps,memSpfn,arg,m) ->
         let (TTrait(_,logicalCompiledName,_,argtys,returnTy,_) as traitInfo),tpenv = TcPseudoMemberSpec cenv NewTyparsOK env tps  tpenv memSpfn m
-        if List.mem logicalCompiledName BakedInTraitConstraintNames then 
+        if List.contains logicalCompiledName BakedInTraitConstraintNames then 
             warning(BakedInMemberConstraintName(logicalCompiledName,m))
         
         let returnTy = GetFSharpViewOfReturnType cenv.g returnTy
@@ -9457,16 +9457,16 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
-    // Before we check the argume, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
+    // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
     begin
         if lambdaPropagationInfoForArg.Length > 0 then 
             let allOverloadsAreFuncOrMismatchForThisArg = 
                 lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
 
             if allOverloadsAreFuncOrMismatchForThisArg then 
-              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some r | _ -> None)
+              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
               if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
-                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy List.length |> List.length
+                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
           
                 if prefixOfLambdaArgsForEachOverload.Length > 0 then 
@@ -9835,7 +9835,7 @@ and TcAttribute cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute cenv.g mAttr cenv.g.attrib_ConditionalAttribute tcref 
 
     match conditionalCallDefineOpt with 
-    | Some d when not (List.mem d cenv.conditionalDefines) -> 
+    | Some d when not (List.contains d cenv.conditionalDefines) -> 
         []
     | _ ->
 

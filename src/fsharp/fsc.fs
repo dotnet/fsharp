@@ -228,7 +228,7 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
     let tcConfig = TcConfig.Create(tcConfigB,validate=false) 
     
     let AddIfNotPresent(filename:string) =
-        if not(!allSources |> List.mem filename) then
+        if not(!allSources |> List.contains filename) then
             allSources := filename::!allSources
     
     let AppendClosureInformation(filename) =
