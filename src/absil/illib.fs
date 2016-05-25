@@ -85,8 +85,6 @@ module Order =
 
 module Array = 
 
-    let take n xs = xs |> Seq.take n |> Array.ofSeq
-
     let mapq f inp =
         match inp with
         | [| |] -> inp
@@ -99,13 +97,6 @@ module Array =
                 if not (inp.[i] === res.[i]) then eq <- false;
                 i <- i + 1
             if eq then inp else res
-
-    let forall2 f (arr1:'T array) (arr2:'T array) =
-        let len1 = arr1.Length 
-        let len2 = arr2.Length 
-        if len1 <> len2 then invalidArg "Array.forall2" "len1"
-        let rec loop i = (i >= len1) || (f arr1.[i] arr2.[i] && loop (i+1))
-        loop 0
 
     let lengthsEqAndForall2 p l1 l2 = 
         Array.length l1 = Array.length l2 &&
@@ -319,14 +310,9 @@ module List =
                       | x::xs,y::ys -> let cxy = eltOrder.Compare(x,y)
                                        if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
-
-
-    let rec last l = match l with [] -> failwith "last" | [h] -> h | _::t -> last t
+    
     module FrontAndBack = 
         let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
-
-    let replicate x n = 
-        Array.toList (Array.create x n)
 
     let range n m = [ n .. m ]
 
@@ -342,29 +328,20 @@ module List =
         | [] -> false
         | ((h,_)::t) -> x = h || memAssoc x t
 
-    let rec contains x l = match l with [] -> false | h::t -> x = h || contains x t
-
     let rec memq x l = 
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
 
-    let mem x l = contains x l
-
     // must be tail recursive 
-    let mapFold f s l = 
+    let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
         // microbenchmark suggested this implementation is faster than the simpler recursive one, and this function is called a lot
         let mutable s = s
         let mutable r = []
-        let mutable l = l
-        let mutable finished = false
-        while not finished do
-          match l with
-          | x::xs -> let x',s' = f s x
-                     s <- s'
-                     r <- x' :: r
-                     l <- xs
-          | _ -> finished <- true
+        for x in l do
+            let x',s' = f s x
+            s <- s'
+            r <- x' :: r
         List.rev r, s
 
     // Not tail recursive 
@@ -387,9 +364,6 @@ module List =
 
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
-    let rec private repeatAux n x acc = if n <= 0 then acc else repeatAux (n-1) x (x::acc)
-    let repeat n x = repeatAux n x []
-
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
       | []    -> []
@@ -399,8 +373,6 @@ module List =
     let collectFold f s l = 
       let l, s = mapFold f s l
       List.concat l, s
-
-    let singleton x = [x]              
 
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 

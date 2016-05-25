@@ -5618,7 +5618,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
          emptyILEvents,
          mkILCustomAttrs 
            (GenAttrs cenv eenv attribs @
-            (if List.mem tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
+            (if List.contains tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
              then [ (* mkCompilerGeneratedAttribute *) ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)
