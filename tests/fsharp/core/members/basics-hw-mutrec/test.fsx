@@ -2639,6 +2639,7 @@ module FSharp_1_0_bug_1748_Problem_Calling_A_Base_Member_A = begin
 
 end
 
+(*
 module FSharp_1_0_bug_1748_Problem_Calling_A_Base_Member_B = begin
 
     type Exp<'c when 'c :> Exp<'c>> = abstract Print : unit -> unit
@@ -2695,7 +2696,7 @@ module FSharp_1_0_bug_1748_Problem_Calling_A_Base_Member_B = begin
     do  e3.Print()
         System.Console.Write(" = " + e3.Eval().ToString())
 end
-
+*)
 
 
 module Test1 = begin
@@ -3536,16 +3537,16 @@ module SlicingTests =
     f.[*] <- [3]
 
 module Bug_FSharp_1_0_3246 =
-    type r1 =  
+    type R1 =  
         { x : int }
         static member Empty = { x = 3 } 
        
-    and r2 = 
+    and R2 = 
         { x : int }
         static member Empty = { x = 3 }
 
-    let r1 : r1 = r1.Empty
-    let r2 : r2 = r2.Empty
+    let r1 : R1 = R1.Empty
+    let r2 : R2 = R2.Empty
 
 module First_class_use_of_non_overloaded_method_should_detuple_1 =
 
