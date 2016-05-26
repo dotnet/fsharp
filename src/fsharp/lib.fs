@@ -268,9 +268,7 @@ let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 module List = 
     let noRepeats xOrder xs =
         let s = Zset.addList   xs (Zset.empty xOrder) // build set 
-        Zset.elements s          // get elements... no repeats 
-
-    let groupBy f (xs:list<'T>) =  xs |> Seq.groupBy f |> Seq.map (map2Of2 Seq.toList) |> Seq.toList
+        Zset.elements s          // get elements... no repeats
 
 //---------------------------------------------------------------------------
 // Zmap rebinds

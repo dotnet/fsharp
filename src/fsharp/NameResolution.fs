@@ -694,25 +694,33 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
 
 /// Add the contents of a module or namespace to the name resolution environment
 and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) = 
-     let pri = NextExtensionMethodPriority()
-     let mty = modref.ModuleOrNamespaceType
-     let tycons = mty.TypeAndExceptionDefinitions 
+    let pri = NextExtensionMethodPriority()
+    let mty = modref.ModuleOrNamespaceType
+     
+    let nenv =
+        let mutable state = { nenv with eDisplayEnv = nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
+     
+        for exnc in mty.ExceptionDefinitions do
+           let tcref = modref.NestedTyconRef exnc
+           if IsEntityAccessible amap m ad tcref then 
+               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
 
-     let exncs = mty.ExceptionDefinitions
-     let nenv = { nenv with eDisplayEnv= nenv.eDisplayEnv.AddOpenModuleOrNamespace modref }
-     let tcrefs = tycons |> List.map modref.NestedTyconRef |> List.filter (IsEntityAccessible amap m ad) 
-     let exrefs = exncs |> List.map modref.NestedTyconRef |> List.filter (IsEntityAccessible amap m ad) 
-     let nenv = (nenv,exrefs) ||> List.fold (AddExceptionDeclsToNameEnv BulkAdd.Yes)
-     let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
-     let vrefs = 
-         mty.AllValsAndMembers.ToFlatList() 
-         |> FlatList.choose (fun x -> 
-             if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x 
-             else None)
-         |> FlatList.toArray
-     let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
-     let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
-     nenv
+        state
+
+    let tcrefs = 
+       mty.TypeAndExceptionDefinitions 
+       |> List.choose (fun tycon -> 
+           let tcref = modref.NestedTyconRef tycon
+           if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
+
+    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
+    let vrefs = 
+        mty.AllValsAndMembers.ToFlatList() 
+        |> FlatList.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
+        |> FlatList.toArray
+    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+    let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
+    nenv
 
 /// Add a set of modules or namespaces to the name resolution environment
 //
@@ -722,7 +730,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 //    open M1
 // 
 // The list contains [M1b; M1a]
-and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs = 
+and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs =
    (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref)
 
 /// Add a single modules or namespace to the name resolution environment
@@ -1074,8 +1082,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
                 
                 | _ -> 
 #endif
-                    mty.TypesByAccessNames.Values 
-                        |> Seq.toList
+                    mty.TypesByAccessNames.Values
                         |> List.map (tcref.NestedTyconRef >> MakeNestedType ncenv tinst m)
                         |> List.filter (IsTypeAccessible g ncenv.amap m ad)
         else [])
@@ -1540,8 +1547,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
     let tcrefs = 
         tcrefs 
         // remove later duplicates (if we've opened the same module more than once)
-        |> Seq.distinctBy (fun (_,tcref) -> tcref.Stamp) 
-        |> Seq.toList                     
+        |> List.distinctBy (fun (_,tcref) -> tcref.Stamp) 
         // List.sortBy is a STABLE sort (the order matters!)
         |> List.sortBy (fun (_,tcref) -> tcref.Typars(m).Length)
 
@@ -3085,9 +3091,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
 
     let ilTyconNames = 
         mty.TypesByAccessNames.Values
-        |> Seq.toList
         |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-        |> Set.ofSeq      
+        |> Set.ofList
     
     match plid with 
     | [] -> 
@@ -3168,9 +3173,8 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
     
        let ilTyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
-          |> Seq.toList
           |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofSeq      
+          |> Set.ofList
        
        /// Include all the entries in the eUnqualifiedItems table. 
        let unqualifiedItems = 
@@ -3178,7 +3182,6 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            | FullyQualified -> []
            | OpenQualified ->
                nenv.eUnqualifiedItems.Values
-               |> Seq.toList
                |> List.filter (function Item.UnqualifiedType _ -> false | _ -> true)
                |> List.filter (ItemIsUnseen ad g ncenv.amap m >> not)
 
@@ -3201,7 +3204,6 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
        let tycons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> Seq.toList
            |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
            |> List.filter (fun tcref -> not tcref.IsExceptionDecl) 
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
@@ -3210,7 +3212,6 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        // Get all the constructors accessible from here
        let constructors =  
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> Seq.toList
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
            |> List.collect (InfosForTyconConstructors ncenv m ad)
 
@@ -3266,9 +3267,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
 
     let ilTyconNames = 
         mty.TypesByAccessNames.Values
-        |> Seq.toList
         |> List.choose (fun (tycon:Tycon) -> if tycon.IsILTycon then Some tycon.DisplayName else None)
-        |> Set.ofSeq      
+        |> Set.ofList
     
     match plid with 
     | [] -> 
@@ -3333,9 +3333,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
         // empty plid - return namespaces\modules\record types\accessible fields
        let iltyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
-          |> Seq.toList
           |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofSeq
+          |> Set.ofList
 
        let mods = 
            nenv.ModulesAndNamespaces(fullyQualified)
@@ -3348,7 +3347,6 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
 
        let recdTyCons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> Seq.toList
            |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
            |> List.filter (fun tcref -> tcref.IsRecordTycon) 
            |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)

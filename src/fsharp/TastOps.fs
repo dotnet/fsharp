@@ -2210,7 +2210,7 @@ module PrettyTypes = begin
                     choose (tp::tps) (typeIndex, measureIndex) acc
 
                 let tryName (nm, typeIndex, measureIndex) f = 
-                    if List.mem nm alreadyInUse then 
+                    if List.contains nm alreadyInUse then 
                         f()
                     else
                         useThisName (nm, typeIndex, measureIndex)

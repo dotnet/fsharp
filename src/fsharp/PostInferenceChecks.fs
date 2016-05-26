@@ -960,7 +960,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
 
     // Check for violations of allowMultiple = false
     let duplicates = 
-        tcrefs 
+        tcrefs
         |> Seq.groupBy (fun (tcref,_) -> tcref.Stamp) 
         |> Seq.map (fun (_,elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_,count) -> count > 1) 
@@ -1259,7 +1259,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             | None -> []
 
         let namesOfMethodsThatMayDifferOnlyInReturnType = ["op_Explicit";"op_Implicit"] (* hardwired *)
-        let methodUniquenessIncludesReturnType (minfo:MethInfo) = List.mem minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
+        let methodUniquenessIncludesReturnType (minfo:MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
             if methodUniquenessIncludesReturnType minfo
             then MethInfosEquivByNameAndSig        eraseFlag true cenv.g cenv.amap m minfo minfo2
