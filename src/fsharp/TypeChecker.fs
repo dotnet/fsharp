@@ -13020,10 +13020,11 @@ module MutRecBindingChecking =
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
 
                 // Add the type definitions, exceptions, modules and "open" declarations
-                let envForDecls = if report then AddLocalTycons cenv.g cenv.amap scopem tycons envAbove else AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envAbove
+                let envForDecls = envAbove
+                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
+                let envForDecls = if report then AddLocalTycons cenv.g cenv.amap scopem tycons envForDecls else AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envForDecls
                 let envForDecls = (envForDecls, tycons) ||> List.fold (fun env tycon -> if tycon.IsExceptionDecl then AddLocalExnDefnAndReport cenv.tcSink scopem tycon env else env)
                 let envForDecls = (envForDecls, mspecs) ||> List.fold (AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem)
-                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
                 let envForDecls = (envForDecls, moduleAbbrevs) ||> List.fold (TcModuleAbbrevDecl cenv scopem)
                 let envForDecls = AddLocalVals cenv.tcSink scopem lets envForDecls
                 envForDecls)
@@ -16068,7 +16069,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
 
       loop (match parent with ParentNone -> true | Parent _ -> false) [] defs
 
-    let tpenv = emptyUnscopedTyparEnv // TODO: be more careful about tpenv, preserving old behaviour but not coalescing typars across mutrec definitions
+    let tpenv = emptyUnscopedTyparEnv 
     let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent tpenv (mutRecDefns,m,scopem)
 
     // Check the assembly attributes
