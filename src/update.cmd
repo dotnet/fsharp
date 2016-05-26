@@ -8,6 +8,7 @@ setlocal
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
+if /i "%1" == "signonly" goto :ok
 
 echo adding required strong name verification skipping, and NGening built binaries
 echo Usage:
@@ -84,6 +85,8 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
 )
+
+if /i '%1' == 'signonly' goto :eof
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen

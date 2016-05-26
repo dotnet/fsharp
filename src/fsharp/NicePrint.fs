@@ -58,7 +58,7 @@ module internal PrintUtilities =
 
     let applyMaxMembers maxMembers (alldecls : _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> Seq.truncate n |> Seq.toList) @ [wordL "..."] 
+        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL "..."] 
         | _ -> alldecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)

@@ -212,38 +212,38 @@ module Printf =
 
     /// <summary>bprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
-    /// <param name="continutation">The function called after formatting to generate the format result.</param>
+    /// <param name="continuation">The function called after formatting to generate the format result.</param>
     /// <param name="builder">The input StringBuilder.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToStringBuilderThen")>]
-    val kbprintf : continutation:(unit -> 'Result)   -> builder:StringBuilder ->    format:BuilderFormat<'T,'Result> -> 'T
+    val kbprintf : continuation:(unit -> 'Result)   -> builder:StringBuilder ->    format:BuilderFormat<'T,'Result> -> 'T
 
     /// <summary>fprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
-    /// <param name="continutation">The function called after formatting to generate the format result.</param>
+    /// <param name="continuation">The function called after formatting to generate the format result.</param>
     /// <param name="textWriter">The input TextWriter.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToTextWriterThen")>]
-    val kfprintf : continutation:(unit -> 'Result)   -> textWriter:TextWriter -> format:TextWriterFormat<'T,'Result> -> 'T
+    val kfprintf : continuation:(unit -> 'Result)   -> textWriter:TextWriter -> format:TextWriterFormat<'T,'Result> -> 'T
 
     /// <summary>printf, but call the given 'final' function to generate the result.
     /// For example, these let the printing force a flush after all output has 
     /// been entered onto the channel, but not before. </summary>
-    /// <param name="continutation">The function called after formatting to generate the format result.</param>
+    /// <param name="continuation">The function called after formatting to generate the format result.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatThen")>]
-    val kprintf  : continutation:(string -> 'Result) ->                format:StringFormat<'T,'Result> -> 'T
+    val kprintf  : continuation:(string -> 'Result) ->                format:StringFormat<'T,'Result> -> 'T
 
     /// <summary>sprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
-    /// <param name="continutation">The function called to generate a result from the formatted string.</param>
+    /// <param name="continuation">The function called to generate a result from the formatted string.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToStringThen")>]
-    val ksprintf : continutation:(string -> 'Result) ->                format:StringFormat<'T,'Result>  -> 'T
+    val ksprintf : continuation:(string -> 'Result) ->                format:StringFormat<'T,'Result>  -> 'T
 
     /// <summary>Print to a string buffer and raise an exception with the given
     /// result. Helper printers must return strings.</summary>

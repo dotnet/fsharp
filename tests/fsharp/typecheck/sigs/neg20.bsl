@@ -120,7 +120,7 @@ neg20.fs(80,23,80,39): typecheck error FS0193: Type constraint mismatch. The typ
     'C list'    
 is not compatible with type
     'seq<B>'    
-The type 'C list' is not compatible with the type 'seq<B>'
+
 
 neg20.fs(81,34,81,43): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
@@ -188,12 +188,12 @@ neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static membe
     'obj'    
 is not compatible with type
     'int'    
-The type 'obj' is not compatible with the type 'int'.
+.
 neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static member C.OM3 : x:'b * y:'b -> int'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
     ''a'    
-The type 'obj' is not compatible with the type ''a'.
+.
 
 neg20.fs(152,13,152,23): typecheck error FS0033: The type 'Test.BadNumberOfGenericParameters.C<_>' expects 1 type argument(s) but is given 2
 
@@ -228,12 +228,12 @@ neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static memb
     'obj'    
 is not compatible with type
     'int'    
-The type 'obj' is not compatible with the type 'int'.
+.
 neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
     'int []'    
-The type 'obj' is not compatible with the type 'int []'.
+.
 
 neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
     'unit'    
@@ -255,12 +255,12 @@ neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static memb
     'obj'    
 is not compatible with type
     'string'    
-The type 'obj' is not compatible with the type 'string'.
+.
 neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
     'string []'    
-The type 'obj' is not compatible with the type 'string []'.
+.
 
 neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
     'unit'    

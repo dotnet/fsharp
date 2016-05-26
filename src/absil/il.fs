@@ -4641,7 +4641,7 @@ type ILTypeSigParser(tstring : string) =
                     step()
                 drop()
 
-                Some(ILArrayShape(List.repeat rank (Some 0, None)))
+                Some(ILArrayShape(List.replicate rank (Some 0, None)))
             else
                 None
 
@@ -4832,16 +4832,16 @@ type ILReferences =
       ModuleReferences: ILModuleRef list; }
 
 type ILReferencesAccumulator = 
-    { refsA: Hashset<ILAssemblyRef>; 
-      refsM: Hashset<ILModuleRef>; }
+    { refsA: HashSet<ILAssemblyRef>; 
+      refsM: HashSet<ILModuleRef>; }
 
 let emptyILRefs = 
   { AssemblyReferences=[];
     ModuleReferences = []; }
 
 (* Now find references. *)
-let refs_of_assref s x = Hashset.add s.refsA x
-let refs_of_modref s x = Hashset.add s.refsM x
+let refs_of_assref (s:ILReferencesAccumulator) x = s.refsA.Add x |> ignore
+let refs_of_modref (s:ILReferencesAccumulator) x = s.refsM.Add x |> ignore
     
 let refs_of_scoref s x = 
     match x with 
@@ -5049,11 +5049,12 @@ and refs_of_manifest s m =
 
 let computeILRefs modul = 
     let s = 
-      { refsA = Hashset.create 10; 
-        refsM = Hashset.create 5; }
+      { refsA = HashSet<_>(HashIdentity.Structural) 
+        refsM = HashSet<_>(HashIdentity.Structural) }
+
     refs_of_modul s modul;
-    { AssemblyReferences = Hashset.fold (fun x acc -> x::acc) s.refsA [];
-      ModuleReferences =  Hashset.fold (fun x acc -> x::acc) s.refsM [] }
+    { AssemblyReferences = Seq.fold (fun acc x -> x::acc) [] s.refsA
+      ModuleReferences =  Seq.fold (fun acc x -> x::acc) [] s.refsM }
 
 let tspan = System.TimeSpan(System.DateTime.Now.Ticks - System.DateTime(2000,1,1).Ticks)
 
