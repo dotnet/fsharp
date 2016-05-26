@@ -13022,7 +13022,7 @@ module MutRecBindingChecking =
                 // Add the type definitions, exceptions, modules and "open" declarations
                 let envForDecls = envAbove
                 let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp,m) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp)
-                let envForDecls = if report then AddLocalTycons cenv.g cenv.amap scopem tycons envForDecls else AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envForDecls
+                let envForDecls = if report then AddLocalTyconsAndReport cenv.tcSink cenv.g cenv.amap scopem tycons envForDecls else AddLocalTycons cenv.g cenv.amap scopem tycons envForDecls 
                 let envForDecls = (envForDecls, tycons) ||> List.fold (fun env tycon -> if tycon.IsExceptionDecl then AddLocalExnDefnAndReport cenv.tcSink scopem tycon env else env)
                 let envForDecls = (envForDecls, mspecs) ||> List.fold (AddLocalSubModuleAndReport cenv.tcSink cenv.g cenv.amap m scopem)
                 let envForDecls = (envForDecls, moduleAbbrevs) ||> List.fold (TcModuleAbbrevDecl cenv scopem)
