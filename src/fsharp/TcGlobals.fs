@@ -1303,7 +1303,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
                    nm, mkSysTyconRef sys nm, (fun _ -> ty)) 
 
         let entries2 =
-            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.item tinst 0) (List.item tinst 1))
+            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
               "Tuple`2",       ref_tuple2_tcr, decodeTupleTy tupInfoRef
               "Tuple`3",       ref_tuple3_tcr, decodeTupleTy tupInfoRef
               "Tuple`4",       ref_tuple4_tcr, decodeTupleTy tupInfoRef
