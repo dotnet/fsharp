@@ -5169,13 +5169,8 @@ let rec tyOfExpr g e =
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
-<<<<<<< HEAD
-        | TOp.TupleFieldGet(_,i) -> List.nth tinst i
+        | TOp.TupleFieldGet(_,i) -> List.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
-=======
-        | TOp.TupleFieldGet(i) -> List.item i tinst
-        | TOp.Tuple -> mkTupleTy tinst
->>>>>>> 0a57ced21f02d3142d049ab2d394a6fa77591de7
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
         | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] ->  ty | _ -> failwith "bad TOp_try node")
