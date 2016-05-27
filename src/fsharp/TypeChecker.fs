@@ -15129,15 +15129,23 @@ module TcDeclarations = begin
 
     /// Given a type definition, compute whether its members form an extension of an existing type, and if so if it is an 
     /// intrinsic or extrinsic extension
-    let private ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envInitial inSig m (typars:SynTyparDecl list) cs longPath = 
-        let ad = envInitial.eAccessRights
+    let private ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls inSig m (typars:SynTyparDecl list) cs longPath = 
+        let ad = envForDecls.eAccessRights
         
         let tcref = 
           match tyconOpt with
-          | Some tycon when isAtOriginalTyconDefn -> mkLocalTyconRef tycon
+          | Some tycon when isAtOriginalTyconDefn -> 
+
+            // This records a name resolution of the type at the location
+            let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs typars.Length
+            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
+               |> ignore
+
+            mkLocalTyconRef tycon
+
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs typars.Length
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envInitial.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
             | Result res -> res
             | res when inSig && longPath.Length = 1 ->
                 errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(),m))
@@ -15161,7 +15169,7 @@ module TcDeclarations = begin
 
           else
             let isInSameModuleOrNamespace = 
-                 match envInitial.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryFind(tcref.LogicalName) with 
+                 match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryFind(tcref.LogicalName) with 
                   | Some tycon -> (tyconOrder.Compare(tcref.Deref,tycon) = 0)
                   | None -> 
                         //false
@@ -15178,10 +15186,10 @@ module TcDeclarations = begin
                     // not recoverable
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
-                let declaredTypars = TcTyparDecls cenv envInitial typars
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envInitial
+                let declaredTypars = TcTyparDecls cenv envForDecls typars
+                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
                 let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv cs
-                declaredTypars |> List.iter (SetTyparRigid cenv.g envInitial.DisplayEnv m)
+                declaredTypars |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)
                 if not (typarsAEquiv cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, declaredTypars
@@ -15430,10 +15438,10 @@ module TcDeclarations = begin
 
     let SplitMutRecDefns mutRecDefns = mutRecDefns |> MutRecShapes.mapTycons SplitTyconDefn
 
-    let private PrepareTyconMemberDefns tyconOpt fixupFinalAttrs isAtOriginalTyconDefn cenv innerParent envMutRecPrelim  (synTyconInfo, baseValOpt, safeInitInfo, members, tyDeclRange) =
+    let private PrepareTyconMemberDefns tyconOpt fixupFinalAttrs isAtOriginalTyconDefn cenv innerParent envForDecls  (synTyconInfo, baseValOpt, safeInitInfo, members, tyDeclRange) =
         let (ComponentInfo(_,typars, cs,longPath, _, _, _,_)) = synTyconInfo
 
-        let declKind, tcref, declaredTyconTypars = ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envMutRecPrelim false tyDeclRange typars cs longPath
+        let declKind, tcref, declaredTyconTypars = ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls false tyDeclRange typars cs longPath
 
         let newslotsOK = (if isAtOriginalTyconDefn && tcref.IsFSharpObjectModelTycon then NewSlotsOK else NoNewSlots) // NewSlotsOK only on fsobjs 
 
