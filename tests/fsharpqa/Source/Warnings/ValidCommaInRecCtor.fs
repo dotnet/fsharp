@@ -1,3 +1,4 @@
+// #Warnings
 //<Expects status="Success"></Expects>
 
 type Person = { Name : string * bool * bool }

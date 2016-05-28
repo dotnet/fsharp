@@ -243,17 +243,14 @@ type ValFlags(flags:int64) =
 type TyparKind = 
     | Type 
     | Measure
-    // | TupInfo
     member x.AttrName =
       match x with
       | TyparKind.Type -> None
       | TyparKind.Measure -> Some "Measure"
-      // | TyparKind.TupInfo -> Some "TupInfo"
     override x.ToString() = 
       match x with
       | TyparKind.Type -> "type"
       | TyparKind.Measure -> "measure"
-      // | TyparKind.TupInfo -> "tupInfo"
 
 [<RequireQualifiedAccess>]
 /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
@@ -293,9 +290,7 @@ type TyparFlags(flags:int32) =
                      | TyparRigidity.Anon           -> 0b0000010000000) |||
                    (match kind with
                      | TyparKind.Type               -> 0b0000000000000
-                     | TyparKind.Measure            -> 0b0000100000000
-                     //| TyparKind.TupInfo            -> 0b1000000000000   /// NOTE <<--- bit out of order!
-                                                                      ) |||   
+                     | TyparKind.Measure            -> 0b0000100000000) |||   
                    (if comparisonDependsOn then 
                                                        0b0001000000000 else 0) |||
                    (match dynamicReq with
@@ -331,7 +326,6 @@ type TyparFlags(flags:int32) =
                              match (flags &&& 0b1000100000000) with 
                                             | 0b0000000000000 -> TyparKind.Type
                                             | 0b0000100000000 -> TyparKind.Measure
-                                            //| 0b1000000000000 -> TyparKind.TupInfo
                                             | _             -> failwith "unreachable"
 
 
@@ -390,7 +384,11 @@ assert (sizeof<TyparFlags> = 4)
 
 let unassignedTyparName = "?"
 
-exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * string list
+type Predictions = Set<string>
+
+let NoPredictions = Set.empty
+
+exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * Predictions
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
 let KeyTyconByDemangledNameAndArity nm (typars: _ list) x = 
@@ -3285,9 +3283,6 @@ and
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
 
-    // /// Indicates the type is a tupInfo expression being used as part of a substitution
-    // | TType_tupinfo of TupInfo
-
     override x.ToString() =  
         match x with 
         | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
@@ -3295,23 +3290,17 @@ and
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
-             | TupInfo.Const true -> "struct "
-             //| _ -> tupInfo.ToString() 
-             )
+             | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
         | TType_measure ms -> sprintf "%A" ms
-        //| TType_tupinfo ms -> sprintf "%A" ms
 
 and TypeInst = TType list 
 and TTypes = TType list 
 
 and [<RequireQualifiedAccess>] TupInfo = 
-    // /// A variable tupInfo
-    // | Var of Typar
-
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
 
@@ -4141,7 +4130,6 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 //---------------------------------------------------------------------------
 
 let mapTImplFile   f   (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = TImplFile(fragName, pragmas,f moduleExpr,hasExplicitEntryPoint,isScript)
-let fmapTImplFile  f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let z,moduleExpr = f z moduleExpr in z,TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)
 let mapAccImplFile f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let moduleExpr,z = f z moduleExpr in TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript), z
 let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_)) = f z moduleExpr
 
@@ -4246,7 +4234,6 @@ let mkTyparTy (tp:Typar) =
     match tp.Kind with 
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
-    //| TyparKind.TupInfo -> TType_tupinfo (TupInfo.Var tp)
 
 let copyTypar (tp: Typar) = let x = tp.Data in Typar.New { x with typar_stamp=newStamp() }
 let copyTypars tps = List.map copyTypar tps
@@ -4430,19 +4417,18 @@ let fslibValRefEq fslibCcu vref1 vref2 =
 /// This takes into account the possibility that they may have type forwarders
 let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) = 
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when not compilingFslib -> x.ResolvedTarget === y.ResolvedTarget 
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | false, false when 
+    
+    if x.IsResolved && y.IsResolved && not compilingFslib then
+        x.ResolvedTarget === y.ResolvedTarget 
+    elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) -> 
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
         true
-    | _ -> 
-        compilingFslib && fslibEntityRefEq  fslibCcu x y  
+    else
+        compilingFslib && fslibEntityRefEq fslibCcu x y  
 
 /// Primitive routine to compare two UnionCaseRef's for equality
 let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tcr2,c2) as uc2) = 
@@ -4457,12 +4443,10 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tc
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when x.ResolvedTarget === y.ResolvedTarget -> true
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | true,true when valEq x.PrivateTarget y.PrivateTarget -> true
-    | _ -> 
+    if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
+       (x.IsLocalRef && y.IsLocalRef && valEq x.PrivateTarget y.PrivateTarget) then
+        true
+    else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
             let v1 = x.TryDeref 

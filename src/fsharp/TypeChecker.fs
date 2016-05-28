@@ -1868,8 +1868,9 @@ let BuildFieldMap cenv env isPartial ty flds m =
     if isNil flds then invalidArg "flds" "BuildFieldMap"
    
     let frefSets = 
+        let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
-            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
             fld,frefSet, fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
@@ -2125,9 +2126,9 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function (TyparConstraint.CoercesTo _) -> true | _ -> false) with 
             | [TyparConstraint.CoercesTo(cxty,_)], others -> 
                  // Throw away null constraints if they are implied 
-                 match others |> List.filter (function (TyparConstraint.SupportsNull(_)) -> not (TypeSatisfiesNullConstraint cenv.g m cxty) | _ -> true) with
-                 | [] -> Some cxty
-                 | _ -> None
+                 if others |> List.exists (function (TyparConstraint.SupportsNull(_)) -> not (TypeSatisfiesNullConstraint cenv.g m cxty) | _ -> true) 
+                 then None
+                 else Some cxty
             | _ -> None
                  
 
@@ -2166,7 +2167,7 @@ module GeneralizationHelpers =
 
     let CanonicalizePartialInferenceProblem (cenv,denv,m) tps =
         // Canonicalize constraints prior to generalization 
-        let csenv = (MakeConstraintSolverEnv cenv.css m denv)
+        let csenv = (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv)
         TryD (fun () -> ConstraintSolver.CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
              (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m))) 
         |> RaiseOperationResult
@@ -2213,7 +2214,7 @@ module GeneralizationHelpers =
         generalizedTypars |> List.iter (SetTyparRigid cenv.g denv m)
         
         // Generalization removes constraints related to generalized type variables
-        let csenv = MakeConstraintSolverEnv cenv.css m denv
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv
         EliminateConstraintsForGeneralizedTypars csenv NoTrace generalizedTypars
         
         generalizedTypars
@@ -2833,7 +2834,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
                 then actualType 
                 else 
                    let flexibleType = NewInferenceType ()
-                   AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace actualType flexibleType;
+                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType;
                    flexibleType)
 
         // Create a coercion to represent the expansion of the application
@@ -2842,7 +2843,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
 
 
 ///  Checks, warnings and constraint assertions for downcasts 
-let TcRuntimeTypeTest isCast cenv denv m tgty srcTy =
+let TcRuntimeTypeTest isCast isOperator cenv denv m tgty srcTy =
     if TypeDefinitelySubsumesTypeNoCoercion 0 cenv.g cenv.amap m tgty srcTy then 
       warning(TypeTestUnnecessary(m))
 
@@ -2850,12 +2851,13 @@ let TcRuntimeTypeTest isCast cenv denv m tgty srcTy =
         error(IndeterminateRuntimeCoercion(denv,srcTy,tgty,m))
 
     if isSealedTy cenv.g srcTy then 
-        error(RuntimeCoercionSourceSealed(denv,srcTy,m)) 
+        error(RuntimeCoercionSourceSealed(denv,srcTy,m))
 
-    if isSealedTy cenv.g tgty ||
-       isTyparTy cenv.g tgty ||
-       not (isInterfaceTy cenv.g srcTy) then 
-        AddCxTypeMustSubsumeType denv cenv.css m NoTrace srcTy tgty
+    if isSealedTy cenv.g tgty || isTyparTy cenv.g tgty || not (isInterfaceTy cenv.g srcTy) then 
+        if isCast then
+            AddCxTypeMustSubsumeType (ContextInfo.RuntimeTypeTest isOperator) denv cenv.css m NoTrace srcTy tgty
+        else
+            AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace srcTy tgty
 
     if isErasedType cenv.g tgty then
         if isCast then
@@ -2879,7 +2881,7 @@ let TcStaticUpcast cenv denv m tgty srcTy =
     if typeEquiv cenv.g srcTy tgty then 
         warning(UpcastUnnecessary(m)) 
 
-    AddCxTypeMustSubsumeType denv cenv.css m NoTrace tgty srcTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgty srcTy
 
 
 
@@ -2890,7 +2892,7 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
     let conditionalCallDefineOpt = TryFindMethInfoStringAttribute cenv.g m cenv.g.attrib_ConditionalAttribute minfo 
 
     match conditionalCallDefineOpt with 
-    | Some(d) when not (List.mem d cenv.conditionalDefines) -> 
+    | Some(d) when not (List.contains d cenv.conditionalDefines) -> 
 
         // Methods marked with 'Conditional' must return 'unit' 
         UnifyTypes cenv env m cenv.g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
@@ -3284,7 +3286,7 @@ let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
     mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 
 let mkSeqUsing cenv (env: TcEnv) m resourceTy genTy resourceExpr lam =
-    AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_typ resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_typ resourceTy
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv  env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
@@ -3899,7 +3901,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
     | WhereTyparDefaultsToType(tp,ty,m) ->
         let ty',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
-        let csenv = (MakeConstraintSolverEnv cenv.css m env.DisplayEnv)
+        let csenv = (MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv)
         AddConstraint csenv 0 m NoTrace tp' (TyparConstraint.DefaultsTo(ridx,ty',m)) |> CommitOperationResult
         tpenv
 
@@ -3908,7 +3910,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
         if (newOk = NoNewTypars) && isSealedTy cenv.g ty' then 
             errorR(Error(FSComp.SR.tcInvalidConstraintTypeSealed(),m))
-        AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp') 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp') 
         tpenv
 
     | WhereTyparSupportsNull(tp,m) -> checkSimpleConstraint tp m AddCxTypeMustSupportNull
@@ -4158,7 +4160,7 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id,_,_) as t
     match TryFindUnscopedTypar key tpenv with
     | Some res -> checkRes res
     | None -> 
-        if newOk = NoNewTypars then error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,["<unimplemented>"]))
+        if newOk = NoNewTypars then error (UndefinedName(0,FSComp.SR.undefinedNameTypeParameter,id,NoPredictions))
         // OK, this is an implicit declaration of a type parameter 
         // The kind defaults to Type
         let tp' = NewTypar ((match optKind with None -> TyparKind.Type | Some kind -> kind), TyparRigidity.WarnIfNotRigid,tp,false,TyparDynamicReq.Yes,[],false,false)
@@ -4290,7 +4292,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
     | SynType.HashConstraint(ty,m) ->  
         let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
         let ty',tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
-        AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp) 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace  ty' (mkTyparTy tp) 
         tp.AsType, tpenv
 
     | SynType.StaticConstant (c, m) ->
@@ -4476,9 +4478,9 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
             | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),v,_) -> (Some id, v)
             | v -> (None, v))
     let unnamedArgs = args |> Seq.takeWhile (fst >> isNone) |> Seq.toArray |> Array.map snd
-    let otherArgs = args |> Seq.skipWhile (fst >> isNone) |> Seq.toList
-    let namedArgs = otherArgs |> Seq.takeWhile (fst >> isSome) |> Seq.toList |> List.map (map1Of2 Option.get)
-    let otherArgs = otherArgs |> Seq.skipWhile (fst >> isSome) |> Seq.toList
+    let otherArgs = args |> List.skipWhile (fst >> isNone)
+    let namedArgs = otherArgs |> List.takeWhile (fst >> isSome) |> List.map (map1Of2 Option.get)
+    let otherArgs = otherArgs |> List.skipWhile (fst >> isSome)
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
     for (n,_) in namedArgs do
@@ -4810,7 +4812,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
     | SynPat.Named (SynPat.IsInst(cty,m),_,_,_,_) -> 
         let srcTy = ty
         let tgty,tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType env tpenv cty
-        TcRuntimeTypeTest (*isCast*)false cenv env.DisplayEnv m tgty srcTy
+        TcRuntimeTypeTest (*isCast*)false (*isOperator*)true cenv env.DisplayEnv m tgty srcTy
         match pat with 
         | SynPat.IsInst(_,m) ->
             (fun _ -> TPat_isinst (srcTy,tgty,None,m)),(tpenv,names,takenNames)
@@ -4874,7 +4876,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             match args with 
             | SynConstructorArgs.Pats [] 
             | SynConstructorArgs.NamePatPairs ([], _)-> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv,names,takenNames) ty (mkSynPatVar vis id)
-            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,[]))
+            | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoPredictions))
 
         | Item.ActivePatternCase(APElemRef(apinfo,vref,idx)) as item -> 
             let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible"
@@ -5114,7 +5116,7 @@ and TcPatterns warnOnUpper cenv env vFlags s argtys args =
 and solveTypAsError cenv denv m ty =
     let ty2 = NewErrorType ()
     assert((destTyparTy cenv.g ty2).IsFromError)
-    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
+    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
 
 and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
     // This function is motivated by cases like
@@ -5154,7 +5156,7 @@ and TcExprOfUnknownType cenv env tpenv expr =
 and TcExprFlex cenv flex ty (env: TcEnv) tpenv (e: SynExpr) =
     if flex then
         let argty = NewInferenceType ()
-        AddCxTypeMustSubsumeType env.DisplayEnv cenv.css e.Range NoTrace ty argty 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css e.Range NoTrace ty argty 
         let e',tpenv  = TcExpr cenv argty env tpenv e 
         let e' = mkCoerceIfNeeded cenv.g ty argty e'
         e',tpenv
@@ -5163,16 +5165,13 @@ and TcExprFlex cenv flex ty (env: TcEnv) tpenv (e: SynExpr) =
     
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
-
-    let m = expr.Range
-
     // Start an error recovery handler 
     // Note the try/catch can lead to tail-recursion problems for iterated constructs, e.g. let... in... 
     // So be careful! 
     try 
         TcExprNoRecover cenv ty env tpenv expr 
     with e -> 
-
+        let m = expr.Range
         // Error recovery - return some rubbish expression, but replace/annotate 
         // the type of the current expression with a type variable that indicates an error 
         errorRecovery e m 
@@ -5369,7 +5368,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let e',srcTy,tpenv = TcExprOfUnknownType cenv env tpenv e 
         UnifyTypes cenv env m overallTy cenv.g.bool_ty
         let tgty,tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType  env tpenv tgty
-        TcRuntimeTypeTest (*isCast*)false cenv env.DisplayEnv m tgty srcTy        
+        TcRuntimeTypeTest (*isCast*)false (*isOperator*)true cenv env.DisplayEnv m tgty srcTy        
         let e' = mkCallTypeTest cenv.g m tgty  e'
         e', tpenv
     
@@ -5395,15 +5394,15 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.Downcast(e,_,m) | SynExpr.InferredDowncast (e,m) ->
         let e',srcTy,tpenv = TcExprOfUnknownType cenv env tpenv e 
-        let tgty,tpenv = 
+        let tgty,tpenv,isOperator = 
           match expr with
           | SynExpr.Downcast (_,tgty,m) -> 
               let tgty,tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgty
               UnifyTypes cenv env m tgty overallTy
-              tgty,tpenv
-          | SynExpr.InferredDowncast _ -> overallTy,tpenv 
+              tgty,tpenv,true
+          | SynExpr.InferredDowncast _ -> overallTy,tpenv,false
           | _ -> failwith "downcast"
-        TcRuntimeTypeTest (*isCast*)true cenv env.DisplayEnv m tgty srcTy
+        TcRuntimeTypeTest (*isCast*)true isOperator cenv env.DisplayEnv m tgty srcTy
 
         // TcRuntimeTypeTest ensures tgty is a nominal type. Hence we can insert a check here 
         // based on the nullness semantics of the nominal type. 
@@ -5535,7 +5534,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             UnifyTypes cenv env m overallTy genCollTy
             let exprty = NewInferenceType ()
             let genEnumTy =  mkSeqTy cenv.g genCollElemTy
-            AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace genEnumTy exprty 
+            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genEnumTy exprty 
             let expr,tpenv = TcExpr cenv exprty env tpenv comp
             let expr = mkCoerceIfNeeded cenv.g genEnumTy (tyOfExpr cenv.g expr) expr
             (if isArray then mkCallSeqToArray else mkCallSeqToList) cenv.g m genCollElemTy 
@@ -5672,7 +5671,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.TraitCall(tps,memSpfn,arg,m) ->
         let (TTrait(_,logicalCompiledName,_,argtys,returnTy,_) as traitInfo),tpenv = TcPseudoMemberSpec cenv NewTyparsOK env tps  tpenv memSpfn m
-        if List.mem logicalCompiledName BakedInTraitConstraintNames then 
+        if List.contains logicalCompiledName BakedInTraitConstraintNames then 
             warning(BakedInMemberConstraintName(logicalCompiledName,m))
         
         let returnTy = GetFSharpViewOfReturnType cenv.g returnTy
@@ -5942,7 +5941,7 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
 // TcRecordConstruction
 //------------------------------------------------------------------------- 
   
-// Check a record consutrction expression 
+// Check a record construction expression 
 and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let tcref = tcrefOfAppTy cenv.g objTy
     let tycon = tcref.Deref
@@ -5982,9 +5981,10 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
                // Effect order - mutable fields may get modified by other bindings... 
                let fieldNameUnbound nom = List.forall (fun (name,_) -> name <> nom) fldsList
                fspecs 
-               |> List.filter (fun rfld -> rfld.Name |> fieldNameUnbound)
-               |> List.filter (fun f -> not f.IsZeroInit)
-               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef fspec,tinst,m))
+               |> List.choose (fun rfld -> 
+                    if fieldNameUnbound rfld.Name && not rfld.IsZeroInit 
+                    then Some(rfld.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef rfld,tinst,m))
+                    else None)
 
     let fldsList = fldsList @ oldFldsList
 
@@ -6712,8 +6712,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
     let customOperationMethods = 
         AllMethInfosOfTypeInScope cenv.infoReader env.NameEnv (None,ad) IgnoreOverrides mBuilderVal builderTy
-        |> List.filter (IsMethInfoAccessible cenv.amap mBuilderVal ad) 
         |> List.choose (fun methInfo -> 
+                if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
                 let nameSearch = 
                     TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                                  (fun _ -> None) // We do not respect this attribute for IL methods
@@ -7665,6 +7665,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         let mBuilderVal = mBuilderVal.MakeSynthetic()
         SynExpr.Lambda (false,false,SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)],mBuilderVal), runExpr, mBuilderVal)
 
+    let env =
+        match comp with     
+        | SynExpr.YieldOrReturn ((true,_),_,_) -> { env with eContextInfo = ContextInfo.YieldInComputationExpression }
+        | SynExpr.YieldOrReturn ((_,true),_,_) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
+        | _  -> env
+
     let lambdaExpr ,tpenv= TcExpr cenv (builderTy --> overallTy) env tpenv lambdaExpr
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr = mkApps cenv.g ((lambdaExpr,tyOfExpr cenv.g lambdaExpr),[],[interpExpr],mBuilderVal)
@@ -7677,7 +7683,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 /// and helpers rather than to the builder methods (there is actually no builder for 'seq' in the library). 
 /// These are later detected by state machine compilation. 
 ///
-/// Also "ienumerable extraction" is performaed on arguments to "for".
+/// Also "ienumerable extraction" is performed on arguments to "for".
 and TcSequenceExpression cenv env tpenv comp overallTy m = 
 
         let mkDelayedExpr (coreExpr:Expr) = 
@@ -7820,7 +7826,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 
                 if not isYield then errorR(Error(FSComp.SR.tcUseYieldBangForMultipleResults(),m)) 
 
-                AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m  NoTrace genOuterTy genExprTy
+                AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m  NoTrace genOuterTy genExprTy
                 Some(mkCoerceExpr(resultExpr,genOuterTy,m,genExprTy), tpenv)
 
             | SynExpr.YieldOrReturn((isYield,_),yieldExpr,m) -> 
@@ -8586,7 +8592,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         RecdFieldInstanceChecks cenv.g cenv.amap ad mItem rfinfo
         let tgty = rfinfo.EnclosingType
         let valu = isStructTy cenv.g tgty
-        AddCxTypeMustSubsumeType env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
         let objExpr = if valu then objExpr else mkCoerceExpr(objExpr,tgty,mExprAndItem,objExprTy)
         let fieldTy = rfinfo.FieldType
         match delayed with 
@@ -8870,9 +8876,8 @@ and TcMethodApplication
 
     let GenerateMatchingSimpleArgumentTypes (calledMeth:MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-        curriedMethodArgAttribs 
-        |> List.map (List.filter isSimpleFormalArg)
-        |> List.map (NewInferenceTypes)
+        curriedMethodArgAttribs
+        |> List.map (List.filter isSimpleFormalArg >> NewInferenceTypes)
 
     let UnifyMatchingSimpleArgumentTypes exprTy (calledMeth:MethInfo) =
         let curriedArgTys = GenerateMatchingSimpleArgumentTypes calledMeth
@@ -8953,7 +8958,7 @@ and TcMethodApplication
                     yield makeOneCalledMeth (minfo,pinfoOpt,false) ]
 
         let uniquelyResolved = 
-            let csenv = MakeConstraintSolverEnv cenv.css mMethExpr denv
+            let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
             let res = UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
             match res with
             |   ErrorResult _ -> afterTcOverloadResolution.OnOverloadResolutionFailure()
@@ -9039,7 +9044,7 @@ and TcMethodApplication
                 CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
-        let csenv = MakeConstraintSolverEnv cenv.css mMethExpr denv
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
         
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity 
         // about the possible target of the call. 
@@ -9066,8 +9071,7 @@ and TcMethodApplication
                         let resultMinfo = result.Method
                         let overridingInfo =
                             overriding
-                            |> List.filter (fun (minfo,_) -> minfo.IsVirtual)
-                            |> List.tryFind (fun (minfo,_) -> MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 resultMinfo minfo)
+                            |> List.tryFind (fun (minfo,_) -> minfo.IsVirtual && MethInfosEquivByNameAndSig EraseNone true cenv.g cenv.amap range0 resultMinfo minfo)
                         match overridingInfo with
                         |   Some r -> r |> callSink
                         |   None -> (result.Method,result.AssociatedPropertyInfo) |> callSink
@@ -9480,16 +9484,16 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
-    // Before we check the argume, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
+    // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
     begin
         if lambdaPropagationInfoForArg.Length > 0 then 
             let allOverloadsAreFuncOrMismatchForThisArg = 
                 lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
 
             if allOverloadsAreFuncOrMismatchForThisArg then 
-              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some r | _ -> None)
+              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
               if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
-                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy List.length |> List.length
+                let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
           
                 if prefixOfLambdaArgsForEachOverload.Length > 0 then 
@@ -9858,7 +9862,7 @@ and TcAttribute cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
     let conditionalCallDefineOpt = TryFindTyconRefStringAttribute cenv.g mAttr cenv.g.attrib_ConditionalAttribute tcref 
 
     match conditionalCallDefineOpt with 
-    | Some d when not (List.mem d cenv.conditionalDefines) -> 
+    | Some d when not (List.contains d cenv.conditionalDefines) -> 
         []
     | _ ->
 
@@ -9959,7 +9963,7 @@ and TcAttribute cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                     let propNameItem = Item.SetterArg(id, setterItem)
                     CallNameResolutionSink cenv.tcSink (id.idRange,env.NameEnv,propNameItem,propNameItem,ItemOccurence.Use,env.DisplayEnv,ad)
 
-                    AddCxTypeMustSubsumeType env.DisplayEnv cenv.css m NoTrace argty argtyv
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace argty argtyv
 
                     AttribNamedArg(nm,argty,isProp,mkAttribExpr expr))
 
@@ -10101,7 +10105,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
         let mkCleanup (tm,tmty) =
             if isUse then 
                 (allValsDefinedByPattern,(tm,tmty)) ||> FlatList.foldBack (fun v (tm,tmty) ->
-                    AddCxTypeMustSubsumeType denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_typ v.Type
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_typ v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
                     mkTryFinally cenv.g (tm,cleanupE,m,tmty,SequencePointInBodyOfTry,NoSequencePointAtFinally),tmty)
             else 
@@ -11363,7 +11367,9 @@ let TcOpenDecl tcSink g amap m scopem env (longId : Ident list)  =
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve env amap longId)
 
     // validate opened namespace names
-    longId |> List.filter (fun id -> id.idText <> MangledGlobalName) |> List.iter (CheckNamespaceModuleOrTypeName g)
+    for id in longId do
+        if id.idText <> MangledGlobalName then
+            CheckNamespaceModuleOrTypeName g id
 
     let IsPartiallyQualifiedNamespace (modref: ModuleOrNamespaceRef) = 
         let (CompPath(_,p)) = modref.CompilationPath 
@@ -12410,8 +12416,8 @@ module TyconBindingChecking = begin
                                 | PassAIncrClassCtorJustAfterLastLet
                                 | PassAMember _ -> true
                             let restRev = List.rev rest
-                            let afterRev = restRev |> Seq.takeWhile isAfter |> Seq.toList
-                            let beforeRev = restRev |> Seq.skipWhile isAfter |> Seq.toList
+                            let afterRev = restRev |> List.takeWhile isAfter
+                            let beforeRev = restRev |> List.skipWhile isAfter
                             
                             [ yield!  List.rev beforeRev
                               yield PassAIncrClassCtorJustAfterLastLet
@@ -12696,9 +12702,8 @@ module TyconBindingChecking = begin
                             defnCs |> List.exists (function 
                                 | PassCIncrClassBindings groups -> 
                                     groups |> List.exists (function 
-                                        | IncrClassBindingGroup(binds,isStatic,_) -> 
-                                            let nonMethodBinds = binds |> List.filter (IncrClassReprInfo.IsMethodRepr cenv >> not) 
-                                            isStatic && not nonMethodBinds.IsEmpty 
+                                        | IncrClassBindingGroup(binds,isStatic,_) ->
+                                            isStatic && (binds |> List.exists (IncrClassReprInfo.IsMethodRepr cenv >> not)) 
                                         | _ -> false) 
                                 | _ -> false)
 
@@ -14223,14 +14228,15 @@ module EstablishTypeDefinitionCores = begin
             let writeFakeRecordFieldsToSink (fields:RecdField list) =
                 let nenv = envinner.NameEnv
                 // Record fields should be visible from IntelliSense, so add fake names for them (similarly to "let a = ..")
-                for fspec in (fields |> List.filter (fun fspec -> not fspec.IsCompilerGenerated)) do
-                    let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
-                    let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
-                    // Name resolution gives better info for tooltips
-                    let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
-                    CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
-                    // Environment is needed for completions
-                    CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
+                for fspec in fields do
+                    if not fspec.IsCompilerGenerated then
+                        let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
+                        let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
+                        // Name resolution gives better info for tooltips
+                        let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
+                        CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
+                        // Environment is needed for completions
+                        CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
 
             // Notify the Language Service about constructors in discriminated union declaration
             let writeFakeUnionCtorsToSink (unionCases: UnionCase list) = 
@@ -15665,7 +15671,7 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
                         | TyparConstraint.DefaultsTo(priority2,ty2,m) when priority2 = priority -> 
                             let ty1 = mkTyparTy tp
                             if not tp.IsSolved  && not (typeEquiv cenv.g ty1 ty2) then
-                                let csenv = MakeConstraintSolverEnv cenv.css m denvAtEnd
+                                let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denvAtEnd
                                 TryD (fun () -> ConstraintSolver.SolveTyparEqualsTyp csenv 0 m NoTrace ty1 ty2)
                                       (fun e -> solveTypAsError cenv denvAtEnd m ty1
                                                 ErrorD(ErrorFromApplyingDefault(g,denvAtEnd,tp,ty2,e,m)))

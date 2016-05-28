@@ -385,16 +385,16 @@ let rebuildTS g m ts vs =
     let rec rebuild vs ts = 
       match vs,ts with
       | []   ,UnknownTS   -> internalError "rebuildTS: not enough fringe to build tuple"
-      | v::vs,UnknownTS   -> vs,(exprForVal m v,v.Type)
+      | v::vs,UnknownTS   -> (exprForVal m v,v.Type),vs
       | vs   ,TupleTS tss -> 
-          let vs,xtys = List.foldMap rebuild vs tss
+          let xtys,vs = List.mapFold rebuild vs tss
           let xs,tys  = List.unzip xtys
           let x  = mkRefTupled g m xs tys
           let ty = mkRefTupledTy g tys
-          vs,(x,ty)
+          (x,ty),vs
    
-    let vs,(x,_ty) = rebuild vs ts
-    if vs.Length <> 0 then internalError "rebuildTS: had move fringe vars than fringe. REPORT BUG" else ();
+    let (x,_ty),vs = rebuild vs ts
+    if vs.Length <> 0 then internalError "rebuildTS: had more fringe vars than fringe. REPORT BUG" else ();
     x
 
 /// CallPattern is tuple-structure for each argument position.

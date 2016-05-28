@@ -124,7 +124,7 @@
     <value>The tuples have differing lengths of {0} and {1}</value>
   </data>
   <data name="ConstraintSolverInfiniteTypes" xml:space="preserve">
-    <value>The resulting type would be infinite when unifying '{0}' and '{1}'</value>
+    <value>The types '{0}' and '{1}' cannot be unified.</value>
   </data>
   <data name="ConstraintSolverMissingConstraint" xml:space="preserve">
     <value>A type parameter is missing a constraint '{0}'</value>

@@ -94,9 +94,10 @@ let ChooseFreeVarNames takenNames ts =
           chooseName names (t,Some(match nOpt with None ->  0 | Some n -> (n+1)))
         else
           let names = Zset.add tn names
-          names,tn
+          tn,names
+
     let names    = Zset.empty String.order |> Zset.addList takenNames
-    let _names,ts = List.foldMap chooseName names tns
+    let ts,_names = List.mapFold chooseName names tns
     ts
 
 let ilxgenGlobalNng = NiceNameGenerator ()
@@ -442,7 +443,6 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv 
     | TType_var tp -> mkILTyvarTy tyenv.[tp,m]
     | TType_measure _ -> g.ilg.typ_int32 
-    //| TType_tupinfo _ -> g.ilg.typ_int32 
 
 //--------------------------------------------------------------------------
 // Generate ILX references to closures, classunions etc. given a tyenv
@@ -5621,7 +5621,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
          emptyILEvents,
          mkILCustomAttrs 
            (GenAttrs cenv eenv attribs @
-            (if List.mem tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
+            (if List.contains tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
              then [ (* mkCompilerGeneratedAttribute *) ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)

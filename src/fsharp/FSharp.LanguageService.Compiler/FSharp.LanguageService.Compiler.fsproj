@@ -80,6 +80,9 @@
     <Compile Include="..\..\utils\HashMultiMap.fs">
       <Link>Utilities\HashMultiMap.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\EditDistance.fs">
+      <Link>Utilities\EditDistance.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\TaggedCollections.fsi">
       <Link>Utilities\TaggedCollections.fsi</Link>
     </Compile>
@@ -151,6 +154,9 @@
     </Compile>
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
+    </Compile>
+    <Compile Include="..\ErrorResolutionHints.fs">
+      <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
     <Compile Include="..\ReferenceResolution.fsi">
       <Link>ReferenceResolution\ReferenceResolution.fsi</Link>

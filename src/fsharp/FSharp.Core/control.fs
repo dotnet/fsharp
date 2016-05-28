@@ -1553,7 +1553,7 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        args.aux.ccont (new OperationCanceledException())
+                        args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException()))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
