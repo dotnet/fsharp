@@ -60,9 +60,17 @@ type ContextInfo =
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
 | TupleInRecordFields
+/// The type equation comes from a return in a computation expression.
+| ReturnInComputationExpression
+/// The type equation comes from a yield in a computation expression.
+| YieldInComputationExpression
+/// The type equation comes from a runtime type test.
+| RuntimeTypeTest of bool
+/// The type equation comes from an downcast where a upcast could be used.
+| DowncastUsedInsteadOfUpcast of bool
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
-exception ConstraintSolverInfiniteTypes                 of DisplayEnv * TType * TType * range * range
+exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverTypesNotInSubsumptionRelation of DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of DisplayEnv * Typar * TyparConstraint * range * range
@@ -70,7 +78,7 @@ exception ConstraintSolverError                         of string * range * rang
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 exception ErrorFromApplyingDefault                      of TcGlobals * DisplayEnv * Typar * TType * exn * range
 exception ErrorFromAddingTypeEquation                   of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
-exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * range
+exception ErrorsFromAddingSubsumptionConstraint         of TcGlobals * DisplayEnv * TType * TType * exn * ContextInfo * range
 exception ErrorFromAddingConstraint                     of DisplayEnv * exn * range
 exception UnresolvedConversionOperator                  of DisplayEnv * TType * TType * range
 exception PossibleOverload                              of DisplayEnv * string * exn * range
@@ -88,7 +96,7 @@ type ConstraintSolverEnv
 
 val BakedInTraitConstraintNames : string list
 
-val MakeConstraintSolverEnv : ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
+val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
 type Trace = Trace of (unit -> unit) list ref
 
@@ -110,7 +118,7 @@ val AddConstraint                             : ConstraintSolverEnv -> int -> Ra
 val AddCxTypeEqualsType                       : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 val AddCxTypeEqualsTypeUndoIfFailed           : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
-val AddCxTypeMustSubsumeType                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
+val AddCxTypeMustSubsumeType                  : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
 val AddCxTypeMustSubsumeTypeUndoIfFailed      : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxMethodConstraint                     : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit

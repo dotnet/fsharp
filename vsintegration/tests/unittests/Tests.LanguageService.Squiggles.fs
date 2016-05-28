@@ -544,7 +544,7 @@ type X() =
     [<Test>]
     member public this.``OrphanFs.ParseErrorsStillShow``() =  
         let fileContent = """let foo = let(*Mark*)"""
-        this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "Block following "))  
+        this.VerifySquiggleContainedAtStartOfMarker(fileContent,"(*Mark*)",(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, "Every code block "))
 
     /// FEATURE: If a .fs file has a BuildAction other than "Compile", it behaves like a
     /// single-file-project with regards to intellisense.

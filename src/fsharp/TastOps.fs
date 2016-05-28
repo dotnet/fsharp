@@ -127,22 +127,6 @@ let instMeasureTyparRef tpinst unt (tp:Typar)  =
         loop tpinst
    | _ -> failwith "instMeasureTyparRef: kind=Type"
 
-//let instTupInfoTyparRef tpinst unt (tp:Typar)  =
-//   match tp.Kind with 
-//   | TyparKind.TupInfo ->
-//        let rec loop tpinst = 
-//            match tpinst with 
-//            | [] -> unt
-//            | (tp',ty')::t -> 
-//                if typarEq tp tp' then 
-//                    match ty' with 
-//                    | TType_tupinfo unt -> unt
-//                    | _ -> failwith "instTupInfoTyparRef incorrect kind";
- //               else
-//                    loop t
-//        loop tpinst
-//   | _ -> failwith "instTupInfoTyparRef: incorrect kind"
-
 let remapTyconRef (tcmap: TyconRefMap<_>) tcr  =
     match tcmap.TryFind tcr with 
     | Some tcr ->  tcr
@@ -201,9 +185,6 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
   | TType_measure unt -> 
       TType_measure (remapMeasureAux tyenv unt)
 
-  //| TType_tupinfo unt -> 
-  //    TType_tupinfo (remapTupInfoAux tyenv unt)
-
 
 and remapMeasureAux tyenv unt =
     match unt with
@@ -229,16 +210,6 @@ and remapMeasureAux tyenv unt =
 and remapTupInfoAux _tyenv unt =
     match unt with
     | TupInfo.Const _ -> unt
-    //| TupInfo.Var tp as unt -> 
-    //  match tp.Solution with
-    //   | None -> 
-    //      if ListAssoc.containsKey typarEq tp tyenv.tpinst then 
-    //          match ListAssoc.find typarEq tp tyenv.tpinst with 
-    //          | TType_tupinfo unt -> unt
-    //          | _ -> failwith "remapTupInfoAux: incorrect kinds"
-    //      else unt
-    //   | Some (TType_tupinfo unt) -> remapTupInfoAux tyenv unt
-    //   | Some ty -> failwithf "incorrect kinds: %A" ty
 
 and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
@@ -674,19 +645,9 @@ let rec stripTyEqnsA g canShortcut ty =
 
 let stripTyEqns g ty = stripTyEqnsA g false ty
 
-let rec stripTupInfoEqns aexpr = 
-    match aexpr with 
-    //| TupInfo.Var v -> 
-    //   match v.Solution with 
-    //   | Some (TType_tupinfo unt) -> stripTupInfoEqns unt
-    //   | Some ty -> failwithf "incorrect kinds: %A" ty
-    //   | None -> aexpr
-    | _ -> aexpr
-
 let evalTupInfoIsStruct aexpr = 
-    match stripTupInfoEqns aexpr with 
+    match aexpr with 
     | TupInfo.Const b -> b
-    //| _ -> structnessDefault 
 
 /// This erases outermost occurences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
@@ -910,17 +871,11 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         match erasureFlag with 
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true 
-    //| TType_tupinfo m1, TType_tupinfo m2 -> 
-    //    structnessAEquiv erasureFlag g aenv m1 m2  // TODO: check me - too generous on two variables
     | _ -> false
 
 and structnessAEquiv _erasureFlag _g _aenv un1 un2 =
     match stripTupInfoEqns un1, stripTupInfoEqns un2 with 
     | TupInfo.Const b1, TupInfo.Const b2 -> (b1 = b2)
-    //| TupInfo.Var tp1, TupInfo.Var tp2 when typarEq tp1 tp2 -> true
-    //| TupInfo.Var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
-    //    typeEquivAux erasureFlag g aenv.EquivTypars.[tp1] (TType_tupinfo un2)
-    //| _ -> false
 
 and measureAEquiv g aenv un1 un2 =
     let vars1 = ListMeasureVarOccs un1
@@ -970,8 +925,6 @@ let rec getErasedTypes g ty =
         getErasedTypes g dty @ getErasedTypes g rty
     | TType_measure _ -> 
         [ty]
-    //| TType_tupinfo _ -> 
-    //    []
 
 
 //---------------------------------------------------------------------------
@@ -1947,12 +1900,10 @@ and accFreeInType opts ty acc  =
     | TType_var r -> accFreeTyparRef opts r acc
     | TType_forall (tps,r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
     | TType_measure unt -> accFreeInMeasure opts unt acc
-    //| TType_tupinfo unt -> accFreeInTupInfo opts unt acc
 
 and accFreeInTupInfo _opts unt acc = 
     match unt with 
     | TupInfo.Const _ -> acc
-    //| TupInfo.Var v -> accFreeTyparRef opts v acc
 and accFreeInMeasure opts unt acc = List.foldBack (fun (tp,_) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 and accFreeInTypes opts tys acc = 
     match tys with 
@@ -2036,11 +1987,9 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
     | TType_var r -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
     | TType_forall (tps,r) -> unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag false tps (accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r)) acc
     | TType_measure unt -> List.foldBack (fun (tp,_) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
-    //| TType_tupinfo unt -> accFreeInTupInfoLeftToRight g cxFlag thruFlag acc unt
 
 and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
     match unt with 
-    //| TupInfo.Var v -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc v
     | TupInfo.Const _ -> acc
 
 and accFreeInTypesLeftToRight g cxFlag thruFlag acc tys = 
@@ -2285,7 +2234,7 @@ module PrettyTypes = begin
                     choose (tp::tps) (typeIndex, measureIndex) acc
 
                 let tryName (nm, typeIndex, measureIndex) f = 
-                    if List.mem nm alreadyInUse then 
+                    if List.contains nm alreadyInUse then 
                         f()
                     else
                         useThisName (nm, typeIndex, measureIndex)
@@ -2296,7 +2245,6 @@ module PrettyTypes = begin
                           match tp.Kind with 
                           | TyparKind.Type -> (typeIndex+1,measureIndex,'a',20,typeIndex) 
                           | TyparKind.Measure -> (typeIndex,measureIndex+1,'u',6,measureIndex)
-                         // | TyparKind.TupInfo -> (typeIndex,measureIndex+1,'s',6,measureIndex)
                         let nm = 
                            if i < letters then String.make 1 (char(int baseName + i)) 
                            else String.make 1 baseName + string (i-letters+1)
@@ -2310,7 +2258,6 @@ module PrettyTypes = begin
                               match tp.Kind with 
                               | TyparKind.Type -> (typeIndex+1,measureIndex,tp.Name+ string typeIndex) 
                               | TyparKind.Measure -> (typeIndex,measureIndex+1,tp.Name+ string measureIndex)
-                              //| TyparKind.TupInfo -> (typeIndex,measureIndex+1,tp.Name+string measureIndex)
                             tryName (nm,typeIndex, measureIndex) (fun () -> 
                                 tryAgain (typeIndex, measureIndex)))
                 else
@@ -2380,7 +2327,6 @@ module SimplifyTypes = begin
         | TType_fun (s,t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
         | TType_measure _          -> z
-        //| TType_tupinfo _          -> z
 
     let incM x m =
         if Zmap.mem x m then Zmap.add x (1 + Zmap.find x m) m
@@ -2943,7 +2889,6 @@ module DebugPrint = begin
         | TType_tuple (_tupInfo,typs) -> sepListL (wordL "*") (List.map (auxTypeAtomL env) typs) |> wrap
         | TType_fun (f,x)           -> ((auxTypeAtomL env f ^^ wordL "->") --- auxTypeL env x) |> wrap
         | TType_var typar           -> auxTyparWrapL env isAtomic typar 
-        //| TType_tupinfo unt ->  wordL (sprintf "%+A" unt)
         | TType_measure unt -> 
 #if DEBUG
           leftL "{" ^^
@@ -6891,7 +6836,6 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
     | TType_var typar           -> 
         typarEnc g (gtpsType,gtpsMethod) typar
     | TType_measure _ -> "?"
-    //| TType_tupinfo _ -> "?"
 
 and tyargsEnc g (gtpsType,gtpsMethod) args = 
      match args with     
