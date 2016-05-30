@@ -2010,10 +2010,22 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
 
     // One method, incorrect name/arg assignment 
     | _,_,_,_,([],[cmeth]) -> 
-        let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv cmeth.Method)
+        let minfo = cmeth.Method
+        let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
         let msgNum,msgText,msgRange = 
             match cmeth.UnassignedNamedArgs with 
-            | CallerNamedArg(id,_) :: _ -> (msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange)
+            | CallerNamedArg(id,_) :: _ -> 
+                if minfo.IsConstructor then
+                    let typ = minfo.DeclaringEntityRef
+
+                    let predictions =
+                        typ.AllInstanceFieldsAsList
+                        |> List.map (fun p -> p.Name.Replace("@",""))
+                        |> ErrorResolutionHints.FilterPredictions id.idText
+
+                    msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText, ErrorResolutionHints.FormatPredictions predictions),id.idRange
+                else
+                    msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange
             | [] -> (msgNum,msgText,m)
         ErrorD (Error ((msgNum,msgText),msgRange))
 
