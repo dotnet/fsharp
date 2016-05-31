@@ -1,16 +1,20 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
 
+//---------------------------------------------------------------
+// Same test as "members\incremental-hw" but with "rec" added 
 
-module rec IncrementalHwMutrec
 
-//! Setup
+
+module rec IncrementalHwMutrec   // <-----  NOTE THE "rec"
+
+// Setup
 
 let failures = ref false
 let report_failure () = stderr.WriteLine " NO"; failures := true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
 
-//! Address of incremental  local mutable
+// Address of incremental  local mutable
   
 module AddresOfIncrementalClassLocalMutable = 
 
@@ -24,7 +28,7 @@ module AddresOfIncrementalClassLocalMutable =
 
 
 
-//! Address of mutable record field (related to above)
+// Address of mutable record field (related to above)
 
 module AddresOfMutableRecordField = 
     open System.Drawing
@@ -39,12 +43,12 @@ module AddresOfMutableRecordField =
 
 
 
-//! Minor test
+// Minor test
 
 module MinorTest = 
-    type A<'a>(x:'a) = 
+    type A<'T>(x:'T) = 
         
-            let (y:'a) = x
+            let (y:'T) = x
             member this.X = y
         
 
@@ -54,13 +58,13 @@ module MinorTest =
 
 
 
-//! Misc
+// Misc
 
 module Misc = 
-    type 'a Area9aa(x) =
+    type 'T Area9aa(x) =
     
-        let a = (x : 'a)
-        let f (y:'a) = y
+        let a = (x : 'T)
+        let f (y:'T) = y
     
 
     type AList(a) = 
@@ -74,18 +78,18 @@ module Misc =
 
 
 
-//! Wire prevously
+// Wire prevously
     
 (* accepted *)
 module WireOld = 
     [<AbstractClass>]
-    type 'a wire =
+    type wire<'T> =
     
-      abstract Send   : 'a -> unit
-      abstract Listen : ('a -> unit) -> unit
+      abstract Send   : 'T -> unit
+      abstract Listen : ('T -> unit) -> unit
       new () = {}
-      member self.Event = self :> 'a IEvent
-      interface IEvent<'a> with
+      member self.Event = self :> IEvent<'T>
+      interface IEvent<'T> with
           member x.Subscribe(handler) = failwith "nyi"
           member x.AddHandler(handler) = failwith "nyi"
           member x.RemoveHandler(handler) = failwith "nyi"
@@ -93,129 +97,128 @@ module WireOld =
     
     let createWire() =
       let listeners = ref [] in
-      {new wire<'a>() with
+      {new wire<'T>() with
          member __.Send(x)   = List.iter (fun f -> f x) !listeners
          member __.Listen(f) = listeners := f :: !listeners
       }
 
 
 
-//! Wire variations
+// Wire variations
 
 module WireVariations = 
-    (* Accepted *)    
+    // Accepted
     type wire2(z) =
       
          let z = z
          member this.Send(x) = 1 + z + x
       
 
-    (* Accepted *)
-    type 'a wire3(z) =
+    // Accepted 
+    type wire3<'T>(z) =
       
-         let listeners = (z:'a)
-         member this.Send(x:'a) = x
-      
-
-    (* Accepted *)    
-    type wire4<'a>(z) =
-      
-         let listeners = let z:'a = z in ref ([] : ('a -> unit) list)
-         member this.Send(x:'a)           = List.iter (fun f -> f x) !listeners
-         member this.Listen(f:'a -> unit) = listeners := f :: !listeners
+         let listeners = (z:'T)
+         member this.Send(x:'T) = x
       
 
-    (* Accepted *)    
-    type 'a wire5(z) =
+    // Accepted     
+    type wire4<'T>(z) =
       
-         let listeners = ref ([] : ('a -> unit) list)
-         member this.Send(x:'a)           = let z:'a = z in List.iter (fun f -> f x) !listeners
-         member this.Listen(f:'a -> unit) = listeners := f :: !listeners
+         let listeners = let z:'T = z in ref ([] : ('T -> unit) list)
+         member this.Send(x:'T)           = List.iter (fun f -> f x) !listeners
+         member this.Listen(f:'T -> unit) = listeners := f :: !listeners
       
 
-    (* Accepted now - fixed tinst missing error *)
-    type 'a wire6(z) =
+    // Accepted
+    type wire5<'T>(z) =
       
-         let mutable listeners = ([] : ('a -> unit) list)
-         member this.Send(x:'a)           = let z:'a = z in List.iter (fun f -> f x) listeners
-         member this.Listen(f:'a -> unit) = listeners <- f :: listeners
+         let listeners = ref ([] : ('T -> unit) list)
+         member this.Send(x:'T)           = let z:'T = z in List.iter (fun f -> f x) !listeners
+         member this.Listen(f:'T -> unit) = listeners := f :: !listeners
+      
+
+    // Accepted now - fixed tinst missing error 
+    type wire6<'T>(z) =
+      
+         let mutable listeners = ([] : ('T -> unit) list)
+         member this.Send(x:'T)           = let z:'T = z in List.iter (fun f -> f x) listeners
+         member this.Listen(f:'T -> unit) = listeners <- f :: listeners
     
 
-    (* OK, now this types are asserted equal *)
-    type 'a wire7(z) =
+    // OK, now this types are asserted equal 
+    type wire7<'T>(z) =
       
          let listeners  = 12
-         let z : 'a = z
+         let z : 'T = z
          member this.SendA(x:int) = this,listeners
          member this.SendB(x:int) = this,listeners       
       
 
-    (* Soundness concern: should uses of let-fields force a member "this" to be ('a wire) typed? *)
-    type 'a wire8(z) =
+    // Soundness concern: should uses of let-fields force a member "this" to be ('T wire) typed? 
+    type wire8<'T>(z) =
       
-         let z : 'a = z  
+         let z : 'T = z  
          let listeners  = 12
-         member this.SendA(x:int) = x,z,(this: 'a wire8)
-         member this.SendB(x:int) = x,z,(this: 'a wire8)
+         member this.SendA(x:int) = x,z,(this: 'T wire8)
+         member this.SendB(x:int) = x,z,(this: 'T wire8)
       
 
-    (* Accepted *)    
-    type 'a wire9(z) =
+    // Accepted
+    type wire9<'T>(z) =
       
          let mutable listeners  = ([] : int list)
-         let z : 'a = z
+         let z : 'T = z
          member this.Send(x:int) =
            let ls : int list = 1 :: 2 :: listeners in
            List.map (fun x -> x+1) ls
     
 
-    (* Accepted *)    
-    type 'a wire10(z) =
+    // Accepted
+    type wire10<'T>(z) =
       
          let mutable listeners  = ([] : int list)
-         let z : 'a = z
+         let z : 'T = z
          member this.Send(x:int) =
-           let ls : int list = listeners @ [1] in  (* it seems listeners may have the wrong type... *)
+           let ls : int list = listeners @ [1] in  
            List.map (fun f -> f) ls
     
 
-    (* Accepted *)    
-    type 'a wire11(z) =
+    // Accepted
+    type wire11<'T>(z) =
       
          let listeners  = let z:int = z in ([] : int list)
-         member this.Send(x:'a) = (* List.iter (fun f -> ()) listeners *)
-             let xx : 'a wire11 = this in      
+         member this.Send(x:'T) = 
+             let xx : 'T wire11 = this in      
              Some (x,List.head listeners)
     
 
-    (* Accepted *)    
-    type 'a wire12(z) =
+    // Accepted 
+    type wire12<'T>(z) =
       
-         let listeners  = let z:'a = z in ([] : int list)
-         member this.Send(x:'b) = (* List.iter (fun f -> ()) listeners *)
+         let listeners  = let z:'T = z in ([] : int list)
+         member this.Send(x:'b) = 
              Some (this,x,List.head listeners)
     
 
-    (* OK, after avoid the value restriction *)    
+    // OK, after avoid the value restriction
     type wire13(z) =
       
          member this.Send(x:'b) = (ignore (z:int)); Some (this,x)
     
 
-    (* Accepted *)
-    type 'a wire14(z) =
+    // Accepted 
+    type wire14<'T>(z) =
       
          let mutable listeners  = let z:int = z in ([] : int list)
-         member this.Send(x:'a) = (* List.iter (fun f -> ()) listeners *)
+         member this.Send(x:'T) = (* List.iter (fun f -> ()) listeners *)
              listeners
     
 
 
 
-//! Area variations
+// Area variations
   
 module AreaVariations = 
-    (* Accepted *)
     open System.Drawing
     open System.Windows.Forms
     open WireOld
@@ -255,20 +258,14 @@ module AreaVariations =
     
         inherit Panel() 
         let x = 1 + x
-          (**)
         let mutable Bitmap = new Bitmap(100,100)
         let mutable GC     = Graphics.FromImage(Bitmap)   (* GC for bitmap *)
         let resizedWire    = createWire() : (int*int) wire
         let mutable Count  = 0
-          (**)
         do base.BackColor <- Color.Black
         do base.Dock      <- DockStyle.Fill
         do base.Cursor    <- Cursors.Cross
-    //  do base.Resize.Add(fun arg  -> area.resize ())                    (* use before defn risk *)
-    //  do base.Paint .Add(fun args -> area.redrawDrawArea args.Graphics) (* use before defn risk *)
-          (**)
         member this.ResizedE = resizedWire.Event
-          (**)
         member this.Resize () =
           let ww,hh = base.Width,base.Height in
           if ww>0 && hh>0 then (
@@ -276,36 +273,21 @@ module AreaVariations =
                 GC     <- Graphics.FromImage(Bitmap);
                 resizedWire.Send((ww,hh))
           )
-          (**)
-    //  TODO: need to be able to call this.PriorMethod without this.qualification
-    //  do base.Resize.Add(fun arg  -> Resize ())                         (* no risk *)  
-          (**)
         member this.RedrawDrawArea (gc:Graphics) = gc.DrawImage(Bitmap,new Point(0,0))
-    //  member this.Refresh() = using (base.CreateGraphics()) (fun gc ->      RedrawDrawArea gc)   
         member this.Refresh2() = using (base.CreateGraphics()) (fun gc -> this.RedrawDrawArea gc)        
-        (**)
-    //  do base.Paint.Add(fun args -> RedrawDrawArea args.Graphics)       (* no risk *)
-    //  do base.Paint.Add(fun args -> <impliedThisVariable>.RedrawDrawArea args.Graphics)       (* no risk *)
-    
 
     type Area5b(x) as self =
     
         inherit Panel() 
         let x = 1 + x
-          (**)
         let mutable Bitmap = new Bitmap(100,100)
         let mutable GC     = Graphics.FromImage(Bitmap)   (* GC for bitmap *)
         let resizedWire    = createWire() : (int*int) wire
         let mutable Count  = 0
-          (**)
         do self.BackColor <- Color.Black
         do self.Dock      <- DockStyle.Fill
         do self.Cursor    <- Cursors.Cross
-    //  do self.Resize.Add(fun arg  -> area.resize ())                    (* use before defn risk *)
-    //  do self.Paint .Add(fun args -> area.redrawDrawArea args.Graphics) (* use before defn risk *)
-          (**)
         member this.ResizedE = resizedWire.Event
-          (**)
         member this.Resize () =
           let ww,hh = self.Width,self.Height in
           if ww>0 && hh>0 then (
@@ -313,16 +295,8 @@ module AreaVariations =
                 GC     <- Graphics.FromImage(Bitmap);
                 resizedWire.Send((ww,hh))
           )
-          (**)
-    //  TODO: need to be able to call this.PriorMethod without this.qualification
-    //  do self.Resize.Add(fun arg  -> Resize ())                         (* no risk *)  
-          (**)
         member this.RedrawDrawArea (gc:Graphics) = gc.DrawImage(Bitmap,new Point(0,0))
-    //  member this.Refresh() = using (self.CreateGraphics()) (fun gc ->      RedrawDrawArea gc)   
         member this.Refresh2() = using (self.CreateGraphics()) (fun gc -> this.RedrawDrawArea gc)        
-        (**)
-    //  do self.Paint.Add(fun args -> RedrawDrawArea args.Graphics)       (* no risk *)
-    //  do self.Paint.Add(fun args -> <impliedThisVariable>.RedrawDrawArea args.Graphics)       (* no risk *)
     
 
     type Area6(x) =
@@ -341,32 +315,32 @@ module AreaVariations =
 
 
 
-    type 'a Area8(x) =
+    type 'T Area8(x) =
     
         inherit Panel() 
         let a,b = (x : int * int)
         do base.BackColor <- Color.Black
-        let f (y:'a) = y
+        let f (y:'T) = y
         let xx = a
     
 
-    type 'a Area9(x) =
+    type 'T Area9(x) =
     
-        let a = (x : 'a)
-    //    let f (y:'a) = y
+        let a = (x : 'T)
+    //    let f (y:'T) = y
     
 
-    type 'a Area10 =
+    type 'T Area10 =
     
-      val f : 'a -> 'a
+      val f : 'T -> 'T
       new (x:int) = { f = fun x -> x}  
     
 
 
 
-//! Person
+// Person
   
-(* Scala person example *)
+// Scala person example 
 module ScalaPersonExample = 
     type Person1(firstLastSpouse) =
       
@@ -379,8 +353,6 @@ module ScalaPersonExample =
           (match spouse with
            | None        -> "."
            | Some spouse -> " and this is my spouse, " + spouse.FirstName + " " + spouse.LastName + ".")
-        // TODO: the implicit ctor is not in scope for defining alt constructors.
-        // new (f,l) = new Person1(f,l,None)
     
     let pA = new Person1(("bob" ,"smith",None))
     let pB = new Person1(("jill","smith",Some pA))
@@ -388,7 +360,7 @@ module ScalaPersonExample =
 
 
 
-//! Forms
+// Forms
   
 module Forms1 = 
     open System.Drawing
@@ -430,15 +402,9 @@ module Forms2 =
       member this.GC = GC'
     
 
-    //let form = new Form(Visible=true,AutoScroll=true)
-    //let dp = new DrawPanel2(800,400)
-    //do  form.Controls.Add(dp)
-    //do  dp.GC.DrawLine(Pens.White,10,20,30,40)
-    //do  dp.Redraw()
-
 
 module Regression1 = 
-    (* Regression test: local vals of unit type are not given field storage (even if mutable) *)
+    // Regression test: local vals of unit type are not given field storage (even if mutable) 
     type UnitTestA2 (x,y) =
     
       do  printf "TestA %d\n" (x*y)
@@ -456,32 +422,31 @@ module Regression1 =
 
 
 
-//! typar scoping
+// typar scoping
 
 module TyparScopeChecks = 
     (* typar scoping checks 1 *)
-    type ('a,'b) classB1(aa,bb) =
+    type ('T,'b) classB1(aa,bb) =
     
-      let a = aa : 'a
+      let a = aa : 'T
       let b = bb : 'b
-      let f (aaa:'a) (bbb:'b) = aaa,bbb
+      let f (aaa:'T) (bbb:'b) = aaa,bbb
     
 
     (* typar scoping checks *)
-    type ('a,'b) classB2(aa:'a,bb:'b) =
+    type ('T,'b) classB2(aa:'T,bb:'b) =
     
       let a = aa
       let b = bb
-      let f (aaa:'a) (bbb:'b) = aaa,bbb
+      let f (aaa:'T) (bbb:'b) = aaa,bbb
     
 
 
 
 
 module LocalLetRecTests = 
-    //! local let rec test
+    // local let rec test
         
-    (* let rec tests *)
     type LetRecClassA1 (a,b) =
     
       let a,b = a,b
@@ -494,7 +459,6 @@ module LocalLetRecTests =
     let xa = lrCA1.Fa()
     let xb = lrCA1.Fb()
 
-    (* let rec tests *)
     type LetRecClassA2 () =
     
       let rec odd  n = printf "odd  %d?\n" n; if n=0 then false else not(even (n-1))
@@ -509,7 +473,7 @@ module LocalLetRecTests =
     let ox3 = lrCA2.Even(3)
 
 
-    //! local let rec test
+    // local let rec test
         
     type nats = HD of int * (unit -> nats)
     let rec ns = HD (2,(fun () -> HD (3,(fun () -> ns))))
@@ -518,7 +482,7 @@ module LocalLetRecTests =
     type LetRecClassA3 () =
     
       let rec ns = HD (2,(fun () -> HD (3,(fun () -> ns))))
-      let rec xs = 1::2::3::xs  (* WHY IS THIS ACCEPT HERE, BUT NOT AT THE TOP LEVEL??? *)
+      let rec xs = 1::2::3::xs  
       member this.NS = ns
       member this.XS = xs
     
@@ -528,7 +492,7 @@ module LocalLetRecTests =
 
     type LetRecClassA4 () =
     
-      let rec xs = 1::2::3::xs  (* WHY IS THIS ACCEPT HERE, BUT NOT AT THE TOP LEVEL??? *)
+      let rec xs = 1::2::3::xs  
       member this.XS = xs
     
     let lrCA4    = new LetRecClassA4()
@@ -536,7 +500,7 @@ module LocalLetRecTests =
 
 
 
-//! override test
+// override test
   
 module OverrideTest1 = 
     [<AbstractClass>]
@@ -556,8 +520,6 @@ module OverrideTest1 =
 
 
 module OverrideTest2 = 
-
-    //! abstract test
       
     [<AbstractClass>]
     type ImplicitAbstractClass() =
@@ -579,7 +541,7 @@ module OverrideTest2 =
 
 
 module ConstructionTests = 
-    //! CC tests
+    // CC tests
     type CC (x) =
       
         let mutable z = x+1
@@ -593,8 +555,6 @@ module ConstructionTests =
     cc.Set(20)
     cc.F()
 
-
-    //! interface
     type CCCCCCCC() = 
       interface System.IDisposable with      
           member x.Dispose() = ()
@@ -604,7 +564,6 @@ module ConstructionTests =
 
 
 module StaticMemberScopeTest = 
-    //! static expr test
     type StaticTestA1(argA,argB) = 
       let         locval = 1 + argA
       let mutable locmut = 2 + argB
@@ -614,7 +573,6 @@ module StaticMemberScopeTest =
 
 module ConstructorArgTests = 
 
-    //! ctor args stored in fields
     type CtorArgClassA1(argA,argB) = 
       member x.M = argA + argB*2
      
@@ -642,19 +600,9 @@ module SelfReferenceTests =
     let sr = new SelfReferences(1,2)
 
 
-//! Bug: 878 - type unsoundness - implicit constructor members generalising "free-imperative" typars from let-bindings
-(* must be -ve test
-type C() = 
-   let t = ref (Map.empty<string,_>)
-   let f x = (!t).Add("3",x)
-   member x.M() = !t
-
-*)  
-
-
 module MixedRecursiveTypeDefinitions = 
 
-    type ClassType<'a>(x:'a) =         
+    type ClassType<'T>(x:'T) =         
         member self.X = x
         
     and RecordType =
@@ -670,13 +618,13 @@ module MixedRecursiveTypeDefinitions =
 
     and AbbrevType2 = ClassType<string>
 
-    and AnotherClassType<'a>(x:'a) = 
+    and AnotherClassType<'T>(x:'T) = 
         member self.X = x
-        interface InterfaceType<'a> with 
+        interface InterfaceType<'T> with 
             member self.X = x
         
-    and InterfaceType<'a> = 
-        abstract X : 'a
+    and InterfaceType<'T> = 
+        abstract X : 'T
         
     
 
@@ -707,14 +655,6 @@ module ExceptionsWithAugmentations =
     test "ckwh98v" ((try raise x2 with :? E2Exception as e -> e.Member2) = "E")
 
 
-//! Test cases:
-(*  
-  [ ] - self-references - allowed and trapped
-  [ ] - direct calls to most derrived base override
-  [ ] - calls on "super" object - via self and super vars
-*)
-
-//! Finish
 
 let _ = 
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

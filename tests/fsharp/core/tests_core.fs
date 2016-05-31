@@ -1191,6 +1191,9 @@ module Members =
         [<Test; FSharpSuiteScriptPermutations("core/members/factors")>]
         let factors p = singleTestBuildAndRun p
 
+        [<Test; FSharpSuiteScriptPermutations("core/members/factors-mutrec")>]
+        let factorsMutrec p = singleTestBuildAndRun p
+
     module Incremental = 
 
         [<Test; FSharpSuiteScriptPermutations("core/members/incremental")>]
@@ -1206,6 +1209,9 @@ module Members =
 
         [<Test; FSharpSuiteScriptPermutations("core/members/ops")>]
         let ops p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/ops-mutrec")>]
+        let opsMutrec p = singleTestBuildAndRun p
 
 
 module Nested = 
