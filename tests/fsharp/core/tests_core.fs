@@ -854,7 +854,6 @@ module Unicode =
 
     [<Test; FSharpSuiteScriptPermutations("core/unicode")>]
     let unicode2 p = singleTestBuildAndRun p
-    check  (attempt {
 
 module InternalsVisible =
 
