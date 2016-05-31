@@ -1,7 +1,7 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
 
-#light
 
+module rec IncrementalHwMutrec
 
 //! Setup
 
@@ -42,7 +42,7 @@ module AddresOfMutableRecordField =
 //! Minor test
 
 module MinorTest = 
-    type A<'a>(x) = 
+    type A<'a>(x:'a) = 
         
             let (y:'a) = x
             member this.X = y
@@ -183,8 +183,8 @@ module WireVariations =
     type 'a wire11(z) =
       
          let listeners  = let z:int = z in ([] : int list)
-         member this.Send(x:'b) = (* List.iter (fun f -> ()) listeners *)
-             let xx : 'b wire11 = this in      
+         member this.Send(x:'a) = (* List.iter (fun f -> ()) listeners *)
+             let xx : 'a wire11 = this in      
              Some (x,List.head listeners)
     
 
@@ -339,8 +339,8 @@ module AreaVariations =
         do base.BackColor <- Color.Black      
     
 
-    open System.Drawing
-    open System.Windows.Forms
+
+
     type 'a Area8(x) =
     
         inherit Panel() 
@@ -375,10 +375,10 @@ module ScalaPersonExample =
         member x.LastName  = lastName  : string
         member x.Spouse    = spouse    : Person1 option
         member x.Introduction() =
-          "Hi, my name is " ^ firstName ^ " " ^ lastName ^
+          "Hi, my name is " + firstName + " " + lastName +
           (match spouse with
            | None        -> "."
-           | Some spouse -> " and this is my spouse, " ^ spouse.FirstName ^ " " ^ spouse.LastName ^ ".")
+           | Some spouse -> " and this is my spouse, " + spouse.FirstName + " " + spouse.LastName + ".")
         // TODO: the implicit ctor is not in scope for defining alt constructors.
         // new (f,l) = new Person1(f,l,None)
     
