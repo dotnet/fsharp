@@ -960,6 +960,12 @@ module letrec =
     [<Test; FSharpSuiteScriptPermutations("core/letrec")>]
     let letrec p = singleTestBuildAndRun p
 
+    [<Test; FSharpSuiteScriptPermutations("core/letrec-mutrec")>]
+    let ``letrec (mutrec variations part one)`` p = singleTestBuildAndRun p
+
+    [<Test; FSharpSuiteScriptPermutations("core/letrec-mutrec2")>]
+    let ``letrec (mutrec variations part two)`` p = singleTestBuildAndRun p
+
 module LibTest = 
 
     [<Test; FSharpSuiteAllPermutations("core/libtest")>]
