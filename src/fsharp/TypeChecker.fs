@@ -6209,7 +6209,13 @@ and FreshenObjExprAbstractSlot cenv (_env: TcEnv) implty virtNameAndArityPairs (
         let absSlotsByName = List.filter (fst >> fst >> (=) bindName) virtNameAndArityPairs
         
         match absSlotsByName with 
-        | []              -> errorR(Error(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding))
+        | []              ->
+            let predictions =
+                virtNameAndArityPairs
+                |> List.map (fst >> fst)
+                |> ErrorResolutionHints.FilterPredictions bindName
+
+            errorR(Error(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))
         | [(_,absSlot:MethInfo)]     -> errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, (List.sum absSlot.NumArgs)),mBinding))
         | (_,absSlot:MethInfo) :: _  -> errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, (List.sum absSlot.NumArgs)),mBinding))
         
