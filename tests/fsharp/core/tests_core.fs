@@ -42,7 +42,7 @@ module Comprehensions =
 
 module ComprehensionsHw = 
     [<Test; FSharpSuiteScriptPermutations("core/comprehensions-hw")>]
-    let comprehensions p = check  singleTestBuildAndRun p
+    let comprehensions p = singleTestBuildAndRun p
 
 module Control = 
     [<Test; FSharpSuiteFscCodePermutation("core/control")>]
@@ -1208,7 +1208,7 @@ module Members =
         let incrementalHw p = singleTestBuildAndRun p
 
         [<Test; FSharpSuiteScriptPermutations("core/members/incremental-hw-mutrec")>]
-        let incrementalHwMutrec = singleTestBuildAndRun p
+        let incrementalHwMutrec p = singleTestBuildAndRun p
 
     module Ops =
 
