@@ -13,6 +13,12 @@ open NUnit.Framework
 open FsCheck
 #endif
 
+type [<Struct>] Dummy (x: int) =
+  member this.X = x
+  interface IDisposable with
+    member this.Dispose () = ()
+
+
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
 [<AutoOpen>]
 module ChoiceUtils =
@@ -423,6 +429,12 @@ type AsyncModule() =
     [<Test>]
     member this.``dispose should not throw when called on null``() =
         let result = async { use x = null in return () } |> Async.RunSynchronously
+
+        Assert.AreEqual((), result)
+
+    [<Test>]
+    member this.``dispose should not throw when called on null struct``() =
+        let result = async { use x = new Dummy(1) in return () } |> Async.RunSynchronously
 
         Assert.AreEqual((), result)
 
