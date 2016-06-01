@@ -763,6 +763,12 @@ namespace Microsoft.FSharp.Core
     /// <c>System.Int64</c>.</summary>
     type int64<[<Measure>] 'Measure> = int64
 
+    module BasicInlinedOperations =
+
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        val inline internal notnullFast : value:'T -> bool
 
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =

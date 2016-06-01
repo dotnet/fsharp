@@ -478,6 +478,11 @@ namespace Microsoft.FSharp.Core
         let inline isinstPrim<'T>(x:obj) = (# "isinst !0" type ('T) x : obj #)
         let inline castclassPrim<'T>(x:obj) = (# "castclass !0" type ('T) x : 'T #)
         let inline notnullPrim<'T when 'T : not struct>(x:'T) = (# "ldnull cgt.un" x : bool #)
+           
+        let inline internal notnullFast (x: ^T) = 
+             notnullPrim x
+             when ^T struct = true
+
         let inline iscastPrim<'T when 'T : not struct>(x:obj) = (# "isinst !0" type ('T) x : 'T #)
 
 
