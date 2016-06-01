@@ -421,6 +421,12 @@ type AsyncModule() =
 #endif
 
     [<Test>]
+    member this.``dispose should not throw when called on null``() =
+        let result = async { use x = null in return () } |> Async.RunSynchronously
+
+        Assert.AreEqual((), result)
+
+    [<Test>]
     member this.``error on one workflow should cancel all others``() =
         let counter = 
             async {
