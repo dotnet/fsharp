@@ -259,8 +259,11 @@ type TcEnv =
       ePath: Ident list 
       eCompPath: CompilationPath 
       eAccessPath: CompilationPath 
-      eAccessRights: AccessorDomain // this field is computed from other fields, but we amortize the cost of computing it.
-      eInternalsVisibleCompPaths: CompilationPath list // internals under these should be accessible
+      /// This field is computed from other fields, but we amortize the cost of computing it.
+      eAccessRights: AccessorDomain 
+
+      /// Internals under these should be accessible
+      eInternalsVisibleCompPaths: CompilationPath list 
 
       /// Mutable accumulator for the current module type 
       eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
@@ -13012,6 +13015,11 @@ module MutRecBindingChecking =
         env
 
 
+    /// Updates the types of the modules to contain the inferred contents to far, which includes values and members
+    let TcMutRecDefns_UpdateModuleContents defns =
+        defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
+                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+    
     /// Compute the active environments within each nested module.
     let TcMutRecDefns_ComputeEnvs getTyconOpt getVals (cenv: cenv) report scopem m envInitial mutRecShape =
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs 
@@ -13075,8 +13083,7 @@ module MutRecBindingChecking =
                 fixupFinalAttrs())  
 
         // Updates the types of the modules to contain the inferred contents to far, which includes values and members
-        defnsAs |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+        TcMutRecDefns_UpdateModuleContents defnsAs
 
         // Updates the environments to include the values
         // We must open all modules from scratch again because there may be extension methods and/or AutoOpen
@@ -15031,6 +15038,9 @@ module EstablishTypeDefinitionCores =
                   MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
 
+        // Updates the types of the modules to contain the inferred contents to far, which includes nested modules and types
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
+
         // Publish tycons
         (envTmp, withEnvs) ||> MutRecShapes.iterTyconsWithEnv
                 (fun envAbove (_, tyconOpt)  -> 
@@ -15048,8 +15058,7 @@ module EstablishTypeDefinitionCores =
         let envMutRecPrelim, withEnvs =  (envInitial, withEntities) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs snd (fun _ -> []) cenv false scopem m 
 
         // Updates the types of the modules to contain the inferred contents so far
-        withEnvs |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
 
 
         // Phase 1B. Establish the kind of each type constructor 
@@ -15611,15 +15620,29 @@ module TcDeclarations =
 
 
     /// Bind a collection of mutually recursive declarations in a signature file
-    let TcMutRecSignatureDecls cenv env parent tpenv (mutRecSigs:MutRecSigsInitialData,m,scopem) =
+    let TcMutRecSignatureDecls cenv envInitial parent tpenv (mutRecSigs:MutRecSigsInitialData,m,scopem) =
         let mutRecSigsAfterSplit = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
-        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv env parent true tpenv (mutRecSigsAfterSplit,m,scopem)
+        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv envInitial parent true tpenv (mutRecSigsAfterSplit,m,scopem)
 
         // Updates the types of the modules to contain the inferred contents to far, which includes values and members
-        mutRecDefnsAfterCore |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecDefnsAfterCore
 
-        let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRec mutRecDefnsAfterCore
+        // By now we've established the full contents of type definitions apart from their
+        // members and any fields determined by implicit construction.  We know the kinds and 
+        // representations of types and have established them as valid.
+        //
+        // We now reconstruct the active environments all over again - this will add the union cases and fields. 
+        //
+        // Note: This environment reconstruction doesn't seem necessary. We're about to create Val's for all members,
+        // which does require type checking, but no more information than is already available.
+        let envMutRecPrelimWithReprs, withEnvs =  
+            (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterCore) 
+                ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs 
+                       (fun (_, tyconOpt, _, _) -> tyconOpt)  
+                       (fun _binds ->  [  (* no values are available yet *) ]) 
+                       cenv true scopem m 
+
+        let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
         envMutRec
 
 //-------------------------------------------------------------------------
@@ -15947,8 +15970,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
 
       | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m) ->
 
-                // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
+          // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
           if isRec then 
+              assert (not isContinuingModule)
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
               return! TcModuleOrNamespaceElementsMutRec cenv parent m env [modDecl]
           else
@@ -15974,7 +15998,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
               let mspec = NewModuleOrNamespace (Some env.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
 
               // Now typecheck. 
-              let! mexpr, topAttrsNew, env, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml false mdefs 
+              let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml false mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
               mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
@@ -15986,7 +16010,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
               //   - the implicit module of a script 
               //   - the major 'module' declaration for a file stating with 'module X.Y' 
               //   - an interactive entry for F# Interactive 
-              // In this case the envAtEnd is the environment at the end of this module
+              //
+              // In this case the envAtEnd is the environment at the end of this module, which doesn't contain the module definition itself
+              // but does contain the results of all the 'open' declarations and so on.
               let envAtEnd = (if isContinuingModule then envAtEnd  else env)
           
               return ((fun modDefs -> modDefn :: modDefs),topAttrsNew), env, envAtEnd
@@ -16017,7 +16043,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
           let envForNamespace = LocateEnv cenv.topCcu env enclosingNamespacePath
           let envForNamespace = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envForNamespace
 
-          let! modExpr, topAttrs, _, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envForNamespace xml isRec defs
+          let! modExpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envForNamespace xml isRec defs
           
           let env = 
               if isNil enclosingNamespacePath then 
@@ -16063,7 +16089,7 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent endm (defsSoFar, env, envAt
         // tail recursive 
         return! TcModuleOrNamespaceElementsNonMutRec  cenv parent endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
     | [] -> 
-        return List.rev defsSoFar,env, envAtEnd
+        return List.rev defsSoFar, envAtEnd
  }
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
@@ -16131,10 +16157,11 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
     // Check the assembly attributes
     let attrs, _ = TcAttributesWithPossibleTargets false cenv envAfter AttributeTargets.Top synAttrs
 
-    // Check the non-escaping condition as we build the expression on the way back up 
-    let exprfWithEscapeCheck e = 
+    // Check the non-escaping condition as we build the list of module expressions on the way back up 
+    let exprfWithEscapeCheck modExprs = 
         TcMutRecDefnsEscapeCheck mutRecDefnsChecked envInitial
-        TcMutRecDefsFinish cenv mutRecDefnsChecked m :: e 
+        let modExpr = TcMutRecDefsFinish cenv mutRecDefnsChecked m 
+        modExpr :: modExprs
 
     return (exprfWithEscapeCheck,attrs),envAfter, envAfter
 
@@ -16163,20 +16190,20 @@ and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath (xml.ToXmlDoc())
 
     if isRec then 
-        let! (exprf, topAttrsNew), env, envAtEnd = TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
+        let! (exprf, topAttrsNew), _, envAtEnd = TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
         // Apply the functions for each declaration to build the overall expression-builder 
         let mexpr = TMDefs(exprf []) 
-        return (mexpr, topAttrsNew, env, envAtEnd)
+        return (mexpr, topAttrsNew, envAtEnd)
 
     else
-        let! compiledDefs, env, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent endm ([], env, env) defs 
+        let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent endm ([], env, env) defs 
 
         // Apply the functions for each declaration to build the overall expression-builder 
         let mexpr = TMDefs(List.foldBack (fun (f,_) x -> f x) compiledDefs []) 
 
         // Collect up the attributes that are global to the file 
         let topAttrsNew = List.foldBack (fun (_,y) x -> y@x) compiledDefs []
-        return (mexpr, topAttrsNew, env, envAtEnd)
+        return (mexpr, topAttrsNew, envAtEnd)
   }  
     
 
@@ -16360,7 +16387,7 @@ let TypeCheckOneImplFile
     let envinner, mtypeAcc = MakeInitialEnv env 
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment(x) ]
-    let! mexpr, topAttrs, env, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty false defs
+    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty false defs
 
     let implFileTypePriorToSig = !mtypeAcc 
 
