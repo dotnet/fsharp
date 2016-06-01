@@ -415,7 +415,7 @@ namespace Microsoft.FSharp.Core
 
 #endif
 
-    module BasicInlinedOperations =  
+    module internal BasicInlinedOperations =  
         let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
         let inline box     (x:'T) = (# "box !0" type ('T) x : obj #)
         let inline not     (b:bool) = (# "ceq" b false : bool #)
@@ -478,10 +478,6 @@ namespace Microsoft.FSharp.Core
         let inline isinstPrim<'T>(x:obj) = (# "isinst !0" type ('T) x : obj #)
         let inline castclassPrim<'T>(x:obj) = (# "castclass !0" type ('T) x : 'T #)
         let inline notnullPrim<'T when 'T : not struct>(x:'T) = (# "ldnull cgt.un" x : bool #)
-           
-        let inline internal notnullFast (x: ^T) = 
-             notnullPrim x
-             when ^T struct = true
 
         let inline iscastPrim<'T when 'T : not struct>(x:obj) = (# "isinst !0" type ('T) x : 'T #)
 
@@ -663,6 +659,10 @@ namespace Microsoft.FSharp.Core
     // code for each new datatype.
 
     module LanguagePrimitives =  
+
+        let inline IsNonNull (x: 'T) = 
+            (# "ldnull cgt.un" x : bool #)
+            when ^T struct = true
    
 
         module (* internal *) ErrorStrings =
