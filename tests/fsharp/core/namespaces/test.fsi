@@ -61,3 +61,17 @@ namespace rec CheckRecursiveNameResolution3
 
       module M = 
           type C
+
+// Check recursive name resolution
+namespace rec CheckRecursiveNameResolution4
+
+    module Test =
+
+      open Test.M
+
+      module N = 
+          val x : C
+
+      module M = 
+          type C
+
