@@ -124,3 +124,18 @@ namespace rec CheckRecursiveNameResolution3
              member x.P = C()
 
 
+namespace rec CheckRecursiveNameResolution4
+
+    module Test =
+
+      open Test.M // The name Test should be in scope
+
+      module N = 
+          let x = C()
+
+      module M = 
+          [<Sealed>]
+          type C() =
+             member x.P = C()
+
+
