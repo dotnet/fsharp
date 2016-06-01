@@ -24,3 +24,40 @@ module X = begin
 end
 
 
+
+// Check recursive name resolution
+namespace rec CheckRecursiveNameResolution1
+
+    module Test =
+
+      module N = 
+          val x : Test.M.C
+
+      module M = 
+          type C
+
+
+// Check recursive name resolution
+namespace rec CheckRecursiveNameResolution2
+
+    module Test =
+
+      module N = 
+          val x : M.C
+
+      module M = 
+          type C
+
+
+// Check recursive name resolution
+namespace rec CheckRecursiveNameResolution3
+
+    module Test =
+
+      open M
+
+      module N = 
+          val x : C
+
+      module M = 
+          type C
