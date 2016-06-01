@@ -2957,7 +2957,8 @@ seqExpr:
   | hardwhiteLetBindings %prec prec_args_error
      { let hwlb,m = $1
        let mLetKwd,isUse = match hwlb with (BindingSetPreAttrs(m,_,isUse,_,_))  -> m,isUse
-       reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedStatementAfterLet(if isUse then "use" else "let"))
+       let usedKeyword = if isUse then "use" else "let"
+       reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword,usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
        mkLocalBindings (m,hwlb,arbExpr("seqExpr",fauxRange)) }
 

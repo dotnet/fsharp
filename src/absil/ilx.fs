@@ -133,7 +133,12 @@ let destinations i =
   match i with 
   |  (EI_brisdata (_,_,_,l1,l2)) ->  [l1; l2]
   |  (EI_callfunc (Tailcall,_)) ->   []
-  |  (EI_datacase (_,_,ls,l)) -> l:: (List.foldBack (fun (_,l) acc -> ListSet.insert l acc) ls [])
+  |  (EI_datacase (_,_,ls,l)) -> 
+        let hashSet = System.Collections.Generic.HashSet<_>(HashIdentity.Structural)
+        [yield l
+         for (_,l) in ls do
+            if hashSet.Add l then
+                yield l]
   | _ -> []
 
 let fallthrough i = 
