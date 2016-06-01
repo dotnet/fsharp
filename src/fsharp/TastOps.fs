@@ -3447,12 +3447,12 @@ end
 let wrapModuleOrNamespaceType id cpath mtyp = 
     NewModuleOrNamespace (Some cpath)  taccessPublic  id  XmlDoc.Empty  [] (notlazy mtyp)
 
-let wrapModuleOrNamespaceTypeInNamespace id cpath (mtyp:ModuleOrNamespaceType) = 
-    let mspec = NewModuleOrNamespace (Some cpath) taccessPublic id  XmlDoc.Empty [] (notlazy mtyp)
+let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
+    let mspec = wrapModuleOrNamespaceType id cpath mtyp
     NewModuleOrNamespaceType Namespace [ mspec ] []
 
 let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr = 
-    let mspec = NewModuleOrNamespace (Some cpath) taccessPublic id XmlDoc.Empty [] (notlazy (NewEmptyModuleOrNamespaceType Namespace))
+    let mspec = wrapModuleOrNamespaceType id cpath (NewEmptyModuleOrNamespaceType Namespace)
     TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property

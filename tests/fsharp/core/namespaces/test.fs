@@ -30,11 +30,10 @@ namespace UseMe
 
     open Hello.Goodbye
     
-    module Tests  = begin
-      do Hello.Goodbye.Utils.test "test292jwe" (Hello.Goodbye.X.x + 1 = Hello.Beatles.X.x)
-      do Hello.Goodbye.Utils.test "test292jwe" (Hello.Beatles.HeyJude <> Hello.Beatles.Yesterday)
+    module Tests  = 
+      Hello.Goodbye.Utils.test "test292jwe" (Hello.Goodbye.X.x + 1 = Hello.Beatles.X.x)
+      Hello.Goodbye.Utils.test "test292jwe" (Hello.Beatles.HeyJude <> Hello.Beatles.Yesterday)
 
-    end
 
     module MoreTests = begin
         open global.Microsoft.FSharp.Core
@@ -66,15 +65,6 @@ namespace global
 
     end
 
-
-    module Utils  = begin
-
-      let _ = 
-        if !Hello.Goodbye.Utils.failures then (stdout.WriteLine "Test Failed"; exit 1) 
-        else (stdout.WriteLine "Test Passed"; 
-              System.IO.File.WriteAllText("test.ok","ok"); 
-              exit 0)
-    end
 
 
 
@@ -131,11 +121,13 @@ namespace rec CheckRecursiveNameResolution4
       open Test.M // The name Test should be in scope
 
       module N = 
-          let x = C()
+          let x = C(4)
 
       module M = 
           [<Sealed>]
-          type C() =
-             member x.P = C()
+          type C(c:int) =
+             member x.P = C(0)
+             member x.V = c
 
 
+      do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)

@@ -13015,7 +13015,7 @@ module MutRecBindingChecking =
         env
 
 
-    /// Updates the types of the modules to contain the inferred contents to far, which includes values and members
+    /// Updates the types of the modules to contain the contents so far
     let TcMutRecDefns_UpdateModuleContents defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
                 mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
@@ -13082,7 +13082,7 @@ module MutRecBindingChecking =
         mutRecDefns |> MutRecShapes.iterTycons (fun (MutRecDefnsPhase2InfoForTycon(_, _, _, _, _, fixupFinalAttrs)) -> 
                 fixupFinalAttrs())  
 
-        // Updates the types of the modules to contain the inferred contents to far, which includes values and members
+        // Updates the types of the modules to contain the contents so far, which now includes values and members
         TcMutRecDefns_UpdateModuleContents defnsAs
 
         // Updates the environments to include the values
@@ -15038,7 +15038,7 @@ module EstablishTypeDefinitionCores =
                   MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
 
-        // Updates the types of the modules to contain the inferred contents to far, which includes nested modules and types
+        // Updates the types of the modules to contain the contents so far, which now includes the nested modules and types
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
 
         // Publish tycons
@@ -15050,16 +15050,15 @@ module EstablishTypeDefinitionCores =
                         CheckForDuplicateModule envAbove tycon.LogicalName tycon.Range
                         PublishTypeDefn cenv envAbove tycon))
 
+        // Updates the types of the modules to contain the contents so far
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
+
         // Phase1AB - Compute the active environments within each nested module.
         //
         // Add the types to the environment. This does not add the fields and union cases (because we haven't established them yet). 
         // We re-add them to the original environment later on. We don't report them to the Language Service yet as we don't know if 
         // they are well-formed (e.g. free of abbreviation cycles) 
         let envMutRecPrelim, withEnvs =  (envInitial, withEntities) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs snd (fun _ -> []) cenv false scopem m 
-
-        // Updates the types of the modules to contain the inferred contents so far
-        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
-
 
         // Phase 1B. Establish the kind of each type constructor 
         // Here we run InferTyconKind and record partial information about the kind of the type constructor. 
@@ -15624,7 +15623,7 @@ module TcDeclarations =
         let mutRecSigsAfterSplit = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
         let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv envInitial parent true tpenv (mutRecSigsAfterSplit,m,scopem)
 
-        // Updates the types of the modules to contain the inferred contents to far, which includes values and members
+        // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecDefnsAfterCore
 
         // By now we've established the full contents of type definitions apart from their
