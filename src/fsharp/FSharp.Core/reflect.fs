@@ -571,12 +571,6 @@ module internal Impl =
       |> Array.filter isFieldProperty
       |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
 
-    let recdDescOfProps props = 
-       props |> Array.toList |> List.map (fun (p:PropertyInfo) -> p.Name, p.PropertyType) 
-
-    let getRecd obj (props:PropertyInfo[]) = 
-        props |> Array.map (fun prop -> prop.GetValue(obj,null))
-
     let getRecordReader(typ:Type,bindingFlags) = 
         let props = fieldPropsOfRecordType(typ,bindingFlags)
         (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,null)))

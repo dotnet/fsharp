@@ -85,8 +85,6 @@ module Order =
 
 module Array = 
 
-    let take n xs = xs |> Seq.take n |> Array.ofSeq
-
     let mapq f inp =
         match inp with
         | [| |] -> inp
@@ -99,13 +97,6 @@ module Array =
                 if not (inp.[i] === res.[i]) then eq <- false;
                 i <- i + 1
             if eq then inp else res
-
-    let forall2 f (arr1:'T array) (arr2:'T array) =
-        let len1 = arr1.Length 
-        let len2 = arr2.Length 
-        if len1 <> len2 then invalidArg "Array.forall2" "len1"
-        let rec loop i = (i >= len1) || (f arr1.[i] arr2.[i] && loop (i+1))
-        loop 0
 
     let lengthsEqAndForall2 p l1 l2 = 
         Array.length l1 = Array.length l2 &&
@@ -120,19 +111,6 @@ module Array =
             res.[i] <- h';
             acc <- s'
         res, acc
-
-
-    // REVIEW: systematically eliminate foldMap/mapFold duplication. 
-    // They only differ by the tuple returned by the function.
-    let foldMap f s l = 
-        let mutable acc = s
-        let n = Array.length l
-        let mutable res = Array.zeroCreate n
-        for i = 0 to n - 1 do
-            let s',h' = f acc l.[i]
-            res.[i] <- h'
-            acc <- s'
-        acc, res
 
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
@@ -192,13 +170,6 @@ module Option =
         match opt with 
         | None -> dflt()
         | res -> res
-
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f z l = 
-        match l with 
-        | None   -> z,None
-        | Some x -> let z,x = f z x
-                    z,Some x
 
     let fold f z x = 
         match x with 
@@ -339,14 +310,9 @@ module List =
                       | x::xs,y::ys -> let cxy = eltOrder.Compare(x,y)
                                        if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
-
-
-    let rec last l = match l with [] -> failwith "last" | [h] -> h | _::t -> last t
+    
     module FrontAndBack = 
         let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
-
-    let replicate x n = 
-        Array.toList (Array.create x n)
 
     let range n m = [ n .. m ]
 
@@ -362,29 +328,20 @@ module List =
         | [] -> false
         | ((h,_)::t) -> x = h || memAssoc x t
 
-    let rec contains x l = match l with [] -> false | h::t -> x = h || contains x t
-
     let rec memq x l = 
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
 
-    let mem x l = contains x l
-
     // must be tail recursive 
-    let mapFold f s l = 
+    let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
         // microbenchmark suggested this implementation is faster than the simpler recursive one, and this function is called a lot
         let mutable s = s
         let mutable r = []
-        let mutable l = l
-        let mutable finished = false
-        while not finished do
-          match l with
-          | x::xs -> let x',s' = f s x
-                     s <- s'
-                     r <- x' :: r
-                     l <- xs
-          | _ -> finished <- true
+        for x in l do
+            let x',s' = f s x
+            s <- s'
+            r <- x' :: r
         List.rev r, s
 
     // Not tail recursive 
@@ -407,9 +364,6 @@ module List =
 
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
-    let rec private repeatAux n x acc = if n <= 0 then acc else repeatAux (n-1) x (x::acc)
-    let repeat n x = repeatAux n x []
-
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
       | []    -> []
@@ -419,19 +373,6 @@ module List =
     let collectFold f s l = 
       let l, s = mapFold f s l
       List.concat l, s
-
-    let singleton x = [x]
-
-    // NOTE: must be tail-recursive 
-    let rec private foldMapAux f z l acc =
-      match l with
-      | []    -> z,List.rev acc
-      | x::xs -> let z,x = f z x
-                 foldMapAux f z xs (x::acc)
-                 
-    // NOTE: must be tail-recursive 
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f z l = foldMapAux f z l []
 
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
@@ -508,30 +449,9 @@ module Dictionary =
         let dict = new System.Collections.Generic.Dictionary<_,_>(List.length l, HashIdentity.Structural)
         l |> List.iter (fun (k,v) -> dict.Add(k,v))
         dict
-
-
-// FUTURE CLEANUP: remove this adhoc collection
-type Hashset<'T> = Dictionary<'T,int>
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Hashset = 
-    let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
-    let add (t: Hashset<'T>) x = if not (t.ContainsKey x) then t.[x] <- 0
-    let fold f (t:Hashset<'T>) acc = Seq.fold (fun z (KeyValue(x,_)) -> f x z) acc t 
-    let ofList l = 
-        let t = new Hashset<'T>(List.length l, HashIdentity.Structural)
-        l |> List.iter (fun x -> t.[x] <- 0)
-        t
         
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
-
-//---------------------------------------------------
-// Lists as sets. This is almost always a bad data structure and should be eliminated from the compiler.  
-
-module ListSet =
-    let insert e l =
-        if List.mem e l then l else e::l
 
 //---------------------------------------------------
 // Misc
@@ -602,14 +522,6 @@ module FlatList =
             let  arr,acc = Array.mapFold f acc x.array
             FlatList(arr),acc
 
-    // REVIEW: systematically eliminate foldMap/mapFold duplication
-    let foldMap f acc (x:FlatList<_>) = 
-        match x.array with
-        | null -> 
-            acc,FlatList.Empty
-        | arr -> 
-            let  acc,arr = Array.foldMap f acc x.array
-            acc,FlatList(arr)
 #endif
 #if FLAT_LIST_AS_LIST
 
@@ -621,7 +533,6 @@ module FlatList =
     let order eltOrder = List.order eltOrder 
     let mapq f (x:FlatList<_>) = List.mapq f x
     let mapFold f acc (x:FlatList<_>) =  List.mapFold f acc x
-    let foldMap f acc (x:FlatList<_>) =  List.foldMap f acc x
 
 #endif
 
@@ -631,7 +542,6 @@ module FlatList =
     let order eltOrder = Array.order eltOrder 
     let mapq f x = Array.mapq f x
     let mapFold f acc x =  Array.mapFold f acc x
-    let foldMap f acc x =  Array.foldMap f acc x
 #endif
 
 
@@ -968,7 +878,6 @@ type Map<'Key,'Value when 'Key : comparison> with
         | Some r -> res <- r; true
 
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
-    member x.Elements = [ for kvp in x -> kvp ]
     member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
     member x.MarkAsCollapsible ()  = x
@@ -983,7 +892,7 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k
-    member x.Values = contents.Values |> Seq.concat
+    member x.Values = contents.Values |> List.concat
     static member Empty : LayeredMultiMap<'Key,'Value> = LayeredMultiMap LayeredMap.Empty
 
 [<AutoOpen>]
