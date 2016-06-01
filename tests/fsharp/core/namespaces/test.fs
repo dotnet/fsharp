@@ -75,3 +75,48 @@ module Utils  = begin
           System.IO.File.WriteAllText("test.ok","ok"); 
           exit 0)
 end
+
+
+
+// Check recursive name resolution
+namespace CheckRecursiveNameResolution1
+
+    module rec Test =
+
+      module N = 
+          let x = Test.M.C()
+
+      module M = 
+          type C() =
+             member x.P = M.C()
+
+
+// Check recursive name resolution
+namespace CheckRecursiveNameResolution2
+
+    module rec Test =
+
+      open M
+
+      module N = 
+          let x = C()
+
+      module M = 
+          type C() =
+             member x.P = C()
+
+
+// Check recursive name resolution
+namespace rec CheckRecursiveNameResolution3
+
+    module Test =
+
+      open M
+
+      module N = 
+          let x = C()
+
+      module M = 
+          type C() =
+             member x.P = C()
+
