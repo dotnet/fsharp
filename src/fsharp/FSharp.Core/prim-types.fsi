@@ -766,11 +766,6 @@ namespace Microsoft.FSharp.Core
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
 
-        /// <summary>Determines whether the given value is not null.</summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is not null, false otherwise.</returns>
-        val inline IsNonNull : value:'T -> bool
-
         /// <summary>Compare two values for equality using partial equivalence relation semantics ([nan] &lt;&gt; [nan])</summary>
         /// <param name="e1">The first value.</param>
         /// <param name="e2">The second value.</param>

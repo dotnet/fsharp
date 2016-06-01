@@ -660,11 +660,6 @@ namespace Microsoft.FSharp.Core
 
     module LanguagePrimitives =  
 
-        let inline IsNonNull (x: 'T) = 
-            (# "ldnull cgt.un" x : bool #)
-            when ^T struct = true
-   
-
         module (* internal *) ErrorStrings =
             // inline functions cannot call GetString, so we must make these bits public
             let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
