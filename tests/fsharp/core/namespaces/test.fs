@@ -3,17 +3,14 @@ namespace Hello.Goodbye
 
     type A = A | B | C
 
-    module Utils = begin
+    module Utils = 
       let failures = ref false
       let report_failure () = 
         stderr.WriteLine " NO"; failures := true
       let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
-    end
 
-    module X  = begin
+    module X  = 
       let x = 1 
-
-    end
 
 
 
@@ -21,9 +18,8 @@ namespace Hello.Beatles
 
     type Song = HeyJude | Yesterday
 
-    module X  = begin
+    module X  = 
       let x = 2 
-    end
 
 
 namespace UseMe
@@ -35,7 +31,7 @@ namespace UseMe
       Hello.Goodbye.Utils.test "test292jwe" (Hello.Beatles.HeyJude <> Hello.Beatles.Yesterday)
 
 
-    module MoreTests = begin
+    module MoreTests = 
         open global.Microsoft.FSharp.Core
 
         let arr1 = global.Microsoft.FSharp.Collections.Array.map (global.Microsoft.FSharp.Core.Operators.(+) 1) [| 1;2;3;4 |]
@@ -53,18 +49,14 @@ namespace UseMe
             match x with 
             | global.Microsoft.FSharp.Core.None -> 1
             | global.Microsoft.FSharp.Core.Some _ -> 1
-    end
 
 
 namespace global
 
     type A = A | B | C
 
-    module X  = begin
+    module X  = 
       let x = 1 
-
-    end
-
 
 
 
@@ -131,3 +123,49 @@ namespace rec CheckRecursiveNameResolution4
 
 
       do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)
+
+
+namespace rec CheckRecursiveNameResolution5
+
+    module Test =
+
+      open CheckRecursiveNameResolution5.Test.M // The name Test should be in scope
+
+      module N = 
+          let x = C(4)
+
+      module M = 
+          [<Sealed>]
+          type C(c:int) =
+             member x.P = C(0)
+             member x.V = c
+
+
+      do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)
+      do Hello.Goodbye.Utils.test "test292jwf" (CheckRecursiveNameResolution5.Test.N.x.V = 4)
+
+
+namespace rec global
+
+    open Test.M // The name Test should be in scope
+    module Test =
+
+      open Test.M // The name Test should be in scope
+      open M // The name M should be in scope
+
+      module N = 
+          let x = C(4)
+          let x2 = M.C(4)
+          let x3 = Test.M.C(4)
+
+      module M = 
+          [<Sealed>]
+          type C(c:int) =
+             member x.P = C(0)
+             member x.V = c
+
+
+      do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)
+      do Hello.Goodbye.Utils.test "test292jwf" (N.x.V = 4)
+
+

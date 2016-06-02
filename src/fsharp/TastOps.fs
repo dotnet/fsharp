@@ -3449,7 +3449,7 @@ let wrapModuleOrNamespaceType id cpath mtyp =
 
 let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
-    NewModuleOrNamespaceType Namespace [ mspec ] []
+    NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
 
 let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (NewEmptyModuleOrNamespaceType Namespace)

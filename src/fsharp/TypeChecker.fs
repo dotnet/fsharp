@@ -623,8 +623,10 @@ let LocateEnv ccu env enclosingNamespacePath =
     env
 
 let BuildRootModuleType enclosingNamespacePath (cpath:CompilationPath) mtyp = 
-    (enclosingNamespacePath,(cpath, mtyp)) 
-        ||> List.foldBack (fun id (cpath, mtyp) -> (cpath.ParentCompPath, wrapModuleOrNamespaceTypeInNamespace  id cpath.ParentCompPath mtyp))
+    (enclosingNamespacePath,(cpath, (mtyp, None))) 
+        ||> List.foldBack (fun id (cpath, (mtyp, mspec)) ->
+            let a,b = wrapModuleOrNamespaceTypeInNamespace  id cpath.ParentCompPath mtyp 
+            cpath.ParentCompPath, (a, match mspec with Some _ -> mspec | None -> Some b))
         |> snd
         
 let BuildRootModuleExpr enclosingNamespacePath (cpath:CompilationPath) mexpr = 
@@ -13015,10 +13017,19 @@ module MutRecBindingChecking =
         env
 
 
+    /// Update the contents accessible via the recursive namespace declaration, if any
+    let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
+        match mutRecNSInfo with 
+        | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc) -> 
+            mspecNS.Data.entity_modul_contents <- notlazy !mtypeAcc
+        | _ -> ()  
+
     /// Updates the types of the modules to contain the contents so far
-    let TcMutRecDefns_UpdateModuleContents defns =
+    let TcMutRecDefns_UpdateModuleContents mutRecNSInfo defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-                mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+              mspec.Data.entity_modul_contents <- notlazy !mtypeAcc)  
+
+        TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
     /// Compute the active environments within each nested module.
     let TcMutRecDefns_ComputeEnvs getTyconOpt getVals (cenv: cenv) report scopem m envInitial mutRecShape =
@@ -13070,7 +13081,7 @@ module MutRecBindingChecking =
                 envForDecls)
 
     /// Phase 2: Check the members and 'let' definitions in a mutually recursive group of definitions.
-    let TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem (envMutRecPrelimWithReprs: TcEnv, mutRecDefns: MutRecDefnsPhase2Info) =
+    let TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo (envMutRecPrelimWithReprs: TcEnv) (mutRecDefns: MutRecDefnsPhase2Info) =
         let g = cenv.g
         let denv = envMutRecPrelimWithReprs.DisplayEnv
         
@@ -13083,7 +13094,7 @@ module MutRecBindingChecking =
                 fixupFinalAttrs())  
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
-        TcMutRecDefns_UpdateModuleContents defnsAs
+        TcMutRecDefns_UpdateModuleContents mutRecNSInfo defnsAs
 
         // Updates the environments to include the values
         // We must open all modules from scratch again because there may be extension methods and/or AutoOpen
@@ -13203,7 +13214,7 @@ module MutRecBindingChecking =
         defnsEs,envMutRec
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
-let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem (envMutRec: TcEnv, mutRecDefns: MutRecDefnsPhase2Data) = 
+let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) = 
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
         let overridesOK  = DeclKind.CanOverrideOrImplement(declKind)
@@ -13300,7 +13311,7 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem (envMutRec: TcEnv, mutRec
                       (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
               MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds, fixupFinalAttrs))
       
-      MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem (envMutRec, binds)
+      MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo envMutRec binds
 
     with e -> errorRecovery e scopem; [], envMutRec
 
@@ -13798,7 +13809,7 @@ module TcExceptionDeclarations =
         let envMutRec =  AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
-        let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRec, defns)
+        let binds2,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.map snd |> List.concat
         // Augment types with references to values that implement the pre-baked semantics of the type
         let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
@@ -15003,7 +15014,7 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent inSig tpenv (typeDefCores:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>, m, scopem) =
+    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent inSig tpenv m scopem mutRecNSInfo (typeDefCores:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
 
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these.  Augmentations are skipped in this phase.
@@ -15039,7 +15050,7 @@ module EstablishTypeDefinitionCores =
               (fun envAbove _ -> envAbove)
 
         // Updates the types of the modules to contain the contents so far, which now includes the nested modules and types
-        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo withEnvs 
 
         // Publish tycons
         (envTmp, withEnvs) ||> MutRecShapes.iterTyconsWithEnv
@@ -15051,7 +15062,7 @@ module EstablishTypeDefinitionCores =
                         PublishTypeDefn cenv envAbove tycon))
 
         // Updates the types of the modules to contain the contents so far
-        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents withEnvs 
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo withEnvs 
 
         // Phase1AB - Compute the active environments within each nested module.
         //
@@ -15470,7 +15481,7 @@ module TcDeclarations =
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
-    let TcMutRecDefinitions cenv envInitial parent tpenv (mutRecDefns: MutRecDefnsInitialData,m,scopem) =
+    let TcMutRecDefinitions cenv envInitial parent tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) =
 
         // Split the definitions into "core representations" and "members".  The code to process core representations
         // is shared between processing of signature files and implementation files.
@@ -15480,7 +15491,7 @@ module TcDeclarations =
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 
             EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 
                (fun containerInfo synBinds -> [ for synBind in synBinds -> RecDefnBindingInfo(containerInfo,NoNewSlots,ModuleOrMemberBinding,synBind) ])
-               cenv envInitial parent false tpenv (mutRecDefnsAfterSplit,m,scopem)
+               cenv envInitial parent false tpenv m scopem mutRecNSInfo mutRecDefnsAfterSplit
 
         // Package up the phase two information for processing members.
         let mutRecDefnsAfterPrep = 
@@ -15511,7 +15522,7 @@ module TcDeclarations =
                        cenv true scopem m 
 
         // Check the members and decide on representations for types with implicit constructors.
-        let withBindings,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem (envMutRecPrelimWithReprs, withEnvs)
+        let withBindings,envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo  envMutRecPrelimWithReprs withEnvs
 
         // Generate the hash/compare/equality bindings for all tycons.
         //
@@ -15619,12 +15630,12 @@ module TcDeclarations =
 
 
     /// Bind a collection of mutually recursive declarations in a signature file
-    let TcMutRecSignatureDecls cenv envInitial parent tpenv (mutRecSigs:MutRecSigsInitialData,m,scopem) =
+    let TcMutRecSignatureDecls cenv envInitial parent tpenv m scopem mutRecNSInfo (mutRecSigs:MutRecSigsInitialData) =
         let mutRecSigsAfterSplit = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
-        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv envInitial parent true tpenv (mutRecSigsAfterSplit,m,scopem)
+        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv envInitial parent true tpenv m scopem mutRecNSInfo mutRecSigsAfterSplit
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
-        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecDefnsAfterCore
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterCore
 
         // By now we've established the full contents of type definitions apart from their
         // members and any fields determined by implicit construction.  We know the kinds and 
@@ -15660,7 +15671,7 @@ let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) synSigDecl : E
         | SynModuleSigDecl.Types (typeSpecs,m) -> 
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
-            let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent emptyUnscopedTyparEnv (mutRecDefns,m,scopem)
+            let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent emptyUnscopedTyparEnv m scopem None mutRecDefns
             return env 
 
         | SynModuleSigDecl.Open (mp,m) -> 
@@ -15683,7 +15694,7 @@ let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) synSigDecl : E
             if isRec then 
                 // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
                 let modDecl = SynModuleSigDecl.NestedModule(compInfo,false,mdefs,m)
-                return! TcSignatureElementsMutRec cenv parent endm env [modDecl]
+                return! TcSignatureElementsMutRec cenv parent endm None env [modDecl]
             else
                 let id = ComputeModuleName longPath
                 let vis,_ = ComputeAccessAndCompPath env None im vis parent
@@ -15745,18 +15756,27 @@ let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) synSigDecl : E
                 else 
                     longId, defs
 
-            let envForNamespace = LocateEnv cenv.topCcu env enclosingNamespacePath
+            let envNS = LocateEnv cenv.topCcu env enclosingNamespacePath
+            let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
-            let envForNamespace = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envForNamespace
-            
-            let! envAtEnd = TcSignatureElements cenv ParentNone m.EndRange envForNamespace xml isRec defs
+            // For 'namespace rec' and 'module rec' we add the thing being defined 
+            let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+            let mtypRoot, mspecNSOpt = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+
+            // For 'namespace rec' and 'module rec' we add the thing being defined 
+            let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m envNS mtypRoot else envNS
+            let nsInfo = Some (mspecNSOpt, envNS.eModuleOrNamespaceTypeAccumulator) 
+            let mutRecNSInfo = if isRec then nsInfo else None
+
+            let! envAtEnd = TcSignatureElements cenv ParentNone m.EndRange envNS xml mutRecNSInfo defs
+
+            MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo
+
             let env = 
                 if isNil enclosingNamespacePath then 
                     envAtEnd
                 else
-                    let modulTypeRoot = BuildRootModuleType enclosingNamespacePath envForNamespace.eCompPath !(envForNamespace.eModuleOrNamespaceTypeAccumulator)
-
-                    let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
+                    let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env mtypRoot
 
                     // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment.
                     let env = 
@@ -15765,7 +15785,7 @@ let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) synSigDecl : E
                         | None -> env
 
                     // Publish the combined module type
-                    env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
+                    env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
                     env
 
             return env
@@ -15776,24 +15796,25 @@ let rec TcSignatureElementNonMutRec cenv parent endm (env: TcEnv) synSigDecl : E
   }
 
 
-and TcSignatureElements cenv parent endm env xml isRec defs = 
+and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs = 
     eventually {
         // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
         if cenv.compilingCanonicalFslibModuleType then 
             ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath (xml.ToXmlDoc())
 
-        if isRec then 
-            return! TcSignatureElementsMutRec cenv parent endm env defs
-        else
+        match mutRecNSInfo with 
+        | Some _ ->
+            return! TcSignatureElementsMutRec cenv parent endm mutRecNSInfo env defs
+        | None ->
             return! TcSignatureElementsNonMutRec cenv parent endm env defs
     }
 
 and TcSignatureElementsNonMutRec cenv parent endm env defs = 
     eventually {
-        return! Eventually.fold (TcSignatureElementNonMutRec cenv parent endm) env defs
+        return! Eventually.fold (TcSignatureElementNonMutRec cenv parent endm ) env defs
     }
 
-and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDecl list) =
+and TcSignatureElementsMutRec cenv parent endm mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
     eventually {
         let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
         let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
@@ -15841,7 +15862,7 @@ and TcSignatureElementsMutRec cenv parent endm envInitial (defs: SynModuleSigDec
 
               |> fst
           loop (match parent with ParentNone -> true | Parent _ -> false) defs
-        return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent emptyUnscopedTyparEnv (mutRecDefns,m,scopem)
+        return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent emptyUnscopedTyparEnv m scopem mutRecNSInfo mutRecDefns
     }
 
 
@@ -15855,7 +15876,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id,modKind,de
     let envForModule,mtypeAcc = MakeInnerEnv env id modKind
 
     // Now typecheck the signature, using mutation to fill in the submodule description. 
-    let! envAtEnd = TcSignatureElements cenv parent endm envForModule xml false defs
+    let! envAtEnd = TcSignatureElements cenv parent endm envForModule xml None defs
     
     // mtypeAcc has now accumulated the module type 
     return !mtypeAcc, envAtEnd
@@ -15927,7 +15948,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
       | SynModuleDecl.Types (typeDefs,m) -> 
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
-          let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent tpenv (mutRecDefns, m, scopem)
+          let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent tpenv m scopem None mutRecDefns
           // Check the non-escaping condition as we build the expression on the way back up 
           let exprfWithEscapeCheck e = 
               TcMutRecDefnsEscapeCheck mutRecDefnsChecked env
@@ -15973,7 +15994,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
           if isRec then 
               assert (not isContinuingModule)
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
-              return! TcModuleOrNamespaceElementsMutRec cenv parent m env [modDecl]
+              return! TcModuleOrNamespaceElementsMutRec cenv parent m env None [modDecl]
           else
               let (ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im)) = compInfo
               let id = ComputeModuleName longPath
@@ -15997,7 +16018,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
               let mspec = NewModuleOrNamespace (Some env.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (notlazy (NewEmptyModuleOrNamespaceType modKind))
 
               // Now typecheck. 
-              let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml false mdefs 
+              let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
               mspec.Data.entity_modul_contents <- notlazy !mtypeAcc  
@@ -16039,18 +16060,29 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
               else 
                   longId, defs
 
-          let envForNamespace = LocateEnv cenv.topCcu env enclosingNamespacePath
-          let envForNamespace = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envForNamespace
+          let envNS = LocateEnv cenv.topCcu env enclosingNamespacePath
+          let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
-          let! modExpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envForNamespace xml isRec defs
+          let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+          let mtypRoot, mspecNSOpt = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+
+          // TODO: test 'namespace rec global'
+
+          // For 'namespace rec' and 'module rec' we add the thing being defined 
+          let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m envNS mtypRoot else envNS
+          let nsInfo = Some (mspecNSOpt, envNS.eModuleOrNamespaceTypeAccumulator)
+          let mutRecNSInfo = if isRec then nsInfo else None
+
+          let! modExpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo defs
+
+          MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo
           
           let env = 
               if isNil enclosingNamespacePath then 
                   envAtEnd
               else
-                  let modulTypeRoot = BuildRootModuleType enclosingNamespacePath envForNamespace.eCompPath !(envForNamespace.eModuleOrNamespaceTypeAccumulator)
 
-                  let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
+                  let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env mtypRoot
 
                   // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment
                   let env = 
@@ -16059,10 +16091,10 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent scopem env synDec
                       | None -> env
 
                   // Publish the combined module type
-                  env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
+                  env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
                   env
           
-          let modExprRoot = BuildRootModuleExpr enclosingNamespacePath envForNamespace.eCompPath modExpr
+          let modExprRoot = BuildRootModuleExpr enclosingNamespacePath envNS.eCompPath modExpr
 
           return ((fun modExprs -> modExprRoot :: modExprs),topAttrs), env, envAtEnd
 
@@ -16092,7 +16124,7 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent endm (defsSoFar, env, envAt
  }
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
-and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModuleDecl list) =
+and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial mutRecNSInfo (defs: SynModuleDecl list) =
  eventually {
 
     let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
@@ -16151,7 +16183,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent endm envInitial (defs: SynModu
       loop (match parent with ParentNone -> true | Parent _ -> false) [] defs
 
     let tpenv = emptyUnscopedTyparEnv 
-    let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent tpenv (mutRecDefns,m,scopem)
+    let mutRecDefnsChecked,envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent tpenv m scopem mutRecNSInfo mutRecDefns 
 
     // Check the assembly attributes
     let attrs, _ = TcAttributesWithPossibleTargets false cenv envAfter AttributeTargets.Top synAttrs
@@ -16182,19 +16214,20 @@ and TcMutRecDefsFinish cenv defs m =
 
     TMDefRec(true,tycons,binds,m)
 
-and TcModuleOrNamespaceElements cenv parent endm env xml isRec defs =
+and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
   eventually {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
     if cenv.compilingCanonicalFslibModuleType then 
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath (xml.ToXmlDoc())
 
-    if isRec then 
-        let! (exprf, topAttrsNew), _, envAtEnd = TcModuleOrNamespaceElementsMutRec cenv parent endm env defs
+    match mutRecNSInfo with 
+    | Some _ -> 
+        let! (exprf, topAttrsNew), _, envAtEnd = TcModuleOrNamespaceElementsMutRec cenv parent endm env mutRecNSInfo defs
         // Apply the functions for each declaration to build the overall expression-builder 
         let mexpr = TMDefs(exprf []) 
         return (mexpr, topAttrsNew, envAtEnd)
 
-    else
+    | None -> 
         let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent endm ([], env, env) defs 
 
         // Apply the functions for each declaration to build the overall expression-builder 
@@ -16386,7 +16419,7 @@ let TypeCheckOneImplFile
     let envinner, mtypeAcc = MakeInitialEnv env 
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment(x) ]
-    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty false defs
+    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None defs
 
     let implFileTypePriorToSig = !mtypeAcc 
 
@@ -16464,7 +16497,7 @@ let TypeCheckOneSigFile  (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDe
     let envinner,mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment(x) ]
-    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty false specs
+    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None specs
     
     let sigFileType = !mtypeAcc 
     
