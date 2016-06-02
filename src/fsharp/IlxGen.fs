@@ -2619,7 +2619,7 @@ and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
     CountCallFuncInstructions();
 
     // Generate the code code an ILX callfunc operation
-    let instrs = EraseClosures.instrsForCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
+    let instrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
     CG.EmitInstrs cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) instrs;
 
     // Done compiling indirect call...
@@ -6260,6 +6260,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       // Instantiate with our own type
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
                       // Here's the body of the method. Call printf, then invoke the function it returns
+                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName,ILMemberAccess.Assembly,[],
                                                    mkILReturn cenv.g.ilg.typ_Object,
                                                    mkMethodBody 
@@ -6273,7 +6274,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                                mkNormalCall sprintfMethSpec; 
                                                                // call the function returned by sprintf
                                                                mkLdarg0 ] @
-                                                             EraseClosures.instrsForCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))),
+                                                             callInstrs),
                                                           None))
                       yield ilMethodDef |> AddSpecialNameFlag |> AddNonUserCompilerGeneratedAttribs cenv.g
                   | None,_ ->

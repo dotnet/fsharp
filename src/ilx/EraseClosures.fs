@@ -125,7 +125,7 @@ type cenv =
       tref_Func: ILTypeRef[];
       mkILTyFuncTy: ILType }
   
-let new_cenv(ilg) =
+let newIlxPubCloEnv(ilg) =
     { ilg=ilg;
       tref_Func= Array.init 10 (fun i -> mkFuncTypeRef(i+1));
       mkILTyFuncTy=ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () ^ ".FSharpTypeFunc"))) }
@@ -195,7 +195,7 @@ let mkLdFreeVar (clospec: IlxClosureSpec) (fv: IlxClosureFreeVar) =
     [ mkLdarg0; mkNormalLdfld (mkILFieldSpecInTy (clospec.ILType,fv.fvName,fv.fvType) ) ]
 
 
-let instrsForCallFunc cenv allocLocal numThisGenParams tl apps = 
+let mkCallFunc cenv allocLocal numThisGenParams tl apps = 
 
             // "callfunc" and "callclo" instructions become a series of indirect 
             // calls or a single direct call.   
@@ -658,7 +658,7 @@ and convTypeDefs cenv mdefGen encl tdefs =
   morphExpandILTypeDefs (convTypeDef cenv mdefGen encl) tdefs
 
 let ConvModule ilg modul = 
-  let cenv = new_cenv(ilg)
+  let cenv = newIlxPubCloEnv(ilg)
   let mdefGen = ref []
   let newTypes = convTypeDefs cenv mdefGen [] modul.TypeDefs
   {modul with TypeDefs=newTypes}
