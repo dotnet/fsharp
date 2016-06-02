@@ -1379,24 +1379,30 @@ type UsingMSBuild() as this =
         let fsVersion =
 #if VS_VERSION_DEV12
             "4.3.1.0"
-#else
+#endif
 #if VS_VERSION_DEV14
             "4.4.0.0"
-#else
+#endif
+#if VS_VERSION_DEV15
             "4.4.1.0"
 #endif
-#endif
+        let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+                             | Some(x) -> x
+                             | None -> failwith "Location of binaries folder cannot be found"
+
         PlaceIntoProjectFileBeforeImport
             (project, sprintf @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
                     <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
+                        <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
                     <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
+                        <HintPath>%s\\FSharp.Compiler.dll</HintPath>
                     </Reference>
-                </ItemGroup>" fsVersion fsVersion)
+                </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
 
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])
@@ -1638,7 +1644,7 @@ type UsingMSBuild() as this =
         let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
         Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
 
-        let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
+        let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
         let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
         Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")

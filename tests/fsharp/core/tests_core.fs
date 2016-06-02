@@ -7,19 +7,9 @@ open NUnit.Framework
 open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
+open FSharpTestSuiteAsserts
 
 let testContext = FSharpTestSuite.testContext
-
-let requireVSUltimate cfg = attempt {
-    do! match cfg.INSTALL_SKU with
-        | Some (Ultimate) -> Success
-        | x ->
-            // IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
-            //     echo Test not supported except on Ultimate
-            NUnitConf.skip (sprintf "Test not supported except on Ultimate, was %A" x)
-            //     exit /b 0
-            // )
-    }
 
 module Access =
     [<Test; FSharpSuiteScriptPermutations("core/access")>]
@@ -667,7 +657,6 @@ module Printing =
     // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
     // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
     [<Test>]
-    [<SetCulture("en-US"); SetUICulture("en-US")>] //not enough
     [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.stdout.txt", "z.output.test.default.stdout.bsl", "z.output.test.default.stderr.txt", "z.output.test.default.stderr.bsl")>]
     [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.stdout.txt", "z.output.test.1000.stdout.bsl", "z.output.test.1000.stderr.txt", "z.output.test.1000.stderr.bsl")>]
     [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize200.fsx", "z.output.test.200.stdout.txt", "z.output.test.200.stdout.bsl", "z.output.test.200.stderr.txt", "z.output.test.200.stderr.bsl")>]
@@ -675,6 +664,8 @@ module Printing =
     [<FSharpSuiteTestCase("core/printing", "--quiet", "z.output.test.quiet.stdout.txt", "z.output.test.quiet.stdout.bsl", "z.output.test.quiet.stderr.txt", "z.output.test.quiet.stderr.bsl")>]
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
+
+        do! requireENCulture ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
@@ -1131,7 +1122,6 @@ module ``Load-Script`` =
         // "%FSI%" --nologo < pipescr
         do! ``fsi <`` "--nologo" "pipescr"
         // echo.
-        echo ""
         // echo Test 4=================================================
         echo "Test 4================================================="
         // "%FSI%" usesfsi.fsx
@@ -1322,9 +1312,9 @@ module Members =
         [<Test; FSharpSuiteCodeAndSignaturePermutations("core/members/basics")>]
         let Basics p = check (attempt {
             let { Directory = dir; Config = cfg } = testContext ()
-        
+
             do! SingleTestBuild.singleTestBuild cfg dir p
-        
+
             do! SingleTestRun.singleTestRun cfg dir p
             })
 
@@ -1930,78 +1920,6 @@ module QueriesOverIQueryable =
 
 
 
-module QueriesOverOData = 
-
-    let build cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
-
-        // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
-        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-
-        // "%PEVERIFY%" test.exe 
-        do! peverify "test.exe"
-
-        // "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fsx
-        do! fsc "%s --optimize -o:test--optimize.exe -g" cfg.fsc_flags ["test.fsx"]
-
-        // "%PEVERIFY%" test--optimize.exe 
-        do! peverify "test--optimize.exe"
-
-        }
-
-    let run cfg dir = attempt {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // REM fsi.exe testing
-        // echo TestC
-        log "TestC"
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile = fileguard "test.ok"
-        // "%FSI%" %fsi_flags% test.fsx
-        do! fsi "%s" cfg.fsi_flags ["test.fsx"]
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-
-        // REM fsc.exe testing
-        // echo TestD
-        log "TestD"
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile2 = fileguard "test.ok"
-        // %CLIX% test.exe
-        do! exec ("."/"test.exe") ""
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile2 |> NUnitConf.checkGuardExists
-
-
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile3 = fileguard "test.ok"
-        // %CLIX% test--optimize.exe
-        do! exec ("."/"test--optimize.exe") ""
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile3 |> NUnitConf.checkGuardExists
-
-        }
-
-    [<Test; FSharpSuiteTest("core/queriesOverOData")>]
-    let queriesOverOData () = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        do! build cfg dir
-
-        do! run cfg dir
-                
-        })
-
-
-
 module QuotesDebugInfo = 
 
     let build cfg dir = attempt {
@@ -2581,24 +2499,6 @@ module Verify =
         let peverify' = Commands.peverify exec cfg.PEVERIFY
         let getfullpath = Commands.getfullpath dir
 
-        // "%PEVERIFY%" "%FSCOREDLLPATH%"
-        do! peverify cfg.FSCOREDLLPATH
-
-        // "%PEVERIFY%" "%FSCOREDLL20PATH%"
-        do! peverify cfg.FSCOREDLL20PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLPORTABLEPATH%"
-        do! peverify cfg.FSCOREDLLPORTABLEPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCOREPATH%"
-        do! peverify cfg.FSCOREDLLNETCOREPATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE78PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE78PATH
-
-        // "%PEVERIFY%" "%FSCOREDLLNETCORE259PATH%"
-        do! peverify cfg.FSCOREDLLNETCORE259PATH
-
         // "%PEVERIFY%" "%FSCBinPath%\FSharp.Build.dll"
         do! peverify (cfg.FSCBinPath/"FSharp.Build.dll")
 
@@ -2617,14 +2517,4 @@ module Verify =
 
         // "%PEVERIFY%" xmlverify.exe
         do! peverify "xmlverify.exe"
-
-        // REM == Calc correct path to FSharp.Core.dll no matter what arch we are on
-        // call :SetFSCoreXMLPath "%FSCOREDLLPATH%"
-        // :SetFSCoreXMLPath
-        // set FSHARPCOREXML=%~dpn1.xml
-        let FSharpCoreXml = Path.ChangeExtension(cfg.FSCOREDLLPATH, ".xml") |> getfullpath
-
-        // %CLIX% xmlverify.exe "%FSHARPCOREXML%"
-        do! exec ("."/"xmlverify.exe") FSharpCoreXml
-                
         })

@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <AssemblyName>PortableLibraryProject</AssemblyName>
+    <TemplateCategory>ProjectTemplates</TemplateCategory>
+    <IsPackage>true</IsPackage>
+    <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
+  </PropertyGroup>
+  
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
+  
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Script.fsx">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
+    <TemplateFiles Include="Template\AssemblyInfo.fs" />
+    <TemplateFiles Include="Template\PortableLibrary.vstemplate" />
+    <TemplateFiles Include="Template\PortableLibrary.fsproj" />
+    <TemplateFiles Include="Template\PortableLibrary1.fs" />
+    <TemplateFiles Include="Template\Script.fsx" />
+  </ItemGroup>
+  
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+  <Target Name="CoreCompile" />
+  
+  <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+  </Target>
+</Project>

@@ -22,16 +22,3 @@ Imports System.Runtime.InteropServices
 'The following GUID is for the ID of the typelib if this project is exposed to COM
 <Assembly: Guid("cb4fb4ad-db26-4862-b20c-306d192015d6")> 
 
-' Version information for an assembly consists of the following four values:
-'
-'      Major Version
-'      Minor Version 
-'      Build Number
-'      Revision
-'
-' You can specify all the values or you can default the Build and Revision Numbers 
-' by using the '*' as shown below:
-#if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("14.0.0.9055")>
-#end if

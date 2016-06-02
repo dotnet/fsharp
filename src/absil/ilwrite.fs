@@ -12,6 +12,12 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter
+
+#if FX_NO_CORHOST_SIGNER
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
+
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
@@ -22,21 +28,6 @@ open System.IO
 #if DEBUG
 let showEntryLookups = false
 #endif
-
-//---------------------------------------------------------------------
-// Library
-//---------------------------------------------------------------------
-
-let reportTime =
-    let tFirst = ref None     
-    let tPrev = ref None     
-    fun showTimes descr ->
-        if showTimes then 
-            let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-            let prev = match !tPrev with None -> 0.0 | Some t -> t
-            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
-            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
-            tPrev := Some t
 
 //---------------------------------------------------------------------
 // Byte, byte array fragments and other concrete representations
@@ -70,7 +61,6 @@ let align alignment n = ((n + alignment - 1) / alignment) * alignment
 //---------------------------------------------------------------------
 // Concrete token representations etc. used in PE files
 //---------------------------------------------------------------------
-
 
 type ByteBuffer with 
 
@@ -113,10 +103,10 @@ let getUncodedToken (tab:TableName) idx = ((tab.Index <<< 24) ||| idx)
 
 // From ECMA for UserStrings:
 // This final byte holds the value 1 if and only if any UTF16 character within the string has any bit set in its top byte, or its low byte is any of the following:
-// 0x01–0x08, 0x0E–0x1F, 0x27, 0x2D,
+// 0x01-0x08, 0x0E-0x1F, 0x27, 0x2D,
 // 0x7F. Otherwise, it holds 0. The 1 signifies Unicode characters that require handling beyond that normally provided for 8-bit encoding sets.
 
-// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. We’ve raised the issue with both teams. See Dev10 bug 850073 for details.
+// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. Weï¿½ve raised the issue with both teams. See Dev10 bug 850073 for details.
 
 let markerForUnicodeBytes (b:byte[]) = 
     let len = b.Length
@@ -153,341 +143,18 @@ let applyFixup32 (data:byte[]) offset v =
     data.[offset+2] <- b2 v
     data.[offset+3] <- b3 v
 
-// -------------------------------------------------------------------- 
-// PDB data
-// --------------------------------------------------------------------  
-
-type PdbDocumentData = ILSourceDocument
-
-type PdbLocalVar = 
-    { Name: string
-      Signature: byte[] 
-      /// the local index the name corresponds to
-      Index: int32  }
-
-type PdbMethodScope = 
-    { Children: PdbMethodScope array
-      StartOffset: int
-      EndOffset: int
-      Locals: PdbLocalVar array
-      (* REVIEW open_namespaces: pdb_namespace array *) }
-
-type PdbSourceLoc = 
-    { Document: int
-      Line: int
-      Column: int }
-      
-type PdbSequencePoint = 
-    { Document: int
-      Offset: int
-      Line: int
-      Column: int
-      EndLine: int
-      EndColumn: int }
-    override x.ToString() = sprintf "(%d,%d)-(%d,%d)" x.Line x.Column x.EndLine x.EndColumn
-
-type PdbMethodData = 
-    { MethToken: int32
-      MethName:string
-      Params: PdbLocalVar array
-      RootScope: PdbMethodScope
-      Range: (PdbSourceLoc * PdbSourceLoc) option
-      SequencePoints: PdbSequencePoint array }
-
-module SequencePoint = 
-    let orderBySource sp1 sp2 = 
-        let c1 = compare sp1.Document sp2.Document
-        if c1 <> 0 then c1 else 
-        let c1 = compare sp1.Line sp2.Line
-        if c1 <> 0 then c1 else 
-        compare sp1.Column sp2.Column 
-        
-    let orderByOffset sp1 sp2 = 
-        compare sp1.Offset sp2.Offset 
-
-/// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
-let sizeof_IMAGE_DEBUG_DIRECTORY = 28 
-
-[<NoEquality; NoComparison>]
-type PdbData = 
-    { EntryPoint: int32 option
-      // MVID of the generated .NET module (used by MDB files to identify debug info)
-      ModuleID: byte[]
-      Documents: PdbDocumentData[]
-      Methods: PdbMethodData[] }
-
-//---------------------------------------------------------------------
-// PDB Writer.  The function [WritePdbInfo] abstracts the 
-// imperative calls to the Symbol Writer API.
-//---------------------------------------------------------------------
-
-let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
-    (try FileSystem.FileDelete fpdb with _ -> ())
-    let pdbw = ref Unchecked.defaultof<PdbWriter>
-    
-    try
-        pdbw := pdbInitialize f fpdb
-    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb(fpdb), rangeCmdArgs))
-
-    match info.EntryPoint with 
-    | None -> () 
-    | Some x -> pdbSetUserEntryPoint !pdbw x 
-
-    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument !pdbw doc.File)
-    let getDocument i = 
-      if i < 0 || i > docs.Length then failwith "getDocument: bad doc number"
-      docs.[i]
-    reportTime showTimes (sprintf "PDB: Defined %d documents" info.Documents.Length)
-    Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-
-    reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
-
-    // This next bit is a workaround.  The sequence points we get 
-    // from F# (which has nothing to do with this module) are actually expression 
-    // marks, i.e. the source ranges they denote are typically 
-    // nested, and each point indicates where the  
-    // code for an expression with a particular range begins.  
-    // This is in many ways a much more convenient form to emit. 
-    // However, it is not the form that debug tools accept nicely. 
-    // However, sequence points are really a non-overlapping, non-nested 
-    // partition of the source code of a method.  So here we shorten the 
-    // length of all sequence point marks so they do not go further than 
-    // the next sequence point in the source. 
-    let spCounts =  info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = Array.concat (Array.map (fun x -> x.SequencePoints) info.Methods |> Array.toList)
-    let allSps = Array.mapi (fun i sp -> (i,sp)) allSps
-    if fixupOverlappingSequencePoints then 
-        // sort the sequence points into source order 
-        Array.sortInPlaceWith (fun (_,sp1) (_,sp2) -> SequencePoint.orderBySource sp1 sp2) allSps
-        // shorten the ranges of any that overlap with following sequence points 
-        // sort the sequence points back into offset order 
-        for i = 0 to Array.length allSps - 2 do
-            let n,sp1 = allSps.[i]
-            let _,sp2 = allSps.[i+1]
-            if (sp1.Document = sp2.Document) && 
-               (sp1.EndLine > sp2.Line || 
-                (sp1.EndLine = sp2.Line &&
-                 sp1.EndColumn >= sp2.Column)) then
-              let adjustToPrevLine = (sp1.Line < sp2.Line)
-              allSps.[i] <-  n,{sp1 with EndLine = (if adjustToPrevLine then sp2.Line-1 else sp2.Line)
-                                         EndColumn = (if adjustToPrevLine then 80 else sp2.Column) }
-        Array.sortInPlaceBy fst allSps
-
-
-    
-    let spOffset = ref 0
-    info.Methods |> Array.iteri (fun i minfo ->
-
-          let sps = Array.sub allSps !spOffset spCounts.[i]
-          spOffset := !spOffset + spCounts.[i]
-          begin match minfo.Range with 
-          | None -> () 
-          | Some (a,b) ->
-              pdbOpenMethod !pdbw minfo.MethToken
-
-              pdbSetMethodRange !pdbw 
-                (getDocument a.Document) a.Line a.Column
-                (getDocument b.Document) b.Line b.Column
-
-              // Partition the sequence points by document 
-              let spsets =
-                let res = (Map.empty : Map<int,PdbSequencePoint list ref>)
-                let add res (_,sp) = 
-                  let k = sp.Document
-                  match Map.tryFind k res with
-                      Some xsR -> xsR := sp :: !xsR; res
-                    | None     -> Map.add k (ref [sp]) res
-               
-                let res = Array.fold add res sps
-                let res = Map.toList res  // ordering may not be stable 
-                List.map (fun (_,x) -> Array.ofList !x) res
-
-              spsets |> List.iter (fun spset -> 
-                  if spset.Length > 0 then 
-                    Array.sortInPlaceWith SequencePoint.orderByOffset spset
-                    let sps = 
-                      spset |> Array.map (fun sp -> 
-                           // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset 
-                           (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn)) 
-                  // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here 
-                    if sps.Length < 5000 then 
-                      pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
-
-              // Write the scopes 
-              let rec writePdbScope top sco = 
-                  if top || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then 
-                      pdbOpenScope !pdbw sco.StartOffset
-                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
-                      sco.Children |> Array.iter (writePdbScope false)
-                      pdbCloseScope !pdbw sco.EndOffset
-              writePdbScope true minfo.RootScope 
-
-              pdbCloseMethod !pdbw
-          end)
-    reportTime showTimes "PDB: Wrote methods"
-    let res = pdbGetDebugInfo !pdbw
-    
-    for pdbDoc in docs do
-        pdbCloseDocument pdbDoc
-
-    pdbClose !pdbw f fpdb;
-    reportTime showTimes "PDB: Closed"
-    res
-
-//---------------------------------------------------------------------
-// Support functions for calling 'Mono.CompilerServices.SymbolWriter'
-// assembly dynamically if it is available to the compiler
-//---------------------------------------------------------------------
-
-open System.Reflection
-open Microsoft.FSharp.Reflection
-
-// Dynamic invoke operator. Implements simple overload resolution based 
-// on the name and number of parameters only.
-// Supports the following cases:
-//   obj?Foo()        // call with no arguments
-//   obj?Foo(1, "a")  // call with two arguments (extracted from tuple)
-// NOTE: This doesn’t actually handle all overloads.  It just picks first entry with right 
-// number of arguments.
-let (?) this memb (args:'Args) : 'R = 
-    // Get array of 'obj' arguments for the reflection call
-    let args = 
-        if typeof<'Args> = typeof<unit> then [| |]
-        elif FSharpType.IsTuple typeof<'Args> then Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields(args)
-        else [| box args |]
-    
-    // Get methods and perform overload resolution
-    let methods = this.GetType().GetMethods()
-    let bestMatch = methods |> Array.tryFind (fun mi -> mi.Name = memb && mi.GetParameters().Length = args.Length)
-    match bestMatch with
-    | Some(mi) -> unbox(mi.Invoke(this, args))        
-    | None -> error(Error(FSComp.SR.ilwriteMDBMemberMissing(memb), rangeCmdArgs))
-
-// Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
-
-let monoCompilerSvc = "Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"
-let ctor (asmName:string) (clsName:string) (args:obj[]) = 
-    let asm = Assembly.Load(asmName)
-    let ty = asm.GetType(clsName)
-    System.Activator.CreateInstance(ty, args)
-
-let createSourceMethodImpl (name:string) (token:int) (namespaceID:int) = 
-    ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.SourceMethodImpl" [| box name; box token; box namespaceID |]
-
-let createWriter (f:string) = 
-    ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.MonoSymbolWriter" [| box f |]
-    
-//---------------------------------------------------------------------
-// MDB Writer.  Generate debug symbols using the MDB format
-//---------------------------------------------------------------------
-
-let WriteMdbInfo fmdb f info = 
-    // Note, if we can’t delete it code will fail later
-    (try FileSystem.FileDelete fmdb with _ -> ())
-
-    // Try loading the MDB symbol writer from an assembly available on Mono dynamically
-    // Report an error if the assembly is not available.    
-    let wr = 
-        try createWriter f
-        with e -> error(Error(FSComp.SR.ilwriteErrorCreatingMdb(), rangeCmdArgs))
-
-    // NOTE: MonoSymbolWriter doesn't need information about entrypoints, so 'info.EntryPoint' is unused here.
-    // Write information about Documents. Returns '(SourceFileEntry*CompileUnitEntry)[]'
-    let docs =
-        [| for doc in info.Documents do
-             let doc = wr?DefineDocument(doc.File)
-             let unit = wr?DefineCompilationUnit(doc)
-             yield doc, unit |]
-           
-    let getDocument i = 
-        if i < 0 || i >= Array.length docs then failwith "getDocument: bad doc number" else docs.[i]
-    
-    // Sort methods and write them to the MDB file
-    Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    for meth in info.Methods do
-        // Creates an instance of 'SourceMethodImpl' which is a private class that implements 'IMethodDef' interface
-        // We need this as an argument to 'OpenMethod' below. Using private class is ugly, but since we don't reference
-        // the assembly, the only way to implement 'IMethodDef' interface would be dynamically using Reflection.Emit...
-        let sm = createSourceMethodImpl meth.MethName meth.MethToken 0
-        match meth.Range with
-        | Some(mstart, _) ->
-            // NOTE: 'meth.Params' is not needed, Mono debugger apparently reads this from meta-data
-            let _, cue = getDocument mstart.Document
-            wr?OpenMethod(cue, 0, sm) |> ignore
-            
-            // Write sequence points
-            for sp in meth.SequencePoints do
-                wr?MarkSequencePoint(sp.Offset, cue?get_SourceFile(), sp.Line, sp.Column, false)
-            
-            // Walk through the tree of scopes and write all variables
-            let rec writeScope (scope:PdbMethodScope) = 
-                wr?OpenScope(scope.StartOffset) |> ignore
-                for local in scope.Locals do
-                    wr?DefineLocalVariable(local.Index, local.Name)
-                for child in scope.Children do 
-                    writeScope(child)
-                wr?CloseScope(scope.EndOffset)          
-            writeScope(meth.RootScope)
-            
-            // Finished generating debug information for the curretn method
-            wr?CloseMethod()
-        | _ -> ()
-    
-    // Finalize - MDB requires the MVID of the generated .NET module
-    let moduleGuid = new System.Guid(info.ModuleID |> Array.map byte)
-    wr?WriteSymbolFile(moduleGuid)
-
-//---------------------------------------------------------------------
-// Dumps debug info into a text file for testing purposes
-//---------------------------------------------------------------------
-open Printf
-
-let DumpDebugInfo (outfile:string) (info:PdbData) = 
-    use sw = new StreamWriter(outfile + ".debuginfo")
-
-    fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
-    fprintfn sw "DOCUMENTS"
-    for i, doc in Seq.zip [0 .. info.Documents.Length-1] info.Documents do
-      fprintfn sw " [%d] %s" i doc.File
-      fprintfn sw "     Type: %A" doc.DocumentType
-      fprintfn sw "     Language: %A" doc.Language
-      fprintfn sw "     Vendor: %A" doc.Vendor
-    
-    // Sort methods (because they are sorted in PDBs/MDBs too)
-    fprintfn sw "\r\nMETHODS"
-    Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    for meth in info.Methods do
-      fprintfn sw " %s" meth.MethName
-      fprintfn sw "     Params: %A" [ for p in meth.Params -> sprintf "%d: %s" p.Index p.Name ]
-      fprintfn sw "     Range: %A" (meth.Range |> Option.map (fun (f, t) -> 
-                                      sprintf "[%d,%d:%d] - [%d,%d:%d]" f.Document f.Line f.Column t.Document t.Line t.Column))
-      fprintfn sw "     Points:"
-      
-      for sp in meth.SequencePoints do
-        fprintfn sw "      - Doc: %d Offset:%d [%d:%d]-[%d-%d]" sp.Document sp.Offset sp.Line sp.Column sp.EndLine sp.EndColumn
-      
-      // Walk through the tree of scopes and write all variables
-      fprintfn sw "     Scopes:"
-      let rec writeScope offs (scope:PdbMethodScope) = 
-        fprintfn sw "      %s- [%d-%d]" offs scope.StartOffset scope.EndOffset
-        if scope.Locals.Length > 0 then
-          fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]
-        for child in scope.Children do writeScope (offs + "  ") child
-      writeScope "" meth.RootScope
-      fprintfn sw ""
-    
-
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
 
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
+    | PublicKeyOptionsSigner of Support.pubkeyOptions
     | KeyPair of Support.keyPair
     | KeyContainer of Support.keyContainerName
 
-    static member OpenPublicKeyFile s = PublicKeySigner(Support.signerOpenPublicKeyFile s)
-      
+    static member OpenPublicKeyOptions s p = PublicKeyOptionsSigner((Support.signerOpenPublicKeyFile s), p)
+
     static member OpenPublicKey pubkey = PublicKeySigner(pubkey)
 
     static member OpenKeyPairFile s = KeyPair(Support.signerOpenKeyPairFile s)
@@ -497,29 +164,42 @@ type ILStrongNameSigner =
     member s.Close() = 
         match s with 
         | PublicKeySigner _
+        | PublicKeyOptionsSigner _
         | KeyPair _ -> ()
         | KeyContainer containerName -> Support.signerCloseKeyContainer(containerName)
       
     member s.IsFullySigned =
         match s with 
         | PublicKeySigner _ -> false
+        | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
+                                        usePublicSign
         | KeyPair _ | KeyContainer _ -> true
 
     member s.PublicKey = 
         match s with 
-        | PublicKeySigner p -> p
+        | PublicKeySigner pk -> pk
+        | PublicKeyOptionsSigner pko -> let pk, _ = pko
+                                        pk
         | KeyPair kp -> Support.signerGetPublicKeyForKeyPair kp
         | KeyContainer kn -> Support.signerGetPublicKeyForKeyContainer kn
 
     member s.SignatureSize = 
-        try Support.signerSignatureSize(s.PublicKey)
-        with e -> 
-          failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-          0x80 
+        let pkSignatureSize pk =
+            try Support.signerSignatureSize(pk)
+            with e -> 
+              failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
+              0x80 
+        match s with 
+        | PublicKeySigner pk -> pkSignatureSize pk
+        | PublicKeyOptionsSigner pko -> let pk, _ = pko
+                                        pkSignatureSize pk
+        | KeyPair kp -> pkSignatureSize (Support.signerGetPublicKeyForKeyPair kp)
+        | KeyContainer kn -> pkSignatureSize (Support.signerGetPublicKeyForKeyContainer kn)
 
     member s.SignFile file = 
         match s with 
         | PublicKeySigner _ -> ()
+        | PublicKeyOptionsSigner _ -> ()
         | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
         | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
 
@@ -743,10 +423,10 @@ type MemberRefRow(mrp:RowElement,nmIdx:StringIndex,blobIdx:BlobIndex) =
 // This environment keeps track of how many generic parameters are in scope. 
 // This lets us translate AbsIL type variable number to IL type variable numbering 
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
-let envForTypeDef (td:ILTypeDef)              = { EnclosingTyparCount=td.GenericParams.Length }
-let envForMethodRef env (typ:ILType)         = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
-let envForNonGenericMethodRef _mref          = { EnclosingTyparCount=System.Int32.MaxValue }
-let envForFieldSpec (fspec:ILFieldSpec)      = { EnclosingTyparCount=fspec.EnclosingType.GenericArgs.Length }
+let envForTypeDef (td:ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
+let envForMethodRef env (typ:ILType)           = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
+let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
+let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.EnclosingType.GenericArgs.Length }
 let envForOverrideSpec (ospec:ILOverridesSpec) = { EnclosingTyparCount=ospec.EnclosingType.GenericArgs.Length }
 
 //---------------------------------------------------------------------
@@ -2623,7 +2303,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
-        (requiredStringFixups', methbuf.Close()), seqpoints, scopes
+        0x0, (requiredStringFixups', methbuf.Close()), seqpoints, scopes
     else
         // Use Fat format 
         let flags = 
@@ -2697,7 +2377,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         
         let requiredStringFixups' = (12,requiredStringFixups)
 
-        (requiredStringFixups', methbuf.Close()), seqpoints, scopes
+        localToken, (requiredStringFixups', methbuf.Close()), seqpoints, scopes
 
 // -------------------------------------------------------------------- 
 // ILFieldDef --> FieldDef Row
@@ -2912,13 +2592,14 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
       (match md.mdBody.Contents with 
       | MethodBody.IL ilmbody -> 
           let addr = cenv.nextCodeAddr
-          let (code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
+          let (localToken, code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
 
           // Now record the PDB record for this method - we write this out later. 
           if cenv.generatePdb then 
             cenv.pdbinfo.Add  
               { MethToken=getUncodedToken TableNames.Method midx
                 MethName=md.Name
+                LocalSignatureToken=localToken
                 Params= [| |] (* REVIEW *)
                 RootScope = rootScope
                 Range=  
@@ -3229,10 +2910,9 @@ and GetManifsetAsAssemblyRow cenv m =
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
               // Any debugging customattributes will automatically propagate
               // REVIEW: No longer appears to be the case...
-              (if m.JitTracking then 0x8000 else 0x0) |||
-              (if m.DisableJitOptimizations then 0x4000 else 0x0) |||
-              (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 
-              0x0000)
+              (if m.JitTracking then 0x8000 else 0x0) ||| 
+              (if m.DisableJitOptimizations then 0x4000 else 0x0) ||| 
+              (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
           (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
           StringE (GetStringHeapIdx cenv m.Name)
           (match m.Locale with None -> StringE 0 | Some x -> StringE (GetStringHeapIdx cenv x)) |]
@@ -3284,6 +2964,8 @@ let SortTableRows tab (rows:IGenericRow[]) =
            |> Array.map (fun arr -> (SimpleSharedRow arr) :> IGenericRow)
     else 
         rows
+
+let timestamp = absilWriteGetTimeStamp ()
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
@@ -3345,20 +3027,23 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
     // Now the main compilation step 
     GenModule cenv  m
 
-    // Fetch out some of the results  
+    // .exe files have a .entrypoint instruction.  Do not write it to the entrypoint when writing  dll.
     let entryPointToken = 
         match cenv.entrypoint with 
         | Some (epHere,tok) -> 
-            getUncodedToken (if epHere then TableNames.Method else TableNames.File) tok 
+            if isDll then 0x0
+            else getUncodedToken (if epHere then TableNames.Method else TableNames.File) tok 
         | None -> 
             if not isDll then dprintn "warning: no entrypoint specified in executable binary"
             0x0
 
     let pdbData = 
         { EntryPoint= (if isDll then None else Some entryPointToken)
+          Timestamp = timestamp
           ModuleID = cenv.moduleGuid
           Documents = cenv.documents.EntriesAsArray
-          Methods= cenv.pdbinfo.ToArray() }
+          Methods = cenv.pdbinfo.ToArray() 
+          TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
     let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
         let enc = tds |> List.map (fun td -> td.Name)
@@ -3396,7 +3081,6 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
 //=====================================================================
 // TABLES+BLOBS --> PHYSICAL METADATA+BLOBS
 //=====================================================================
-
 type BinaryChunk = 
     { size: int32 
       addr: int32 }
@@ -3409,9 +3093,13 @@ let count f arr =
 
 module FileSystemUtilites = 
     open System.Reflection
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission filename =
 
+#if ENABLE_MONO_SUPPORT
       if runningOnMono then 
         try 
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
@@ -3424,7 +3112,12 @@ module FileSystemUtilites =
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString())
             // Fail silently
-        
+      else
+#else
+        ignore filename
+#endif
+        ()
+
 let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
@@ -3648,9 +3341,9 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
             codedBigness 2 TableNames.ModuleRef || 
             codedBigness 2 TableNames.AssemblyRef  ||
             codedBigness 2 TableNames.TypeRef
-        
+
         let tablesBuf =  ByteBuffer.Create 20000
-        
+
         // Now the coded tables themselves  - first the schemata header 
         tablesBuf.EmitIntsAsBytes    
             [| 0x00; 0x00; 0x00; 0x00; 
@@ -3658,7 +3351,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
                mdtableVersionMinor // minor version of table schemata 
                
                ((if stringsBig then 0x01 else 0x00) |||  // bit vector for heap size 
-                (if guidsBig then 0x02 else 0x00) |||  
+                (if guidsBig then 0x02 else 0x00)   |||  
                 (if blobsBig then 0x04 else 0x00))
                0x01 (* reserved, always 1 *) |]
  
@@ -3814,8 +3507,6 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
     entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings
 
-
-
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
 //---------------------------------------------------------------------
@@ -3874,7 +3565,8 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, 
+                                  fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3913,17 +3605,18 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         end;
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
-    let timestamp = absilWriteGetTimeStamp ()
-
     let os = 
-        try  
+        try
+            // Ensure the output directory exists otherwise it will fail
+            let dir = Path.GetDirectoryName(outfile)
+            if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
             new BinaryWriter(FileSystem.FileStreamCreateShim(outfile))
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let  pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
         try 
-      
+
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -3934,7 +3627,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
 
           // HEADERS 
-
           let next = 0x0
           let headerSectionPhysLoc = 0x0
           let headerAddr = next
@@ -4054,15 +3746,22 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             match modul.NativeResources with
             | [] -> [||]
             | resources ->
+#if ENABLE_MONO_SUPPORT
                 if runningOnMono then
                   [||]
                 else
+#endif
+#if FX_NO_LINKEDRESOURCES
+                  ignore resources
+                  ignore resourceFormat
+                  [||]
+#else
                   let unlinkedResources = List.map Lazy.force resources
                   begin
                     try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                   end
-                
+#endif
           let nativeResourcesSize = nativeResources.Length
 
           let nativeResourcesChunk,next = chunk nativeResourcesSize next
@@ -4157,7 +3856,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           
           writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic);
           
-     // Now comes optional header 
+       // Now comes optional header 
 
           let peOptionalHeaderByte = peOptionalHeaderByteByCLRVersion desiredMetadataVersion
 
@@ -4168,7 +3867,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             writeInt32AsUInt16 os 0x010b; // Always 0x10B (see Section 23.1). 
           writeInt32AsUInt16 os peOptionalHeaderByte; // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8 
           writeInt32 os textSectionPhysSize;          // Size of the code (text) section, or the sum of all code sections if there are multiple sections. 
-       // 000000a0 
+        // 000000a0 
           writeInt32 os dataSectionPhysSize;          // Size of the initialized data section, or the sum of all such sections if there are multiple data sections. 
           writeInt32 os 0x00;                         // Size of the uninitialized data section, or the sum of all such sections if there are multiple unitinitalized data sections. 
           writeInt32 os entrypointCodeChunk.addr;     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 in a section marked execute/read for EXEs or 0 for DLLs e.g. 0x0000b57e 
@@ -4272,14 +3971,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writeInt32 os textSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x00009584 
           writeInt32 os textSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x00020000 
           writeInt32 os textSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. 0x00009600 
-          writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
+          writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
        // 00000190  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
        // 00000198  
           writeInt32AsUInt16 os 0x00// NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags describing section’s characteristics, see below. IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
+          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags describing section's characteristics, see below. IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
           
           write (Some dataSectionHeaderChunk.addr) os "data section header" [| |]
           
@@ -4290,7 +3989,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writeInt32 os dataSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
        // 000001b0  
           writeInt32 os dataSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. e.g. 0x00000200 
-          writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
+          writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
@@ -4306,7 +4005,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
        // 000001b0  
           writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00000200 
-          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
+          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
           writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
@@ -4369,7 +4068,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
           if signer <> None then 
             write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy)
-          
+
           write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |]
           writeBytes os resources
           write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |]
@@ -4427,11 +4126,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
+#if FX_NO_LINKEDRESOURCES
+#else
           match nativeResources with
           | [||] -> ()
           | resources ->
                 write (Some (dataSectionVirtToPhys nativeResourcesChunk.addr)) os "raw native resources" [| |]
                 writeBytes os resources
+#endif
 
           if dummydatap.size <> 0x0 then
               write (Some (dataSectionVirtToPhys dummydatap.addr)) os "dummy data" [| 0x0uy |]
@@ -4461,74 +4163,76 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                  b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
-          os.Close()
+          os.Dispose()
           
           try 
               FileSystemUtilites.setExecutablePermission outfile
           with _ -> 
               ()
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
-          
-        // Looks like a finally...
+
+        // Looks like a finally
         with e ->   
             (try 
-                os.Close() 
+                os.Dispose()
                 FileSystem.FileDelete outfile 
              with _ -> ()) 
             reraise()
-   
 
     reportTime showTimes "Writing Image"
-     
-    if dumpDebugInfo then 
-        DumpDebugInfo outfile pdbData
+
+    if dumpDebugInfo then logDebugInfo outfile pdbData
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
+#if ENABLE_MONO_SUPPORT
     | Some fmdb when runningOnMono -> 
-        WriteMdbInfo fmdb outfile pdbData
-            
+        writeMdbInfo fmdb outfile pdbData
+#endif
     | Some fpdb -> 
         try 
-            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
+            let idd = 
+#if FX_NO_PDB_WRITER
+                ignore portablePDB
+                writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
+#else
+                if portablePDB then 
+                    writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
+                else
+                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
+#endif
             reportTime showTimes "Generate PDB Info"
-            
-          // Now we have the debug data we can go back and fill in the debug directory in the image 
+
+            // Now we have the debug data we can go back and fill in the debug directory in the image 
             let fs2 = FileSystem.FileStreamWriteExistingShim(outfile)
             let os2 = new BinaryWriter(fs2)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                writeInt32 os2 idd.iddCharacteristics // IMAGE_DEBUG_DIRECTORY.Characteristics 
+                writeInt32 os2 idd.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics 
                 writeInt32 os2 timestamp
                 writeInt32AsUInt16 os2 idd.iddMajorVersion
                 writeInt32AsUInt16 os2 idd.iddMinorVersion
                 writeInt32 os2 idd.iddType
-                writeInt32 os2 idd.iddData.Length  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                writeInt32 os2 idd.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData 
+                writeInt32 os2 debugDataChunk.addr              // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                writeInt32 os2 (textV2P debugDataChunk.addr)    // IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
-                (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics
-                dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion
-                dprintf "iddMinorVersion = %ld\n" idd.iddMinorVersion
-                dprintf "iddType = %ld\n" idd.iddType
-                dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData) *)
-                  
                 // write the debug raw data as given us by the PDB writer 
                 os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
-                if debugDataChunk.size < idd.iddData.Length then 
-                    failwith "Debug data area is not big enough.  Debug info may not be usable"
+                if debugDataChunk.size < idd.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
                 writeBytes os2 idd.iddData
-                os2.Close()
+                os2.Dispose()
             with e -> 
                 failwith ("Error while writing debug directory entry: "+e.Message)
-                (try os2.Close(); FileSystem.FileDelete outfile with _ -> ()) 
+                (try os2.Dispose(); FileSystem.FileDelete outfile with _ -> ()) 
                 reraise()
         with e -> 
             reraise()
-            
-    end
+
+    end      
+    ignore debugDataChunk
     reportTime showTimes "Finalize PDB"
 
     /// Sign the binary.  No further changes to binary allowed past this point! 
@@ -4539,20 +4243,20 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             s.SignFile outfile
             s.Close() 
         with e -> 
-            failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
+            failwith ("Warning: A call to SignFile failed ("+e.Message+")")
             (try s.Close() with _ -> ())
             (try FileSystem.FileDelete outfile with _ -> ()) 
             ()
 
     reportTime showTimes "Signing Image"
     //Finished writing and signing the binary and debug info...
-
     mappings
 
 
 type options =
-   { ilg: ILGlobals
+   { ilg: ILGlobals;
      pdbfile: string option
+     portablePDB: bool
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
@@ -4560,6 +4264,7 @@ type options =
      dumpDebugInfo:bool }
 
 
-let WriteILBinary (outfile, args, ilModule, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) ilModule noDebugData)
-
+let WriteILBinary (outfile, (args: options), modul, noDebugData) =
+    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, 
+                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, 
+                                          args.dumpDebugInfo) modul noDebugData)

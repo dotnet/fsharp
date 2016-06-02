@@ -8,15 +8,12 @@ setlocal
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
-if /i "%1" == "vsdebug" goto :ok
-if /i "%1" == "vsrelease" goto :ok
+if /i "%1" == "signonly" goto :ok
 
 echo adding required strong name verification skipping, and NGening built binaries
 echo Usage:
 echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]
-echo    update.cmd vsdebug [-ngen]
-echo    update.cmd vsrelease [-ngen]
 exit /b 1
 
 :ok
@@ -46,6 +43,10 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
 
+%SN32% -Vr fsc,b03f5f7f11d50a3a
+%SN32% -Vr fsi,b03f5f7f11d50a3a
+%SN32% -Vr FsiAnyCPU,b03f5f7f11d50a3a
+
 %SN32% -Vr FSharp.Compiler,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Editor,b03f5f7f11d50a3a
@@ -58,6 +59,7 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
 %SN32% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
 %SN32% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
+%SN32% -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -65,6 +67,10 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Hosted,b03f5f7f11d50a3a
 
+    %SN64% -Vr fsc,b03f5f7f11d50a3a
+    %SN64% -Vr fsi,b03f5f7f11d50a3a
+    %SN64% -Vr FsiAnyCPU,b03f5f7f11d50a3a	
+	
     %SN64% -Vr FSharp.Compiler,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.Editor,b03f5f7f11d50a3a
@@ -75,9 +81,12 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-    %SN64% -Vr Unittests,b03f5f7f11d50a3a
-    %SN64% -Vr Salsa,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
+    %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
+    %SN64% -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
 )
+
+if /i '%1' == 'signonly' goto :eof
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen

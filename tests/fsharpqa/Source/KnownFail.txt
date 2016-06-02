@@ -32,6 +32,9 @@
 
 # Redmond suite (RunAll.pl) known failures
 
+fail001		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelNamespace.fs - Desktop)
+fail002		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelModule.fs - Portable)
+fail003		CodeGen\EmittedIL\SerializableAttribute	#  (ToplevelNamespace.fs - Portable)
 OS32BIT						Conformance\DeclarationElements\P-invokeDeclarations (CallingConventions01.fs - x64) -- This test is not meant to run on a 32bit OS
 MT402020					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
 MT402040					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
@@ -73,55 +76,13 @@ MT402020					Optimizations\AssemblyBoundary (InlineWithPrivateValuesStruct) --Ha
 !CURRENTUICULTURE1033		Printing (LazyValues02NetFx4.fsx) -- Testcase not fully loc
 !CURRENTUICULTURE1033		Printing (LazyValues03NetFx4.fsx) -- Testcase not fully loc
 CHK							Stress (2766.fs) -- failed
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile (E_StaticParamBlank.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_AssemblyIsNotAWebService.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_BackslashBackslash.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_Dot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_EmptyString.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_FsharpFile.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_HttpSite.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\SqlEntityConnection\Diagnostics (E_LocWarningAndErrorsFromEdmGen.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\WsdlService\Diagnostics (E_UriFormatNotSupported.fsx) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq01.fs) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq02.fs) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\Misc (E_ManyErrors01.fsx) -- DevDiv:311454
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NNN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NYN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YNN) -- Testcase not fully loc
-!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YYN) -- Testcase not fully loc
 
 # IDE unit test known failures
 
-!NETFX35		UnitTests.Tests.LanguageService.CompletionList.AutoCompletionMSBuild.FlagsAndSettings.Bug1969 -- failed
-!NETFX35		UnitTests.Tests.LanguageService.CompletionList.AutoCompletionProjectSystem.FlagsAndSettings.Bug1969 -- failed
 				UnitTests.Tests.LanguageService.General.MSBuild.PublicSurfaceArea.DotNetReflection -- gazillion dependencies on suitebin DLLs
 				UnitTests.Tests.LanguageService.General.ProjectSystem.PublicSurfaceArea.DotNetReflection -- gazillion dependencies on suitebin DLLs
-!NETFX35		UnitTests.Tests.ProjectSystem.Config.TargetPlatform -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.Automation.OutputGroup.OUTPUTLOC -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.BuildAndClean -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.DebuggingEXESucceeds -- failed
 				UnitTests.Tests.ProjectSystem.Miscellaneous.ErrorReporting.EmptyModuleReportedAtTheLastLine -- very noisy test
-!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.LoadProject.x86 -- failed
 				UnitTests.Tests.ProjectSystem.Miscellaneous.PreBuildEvent -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.TestBuildActions -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.MultiTargeting.Multitargeting.CheckIconForMatchedAssemblyReference20 -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.MultiTargeting.Multitargeting.CheckIconForMismatchedAssemblyReference -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.BrowseTab.DifferentVersion -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.BrowseTab.SameVersion -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.NetTab -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate1 -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.Works -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.SameVersion -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.NetTab -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.References.Bug787899.AddDuplicateResolved -- failed
-!NETFX35		UnitTests.Tests.ProjectSystem.References.References.Bug787899.AddDuplicateUnresolved -- failed
 
 # compiler/runtime unit test known failures
 

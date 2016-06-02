@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<PackageLanguagePackManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
-	<Metadata>
-		<Identity Id="Microsoft.VisualStudio.WdExpressDeployment" Version="14.0" Language="neutral" Publisher="Microsoft" />
-		<DisplayName _locID="wdExpressDeployName">Visual F# Tools Templates</DisplayName>
-		<Description _locID="wdExpressDeployDescription">Deploy Visual F# Tools templates to Visual Studio Express for Windows Desktop</Description>
-	</Metadata>
-</PackageLanguagePackManifest>
-

@@ -314,6 +314,7 @@ type TheTests() =
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], null, other, targetFramework))
             let sp, cnn = 
                 match targetFramework with
+                | "v4.6" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier46()
                 | "v4.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier45()
                 | "v4.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
                 | "v3.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier35()
@@ -385,7 +386,7 @@ type TheTests() =
     <OutputType>{0}</OutputType>
     <RootNamespace>Blah</RootNamespace>
     <AssemblyName>Blah</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
   </PropertyGroup>
@@ -409,7 +410,7 @@ type TheTests() =
     <OutputType>{0}</OutputType>
     <RootNamespace>Blah</RootNamespace>
     <AssemblyName>Blah</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Name>Blah</Name>
   </PropertyGroup>
@@ -472,7 +473,7 @@ type TheTests() =
                 <OutputType>Library</OutputType>
                 <RootNamespace>Blah</RootNamespace>
                 <AssemblyName>Blah</AssemblyName>
-                <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+                <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
               </PropertyGroup>"

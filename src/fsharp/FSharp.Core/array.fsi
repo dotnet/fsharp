@@ -12,6 +12,14 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module Array = 
 
+        /// <summary>Builds a new array that contains the cartesian product of the two input arrays.</summary>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <returns>The resulting array of pairs.</returns>
+        [<CompiledName("AllPairs")>]
+        val allPairs: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+
         /// <summary>Builds a new array that contains the elements of the first array followed by the elements of the second array.</summary>
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
@@ -792,7 +800,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
 
-        /// <summary>Bypasses elements in an array while the given predicate returns <c>true</c>, and then returns
+        /// <summary>Bypasses elements in an array while the given predicate returns True, and then returns
         /// the remaining elements in a new array.</summary>
         /// <param name="predicate">A function that evaluates an element of the array to a boolean value.</param>
         /// <param name="source">The input array.</param>
@@ -942,7 +950,7 @@ namespace Microsoft.FSharp.Collections
         val take: count:int -> array:'T[] -> 'T[]
 
         /// <summary>Returns an array that contains all elements of the original array while the 
-        /// given predicate returns <c>true</c>, and then returns no further elements.</summary>
+        /// given predicate returns True, and then returns no further elements.</summary>
         ///
         /// <param name="predicate">A function that evaluates to false when no more items should be returned.</param>
         /// <param name="array">The input array.</param>
@@ -984,8 +992,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         val truncate: count:int -> array:'T[] -> 'T[]
 
-        /// <summary>Returns the first element for which the given function returns <c>true</c>.
-        /// Return <c>None</c> if no such element exists.</summary>
+        /// <summary>Returns the first element for which the given function returns True.
+        /// Return None if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         /// <returns>The first element that satisfies the predicate, or None.</returns>
@@ -993,8 +1001,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
 
-        /// <summary>Returns the last element for which the given function returns <c>true</c>.
-        /// Return <c>None</c> if no such element exists.</summary>
+        /// <summary>Returns the last element for which the given function returns True.
+        /// Return None if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>

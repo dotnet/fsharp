@@ -334,7 +334,7 @@ type LanguagePrimitivesModule() =
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMaximum null null
-        Assert.AreEqual(null, resultNul)
+        Assert.IsNull(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMaximum null "ABCDE"
         Assert.AreEqual("ABCDE", resultNul)
@@ -360,13 +360,13 @@ type LanguagePrimitivesModule() =
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMinimum null null
-        Assert.AreEqual(null, resultNul)
+        Assert.IsNull(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMinimum null "ABC"
-        Assert.AreEqual(null, resultNul)
+        Assert.IsNull(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMinimum "ABC" null
-        Assert.AreEqual(null, resultNul)
+        Assert.IsNull(resultNul)
         
     [<Test>]
     member this.GenericOne() =
@@ -425,7 +425,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(-100000000000000000L, resultValue)   
 
         let resultValue = LanguagePrimitives.ParseInt64 "0" 
-        Assert.AreEqual(0, resultValue)    
+        Assert.AreEqual(0L, resultValue)
 
         CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseInt64 "" |> ignore)    
         
