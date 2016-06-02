@@ -18,7 +18,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFramework)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
