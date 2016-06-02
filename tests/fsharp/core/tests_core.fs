@@ -1060,11 +1060,11 @@ module ``Load-Script`` =
         // echo Test 12=================================================
         echo "Test 12================================================="
         // "%FSC%" FlagCheck.fsx  --nologo
-        do! fsc "--nologo" ["FlagCheck.fsx"]
+        do! fsc "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
         // FlagCheck.exe
-        do! exec ("."/"FlagCheck.exe") ""
+        do! exec ("."/"FlagCheckScript.exe") ""
         // del FlagCheck.exe
-        del "FlagCheck.exe"
+        del "FlagCheckScript.exe"
         // echo Test 13=================================================
         echo "Test 13================================================="
         // "%FSI%" load-FlagCheckFs.fsx
