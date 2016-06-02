@@ -9,6 +9,7 @@ open System.Runtime.InteropServices
 open NUnit.Framework
 open FsCheck
 open FsCheck.PropOperators
+open FSharp.Reflection.FSharpReflectionExtensions
 
 type Record =
     {   A: int
