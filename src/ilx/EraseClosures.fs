@@ -173,11 +173,9 @@ let mkMethSpecForMultiApp cenv (argtys': ILType list,rty) =
            formalRetTy,
            inst.Tail.Tail))
 
-let mkCallBlockForMultiValueApp cenv doTailCall (args',rty') inplab outlab =
+let mkCallBlockForMultiValueApp cenv doTailCall (args',rty') =
     let callvirt,mr = mkMethSpecForMultiApp cenv (args',rty')
-    let instrs = [ ( if callvirt then I_callvirt (doTailCall,mr, None) else I_call (doTailCall,mr, None) ) ]
-    if doTailCall = Tailcall then mkNonBranchingInstrs inplab instrs 
-    else mkNonBranchingInstrsThenBr inplab instrs outlab
+    [ ( if callvirt then I_callvirt (doTailCall,mr, None) else I_call (doTailCall,mr, None) ) ]
 
 let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) = 
     let tyargsl,argtys,rstruct = stripSupportedAbstraction clospec.FormalLambdas
@@ -196,19 +194,12 @@ let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) =
 let mkLdFreeVar (clospec: IlxClosureSpec) (fv: IlxClosureFreeVar) = 
     [ mkLdarg0; mkNormalLdfld (mkILFieldSpecInTy (clospec.ILType,fv.fvName,fv.fvType) ) ]
 
-let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParameterDefs) inplab outlab instr = 
 
-    match instr with 
-    | I_other e when isIlxExtInstr e -> 
-        match destIlxExtInstr e with 
-        | i when (match i with  EI_callfunc _ -> true | _ -> false) ->
+let instrsForCallFunc cenv allocLocal numThisGenParams tl apps = 
+
             // "callfunc" and "callclo" instructions become a series of indirect 
             // calls or a single direct call.   
-            let varCount = thisGenParams.Length
-            let tl,apps = 
-              match i with 
-              | EI_callfunc (tl,apps) -> tl,apps
-              | _ -> failwith "Unexpected call instruction"
+            let varCount = numThisGenParams
 
             // Unwind the stack until the arguments given in the apps have 
             // all been popped off.  The apps given to this function is 
@@ -226,7 +217,7 @@ let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParamet
                 | Apps_app (arg,rest) -> 
                     let storers, loaders = unwind rest
                     let argStorers,argLoaders = 
-                          let locn = tmps.AllocLocal (mkILLocal arg None)
+                          let locn = allocLocal arg 
                           [mkStloc locn], [mkLdloc locn]
                     argStorers :: storers, argLoaders :: loaders  
                 | Apps_done _ -> 
@@ -239,7 +230,7 @@ let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParamet
                 else 
                   stripUpTo n (function (_x::_y) -> true | _ -> false) (function (x::y) -> (x,y) | _ -> failwith "no!") loaders
             
-            let rec buildApp fst loaders apps inplab outlab =
+            let rec buildApp fst loaders apps =
                 // Strip off one valid indirect call.  [fst] indicates if this is the 
                 // first indirect call we're making. The code below makes use of the 
                 // fact that term and type applications are never currently mixed for 
@@ -258,21 +249,15 @@ let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParamet
                     let doTailCall = andTailness tl false
                     let instrs1 = 
                         precall @
-                        [ I_callvirt (doTailCall, 
-                                      
-                                      (mkILInstanceMethSpecInTy (cenv.mkILTyFuncTy,"Specialize",[],cenv.ilg.typ_Object, instTyargs)), None) ]
+                        [ I_callvirt (doTailCall,  (mkILInstanceMethSpecInTy (cenv.mkILTyFuncTy,"Specialize",[],cenv.ilg.typ_Object, instTyargs)), None) ]
                     let instrs1 =                        
                         // TyFunc are represented as Specialize<_> methods returning an object.                            
                         // For value types, recover result via unbox and load.
                         // For reference types, recover via cast.
                         let rtnTy = mkTyOfApps cenv rest'
                         instrs1 @ [ I_unbox_any rtnTy]
-                    if doTailCall = Tailcall then mkNonBranchingInstrs inplab instrs1 
-                    else 
-                        let endOfCallBlock = generateCodeLabel ()
-                        let block1 = mkNonBranchingInstrsThenBr inplab instrs1 endOfCallBlock
-                        let block2 = buildApp false loaders' rest' endOfCallBlock outlab
-                        mkGroupBlock ([endOfCallBlock],[ block1; block2 ])
+                    if doTailCall = Tailcall then instrs1 
+                    else instrs1 @ buildApp false loaders' rest' 
 
               // Term applications 
                 | [],args,rest when nonNil args -> 
@@ -281,29 +266,20 @@ let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParamet
                     let rty  = mkTyOfApps cenv rest
                     let doTailCall = andTailness tl isLast
 
-                    let startOfCallBlock = generateCodeLabel ()
-                    let preCallBlock = mkNonBranchingInstrsThenBr inplab precall startOfCallBlock
+                    let preCallBlock = precall 
 
                     if doTailCall = Tailcall then 
-                        let callBlock =  mkCallBlockForMultiValueApp cenv doTailCall (args,rty) startOfCallBlock outlab
-                        mkGroupBlock ([startOfCallBlock],[ preCallBlock; callBlock ])
+                        let callBlock =  mkCallBlockForMultiValueApp cenv doTailCall (args,rty) 
+                        preCallBlock @ callBlock 
                     else
-                        let endOfCallBlock = generateCodeLabel ()
-                        let callBlock =  mkCallBlockForMultiValueApp cenv doTailCall (args,rty) startOfCallBlock endOfCallBlock
-                        let restBlock = buildApp false loaders' rest endOfCallBlock outlab
-                        mkGroupBlock ([startOfCallBlock; endOfCallBlock],[ preCallBlock; callBlock; restBlock ])
+                        let callBlock =  mkCallBlockForMultiValueApp cenv doTailCall (args,rty) 
+                        let restBlock = buildApp false loaders' rest 
+                        preCallBlock @ callBlock @ restBlock 
 
-                | [],[],Apps_done _rty -> 
-                    // "void" return values are allowed in function types 
-                    // but are translated to empty value classes.  These 
-                    // values need to be popped. 
-                    mkNonBranchingInstrsThen inplab ([]) (if tl = Tailcall then I_ret else I_br outlab)
+                | [],[],Apps_done _rty -> [  ]
                 | _ -> failwith "*** Error: internal error: unknown indirect calling convention returned by stripSupportedIndirectCall"
              
-            InstrMorph (buildApp true [] apps inplab outlab)
-        | _ ->  InstrMorph [instr]  
-          
-    | _ ->  InstrMorph [instr] 
+            buildApp true [] apps 
 
 // Fix up I_ret instruction. Generalise to selected instr.
 let convReturnInstr ty _inplab _outlab instr = 
@@ -311,7 +287,7 @@ let convReturnInstr ty _inplab _outlab instr =
     | I_ret -> InstrMorph [I_box ty;I_ret]
     | _     -> InstrMorph [instr]
         
-let convILMethodBody cenv (thisGenParams,thisClo,boxReturnTy) il = 
+let convILMethodBody (thisClo,boxReturnTy) il = 
     let tmps = ILLocalsAllocator il.Locals.Length
     let locals = il.Locals
     // Add a local to keep the result value of a thunk while storing it 
@@ -321,7 +297,7 @@ let convILMethodBody cenv (thisGenParams,thisClo,boxReturnTy) il =
         match thisClo with 
         | Some _ -> il.MaxStack+2 (* for calls *)
         | None -> il.MaxStack
-    let code' = morphExpandILInstrsInILCode (convInstr cenv (tmps,thisGenParams)) il.Code
+    let code' = il.Code
     let code' = match boxReturnTy with
                 | None    -> code'
                 | Some ty -> (* box before returning? e.g. in the case of a TyFunc returning a struct, which compiles to a Specialise<_> method returning an object *)
@@ -331,12 +307,12 @@ let convILMethodBody cenv (thisGenParams,thisClo,boxReturnTy) il =
              Code= code' ;
              Locals = ILList.ofList (ILList.toList locals @ tmps.Close()) }
 
-let convMethodBody cenv (thisGenParams,thisClo) = function
-    | MethodBody.IL il -> MethodBody.IL (convILMethodBody cenv (thisGenParams,thisClo,None) il)
+let convMethodBody thisClo = function
+    | MethodBody.IL il -> MethodBody.IL (convILMethodBody (thisClo,None) il)
     | x -> x
 
-let convMethodDef cenv (thisGenParams,thisClo) (md: ILMethodDef)  =
-    let b' = convMethodBody cenv ((thisGenParams @ md.GenericParams) ,thisClo) (md.mdBody.Contents)
+let convMethodDef thisClo (md: ILMethodDef)  =
+    let b' = convMethodBody thisClo (md.mdBody.Contents)
     {md with mdBody=mkMethBodyAux b'}
 
 // -------------------------------------------------------------------- 
@@ -495,8 +471,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [],
                    mkILReturn(cenv.ilg.typ_Object),
-                   MethodBody.IL (convILMethodBody cenv (td.GenericParams@addedGenParams,Some nowCloSpec,boxReturnTy)
-                                    (Lazy.force clo.cloCode)))
+                   MethodBody.IL (convILMethodBody (Some nowCloSpec,boxReturnTy) (Lazy.force clo.cloCode)))
               let ctorMethodDef = 
                   mkILStorageCtor 
                     (tagClo,
@@ -592,7 +567,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                           ("Invoke",ILMemberAccess.Public,
                            nowParams, 
                            mkILReturn nowReturnTy,
-                           MethodBody.IL (convILMethodBody cenv (td.GenericParams,Some nowCloSpec,None)  (Lazy.force clo.cloCode)))
+                           MethodBody.IL (convILMethodBody (Some nowCloSpec,None)  (Lazy.force clo.cloCode)))
                     let ctorMethodDef = 
                         mkILStorageCtor 
                            (tagClo,
@@ -629,7 +604,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
           let cloCode' = 
             match td.Extends with 
             | None ->  (mkILNonGenericEmptyCtor tagClo cenv.ilg.typ_Object).MethodBody 
-            | Some  _ -> convILMethodBody cenv (td.GenericParams,Some nowCloSpec,None)  (Lazy.force clo.cloCode)
+            | Some  _ -> convILMethodBody (Some nowCloSpec,None)  (Lazy.force clo.cloCode)
 
           let ctorMethodDef = 
             let flds = (mkILCloFldSpecs cenv nowFields)
@@ -654,7 +629,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                   Extends= (match td.Extends with None -> Some cenv.ilg.typ_Object | Some x -> Some(x));
                   Name = td.Name;
                   GenericParams= td.GenericParams;
-                  Methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef cenv ( td.GenericParams,Some nowCloSpec)) td.Methods.AsList); 
+                  Methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList); 
                   Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList);
                   tdKind = ILTypeDefKind.Class; } 
           [cloTypeDef],[]
@@ -677,7 +652,7 @@ let rec convTypeDef cenv mdefGen encl td =
   | _ -> 
       [ {td with 
              NestedTypes = convTypeDefs cenv mdefGen (encl@[td.Name]) td.NestedTypes;
-             Methods=morphILMethodDefs (convMethodDef cenv (td.GenericParams,None)) td.Methods; } ]
+             Methods=morphILMethodDefs (convMethodDef None) td.Methods; } ]
 
 and convTypeDefs cenv mdefGen encl tdefs = 
   morphExpandILTypeDefs (convTypeDef cenv mdefGen encl) tdefs
