@@ -1316,10 +1316,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         //  Applied when a token other then a long identifier is seen 
         | _, (CtxtNamespaceHead (namespaceTokenPos, prevToken) :: _) -> 
             match prevToken, token with 
-            | NAMESPACE, GLOBAL when namespaceTokenPos.Column < tokenStartPos.Column -> 
-                replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
-                returnToken tokenLexbufState token
-            | (NAMESPACE | DOT | REC), (REC | IDENT _) when namespaceTokenPos.Column < tokenStartPos.Column -> 
+            | (NAMESPACE | DOT | REC | GLOBAL), (REC | IDENT _ | GLOBAL) when namespaceTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
                 returnToken tokenLexbufState token
             | IDENT _, DOT when namespaceTokenPos.Column < tokenStartPos.Column -> 
