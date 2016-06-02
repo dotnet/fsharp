@@ -589,6 +589,7 @@ tcExpressionWithIfRequiresParenthesis,"This list or array expression includes an
 765,tcExtraneousFieldsGivenValues,"Extraneous fields have been given values"
 766,tcObjectExpressionsCanOnlyOverrideAbstractOrVirtual,"Only overrides of abstract and virtual members may be specified in object expressions"
 767,tcNoAbstractOrVirtualMemberFound,"The member '%s' does not correspond to any abstract or virtual method available to override or implement.%s"
+767,tcMemberFoundIsNotAbstractOrVirtual,"The type %s contains the member '%s' but it is not a virtual or abstract method that is available to override or implement.%s"
 768,tcArgumentArityMismatch,"The member '%s' does not accept the correct number of arguments, %d arguments are expected"
 769,tcArgumentArityMismatchOneOverload,"The member '%s' does not accept the correct number of arguments. One overload accepts %d arguments."
 770,tcSimpleMethodNameRequired,"A simple method name is required here"
