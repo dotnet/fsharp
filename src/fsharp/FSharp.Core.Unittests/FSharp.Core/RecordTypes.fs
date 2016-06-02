@@ -2,6 +2,7 @@
 module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Core.RecordTypes
 
 #nowarn "9"
+#nowarn "44" // deprecation of some APIs on CoreCLR
 
 open System
 open System.Reflection
@@ -9,7 +10,16 @@ open System.Runtime.InteropServices
 open NUnit.Framework
 open FsCheck
 open FsCheck.PropOperators
+
+#if FX_RESHAPED_REFLECTION
 open FSharp.Reflection.FSharpReflectionExtensions
+
+[<AutoOpen>]
+module PrimReflectionAdapters =
+    
+    type System.Type with
+        member this.IsValueType = this.GetTypeInfo().IsValueType
+#endif
 
 type Record =
     {   A: int
