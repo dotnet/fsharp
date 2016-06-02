@@ -8,25 +8,29 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Text
-open System.Collections.Generic
+
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.TcGlobals 
-open Microsoft.FSharp.Compiler.Range
+
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.PrettyNaming
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
 module EnvMisc2 =
@@ -150,7 +154,7 @@ module internal ItemDescriptionsImpl =
         | Item.CustomOperation (_,_,Some minfo)  -> rangeOfMethInfo g preferFlag minfo
         | Item.TypeVar (_,tp)  -> Some tp.Range
         | Item.ModuleOrNamespaces(modrefs) -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.MethodGroup(_,minfos) 
+        | Item.MethodGroup(_,minfos,_) 
         | Item.CtorGroup(_,minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _,_, _, m) -> Some m
         | Item.SetterArg (_,item) -> rangeOfItem g preferFlag item
@@ -195,7 +199,7 @@ module internal ItemDescriptionsImpl =
 
         | Item.ArgName (_,_,Some (ArgumentContainer.Method minfo))  -> ccuOfMethInfo g minfo
 
-        | Item.MethodGroup(_,minfos)
+        | Item.MethodGroup(_,minfos,_)
         | Item.CtorGroup(_,minfos) -> minfos |> List.tryPick (ccuOfMethInfo g)
         | Item.CustomOperation (_,_,Some minfo)       -> ccuOfMethInfo g minfo
 
@@ -390,12 +394,13 @@ module internal ItemDescriptionsImpl =
         | Item.Property(_,(pinfo :: _)) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
         | Item.Event(einfo) -> mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
 
-        | Item.MethodGroup(_,minfo :: _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+        | Item.MethodGroup(_,minfo :: _,_) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
         | Item.CtorGroup(_,minfo :: _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
-        | Item.ArgName(_, _, Some argContainer) -> match argContainer with 
-                                                   | ArgumentContainer.Method(minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
-                                                   | ArgumentContainer.Type(tcref) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-                                                   | ArgumentContainer.UnionCase(ucinfo) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        | Item.ArgName(_, _, Some argContainer) -> 
+            match argContainer with 
+            | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
+            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            | ArgumentContainer.UnionCase ucinfo -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
         |  _ -> FSharpXmlDoc.None
 
     /// Produce an XmlComment with a signature or raw text.
@@ -509,7 +514,7 @@ module internal ItemDescriptionsImpl =
                     (nm1 = nm2) && typarRefEq tp1 tp2
               | Wrap(Item.ModuleOrNamespaces(modref1 :: _)), Wrap(Item.ModuleOrNamespaces(modref2 :: _)) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
               | Wrap(Item.SetterArg(id1,_)), Wrap(Item.SetterArg(id2,_)) -> (id1.idRange, id1.idText) = (id2.idRange, id2.idText)
-              | Wrap(Item.MethodGroup(_, meths1)), Wrap(Item.MethodGroup(_, meths2)) -> 
+              | Wrap(Item.MethodGroup(_, meths1,_)), Wrap(Item.MethodGroup(_, meths2,_)) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | Wrap(Item.Value vref1 | Item.CustomBuilder (_,vref1)), Wrap(Item.Value vref2 | Item.CustomBuilder (_,vref2)) -> valRefEq g vref1 vref2
@@ -541,7 +546,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.CustomOperation (_,_,None)) -> 1
               | Wrap(Item.ModuleOrNamespaces(modref :: _)) -> hash (fullDisplayTextOfModRef modref)          
               | Wrap(Item.SetterArg(id,_)) -> hash (id.idRange, id.idText)
-              | Wrap(Item.MethodGroup(_, meths)) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
+              | Wrap(Item.MethodGroup(_, meths,_)) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Wrap(Item.CtorGroup(name, meths)) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | Wrap(Item.Value vref | Item.CustomBuilder (_,vref)) -> hash vref.LogicalName
               | Wrap(Item.ActivePatternCase(APElemRef(_apinfo, vref, idx))) -> hash (vref.LogicalName, idx)
@@ -607,7 +612,8 @@ module internal ItemDescriptionsImpl =
         | Item.Property(_,(pinfo::_)) -> bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g pinfo.EnclosingType); bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName,_,_) -> customOpName
         | Item.CtorGroup(_,minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef)
-        | Item.MethodGroup(_,minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.MethodGroup(_,_,Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.MethodGroup(_,minfo :: _,_) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringEntityRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor typ 
         | Item.DelegateCtor typ 
@@ -623,7 +629,7 @@ module internal ItemDescriptionsImpl =
         | Item.UnqualifiedType([]) 
         | Item.Types(_,[]) 
         | Item.CtorGroup(_,[]) 
-        | Item.MethodGroup(_,[]) 
+        | Item.MethodGroup(_,[],_) 
         | Item.ModuleOrNamespaces []
         | Item.Property(_,[]) -> ""
 
@@ -802,7 +808,7 @@ module internal ItemDescriptionsImpl =
 
         // F# constructors and methods
         | Item.CtorGroup(_,minfos) 
-        | Item.MethodGroup(_,minfos) ->
+        | Item.MethodGroup(_,minfos,_) ->
             FormatOverloadsToList infoReader m denv d minfos
         
         // The 'fake' zero-argument constructors of .NET interfaces.
@@ -937,7 +943,7 @@ module internal ItemDescriptionsImpl =
             let layout = (NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty)
             bufferL os layout
         | Item.CustomOperation (_,_,Some minfo)
-        | Item.MethodGroup(_,(minfo :: _)) 
+        | Item.MethodGroup(_,(minfo :: _),_) 
         | Item.CtorGroup(_,(minfo :: _)) -> 
             let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
             bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty) 
@@ -1097,9 +1103,10 @@ module internal ItemDescriptionsImpl =
             | ProvidedMeth _::_ -> None
 #endif
         | Item.CustomOperation (_,_,Some minfo) -> getKeywordForMethInfo minfo
-        | Item.MethodGroup(_,minfo :: _) -> getKeywordForMethInfo minfo
+        | Item.MethodGroup(_,_,Some minfo) -> getKeywordForMethInfo minfo
+        | Item.MethodGroup(_,minfo :: _,_) -> getKeywordForMethInfo minfo
         | Item.SetterArg (_, propOrField) -> GetF1Keyword propOrField 
-        | Item.MethodGroup(_,[]) 
+        | Item.MethodGroup(_,[],_) 
         | Item.CustomOperation (_,_,None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
         | Item.ArgName _ // no keyword on named parameters 
@@ -1303,7 +1310,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
             let isOpItem(nm,item) = 
                 match item with 
                 | [Item.Value _]
-                | [Item.MethodGroup(_,[_])] -> 
+                | [Item.MethodGroup(_,[_],_)] -> 
                     (IsOpName nm) && nm.[0]='(' && nm.[nm.Length-1]=')'
                 | [Item.UnionCase _] -> IsOpName nm
                 | _ -> false              

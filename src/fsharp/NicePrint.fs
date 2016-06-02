@@ -6,15 +6,13 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
-#nowarn "44" // This construct is deprecated. please use List.item
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
@@ -23,17 +21,20 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL (* Abstract IL  *)
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
+open Microsoft.FSharp.Compiler.InfoReader
+open Microsoft.FSharp.Compiler.AttributeChecking
+open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.PrettyNaming
+
 open Microsoft.FSharp.Core.Printf
+
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.PrettyNaming
 
 [<AutoOpen>]
 module internal PrintUtilities = 
@@ -57,7 +58,7 @@ module internal PrintUtilities =
 
     let applyMaxMembers maxMembers (alldecls : _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> Seq.truncate n |> Seq.toList) @ [wordL "..."] 
+        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL "..."] 
         | _ -> alldecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)
@@ -185,7 +186,7 @@ module private PrintIL =
         | ILType.Ptr t
         | ILType.Byref t            -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t  -> layoutILCallingSignature denv ilTyparSubst None t
-        | ILType.TypeVar n            -> List.nth ilTyparSubst (int n)
+        | ILType.TypeVar n          -> List.item (int n) ilTyparSubst
         | ILType.Modified (_, _, t) -> layoutILType denv ilTyparSubst t // Just recurse through them to the contained ILType
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
@@ -1448,8 +1449,8 @@ module private TastDefinitionPrinting =
             match valRef with
             | None -> true
             | Some(vr) ->
-                (denv.showObsoleteMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
-                (denv.showHiddenMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g vr.Attribs))
+                (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
+                (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vr.Attribs))
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
@@ -1582,8 +1583,8 @@ module private TastDefinitionPrinting =
                                       // Don't print individual methods forming interface implementations - these are currently never exported 
                                       not (isInterfaceTy denv.g oty)
                                   | [] -> true)
-              |> List.filter (fun v -> denv.showObsoleteMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForObsolete denv.g v.Attribs))
-              |> List.filter (fun v -> denv.showHiddenMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g v.Attribs))
+              |> List.filter (fun v -> denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs))
+              |> List.filter (fun v -> denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g v.Attribs))
           // sort 
           let sortKey (v:ValRef) = (not v.IsConstructor,    // constructors before others 
                                     v.Id.idText,            // sort by name 

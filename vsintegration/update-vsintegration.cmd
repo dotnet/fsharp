@@ -99,8 +99,6 @@ if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
 REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# %FSHARPVERSION% Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.9055\
 
-
-
 rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
 %SN32% -Vr FSharp.Core,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.Build,b03f5f7f11d50a3a
@@ -138,15 +136,6 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
     %SN64% -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
     %SN64% -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
-)
-
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
-	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
-	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies" (
-	copy /y %BINDIR%\FSharp.Compiler.Server.Shared.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Server.Shared.dll"
-	copy /y %BINDIR%\FSharp.Compiler.Interactive.Settings.dll "%ProgramFiles%\Microsoft Visual Studio %VisualStudioVersion%\Common7\IDE\PrivateAssemblies\FSharp.Compiler.Interactive.Settings.dll"
 )
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll

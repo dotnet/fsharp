@@ -384,7 +384,11 @@ assert (sizeof<TyparFlags> = 4)
 
 let unassignedTyparName = "?"
 
-exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * string list
+type Predictions = Set<string>
+
+let NoPredictions = Set.empty
+
+exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * Predictions
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
 let KeyTyconByDemangledNameAndArity nm (typars: _ list) x = 
@@ -1681,11 +1685,15 @@ and Construct =
             let isMeasure = 
                 st.PApplyWithProvider((fun (st,provider) -> 
                     let findAttrib (ty:System.Type) (a:CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
+                    let ty = st.RawSystemType
+#if FX_RESHAPED_REFLECTION
+                    let ty = ty.GetTypeInfo()
+#endif
 #if FX_NO_CUSTOMATTRIBUTEDATA
-                    provider.GetMemberCustomAttributesData(st.RawSystemType) 
+                    provider.GetMemberCustomAttributesData(ty) 
 #else
                     ignore provider
-                    st.RawSystemType.GetCustomAttributesData()
+                    ty.GetCustomAttributesData()
 #endif
                         |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
                   .PUntaintNoFailure(fun x -> x)
@@ -4107,7 +4115,6 @@ let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValD
 //---------------------------------------------------------------------------
 
 let mapTImplFile   f   (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = TImplFile(fragName, pragmas,f moduleExpr,hasExplicitEntryPoint,isScript)
-let fmapTImplFile  f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let z,moduleExpr = f z moduleExpr in z,TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)
 let mapAccImplFile f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let moduleExpr,z = f z moduleExpr in TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript), z
 let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_)) = f z moduleExpr
 
@@ -4395,19 +4402,18 @@ let fslibValRefEq fslibCcu vref1 vref2 =
 /// This takes into account the possibility that they may have type forwarders
 let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) = 
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when not compilingFslib -> x.ResolvedTarget === y.ResolvedTarget 
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | false, false when 
+    
+    if x.IsResolved && y.IsResolved && not compilingFslib then
+        x.ResolvedTarget === y.ResolvedTarget 
+    elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) -> 
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
         true
-    | _ -> 
-        compilingFslib && fslibEntityRefEq  fslibCcu x y  
+    else
+        compilingFslib && fslibEntityRefEq fslibCcu x y  
 
 /// Primitive routine to compare two UnionCaseRef's for equality
 let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tcr2,c2) as uc2) = 
@@ -4422,12 +4428,10 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tc
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when x.ResolvedTarget === y.ResolvedTarget -> true
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | true,true when valEq x.PrivateTarget y.PrivateTarget -> true
-    | _ -> 
+    if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
+       (x.IsLocalRef && y.IsLocalRef && valEq x.PrivateTarget y.PrivateTarget) then
+        true
+    else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
             let v1 = x.TryDeref 

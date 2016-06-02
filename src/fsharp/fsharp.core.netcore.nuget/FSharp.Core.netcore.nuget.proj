@@ -1,0 +1,25 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <PkgVersion>$(NuGetPerBuildPreReleaseVersion)</PkgVersion>
+    <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+    <Net40FsiToolPath>$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin</Net40FsiToolPath>
+  </PropertyGroup>
+
+  <!-- TODO: Switch to using lkg coreclr fsi and remove dependency on building net40 fsi after fixing #1168 -->
+
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
+    <MSBuild Projects="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net40" />
+    <Exec Command="$(Net40FsiToolPath)\$(FsiToolExe) --exec layoutfscorenuget.fsx --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
+    <Exec Command="$(Net40FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Core.netcore.nuspec --bindir:$(OutDir)"/>
+  </Target>
+
+  <Target Name="Rebuild"  DependsOnTargets="Build" />
+
+</Project>

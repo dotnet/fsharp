@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
@@ -16,6 +16,7 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnsureThereAreNoUnusedFsSrGenResources>False</EnsureThereAreNoUnusedFsSrGenResources>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <CustomOutputPath>true</CustomOutputPath>
@@ -31,11 +32,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Data.TypeProviders\FSData.txt" >
-      <Link>FSData.txt</Link>
-    </FsSrGen>
-    <Compile Include="TypeProviderEmit.fsi" />
-    <Compile Include="TypeProviderEmit.fs" />
+	<FsSrGen Include="FSData.txt" />
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DummyProviderForLanguageServiceTesting.fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

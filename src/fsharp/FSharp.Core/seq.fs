@@ -1442,6 +1442,13 @@ namespace Microsoft.FSharp.Collections
                    enumeratorR := None)
             (new CachedSeq<_>(cleanup, result) :> seq<_>)
 
+        [<CompiledName("AllPairs")>]
+        let allPairs source1 source2 =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            let cached = cache source2
+            source1 |> collect (fun x -> cached |> map (fun y -> x,y))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]             
         [<CompiledName("ReadOnly")>]
         let readonly (source:seq<_>) = 

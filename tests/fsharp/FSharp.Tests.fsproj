@@ -67,6 +67,7 @@
     </Compile>
     <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs" />
     <Compile Include="nunitConf.fs" />
+    <Compile Include="FSharpTestSuiteAsserts.fs" />
     <Compile Include="single-test-build.fs" />
     <Compile Include="single-test-run.fs" />
     <Compile Include="single-neg-test.fs" />
@@ -91,7 +92,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="typeProviders\build-typeprovider-test.fs" />
-    <Compile Include="typeProviders\builtin\copyFSharpDataTypeProviderDLL.fs" />
     <Compile Include="typeProviders\tests_typeProviders.fs" /> 
   </ItemGroup>
   <ItemGroup>

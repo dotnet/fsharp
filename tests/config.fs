@@ -41,18 +41,18 @@ let private GetFSLibPaths env osArch fscBinPath =
     let X86_PROGRAMFILES = WindowsPlatform.x86ProgramFilesDirectory env osArch
 
     // REM == Default VS install locations
-    // set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055
-    let mutable FSCOREDLLPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.4.1.9055"
+    // set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
+    let mutable FSCOREDLLPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.4.1.0"
     // set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
     let mutable FSCOREDLL20PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v2.0"/"2.3.0.0"
-    // set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
-    let mutable FSCOREDLLPORTABLEPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETPortable"/"3.47.41.9055"
-    // set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
-    let mutable FSCOREDLLNETCOREPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.7.41.9055"
-    // set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
-    let mutable FSCOREDLLNETCORE78PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.78.41.9055"
-    // set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
-    let mutable FSCOREDLLNETCORE259PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.259.41.9055"
+    // set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.0
+    let mutable FSCOREDLLPORTABLEPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETPortable"/"3.47.41.0"
+    // set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.0
+    let mutable FSCOREDLLNETCOREPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.7.41.0"
+    // set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.0
+    let mutable FSCOREDLLNETCORE78PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.78.41.0"
+    // set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.0
+    let mutable FSCOREDLLNETCORE259PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.259.41.0"
     // set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
     let mutable FSDATATPPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.3.0.0"/"Type Providers"
     // set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
@@ -90,11 +90,6 @@ let private GetFSLibPaths env osArch fscBinPath =
     | Some d when fileExists (d/"FSharp.Core.dll") -> FSCOREDLLNETCORE259PATH <- d
     | Some _ | None -> ()
 
-    // IF EXIST "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
-    match fscBinPath with
-    | Some d when fileExists (d/"FSharp.Data.TypeProviders.dll") -> FSDATATPPATH <- d
-    | Some _ | None -> ()
-
     // set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
     FSCOREDLLPATH <- FSCOREDLLPATH/"FSharp.Core.dll"
     // set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
@@ -107,8 +102,6 @@ let private GetFSLibPaths env osArch fscBinPath =
     FSCOREDLLNETCORE78PATH <- FSCOREDLLNETCORE78PATH/"FSharp.Core.dll"
     // set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
     FSCOREDLLNETCORE259PATH <- FSCOREDLLNETCORE259PATH/"FSharp.Core.dll"
-    // set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
-    FSDATATPPATH <- FSDATATPPATH/"FSharp.Data.TypeProviders.dll"
     // set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
     FSCOREDLLVPREVPATH <- FSCOREDLLVPREVPATH/"FSharp.Core.dll"
 
@@ -130,11 +123,11 @@ let private GetFSLibPaths env osArch fscBinPath =
 // REM === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
 // REM === 
 let private SetFSCBinPath45 () =
-    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
-    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
+    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
+    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
     // IF EXIST "%FSCBinPath%" goto :EOF
     let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\4.0\Runtime\v4.0" "" with
+    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\4.1\Runtime\v4.0" "" with
     | Some (:? string as d) when directoryExists d -> Some d
     | Some _ | None -> None
 
@@ -143,9 +136,12 @@ let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
         // rem first see if we have got msbuild installed
         let mutable MSBuildToolsPath = envVars |> Map.tryFind "MSBuildToolsPath"
 
-        // if exist "%X86_PROGRAMFILES%\MSBuild\14.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\14.0\Bin\
-        if x86_ProgramFiles/"MSBuild"/"14.0"/"Bin"/"MSBuild.exe" |> fileExists
-        then  MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"14.0"/"Bin" |> Commands.pathAddBackslash)
+        // if exist "%X86_PROGRAMFILES%\MSBuild\15.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\15.0\Bin\
+        if x86_ProgramFiles/"MSBuild"/"15.0"/"Bin"/"MSBuild.exe" |> fileExists then
+            MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"15.0"/"Bin" |> Commands.pathAddBackslash)
+        if x86_ProgramFiles/"MSBuild"/"14.0"/"Bin"/"MSBuild.exe" |> fileExists then
+            MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"14.0"/"Bin" |> Commands.pathAddBackslash)
+
         // if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
         match MSBuildToolsPath with
         | Some x -> Some x

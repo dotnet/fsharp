@@ -177,26 +177,17 @@ let g (t : T) = t.Count()
         """
 
         let expectedMessages =
-            [
-        "Possible overload: 'new : bool -> X'. Type constraint mismatch. The type 
-    float    
-is not compatible with type
-    bool    
-The type 'float' is not compatible with the type 'bool'."
-        "Possible overload: 'new : int -> X'. Type constraint mismatch. The type 
-    float    
-is not compatible with type
-    int    
-The type 'float' is not compatible with the type 'int'."
-            ]
-            |> List.map (fun s -> s.Replace("\r\n", "\n"))
+            [ "Possible overload: 'new : bool -> X'."
+              "Possible overload: 'new : int -> X'." ]
 
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(3, List.length errors)
                 assertContains errors "No overloads match for method 'X'. The available overloads are shown below (or in the Error List window)."
                 for expected in expectedMessages do
-                    assertContains errors expected
+                   errors
+                   |> List.exists (fun e -> e.Message.StartsWith expected)
+                   |> Assert.IsTrue
 
     [<Test>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
@@ -441,9 +432,9 @@ type staticInInterface =
         // but here as you can see it's give (int * int)
         let fileContent = """ type foo = N1.T< const 42,2>"""
         let expectedStr = """This expression was expected to have type
-    string    
+    'string'    
 but here has type
-    int    """
+    'int'    """
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     

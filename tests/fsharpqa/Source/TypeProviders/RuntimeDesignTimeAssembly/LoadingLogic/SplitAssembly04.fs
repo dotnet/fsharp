@@ -1,2 +1,0 @@
-//<Expects status="error" id="FS3031">The type provider '.+MyTPRuntime\.dll' reported an error: Assembly attribute 'TypeProviderAssemblyAttribute' refers to a designer assembly 'MyTPDesignTime, Version=2\.2\.2\.2, Culture=neutral, PublicKeyToken=940f4698116c96c9, processorArchitecture=MSIL' which cannot be loaded or doesn't exist\..+ 'MyTPDesignTime, Version=2\.2\.2\.2, Culture=neutral, PublicKeyToken=940f4698116c96c9'.+</Expects>
-exit 0

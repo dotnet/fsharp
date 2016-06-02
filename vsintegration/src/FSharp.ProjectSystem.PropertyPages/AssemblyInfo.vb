@@ -3,6 +3,7 @@
 Imports System
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
+Imports Microsoft.VisualStudio.Shell
 
 '/* F# additions: begin. */
 <Assembly: AssemblyDescription("FSharp.ProjectSystem.Base.dll")>
@@ -13,7 +14,4 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyConfiguration("")>
 <Assembly: AssemblyCulture("")>
 
-#if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("14.0.0.9055")>
-#end if
+<Assembly: ProvideCodeBase(CodeBase := "$PackageFolder$\\FSharp.ProjectSystem.PropertyPages.dll")>

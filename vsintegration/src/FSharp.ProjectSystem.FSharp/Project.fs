@@ -37,14 +37,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     
-#if DESIGNER
-    open Microsoft.Windows.Design.Host
-    open Microsoft.Windows.Design.Model
-    open Microsoft.VisualStudio.Designer.Interfaces
-    open Microsoft.VisualStudio.TextManager.Interop
-    open Microsoft.VisualStudio.Shell.Design.Serialization
-    open Microsoft.VisualStudio.Shell.Design.Serialization.CodeDom
-#endif
     open Microsoft.VisualStudio
 
     open EnvDTE
@@ -176,27 +168,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     //    FSharpProjectFactory
     //    ....
 
-    type (* start of very large set of mutually recursive OO types *)
-
-(*
-See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools" Value="#6000" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools\F# Interactive" Value="#6001" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-    <Registry Name="Page" Value="{4489e9de-6ac1-3cd6-bff8-a904fd0e82d4}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\AutomationProperties\F# Tools\F# Interactive">
-    <Registry Name="Name" Value="F# Tools.F# Interactive" Type="string" />
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-*)
+    type
         [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
-                            (* NOTE: search for FSHARP-TOOLS-INTERACTIVE-LINK *)                            
-                            (* NOTE: the cat/sub-cat names appear in an error message in sessions.ml, fix up any changes there *)
                             "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                             6000s,      6001s,              // resource id for localisation of the above
                             true)>]                         // true = supports automation
@@ -311,9 +284,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
                 this.RegisterProjectFactory(new FSharpProjectFactory(this))
                 //this.RegisterProjectFactory(new FSharpWPFProjectFactory(this :> IServiceProvider))
-#if DESIGNER                
-                this.RegisterEditorFactory(new EditorFactory(this))
-#endif
+
                 // was used to ensure the LS has been initialized, because the TypeProviderSecurityGlobals 
                 // global state was needed for e.g. Tools\Options
                 //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
@@ -395,34 +366,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
         [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
         internal WAFSharpProjectFactory() = class end
 
-#if DESIGNER
-    and [<ComVisible(true)>]
-        [<ClassInterface(ClassInterfaceType.None)>]
-        [<Guid("47C65732-87AE-4C8A-8AA5-234E00E9D9AB")>]
-        public FSharpWPFFlavor(site:IServiceProvider) =
-            inherit FlavoredProjectBase() 
-
-            override x.GetGuidProperty(itemId:uint32, propId:int ) =
-                if (propId = int32 __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 
-                    typeof<FSharpWPFProjectFactory>.GUID
-                else 
-                    base.GetGuidProperty(itemId, propId)
-
-            override x.GetProperty(itemId:uint32, propId:int, property:byref<obj>) =
-                base.GetProperty(itemId, propId, &property)
-
-    and [<Guid("117B3E77-35E9-4f6d-4237-E6D103EA4D4A")>]
-        internal FSharpWPFProjectFactory(site:IServiceProvider) =
-            inherit FlavoredProjectFactoryBase()
-        
-            /// Create an instance of our project. The initialization will be done later
-            /// when VS calls InitalizeForOuter on it.
-        
-            /// <param name="outerProjectIUnknown">This is only useful if someone else is subtyping us</param>
-            /// <returns>An uninitialized instance of our project</returns>
-            override x.PreCreateForOuter(outerProjectIUnknown:IntPtr) = box (new FSharpWPFFlavor(site))
-
-#endif
     and 
 
         [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
@@ -434,10 +377,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             let GUID_MruPage = new Guid("{BF42FC6C-1C43-487F-A524-C2E7BC707479}")
 #endif
             let mutable vsProject : VSLangProj.VSProject = null
-#if DESIGNER            
-            let mutable codeDomProvider : Microsoft.VisualStudio.Designer.Interfaces.IVSMDCodeDomProvider  = null
-            let mutable designerContext : DesignerContext  = null 
-#endif            
             let mutable trackDocumentsHandle = 0u
             let mutable addFilesNotification : option<(array<string> -> unit)> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
             
@@ -504,9 +443,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 // The following properties classes are specific to F# so we can use their GUIDs directly
                 this.AddCATIDMapping(typeof<FSharpProjectNodeProperties>, typeof<FSharpProjectNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<FSharpFileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
-#if DESIGNER                
-                this.AddCATIDMapping(typeof<OAFSharpFileItem>, typeof<OAFSharpFileItem>.GUID)
-#endif
                 // This one we use the same as F# file nodes since both refer to files
                 this.AddCATIDMapping(typeof<FileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
@@ -669,11 +605,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 let documentTracker = this.Site.GetService(typeof<SVsTrackProjectDocuments>) :?> IVsTrackProjectDocuments2
                 documentTracker.AdviseTrackProjectDocumentsEvents(this, &trackDocumentsHandle) |> ignore
 
-#if DESIGNER
-                //If this is a WPFFlavor-ed project, then add a project-level DesignerContext service to provide
-                //event handler generation (EventBindingProvider) for the XAML designer.
-                x.OleServiceProvider.AddService(typeof<DesignerContext>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
-#endif                
 
                 
             /// Returns the outputfilename based on the output type
@@ -684,23 +615,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 let outputType = ParseEnum<OutputType>(outputTypeAsString) 
 
                 assemblyName + GetOutputExtension(outputType)
-
-#if DESIGNER
-            /// Retreive the CodeDOM provider
-            member this.CodeDomProvider : IVSMDCodeDomProvider =
-                    if (codeDomProvider= null) then 
-                        codeDomProvider <- (new VSMDFSharpProvider(this.VSProject) :> IVSMDCodeDomProvider)
-                    codeDomProvider
-
-            member this.DesignerContext : Microsoft.Windows.Design.Host.DesignerContext  =
-                    if (designerContext= null) then 
-                        designerContext <- new DesignerContext()
-                        //Set the RuntimeNameProvider so the XAML designer will call it when items are added to
-                        //a design surface. Since the provider does not depend on an item context, we provide it at 
-                        //the project level.
-                        designerContext.RuntimeNameProvider <- new FSharpRuntimeNameProvider()
-                    designerContext
-#endif
 
             /// Get the VSProject corresponding to this project
             member this.VSProject : VSLangProj.VSProject  = 
@@ -883,10 +797,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         typeof<FSharpDebugPropPageComClass>.GUID 
                         typeof<FSharpReferencePathsPropPageComClass>.GUID 
                     |] (VSHiveUtilities.getPriorityExtendedPropertyPages())
-#if DESIGNER
-            override x.GetAutomationObject() =
-                new OAFSharpProject(this) |> box
-#endif
 
             /// Overriding to provide customization of files on add files.
             /// This will replace tokens in the file with actual value (namespace, class name,...)
@@ -987,11 +897,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 let newNode = new FSharpFileNode(this, item, hierarchyId)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.Project>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.ProjectItem>, newNode.ServiceCreator, false)
-#if DESIGNER                
-                if not (String.IsNullOrEmpty(includ) && Path.GetExtension(includ).Equals(".xaml", StringComparison.OrdinalIgnoreCase)) then 
-                    //Create a DesignerContext for the XAML designer for this file
-                    newNode.OleServiceProvider.AddService(typeof<DesignerContext>, newNode.ServiceCreator, false)
-#endif
                 newNode.OleServiceProvider.AddService(typeof<VSLangProj.VSProject>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
                 if (FSharpProjectNode.IsCompilingFSharpFile(includ)) then 
                     newNode.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
@@ -1407,15 +1312,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             
             /// Creates the services exposed by this project.
             member x.CreateServices(serviceType:Type) =
-#if DESIGNER
-                if (typeof<SVSMDCodeDomProvider> = serviceType) then 
-                    this.CodeDomProvider |> box
-                else if (typeof<System.CodeDom.Compiler.CodeDomProvider> = serviceType) then 
-                    this.CodeDomProvider.CodeDomProvider
-                else if (typeof<DesignerContext> = serviceType) then 
-                    this.DesignerContext |> box
-                else 
-#endif
                 if (typeof<VSLangProj.VSProject> = serviceType) then 
                     this.VSProject |> box
                 else if (typeof<EnvDTE.Project> = serviceType) then 
@@ -1439,9 +1335,13 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 Trace.PrintLine("ProjectSystem", fun _ -> sprintf "Called InvokeMsBuild(%s), result: %A" target result)
 #endif
                 result
-            
+
             // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
+#if FX_NO_CONVERTER
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
+#else
             member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+#endif
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1458,10 +1358,14 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
                 if actuallyBuild then
+#if FX_NO_CONVERTER
+                    compile.Invoke()
+#else
                     compile.Invoke(0)
+#endif
                 else
                     0
-            
+
             // returns an array of all "foo"s of form: <Compile Include="foo"/>
             member private x.ComputeCompileItems() =
                 FSharpProjectNode.ComputeCompileItems(x.BuildProject, x.ProjectFolder)
@@ -1745,31 +1649,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     // initialize output params
                     result <- null
                     VSConstants.E_NOTIMPL
-
-#if DESIGNER
-                    //Validate input
-                    if (String.IsNullOrEmpty(mkDocument)) then 
-                        raise <| ArgumentException("Was null or empty", "mkDocument")
-
-                    // Make sure that the document moniker passed to us is part of this project
-                    // We also don't care if it is not a F# file node
-                    let mutable itemid = 0u
-                    ErrorHandler.ThrowOnFailure(x.ParseCanonicalName(mkDocument, &itemid)) |> ignore
-                    let hierNode = x.NodeFromItemId(itemid)
-                    if ((hierNode= null) || not (hierNode :? FSharpFileNode)) then
-                        VSConstants.E_NOTIMPL
-                    else
-                        begin match (propid) with 
-                          | i when i = int32 __VSPSEPROPID.VSPSEPROPID_UseGlobalEditorByDefault -> 
-                                // we do not want to use global editor for form files
-                                result <- box true
-                          | i when i = int32 __VSPSEPROPID.VSPSEPROPID_ProjectDefaultEditorName -> 
-                                result <- box "FSharp Form Editor"
-                          | _ -> ()
-                        end
-
-                        VSConstants.S_OK
-#endif
 
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
                     // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
@@ -2106,32 +1985,32 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
        | ApplicationDefinition = 4
        | Page = 5
        | Resource  = 6
-       
+
     and public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
         inherit PropertyDescriptor(prop)
-        
+
         override this.DisplayName = SR.BuildAction
-        
+
         override this.ComponentType = typeof<FSharpFileNodeProperties>
-        
+
         override this.PropertyType = typeof<VSLangProj.prjBuildAction>
-        
+
         override this.IsReadOnly = false
-        
+
         override this.GetEditor(editorBaseType : Type) = this.CreateInstance(editorBaseType)
-        
+
         override this.Converter = null
-        
+
         override this.CanResetValue(o : obj) = prop.CanResetValue(o)
-        
+
         override this.GetValue (o : obj) =
             prop.GetValue(o)
-            
+
         override this.SetValue (o : obj, value : obj) =
             prop.SetValue(o, value)
-        
+
         override this.ResetValue (o : obj) = prop.ResetValue(o)
-        
+
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
     and 
@@ -2190,13 +2069,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                            | :? IOleServiceProvider as x -> x
                            | _ -> null
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
-                Some(new SelectionElementValueChangedListener(sp, root))
-
-#if DESIGNER            
-            let mutable vsProjectItem : OAVSProjectItem  = null
-            let mutable automationObject : OAFSharpFileItem  option = None
-            let mutable designerContext : DesignerContext  = null
-#endif
+                Some(new SelectionElementValueChangedListener(sp))
 
             do selectionChangedListener.Value.Init()
                         
@@ -2250,23 +2123,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 with get() = x.ItemNode.GetMetadata(ProjectFileConstants.SubType)
                 and set(value) = x.ItemNode.SetMetadata(ProjectFileConstants.SubType, value)
 
-#if DESIGNER
-            member x.VSProjectItem = 
-                    if (null = vsProjectItem) then
-                        vsProjectItem <- new OAVSProjectItem(x)
-                    vsProjectItem
-
-            member x.DesignerContext : Microsoft.Windows.Design.Host.DesignerContext  =
-                if (designerContext= null) then 
-                    designerContext <- new DesignerContext()
-                    //Set the EventBindingProvider for this XAML file so the designer will call it
-                    //when event handlers need to be generated
-                    designerContext.EventBindingProvider <- new FSharpEventBindingProvider(x.Parent.FindChild(x.Url.Replace(".xaml", ".fs")) :?> FSharpFileNode)
-                designerContext
-
-            override x.Object = x.VSProjectItem |> box
-#endif
-
             override x.CreatePropertiesObject() =
                 let properties = new FSharpFileNodeProperties(x)
                 (properties :> NodeProperties)
@@ -2289,13 +2145,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 finally
                     base.Dispose(disposing)                
 
-#if DESIGNER
-            /// Returns an FSharp FileNode specific object implmenting DTE.ProjectItem
-            override x.GetAutomationObject() =
-                if automationObject.IsNone then
-                    automationObject <- Some(new OAFSharpFileItem((x.ProjectMgr.GetAutomationObject() :?> OAProject), x))
-                automationObject |> box
-#endif
             override x.ImageIndex =
                     if (x.IsFormSubType) then 
                         int32 ProjectNode.ImageName.WindowsForm
@@ -2682,10 +2531,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             member x.CreateServices(serviceType:Type ) =
                 if (typeof<EnvDTE.ProjectItem> = serviceType) then 
                     x.GetAutomationObject()
-#if DESIGNER                    
-                else if (typeof<DesignerContext> = serviceType) then 
-                    x.DesignerContext |> box
-#endif                    
                 else 
                     null
 
@@ -2698,25 +2543,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 new(project:ProjectNode, referencedProjectName:string, projectPath:string, projectReference:string) =
                     { inherit ProjectReferenceNode(project, referencedProjectName, projectPath, projectReference) }
 
-            
-                /// Checks if a reference can be added to the project. 
-                /// It calls base to see if the reference is not already there,
-                /// and that it is not circular reference.
-                /// If the target project is a a FSharp Project we can not add the project reference 
-                /// because this scenario is not supported.
-            
-                /// <param name="errorHandler">The error handler delegate to return</param>
-               /// <returns>false if reference cannot be added, otherwise true</returns>
-                override x.CheckIfCanAddReference() =
-#if DESIGNER                    
-                    //If source project has designer files of subtype form and if the target output (assembly) does not exists 
-                    //show a dialog that tells the user to build the target project before the project reference can be added
-                    if not (Internal.Utilities.FileSystem.File.SafeExists(x.ReferencedProjectOutputPath)) && x.HasFormItems() then
-                        AddReferenceCheckResult.Failed(FSharpSR.ProjectReferenceError2)
-                    else
-#endif
-                        base.CheckIfCanAddReference()
-            
                 /// Evaluates all fsharpfilenode children of the project and returns true if anyone has subtype set to Form
             
                 /// <returns>true if a fsharpfilenode with subtype Form is found</returns>
@@ -2753,479 +2579,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.CreateProjectReferenceNode(selectorData:VSCOMPONENTSELECTORDATA) =
                 (new FSharpProjectReferenceNode(x.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef) :> ProjectReferenceNode)
 
-    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider, projMgr:ProjectNode ) =
+    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
             inherit SelectionListener(serviceProvider)
 
-            override x.OnElementValueChanged(elementid:uint32, varValueOld:obj, _varValueNew:obj) =
-                let mutable hr = VSConstants.S_OK
-                if (elementid = VSConstants.DocumentFrame) then 
-                    let pWindowFrame = varValueOld :?> IVsWindowFrame
-                    if (pWindowFrame <> null) then 
-                        let mutable document : obj = null
-                        // Get the name of the document associated with the old window frame
-                        hr <- pWindowFrame.GetProperty(int32 __VSFPROPID.VSFPROPID_pszMkDocument, &document)
-                        if (ErrorHandler.Succeeded(hr)) then 
-                            let mutable itemid = 0u
-                            let hier = (box projMgr :?> IVsHierarchy)
-                            hr <- hier.ParseCanonicalName((document :?> string), &itemid)
-                            match projMgr.NodeFromItemId(itemid) with 
-                            | :? FSharpFileNode as node -> 
-                                ignore(node)
-                            | _ -> 
-                                ()
-                hr
+            override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
 
-#if DESIGNER
-    and [<Guid(GuidList.guidEditorFactoryString)>]
-        internal EditorFactory(package :FSharpProjectPackage) = class  
-          
-            let mutable serviceProvider : ServiceProvider = null
-
-            let  GetTextBuffer(docDataExisting:System.IntPtr ) : IVsTextLines  = 
-                if (docDataExisting = IntPtr.Zero) then 
-                    // Create a new IVsTextLines buffer.
-                    let textLinesType = typeof<IVsTextLines>
-                    let mutable riid = textLinesType.GUID
-                    let mutable clsid = typeof<VsTextBufferClass>.GUID
-                    let textLines = package.CreateInstance(&clsid, &riid, textLinesType) :?> IVsTextLines
-
-                    // set the buffer's site
-                    (box textLines :?> IObjectWithSite).SetSite(GetService<IOleServiceProvider>(serviceProvider :> IServiceProvider))
-                    textLines 
-                    
-                else
-                    // Use the existing text buffer
-                    let dataObject = Marshal.GetObjectForIUnknown(docDataExisting)
-                    match dataObject with
-                    | :? IVsTextLines as textLines -> 
-                        textLines
-                    | :? IVsTextBufferProvider as textBufferProvider -> 
-                        // Try get the text buffer from textbuffer provider
-                        let hr, textLines = textBufferProvider.GetTextBuffer() 
-                        // REVIEW: ignoring failing HR here
-                        textLines
-                    | _ -> 
-                        // Unknown docData type then, so we have to force VS to close the other editor.
-                        ErrorHandler.ThrowOnFailure((int) VSConstants.VS_E_INCOMPATIBLEDOCDATA) |> ignore
-                        null
-
-            member private ef.CreateCodeView(textLines:IVsTextLines, editorCaption:byref<string>, cmdUI:byref<Guid>) =
-                let codeWindowType = typeof<IVsCodeWindow>
-                let mutable riid = codeWindowType.GUID
-                let mutable clsid = typeof<VsCodeWindowClass>.GUID
-                let window = package.CreateInstance(&clsid, &riid, codeWindowType) :?> IVsCodeWindow
-                ErrorHandler.ThrowOnFailure(window.SetBuffer(textLines)) |> ignore
-                ErrorHandler.ThrowOnFailure(window.SetBaseEditorCaption(null)) |> ignore
-                ErrorHandler.ThrowOnFailure(window.GetEditorCaption(READONLYSTATUS.ROSTATUS_Unknown, &editorCaption)) |> ignore
-                cmdUI <- VSConstants.GUID_TextEditorFactory
-                Marshal.GetIUnknownForObject(window)
-
-            member private ef.CreateFormView(hierarchy:IVsHierarchy, itemid:uint32, textLines:IVsTextLines, editorCaption:byref<string>, cmdUI:byref<Guid>) =
-                // Request the Designer Service
-                let designerService = GetService<IVSMDDesignerService>(serviceProvider :> IServiceProvider)
-            
-                // Create loader for the designer
-                let designerLoader = designerService.CreateDesignerLoader("Microsoft.VisualStudio.Designer.Serialization.VSDesignerLoader") :?> IVSMDDesignerLoader
-                
-                let mutable loaderInitalized = false
-                try
-                    let provider = GetService<IOleServiceProvider>(serviceProvider :> IServiceProvider)
-                    // Initialize designer loader 
-                    designerLoader.Initialize(provider, hierarchy, (int)itemid, textLines)
-                    loaderInitalized <- true
-
-                    // Create the designer
-                    let designer = designerService.CreateDesigner(provider, designerLoader)
-
-                    // Get editor caption
-                    editorCaption <- designerLoader.GetEditorCaption(int32 READONLYSTATUS.ROSTATUS_Unknown)
-
-                    // Get view from designer
-                    let docView = designer.View
-
-                    // Get command guid from designer
-                    cmdUI <- designer.CommandGuid
-
-                    Marshal.GetIUnknownForObject(docView)
-
-                with e -> 
-                    // The designer loader may have created a reference to the shell or the text buffer.
-                    // In case we fail to create the designer we should manually dispose the loader
-                    // in order to release the references to the shell and the textbuffer
-                    if (loaderInitalized) then
-                        designerLoader.Dispose()
-                    raise(e)
-
-
-            member private ef.CreateDocumentView(physicalView:string, hierarchy:IVsHierarchy, itemid:uint32, textLines:IVsTextLines, editorCaption:byref<string>, cmdUI:byref<Guid>) =
-                //Init out params
-                editorCaption <- String.Empty
-                cmdUI <- Guid.Empty
-                
-                if (String.IsNullOrEmpty(physicalView)) then 
-                    // create code window as default physical view
-                    ef.CreateCodeView(textLines, &editorCaption, &cmdUI)
-                else if (String.Compare(physicalView, "design", true, CultureInfo.InvariantCulture) = 0) then
-                    // Create Form view
-                    ef.CreateFormView(hierarchy, itemid, textLines, &editorCaption, &cmdUI)
-                else 
-                    // We couldn't create the view
-                    // Return special error code so VS can try another editor factory.
-                    ErrorHandler.ThrowOnFailure((int)VSConstants.VS_E_UNSUPPORTEDFORMAT) |> ignore
-
-                    IntPtr.Zero
-
-
-            interface IVsEditorFactory with 
-                member x.SetSite(psp: IOleServiceProvider) =
-                    serviceProvider <- new ServiceProvider(psp)
-                    VSConstants.S_OK
-
-                // This method is called by the Environment (inside IVsUIShellOpenDocument::
-                // OpenStandardEditor and OpenSpecificEditor) to map a LOGICAL view to a 
-                // PHYSICAL view. A LOGICAL view identifies the purpose of the view that is
-                // desired (e.g. a view appropriate for Debugging [LOGVIEWID_Debugging], or a 
-                // view appropriate for text view manipulation :?> by navigating to a find
-                // result [LOGVIEWID_TextView]). A PHYSICAL view identifies an actual type 
-                // of view implementation that an IVsEditorFactory can create. 
-                //
-                // NOTE: Physical views are identified by a string of your choice with the 
-                // one constraint that the default/primary physical view for an editor  
-                // *MUST* use a NULL string :?> its physical view name (*pbstrPhysicalView = NULL).
-                //
-                // NOTE: It is essential that the implementation of MapLogicalView properly
-                // validates that the LogicalView desired is actually supported by the editor.
-                // If an unsupported LogicalView is requested then E_NOTIMPL must be returned.
-                //
-                // NOTE: The special Logical Views supported by an Editor Factory must also 
-                // be registered in the local registry hive. LOGVIEWID_Primary is implicitly 
-                // supported by all editor types and does not need to be registered.
-                // For example, an editor that supports a ViewCode/ViewDesigner scenario
-                // might register something like the following:
-                //        HKLM\Software\Microsoft\VisualStudio\9.0\Editors\
-                //            {...guidEditor...}\
-                //                LogicalViews\
-                //                    {...LOGVIEWID_TextView...} = s ''
-                //                    {...LOGVIEWID_Code...} = s ''
-                //                    {...LOGVIEWID_Debugging...} = s ''
-                //                    {...LOGVIEWID_Designer...} = s 'Form'
-                //
-                member this.MapLogicalView(logicalView : Guid byref, physicalView : string byref) =
-                    // initialize out parameter
-                    physicalView <- null
-
-                    let isSupportedView = 
-                        // Determine the physical view
-                        if (VSConstants.LOGVIEWID_Primary = logicalView) then
-                            // primary view uses NULL :?> pbstrPhysicalView
-                            true
-                        else if (VSConstants.LOGVIEWID_Designer = logicalView) then
-                            physicalView <- "Design"
-                            true
-                        else
-                            false 
-
-                    if (isSupportedView) then
-                        VSConstants.S_OK
-                    else
-                        // E_NOTIMPL must be returned for any unrecognized rguidLogicalView values
-                        VSConstants.E_NOTIMPL
-
-                member this.Close() =
-                    VSConstants.S_OK
-
-                member this.CreateEditorInstance
-                              (createEditorFlags:uint32,
-                               documentMoniker:string,
-                               physicalView:string,
-                               hierarchy:IVsHierarchy,
-                               itemid:uint32,
-                               docDataExisting:System.IntPtr,
-                               docView : byref<System.IntPtr>,
-                               docData: byref<System.IntPtr>,
-                               editorCaption:byref<string>,
-                               commandUIGuid:byref<Guid>,
-                               createDocumentWindowFlags:byref<int>) =
-                    // Initialize output parameters
-                    docView <- IntPtr.Zero
-                    docData <- IntPtr.Zero
-                    commandUIGuid <- GuidList.guidEditorFactory
-                    createDocumentWindowFlags <- 0
-                    editorCaption <- null
-
-                    // Validate inputs
-                    if ((createEditorFlags &&& (VSConstants.CEF_OPENFILE ||| VSConstants.CEF_SILENT)) = 0u) then 
-                        VSConstants.E_INVALIDARG 
-                    else
-                    
-
-                    // Get a text buffer
-                    let textLines = GetTextBuffer(docDataExisting)
-
-                    // Assign docData IntPtr to either existing docData or the new text buffer
-                    if (docDataExisting <> IntPtr.Zero) then 
-                        docData <- docDataExisting
-                        Marshal.AddRef(docData) |> ignore
-                    else
-                        docData <- Marshal.GetIUnknownForObject(textLines)
-
-                    try
-                        docView <- this.CreateDocumentView(physicalView, hierarchy, itemid, textLines, &editorCaption, &commandUIGuid)
-                        VSConstants.S_OK
-                    finally
-                        if (docView = IntPtr.Zero) then
-                            if (docDataExisting <> docData && docData <> IntPtr.Zero) then 
-                                // Cleanup the instance of the docData that we have addref'ed
-                                Marshal.Release(docData) |> ignore
-                                docData <- IntPtr.Zero
-            end
-        end // class EditorFactory
-
-    and 
-
-    /// This class provides the event handler generation for the 
-    /// WPF designer. Note that this object is NOT required for languages
-    /// where the CodeDom is used for event handler generation. This is needed
-    /// in the case of FSharp due to limitations in the static compiler 
-    /// support.
-      FSharpEventBindingProvider(fsFile:FSharpFileNode ) = 
-        inherit EventBindingProvider()
-        let project = fsFile.ProjectMgr
-
-        /// This method will get the CodeDomDocDataAdapter corresponding to the active XAML file in
-        /// the designer.
-
-        /// <returns>The CodeDomDocDataAdapter for the .py file that corresponds to the active xaml file</returns>
-        let GetDocDataAdapterForFSharpFile() =
-            let codeDom = GetService2<SVSMDCodeDomProvider,IVSMDCodeDomProvider>(GetProvider(fsFile) :> IServiceProvider)
-            let project = (project :?> FSharpProjectNode) in
-            let data = new DocData(project.ProjectMgr.Site, fsFile.Url)
-            let cdDocDataAdapter = new CodeDomDocDataAdapter(project.ProjectMgr.Site, data)
-            cdDocDataAdapter
-
-        /// <returns>The CodeTypeDeclaration for the .py file that corresponds to the active xaml file</returns>
-        let GetCodeDomForFSharpFile() =
-            GetDocDataAdapterForFSharpFile().TypeDeclaration
-
-        let GetHandlersFromActiveFsharpFile(methodName:string ) =
-            let methods = new List<CodeTypeMember>()
-            //We expect that fsharp files that contain the event wiring for XAML files contain a namespace
-            //and a class.
-            for (memb:CodeTypeMember) in GetCodeDomForFSharpFile().Members do
-                //We just match on the element name here (e.g. button1_Click), not on parameters
-                if (memb.Name = methodName) then 
-                    methods.Add(memb)
-                    
-            methods
-
-        override x.AddEventHandler(eventDescription:EventDescription, objectName:string, methodName:string ) =
-            let Init = "__init__"
-            //This is not the most optimal solution for WPF since we will call FindLogicalNode for each event handler,
-            //but it simplifies the code generation for now.
-
-            let adapter = GetDocDataAdapterForFSharpFile()
-
-            //Find the __init__ method
-            let meth  =
-                let searchResult = 
-                    seq { for x in adapter.TypeDeclaration.Members -> x }
-                    |> Seq.tryFind  (fun (ctMember:CodeTypeMember ) -> (ctMember :? CodeConstructor) && (ctMember.Name = Init)) 
-                match  searchResult with 
-                | None -> (new CodeConstructor(Name=Init) :> CodeMemberMethod)
-                | Some ctMember -> (ctMember :?> CodeMemberMethod) in
-
-            //Create a code statement which looks like: LogicalTreeHelper.FindLogicalNode(self.Root, "button1").Click += self.button1_Click
-            failwith "AddEventHandler: NYI"
-            assert false
-            (*
-            let logicalTreeHelper = new CodeTypeReferenceExpression("LogicalTreeHelper")
-            let findLogicalNodeMethod = new CodeMethodReferenceExpression(logicalTreeHelper, "FindLogicalNode")
-            let selfWindow = new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), "Root")
-            let findLogicalNodeInvoke = new CodeMethodInvokeExpression( findLogicalNodeMethod, selfWindow.ToString(), new CodeSnippetExpression("\'" + objectName + "\'"))
-            let createDelegateExpression = new CodeDelegateCreateExpression(new CodeTypeReference("System.EventHandler"), new CodeThisReferenceExpression(), methodName)
-            let attachEvent = new CodeAttachEventStatement(findLogicalNodeInvoke, eventDescription.Name, createDelegateExpression)
-            meth.Statements.Add(attachEvent)
-            adapter.Generate()
-            *)
-            
-
-        override x.AllowClassNameForMethodName() =
-            true
-
-        override x.CreateMethod(eventDescription:EventDescription, methodName:string ) =
-            let meth = new CodeMemberMethod()
-            meth.Name <- methodName
-            
-            for (param:EventParameter) in eventDescription.Parameters do
-                meth.Parameters.Add(new CodeParameterDeclarationExpression(param.TypeName, param.Name))  |> ignore
-
-            //Finally, add the new method to the class
-            let adapter = GetDocDataAdapterForFSharpFile()
-            adapter.TypeDeclaration.Members.Add(meth) |> ignore
-            adapter.Generate()
-            true
-
-        override x.CreateUniqueMethodName(objectName:string, eventDescription:EventDescription ) =
-            let originalMethodName = String.Format(CultureInfo.InvariantCulture, "{0}_{1}", [| box objectName; box eventDescription.Name |])
-            let mutable methodName = originalMethodName
-
-            let mutable methods = GetHandlersFromActiveFsharpFile(String.Format(CultureInfo.InvariantCulture, "{0}_{1}", [| box objectName; box eventDescription.Name |]))
-            while (methods.Count > 0) do
-                //Try to append a _# at the end until we find an unused method name
-                let matchRes = Regex.Match(methodName, @"_\d+$")
-                if not (matchRes.Success) then 
-                    methodName <- originalMethodName + "_1"
-                else
-                    let nextValue = Int32.Parse(matchRes.Value.Substring(1)) + 1
-                    methodName <- String.Format(CultureInfo.InvariantCulture, "{0}_{1}", [| box originalMethodName; box nextValue |])
-                methods <- GetHandlersFromActiveFsharpFile(methodName)
-
-            methodName
-
-        override x. GetCompatibleMethods(eventDescription:EventDescription ) =
-            raise <| NotImplementedException()
-
-        override x.GetMethodHandlers(eventDescription:EventDescription, objectName:string) =
-           [| for ( memb:CodeTypeMember) in GetCodeDomForFSharpFile().Members do
-                if (memb :? CodeConstructor) then
-                    let ctor = memb :?> CodeConstructor
-                    for (statement:CodeStatement)  in ctor.Statements do
-                        if (statement :? CodeAttachEventStatement) then
-                            let codeAttach = statement :?> CodeAttachEventStatement
-                            //Skip if this is not the event that the designer is looking for.
-                            if not(codeAttach.Event.EventName <> eventDescription.Name) then
-                                if (codeAttach.Event.TargetObject :? CodeMethodInvokeExpression) then
-                                    let findLogNode = codeAttach.Event.TargetObject :?> CodeMethodInvokeExpression
-                                    if (findLogNode.Parameters.Count >= 2) then
-                                        if (findLogNode.Parameters.[1] :? CodePrimitiveExpression) then
-                                            let targetObjectName = (findLogNode.Parameters.[1] :?> CodePrimitiveExpression).Value.ToString().Trim([| '"' |])
-                                            if(targetObjectName.Equals(objectName, StringComparison.Ordinal)) then 
-                                                if (codeAttach.Listener :? CodeDelegateCreateExpression) then 
-                                                    yield ((codeAttach.Listener :?> CodeDelegateCreateExpression).MethodName) |] 
-            |> Seq.readonly
-
-        override x.IsExistingMethodName(eventDescription:EventDescription, methodName:string) =
-            let elements = GetHandlersFromActiveFsharpFile(methodName)
-            elements.Count <> 0
-
-        override x.RemoveEventHandler(eventDescription:EventDescription, objectName:string, methodName:string) =
-            raise <| NotImplementedException()
-
-        override x.RemoveMethod(eventDescription:EventDescription, methodName:string) =
-            raise <| NotImplementedException()
-
-        override x.SetClassName(className:string) = 
-            ()
-
-        override x.ShowMethod(eventDescription:EventDescription, methodName:string) =
-            let adapter = GetDocDataAdapterForFSharpFile()
-            let methodsToShow = GetHandlersFromActiveFsharpFile(methodName)
-            if (methodsToShow= null || methodsToShow.Count < 1) then
-                false
-            else
-
-                let mutable point = new Point()
-                if (methodsToShow.[0] <> null) then 
-                    //We can't navigate to every method, so just take the first one in the list.
-                    let pt = methodsToShow.[0].UserData.[ box(typeof<Point>) ]
-                    if (pt <> null) then 
-                        point <- (pt :?> Point)
-                //Get IVsTextManager to navigate to the code
-                let mgr = (Package.GetGlobalService(typeof<VsTextManagerClass>) :?> IVsTextManager)
-                let mutable logViewCode = VSConstants.LOGVIEWID_Code
-                ErrorHandler.Succeeded(mgr.NavigateToLineAndColumn(adapter.DocData.Buffer, &logViewCode, point.Y - 1, point.X, point.Y - 1, point.X))
-
-        override x.ValidateMethodName(eventDescription:EventDescription, methodName:string) =
-            ()
-
-
-    and FSharpRuntimeNameProvider() = 
-            inherit RuntimeNameProvider()
-            override x.CreateValidName(proposal:string ) = proposal
-            override x.IsExistingName(name:string ) = 
-                //We will get uniqueness in the XAML file via the matchScope predicate.
-                //In a more complete implementation, this method would verify that there isn't
-                //a member in the code behind file with the given name.
-                false
-
-            override x.NameFactory = (new FSharpRuntimeNameFactory() :> RuntimeNameFactory)
-
-    and 
-
-      [<Serializable>]
-      FSharpRuntimeNameFactory() = 
-        inherit RuntimeNameFactory()
-        override x.CreateUniqueName(itemType:Type, proposedName:string, matchScope:Predicate<string>, rootScope:bool, provider:RuntimeNameProvider ) =
-            if (null = itemType) then raise <| ArgumentNullException("itemType")
-            if (null = matchScope) then raise <| ArgumentNullException("matchScope")
-            if (null = provider) then raise <| ArgumentNullException("provider")
-
-            let mutable name = null
-            let mutable baseName = proposedName
-
-            if (String.IsNullOrEmpty(baseName)) then 
-                baseName <- TypeDescriptor.GetClassName(itemType)
-                let lastDot = baseName.LastIndexOf('.')
-                if (lastDot <> -1) then 
-                    baseName <- baseName.Substring(lastDot + 1)
-
-                // Names should start with a lower-case character
-                baseName <- System.Char.ToLower(baseName.[0], CultureInfo.InvariantCulture).ToString() + baseName.Substring(1)
-
-            let mutable idx = 1
-            let mutable isUnique = false
-            while not (isUnique) do
-                name <- String.Format(CultureInfo.InvariantCulture, "{0}{1}", [| box baseName; box idx |])
-                idx <- idx + 1
-
-                // Test for uniqueness
-                isUnique <- not (matchScope.Invoke(name))
-
-                let tempName = name
-                name <- provider.CreateValidName(tempName)
-
-                if not (String.Equals(name, tempName, StringComparison.Ordinal)) then 
-                    // RNP has changed the name, test again for uniqueness
-                    isUnique <- not (matchScope.Invoke(name))
-
-                if (isUnique && rootScope) then 
-                    // Root name scope means we have to let the RNP test for uniqueness too
-                    isUnique <- not (provider.IsExistingName(name))
-            name
-
-    and /// Add support for automation on py files.
-        [<ComVisible(true)>]
-        [<Guid("F88F0B48-A3BA-4069-B465-AA4C8F92ECD7")>]
-        public OAFSharpFileItem(project:OAProject, node:FileNode) = 
-            inherit OAFileItem(project, node) 
-            let mutable codeModel : EnvDTE.FileCodeModel = null
-
-            override this.FileCodeModel : EnvDTE.FileCodeModel  = 
-                match codeModel with 
-                | null -> 
-                    if this.Node = null then null else
-                    if this.Node.OleServiceProvider = null then null else
-                    let sp = new ServiceProvider(this.Node.OleServiceProvider)
-                    match TryGetService2<SVSMDCodeDomProvider,IVSMDCodeDomProvider>(sp :> IServiceProvider)  with
-                    | None -> null
-                    | Some(smdProvider) -> 
-                        let provider = (smdProvider.CodeDomProvider :?> CodeDomProvider)
-                        codeModel <- FSharpCodeModelFactory.CreateFileCodeModel((box this :?> EnvDTE.ProjectItem), provider, this.Node.Url)
-                        codeModel    
-                | _ -> codeModel
-                
-            override this.Open(viewKind: string) : EnvDTE.Window  = 
-              if (String.Compare(viewKind, EnvDTE.Constants.vsViewKindPrimary) = 0) &&
-                  // Get the subtype and decide the viewkind based on the result
-                 ((this.Node :?> FSharpFileNode).IsFormSubType) then 
-                  base.Open(EnvDTE.Constants.vsViewKindDesigner)
-              else
-                  base.Open(viewKind)
-
-    and [<ComVisible(true)>]
-        public OAFSharpProject(fsharpProject:FSharpProjectNode) =
-            inherit OAProject(fsharpProject)
-
-            override x.CodeModel : EnvDTE.CodeModel =
-                FSharpCodeModelFactory.CreateProjectCodeModel(x)
-#endif
