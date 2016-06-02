@@ -684,7 +684,6 @@ type ILInstr =
 type ILInstrSetExtension<'Extension> = 
     { instrExtDests: ('Extension -> ILCodeLabel list);
       instrExtFallthrough: ('Extension -> ILCodeLabel option);
-      instrExtIsTailcall: ('Extension -> bool);
       instrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> 'Extension -> 'Extension; }
 
 val RegisterInstructionSetExtension: ILInstrSetExtension<'Extension> -> ('Extension -> IlxExtensionInstr) * (IlxExtensionInstr -> bool) * (IlxExtensionInstr -> 'Extension)

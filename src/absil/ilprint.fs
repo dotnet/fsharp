@@ -805,11 +805,6 @@ let rec goutput_instr env os inst =
           goutput_cuspec env os ty;
           output_string os ",";  
           output_parens (output_seq "," (fun os (x,y) -> output_int os x;  output_string os ",";  output_code_label os y)) os l
-      |  (EI_callfunc (tl,cs)) -> 
-          output_tailness os tl; 
-          output_string os "callfunc "; 
-          goutput_apps env os cs;
-          output_after_tailcall os tl;
   | _ -> 
       output_string os "<printing for this instruction is not implemented>"
 
