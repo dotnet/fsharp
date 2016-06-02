@@ -11,9 +11,9 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 val ConvModule: ILGlobals -> ILModuleDef -> ILModuleDef 
 
 type cenv
-val instrsForCallFunc : cenv -> allocLocal:(ILType -> uint16) -> numThisGenParams:int -> ILTailcall -> IlxClosureApps -> ILInstr list
+val mkCallFunc : cenv -> allocLocal:(ILType -> uint16) -> numThisGenParams:int -> ILTailcall -> IlxClosureApps -> ILInstr list
 
 val mkILFuncTy : cenv -> ILType -> ILType -> ILType
 val mkILTyFuncTy : cenv -> ILType
-val new_cenv : ILGlobals -> cenv
+val newIlxPubCloEnv : ILGlobals -> cenv
 val mkTyOfLambdas: cenv -> IlxClosureLambdas -> ILType
