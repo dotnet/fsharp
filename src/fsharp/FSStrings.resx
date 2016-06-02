@@ -892,7 +892,7 @@
     <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
   </data>
   <data name="UnitTypeExpected1" xml:space="preserve">
-    <value>This expression should have type 'unit', but has type '{0}'. Use 'ignore' to discard the result of the expression, or 'let' to bind the result to a name.</value>
+    <value>This expression has a value of type '{0}' that is implicitly ignored. Use the 'ignore' function to discard this value explicitly, e.g. 'expr |> ignore', or bind it to a name to refer to it later, e.g. 'let result = expr'.</value>
   </data>
   <data name="UnitTypeExpected2" xml:space="preserve">
     <value>This expression should have type 'unit', but has type '{0}'. If assigning to a property use the syntax 'obj.Prop &lt;- expr'.</value>
