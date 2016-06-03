@@ -83,6 +83,7 @@ let parseOctalUInt64 (s:string) p l =
     parse p 0UL
 
 let parseInt32 (s:string) = 
+    let s = s.Replace("_", "")
     let l = s.Length 
     let mutable p = 0 
     let sign = getSign32 s &p l 
@@ -175,11 +176,12 @@ let anychar = [^'\n''\r']
 let anystring = anychar*
 let op_char = '!'|'$'|'%'|'&'|'*'|'+'|'-'|'.'|'/'|'<'|'='|'>'|'?'|'@'|'^'|'|'|'~'|':'
 let ignored_op_char = '.' | '$' | '?'
+let seperator = '_'
 let xinteger = 
-  (  '0' ('x'| 'X')  hex + 
-   | '0' ('o'| 'O')  (['0'-'7']) + 
-   | '0' ('b'| 'B')  (['0'-'1']) + )
-let integer = digit+
+  (  '0' ('x'| 'X')  hex ((hex | seperator)* hex)?
+   | '0' ('o'| 'O')  (['0'-'7']) (((['0'-'7']) | seperator)* (['0'-'7']))?
+   | '0' ('b'| 'B')  (['0'-'1']) (((['0'-'1']) | seperator)* (['0'-'1']))?)
+let integer = digit ((digit | seperator)* digit)?
 let int8 = integer 'y'
 let uint8 = (xinteger | integer) 'u' 'y' 
 let int16 = integer 's'
@@ -196,8 +198,8 @@ let xint8 = xinteger 'y'
 let xint16 = xinteger 's'
 let xint = xinteger 
 let xint32 = xinteger 'l'
-let floatp = digit+ '.' digit*  
-let floate = digit+ ('.' digit* )? ('e'| 'E') ['+' '-']? digit+
+let floatp = digit ((digit | seperator)* digit)? '.' (digit (digit | seperator)*)?  
+let floate = digit ((digit | seperator)* digit)? ('.' (digit (digit | seperator)*)? )? ('e'| 'E') ['+' '-']? digit (digit | seperator)*
 let float = floatp | floate 
 let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 let ieee64 = float

@@ -2507,7 +2507,7 @@ namespace Microsoft.FSharp.Core
         let ParseUInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
                 raise( new System.ArgumentNullException("s") )
-            let s = s.Trim() 
+            let s = s.Replace("_", "").Trim() 
             let l = s.Length 
             let mutable p = 0 
             let specifier = get0OXB s &p l 
@@ -2524,7 +2524,7 @@ namespace Microsoft.FSharp.Core
         let ParseInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
                 raise( new System.ArgumentNullException("s") )
-            let s = s.Trim() 
+            let s = s.Replace("_", "").Trim() 
             let l = s.Length 
             let mutable p = 0 
             let sign = getSign32 s &p l 
@@ -2543,7 +2543,7 @@ namespace Microsoft.FSharp.Core
         let ParseInt64 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
                 raise( new System.ArgumentNullException("s") )
-            let s = s.Trim() 
+            let s = s.Replace("_", "").Trim() 
             let l = s.Length 
             let mutable p = 0 
             let sign = getSign64 s &p l 
@@ -2562,7 +2562,7 @@ namespace Microsoft.FSharp.Core
         let ParseUInt64     (s:string) : uint64 = 
             if System.Object.ReferenceEquals(s,null) then
                 raise( new System.ArgumentNullException("s") )
-            let s = s.Trim() 
+            let s = s.Replace("_", "").Trim() 
             let l = s.Length 
             let mutable p = 0 
             let specifier = get0OXB s &p l 
@@ -4144,8 +4144,8 @@ namespace Microsoft.FSharp.Core
         let inline ParseUInt16 (s:string)     = (# "conv.ovf.u2" (ParseUInt32 s) : uint16 #)
         let inline ParseIntPtr (s:string)  = (# "conv.ovf.i"  (ParseInt64 s)  : nativeint #)
         let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
-        let inline ParseDouble (s:string)   = Double.Parse(s,NumberStyles.Float, CultureInfo.InvariantCulture)
-        let inline ParseSingle (s:string) = Single.Parse(s,NumberStyles.Float, CultureInfo.InvariantCulture)
+        let inline ParseDouble (s:string)   = Double.Parse(s.Replace("_", ""),NumberStyles.Float, CultureInfo.InvariantCulture)
+        let inline ParseSingle (s:string) = Single.Parse(s.Replace("_", ""),NumberStyles.Float, CultureInfo.InvariantCulture)
             
 
         [<NoDynamicInvocation>]
