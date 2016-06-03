@@ -117,19 +117,13 @@ type IlxClosureSpec =
 
 type IlxInstr = 
   // Discriminated unions
-  | EI_lddata of avoidHelpers:bool * IlxUnionSpec * int * int
-  | EI_isdata of avoidHelpers:bool * IlxUnionSpec * int
-  | EI_brisdata of avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel
   | EI_castdata of bool * IlxUnionSpec * int
-  | EI_stdata of IlxUnionSpec * int * int
   | EI_datacase of avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel
   | EI_lddatatag of avoidHelpers:bool * IlxUnionSpec
-  | EI_newdata of IlxUnionSpec * int
   
 
 let destinations i =
   match i with 
-  |  (EI_brisdata (_,_,_,l1,l2)) ->  [l1; l2]
   |  (EI_datacase (_,_,ls,l)) -> 
         let hashSet = System.Collections.Generic.HashSet<_>(HashIdentity.Structural)
         [yield l
@@ -140,13 +134,11 @@ let destinations i =
 
 let fallthrough i = 
   match i with 
-  |  (EI_brisdata (_,_,_,_,l)) 
   |  (EI_datacase (_,_,_,l)) -> Some l
   | _ -> None
 
 let remapIlxLabels lab2cl i = 
   match i with 
-    | EI_brisdata (z,a,b,l1,l2) -> EI_brisdata (z,a,b,lab2cl l1,lab2cl l2)
     | EI_datacase (z,x,ls,l) -> EI_datacase (z,x,List.map (fun (y,l) -> (y,lab2cl l)) ls, lab2cl l)
     | _ -> i
 
