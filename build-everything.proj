@@ -21,7 +21,7 @@
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
-    <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-deployment-build.proj" />
+    <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +37,10 @@
     <ProjectsWithCoreClr Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_CORECLR)'=='1'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <SetupProjects Include="setup/fsharp-setup-build.proj" Condition="'$(BUILD_SETUP)'=='1'" />
+  </ItemGroup>
+  
   <Target Name="Build">
     <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
@@ -44,6 +48,7 @@
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
   </Target>
 
   <Target Name="Rebuild">
@@ -53,6 +58,7 @@
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
   </Target>
 
   <Target Name="Clean">
@@ -62,5 +68,6 @@
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
     <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
   </Target>
 </Project>
