@@ -82,8 +82,11 @@ let parseOctalUInt64 (s:string) p l =
     let rec parse n acc = if n < l then parse (n+1) (acc * 8UL + (let c = s.[n] in if c >= '0' && c <= '7' then Convert.ToUInt64 c - Convert.ToUInt64 '0' else formatError())) else acc 
     parse p 0UL
 
+let inline removeUnderscores (s:string) =
+    s.Replace("_", "")
+
 let parseInt32 (s:string) = 
-    let s = s.Replace("_", "")
+    let s = removeUnderscores s
     let l = s.Length 
     let mutable p = 0 
     let sign = getSign32 s &p l 
