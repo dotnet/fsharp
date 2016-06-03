@@ -763,15 +763,6 @@ let rec goutput_instr env os inst =
           goutput_cuspec env os ty;
           output_string os ",";
           output_int os n
-      |  (EI_brisdata (_,ty,n,tg1,_)) -> 
-          output_string os "brisdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_string os "(";  
-          output_int os n;
-          output_string os ",";  
-          output_code_label os tg1;
-          output_string os ")"
       | (EI_lddatatag (_,ty)) -> 
           output_string os "lddatatag "; 
           goutput_cuspec env os ty
