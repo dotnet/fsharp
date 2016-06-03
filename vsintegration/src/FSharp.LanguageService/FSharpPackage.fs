@@ -8,6 +8,7 @@ open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
 
 
@@ -16,7 +17,22 @@ open Microsoft.VisualStudio.OLE.Interop
 [<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
 type internal SVsSettingsPersistenceManager = class end
 
-[<Guid("871D2A70-12A2-4e42-9440-425DD92A4116")>]
+[<Guid(FSharpConstants.packageGuidString)>]
+[<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
+                         strLanguageName = FSharpConstants.fsharpLanguageName,
+                         languageResourceID = 100,
+                         MatchBraces = true,
+                         MatchBracesAtCaret = true,
+                         ShowCompletion = true,
+                         ShowMatchingBrace = true,
+                         ShowSmartIndent = true,
+                         EnableAsyncCompletion = true,
+                         QuickInfo = true,
+                         DefaultToInsertSpaces  = true,
+                         CodeSense = true,
+                         DefaultToNonHotURLs = true,
+                         EnableCommenting = true,
+                         CodeSenseDelay = 100)>]
 type internal FSharpPackage() as self =
     inherit Package()
     

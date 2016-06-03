@@ -145,38 +145,38 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<ComVisible(true)>]
     [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.None)>]
     type public IVsMicrosoftInstalledProduct =
-            inherit IVsInstalledProduct
-            abstract IdBmpSplashM : byref<uint32> -> unit
-            abstract OfficialNameM : on : byref<string> -> unit
-            abstract ProductIDM : pid : byref<string> -> unit
-            abstract ProductDetailsM : pd : byref<string> -> unit
-            abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
-            abstract ProductRegistryName : prn : byref<string> -> unit
+        inherit IVsInstalledProduct
+        abstract IdBmpSplashM : byref<uint32> -> unit
+        abstract OfficialNameM : on : byref<string> -> unit
+        abstract ProductIDM : pid : byref<string> -> unit
+        abstract ProductDetailsM : pd : byref<string> -> unit
+        abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
+        abstract ProductRegistryName : prn : byref<string> -> unit
 
-(*
-See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools" Value="#6000" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
+    exception internal ExitedOk
+    exception internal ExitedWithError
 
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools\F# Interactive" Value="#6001" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-    <Registry Name="Page" Value="{4489e9de-6ac1-3cd6-bff8-a904fd0e82d4}" Type="string" />
-  </Registry>
+    //--------------------------------------------------------------------------------------
+    // The big mutually recursive set of types.
+    //    FSharpProjectPackage
+    //    EditorFactory
+    //    FSharpProjectFactory
+    //    ....
 
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\AutomationProperties\F# Tools\F# Interactive">
-    <Registry Name="Name" Value="F# Tools.F# Interactive" Type="string" />
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-*)
-
-    (* NOTE: search for FSHARP-TOOLS-INTERACTIVE-LINK *)                            
-    (* NOTE: the cat/sub-cat names appear in an error message in sessions.ml, fix up any changes there *)
-    // true = supports automation
-    [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,"F# Tools", "F# Interactive",6000s, 6001s, true)>]                         
+    [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
+                        "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
+                        6000s,      6001s,              // resource id for localisation of the above
+                        true)>]                         // true = supports automation
     [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-    // The following should place the ToolWindow with the OutputWindow by default, where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
-    [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, Orientation=ToolWindowOrientation.Bottom, Style=VsDockStyle.Tabbed, PositionX = 0, PositionY = 0, Width = 360, Height = 120, Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] 
+    [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
+                        // The following should place the ToolWindow with the OutputWindow by default.
+                        Orientation=ToolWindowOrientation.Bottom,
+                        Style=VsDockStyle.Tabbed,
+                        PositionX = 0,
+                        PositionY = 0,
+                        Width = 360,
+                        Height = 120,
+                        Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
     [<Guid(GuidList.guidFSharpProjectPkgString)>]
     type internal FSharpProjectPackage() as this = 
             inherit ProjectPackage() 
