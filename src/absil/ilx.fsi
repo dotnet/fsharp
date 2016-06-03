@@ -91,14 +91,9 @@ type IlxClosureApps =
 
 /// ILX extensions to the instruction set.
 type IlxInstr = 
-    | EI_lddata of avoidHelpers:bool * IlxUnionSpec * int * int
-    | EI_isdata of avoidHelpers:bool * IlxUnionSpec * int
-    | EI_brisdata of avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel
     | EI_castdata of bool * IlxUnionSpec * int
-    | EI_stdata of IlxUnionSpec * int * int
     | EI_datacase of avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel
     | EI_lddatatag of avoidHelpers:bool * IlxUnionSpec
-    | EI_newdata of IlxUnionSpec * int
 
 val mkIlxExtInstr: (IlxInstr -> IlxExtensionInstr)
 val isIlxExtInstr: (IlxExtensionInstr -> bool)
