@@ -350,6 +350,8 @@ type TypeReprEnv(reprs : Map<Stamp, uint16>, count: int) =
     member tyenv.Add tps =
         (tyenv,tps) ||> List.fold (fun tyenv tp -> tyenv.AddOne tp)
 
+    member tyenv.Count = count
+
     static member Empty = 
         TypeReprEnv(count = 0, reprs = Map.empty)
 
@@ -2616,10 +2618,9 @@ and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
     let isTailCall = CanTailcall(false,None,eenv.withinSEH,hasByrefArg,false,false,false,false,sequel)
     CountCallFuncInstructions();
 
-    // Generate an ILX callfunc instruction
-    // REVIEW: ILX-to-IL generation of callfunc is too complex. It would probably be better
-    // if we just got rid of callfunc and generated the IL code directly in ilxgen.
-    CG.EmitInstr cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) (mkIlxInstr (EI_callfunc(isTailCall,ilxClosureApps)));
+    // Generate the code code an ILX callfunc operation
+    let instrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
+    CG.EmitInstrs cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) instrs;
 
     // Done compiling indirect call...
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -6259,20 +6260,21 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       // Instantiate with our own type
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
                       // Here's the body of the method. Call printf, then invoke the function it returns
+                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName,ILMemberAccess.Assembly,[],
                                                    mkILReturn cenv.g.ilg.typ_Object,
                                                    mkMethodBody 
                                                          (true,emptyILLocals,2,
                                                           nonBranchingInstrsToCode 
-                                                             [ // load the hardwired format string
+                                                            ([ // load the hardwired format string
                                                                I_ldstr "%+0.8A";  
                                                                // make the printf format object
                                                                mkNormalNewobj newFormatMethSpec;
                                                                // call sprintf
                                                                mkNormalCall sprintfMethSpec; 
                                                                // call the function returned by sprintf
-                                                               mkLdarg0; 
-                                                               mkIlxInstr (EI_callfunc(Normalcall,Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))) ],
+                                                               mkLdarg0 ] @
+                                                             callInstrs),
                                                           None))
                       yield ilMethodDef |> AddSpecialNameFlag |> AddNonUserCompilerGeneratedAttribs cenv.g
                   | None,_ ->

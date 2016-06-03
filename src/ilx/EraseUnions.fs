@@ -560,8 +560,6 @@ let rec convInstr cenv (tmps: ILLocalsAllocator) inplab outlab instr =
             | TailOrNull -> 
                 failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
                 
-        | _ -> InstrMorph [instr] 
-
     | _ -> InstrMorph [instr] 
 
 
