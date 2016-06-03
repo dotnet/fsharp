@@ -40,4 +40,19 @@ let boolConst2 = false
 
 let unitConst = ()
 
+let creditCardNumber = 1234_5678_9012_3456L
+let socialSecurityNumber = 999_99_9999L
+let pi =    3.14_15F
+let hexBytes = 0xFF_EC_DE_5E
+let hexWords = 0xCAFE_BABE
+let maxLong = 0x7fff_ffff_ffff_ffffL
+let nybbles = 0b0010_0101
+let bytes = 0b11010010_01101001_10010100_10010010
+let x2 = 5_2
+let x4 = 5_______2
+let x7 = 0x5_2
+let x9 = 0_52
+let x10 = 05_2
+let x14 = 0o5_2
+
 exit 0
