@@ -87,6 +87,8 @@ let GetSuperTypeOfType g amap m typ =
             Some g.obj_ty
         elif isTupleStructTy g typ then 
             Some g.obj_ty
+        elif isRecdTy g typ then
+            Some g.obj_ty
         else 
             None
 

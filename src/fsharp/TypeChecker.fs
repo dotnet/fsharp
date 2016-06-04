@@ -13880,7 +13880,7 @@ module EstablishTypeDefinitionCores =
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
                hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) || 
-               hasStructAttr && not (match k with TyconStruct -> true | _ -> false) then 
+               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then 
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
@@ -14012,6 +14012,7 @@ module EstablishTypeDefinitionCores =
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
+
         NewTycon(cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars, doc.ToXmlDoc(), preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmtyp)
 
     //-------------------------------------------------------------------------
@@ -14034,6 +14035,13 @@ module EstablishTypeDefinitionCores =
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
+
+        let isStructRecordType = 
+            match synTyconRepr with
+            | SynTypeDefnSimpleRepr.Record _ -> HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
+            | _ -> false
+
+        tycon.SetIsStructRecordType isStructRecordType
 
         // Set the compiled name, if any
         tycon.Data.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
@@ -14432,7 +14440,9 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
                   | SynTypeDefnSimpleRepr.Union _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
-                  | SynTypeDefnSimpleRepr.Record _ -> None
+                  | SynTypeDefnSimpleRepr.Record _ ->
+                      if tycon.IsStructRecordTycon then Some(cenv.g.system_Value_typ)
+                      else None
                   | SynTypeDefnSimpleRepr.General (kind,_,slotsigs,fields,isConcrete,_,_,_) ->
                       let kind = InferTyconKind cenv.g (kind,attrs,slotsigs,fields,inSig,isConcrete,m)
                                            
