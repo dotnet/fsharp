@@ -2505,7 +2505,9 @@ namespace Microsoft.FSharp.Core
             parse p 0UL
 
         let inline removeUnderscores (s:string) =
-            s.Replace("_", "")
+            match s with
+            | null -> null
+            | s -> s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
