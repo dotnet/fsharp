@@ -39,3 +39,11 @@ namespace Neg95B
       open System
 
     //module rec RecNotAllowedOnModuleAbbreviation = List
+
+
+    [<Struct>]
+    type StructRecord =
+        {
+            X: float
+            Y: StructRecord
+        }
