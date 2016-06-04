@@ -117,9 +117,10 @@ module internal ToolLocationHelper =
     let visualStudioVersion110 = new Version(11, 0);
     let visualStudioVersion120 = new Version(12, 0);
     let visualStudioVersion140 = new Version(14, 0);
+    let visualStudioVersion150 = new Version(15, 0);
 
     // keep this up-to-date; always point to the latest visual studio version.
-    let visualStudioVersionLatest = visualStudioVersion140;
+    let visualStudioVersionLatest = visualStudioVersion150;
 
     let dotNetFrameworkRegistryPath = "SOFTWARE\\Microsoft\\.NETFramework";
     let dotNetFrameworkSetupRegistryPath = "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP";
@@ -735,6 +736,7 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion45  visualStudioVersion110     // v4.5
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion451 visualStudioVersion120     // v4.5.1
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion150     // v4.6
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 

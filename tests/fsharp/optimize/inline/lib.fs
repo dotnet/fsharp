@@ -70,6 +70,51 @@ module Vector3GenericObj =
     let inline test (v1: Vector3Generic<obj>) (v2: Vector3Generic<obj>) =
         v1.x
 
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3StructRecord  =
+    {
+        x: single
+        y: single
+        z: single
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3StructRecord =
+    let inline dot (v1: Vector3StructRecord) (v2: Vector3StructRecord) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3StructRecordMutableField  =
+    {
+        x: single
+        mutable y: single
+        z: single
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3StructRecordMutableField =
+    let inline dot (v1: Vector3StructRecordMutableField) (v2: Vector3StructRecordMutableField) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3StructRecordGeneric<'T>  =
+    {
+        x: 'T
+        mutable y: 'T
+        z: 'T
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3StructRecordGeneric =
+    let inline dot (v1: Vector3StructRecordGeneric<single>) (v2: Vector3StructRecordGeneric<single>) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
 type HiddenRecord = 
     private { x : int } 
     member this.X = this.x

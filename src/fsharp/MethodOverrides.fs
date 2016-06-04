@@ -293,7 +293,7 @@ module DispatchSlotChecking =
                     match  overrides |> List.filter (IsPartialMatch g amap m dispatchSlot)  with 
                     | [] -> 
                         match overrides |> List.filter (fun overrideBy -> IsNameMatch dispatchSlot overrideBy && 
-                                                                            IsImplMatch g dispatchSlot overrideBy)  with 
+                                                                          IsImplMatch g dispatchSlot overrideBy)  with 
                         | [] -> 
                             noimpl()
                         | [ Override(_,_,_,(mtps,_),argTys,_,_,_) as overrideBy ] -> 
@@ -307,13 +307,11 @@ module DispatchSlotChecking =
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot),overrideBy.Range))
 
                     | [ overrideBy ] -> 
-
-                        match dispatchSlots  |> List.filter (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) with 
-                        | [] -> 
+                        if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
+                            noimpl()
+                        else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                        | _ -> 
-                            noimpl()
                         
                     | _ -> 
                         fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot),m))

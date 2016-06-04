@@ -94,9 +94,10 @@ let ChooseFreeVarNames takenNames ts =
           chooseName names (t,Some(match nOpt with None ->  0 | Some n -> (n+1)))
         else
           let names = Zset.add tn names
-          names,tn
+          tn,names
+
     let names    = Zset.empty String.order |> Zset.addList takenNames
-    let _names,ts = List.foldMap chooseName names tns
+    let ts,_names = List.mapFold chooseName names tns
     ts
 
 let ilxgenGlobalNng = NiceNameGenerator ()
@@ -348,6 +349,8 @@ type TypeReprEnv(reprs : Map<Stamp, uint16>, count: int) =
 
     member tyenv.Add tps =
         (tyenv,tps) ||> List.fold (fun tyenv tp -> tyenv.AddOne tp)
+
+    member tyenv.Count = count
 
     static member Empty = 
         TypeReprEnv(count = 0, reprs = Map.empty)
@@ -1510,7 +1513,7 @@ type sequel =
   | LeaveHandler of (bool (* finally? *) * int * Mark)  
   /// Branch to the given mark
   | Br of Mark
-  | CmpThenBrOrContinue of Pops * ILInstr
+  | CmpThenBrOrContinue of Pops * ILInstr list
   /// Continue and leave the value on the IL computation stack
   | Continue
   /// The value then do something else
@@ -1890,7 +1893,7 @@ and GenSequel cenv cloc cgbuf sequel =
   | ReturnVoid ->
       CG.EmitInstr cgbuf (pop 0) Push0 I_ret 
   | CmpThenBrOrContinue(pops,bri) ->
-      CG.EmitInstr cgbuf pops Push0 bri
+      CG.EmitInstrs cgbuf pops Push0 bri
   | Return -> 
       CG.EmitInstr cgbuf (pop 1) Push0 I_ret 
   | EndLocalScope _ -> failwith "EndLocalScope unexpected"
@@ -2023,7 +2026,7 @@ and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
 and GenAllocUnionCase cenv cgbuf eenv  (c,tyargs,args,m) sequel =
     GenExprs cenv cgbuf eenv args;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv c tyargs
-    CG.EmitInstr cgbuf (pop args.Length) (Push [cuspec.EnclosingType]) (mkIlxInstr (EI_newdata (cuspec,idx)));
+    CG.EmitInstrs cgbuf (pop args.Length) (Push [cuspec.EnclosingType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx));
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
@@ -2177,7 +2180,7 @@ and GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel =
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    CG.EmitInstrs cgbuf (pop 1) (Push [fty]) [ mkIlxInstr (EI_lddata(avoidHelpers, cuspec,idx,n)) ];
+    CG.EmitInstrs cgbuf (pop 1) (Push [fty]) (EraseUnions.mkLdData (avoidHelpers, cuspec, idx, n));
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
@@ -2192,7 +2195,7 @@ and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel =
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
     CG.EmitInstr cgbuf (pop 1) (Push [cuspec.EnclosingType]) (mkIlxInstr (EI_castdata(false,cuspec,idx)));
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue;
-    CG.EmitInstr cgbuf (pop 2) Push0 (mkIlxInstr (EI_stdata(cuspec,idx,n)) );
+    CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n));
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetRecdFieldAddr cenv cgbuf eenv (e,f,tyargs,m) sequel = 
@@ -2615,10 +2618,9 @@ and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
     let isTailCall = CanTailcall(false,None,eenv.withinSEH,hasByrefArg,false,false,false,false,sequel)
     CountCallFuncInstructions();
 
-    // Generate an ILX callfunc instruction
-    // REVIEW: ILX-to-IL generation of callfunc is too complex. It would probably be better
-    // if we just got rid of callfunc and generated the IL code directly in ilxgen.
-    CG.EmitInstr cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) (mkIlxInstr (EI_callfunc(isTailCall,ilxClosureApps)));
+    // Generate the code code an ILX callfunc operation
+    let instrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
+    CG.EmitInstrs cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) instrs;
 
     // Done compiling indirect call...
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -2842,7 +2844,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     CG.EmitSeqPoint cgbuf  e2.Range;
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None;
     let cmp = match dir with FSharpForLoopUp | FSharpForLoopDown -> BI_bne_un | CSharpForLoopUp -> BI_blt
-    let e2Sequel =  (CmpThenBrOrContinue (pop 2, I_brcmp(cmp,inner.CodeLabel,finish.CodeLabel)));
+    let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel,finish.CodeLabel) ]));
 
     if isFSharpStyle then 
         EmitGetLocal cgbuf cenv.g.ilg.typ_int32  finishIdx
@@ -2873,7 +2875,7 @@ and GenWhileLoop cenv cgbuf eenv (spWhile,e1,e2,m) sequel =
     | NoSequencePointAtWhileLoop -> ()
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do' 
-    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, I_brcmp(BI_brfalse,finish.CodeLabel,inner.CodeLabel)));
+    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse,finish.CodeLabel,inner.CodeLabel) ]));
     CG.SetMarkToHere cgbuf inner; 
     
     GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest));
@@ -2975,11 +2977,11 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa) 
     | ([ AI_ceq ],
        [arg1; Expr.Const((Const.Bool false | Const.SByte 0y| Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy| Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL),_,_) ], 
-       CmpThenBrOrContinue(1,I_brcmp (((BI_brfalse | BI_brtrue) as bi) , label1,label2)),
+       CmpThenBrOrContinue(1, [I_brcmp (((BI_brfalse | BI_brtrue) as bi) , label1,label2) ]),
        _) ->
 
             let bi = match bi with BI_brtrue -> BI_brfalse | _ -> BI_brtrue
-            GenExpr cenv cgbuf eenv SPSuppress arg1 (CmpThenBrOrContinue(pop 1,I_brcmp (bi, label1,label2)))
+            GenExpr cenv cgbuf eenv SPSuppress arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi, label1,label2) ]))
 
     // Query; when do we get a 'ret' in IL assembly code?
     | [ I_ret ], [arg1],sequel,[_ilRetTy] -> 
@@ -3031,28 +3033,28 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
 
       // NOTE: THESE ARE NOT VALID ON FLOATING POINT DUE TO NaN.  Hence INLINE ASM ON FP. MUST BE CAREFULLY WRITTEN  
 
-      | [ AI_clt ], CmpThenBrOrContinue(1,I_brcmp (BI_brfalse, label1,label2)) when not (anyfpType (tyOfExpr g args.Head)) ->
+      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge,label1,label2));
-      | [ AI_cgt ], CmpThenBrOrContinue(1,I_brcmp (BI_brfalse, label1,label2)) when not (anyfpType (tyOfExpr g args.Head)) ->
+      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble,label1, label2));
-      | [ AI_clt_un ], CmpThenBrOrContinue(1,I_brcmp (BI_brfalse, label1,label2)) when not (anyfpType (tyOfExpr g args.Head)) ->
+      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge_un,label1,label2));
-      | [ AI_cgt_un ], CmpThenBrOrContinue(1,I_brcmp (BI_brfalse, label1,label2)) when not (anyfpType (tyOfExpr g args.Head)) ->
+      | [ AI_cgt_un ], CmpThenBrOrContinue(1, [I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble_un,label1, label2));
-      | [ AI_ceq ], CmpThenBrOrContinue(1,I_brcmp (BI_brfalse, label1,label2)) when not (anyfpType (tyOfExpr g args.Head)) ->
+      | [ AI_ceq ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bne_un,label1, label2));
         
       // THESE ARE VALID ON FP w.r.t. NaN 
         
-      | [ AI_clt ], CmpThenBrOrContinue(1,I_brcmp (BI_brtrue, label1,label2)) ->
+      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt,label1, label2));
-      | [ AI_cgt ], CmpThenBrOrContinue(1,I_brcmp (BI_brtrue, label1,label2)) ->
+      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt,label1, label2));
-      | [ AI_clt_un ], CmpThenBrOrContinue(1,I_brcmp (BI_brtrue, label1,label2)) ->
+      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt_un,label1, label2));
-      | [ AI_cgt_un ], CmpThenBrOrContinue(1,I_brcmp (BI_brtrue, label1,label2)) ->
+      | [ AI_cgt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt_un,label1, label2));
-      | [ AI_ceq ], CmpThenBrOrContinue(1,I_brcmp (BI_brtrue, label1,label2)) ->
+      | [ AI_ceq ], CmpThenBrOrContinue(1, [ I_brcmp (BI_brtrue, label1,label2) ]) ->
         CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_beq,label1, label2));
       | _ -> 
         // Failing that, generate the real IL leaving value(s) on the stack 
@@ -4235,7 +4237,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
         let cuspec = GenUnionSpec cenv.amap m cenv.g eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib c.TyconRef
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_bool],(mkIlxInstr (EI_isdata (avoidHelpers, cuspec, idx))))) eenv successTree failureTree targets repeatSP targetInfos sequel
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
 
       | _ ->  
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -4364,7 +4366,12 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
 
              | TTarget(_,BoolExpr(b1),_),_ -> 
                  GenExpr cenv cgbuf eenv SPSuppress e Continue;
-                 (match tester with Some (pops,push,i) -> CG.EmitInstr cgbuf pops push i; | _ -> ());
+                 match tester with 
+                 | Some (pops,pushes,i) -> 
+                    match i with 
+                    | Choice1Of2 (avoidHelpers,cuspec,idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData cenv.g.ilg (avoidHelpers, cuspec, idx))
+                    | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i;
+                 | _ -> ();
                  if not b1 then 
                    CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_bool]) [mkLdcInt32 (0); ];
                    CG.EmitInstrs cgbuf (pop 1) Push0 [AI_ceq];
@@ -4379,16 +4386,17 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
         (match tester with 
         | None -> 
             (* generate the expression, then test it for "false" *)
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1,I_brcmp (BI_brfalse, failure.CodeLabel, success.CodeLabel)));
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel, success.CodeLabel) ]));
 
-        (* Turn "EI_isdata" tests that branch into EI_brisdata tests *)
-        | Some (_,_,I_other i) when isIlxExtInstr i && (match destIlxExtInstr i with EI_isdata _ -> true | _ -> false) ->
-            let (avoidHelpers,cuspec,idx) = match destIlxExtInstr i with EI_isdata (avoidHelpers,cuspec,idx) -> (avoidHelpers,cuspec,idx) | _ -> failwith "??"
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1,mkIlxInstr (EI_brisdata (avoidHelpers,cuspec, idx, success.CodeLabel, failure.CodeLabel))));
+        (* Turn 'isdata' tests that branch into EI_brisdata tests *)
+        | Some (_,_,Choice1Of2 (avoidHelpers,cuspec,idx)) ->
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData cenv.g.ilg (avoidHelpers,cuspec, idx, success.CodeLabel, failure.CodeLabel)));
 
         | Some (pops,pushes,i) ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue;
-            CG.EmitInstr cgbuf pops pushes i;
+            match i with 
+            | Choice1Of2 (avoidHelpers,cuspec,idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData cenv.g.ilg (avoidHelpers, cuspec, idx))
+            | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i;
             CG.EmitInstr cgbuf (pop 1) Push0  (I_brcmp (BI_brfalse, failure.CodeLabel, success.CodeLabel)));
 
         let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf success stackAtTargets eenv successTree targets repeatSP targetInfos sequel
@@ -5617,7 +5625,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
          emptyILEvents,
          mkILCustomAttrs 
            (GenAttrs cenv eenv attribs @
-            (if List.mem tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
+            (if List.contains tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]  
              then [ (* mkCompilerGeneratedAttribute *) ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)
@@ -6096,7 +6104,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | TTyconInterface  -> ILTypeDefKind.Interface
                | TTyconEnum       -> ILTypeDefKind.Enum 
                | TTyconDelegate _ -> ILTypeDefKind.Delegate 
-
+           | TRecdRepr _ when tycon.IsStructRecordTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField = 
@@ -6258,20 +6266,21 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       // Instantiate with our own type
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
                       // Here's the body of the method. Call printf, then invoke the function it returns
+                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName,ILMemberAccess.Assembly,[],
                                                    mkILReturn cenv.g.ilg.typ_Object,
                                                    mkMethodBody 
                                                          (true,emptyILLocals,2,
                                                           nonBranchingInstrsToCode 
-                                                             [ // load the hardwired format string
+                                                            ([ // load the hardwired format string
                                                                I_ldstr "%+0.8A";  
                                                                // make the printf format object
                                                                mkNormalNewobj newFormatMethSpec;
                                                                // call sprintf
                                                                mkNormalCall sprintfMethSpec; 
                                                                // call the function returned by sprintf
-                                                               mkLdarg0; 
-                                                               mkIlxInstr (EI_callfunc(Normalcall,Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))) ],
+                                                               mkLdarg0 ] @
+                                                             callInstrs),
                                                           None))
                       yield ilMethodDef |> AddSpecialNameFlag |> AddNonUserCompilerGeneratedAttribs cenv.g
                   | None,_ ->
@@ -6298,12 +6307,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      relevantFields
                      |> List.map (fun (_,ilFieldName,_,_,_,ilPropType,_,fspec) -> (fspec.Name,ilFieldName,ilPropType))
 
-                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, Some cenv.g.ilg.tspec_Object, ilThisTy, ChooseParamNames fieldNamesAndTypes, reprAccess)
+                 let isStructRecord = tycon.IsStructRecordTycon
+
+                 // No type spec if the record is a value type
+                 let spec = if isStructRecord then None else Some(cenv.g.ilg.tspec_Object)
+                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, ChooseParamNames fieldNamesAndTypes, reprAccess)
 
                  yield ilMethodDef 
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true)  attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
-                 if isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true) then
+                 // Records that are value types do not create a default constructor with CLIMutable or ComVisible
+                 if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
                      yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.tspec_Object, ilThisTy, [], reprAccess) 
 
               | TFsObjModelRepr r when tycon.IsFSharpDelegateTycon ->

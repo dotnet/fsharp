@@ -1,35 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);2008</NoWarn>
-    <GeneratePkgDefFile>false</GeneratePkgDefFile>
-    <CreateVsixContainer>false</CreateVsixContainer>
-	<SkipCopyBuildProduct>true</SkipCopyBuildProduct>
-	<DebugSymbols>false</DebugSymbols>
-	<DebugType>None</DebugType>
-  </PropertyGroup>
-  <PropertyGroup>
-	<FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
-    <ProjectGuid>{604F0DAA-2D33-48DD-B162-EDF0B672803D}</ProjectGuid>
-	<TemplateCategory>ProjectTemplates</TemplateCategory>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <AssemblyName>ConsoleProject</AssemblyName>
-	<GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <TemplateCategory>ProjectTemplates</TemplateCategory>
+    <IsPackage>true</IsPackage>
+    <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
   </PropertyGroup>
-  <Import Project="..\..\src\FSharp.Common.props" />
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
+  </PropertyGroup>
+  
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Program.fs">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Program.fs.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Program.fs.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
   <ItemGroup>
@@ -40,12 +38,12 @@
     <TemplateFiles Include="Template\ConsoleApplication.vstemplate" />
   </ItemGroup>
   
-  <Import Project="..\..\src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
-  <Target Name="GatherLocalizableTemplatesForLocalization" BeforeTargets="Localize">
-	<Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
-  </Target>
+  <Target Name="CoreCompile" />
   
-  <Target Name="TemplateProjectOutputGroup" />
+  <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
+  </Target>
 </Project>

@@ -350,11 +350,12 @@ type TyparFlags(flags:int32) =
 [<Struct>]
 type EntityFlags(flags:int64) =
 
-    new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor) = 
+    new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordType) = 
         EntityFlags((if isModuleOrNamespace then                        0b00000000001L else 0L) |||
                     (if usesPrefixDisplay   then                        0b00000000010L else 0L) |||
                     (if preEstablishedHasDefaultCtor then               0b00000000100L else 0L) |||
-                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L)) 
+                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L) |||
+                    (if isStructRecordType then                         0b00000100000L else 0L)) 
 
     member x.IsModuleOrNamespace                 = (flags       &&&     0b00000000001L) <> 0x0L
     member x.IsPrefixDisplay                     = (flags       &&&     0b00000000010L) <> 0x0L
@@ -367,6 +368,9 @@ type EntityFlags(flags:int64) =
     // the 'this' pointer prior to successful initialization of the partial contents of the object. In this
     // case sub-classes must protect themselves against early access to their contents.
     member x.HasSelfReferentialConstructor       = (flags       &&&     0b00000001000L) <> 0x0L
+
+    /// This bit represents a F# record that is a value type, or a struct record.
+    member x.IsStructRecordType                  = (flags       &&&     0b00000100000L) <> 0x0L
 
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's bing listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
@@ -384,7 +388,11 @@ assert (sizeof<TyparFlags> = 4)
 
 let unassignedTyparName = "?"
 
-exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * string list
+type Predictions = Set<string>
+
+let NoPredictions = Set.empty
+
+exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * Predictions
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
 let KeyTyconByDemangledNameAndArity nm (typars: _ list) x = 
@@ -767,6 +775,9 @@ type Entity =
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true |  _ -> false
 
+    /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
+    member x.IsStructRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> x.Data.entity_flags.IsStructRecordType | _ -> false
+
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFsObjModelRepr _ -> true |  _ -> false
 
@@ -810,10 +821,13 @@ type Entity =
 
     /// Indicates if this is an F#-defined struct or enum type definition , i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
-        x.IsFSharpObjectModelTycon &&
-        match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-        | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
-        | TTyconStruct | TTyconEnum -> true
+        match x.TypeReprInfo with
+        | TRecdRepr _ -> x.IsStructRecordTycon
+        | TFsObjModelRepr info ->
+            match info.fsobjmodel_kind with
+            | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
+            | TTyconStruct | TTyconEnum -> true
+        | _ -> false
 
     /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
     member x.IsILStructOrEnumTycon =
@@ -1717,7 +1731,7 @@ and Construct =
             entity_kind=kind
             entity_range=m
             entity_other_range=None
-            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordType=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_abbrev = None
@@ -1746,7 +1760,7 @@ and Construct =
             entity_stamp=stamp
             entity_kind=TyparKind.Type
             entity_modul_contents = mtype
-            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_abbrev = None
             entity_tycon_repr = TNoRepr
@@ -4111,7 +4125,6 @@ let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValD
 //---------------------------------------------------------------------------
 
 let mapTImplFile   f   (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = TImplFile(fragName, pragmas,f moduleExpr,hasExplicitEntryPoint,isScript)
-let fmapTImplFile  f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let z,moduleExpr = f z moduleExpr in z,TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)
 let mapAccImplFile f z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) = let moduleExpr,z = f z moduleExpr in TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript), z
 let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_)) = f z moduleExpr
 
@@ -4399,19 +4412,18 @@ let fslibValRefEq fslibCcu vref1 vref2 =
 /// This takes into account the possibility that they may have type forwarders
 let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) = 
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when not compilingFslib -> x.ResolvedTarget === y.ResolvedTarget 
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | false, false when 
+    
+    if x.IsResolved && y.IsResolved && not compilingFslib then
+        x.ResolvedTarget === y.ResolvedTarget 
+    elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) -> 
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
         true
-    | _ -> 
-        compilingFslib && fslibEntityRefEq  fslibCcu x y  
+    else
+        compilingFslib && fslibEntityRefEq fslibCcu x y  
 
 /// Primitive routine to compare two UnionCaseRef's for equality
 let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tcr2,c2) as uc2) = 
@@ -4426,12 +4438,10 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tc
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when x.ResolvedTarget === y.ResolvedTarget -> true
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | true,true when valEq x.PrivateTarget y.PrivateTarget -> true
-    | _ -> 
+    if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
+       (x.IsLocalRef && y.IsLocalRef && valEq x.PrivateTarget y.PrivateTarget) then
+        true
+    else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
             let v1 = x.TryDeref 
@@ -4558,7 +4568,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_typars=LazyWithContext.NotLazy []
         entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
-        entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+        entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordType=false)
         entity_il_repr_cache= newCache()   } 
 
 let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -4577,7 +4587,7 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_other_range = None }
 
     
-let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
+let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordType, mtyp) =
     let stamp = newStamp() 
     Tycon.New "tycon"
       { entity_stamp=stamp
@@ -4586,7 +4596,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_kind=kind
         entity_range=m
         entity_other_range=None
-        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor)
+        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordType=isStructRecordType)
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_abbrev = None
@@ -4607,7 +4617,7 @@ let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
 
     // NOTE: hasSelfReferentialCtor=false is an assumption about mscorlib
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
-    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
+    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, false, mtyp)
 
     tycon.Data.entity_tycon_repr <- TILObjModelRepr (scoref,enc,tdef)
     tycon.TypeContents.tcaug_closed <- true

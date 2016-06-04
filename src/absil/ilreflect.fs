@@ -1179,9 +1179,11 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
     | I_refanyval typ              -> ilG.EmitAndLog(OpCodes.Refanyval,convType cenv emEnv  typ)
     | I_rethrow                    -> ilG.EmitAndLog(OpCodes.Rethrow)
     | I_break                      -> ilG.EmitAndLog(OpCodes.Break)
-#if FX_RESHAPED_REFEMIT
-#else
     | I_seqpoint src               -> 
+#if FX_RESHAPED_REFEMIT
+        ignore src
+        ()
+#else
         if cenv.generatePdb && not (src.Document.File.EndsWith("stdin",StringComparison.Ordinal)) then
             let guid x = match x with None -> Guid.Empty | Some g -> Guid(g:byte[]) in
             let symDoc = modB.DefineDocumentAndLog(src.Document.File, guid src.Document.Language, guid src.Document.Vendor, guid src.Document.DocumentType)
