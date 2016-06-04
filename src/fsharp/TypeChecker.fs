@@ -13567,7 +13567,7 @@ module EstablishTypeDefinitionCores = begin
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
                hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) || 
-               hasStructAttr && not (match k with TyconStruct -> true | _ -> false) then 
+               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then 
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
@@ -13638,7 +13638,7 @@ module EstablishTypeDefinitionCores = begin
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
     let private TcTyconDefnCore_Phase0_BuildInitialTycon cenv env parent (TyconDefnCoreIndexed(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor,_)) = 
-        let (ComponentInfo(_,synTypars, _,id,doc,preferPostfix, vis,_)) = synTyconInfo
+        let (ComponentInfo(synAttrs,synTypars, _,id,doc,preferPostfix, vis,_)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
         let id = ComputeTyconName (id, (match synTyconRepr with SynTypeDefnSimpleRepr.TypeAbbrev _ -> false | _ -> true), checkedTypars)
@@ -13666,7 +13666,16 @@ module EstablishTypeDefinitionCores = begin
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
-        NewTycon(cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars, doc.ToXmlDoc(), preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmtyp)
+
+        let isStructRecordType = 
+            match synTyconRepr with
+            | SynTypeDefnSimpleRepr.Record _ -> 
+                let attrs = TcAttributes cenv env AttributeTargets.TyconDecl synAttrs
+                HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
+            | _ -> 
+                false
+
+        NewTycon(cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars, doc.ToXmlDoc(), preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordType, lmtyp)
 
     //-------------------------------------------------------------------------
     /// Establishing type definitions: early phase: work out the basic kind of the type definition
@@ -14081,7 +14090,9 @@ module EstablishTypeDefinitionCores = begin
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
                   | SynTypeDefnSimpleRepr.Union _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
-                  | SynTypeDefnSimpleRepr.Record _ -> None
+                  | SynTypeDefnSimpleRepr.Record _ ->
+                      if tycon.IsStructRecordTycon then Some(cenv.g.system_Value_typ)
+                      else None
                   | SynTypeDefnSimpleRepr.General (kind,_,slotsigs,fields,isConcrete,_,_,_) ->
                       let kind = InferTyconKind cenv.g (kind,attrs,slotsigs,fields,inSig,isConcrete,m)
                                            
