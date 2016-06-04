@@ -763,53 +763,15 @@ let rec goutput_instr env os inst =
           goutput_cuspec env os ty;
           output_string os ",";
           output_int os n
-      | (EI_isdata (_,ty,n))  -> 
-          output_string os "isdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
-      |  (EI_brisdata (_,ty,n,tg1,_)) -> 
-          output_string os "brisdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_string os "(";  
-          output_int os n;
-          output_string os ",";  
-          output_code_label os tg1;
-          output_string os ")"
-      | (EI_lddata (_,ty,n,m))  -> 
-          output_string os "lddata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
       | (EI_lddatatag (_,ty)) -> 
           output_string os "lddatatag "; 
           goutput_cuspec env os ty
-      |  (EI_stdata (ty,n,m)) -> 
-          output_string os "stdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
-      |  (EI_newdata (ty,n))  -> 
-          output_string os "newdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
       |  (EI_datacase (_,ty,l,_))  -> 
           output_string os "datacase";
           output_string os " ";  
           goutput_cuspec env os ty;
           output_string os ",";  
           output_parens (output_seq "," (fun os (x,y) -> output_int os x;  output_string os ",";  output_code_label os y)) os l
-      |  (EI_callfunc (tl,cs)) -> 
-          output_tailness os tl; 
-          output_string os "callfunc "; 
-          goutput_apps env os cs;
-          output_after_tailcall os tl;
   | _ -> 
       output_string os "<printing for this instruction is not implemented>"
 

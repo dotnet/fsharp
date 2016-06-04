@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<PackageLanguagePackManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
-	<Metadata>
-		<Identity Id="Microsoft.VisualStudio.VsProDeployment" Version="14.0" Language="neutral" Publisher="Microsoft" />
-		<DisplayName _locID="VsProDeployName">Visual F# Tools Templates</DisplayName>
-		<Description _locID="VsProDeployDescription">Deploy Visual F# Tools templates to Visual Studio</Description>
-	</Metadata>
-</PackageLanguagePackManifest>
