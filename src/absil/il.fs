@@ -790,15 +790,6 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
     member x.QualifiedNameWithNoShortPrimaryAssembly = 
         x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(x.BasicQualifiedName)
 
-and 
-    [<CustomEquality; CustomComparison>]
-    IlxExtensionType = 
-    | Ext_typ of obj
-    member x.Value = (let (Ext_typ(v)) = x in v)
-    override x.Equals(yobj) = match yobj with :? IlxExtensionType as y -> Unchecked.equals x.Value y.Value | _ -> false
-    interface System.IComparable with
-        override x.CompareTo(yobj) = match yobj with :? IlxExtensionType as y -> Unchecked.compare x.Value y.Value | _ -> invalidOp "bad comparison"
-
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature = 
     { CallingConv: ILCallingConv;
@@ -1688,12 +1679,6 @@ type ILTypeDefKind =
     | Interface
     | Enum 
     | Delegate
-    | Other of IlxExtensionTypeKind
-
-and IlxExtensionTypeKind = Ext_type_def_kind of obj
-
-type internal_type_def_kind_extension = 
-    { internalTypeDefKindExtIs: IlxExtensionTypeKind -> bool; }
 
 
 [<NoComparison; NoEquality>]
@@ -1936,22 +1921,6 @@ let mkILBoxedTyRaw tref tinst = mkILNamedTyRaw AsObject tref tinst
 let mkILNonGenericValueTy tref = mkILNamedTy AsValue tref []
 let mkILNonGenericBoxedTy tref = mkILNamedTy AsObject tref []
 
-
-type ILTypeDefKindExtension<'T> = 
-    | TypeDefKindExtension
-
-let type_def_kind_extensions = ref []
-
-let RegisterTypeDefKindExtension (TypeDefKindExtension : ILTypeDefKindExtension<'T>) = 
-    if nonNil !type_def_kind_extensions then failwith "define_type_extension: only one extension currently allowed";
-    let mk (x:'T) = Ext_type_def_kind (box x)
-    let test (Ext_type_def_kind _x) = true
-    let dest (Ext_type_def_kind x) = (unbox x: 'T)
-    type_def_kind_extensions := 
-       { internalTypeDefKindExtIs=test;}
-         :: !type_def_kind_extensions;
-    mk,test,dest
-
 // -------------------------------------------------------------------- 
 // Making assembly, module and file references
 // -------------------------------------------------------------------- 
@@ -1961,10 +1930,6 @@ let mkSimpleAssRef n =
 
 let mkSimpleModRef n = 
     ILModuleRef.Create(n, true, None)
-
-let module_name_of_scoref = function 
-    | ILScopeRef.Module(mref) -> mref.Name
-    | _ -> failwith "module_name_of_scoref"
 
 // --------------------------------------------------------------------
 // The toplevel class of a module is called "<Module>"
