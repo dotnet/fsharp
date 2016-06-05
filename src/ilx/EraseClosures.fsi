@@ -8,8 +8,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
-val ConvModule: ILGlobals -> ILModuleDef -> ILModuleDef 
-
 type cenv
 val mkCallFunc : cenv -> allocLocal:(ILType -> uint16) -> numThisGenParams:int -> ILTailcall -> IlxClosureApps -> ILInstr list
 
