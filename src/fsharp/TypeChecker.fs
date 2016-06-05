@@ -11779,7 +11779,7 @@ module IncrClassChecking = begin
             let recdFields = MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
 
             // Mutate the entity_tycon_repr to publish the fields
-            tcref.Deref.Data.entity_tycon_repr <- TFsObjModelRepr { tcref.FSharpObjectModelTypeInfo with fsobjmodel_rfields = recdFields}  
+            tcref.Deref.Data.entity_tycon_repr <- TFSharpObjectRepr { tcref.FSharpObjectModelTypeInfo with fsobjmodel_rfields = recdFields}  
 
 
         /// Given localRep saying how locals have been represented, e.g. as fields.
@@ -13712,9 +13712,9 @@ module EstablishTypeDefinitionCores = begin
                 if not inSig && not hasMeasureAttr then 
                     errorR(Error(FSComp.SR.tcTypeRequiresDefinition(),m))
                 if hasMeasureAttr then 
-                    TFsObjModelRepr { fsobjmodel_kind=TTyconClass 
-                                      fsobjmodel_vslots=[]
-                                      fsobjmodel_rfields=MakeRecdFieldsTable [] }
+                    TFSharpObjectRepr { fsobjmodel_kind=TTyconClass 
+                                        fsobjmodel_vslots=[]
+                                        fsobjmodel_rfields=MakeRecdFieldsTable [] }
                 else 
                     TNoRepr
 
@@ -13758,14 +13758,14 @@ module EstablishTypeDefinitionCores = begin
                     let repr = { fsobjmodel_kind=kind 
                                  fsobjmodel_vslots=[]
                                  fsobjmodel_rfields=MakeRecdFieldsTable [] }
-                    TFsObjModelRepr repr
+                    TFSharpObjectRepr repr
 
             | SynTypeDefnSimpleRepr.Enum _ -> 
                 let kind = TTyconEnum
                 let repr = { fsobjmodel_kind=kind 
                              fsobjmodel_vslots=[]
                              fsobjmodel_rfields=MakeRecdFieldsTable [] }
-                TFsObjModelRepr repr
+                TFSharpObjectRepr repr
 
         // OK, now fill in the (partially computed) type representation
         tycon.Data.entity_tycon_repr <- repr
@@ -14239,9 +14239,9 @@ module EstablishTypeDefinitionCores = begin
                     hiddenReprChecks(false)
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureAttr then 
-                        let repr = TFsObjModelRepr { fsobjmodel_kind=TTyconClass 
-                                                     fsobjmodel_vslots=[]
-                                                     fsobjmodel_rfields= MakeRecdFieldsTable [] }
+                        let repr = TFSharpObjectRepr { fsobjmodel_kind=TTyconClass 
+                                                       fsobjmodel_vslots=[]
+                                                       fsobjmodel_rfields= MakeRecdFieldsTable [] }
                         repr, None, NoSafeInitInfo
                     else 
                         TNoRepr, None, NoSafeInitInfo
@@ -14424,7 +14424,7 @@ module EstablishTypeDefinitionCores = begin
                         let safeInitFields = match safeInitInfo with SafeInitField (_, fld) -> [fld] | NoSafeInitInfo -> []
                         
                         let repr = 
-                            TFsObjModelRepr 
+                            TFSharpObjectRepr 
                                 { fsobjmodel_kind=kind 
                                   fsobjmodel_vslots= abstractSlots
                                   fsobjmodel_rfields=MakeRecdFieldsTable (userFields @ implicitStructFields  @ safeInitFields) } 
@@ -14444,7 +14444,7 @@ module EstablishTypeDefinitionCores = begin
 
                     writeFakeRecordFieldsToSink fields' 
                     let repr = 
-                        TFsObjModelRepr 
+                        TFSharpObjectRepr 
                             { fsobjmodel_kind=kind 
                               fsobjmodel_vslots=[]
                               fsobjmodel_rfields= MakeRecdFieldsTable (vfld :: fields') }

@@ -3126,7 +3126,7 @@ module DebugPrint = begin
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFsObjModelRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
             // if TTyconInterface, the iimpls should be printed as inheritted interfaces 
@@ -3158,7 +3158,7 @@ module DebugPrint = begin
             match repr with 
             | TRecdRepr _ ->
                 tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL ";") |> aboveListL  
-            | TFsObjModelRepr r -> 
+            | TFSharpObjectRepr r -> 
                 match r.fsobjmodel_kind with 
                 | TTyconDelegate _ ->
                     wordL "delegate ..."
@@ -3186,10 +3186,10 @@ module DebugPrint = begin
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL start @@-- aboveListL alldecls) @@ wordL "end"
-            | TFiniteUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _                      -> wordL "(# ... #)"
             | TMeasureableRepr ty             -> typeL ty
-            | TILObjModelRepr (_,_,td) -> wordL td.Name
+            | TILObjectRepr (_,_,td) -> wordL td.Name
             | _ -> failwith "unreachable"
         let reprL = 
             match tycon.TypeReprInfo with 
@@ -3980,7 +3980,7 @@ and accLocalTyconRepr opts b fvs =
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs = 
-    if match tc.TypeReprInfo with  TFsObjModelRepr _ | TRecdRepr _ | TFiniteUnionRepr _ -> true | _ -> false
+    if match tc.TypeReprInfo with  TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false
     then accLocalTyconRepr opts tc fvs
     else fvs
 
@@ -4712,10 +4712,10 @@ and remapFsObjData g tmenv x =
 
 and remapTyconRepr g tmenv repr = 
     match repr with 
-    | TFsObjModelRepr    x -> TFsObjModelRepr (remapFsObjData g tmenv x)
+    | TFSharpObjectRepr    x -> TFSharpObjectRepr (remapFsObjData g tmenv x)
     | TRecdRepr          x -> TRecdRepr (remapRecdFields g tmenv x)
-    | TFiniteUnionRepr   x -> TFiniteUnionRepr (remapUnionCases g tmenv x)
-    | TILObjModelRepr    _ -> failwith "cannot remap IL type definitions"
+    | TUnionRepr   x -> TUnionRepr (remapUnionCases g tmenv x)
+    | TILObjectRepr    _ -> failwith "cannot remap IL type definitions"
 #if EXTENSIONTYPING
     | TProvidedNamespaceExtensionPoint _ -> repr
     | TProvidedTypeExtensionPoint info -> 

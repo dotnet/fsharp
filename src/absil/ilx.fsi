@@ -126,16 +126,6 @@ and IlxUnionInfo =
       cudWhere: ILSourceMarker option;  
     }
 
-type IlxTypeDefKind = 
-   | Closure of IlxClosureInfo
-   | Union of IlxUnionInfo
-
-val mkIlxExtTypeDefKind: (IlxTypeDefKind -> IlxExtensionTypeKind)
-val isIlxExtTypeDefKind: (IlxExtensionTypeKind -> bool)
-val destIlxExtTypeDefKind: (IlxExtensionTypeKind -> IlxTypeDefKind)
-
-val mkIlxTypeDefKind: IlxTypeDefKind -> ILTypeDefKind
-
 // -------------------------------------------------------------------- 
 // MS-ILX constructs: Closures, thunks, classunions
 // -------------------------------------------------------------------- 
