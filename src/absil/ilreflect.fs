@@ -1680,7 +1680,6 @@ let typeAttrbutesOfTypeDefKind x =
     | ILTypeDefKind.Interface       -> TypeAttributes.Interface
     | ILTypeDefKind.Enum            -> TypeAttributes.Class
     | ILTypeDefKind.Delegate        -> TypeAttributes.Class
-    | ILTypeDefKind.Other _xtdk     -> failwith "typeAttributes of other external"
 
 let typeAttrbutesOfTypeAccess x =
     match x with 

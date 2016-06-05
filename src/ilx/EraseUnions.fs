@@ -176,13 +176,13 @@ let cuspecRepr =
 type NoTypesGeneratedViaThisReprDecider = NoTypesGeneratedViaThisReprDecider
 let cudefRepr = 
     UnionReprDecisions
-        ((fun (_enc,_td,cud) -> cud.cudAlternatives),
-         (fun (_enc,_td,cud) -> cud.cudNullPermitted), 
+        ((fun (_td,cud) -> cud.cudAlternatives),
+         (fun (_td,cud) -> cud.cudNullPermitted), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
-         (fun (_enc,_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
+         (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
-         (fun (_enc,_td,_cud) -> NoTypesGeneratedViaThisReprDecider),
-         (fun ((_enc,_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
+         (fun (_td,_cud) -> NoTypesGeneratedViaThisReprDecider),
+         (fun ((_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
 
 
 let mkBasicBlock2 (a,b) = 
@@ -574,6 +574,20 @@ let convILMethodBody ilg il =
 let convMethodDef ilg md  =
     {md with mdBody= morphILMethodBody (convILMethodBody ilg) md.mdBody }
 
+let rec convTypeDef ilg td = 
+      {td with NestedTypes = convTypeDefs ilg td.NestedTypes;
+               Methods=morphILMethodDefs (convMethodDef ilg) td.Methods; }
+
+and convTypeDefs ilg tdefs : ILTypeDefs = 
+    morphILTypeDefs (convTypeDef ilg) tdefs
+
+let ConvModule ilg modul = 
+    morphILTypeDefsInILModule (convTypeDefs ilg) modul
+
+
+//---------------------------------------------------
+// Generate the union classes
+
 let mkHiddenGeneratedInstanceFieldDef ilg (nm,ty,init,access) = 
      mkILInstanceField (nm,ty,init,access)
             |> addFieldNeverAttrs ilg
@@ -615,10 +629,10 @@ let mkMethodsAndPropertiesForFields ilg access attr hasHelpers (typ: ILType) (fi
                               nonBranchingInstrsToCode 
                                 [ mkLdarg 0us;
                                   mkNormalLdfld fspec ], attr))
-                  |> convMethodDef ilg
                   |> addMethodGeneratedAttrs ilg  ]
     
     basicProps, basicMethods
+
     
 let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (alt:IlxUnionAlternative) =
     let attr = cud.cudWhere
@@ -654,7 +668,6 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                             mkMethodBody(true,emptyILLocals,fields.Length,
                                     nonBranchingInstrsToCode 
                                       [ I_ldsfld (Nonvolatile,mkConstFieldSpec altName baseTy) ], attr))
-                         |> convMethodDef ilg
                          |> addMethodGeneratedAttrs ilg
                  [meth]
                      
@@ -678,7 +691,6 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                           mkILReturn ilg.typ_bool,
                           mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
-                      |> convMethodDef ilg
                       |> addMethodGeneratedAttrs ilg ],
                     [ { Name=mkTesterName altName;
                         IsRTSpecialName=false;
@@ -704,7 +716,6 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                           ("get_" + altName,
                            cud.cudHelpersAccess, [], mkILReturn baseTy,
                            mkMethodBody(true,emptyILLocals,fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num), attr))
-                        |> convMethodDef ilg
                         |> addMethodGeneratedAttrs ilg
                         |> addAltAttribs
 
@@ -736,7 +747,6 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                                     nonBranchingInstrsToCode 
                                       (Array.toList (Array.mapi (fun i _ -> mkLdarg (uint16 i)) fields) @
                                        (convNewDataInstrInternal ilg cuspec num)), attr))
-                         |> convMethodDef ilg
                          |> addMethodGeneratedAttrs ilg
                          |> addAltAttribs
 
@@ -802,7 +812,6 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                                           [ mkLdarg0;
                                             mkNormalLdfld (mkILFieldSpecInTy (debugProxyTy,debugProxyFieldName,altTy)); 
                                             mkNormalLdfld (mkILFieldSpecInTy(altTy,fldName,fldTy));],None))
-                            |> convMethodDef ilg
                             |> addMethodGeneratedAttrs ilg)
                         |> Array.toList
 
@@ -891,10 +900,10 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
     baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
         
   
-let rec convClassUnionDef ilg enc td cud = 
-    let baseTy = mkILFormalBoxedTy (mkRefForNestedILTypeDef ILScopeRef.Local (enc,td)) td.GenericParams
+let mkClassUnionDef ilg tref td cud = 
+    let baseTy = mkILFormalBoxedTy tref td.GenericParams
     let cuspec = IlxUnionSpec(IlxUnionRef(baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
-    let info = (enc,td,cud)
+    let info = (td,cud)
     let repr = cudefRepr 
     let isTotallyImmutable = (cud.cudHasHelpers <> SpecialFSharpListHelpers)
 
@@ -999,7 +1008,6 @@ let rec convClassUnionDef ilg enc td cud =
                                  [ mkLdarg0;
                                    (mkIlxInstr (EI_lddatatag (true, cuspec))) ], 
                              cud.cudWhere))
-                |> convMethodDef ilg 
                 |> addMethodGeneratedAttrs ilg ], 
               [] 
 
@@ -1013,7 +1021,6 @@ let rec convClassUnionDef ilg enc td cud =
                                  [ mkLdarg0;
                                    (mkIlxInstr (EI_lddatatag (true, cuspec))) ], 
                              cud.cudWhere)) 
-                |> convMethodDef ilg
                 |> addMethodGeneratedAttrs ilg ], 
           
               [ { Name=tagPropertyName;
@@ -1034,21 +1041,9 @@ let rec convClassUnionDef ilg enc td cud =
     // The class can be abstract if each alternative is represented by a derived type
     let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
 
-    let existingMeths = 
-        td.Methods.AsList 
-            // Filter out the F#-compiler supplied implementation of the get_Empty method. This is because we will replace
-            // its implementation by one that loads the unique private static field for lists
-            |> List.filter (fun md -> not (cud.cudHasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) &&
-                                      not (cud.cudHasHelpers = SpecialFSharpOptionHelpers && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some")))
-            // Convert the user-defined methods
-            |> List.map (convMethodDef ilg) 
-    
-    let existingProps = 
-        td.Properties.AsList
-            // Filter out the F#-compiler supplied implementation of the Empty property.
-            |> List.filter (fun pd -> not (cud.cudHasHelpers = SpecialFSharpListHelpers && (pd.Name = "Empty"  || pd.Name = "IsEmpty"  )) &&
-                                      not (cud.cudHasHelpers = SpecialFSharpOptionHelpers && (pd.Name = "Value" || pd.Name = "None")))
-    
+    let existingMeths = td.Methods.AsList 
+    let existingProps = td.Properties.AsList
+
     let enumTypeDef = 
         // The nested Tags type is elided if there is only one tag
         // The Tag property is NOT elided if there is only one tag
@@ -1085,7 +1080,7 @@ let rec convClassUnionDef ilg enc td cud =
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ 
                                altTypeDefs @ 
                                altDebugTypeDefs @
-                               (convTypeDefs ilg (enc@[td]) td.NestedTypes).AsList);
+                               td.NestedTypes.AsList);
           GenericParams= td.GenericParams;
           Access = td.Access;
           IsAbstract = isAbstract;
@@ -1116,26 +1111,27 @@ let rec convClassUnionDef ilg enc td cud =
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 
 
+(*
+    printfn "union type %s has helpers = %+A" td.Name cud.cudHasHelpers
+    for md in td.Methods do 
+        printfn "original union type %s has method %s" td.Name md.Name
+    for pd in td.Properties.AsList do 
+        printfn "original union type %s has property %s" td.Name pd.Name
+    for md in baseTypeDef.Methods.AsList do 
+        printfn "type %s has method %s" baseTypeDef.Name md.Name
+    for pd in baseTypeDef.Properties.AsList do 
+        printfn "type %s has property %s" baseTypeDef.Name pd.Name
+
+    for pd in tagProps do 
+        printfn "type %s has tag property %s" baseTypeDef.Name pd.Name
+    for pd in basePropsFromAlt do 
+        printfn "type %s has basePropsFromAlt property %s" baseTypeDef.Name pd.Name
+    for pd in selfProps do 
+        printfn "type %s has selfProps property %s" baseTypeDef.Name pd.Name
+    for pd in existingProps do 
+        printfn "type %s has existingProps property %s" baseTypeDef.Name pd.Name
+*)
+
     baseTypeDef
 
-
-and convTypeDef ilg enc td = 
-    match td.tdKind with 
-    | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-        begin match destIlxExtTypeDefKind e with 
-        | IlxTypeDefKind.Closure cloinfo -> 
-            {td with NestedTypes = convTypeDefs ilg (enc@[td]) td.NestedTypes;
-                     Methods=morphILMethodDefs (convMethodDef ilg) td.Methods;
-                     tdKind= mkIlxTypeDefKind(IlxTypeDefKind.Closure (morphIlxClosureInfo (convILMethodBody ilg) cloinfo)) }
-        | IlxTypeDefKind.Union cud -> convClassUnionDef ilg enc td cud
-        end
-    | _ -> 
-      {td with NestedTypes = convTypeDefs ilg (enc@[td]) td.NestedTypes;
-               Methods=morphILMethodDefs (convMethodDef ilg) td.Methods; }
-
-and convTypeDefs ilg enc tdefs : ILTypeDefs = 
-    morphILTypeDefs (convTypeDef ilg enc) tdefs
-
-let ConvModule ilg modul = 
-    morphILTypeDefsInILModule (convTypeDefs ilg []) modul
 

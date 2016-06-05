@@ -172,15 +172,6 @@ and IlxUnionInfo =
       /// debug info for generated code for classunions 
       cudWhere: ILSourceMarker option; }
 
-type IlxTypeDefKind = 
- | Closure of IlxClosureInfo
- | Union of IlxUnionInfo
-
-let (mkIlxExtTypeDefKind,isIlxExtTypeDefKind,destIlxExtTypeDefKind) = 
-  (RegisterTypeDefKindExtension TypeDefKindExtension : (IlxTypeDefKind -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> IlxTypeDefKind) )
-
-let mkIlxTypeDefKind i = ILTypeDefKind.Other (mkIlxExtTypeDefKind i)
-
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types
 // -------------------------------------------------------------------- 
