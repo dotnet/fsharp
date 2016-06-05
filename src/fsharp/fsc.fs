@@ -2034,8 +2034,6 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile
     
     ReportTime tcConfig "ILX -> IL (Unions)"; 
     let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
-    ReportTime tcConfig "ILX -> IL (Funcs)"; 
-    let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
     AbortOnError(errorLogger,tcConfig,exiter)
     Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
