@@ -1407,8 +1407,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
     end;
     
-    // Considers TFsObjModelRepr, TRecdRepr and TFiniteUnionRepr. 
-    // [Review] are all cases covered: TILObjModelRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
+    // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
+    // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon);
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> CheckTypePermitByrefs cenv env m); (* check vslots = abstract slots *)
     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (CheckTypePermitByrefs cenv env m);                   (* check implemented interface types *)
@@ -1427,7 +1427,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     //implements_of_tycon cenv.g tycon |> List.iter visitType
     if tycon.IsFSharpDelegateTycon then 
         match tycon.TypeReprInfo with 
-        | TFsObjModelRepr r ->
+        | TFSharpObjectRepr r ->
             match r.fsobjmodel_kind with 
             | TTyconDelegate ss ->
                 //ss.ClassTypars 

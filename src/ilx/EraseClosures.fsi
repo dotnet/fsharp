@@ -17,3 +17,6 @@ val mkILFuncTy : cenv -> ILType -> ILType -> ILType
 val mkILTyFuncTy : cenv -> ILType
 val newIlxPubCloEnv : ILGlobals -> cenv
 val mkTyOfLambdas: cenv -> IlxClosureLambdas -> ILType
+
+val convIlxClosureDef : cenv -> encl: string list -> ILTypeDef -> IlxClosureInfo -> ILTypeDef list
+

@@ -14,5 +14,6 @@ val mkIsData : ILGlobals -> bool * IlxUnionSpec * int -> ILInstr list
 val mkLdData : bool * IlxUnionSpec * int * int -> ILInstr list
 val mkStData : IlxUnionSpec * int * int -> ILInstr list
 val mkBrIsData : ILGlobals -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel -> ILInstr list
+val mkClassUnionDef : ILGlobals -> ILTypeRef -> ILTypeDef -> IlxUnionInfo -> ILTypeDef
 val ConvModule: ILGlobals -> ILModuleDef -> ILModuleDef 
 val GetILTypeForAlternative : IlxUnionSpec -> int -> ILType
