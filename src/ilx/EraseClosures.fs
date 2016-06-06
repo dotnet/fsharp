@@ -297,14 +297,16 @@ let convILMethodBody (thisClo,boxReturnTy) il =
         match thisClo with 
         | Some _ -> il.MaxStack+2 (* for calls *)
         | None -> il.MaxStack
-    let code' = il.Code
-    let code' = match boxReturnTy with
-                | None    -> code'
-                | Some ty -> (* box before returning? e.g. in the case of a TyFunc returning a struct, which compiles to a Specialise<_> method returning an object *)
-                             morphExpandILInstrsInILCode (convReturnInstr ty) code'
+    let code = il.Code
+    // Box before returning? e.g. in the case of a TyFunc returning a struct, which 
+    // compiles to a Specialise<_> method returning an object 
+    let code = 
+        match boxReturnTy with
+        | None    -> code
+        | Some ty -> morphExpandILInstrsInILCode (convReturnInstr ty) code
     {il with MaxStack=newMax;  
              IsZeroInit=true;
-             Code= code' ;
+             Code= code ;
              Locals = ILList.ofList (ILList.toList locals @ tmps.Close()) }
 
 let convMethodBody thisClo = function
@@ -314,24 +316,6 @@ let convMethodBody thisClo = function
 let convMethodDef thisClo (md: ILMethodDef)  =
     let b' = convMethodBody thisClo (md.mdBody.Contents)
     {md with mdBody=mkMethBodyAux b'}
-
-// -------------------------------------------------------------------- 
-// Convert a class 
-// -------------------------------------------------------------------- 
-
-let rec convTypeDef cenv encl td = 
-      [ {td with 
-             NestedTypes = convTypeDefs cenv (encl@[td.Name]) td.NestedTypes;
-             Methods=morphILMethodDefs (convMethodDef None) td.Methods; } ]
-
-and convTypeDefs cenv encl tdefs = 
-  morphExpandILTypeDefs (convTypeDef cenv encl) tdefs
-
-let ConvModule ilg modul = 
-  let cenv = newIlxPubCloEnv(ilg)
-  let newTypes = convTypeDefs cenv [] modul.TypeDefs
-  {modul with TypeDefs=newTypes}
-
 
 // -------------------------------------------------------------------- 
 // Make fields for free variables of a type abstraction.
@@ -377,7 +361,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let tagApp = (Lazy.force clo.cloCode).SourceMarker
       
       let tyargsl,tmargsl,laterStruct = stripSupportedAbstraction clo.cloStructure
-      let laterAccess = td.Access (* (if td.Access = ILTypeDefAccess.Public then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Nested ILMemberAccess.Assembly) in*)
+      let laterAccess = td.Access
 
       // Adjust all the argument and environment accesses 
       let rewriteCodeToAccessArgsFromEnv laterCloSpec (argToFreeVarMap: (int * IlxClosureFreeVar) list)  = 
@@ -473,14 +457,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    tagApp)
 
               let nowTypeDefs = 
-                convIlxClosureDef cenv encl
-                  td {clo with cloStructure=nowStruct; 
-                               cloCode=notlazy nowCode}
+                convIlxClosureDef cenv encl td {clo with cloStructure=nowStruct; 
+                                                         cloCode=notlazy nowCode}
               nowTypeDefs @ laterTypeDefs
           else 
               // CASE 1b. Build a type application. 
-              // Currently the sole mbody defines a class and uses 
-              // virtual methods. 
               let boxReturnTy = Some nowReturnTy (* box prior to all I_ret *)
               let nowApplyMethDef =
                 mkILGenericVirtualMethod
@@ -557,19 +538,17 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                        end,
                      tagApp)
               let nowTypeDefs = 
-                convIlxClosureDef cenv encl
-                  td
-                  {clo with cloStructure=nowStruct;
-                            cloCode=notlazy nowCode}
+                convIlxClosureDef cenv encl td {clo with cloStructure=nowStruct;
+                                                         cloCode=notlazy nowCode}
               let laterCode = rewriteCodeToAccessArgsFromEnv laterCloSpec argToFreeVarMap
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
                   {td with GenericParams=laterGenericParams;
-                             Access=laterAccess;
-                             Name=laterTypeName} 
+                           Access=laterAccess;
+                           Name=laterTypeName} 
                   {clo with cloStructure=laterStruct;
-                        cloFreeVars=laterFields;
-                        cloCode=notlazy laterCode}
+                            cloFreeVars=laterFields;
+                            cloCode=notlazy laterCode}
               // add 'compiler generated' to all the methods in the 'now' classes
               let laterTypeDefs = laterTypeDefs |>  List.map (addMethodGeneratedAttrsToTypeDef cenv.ilg)
               nowTypeDefs @ laterTypeDefs
