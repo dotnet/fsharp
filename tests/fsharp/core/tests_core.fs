@@ -1186,6 +1186,10 @@ module ``Load-Script`` =
         do! exec ("."/"ProjectDriver.exe") ""
         // del ProjectDriver.exe
         del "ProjectDriver.exe"
+        // echo Test 17=================================================
+        echo "Test 17================================================="
+        // "%FSI%" load-IncludeNoWarn211.fsx
+        do! fsi "" ["load-IncludeNoWarn211.fsx"]
         // echo Done ==================================================
         echo "Done =================================================="
         }
