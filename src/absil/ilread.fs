@@ -16,7 +16,10 @@ open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+#if FX_NO_PDB_READER
+#else
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
+#endif
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 open Microsoft.FSharp.Compiler.AbstractIL.IL  
@@ -1456,6 +1459,9 @@ let readBlobHeapAsDouble ctxt vidx = fst (sigptrGetDouble (readBlobHeap ctxt vid
 //        (e) the start of the native resources attached to the binary if any
 // ----------------------------------------------------------------------*)
 
+#if FX_NO_LINKEDRESOURCES
+let readNativeResources _ctxt = []
+#else
 let readNativeResources ctxt = 
     let nativeResources = 
         if ctxt.nativeResourcesSize = 0x0 || ctxt.nativeResourcesAddr = 0x0 then 
@@ -1464,6 +1470,7 @@ let readNativeResources ctxt =
             [ (lazy (let linkedResource = seekReadBytes ctxt.is (ctxt.anyV2P (ctxt.infile + ": native resources",ctxt.nativeResourcesAddr)) ctxt.nativeResourcesSize
                      unlinkResource ctxt.nativeResourcesAddr linkedResource)) ]
     nativeResources
+#endif
    
 let dataEndPoints ctxtH = 
     lazy

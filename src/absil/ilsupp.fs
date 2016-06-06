@@ -31,11 +31,8 @@ open System.Runtime.CompilerServices
 #else
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
 let inline ignore _x = ()
-#endif
 
 // Native Resource linking/unlinking
-#if FX_NO_LINKEDRESOURCES && FX_NO_WIN32RES
-#else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 #endif
 
@@ -60,7 +57,7 @@ let bytesToQWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte) , (b4 : 
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n : int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
 
-#if FX_NO_LINKEDRESOURCES  && FX_NO_WIN32RES
+#if FX_NO_LINKEDRESOURCES
 #else
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
@@ -584,14 +581,11 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
             
         !size
 
-#if FX_NO_LINKEDRESOURCES
-#else
 let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRVA:int32) (fileType:PEFileType) (outputFilePath:string) = 
-
     let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
     let mutable tempResFiles : string list = []
     let mutable objBytes : byte[] = [||]
-
+    
     let unlinkedResources = unlinkedResources |> List.filter (fun arr -> arr.Length > 0)
     if unlinkedResources.Length = 0 then // bail if there's nothing to link
         objBytes
@@ -600,10 +594,8 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
         // check if the first dword is 0x0
         let firstDWord = bytesToDWord(unlinkedResources.[0].[0], unlinkedResources.[0].[1], unlinkedResources.[0].[2], unlinkedResources.[0].[3])
         if firstDWord = 0 then
-
             // build the command line invocation string for cvtres.exe
             let corSystemDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-
             // We'll use the current dir and a random file name rather than System.IO.Path.GetTempFileName
             // to try and prevent the command line invocation string from being > MAX_PATH
 
@@ -756,6 +748,110 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
 
         // return the buffer    
         pResBuffer
+
+let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) = 
+    let mutable nResNodes = 0
+
+    let pirdType = bytesToIRD pbLinkedResource 0
+    let mutable pirdeType = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
+    let nEntries = pirdType.NumberOfNamedEntries + pirdType.NumberOfIdEntries
+
+    // determine entry buffer size
+    // TODO: coalesce these two loops
+    for iEntry = 0 to ((int)nEntries - 1) do
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+
+        if pirdeType.DataIsDirectory then
+            let nameBase = pirdeType.OffsetToDirectory
+            let pirdName = bytesToIRD pbLinkedResource nameBase
+            let mutable pirdeName = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
+            let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
+
+            for iEntry2 = 0 to ((int)nEntries2 - 1) do
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+
+                if pirdeName.DataIsDirectory then
+                    let langBase = pirdeName.OffsetToDirectory
+                    let pirdLang = bytesToIRD pbLinkedResource langBase
+                    let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
+                    
+                    nResNodes <- nResNodes + ((int)nEntries3) ;
+                else
+                    nResNodes <- nResNodes + 1 ;
+        else
+            nResNodes <- nResNodes + 1 ;
+
+    let pResNodes : ResFormatNode [] = Array.zeroCreate nResNodes
+    nResNodes <- 0 ;
+
+    // fill out the entry buffer
+    for iEntry = 0 to ((int)nEntries - 1) do
+        pirdeType <- bytesToIRDE pbLinkedResource (IMAGE_RESOURCE_DIRECTORY.Width + (iEntry * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;  
+        let dwTypeID = pirdeType.Name
+        // Need to skip VERSION and RT_MANIFEST resources
+        // REVIEW: ideally we shouldn't allocate space for these, or rename properly so we don't get the naming conflict
+        let skipResource = (0x10 = dwTypeID) || (0x18 = dwTypeID)
+        if pirdeType.DataIsDirectory then
+            let nameBase = pirdeType.OffsetToDirectory
+            let pirdName = bytesToIRD pbLinkedResource nameBase
+            let mutable pirdeName = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
+            let nEntries2 = pirdName.NumberOfNamedEntries + pirdName.NumberOfIdEntries
+                
+            for iEntry2 = 0 to ((int)nEntries2 - 1) do
+                pirdeName <- bytesToIRDE pbLinkedResource (nameBase + (iEntry2 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                let dwNameID = pirdeName.Name
+
+                if pirdeName.DataIsDirectory then
+                    let langBase = pirdeName.OffsetToDirectory
+                    let pirdLang = bytesToIRD pbLinkedResource langBase
+                    let mutable pirdeLang = Unchecked.defaultof<IMAGE_RESOURCE_DIRECTORY_ENTRY>
+                    let nEntries3 = pirdLang.NumberOfNamedEntries + pirdLang.NumberOfIdEntries
+                        
+                    for iEntry3 = 0 to ((int)nEntries3 - 1) do
+                        pirdeLang <- bytesToIRDE pbLinkedResource (langBase + (iEntry3 * IMAGE_RESOURCE_DIRECTORY_ENTRY.Width)) ;
+                        let dwLangID = pirdeLang.Name
+                            
+                        if pirdeLang.DataIsDirectory then
+                            // Resource hierarchy exceeds three levels
+                            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
+                        else
+                            if (not skipResource) then
+                                let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)
+                                pResNodes.[nResNodes] <- rfn ;
+                                nResNodes <- nResNodes + 1 ;
+                else
+                    if (not skipResource) then
+                        let rfn = ResFormatNode(dwTypeID, dwNameID, 0, pirdeName.OffsetToData, pbLinkedResource)
+                        pResNodes.[nResNodes] <- rfn ;
+                        nResNodes <- nResNodes + 1 ;
+        else
+            if (not skipResource) then
+                let rfn = ResFormatNode(dwTypeID, 0, 0, pirdeType.OffsetToData, pbLinkedResource) // REVIEW: I believe these 0s are what's causing the duplicate res naming problems
+                pResNodes.[nResNodes] <- rfn ;
+                nResNodes <- nResNodes + 1 ;
+
+    // Ok, all tree leaves are in ResFormatNode structs, and nResNodes ptrs are in pResNodes
+    let mutable size = 0
+    if nResNodes <> 0 then
+        size <- size + ResFormatHeader.Width ; // sizeof(ResFormatHeader)
+        for i = 0 to (nResNodes - 1) do
+            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0) ;
+
+    let pResBuffer = Bytes.zeroCreate size
+
+    if nResNodes <> 0 then
+        let mutable resBufferOffset = 0
+
+        // Write a dummy header
+        let rfh = ResFormatHeader()
+        let rfhBytes = rfh.toBytes()
+        Bytes.blit rfhBytes 0 pResBuffer 0 ResFormatHeader.Width
+        resBufferOffset <- resBufferOffset + ResFormatHeader.Width ;
+
+        for i = 0 to (nResNodes - 1) do
+            resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset) ;
+
+    pResBuffer
 #endif
 
 #if FX_NO_PDB_WRITER
