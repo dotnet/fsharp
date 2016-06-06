@@ -858,8 +858,6 @@ type internal FsiDynamicCompiler
             
         ReportTime tcConfig "ILX -> IL (Unions)"; 
         let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
-        ReportTime tcConfig "ILX -> IL (Funcs)"; 
-        let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
         errorLogger.AbortOnError();   
               
