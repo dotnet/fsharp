@@ -2,7 +2,7 @@
 #light
 
 // Verify warning if a finally block does not return 'unit'
-//<Expects id="FS0020" status="warning">This expression has a value of type 'bool' that is implicitly ignored</Expects>
+//<Expects id="FS0020" status="warning">The result of this expression is implicitly ignored</Expects>
 
 let x : int =
     try
