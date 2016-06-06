@@ -763,53 +763,15 @@ let rec goutput_instr env os inst =
           goutput_cuspec env os ty;
           output_string os ",";
           output_int os n
-      | (EI_isdata (_,ty,n))  -> 
-          output_string os "isdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
-      |  (EI_brisdata (_,ty,n,tg1,_)) -> 
-          output_string os "brisdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_string os "(";  
-          output_int os n;
-          output_string os ",";  
-          output_code_label os tg1;
-          output_string os ")"
-      | (EI_lddata (_,ty,n,m))  -> 
-          output_string os "lddata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
       | (EI_lddatatag (_,ty)) -> 
           output_string os "lddatatag "; 
           goutput_cuspec env os ty
-      |  (EI_stdata (ty,n,m)) -> 
-          output_string os "stdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
-      |  (EI_newdata (ty,n))  -> 
-          output_string os "newdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
       |  (EI_datacase (_,ty,l,_))  -> 
           output_string os "datacase";
           output_string os " ";  
           goutput_cuspec env os ty;
           output_string os ",";  
           output_parens (output_seq "," (fun os (x,y) -> output_int os x;  output_string os ",";  output_code_label os y)) os l
-      |  (EI_callfunc (tl,cs)) -> 
-          output_tailness os tl; 
-          output_string os "callfunc "; 
-          goutput_apps env os cs;
-          output_after_tailcall os tl;
   | _ -> 
       output_string os "<printing for this instruction is not implemented>"
 
@@ -1023,30 +985,10 @@ let rec goutput_tdef (enc) env contents os cd =
           goutput_fdefs tref env os cd.Fields;
           goutput_pdefs env os cd.Properties;
   else 
-    let isclo = 
-      match cd.tdKind with 
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Closure _ ->  true
-          | _ -> false
-      | _ -> false 
-    let isclassunion = 
-      match cd.tdKind with 
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Union _ ->  true
-          | _ -> false
-      | _ -> false 
-    if not (isclo || isclassunion) || contents then 
       output_string os "\n";
       match cd.tdKind with 
       | ILTypeDefKind.Class | ILTypeDefKind.Enum | ILTypeDefKind.Delegate | ILTypeDefKind.ValueType -> output_string os ".class "
       | ILTypeDefKind.Interface ->  output_string os ".class  interface "
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Closure _ ->  output_string os ".closure "
-          | IlxTypeDefKind.Union  _ ->  output_string os ".classunion "
-      | ILTypeDefKind.Other _ -> failwith "unknown extension" 
       output_init_semantics os cd.InitSemantics;
       output_string os " ";
       output_type_access os cd.Access;
@@ -1062,17 +1004,8 @@ let rec goutput_tdef (enc) env contents os cd =
       output_sqstring os cd.Name ;
       goutput_gparams env os cd.GenericParams;
       output_string os "\n\t";
-      if isclo then 
-        match cd.tdKind with 
-        | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-            match destIlxExtTypeDefKind e with 
-            | IlxTypeDefKind.Closure _cloinfo ->  
-                () //goutput_freevars env os cloinfo.cloFreeVars
-            | _ -> ()
-        | _ -> ()
-      else 
-          goutput_superclass env os cd.Extends;
-          output_string os "\n\t";
+      goutput_superclass env os cd.Extends;
+      output_string os "\n\t";
       goutput_implements env os cd.Implements;
       output_string os "\n{\n ";
       if contents then 
@@ -1082,19 +1015,6 @@ let rec goutput_tdef (enc) env contents os cd =
         pp_layout_decls os ();
         goutput_fdefs tref env os cd.Fields;
         goutput_mdefs env os cd.Methods;
-        match cd.tdKind with 
-        | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-            match destIlxExtTypeDefKind e with 
-            | IlxTypeDefKind.Closure x ->  
-                output_string os "\n.apply ";
-                (goutput_lambdas env) os x.cloStructure;
-                output_string os "\n { ";
-                (goutput_ilmbody env) os (Lazy.force x.cloCode);
-                output_string os "}\n";
-            | IlxTypeDefKind.Union x ->  
-                Array.iter (fun x -> output_string os " .alternative "; 
-                                     goutput_alternative_ref env os x) x.cudAlternatives;
-        | _ -> ()
       goutput_tdefs contents  (enc@[cd.Name]) env os cd.NestedTypes;
       output_string os "\n}";
 

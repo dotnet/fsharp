@@ -117,22 +117,13 @@ type IlxClosureSpec =
 
 type IlxInstr = 
   // Discriminated unions
-  | EI_lddata of (* avoidHelpers: *) bool * IlxUnionSpec * int * int
-  | EI_isdata of (* avoidHelpers: *) bool * IlxUnionSpec * int
-  | EI_brisdata of (* avoidHelpers: *) bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel
   | EI_castdata of bool * IlxUnionSpec * int
-  | EI_stdata of IlxUnionSpec * int * int
-  | EI_datacase of (* avoidHelpers: *) bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel (* last label is fallthrough *)
-  | EI_lddatatag of (* avoidHelpers: *) bool * IlxUnionSpec
-  | EI_newdata of IlxUnionSpec * int
+  | EI_datacase of avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel
+  | EI_lddatatag of avoidHelpers:bool * IlxUnionSpec
   
-  // Closures
-  | EI_callfunc of ILTailcall * IlxClosureApps
 
 let destinations i =
   match i with 
-  |  (EI_brisdata (_,_,_,l1,l2)) ->  [l1; l2]
-  |  (EI_callfunc (Tailcall,_)) ->   []
   |  (EI_datacase (_,_,ls,l)) -> 
         let hashSet = System.Collections.Generic.HashSet<_>(HashIdentity.Structural)
         [yield l
@@ -143,27 +134,19 @@ let destinations i =
 
 let fallthrough i = 
   match i with 
-  |  (EI_brisdata (_,_,_,_,l)) 
   |  (EI_datacase (_,_,_,l)) -> Some l
   | _ -> None
 
-let isTailcall i = 
-  match i with 
-  |  (EI_callfunc (Tailcall,_)) -> true
-  | _ -> false
-
 let remapIlxLabels lab2cl i = 
   match i with 
-    | EI_brisdata (z,a,b,l1,l2) -> EI_brisdata (z,a,b,lab2cl l1,lab2cl l2)
     | EI_datacase (z,x,ls,l) -> EI_datacase (z,x,List.map (fun (y,l) -> (y,lab2cl l)) ls, lab2cl l)
     | _ -> i
 
 let (mkIlxExtInstr,isIlxExtInstr,destIlxExtInstr) = 
   RegisterInstructionSetExtension  
-    { instrExtDests=destinations;
-      instrExtFallthrough=fallthrough;
-      instrExtIsTailcall=isTailcall;
-      instrExtRelabel=remapIlxLabels; }
+    { instrExtDests=destinations
+      instrExtFallthrough=fallthrough
+      instrExtRelabel=remapIlxLabels }
 
 let mkIlxInstr i = I_other (mkIlxExtInstr i)
 
@@ -175,24 +158,19 @@ type IlxClosureInfo =
       cloSource: ILSourceMarker option}
 
 and IlxUnionInfo = 
-    { cudReprAccess: ILMemberAccess; (* is the representation public? *)
-      cudHelpersAccess: ILMemberAccess; (* are the representation public? *)
-      cudHasHelpers: IlxUnionHasHelpers; (* generate the helpers? *)
-      cudDebugProxies: bool; (* generate the helpers? *)
+    { /// is the representation public? 
+      cudReprAccess: ILMemberAccess; 
+      /// are the representation public? 
+      cudHelpersAccess: ILMemberAccess; 
+      /// generate the helpers? 
+      cudHasHelpers: IlxUnionHasHelpers; 
+      /// generate the helpers? 
+      cudDebugProxies: bool; 
       cudDebugDisplayAttributes: ILAttribute list;
       cudAlternatives: IlxUnionAlternative array;
       cudNullPermitted: bool;
-      (* debug info for generated code for classunions *) 
+      /// debug info for generated code for classunions 
       cudWhere: ILSourceMarker option; }
-
-type IlxTypeDefKind = 
- | Closure of IlxClosureInfo
- | Union of IlxUnionInfo
-
-let (mkIlxExtTypeDefKind,isIlxExtTypeDefKind,destIlxExtTypeDefKind) = 
-  (RegisterTypeDefKindExtension TypeDefKindExtension : (IlxTypeDefKind -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> IlxTypeDefKind) )
-
-let mkIlxTypeDefKind i = ILTypeDefKind.Other (mkIlxExtTypeDefKind i)
 
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types

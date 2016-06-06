@@ -98,15 +98,6 @@ type ILSourceMarker =
     member EndLine: int
     member EndColumn: int
 
-/// Extensibility: ignore these unless you are generating ILX
-/// structures directly.
-[<Sealed>]
-type IlxExtensionType  =
-    interface System.IComparable
-
-/// Represents an extension to the algebra of type kinds
-type IlxExtensionTypeKind 
-
 /// Represents an extension to the algebra of instructions
 type IlxExtensionInstr 
 
@@ -684,7 +675,6 @@ type ILInstr =
 type ILInstrSetExtension<'Extension> = 
     { instrExtDests: ('Extension -> ILCodeLabel list);
       instrExtFallthrough: ('Extension -> ILCodeLabel option);
-      instrExtIsTailcall: ('Extension -> bool);
       instrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> 'Extension -> 'Extension; }
 
 val RegisterInstructionSetExtension: ILInstrSetExtension<'Extension> -> ('Extension -> IlxExtensionInstr) * (IlxExtensionInstr -> bool) * (IlxExtensionInstr -> 'Extension)
@@ -1409,8 +1399,6 @@ type ILTypeDefKind =
     | Interface
     | Enum 
     | Delegate 
-    (* FOR EXTENSIONS, e.g. MS-ILX *)  
-    | Other of IlxExtensionTypeKind
 
 /// Tables of named type definitions.  The types and table may contain on-demand
 /// (lazy) computations, e.g. the actual reading of some aspects
@@ -2293,9 +2281,3 @@ type ILReferences =
 val computeILRefs: ILModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 
-// -------------------------------------------------------------------- 
-// The following functions are used to define an extension to the  In reality the only extension is ILX
-
-type ILTypeDefKindExtension<'Extension> = TypeDefKindExtension
-
-val RegisterTypeDefKindExtension: ILTypeDefKindExtension<'Extension> -> ('Extension -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> 'Extension)

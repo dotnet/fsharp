@@ -34,7 +34,6 @@ val morphILTypeRefsInILModuleMemoized:  ILGlobals -> ILTypeRef morph ->  ILModul
 val morphILScopeRefsInILModuleMemoized: ILGlobals -> ILScopeRef morph ->  ILModuleDef ->  ILModuleDef
 
 val morphILMethodBody: ILMethodBody morph -> ILLazyMethodBody -> ILLazyMethodBody
-val morphIlxClosureInfo: ILMethodBody morph -> IlxClosureInfo ->  IlxClosureInfo
 val morphILInstrsInILCode: (ILInstr -> ILInstr list) -> ILCode -> ILCode
 
 [<Struct; NoComparison; NoEquality>]

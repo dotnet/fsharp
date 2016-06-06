@@ -405,17 +405,6 @@ let mdefs_typ2typ_ilmbody2ilmbody ilg fs x = morphILMethodDefs (mdef_typ2typ_ilm
 let cuinfo_typ2typ ilg ftype cud = 
     { cud with cudAlternatives = alts_typ2typ ilg ftype cud.cudAlternatives; } 
 
-
-let cloinfo_typ2typ_ilmbody2ilmbody fs clo = 
-    let (ftype,filmbody) = fs 
-    let c' = filmbody None (Lazy.force clo.cloCode) 
-    { clo with cloFreeVars = freevars_typ2typ ftype clo.cloFreeVars;
-               cloCode=notlazy c' }
-
-let morphIlxClosureInfo f clo = 
-    let c' = f (Lazy.force clo.cloCode) 
-    { clo with cloCode=notlazy c' }
-
 let mimpl_typ2typ f e =
     { Overrides = ospec_typ2typ f e.Overrides;
       OverrideBy = mspec_typ2typ (f,(fun _ -> f)) e.OverrideBy; }
@@ -443,7 +432,7 @@ let edefs_typ2typ ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_typ2ty
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)
 
 let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td = 
-   let (ftype,filmbody,fmdefs) = fs 
+   let (ftype,fmdefs) = fs 
    let ftype' = ftype (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
    let fdefs' = fdefs_typ2typ ilg ftype' td.Fields 
@@ -457,13 +446,6 @@ let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td =
             Events = edefs_typ2typ ilg ftype' td.Events; 
             Properties = pdefs_typ2typ ilg ftype' td.Properties;
             CustomAttrs = cattrs_typ2typ ilg ftype' td.CustomAttrs;
-            tdKind =
-               match td.tdKind with
-               | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-                   match destIlxExtTypeDefKind e with 
-                   | IlxTypeDefKind.Closure i -> mkIlxTypeDefKind (IlxTypeDefKind.Closure (cloinfo_typ2typ_ilmbody2ilmbody (ftype',filmbody (enc,td)) i))
-                   | IlxTypeDefKind.Union i -> mkIlxTypeDefKind (IlxTypeDefKind.Union (cuinfo_typ2typ ilg ftype' i))
-               | _ -> td.tdKind
   }
 
 and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs = 
@@ -478,13 +460,11 @@ let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
 
 let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg
     ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),
-     (filmbody: ILModuleDef -> ILTypeDef list * ILTypeDef -> ILMethodDef option -> ILMethodBody -> ILMethodBody),
      fmdefs) m = 
 
     let ftdefs = 
       tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg []
         (ftype m,
-         filmbody m,
          fmdefs m) 
 
     { m with TypeDefs=ftdefs m.TypeDefs;
@@ -493,13 +473,9 @@ let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg
     
 let module_bblock2code_typ2typ_maxstack2maxstack ilg fs x = 
     let (fbblock,ftype,fmaxstack) = fs 
-    let filmbody modCtxt tdefCtxt mdefCtxt =
-      ilmbody_bblock2code_typ2typ_maxstack2maxstack 
-        (fbblock modCtxt tdefCtxt mdefCtxt, 
-         ftype modCtxt (Some tdefCtxt) mdefCtxt,
-         fmaxstack modCtxt tdefCtxt mdefCtxt) 
+    let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_bblock2code_typ2typ_maxstack2maxstack (fbblock modCtxt tdefCtxt mdefCtxt, ftype modCtxt (Some tdefCtxt) mdefCtxt, fmaxstack modCtxt tdefCtxt mdefCtxt) 
     let fmdefs modCtxt tdefCtxt = mdefs_typ2typ_ilmbody2ilmbody ilg (ftype modCtxt (Some tdefCtxt), filmbody modCtxt tdefCtxt) 
-    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg (ftype, filmbody, fmdefs) x 
+    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg (ftype, fmdefs) x 
 
 let module_bblock2code_typ2typ ilg (f1,f2) x = 
   module_bblock2code_typ2typ_maxstack2maxstack ilg (f1, f2, (fun _modCtxt _tdefCtxt _mdefCtxt x -> x)) x
