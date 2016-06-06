@@ -1070,6 +1070,8 @@ type internal FsiDynamicCompiler
               else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) sourceFile)
           fsiConsoleOutput.uprintfn "]"
 
+          closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun m -> m,n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
+
           // Play errors and warnings from closures of the surface (root) script files.
           closure.RootErrors |> List.iter errorSink
           closure.RootWarnings |> List.iter warnSink
