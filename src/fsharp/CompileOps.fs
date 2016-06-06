@@ -531,7 +531,7 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator","
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning","%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning","")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected","%s")
-let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","%s")
+let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","")
 let UnitTypeExpected2E() = DeclareResourceString("UnitTypeExpected2","%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime","")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1","%s")
@@ -1182,7 +1182,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           if perhapsProp then 
             os.Append(UnitTypeExpected2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
           else
-            os.Append(UnitTypeExpected1E().Format (NicePrint.stringOfTy denv ty)) |> ignore
+            os.Append(UnitTypeExpected1E().Format) |> ignore
       | RecursiveUseCheckedAtRuntime  _ -> 
           os.Append(RecursiveUseCheckedAtRuntimeE().Format) |> ignore
       | LetRecUnsound (_,[v],_) ->  

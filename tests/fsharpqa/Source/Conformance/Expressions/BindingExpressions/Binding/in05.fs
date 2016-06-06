@@ -5,7 +5,7 @@
 // Eventually, we will deprecated them - and the specs will be updated.
 //<Expects status="error" span="(12,13-12,14)" id="FS0001">The type 'int' does not match the type 'unit'$</Expects>
 //<Expects status="error" span="(12,18-12,24)" id="FS0001">Type mismatch\. Expecting a.    ''a -> 'b'    .but given a.    ''a -> unit'    .The type 'int' does not match the type 'unit'$</Expects>
-//<Expects status="error" span="(10,5-13,10)" id="FS0020">This expression has a value of type 'bool' that is implicitly ignored\. Use the 'ignore' function to discard this value explicitly, e\.g\. 'expr \|> ignore', or bind it to a name to refer to it later, e\.g\. 'let result = expr'\.$</Expects>
+//<Expects status="error" span="(10,5-13,10)" id="FS0020">The result of this expression is implicitly ignored\. Consider using 'ignore' to discard this value explicitly, e\.g\. 'expr \|> ignore', or 'let' to bind the result to a name, e\.g\. 'let result = expr'.$</Expects>
 module E = 
     let a = 3 in
         a + 1 |> ignore

@@ -2,7 +2,7 @@
 #light
 
 // Verify warning when 'do-bindings' do not return unit.
-//<Expects id="FS0020" status="warning">This expression has a value of type 'int' that is implicitly ignored</Expects>
+//<Expects id="FS0020" status="warning">The result of this expression is implicitly ignored</Expects>
 
 let square x = x * x
 
