@@ -1,23 +1,23 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
-  <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
+  <ItemGroup Condition="'$(BUILD_NET40)'=='1' or '$(BUILD_ALL)'=='1'">
     <ProjectsWithDefaultFramework Include="src/fsharp-library-build.proj" />
     <ProjectsWithDefaultFramework Include="src/fsharp-compiler-build.proj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectsWithDefaultFramework Include="src/fsharp-library-unittests-build.proj"  Condition="'$(TEST_NET40_COREUNIT)'=='1'" />
-    <ProjectsWithDefaultFramework Include="src/fsharp-compiler-unittests-build.proj" Condition="'$(TEST_COMPILERUNIT)'=='1'" />
-    <ProjectsWithDefaultFramework Include="tests/fsharp/FSharp.Tests.fsproj"         Condition="'$(TEST_FSHARP_SUITE)'=='1'" />
+    <ProjectsWithDefaultFramework Include="src/fsharp-library-unittests-build.proj"  Condition="'$(TEST_NET40_COREUNIT)'=='1' or '$(BUILD_ALL)'=='1'" />
+    <ProjectsWithDefaultFramework Include="src/fsharp-compiler-unittests-build.proj" Condition="'$(TEST_COMPILERUNIT)'=='1' or '$(BUILD_ALL)'=='1'" />
+    <ProjectsWithDefaultFramework Include="tests/fsharp/FSharp.Tests.fsproj"         Condition="'$(TEST_FSHARP_SUITE)'=='1' or '$(BUILD_ALL)'=='1'" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectsWithPortableFramework Include="src/fsharp-library-build.proj"           Condition="'$(BUILD_PORTABLE)'=='1'"/>
-    <ProjectsWithPortableFramework Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_PORTABLE_COREUNIT)'=='1'" />
+    <ProjectsWithPortableFramework Include="src/fsharp-library-build.proj"           Condition="'$(BUILD_PORTABLE)'=='1' or '$(BUILD_ALL)'=='1'"/>
+    <ProjectsWithPortableFramework Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_PORTABLE_COREUNIT)'=='1' or '$(BUILD_ALL)'=='1'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILD_VS)'=='1'">
+  <ItemGroup Condition="'$(BUILD_VS)'=='1' or '$(BUILD_ALL)'=='1'">
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
@@ -25,20 +25,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(TEST_VS)'=='1'" />
+    <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(TEST_VS)'=='1' or '$(BUILD_ALL)'=='1'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
+  <ItemGroup Condition="'$(BUILD_CORECLR)'=='1' or '$(BUILD_ALL)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp-library-build.proj" />
     <ProjectsWithCoreClr Include="src/fsharp-compiler-build.proj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectsWithCoreClr Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_CORECLR)'=='1'" />
+    <ProjectsWithCoreClr Include="src/fsharp-library-unittests-build.proj" Condition="'$(TEST_CORECLR)'=='1' or '$(BUILD_ALL)'=='1'" />
   </ItemGroup>
 
   <ItemGroup>
-    <SetupProjects Include="setup/fsharp-setup-build.proj" Condition="'$(BUILD_SETUP)'=='1'" />
+    <SetupProjects Include="setup/fsharp-setup-build.proj" Condition="'$(BUILD_SETUP)'=='1' or '$(BUILD_ALL)'=='1'" />
   </ItemGroup>
   
   <Target Name="Build">
