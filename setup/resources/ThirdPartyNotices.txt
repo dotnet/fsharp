@@ -10,9 +10,9 @@ Microsoft is offering you a license to use the following components with Microso
 
 %% Visual F# Tools NOTICES AND INFORMATION BEGIN HERE
 =========================================
-Copyright (c) Microsoft Open Technologies, Inc.  All rights reserved.
-Microsoft Open Technologies would like to thank its contributors, a list
-of whom are at https://visualfsharp.codeplex.com/wikipage?title=Contributors.
+Copyright (c) Microsoft.  All rights reserved.
+Microsoft would like to thank its contributors, a list
+of whom are at https://github.com/Microsoft/visualfsharp/graphs/contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you
 may not use this file except in compliance with the License. You may
