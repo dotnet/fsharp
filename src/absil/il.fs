@@ -3446,8 +3446,6 @@ type ILExceptionSpec =
     { exnRange: (ILCodeLabel * ILCodeLabel);
       exnClauses: ILExceptionClause list }
 
-type exceptions = ILExceptionSpec list
-
 //-----------------------------------------------------------------------
 // [instructions_to_code] makes the basic block structure of code from
 // a primitive array of instructions.  We
