@@ -5227,6 +5227,114 @@ namespace Microsoft.FSharp.Core
                   interface IEnumerable with 
                       member x.GetEnumerator() = (gen() :> IEnumerator) }
 
+            [<NoEquality; NoComparison>]
+            type VariableStepIntegralRangeState<'T> = {
+                mutable Started  : bool
+                mutable Complete : bool
+                mutable Current  : 'T
+            }
+            let inline variableStepIntegralRange n step m =
+                if step = LanguagePrimitives.GenericZero then
+                    invalidArg "step" (SR.GetString(SR.stepCannotBeZero));
+
+                let variableStepRangeEnumerator () =
+                    let state = {
+                        Started  = false
+                        Complete = false
+                        Current  = Unchecked.defaultof<'T>
+                    }
+
+                    let current () = 
+                        // according to IEnumerator<int>.Current documentation, the result of of Current
+                        // is undefined prior to the first call of MoveNext and post called to MoveNext
+                        // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                        // so we should be able to just return value here, and we could get rid of the 
+                        // complete variable which would be faster
+                        if not state.Started then
+                            notStarted ()
+                        elif state.Complete then
+                            alreadyFinished ()
+                        else
+                            state.Current
+
+                    { new IEnumerator<'T> with
+                        member __.Dispose () = ()
+
+                        member __.Current = current ()
+
+                      interface IEnumerator with 
+                        member __.Current = box (current ())
+
+                        member __.Reset () =
+                            state.Started <- false
+                            state.Complete <- false
+                            state.Current <- Unchecked.defaultof<_> 
+
+                        member __.MoveNext () =
+                            if not state.Started then
+                                state.Started <- true
+                                state.Current <- n
+                                state.Complete <- 
+                                    (  (step > LanguagePrimitives.GenericZero && state.Current > m)
+                                    || (step < LanguagePrimitives.GenericZero && state.Current < m))
+                            else
+                                let next = state.Current + step
+                                if   (step > LanguagePrimitives.GenericZero && next > state.Current && next <= m)
+                                    || (step < LanguagePrimitives.GenericZero && next < state.Current && next >= m) then
+                                    state.Current <- next
+                                else
+                                    state.Complete <- true
+
+                            not state.Complete}
+
+                { new IEnumerable<'T> with
+                    member __.GetEnumerator () = variableStepRangeEnumerator ()
+
+                  interface IEnumerable with
+                    member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
+
+            let inline simpleIntegralRange minValue maxValue n step m =
+                if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue then 
+                    variableStepIntegralRange n step m
+                else 
+                    // a constrained, common simple iterator that is fast.
+                    let singleStepRangeEnumerator () =
+                        let value : Ref<'T> = ref (n - LanguagePrimitives.GenericOne)
+
+                        let inline current () =
+                            // according to IEnumerator<int>.Current documentation, the result of of Current
+                            // is undefined prior to the first call of MoveNext and post called to MoveNext
+                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                            // so we should be able to just return value here, which would be faster
+                            if !value < n then
+                                notStarted ()
+                            elif !value > m then
+                                alreadyFinished ()
+                            else 
+                                !value
+
+                        { new IEnumerator<'T> with
+                            member __.Dispose () = ()
+                            member __.Current = current ()
+
+                          interface IEnumerator with
+                            member __.Current = box (current ())
+                            member __.Reset () = value := n - LanguagePrimitives.GenericOne
+                            member __.MoveNext () =
+                                if !value < m then
+                                    value := !value + LanguagePrimitives.GenericOne
+                                    true
+                                elif !value = m then 
+                                    value := m + LanguagePrimitives.GenericOne
+                                    false
+                                else false }
+
+                    { new IEnumerable<'T> with
+                        member __.GetEnumerator () = singleStepRangeEnumerator ()
+
+                      interface IEnumerable with
+                        member __.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
+
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 
             let inline integralRangeStep<'T,'Step> (zero:'Step) (add:'T -> 'Step -> 'T) (n:'T, step:'Step, m:'T) =
@@ -5306,16 +5414,16 @@ namespace Microsoft.FSharp.Core
                   interface System.Collections.IEnumerable with 
                       member x.GetEnumerator() = (gen() :> System.Collections.IEnumerator) }
 
-            let RangeInt32   n step m : seq<int>        = integralRangeStep 0    (+) (n,step,m)
-            let RangeInt64   n step m : seq<int64>      = integralRangeStep 0L   (+) (n,step,m)
-            let RangeUInt64  n step m : seq<uint64>     = integralRangeStep 0UL  (+) (n,step,m)
-            let RangeUInt32  n step m : seq<uint32>     = integralRangeStep 0ul  (+) (n,step,m)
-            let RangeIntPtr  n step m : seq<nativeint>  = integralRangeStep 0n   (+) (n,step,m)
-            let RangeUIntPtr n step m : seq<unativeint> = integralRangeStep 0un  (+) (n,step,m)
-            let RangeInt16   n step m : seq<int16>      = integralRangeStep 0s   (+) (n,step,m)
-            let RangeUInt16  n step m : seq<uint16>     = integralRangeStep 0us  (+) (n,step,m)
-            let RangeSByte   n step m : seq<sbyte>      = integralRangeStep 0y   (+) (n,step,m)
-            let RangeByte    n step m : seq<byte>       = integralRangeStep 0uy  (+) (n,step,m)
+            let RangeInt32   n step m : seq<int>        = simpleIntegralRange Int32.MinValue Int32.MaxValue n step m
+            let RangeInt64   n step m : seq<int64>      = simpleIntegralRange Int64.MinValue Int64.MaxValue n step m
+            let RangeUInt64  n step m : seq<uint64>     = simpleIntegralRange UInt64.MinValue UInt64.MaxValue n step m
+            let RangeUInt32  n step m : seq<uint32>     = simpleIntegralRange UInt32.MinValue UInt32.MaxValue n step m
+            let RangeIntPtr  n step m : seq<nativeint>  = variableStepIntegralRange n step m
+            let RangeUIntPtr n step m : seq<unativeint> = variableStepIntegralRange n step m
+            let RangeInt16   n step m : seq<int16>      = simpleIntegralRange Int16.MinValue Int16.MaxValue n step m
+            let RangeUInt16  n step m : seq<uint16>     = simpleIntegralRange UInt16.MinValue UInt16.MaxValue n step m
+            let RangeSByte   n step m : seq<sbyte>      = simpleIntegralRange SByte.MinValue SByte.MaxValue n step m
+            let RangeByte    n step m : seq<byte>       = simpleIntegralRange Byte.MinValue Byte.MaxValue n step m
             let RangeDouble  n step m : seq<float>      = floatingRange float   (n,step,m)
             let RangeSingle  n step m : seq<float32>    = floatingRange float32 (n,step,m)
             let RangeGeneric   one add n m : seq<'T> = integralRange (one,add,n,m)
