@@ -89,18 +89,6 @@ type IlxClosureApps =
     | Apps_app of ILType * IlxClosureApps 
     | Apps_done of ILType
 
-/// ILX extensions to the instruction set.
-type IlxInstr = 
-    | EI_castdata of bool * IlxUnionSpec * int
-    | EI_datacase of avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel
-    | EI_lddatatag of avoidHelpers:bool * IlxUnionSpec
-
-val mkIlxExtInstr: (IlxInstr -> IlxExtensionInstr)
-val isIlxExtInstr: (IlxExtensionInstr -> bool)
-val destIlxExtInstr: (IlxExtensionInstr -> IlxInstr)
-
-val mkIlxInstr: IlxInstr -> ILInstr
-
 // -------------------------------------------------------------------- 
 // ILX extensions to the kinds of type definitions available
 // -------------------------------------------------------------------- 
@@ -111,7 +99,7 @@ type IlxClosureInfo =
       cloCode: Lazy<ILMethodBody>;
       cloSource: ILSourceMarker option}
 
-and IlxUnionInfo = 
+type IlxUnionInfo = 
     { /// Is the representation public? 
       cudReprAccess: ILMemberAccess; 
       /// Are the representation helpers public? 

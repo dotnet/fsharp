@@ -1124,46 +1124,7 @@ type ILInstr =
   (* FOR EXTENSIONS, e.g. MS-ILX *)  
   | EI_ilzero of ILType
   | EI_ldlen_multi      of int32 * int32
-  | I_other    of IlxExtensionInstr
 
-and IlxExtensionInstr = Ext_instr of obj
-
-
-// -------------------------------------------------------------------- 
-// Helpers for the ILX extensions
-// -------------------------------------------------------------------- 
-
-type internal_instr_extension = 
-    { internalInstrExtDests: IlxExtensionInstr -> ILCodeLabel list;
-      internalInstrExtFallthrough: IlxExtensionInstr -> ILCodeLabel option;
-      internalInstrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> IlxExtensionInstr -> IlxExtensionInstr; }
-
-type ILInstrSetExtension<'T> = 
-    { instrExtDests: 'T -> ILCodeLabel list;
-      instrExtFallthrough: 'T -> ILCodeLabel option;
-      instrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> 'T -> 'T; }
-
-let instrExtensions = ref []
-
-let RegisterInstructionSetExtension  (ext: ILInstrSetExtension<'T>) = 
-    if nonNil !instrExtensions then failwith "RegisterInstructionSetExtension: only one extension currently allowed";
-    let mk (x: 'T) = Ext_instr (box x)
-    let test (Ext_instr _x) = true
-    let dest (Ext_instr x) = (unbox x : 'T)
-    instrExtensions := 
-       { internalInstrExtDests=(fun x -> ext.instrExtDests (dest x));
-         internalInstrExtFallthrough=(fun x -> ext.instrExtFallthrough (dest x));
-         internalInstrExtRelabel=(fun f x -> mk (ext.instrExtRelabel f (dest x))); }
-         :: !instrExtensions;
-    mk,test,dest
-
-let rec find_extension s f l = 
-  let rec look l1 = 
-    match l1 with
-    | [] -> failwith ("extension for "+s+" not found")
-    | (h::t) -> match f h with None -> look t | Some res -> res 
-  look l
-          
 
 type ILDebugMapping = 
     { LocalIndex: int;
@@ -1180,7 +1141,6 @@ type ILBasicBlock =
     member x.Fallthrough = 
         match x.LastInstruction with 
         | I_br l | I_brcmp (_,_,l) | I_switch (_,l) -> Some l
-        | I_other e -> find_extension "instr" (fun ext -> Some (ext.internalInstrExtFallthrough e)) !instrExtensions
         | _ -> None
 
 
@@ -2065,7 +2025,6 @@ let destinationsOfInstr i =
     | I_endfinally | I_endfilter | I_ret | I_throw | I_rethrow 
     | I_call (Tailcall,_,_)| I_callvirt (Tailcall,_,_)| I_callconstraint (Tailcall,_,_,_)
     | I_calli (Tailcall,_,_) -> []
-    | I_other e -> find_extension "instr" (fun ext -> Some (ext.internalInstrExtDests e)) !instrExtensions
     | _ -> []
 
 let destinationsOfBasicBlock (bblock:ILBasicBlock) = destinationsOfInstr bblock.LastInstruction
@@ -2080,7 +2039,6 @@ let instrIsBasicBlockEnd i =
     match i with 
     | I_leave _ | I_br _ | I_brcmp _ | I_switch _ | I_endfinally
     | I_endfilter | I_ret | I_throw | I_rethrow  ->  true
-    | I_other e -> find_extension "instr" (fun ext -> Some (nonNil (ext.internalInstrExtDests e))) !instrExtensions
     | _ -> false
 
 let checks = false 
@@ -3586,7 +3544,6 @@ type BasicBlockStartsToCodeLabelsMap(instrs,tryspecs,localspecs,lab2pc) =
         match i with 
         | I_leave l -> I_leave(c.lab2cl l)
         | I_br l -> I_br (c.lab2cl l)
-        | I_other e -> I_other (find_extension "instr" (fun ext -> Some (ext.internalInstrExtRelabel c.lab2cl e)) !instrExtensions)
         | I_brcmp (x,l1,l2) -> I_brcmp(x,c.lab2cl l1, c.lab2cl l2)
         | I_switch (ls,l) -> I_switch(List.map c.lab2cl ls, c.lab2cl l)
         | _ -> i 
@@ -4881,7 +4838,7 @@ and refs_of_instr s x =
     | I_ldarga _|I_ldarg _|I_leave _|I_br _
     | I_brcmp _|I_rethrow|I_refanytype|I_ldlen|I_throw|I_initblk _ |I_cpblk _ 
     | I_localloc|I_ret |I_endfilter|I_endfinally|I_arglist
-    | I_other _ | I_break
+    | I_break
     | AI_add    | AI_add_ovf | AI_add_ovf_un | AI_and    | AI_div    | AI_div_un | AI_ceq      | AI_cgt      | AI_cgt_un   | AI_clt     
     | AI_clt_un  | AI_conv      _ | AI_conv_ovf  _ | AI_conv_ovf_un  _ | AI_mul       | AI_mul_ovf    | AI_mul_ovf_un | AI_rem       | AI_rem_un       
     | AI_shl       | AI_shr       | AI_shr_un | AI_sub       | AI_sub_ovf   | AI_sub_ovf_un   | AI_xor       | AI_or        | AI_neg       | AI_not       

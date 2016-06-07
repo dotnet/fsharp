@@ -1608,6 +1608,9 @@ let CodeGenMethod cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,
     // ILDASM has issues if you emit symbols with a source range but without any sequence points
     let sourceRange = if hasSequencePoints then GenPossibleILSourceMarker cenv m else None
 
+    // The old union erasure phase increased maxstack by 2 since the code pushes some items, we do the same here
+    let maxStack = maxStack + 2
+
     // Build an Abstract IL method     
     instrs, mkILMethodBody (true,mkILLocals locals,maxStack,code, sourceRange)
 
@@ -2176,13 +2179,21 @@ and GenSetExnField cenv cgbuf eenv (e,ecref,fieldNum,e2,m) sequel =
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld(mkILFieldSpecInTy (typ,ilFieldName,ftyp)));
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
+and UnionCodeGen (cgbuf: CodeGenBuffer) = 
+    { new EraseUnions.ICodeGen<Mark> with 
+        member __.CodeLabel(m) = m.CodeLabel
+        member __.GenerateDelayMark() = CG.GenerateDelayMark cgbuf "unionCodeGenMark"
+        member __.GenLocal(ilty) = cgbuf.AllocLocal([],ilty) |> uint16
+        member __.SetMarkToHere(m) = CG.SetMarkToHere cgbuf m
+        member __.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
+        member __.EmitInstrs xs = CG.EmitInstrs cgbuf (pop 0) (Push []) xs }
 
 and GenUnionCaseProof cenv cgbuf eenv (e,ucref,tyargs,m) sequel =
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
     let fty = EraseUnions.GetILTypeForAlternative cuspec idx 
-    CG.EmitInstrs cgbuf (pop 1) (Push [fty])
-      [ mkIlxInstr (EI_castdata(false,cuspec,idx)); ];
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,cuspec,idx)
+    CG.EmitInstrs cgbuf (pop 1) (Push [fty]) [ ]  // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel =
@@ -2199,13 +2210,15 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec = GenUnionSpec cenv.amap m cenv.g eenv.tyenv tcref tyargs
     let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib tcref
-    CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_int32]) [ mkIlxInstr (EI_lddatatag(avoidHelpers, cuspec)) ];
+    EraseUnions.emitLdDataTag cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
+    CG.EmitInstrs cgbuf (pop 1) (Push [cenv.g.ilg.typ_int32]) [  ] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel = 
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
-    CG.EmitInstr cgbuf (pop 1) (Push [cuspec.EnclosingType]) (mkIlxInstr (EI_castdata(false,cuspec,idx)));
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,cuspec,idx)
+    CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.EnclosingType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue;
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n));
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
@@ -2360,9 +2373,10 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
               else ntmargs
 
         for i = ntmargs - 1 downto 0 do 
-          CG.EmitInstrs cgbuf (pop 1) Push0 [ I_starg (uint16 (i+cgbuf.PreallocatedArgCount)) ];
-        done;
-        CG.EmitInstrs cgbuf (pop 0) Push0 [ I_br (mark.CodeLabel) ];
+            CG.EmitInstrs cgbuf (pop 1) Push0 [ I_starg (uint16 (i+cgbuf.PreallocatedArgCount)) ]
+
+        CG.EmitInstrs cgbuf (pop 0) Push0 [ I_br mark.CodeLabel ]
+
         GenSequelEndScopes cgbuf sequel
         
   // PhysicalEquality becomes cheap reference equality once
@@ -2961,16 +2975,10 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
             | I_ldsfld (vol,fspec)                   ,_       -> I_ldsfld (vol,modFieldSpec fspec)
             | I_ldsflda (fspec)                      ,_       -> I_ldsflda (modFieldSpec fspec)
             | EI_ilzero(ILType.TypeVar _)              ,[tyarg] -> EI_ilzero(tyarg)
-            | I_other e,_ when isIlxExtInstr e -> 
-                begin match (destIlxExtInstr e),ilTyArgs with 
-                |  _ -> 
-                    if not (isNil tyargs) then err "Bad polymorphic ILX instruction"; 
-                    i
-                end
             | AI_nop,_ -> i  
-                (* These are embedded in the IL for a an initonly ldfld, i.e. *)
-                (* here's the relevant comment from tc.fs *)
-                (*     "Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr." *)
+                // These are embedded in the IL for a an initonly ldfld, i.e. 
+                // here's the relevant comment from tc.fs 
+                //     "Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr." 
 
             | _ -> 
                 if not (isNil tyargs) then err "Bad polymorphic IL instruction"; 
@@ -4308,7 +4316,8 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
                   | _ -> failwith "error: mixed constructor/const test?") 
             
             let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib hdc.TyconRef
-            CG.EmitInstr cgbuf (pop 1) Push0 (mkIlxInstr (EI_datacase (avoidHelpers,cuspec,dests, defaultLabel.CodeLabel)));
+            EraseUnions.emitDataSwitch cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers,cuspec,dests,defaultLabel.CodeLabel);
+            CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
             GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos caseLabels cases defaultTargetOpt defaultLabel sequel
               
         | Test.Const c ->
