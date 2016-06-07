@@ -68,6 +68,6 @@
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
   
-    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\insertion\$(Lang)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\insertion\msi\$(Lang)\%(Filename)%(Extension)')" />
   </Target>
 </Project>
