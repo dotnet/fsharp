@@ -4,6 +4,7 @@
     <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
     <FinalizeManifest>true</FinalizeManifest>
     <FinalizeSkipLayout>true</FinalizeSkipLayout>
+    <IsPackage>true</IsPackage>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion\json</OutputPath>
   </PropertyGroup>
 
