@@ -5,6 +5,7 @@
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
     <OutputType>manifest</OutputType>
+    <IsPackage>true</IsPackage>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion\json</OutputPath>
   </PropertyGroup>
 
