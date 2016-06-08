@@ -282,10 +282,10 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             buildApp true [] apps 
 
 // Fix up I_ret instruction. Generalise to selected instr.
-let convReturnInstr ty _inplab _outlab instr = 
+let convReturnInstr ty instr = 
     match instr with 
-    | I_ret -> InstrMorph [I_box ty;I_ret]
-    | _     -> InstrMorph [instr]
+    | I_ret -> [I_box ty;I_ret]
+    | _     -> [instr]
         
 let convILMethodBody (thisClo,boxReturnTy) il = 
     let tmps = ILLocalsAllocator il.Locals.Length
@@ -303,7 +303,7 @@ let convILMethodBody (thisClo,boxReturnTy) il =
     let code = 
         match boxReturnTy with
         | None    -> code
-        | Some ty -> morphExpandILInstrsInILCode (convReturnInstr ty) code
+        | Some ty -> morphILInstrsInILCode (convReturnInstr ty) code
     {il with MaxStack=newMax;  
              IsZeroInit=true;
              Code= code ;

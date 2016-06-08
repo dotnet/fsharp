@@ -185,10 +185,6 @@ let cudefRepr =
          (fun ((_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
 
 
-let mkBasicBlock2 (a,b) = 
-    mkBasicBlock { Label=a; Instructions= Array.ofList b}
-
-
 let mkTesterName nm = "Is" + nm
 let tagPropertyName = "Tag"
 
@@ -372,6 +368,41 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
             | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un  ]
             | _ -> failwith "unexpected"
 
+type ICodeGen<'Mark> = 
+    abstract CodeLabel: 'Mark -> ILCodeLabel
+    abstract GenerateDelayMark: unit -> 'Mark
+    abstract GenLocal: ILType -> uint16
+    abstract SetMarkToHere: 'Mark  -> unit
+    abstract EmitInstr : ILInstr -> unit
+    abstract EmitInstrs : ILInstr list -> unit
+
+// TODO: this will be removed
+let genWith g = 
+    let blocks = ResizeArray() // all the blocks emitted so far
+    let instrs = ResizeArray() // the current block being emitted
+    let internalLabels = ResizeArray()
+    let firstLabel = generateCodeLabel()
+    let mutable label = firstLabel
+    let closeBock m = 
+        blocks.Add (mkBasicBlock { Label = label; Instructions=instrs.ToArray() })
+        internalLabels.Add label
+        label <- m
+        instrs.Clear()
+    let cg = 
+            { new ICodeGen<_> with 
+                member __.CodeLabel(m) = m
+                member __.GenerateDelayMark() = generateCodeLabel()
+                member __.GenLocal(ilty) = failwith "not needed"
+                member __.SetMarkToHere(m) = closeBock m
+                member __.EmitInstr x = instrs.Add x
+                member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i }
+    g cg
+    closeBock (generateCodeLabel())
+    let entry = generateCodeLabel()
+    // TODO: what about "I_ret" instruction???
+    mkGroupBlock(internalLabels |> Seq.toList, mkBasicBlock { Label = entry; Instructions = [| I_br firstLabel |] } :: (blocks |> Seq.toList))
+
+
 let mkBrIsData ilg (avoidHelpers, cuspec,cidx,tg,failLab) = 
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
@@ -393,196 +424,138 @@ let mkBrIsData ilg (avoidHelpers, cuspec,cidx,tg,failLab) =
             | _ -> failwith "unexpected"
 
 
-let rec convInstr ilg (tmps: ILLocalsAllocator) inplab outlab instr = 
-    match instr with 
-    | I_other e when isIlxExtInstr e -> 
-        match (destIlxExtInstr e) with 
-        |  EI_lddatatag (avoidHelpers,cuspec) -> 
-                // If helpers exist, use them
-            match cuspec.HasHelpers with
-            | SpecialFSharpListHelpers 
-            | AllHelpers  
-                     when not avoidHelpers -> InstrMorph [ mkGetTagFromHelpers ilg cuspec ]
-            | _ -> 
+let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
+        // If helpers exist, use them
+    match cuspec.HasHelpers with
+    | (SpecialFSharpListHelpers | AllHelpers) when not avoidHelpers -> 
+        ldOpt |> Option.iter cg.EmitInstr 
+        cg.EmitInstr (mkGetTagFromHelpers ilg cuspec)
+    | _ -> 
                     
-                let alts = cuspec.Alternatives
-                match cuspecRepr.DiscriminationTechnique cuspec with
-                | TailOrNull ->
-                    // leaves 1 if cons, 0 if not
-                    InstrMorph (mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un])
-                | IntegerTag -> 
-                    let baseTy = baseTyOfUnionSpec cuspec
-                    InstrMorph (mkGetTagFromField ilg cuspec baseTy)
-                | SingleCase -> 
-                    InstrMorph [ AI_pop; mkLdcInt32 0 ] 
-                | RuntimeTypes -> 
-                    let baseTy = baseTyOfUnionSpec cuspec
-                    let locn = tmps.AllocLocal (mkILLocal baseTy None)
-
-                    let mkCase last inplab cidx failLab = 
-                        let alt = altOfUnionSpec cuspec cidx
-                        let altTy = tyForAlt cuspec alt
-                        let altName = alt.Name
-                        let internalLab = generateCodeLabel ()
-                        let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec, alt)
-                        if last then 
-                            mkBasicBlock2 (inplab,[ mkLdcInt32 cidx; I_br outlab ])   
-                        else 
-                            let test = I_brcmp ((if cmpNull then BI_brtrue else BI_brfalse),failLab,internalLab)
-                            let test_block = 
-                                if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
-                                    [ test ]
-                                else
-                                    mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy test
-                            mkGroupBlock 
-                                ([internalLab],
-                                [ mkBasicBlock2 (inplab, mkLdloc locn ::test_block);
-                                    mkBasicBlock2 (internalLab,[mkLdcInt32 cidx; I_br outlab ]) ]) 
-
-                    // Make the block for the last test. 
-                    let lastInpLab = generateCodeLabel ()
-                    let lastBlock = mkCase true lastInpLab 0 outlab
-
-                    // Make the blocks for the remaining tests. 
-                    let _, firstInpLab, overallBlock = 
-                        List.foldBack
-                            (fun _ (n, continueInpLab, continueBlock) -> 
-                                let newInpLab = generateCodeLabel ()
-                                n+1,
-                                newInpLab,
-                                mkGroupBlock 
-                                    ([continueInpLab],
-                                    [ mkCase false newInpLab n continueInpLab;
-                                    continueBlock ]))
-                            (List.tail alts)
-                            (1,lastInpLab, lastBlock)
-
+        let alts = cuspec.Alternatives
+        match cuspecRepr.DiscriminationTechnique cuspec with
+        | TailOrNull ->
+            // leaves 1 if cons, 0 if not
+            ldOpt |> Option.iter cg.EmitInstr 
+            cg.EmitInstrs (mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un])
+        | IntegerTag -> 
+            let baseTy = baseTyOfUnionSpec cuspec
+            ldOpt |> Option.iter cg.EmitInstr 
+            cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
+        | SingleCase -> 
+            ldOpt |> Option.iter cg.EmitInstr 
+            cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ] 
+        | RuntimeTypes -> 
+            let baseTy = baseTyOfUnionSpec cuspec
+            let ld = 
+                match ldOpt with 
+                | None -> 
+                    let locn = cg.GenLocal baseTy 
                     // Add on a branch to the first input label.  This gets optimized away by the printer/emitter. 
-                    InstrMorph 
-                        (mkGroupBlock
-                            ([firstInpLab],
-                            [ mkBasicBlock2 (inplab, [ mkStloc locn; I_br firstInpLab ]);
-                        overallBlock ]))
-                
-        |  EI_castdata (canfail,cuspec,cidx) ->
+                    cg.EmitInstr (mkStloc locn)
+                    mkLdloc locn 
+                | Some i -> i
+
+            let outlab = cg.GenerateDelayMark()
+
+            let emitCase cidx = 
+                let alt = altOfUnionSpec cuspec cidx
+                let internalLab = cg.GenerateDelayMark()
+                let failLab = cg.GenerateDelayMark ()
+                let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec, alt)
+                let test = I_brcmp ((if cmpNull then BI_brtrue else BI_brfalse),cg.CodeLabel failLab,cg.CodeLabel internalLab)
+                let testBlock = 
+                    if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
+                        [ test ]
+                    else
+                        let altName = alt.Name
+                        let altTy = tyForAlt cuspec alt
+                        mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy test
+                cg.EmitInstrs (ld :: testBlock);
+                cg.SetMarkToHere internalLab
+                cg.EmitInstrs [mkLdcInt32 cidx; I_br (cg.CodeLabel outlab) ]
+                cg.SetMarkToHere failLab
+
+            // Make the blocks for the remaining tests. 
+            for n in alts.Length-1 .. -1 .. 1 do 
+                emitCase n 
+
+            // Make the block for the last test. 
+            cg.EmitInstr (mkLdcInt32 0)
+            cg.SetMarkToHere outlab
+
+let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
+    emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)  
+
+let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,cuspec,cidx) = 
+    let alt = altOfUnionSpec cuspec cidx
+    if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+        if canfail then 
+            let outlab = cg.GenerateDelayMark ()
+            let internal1 = cg.GenerateDelayMark ()
+            cg.EmitInstrs [AI_dup; I_brcmp (BI_brfalse, cg.CodeLabel outlab, cg.CodeLabel internal1) ];
+            cg.SetMarkToHere internal1
+            cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
+            cg.SetMarkToHere outlab
+        // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
+    elif cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt) then 
+        ()
+    else 
+        let altTy = tyForAlt cuspec alt
+        cg.EmitInstr (I_castclass altTy)
+              
+let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases, cont) =
+    let baseTy = baseTyOfUnionSpec cuspec
+        
+    match cuspecRepr.DiscriminationTechnique cuspec with 
+    | RuntimeTypes ->  
+        let locn = cg.GenLocal baseTy 
+
+        cg.EmitInstr (mkStloc locn)
+
+        for (cidx,tg) in cases do 
             let alt = altOfUnionSpec cuspec cidx
             let altTy = tyForAlt cuspec alt
-            if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
-              if canfail then 
-                  let internal1 = generateCodeLabel ()
-                  InstrMorph 
-                    (mkGroupBlock  
-                       ([internal1],
-                       [ mkBasicBlock2 (inplab,
-                                        [ AI_dup;
-                                          I_brcmp (BI_brfalse,outlab, internal1) ]);
-                         mkBasicBlock2 (internal1,
-                                        [ mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException";
-                                          I_throw ]);
-                       ] ))
-              else 
-                  // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
-                  InstrMorph [] 
-                  
-            elif cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt) then 
-                InstrMorph []
-
-            else InstrMorph [ I_castclass altTy ] 
-              
-              
-        |  EI_datacase (avoidHelpers, cuspec, cases, cont) ->
-            let baseTy = baseTyOfUnionSpec cuspec
-        
-            match cuspecRepr.DiscriminationTechnique cuspec with 
-            | RuntimeTypes ->  
-                let locn = tmps.AllocLocal (mkILLocal baseTy None)
-                let mkCase _last inplab (cidx,tg) failLab = 
-                    let alt = altOfUnionSpec cuspec cidx
-                    let altTy = tyForAlt cuspec alt
-                    let altName = alt.Name
-                    let _internalLab = generateCodeLabel ()
-                    let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec,alt)
+            let altName = alt.Name
+            let failLab = cg.GenerateDelayMark ()
+            let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec,alt)
      
-                    let test = 
-                        let testInstr = I_brcmp ((if cmpNull then BI_brfalse else BI_brtrue),tg,failLab) 
+            let testInstr = I_brcmp ((if cmpNull then BI_brfalse else BI_brtrue),tg,cg.CodeLabel failLab) 
 
-                        [ mkLdloc locn ] @
-                        (if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
-                             [ testInstr ]
-                         else 
-                             mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
-
-                    mkBasicBlock2 (inplab, test) 
+            cg.EmitInstr (mkLdloc locn)
+            if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
+                 cg.EmitInstr testInstr 
+            else 
+                 cg.EmitInstrs (mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
+            cg.SetMarkToHere failLab
+        cg.EmitInstr (I_br cont)
                 
-                // Make the block for the last test. 
-                let lastInpLab = generateCodeLabel ()
-                let lastCase, firstCases = 
-                    let l2 = List.rev cases 
-                    List.head l2, List.rev (List.tail l2)
+
+    | IntegerTag -> 
+        match cases with 
+        | [] -> cg.EmitInstrs  [ AI_pop; I_br cont ]
+        | _ ->
+        // Use a dictionary to avoid quadratic lookup in case list
+        let dict = System.Collections.Generic.Dictionary<int,_>()
+        for (i,case) in cases do dict.[i] <- case
+        let emitCase i _ = 
+            let mutable res = Unchecked.defaultof<_>
+            let ok = dict.TryGetValue(i, &res)
+            if ok then res else cont
+
+        let dests = Array.mapi emitCase cuspec.AlternativesArray
+        cg.EmitInstrs (mkGetTag ilg cuspec)
+        cg.EmitInstr (I_switch (Array.toList dests,cont))
+
+    | SingleCase ->
+        match cases with 
+        | [(0,tg)] -> cg.EmitInstrs [ AI_pop; I_br tg ]
+        | [] -> cg.EmitInstrs  [ AI_pop; I_br cont ]
+        | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
+
+    | TailOrNull -> 
+        failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
                 
-                let lastBlock = mkCase true lastInpLab lastCase cont
-                
-                // Make the blocks for the remaining tests. 
-                let firstInpLab,overallBlock = 
-                    List.foldBack
-                        (fun caseInfo (continueInpLab, continueBlock) -> 
-                            let newInpLab = generateCodeLabel ()
-                            (newInpLab, mkGroupBlock 
-                                          ([continueInpLab],
-                                          [ mkCase false newInpLab caseInfo continueInpLab;
-                                            continueBlock ])))
-                        firstCases
-                        (lastInpLab, lastBlock)
-
-                // Add on a branch to the first input label.  This gets optimized 
-                // away by the printer/emitter. 
-                InstrMorph 
-                  (mkGroupBlock
-                     ([firstInpLab],
-                     [ mkBasicBlock2 (inplab, [ mkStloc locn; I_br firstInpLab ]);
-                       overallBlock ]))
-            | IntegerTag -> 
-                // Use a dictionary to avoid quadratic lookup in case list
-                let dict = System.Collections.Generic.Dictionary<int,_>()
-                for (i,case) in cases do dict.[i] <- case
-                let mkCase i _ = 
-                    let mutable res = Unchecked.defaultof<_>
-                    let ok = dict.TryGetValue(i, &res)
-                    if ok then res else cont
-
-                let dests = List.mapi mkCase cuspec.Alternatives
-                InstrMorph (mkGetTag ilg cuspec @ [ I_switch (dests,cont) ])
-            | SingleCase ->
-                match cases with 
-                | [(0,tg)] -> InstrMorph [ AI_pop; I_br tg ]
-                | [] -> InstrMorph [ AI_pop; I_br cont ]
-                | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
-            | TailOrNull -> 
-                failwith "unexpected: switches on lists should have been eliminated to brisdata tests"
-                
-    | _ -> InstrMorph [instr] 
-
-
-let convILMethodBody ilg il = 
-    let tmps = ILLocalsAllocator il.Locals.Length
-    let code= morphExpandILInstrsInILCode (convInstr ilg tmps) il.Code
-    {il with
-          Locals = ILList.ofList (ILList.toList il.Locals @ tmps.Close());
-          Code=code; 
-          MaxStack=il.MaxStack+2 }
-
-let convMethodDef ilg md  =
-    {md with mdBody= morphILMethodBody (convILMethodBody ilg) md.mdBody }
-
-let rec convTypeDef ilg td = 
-      {td with NestedTypes = convTypeDefs ilg td.NestedTypes;
-               Methods=morphILMethodDefs (convMethodDef ilg) td.Methods; }
-
-and convTypeDefs ilg tdefs : ILTypeDefs = 
-    morphILTypeDefs (convTypeDef ilg) tdefs
-
-let ConvModule ilg modul = 
-    morphILTypeDefsInILModule (convTypeDefs ilg) modul
 
 
 //---------------------------------------------------
@@ -994,33 +967,19 @@ let mkClassUnionDef ilg tref td cud =
             |> Array.mapi (fun num alt -> mkILLiteralField (alt.Name, tagFieldType, ILFieldInit.Int32 num, None, ILMemberAccess.Public))
             |> Array.toList
 
+        
         let tagMeths,tagProps = 
+
+          let body = mkMethodBody(true,emptyILLocals,2,genWith (fun cg -> emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec); cg.EmitInstr I_ret), cud.cudWhere)
           // // If we are using NULL as a representation for an element of this type then we cannot 
           // // use an instance method 
           if (repr.OptimizingOneAlternativeToNull info) then
-              [ mkILNonGenericStaticMethod
-                    ("Get" + tagPropertyName,
-                     cud.cudHelpersAccess,
-                     [mkILParamAnon baseTy],
-                     mkILReturn tagFieldType,
-                     mkMethodBody(true,emptyILLocals,2,
-                             nonBranchingInstrsToCode 
-                                 [ mkLdarg0;
-                                   (mkIlxInstr (EI_lddatatag (true, cuspec))) ], 
-                             cud.cudWhere))
+              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
                 |> addMethodGeneratedAttrs ilg ], 
               [] 
 
           else
-              [ mkILNonGenericInstanceMethod
-                    ("get_" + tagPropertyName,
-                     cud.cudHelpersAccess,[],
-                     mkILReturn tagFieldType,
-                     mkMethodBody(true,emptyILLocals,2,
-                             nonBranchingInstrsToCode 
-                                 [ mkLdarg0;
-                                   (mkIlxInstr (EI_lddatatag (true, cuspec))) ], 
-                             cud.cudWhere)) 
+              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
                 |> addMethodGeneratedAttrs ilg ], 
           
               [ { Name=tagPropertyName;
@@ -1110,27 +1069,6 @@ let mkClassUnionDef ilg tref td cud =
           tdKind = ILTypeDefKind.Class; }
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 
-
-(*
-    printfn "union type %s has helpers = %+A" td.Name cud.cudHasHelpers
-    for md in td.Methods do 
-        printfn "original union type %s has method %s" td.Name md.Name
-    for pd in td.Properties.AsList do 
-        printfn "original union type %s has property %s" td.Name pd.Name
-    for md in baseTypeDef.Methods.AsList do 
-        printfn "type %s has method %s" baseTypeDef.Name md.Name
-    for pd in baseTypeDef.Properties.AsList do 
-        printfn "type %s has property %s" baseTypeDef.Name pd.Name
-
-    for pd in tagProps do 
-        printfn "type %s has tag property %s" baseTypeDef.Name pd.Name
-    for pd in basePropsFromAlt do 
-        printfn "type %s has basePropsFromAlt property %s" baseTypeDef.Name pd.Name
-    for pd in selfProps do 
-        printfn "type %s has selfProps property %s" baseTypeDef.Name pd.Name
-    for pd in existingProps do 
-        printfn "type %s has existingProps property %s" baseTypeDef.Name pd.Name
-*)
 
     baseTypeDef
 

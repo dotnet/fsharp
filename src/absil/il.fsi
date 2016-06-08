@@ -98,9 +98,6 @@ type ILSourceMarker =
     member EndLine: int
     member EndColumn: int
 
-/// Represents an extension to the algebra of instructions
-type IlxExtensionInstr 
-
 [<StructuralEquality; StructuralComparison>]
 type PublicKey = 
     | PublicKey of byte[]
@@ -669,15 +666,6 @@ type ILInstr =
     // EXTENSIONS, e.g. MS-ILX 
     | EI_ilzero of ILType
     | EI_ldlen_multi      of int32 * int32
-    | I_other    of IlxExtensionInstr
-
-// REVIEW: remove this open-ended way of extending the IL and just combine with ILX
-type ILInstrSetExtension<'Extension> = 
-    { instrExtDests: ('Extension -> ILCodeLabel list);
-      instrExtFallthrough: ('Extension -> ILCodeLabel option);
-      instrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> 'Extension -> 'Extension; }
-
-val RegisterInstructionSetExtension: ILInstrSetExtension<'Extension> -> ('Extension -> IlxExtensionInstr) * (IlxExtensionInstr -> bool) * (IlxExtensionInstr -> 'Extension)
 
 /// A list of instructions ending in an unconditionally
 /// branching instruction. A basic block has a label which must be unique
