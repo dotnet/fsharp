@@ -82,7 +82,7 @@ let parseOctalUInt64 (s:string) p l =
     let rec parse n acc = if n < l then parse (n+1) (acc * 8UL + (let c = s.[n] in if c >= '0' && c <= '7' then Convert.ToUInt64 c - Convert.ToUInt64 '0' else formatError())) else acc 
     parse p 0UL
 
-let inline removeUnderscores (s:string) =
+let removeUnderscores (s:string) =
     match s with
     | null -> null
     | s -> s.Replace("_", "")
