@@ -132,7 +132,7 @@ let RunCommand cwd envVars msg (exe, cmdArgs) dumpOutput = attempt {
     //close COMMAND;
     let tempOut = IO.Path.GetTempFileName()
     let result = ``exec 2>1 1>a`` tempOut exe cmdArgs
-    let cmdExitCode = match result with CmdResult.ErrorLevel(x) -> x | CmdResult.Success -> 0
+    let cmdExitCode = match result with CmdResult.ErrorLevel(_, x) -> x | CmdResult.Success -> 0
     let CommandOutput = tempOut |> IO.File.ReadAllText
 
     // #  close STDERR; open STDERR, ">&SAVEERR"; #resore stderr
