@@ -20,12 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-  <!--
-    <Package Include="Assemblies.swr" />
-    <Package Include="PkgDefFiles.swr" />
-    <Package Include="MSBuildTargets.swr" />
-    <Package Include="PublicAssemblies.swr" />
-    <Package Include="ProfessionalTemplates.swr" />    
+    <Package Include="CommonFiles.swr" />
+    <!--
+    <Package Include="Templates.swr" />    
     -->
   </ItemGroup>
   
