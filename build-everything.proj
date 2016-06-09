@@ -21,7 +21,7 @@
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
-    <ProjectsWithDefaultFramework Include="vsintegration/VisualFSharpVsix/VisualFSharpVsix.csproj" />
+    <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
   <ItemGroup>
