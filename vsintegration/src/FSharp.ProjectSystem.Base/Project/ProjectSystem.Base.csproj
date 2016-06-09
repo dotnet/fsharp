@@ -15,6 +15,8 @@
     <AssemblyName>FSharp.ProjectSystem.Base</AssemblyName>
     <UseVsVersion>true</UseVsVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
