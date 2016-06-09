@@ -1,6 +1,6 @@
 // #Regression #Conformance #LexFilter #Precedence #ReqNOMT 
 // Regression test for FSHARP1.0:4161 - Error when trying to lex/parse a range involving biggest negative number
-//<Expect status="success"><Expect>
+//<Expect status="success"></Expect>
 
 #light
 

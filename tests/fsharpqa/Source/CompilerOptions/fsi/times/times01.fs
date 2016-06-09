@@ -1,4 +1,4 @@
 // #NoMT #CompilerOptions 
-//<Expect status>TIME.+Optimizations</Expect>
+//<Expect status="success">TIME.+Optimizations</Expect>
 
 exit 0;;

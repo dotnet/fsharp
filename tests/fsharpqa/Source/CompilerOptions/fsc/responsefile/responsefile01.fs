@@ -1,5 +1,5 @@
 // #NoMT #CompilerOptions 
-//<Expected status="success"></Expects>
+//<Expects status="success"></Expects>
 
 [<EntryPoint>]
 let main args =

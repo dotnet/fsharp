@@ -3,7 +3,7 @@
 // Explicit program entry point: [<ExtryPoint>]
 // 'main' function invoked with no arguments
 //<CmdLine>Hello</CmdLine>
-//<Expected status="success"></Expects>
+//<Expects status="success"></Expects>
 
 module TestModule
 

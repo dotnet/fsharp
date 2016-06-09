@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1793
 // Explicit program entry point: [<ExtryPoint>]
 // Entry point function does not have to be called 'main'
-//<Expected status="success"></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

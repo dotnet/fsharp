@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1304
 // Explicit program entry point: [<ExtryPoint>]
 // 'main' function invoked with no arguments
-//<Expected status="success"></Expects>
+//<Expects status="success"></Expects>
 
 #light
 
