@@ -21,9 +21,7 @@
 
   <ItemGroup>
     <Package Include="CommonFiles.swr" />
-    <!--
-    <Package Include="Templates.swr" />    
-    -->
+    <Package Include="ProfessionalTemplates.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
