@@ -51,7 +51,7 @@ let initializeSuite () =
 
     let doNgen = true;
 
-    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
+    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
 
     let mapWithDefaults defaults m =
         Seq.concat [ (Map.toSeq defaults) ; (Map.toSeq m) ] |> Map.ofSeq
