@@ -21,6 +21,7 @@
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
     <ProjectsWithDefaultFramework Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
+    <ProjectsWithDefaultFramework Include="vsintegration/VisualFSharpVsix/VisualFSharpVsix.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,7 +38,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1' or '$(BUILD_ALL)'=='1'">
-    <SetupProjects Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
     <SetupProjects Include="setup/fsharp-setup-build.proj" />
   </ItemGroup>
   
