@@ -2504,7 +2504,7 @@ namespace Microsoft.FSharp.Core
             let rec parse n acc = if n < l then parse (n+1) (acc *.. 2UL +.. (match s.Chars(n) with '0' -> 0UL | '1' -> 1UL | _ -> formatError())) else acc in          
             parse p 0UL
 
-        let removeUnderscores (s:string) =
+        let inline removeUnderscores (s:string) =
             match s with
             | null -> null
             | s -> s.Replace("_", "")
