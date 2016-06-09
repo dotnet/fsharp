@@ -78,11 +78,40 @@
     <Compile Include="EnvLst.fs" />
     <Compile Include="nunitConf.fs" />
     <Compile Include="run.fs" />
+    <Compile Include="run_pl.fs" />
+    <Content Include="KnownFail.txt" />
+    <None Include="test.lst" />
+    <None Include="nunit_discover.log" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="test_EnvLst.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="test_simple.fs" />
+    <Compile Include="test_Source.fs" />
+    <Compile Include="ClrFx\PseudoCustomAttributes\test_ClrFx_PseudoCustomAttributes.fs" />
+    <Compile Include="CodeGen\test_CodeGen.fs" />
+    <Compile Include="CodeGen\EmittedIL\test_codegen_emittedil.fs" />
+    <Compile Include="CompilerOptions\fsc\test_CompilerOptions_fsc.fs" />
+    <Compile Include="CompilerOptions\fsi\test_CompilerOptions_fsi.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\test_Conformance_BasicGrammarElements.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\test_Conformance_BasicTypeAndModuleDefinitions.fs" />
+    <Compile Include="Conformance\DeclarationElements\test_Conformance_DeclarationElements.fs" />
+    <Compile Include="Conformance\Expressions\test_Conformance_Expressions.fs" />
+    <Compile Include="Conformance\ImplementationFilesAndSignatureFiles\test_Conformance_ImplementationFilesAndSignatureFiles.fs" />
+    <Compile Include="Conformance\InferenceProcedures\test_Conformance_InferenceProcedures.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\test_Conformance_LexicalAnalysis.fs" />
+    <Compile Include="Conformance\LexicalFiltering\test_Conformance_LexicalFiltering.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\test_Conformance_ObjectOrientedTypeDefinitions.fs" />
+    <Compile Include="Conformance\PatternMatching\test_Conformance_PatternMatching.fs" />
+    <Compile Include="Conformance\Signatures\test_Conformance_Signatures.fs" />
+    <Compile Include="Conformance\SpecialAttributesAndTypes\test_Conformance_SpecialAttributesAndTypes.fs" />
+    <Compile Include="Conformance\TypeForwarding\test_Conformance_TypeForwarding.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\test_Conformance_TypesAndTypeConstraints.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\test_Conformance_UnitsOfMeasure.fs" />
+    <Compile Include="Diagnostics\test_Diagnostics.fs" />
+    <Compile Include="ErrorMessages\test_ErrorMessages.fs" />
+    <Compile Include="InteractiveSession\test_InteractiveSession.fs" />
+    <Compile Include="Libraries\test_libraries.fs" />
+    <Compile Include="Libraries\Core\test_libraries_core.fs" />
+    <Compile Include="Optimizations\test_Optimizations.fs" />
+    <Compile Include="XmlDoc\test_XmlDoc.fs" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-module ``FSharpQA-Tests-EnvLst``
+namespace FSharpQA.Tests
 
 open System
 open System.IO
@@ -24,8 +24,3 @@ module ParseLine =
             let emptyData = { Tags = []; Vars = []; Comment = None } 
             let expectedData = EnvLstLine.Data { emptyData with Vars = expected }
             Assert.IsTrue((l = expectedData), (sprintf "Expected '%A', but was '%A'" expected l))
-
-
-
-
-
