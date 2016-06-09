@@ -856,11 +856,6 @@ type internal FsiDynamicCompiler
 
         errorLogger.AbortOnError();
             
-        ReportTime tcConfig "ILX -> IL (Unions)"; 
-        let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
-
-        errorLogger.AbortOnError();   
-              
         ReportTime tcConfig "Assembly refs Normalised"; 
         let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs tcImports) ilxMainModule
         errorLogger.AbortOnError();

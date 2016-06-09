@@ -754,24 +754,7 @@ let rec goutput_instr env os inst =
   | I_cpobj tok -> output_string os "cpobj "; goutput_typ env os tok
   | I_sizeof  tok -> output_string os "sizeof "; goutput_typ env os tok
   | I_seqpoint  s -> output_source os s
-  |  (EI_ilzero ty) -> output_string os "ilzero "; goutput_typ env os ty
-  | I_other e when isIlxExtInstr e -> 
-      match (destIlxExtInstr e) with 
-      | EI_castdata (check,ty,n)     ->
-          if not check then output_string os "/* unchecked. */ ";
-          output_string os "castdata ";
-          goutput_cuspec env os ty;
-          output_string os ",";
-          output_int os n
-      | (EI_lddatatag (_,ty)) -> 
-          output_string os "lddatatag "; 
-          goutput_cuspec env os ty
-      |  (EI_datacase (_,ty,l,_))  -> 
-          output_string os "datacase";
-          output_string os " ";  
-          goutput_cuspec env os ty;
-          output_string os ",";  
-          output_parens (output_seq "," (fun os (x,y) -> output_int os x;  output_string os ",";  output_code_label os y)) os l
+  | EI_ilzero ty -> output_string os "ilzero "; goutput_typ env os ty
   | _ -> 
       output_string os "<printing for this instruction is not implemented>"
 
