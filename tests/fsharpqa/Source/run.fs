@@ -1039,17 +1039,17 @@ let runpl cwd initialEnvVars = attempt {
             let pre =
                 envPRECMD
                 //s/^\$FSC_PIPE/$FSC_PIPE/;
-                |> replace "$FSC_PIPE" FSC_PIPE 
+                |> replace "\\$FSC_PIPE" FSC_PIPE 
                 //s/^\$FSI_PIPE/$FSI_PIPE/;
-                |> replace "$FSI_PIPE" FSI_PIPE
+                |> replace "\\$FSI_PIPE" FSI_PIPE
                 //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                |> replace "$FSI32_PIPE" FSI32_PIPE
+                |> replace "\\$FSI32_PIPE" FSI32_PIPE
                 //s/\$ISCFLAGS/$ISCFLAGS/;
-                |> replace "$ISCFLAGS" ISCFLAGS
+                |> replace "\\$ISCFLAGS" ISCFLAGS
                 //s/^\$CSC_PIPE/$CSC_PIPE/;
-                |> replace "$CSC_PIPE" CSC_PIPE
+                |> replace "\\$CSC_PIPE" CSC_PIPE
                 //s/^\$VBC_PIPE/$VBC_PIPE/;
-                |> replace "$VBC_PIPE" VBC_PIPE
+                |> replace "\\$VBC_PIPE" VBC_PIPE
 
             let exe, cmdArgs = pre |> splitAtFirst Char.IsWhiteSpace
             let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
