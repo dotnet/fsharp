@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Exceptions 
 // This is the sample code that appears in the specs under 9.4
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 exception ThatWentBadlyWrong of string * int

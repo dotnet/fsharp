@@ -2,13 +2,13 @@
 
 // Regression test for FSHARP1.0:2549
 // See also CL:14579
-//<Expect status=success>type T =</Expect>
-//<Expect status=success>class</Expect>
-//<Expect status=success>member M1 : x:int \* y:string -> \('a -> unit\)</Expect>
-//<Expect status=success>member M2 : \(int \* string\) -> \('a -> unit\)</Expect>
-//<Expect status=success>exception ExnType of int \* string</Expect>
-//<Expect status=success>type DiscUnion = \| DataTag of int \* string</Expect>
-//<Expect status=success>val f : x:int -> y:int -> int</Expect>
+//<Expect status="success">type T =</Expect>
+//<Expect status="success">class</Expect>
+//<Expect status="success">member M1 : x:int \* y:string -> \('a -> unit\)</Expect>
+//<Expect status="success">member M2 : \(int \* string\) -> \('a -> unit\)</Expect>
+//<Expect status="success">exception ExnType of int \* string</Expect>
+//<Expect status="success">type DiscUnion = \| DataTag of int \* string</Expect>
+//<Expect status="success">val f : x:int -> y:int -> int</Expect>
 
 
 type T = 

@@ -1,7 +1,7 @@
 // #Regression #Misc #NoMono 
 // Regression test for FSHARP1.0:1668
 // Compiler should provide a way to embed manifest files
-// <Expects status=success></Expects>
+// <Expects status="success"></Expects>
 
 open System.Reflection
 let thisExe = System.Reflection.Assembly.GetExecutingAssembly()

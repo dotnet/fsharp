@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Exceptions 
 // Specify and match on named fields
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 exception AAA of V1 : int * V2 : int * V3 : string
 exception BBB of bool * bool

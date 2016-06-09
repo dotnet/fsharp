@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis 
 // string embedded in a comment: legitimate string containing the 
 // block-comment-end token
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

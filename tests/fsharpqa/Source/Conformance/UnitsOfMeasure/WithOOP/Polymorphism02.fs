@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
 // Regression test for FSHARP1.0:3687
 // ICE in Units of Measure + Polymorphism
-// <Expects status=success></Expects>
+// <Expects status="success"></Expects>
 
 #light
 module Test

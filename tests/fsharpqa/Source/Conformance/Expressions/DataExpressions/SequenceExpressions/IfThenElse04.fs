@@ -1,6 +1,6 @@
 // #Regression #Conformance #DataExpressions #Sequences 
 // Regression test for FSHARP1.0:4527
-//<Expect status=success></Expect>
+//<Expect status="success"></Expect>
 
 let p = [ (if true then
                     [for i = 1 to 10 do yield i]        // yield is not immediately under the 'then' branch,

@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis #Constants 
 // Number type specifier are not case sensitive
 // Float
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let x = 0x5

@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Unions
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 type DU = | A
           | B

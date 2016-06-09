@@ -3,7 +3,7 @@
 // Explicit program entry point: [<ExtryPoint>]
 // 'main' function invoked with 1 argument
 //<CmdLine>Hello</CmdLine>
-//<Expected status=success></Expects>
+//<Expected status="success"></Expects>
 
 #light
 

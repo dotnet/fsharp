@@ -3,7 +3,7 @@
 // Prefix only operators: !OP, ?OP, ~OP
 // Try to use !OP as an infix-op is an error
 // ?OP ~OP
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

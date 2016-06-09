@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1304
 // Explicit program entry point: [<ExtryPoint>]
 // Verify that static initializers are invoked before entering the 'main' function
-//<Expected status=success></Expects>
+//<Expected status="success"></Expects>
 
 #light
 

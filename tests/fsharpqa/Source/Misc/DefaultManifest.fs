@@ -1,5 +1,5 @@
 // The compiler should add an embedded default win32 manifest so that UAC is handled properly
-// <Expects status=success></Expects>
+// <Expects status="success"></Expects>
 
 open System
 open System.Text

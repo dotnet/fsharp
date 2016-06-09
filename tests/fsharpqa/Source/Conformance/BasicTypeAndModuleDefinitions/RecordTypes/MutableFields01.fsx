@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 // Verify that record fields may be marked mutable
 // In this case, only one field is marked as mutable
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 [<Measure>] type Kg

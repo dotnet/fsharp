@@ -1,7 +1,7 @@
 // #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Sample on exception
 // See bug FSHARP1.0:5345
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 exception E of int * int
 

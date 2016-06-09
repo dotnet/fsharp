@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Unions 
 // Union Types
 // Sample from spec - using #light "off"
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light "off"
 
 (* extra space *) type Message = 

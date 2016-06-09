@@ -1,7 +1,7 @@
 // #Regression #Conformance #LexFilter 
 // Regression test for FSHARP1.0:1078
 // The opposit of #light is (for now) #indent "off"
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #indent "off"
 module M
 let SimpleSample() =

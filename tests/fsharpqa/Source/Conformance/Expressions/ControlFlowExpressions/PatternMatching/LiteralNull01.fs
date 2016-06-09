@@ -1,6 +1,6 @@
 // #Regression #Conformance #ControlFlow 
 // Regression test for FSHARP1.0:2323 (Compiler ICE when matching on literal Null)
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 [<Literal>]

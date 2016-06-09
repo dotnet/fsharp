@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Delegates 
 // Delegate taking multiple arguments
 // Declaration is in the form: typ * ... * typ -> typ
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 // Non-generic
 type MultiArgDelegate = delegate of int * string * byte -> unit

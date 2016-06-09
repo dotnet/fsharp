@@ -3,7 +3,7 @@
 // Explicit program entry point: [<ExtryPoint>]
 // 'main' function is in a module
 //<CmdLine>Hello</CmdLine>
-//<Expected status=success></Expects>
+//<Expected status="success"></Expects>
 
 #light
 module M =

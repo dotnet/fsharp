@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Modules 
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module A =

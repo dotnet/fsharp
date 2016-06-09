@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Arrays
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 let samples = [  [|1;1+1|] = [|1;2|];
                  [|hash (1,1+1)|] = [|hash (1,2)|];
