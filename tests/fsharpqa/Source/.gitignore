@@ -7,3 +7,9 @@
 # test specific
 
 EntryPoint/E_CompilingToAModule01.netmodule
+
+XmlDoc/Basic/xmlDoc00*.xml
+XmlDoc/Basic/XMLDocOnEnum01.xml
+XmlDoc/OCamlDoc/ocamldoc001.xml
+
+Conformance/LexicalAnalysis/IdentifiersAndKeywords/test.ok
