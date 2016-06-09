@@ -181,12 +181,12 @@ let anychar = [^'\n''\r']
 let anystring = anychar*
 let op_char = '!'|'$'|'%'|'&'|'*'|'+'|'-'|'.'|'/'|'<'|'='|'>'|'?'|'@'|'^'|'|'|'~'|':'
 let ignored_op_char = '.' | '$' | '?'
-let seperator = '_'
+let separator = '_'
 let xinteger = 
-  (  '0' ('x'| 'X')  hex ((hex | seperator)* hex)?
-   | '0' ('o'| 'O')  (['0'-'7']) (((['0'-'7']) | seperator)* (['0'-'7']))?
-   | '0' ('b'| 'B')  (['0'-'1']) (((['0'-'1']) | seperator)* (['0'-'1']))?)
-let integer = digit ((digit | seperator)* digit)?
+  (  '0' ('x'| 'X')  hex ((hex | separator)* hex)?
+   | '0' ('o'| 'O')  (['0'-'7']) (((['0'-'7']) | separator)* (['0'-'7']))?
+   | '0' ('b'| 'B')  (['0'-'1']) (((['0'-'1']) | separator)* (['0'-'1']))?)
+let integer = digit ((digit | separator)* digit)?
 let int8 = integer 'y'
 let uint8 = (xinteger | integer) 'u' 'y' 
 let int16 = integer 's'
@@ -203,8 +203,8 @@ let xint8 = xinteger 'y'
 let xint16 = xinteger 's'
 let xint = xinteger 
 let xint32 = xinteger 'l'
-let floatp = digit ((digit | seperator)* digit)? '.' (digit (digit | seperator)*)?  
-let floate = digit ((digit | seperator)* digit)? ('.' (digit (digit | seperator)*)? )? ('e'| 'E') ['+' '-']? digit (digit | seperator)*
+let floatp = digit ((digit | separator)* digit)? '.' (digit (digit | separator)*)?  
+let floate = digit ((digit | separator)* digit)? ('.' (digit (digit | separator)*)? )? ('e'| 'E') ['+' '-']? digit (digit | separator)*
 let float = floatp | floate 
 let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 let ieee64 = float
