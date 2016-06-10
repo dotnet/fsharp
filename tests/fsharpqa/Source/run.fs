@@ -14,6 +14,7 @@ let (|Regex|_|) pattern input =
     else None
 
 let lc (s: string) = s.ToLower()
+let stringReplace (a: string) b (s: string) = s.Replace(a, b)
 
 //reality check: it's xml like, but not valid xml
 let parseMalformedXml (s: string) =
@@ -757,28 +758,46 @@ let RunExit envVars = attempt {
     //if (defined($ENV{POSTCMD})) {
     do! match env "POSTCMD" with
         | None -> Success
-        | Some envPOSTCMD ->
+        | Some envPOSTCMD -> attempt {
             // # Do the magic to replace known tokens in the
             // # PRECMD/POSTCMD: for now you can write in env.lst
             // # something like:
             // #    SOURCE=foo.fs POSTCMD="\$FSC_PIPE bar.fs"
             // # and it will expanded into $FSC_PIPE before invoking it
             //$_ = $ENV{POSTCMD};
-            //s/^\$FSC_PIPE/$FSC_PIPE/;
-            //s/^\$FSI_PIPE/$FSI_PIPE/;
-            //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-            //s/^\$CSC_PIPE/$CSC_PIPE/;
-            //s/^\$VBC_PIPE/$VBC_PIPE/;
-            TODO "implement replace"
+            (*
+            let post =
+                envPOSTCMD
+                //s/^\$FSC_PIPE/$FSC_PIPE/;
+                |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
+                //s/^\$FSI_PIPE/$FSI_PIPE/;
+                |> stringReplace "\\$FSI_PIPE" FSI_PIPE 
+                //s/^\$FSI32_PIPE/$FSI32_PIPE/;
+                |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE 
+                //s/^\$CSC_PIPE/$CSC_PIPE/;
+                |> stringReplace "\\$CSC_PIPE" CSC_PIPE 
+                //s/^\$VBC_PIPE/$VBC_PIPE/;
+                |> stringReplace "\\$VBC_PIPE" VBC_PIPE
             
+            let exe, cmdArgs = post |> splitAtFirst Char.IsWhiteSpace
+            let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
+
+            //do! skipIfContainsRedirection "POSTCMD" (exe, cmdArgsString)
+
             //if (RunCommand("POSTCMD",$_,1)){
             //     $exitVal = TEST_FAIL;
             //     $test_result = TEST_FAIL;
             //     $exit_str .= "Fail to execute the POSTCMD. ";
             //}
-            TODO "implement POSTCMD"
+            //let! e,o = RunCommand "POSTCMD" (exe, cmdArgsString) true
+            //if e <> 0
+            //then return! NUnitConf.genericError (sprintf "Fail to execute the POSTCMD %s" o)
+            *)
 
-            NUnitConf.skip "POSTCMD not implemented"
+            TODO "implement POSTCMD"
+            return! NUnitConf.skip (sprintf "POSTCMD not implemented: %s" envPOSTCMD)
+
+            }
     //}
     
     //if (exists($ENV{SKIPTEST})) {
@@ -1046,7 +1065,6 @@ let runplImpl cwd initialEnvVars = attempt {
     do! match env "PRECMD" with
         | None -> Success
         | Some envPRECMD -> attempt {
-            let replace (a: string) b (s: string) = s.Replace(a, b)
             // # Do the magic to replace known tokens in the
             // # PRECMD/POSTCMD: for now you can write in env.lst
             // # something like:
@@ -1056,17 +1074,17 @@ let runplImpl cwd initialEnvVars = attempt {
             let pre =
                 envPRECMD
                 //s/^\$FSC_PIPE/$FSC_PIPE/;
-                |> replace "\\$FSC_PIPE" FSC_PIPE 
+                |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
                 //s/^\$FSI_PIPE/$FSI_PIPE/;
-                |> replace "\\$FSI_PIPE" FSI_PIPE
+                |> stringReplace "\\$FSI_PIPE" FSI_PIPE
                 //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                |> replace "\\$FSI32_PIPE" FSI32_PIPE
+                |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE
                 //s/\$ISCFLAGS/$ISCFLAGS/;
-                |> replace "\\$ISCFLAGS" ISCFLAGS
+                |> stringReplace "\\$ISCFLAGS" ISCFLAGS
                 //s/^\$CSC_PIPE/$CSC_PIPE/;
-                |> replace "\\$CSC_PIPE" CSC_PIPE
+                |> stringReplace "\\$CSC_PIPE" CSC_PIPE
                 //s/^\$VBC_PIPE/$VBC_PIPE/;
-                |> replace "\\$VBC_PIPE" VBC_PIPE
+                |> stringReplace "\\$VBC_PIPE" VBC_PIPE
 
             let exe, cmdArgs = pre |> splitAtFirst Char.IsWhiteSpace
             let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
