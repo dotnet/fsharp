@@ -790,15 +790,6 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
     member x.QualifiedNameWithNoShortPrimaryAssembly = 
         x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(x.BasicQualifiedName)
 
-and 
-    [<CustomEquality; CustomComparison>]
-    IlxExtensionType = 
-    | Ext_typ of obj
-    member x.Value = (let (Ext_typ(v)) = x in v)
-    override x.Equals(yobj) = match yobj with :? IlxExtensionType as y -> Unchecked.equals x.Value y.Value | _ -> false
-    interface System.IComparable with
-        override x.CompareTo(yobj) = match yobj with :? IlxExtensionType as y -> Unchecked.compare x.Value y.Value | _ -> invalidOp "bad comparison"
-
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature = 
     { CallingConv: ILCallingConv;
@@ -1133,51 +1124,7 @@ type ILInstr =
   (* FOR EXTENSIONS, e.g. MS-ILX *)  
   | EI_ilzero of ILType
   | EI_ldlen_multi      of int32 * int32
-  | I_other    of IlxExtensionInstr
 
-and IlxExtensionInstr = Ext_instr of obj
-
-
-// -------------------------------------------------------------------- 
-// Helpers for the ILX extensions
-// -------------------------------------------------------------------- 
-
-type internal_instr_extension = 
-    { internalInstrExtIs: IlxExtensionInstr -> bool; 
-      internalInstrExtDests: IlxExtensionInstr -> ILCodeLabel list;
-      internalInstrExtFallthrough: IlxExtensionInstr -> ILCodeLabel option;
-      internalInstrExtIsTailcall: IlxExtensionInstr -> bool;
-      internalInstrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> IlxExtensionInstr -> IlxExtensionInstr; }
-
-type ILInstrSetExtension<'T> = 
-    { instrExtDests: 'T -> ILCodeLabel list;
-      instrExtFallthrough: 'T -> ILCodeLabel option;
-      instrExtIsTailcall: 'T -> bool;
-      instrExtRelabel: (ILCodeLabel -> ILCodeLabel) -> 'T -> 'T; }
-
-let instrExtensions = ref []
-
-let RegisterInstructionSetExtension  (ext: ILInstrSetExtension<'T>) = 
-    if nonNil !instrExtensions then failwith "RegisterInstructionSetExtension: only one extension currently allowed";
-    let mk (x: 'T) = Ext_instr (box x)
-    let test (Ext_instr _x) = true
-    let dest (Ext_instr x) = (unbox x : 'T)
-    instrExtensions := 
-       { internalInstrExtIs=test;
-         internalInstrExtDests=(fun x -> ext.instrExtDests (dest x));
-         internalInstrExtFallthrough=(fun x -> ext.instrExtFallthrough (dest x));
-         internalInstrExtIsTailcall=(fun x -> ext.instrExtIsTailcall (dest x));
-         internalInstrExtRelabel=(fun f x -> mk (ext.instrExtRelabel f (dest x))); }
-         :: !instrExtensions;
-    mk,test,dest
-
-let rec find_extension s f l = 
-  let rec look l1 = 
-    match l1 with
-    | [] -> failwith ("extension for "+s+" not found")
-    | (h::t) -> match f h with None -> look t | Some res -> res 
-  look l
-          
 
 type ILDebugMapping = 
     { LocalIndex: int;
@@ -1194,7 +1141,6 @@ type ILBasicBlock =
     member x.Fallthrough = 
         match x.LastInstruction with 
         | I_br l | I_brcmp (_,_,l) | I_switch (_,l) -> Some l
-        | I_other e -> find_extension "instr" (fun ext -> if ext.internalInstrExtIs e then Some (ext.internalInstrExtFallthrough e) else None) !instrExtensions
         | _ -> None
 
 
@@ -1693,12 +1639,6 @@ type ILTypeDefKind =
     | Interface
     | Enum 
     | Delegate
-    | Other of IlxExtensionTypeKind
-
-and IlxExtensionTypeKind = Ext_type_def_kind of obj
-
-type internal_type_def_kind_extension = 
-    { internalTypeDefKindExtIs: IlxExtensionTypeKind -> bool; }
 
 
 [<NoComparison; NoEquality>]
@@ -1941,22 +1881,6 @@ let mkILBoxedTyRaw tref tinst = mkILNamedTyRaw AsObject tref tinst
 let mkILNonGenericValueTy tref = mkILNamedTy AsValue tref []
 let mkILNonGenericBoxedTy tref = mkILNamedTy AsObject tref []
 
-
-type ILTypeDefKindExtension<'T> = 
-    | TypeDefKindExtension
-
-let type_def_kind_extensions = ref []
-
-let RegisterTypeDefKindExtension (TypeDefKindExtension : ILTypeDefKindExtension<'T>) = 
-    if nonNil !type_def_kind_extensions then failwith "define_type_extension: only one extension currently allowed";
-    let mk (x:'T) = Ext_type_def_kind (box x)
-    let test (Ext_type_def_kind _x) = true
-    let dest (Ext_type_def_kind x) = (unbox x: 'T)
-    type_def_kind_extensions := 
-       { internalTypeDefKindExtIs=test;}
-         :: !type_def_kind_extensions;
-    mk,test,dest
-
 // -------------------------------------------------------------------- 
 // Making assembly, module and file references
 // -------------------------------------------------------------------- 
@@ -1966,10 +1890,6 @@ let mkSimpleAssRef n =
 
 let mkSimpleModRef n = 
     ILModuleRef.Create(n, true, None)
-
-let module_name_of_scoref = function 
-    | ILScopeRef.Module(mref) -> mref.Name
-    | _ -> failwith "module_name_of_scoref"
 
 // --------------------------------------------------------------------
 // The toplevel class of a module is called "<Module>"
@@ -2105,7 +2025,6 @@ let destinationsOfInstr i =
     | I_endfinally | I_endfilter | I_ret | I_throw | I_rethrow 
     | I_call (Tailcall,_,_)| I_callvirt (Tailcall,_,_)| I_callconstraint (Tailcall,_,_,_)
     | I_calli (Tailcall,_,_) -> []
-    | I_other e -> find_extension "instr" (fun ext -> if ext.internalInstrExtIs e then Some (ext.internalInstrExtDests e) else None) !instrExtensions
     | _ -> []
 
 let destinationsOfBasicBlock (bblock:ILBasicBlock) = destinationsOfInstr bblock.LastInstruction
@@ -2113,7 +2032,6 @@ let destinationsOfBasicBlock (bblock:ILBasicBlock) = destinationsOfInstr bblock.
 let instrIsTailcall i = 
     match i with 
     | I_call (Tailcall,_,_)| I_callvirt (Tailcall,_,_) | I_callconstraint (Tailcall,_,_,_) | I_calli (Tailcall,_,_) -> true
-    | I_other e -> find_extension "instr" (fun ext -> if ext.internalInstrExtIs e then Some (ext.internalInstrExtIsTailcall e) else None) !instrExtensions
     | _ -> false
 
 let instrIsBasicBlockEnd i = 
@@ -2121,7 +2039,6 @@ let instrIsBasicBlockEnd i =
     match i with 
     | I_leave _ | I_br _ | I_brcmp _ | I_switch _ | I_endfinally
     | I_endfilter | I_ret | I_throw | I_rethrow  ->  true
-    | I_other e -> find_extension "instr" (fun ext -> if ext.internalInstrExtIs e then Some (nonNil (ext.internalInstrExtDests e)) else None) !instrExtensions
     | _ -> false
 
 let checks = false 
@@ -3529,8 +3446,6 @@ type ILExceptionSpec =
     { exnRange: (ILCodeLabel * ILCodeLabel);
       exnClauses: ILExceptionClause list }
 
-type exceptions = ILExceptionSpec list
-
 //-----------------------------------------------------------------------
 // [instructions_to_code] makes the basic block structure of code from
 // a primitive array of instructions.  We
@@ -3627,7 +3542,6 @@ type BasicBlockStartsToCodeLabelsMap(instrs,tryspecs,localspecs,lab2pc) =
         match i with 
         | I_leave l -> I_leave(c.lab2cl l)
         | I_br l -> I_br (c.lab2cl l)
-        | I_other e -> I_other (find_extension "instr" (fun ext -> if ext.internalInstrExtIs e then Some (ext.internalInstrExtRelabel c.lab2cl e) else None) !instrExtensions)
         | I_brcmp (x,l1,l2) -> I_brcmp(x,c.lab2cl l1, c.lab2cl l2)
         | I_switch (ls,l) -> I_switch(List.map c.lab2cl ls, c.lab2cl l)
         | _ -> i 
@@ -4641,7 +4555,7 @@ type ILTypeSigParser(tstring : string) =
                     step()
                 drop()
 
-                Some(ILArrayShape(List.repeat rank (Some 0, None)))
+                Some(ILArrayShape(List.replicate rank (Some 0, None)))
             else
                 None
 
@@ -4922,7 +4836,7 @@ and refs_of_instr s x =
     | I_ldarga _|I_ldarg _|I_leave _|I_br _
     | I_brcmp _|I_rethrow|I_refanytype|I_ldlen|I_throw|I_initblk _ |I_cpblk _ 
     | I_localloc|I_ret |I_endfilter|I_endfinally|I_arglist
-    | I_other _ | I_break
+    | I_break
     | AI_add    | AI_add_ovf | AI_add_ovf_un | AI_and    | AI_div    | AI_div_un | AI_ceq      | AI_cgt      | AI_cgt_un   | AI_clt     
     | AI_clt_un  | AI_conv      _ | AI_conv_ovf  _ | AI_conv_ovf_un  _ | AI_mul       | AI_mul_ovf    | AI_mul_ovf_un | AI_rem       | AI_rem_un       
     | AI_shl       | AI_shr       | AI_shr_un | AI_sub       | AI_sub_ovf   | AI_sub_ovf_un   | AI_xor       | AI_or        | AI_neg       | AI_not       

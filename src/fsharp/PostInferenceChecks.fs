@@ -958,7 +958,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
 
     // Check for violations of allowMultiple = false
     let duplicates = 
-        tcrefs 
+        tcrefs
         |> Seq.groupBy (fun (tcref,_) -> tcref.Stamp) 
         |> Seq.map (fun (_,elems) -> List.last (List.ofSeq elems), Seq.length elems) 
         |> Seq.filter (fun (_,count) -> count > 1) 
@@ -1257,7 +1257,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             | None -> []
 
         let namesOfMethodsThatMayDifferOnlyInReturnType = ["op_Explicit";"op_Implicit"] (* hardwired *)
-        let methodUniquenessIncludesReturnType (minfo:MethInfo) = List.mem minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
+        let methodUniquenessIncludesReturnType (minfo:MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
             if methodUniquenessIncludesReturnType minfo
             then MethInfosEquivByNameAndSig        eraseFlag true cenv.g cenv.amap m minfo minfo2
@@ -1407,8 +1407,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
     end;
     
-    // Considers TFsObjModelRepr, TRecdRepr and TFiniteUnionRepr. 
-    // [Review] are all cases covered: TILObjModelRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
+    // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
+    // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon);
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> CheckTypePermitByrefs cenv env m); (* check vslots = abstract slots *)
     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (CheckTypePermitByrefs cenv env m);                   (* check implemented interface types *)
@@ -1427,7 +1427,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     //implements_of_tycon cenv.g tycon |> List.iter visitType
     if tycon.IsFSharpDelegateTycon then 
         match tycon.TypeReprInfo with 
-        | TFsObjModelRepr r ->
+        | TFSharpObjectRepr r ->
             match r.fsobjmodel_kind with 
             | TTyconDelegate ss ->
                 //ss.ClassTypars 
