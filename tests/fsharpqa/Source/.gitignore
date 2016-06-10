@@ -13,3 +13,8 @@ XmlDoc/Basic/XMLDocOnEnum01.xml
 XmlDoc/OCamlDoc/ocamldoc001.xml
 
 Conformance/LexicalAnalysis/IdentifiersAndKeywords/test.ok
+
+Conformance/Signatures/SignatureConformance/InternalAccessibility02.fsi
+
+Stress/2766.fs
+Stress/SeqExprCapacity.fs

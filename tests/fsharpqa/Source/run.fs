@@ -15,6 +15,27 @@ let (|Regex|_|) pattern input =
 
 let lc (s: string) = s.ToLower()
 
+//reality check: it's xml like, but not valid xml
+let parseMalformedXml (s: string) =
+    try
+        //first, try parse as valid xml, if works, that's ok
+        Choice1Of2 (System.Xml.Linq.XElement.Parse(s))
+    with e ->
+        let regexReplace (tag: string) (i: string) =
+            let p = sprintf @"(?<open><%s.*?>)(?<message>.*?)(?<close><\/%s.*?>)" tag tag
+            let r = @"${open}<![CDATA[${message}]]>${close}"
+            Regex.Replace(i, p, r)
+        //maybe is malformed xml, so let's CDATA the inner text
+        let s2 = 
+            s
+            |> regexReplace "Expect"
+            |> regexReplace "CmdLine"
+        try
+            //and retry
+            Choice1Of2 (System.Xml.Linq.XElement.Parse(s2))
+        with e ->
+            Choice2Of2 e
+
 (** PERL NOTES
 
 `-e $path`
@@ -366,12 +387,8 @@ let GetExpectedResults cwd (srcListSepByBlank: string) =
     //push @dontmatch, "internal error";
     ignore "useless, it's a failfast"
     
-    //let's simplify a bit the loop below, it's xml after //
-    let parseXml (s: string) = 
-        try
-            Choice1Of2 (System.Xml.Linq.XElement.Parse(s))
-        with e ->
-            Choice2Of2 e
+    //let's simplify a bit the loop below, it's xml like after //
+    let parseXml = parseMalformedXml
 
     //ITEM: while(<SRC>) {
     SRC ()

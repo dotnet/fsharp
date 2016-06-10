@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="test_EnvLst.fs" />
+    <Compile Include="test_run.fs" />
     <Compile Include="test_Source.fs" />
     <Compile Include="ClrFx\PseudoCustomAttributes\test_ClrFx_PseudoCustomAttributes.fs" />
     <Compile Include="CodeGen\test_CodeGen.fs" />
