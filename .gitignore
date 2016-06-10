@@ -94,6 +94,7 @@ ossreadme*.txt
 *.mdf
 *.ldf
 *.cto
+*.vstman
 project.lock.json
 Tools/
 Backup/

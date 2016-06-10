@@ -613,7 +613,7 @@ rule token args skip = parse
    
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange   
-     let lookup id = List.mem id args.defines
+     let lookup id = List.contains id args.defines
      let lexed = lexeme lexbuf
      let isTrue = evalIfDefExpression lexbuf.StartPos args lookup lexed
      args.ifdefStack := (IfDefIf,m) :: !(args.ifdefStack);

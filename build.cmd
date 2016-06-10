@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^>
+echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
 echo.
 echo No arguments default to 'build' 
 echo.
@@ -98,6 +98,24 @@ if /i '%ARG%' == 'all' (
     set TEST_VS=1
 
     set SKIP_EXPENSIVE_TESTS=0
+)
+
+if /i '%ARG%' == 'microbuild' (
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=0
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    set BUILD_SETUP=1
+    
+    set TEST_COMPILERUNIT=0
+    set TEST_NET40_COREUNIT=0
+    set TEST_CORECLR=0
+    set TEST_PORTABLE_COREUNIT=0
+    set TEST_VS=0
+    set TEST_FSHARP_SUITE=0
+    set TEST_FSHARPQA_SUITE=0
+    set SKIP_EXPENSIVE_TESTS=1
 )
 
 if /i '%ARG%' == 'proto' (
@@ -233,6 +251,7 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
+echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
 echo.
