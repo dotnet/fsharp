@@ -5,7 +5,6 @@ open NUnit.Framework
 open NUnitConf
 open RunPlTest
 
-
 module Removed =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/Removed")>]
@@ -81,31 +80,88 @@ module nologo =
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/nologo")>]
     let nologo () = runpl |> check 
 
-//optimize
+module Optimize =
 
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/optimize")>]
+    let Optimize () = runpl |> check 
 
 module out =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/out")>]
     let out () = runpl |> check 
 
-//pdb
-//platform
-//reference
-//simpleresolution
-//standalone
-//staticlink
-//subsystemversion
-//tailcalls
-//target
-//times
-//warn
-//warnaserror
+module pdb =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/pdb")>]
+    let pdb () = runpl |> check 
+
+module platform =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/platform")>]
+    let platform () = runpl |> check 
+
+module reference =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/reference")>]
+    let reference () = runpl |> check 
+
+module responsefile =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/responsefile")>]
+    let responsefile () = runpl |> check 
+
+module simpleresolution =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/simpleresolution")>]
+    let simpleresolution () = runpl |> check 
+
+module standalone =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/standalone")>]
+    let standalone () = runpl |> check 
+
+module staticlink =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/staticlink")>]
+    let staticlink () = runpl |> check 
+
+module subsystemversion =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/subsystemversion")>]
+    let subsystemversion () = runpl |> check 
+
+module tailcalls =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/tailcalls")>]
+    let tailcalls () = runpl |> check 
+
+module target =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/target")>]
+    let target () = runpl |> check 
+
+module times =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/times")>]
+    let times () = runpl |> check 
+
+module warn =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/warn")>]
+    let warn () = runpl |> check 
+
+module warnaserror =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/warnaserror")>]
+    let warnaserror () = runpl |> check 
 
 module warnon =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/warnon")>]
     let warnon () = runpl |> check 
 
-//win32res
+module win32res =
+
+    [<Test; FSharpQASuiteTest("CompilerOptions/fsc/win32res")>]
+    let win32res () = runpl |> check 
 
