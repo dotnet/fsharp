@@ -1570,7 +1570,7 @@ module StaticLinker =
               ReportTime tcConfig "Static link";
 
 #if EXTENSIONTYPING
-              Morphs.enablemorphCustomAttributeData()
+              Morphs.enableMorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (tcImports, providerGeneratedAssemblies) 
 
               // Transform the ILTypeRefs references in the IL of all provider-generated assemblies so that the references
@@ -1692,7 +1692,7 @@ module StaticLinker =
 
                   providerGeneratedILModules, ilxMainModule
              
-              Morphs.disablemorphCustomAttributeData()
+              Morphs.disableMorphCustomAttributeData()
 #else
               let providerGeneratedILModules = []
 #endif
