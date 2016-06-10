@@ -728,36 +728,36 @@ let LogTime logFile src (compileTime: TimeSpan) (runTime: TimeSpan) =
 // # RunExit -- Exits the script with the specified value.  
 // # 
 //sub RunExit {
-let RunExit envPOSTCMD (exitVal: int) (cmtStr: string) = attempt {
+let RunExit envVars = attempt {
     //my (
     //    $exitVal,		# Our exit value
     //    $cmtStr,		# Comment string to print before exit
     //   ) = @_;
-    ignore "are arguments"    
+    ignore "$exitVal is useless, we use NUnit results, not int exit code"
+    ignore "$cmtStr is useless, was the skip/error message, already managed by attempt and NUnitConf.genericError/skip"
+
+    let env key = envVars |> Map.tryFind key
 
     //my %status_hash = (
     //       0 => "PASS",
     //       1 => "FAIL",
     //       2 => "SKIP"
     //      );
-    let status_hash =
-        [ 0, "PASS"
-          1, "FAIL"
-          2, "SKIP" ]
-        |> Map.ofList
+    ignore "unused"
               
     //print("$cmtStr") if ($cmtStr);
-    do if (not(System.String.IsNullOrWhiteSpace(cmtStr))) then
-           printf "%s" cmtStr
+    ignore "useless"
     
     //my $exit_str;
     let exit_str = ""
     //my $test_result = $exitVal;
-    let test_result = exitVal
+    ignore "useless"
     
     // # Run POSTCMD if any
     //if (defined($ENV{POSTCMD})) {
-    do! if (not(System.String.IsNullOrWhiteSpace(envPOSTCMD))) then
+    do! match env "POSTCMD" with
+        | None -> Success
+        | Some envPRECMD ->
             // # Do the magic to replace known tokens in the
             // # PRECMD/POSTCMD: for now you can write in env.lst
             // # something like:
@@ -779,8 +779,6 @@ let RunExit envPOSTCMD (exitVal: int) (cmtStr: string) = attempt {
             TODO "implement POSTCMD"
 
             NUnitConf.skip "POSTCMD not implemented"
-        else
-            Success
     //}
     
     //if (exists($ENV{SKIPTEST})) {
@@ -820,10 +818,12 @@ let RunExit envPOSTCMD (exitVal: int) (cmtStr: string) = attempt {
     TODO "implement SKIP? or it's the runner filter?"
     
     //print $exit_str . $status_hash{$test_result} . "\n";
-    printfn "%s %s" exit_str (status_hash |> Map.find test_result)
+    ignore "nunit already has output"
     
     //exit($exitVal);
-    return exitVal
+    ignore "nunit result are used, not int exit codes"
+
+    return ()
     }
 
 // #############################################################
@@ -854,7 +854,7 @@ let GetCurrentPlatform () =
     ignore "useless, it's calculated from another function"      
 
 
-let runpl cwd initialEnvVars = attempt {
+let runplImpl cwd initialEnvVars = attempt {
 
     let mutable envVars = initialEnvVars
 
@@ -1253,8 +1253,7 @@ let runpl cwd initialEnvVars = attempt {
                 NUnitConf.skip "Internal Logic Error(1)"
             else
                 //RunExit(TEST_PASS);		# Designed to fail, and it did
-                ignore "make it pass, it's going to be a big if"
-                NUnitConf.genericError "Not implemented: Designed to fail, and it did"
+                Success
         else
             Success
     //}
@@ -1492,5 +1491,13 @@ let runpl cwd initialEnvVars = attempt {
     
     //exit (1); #safe stop
     //safe stop
-    
+    }
+
+
+let runpl cwd initialEnvVars = attempt {
+    do! runplImpl cwd initialEnvVars
+
+    //test is ok, let's check runExit
+    return! RunExit initialEnvVars
+
     }
