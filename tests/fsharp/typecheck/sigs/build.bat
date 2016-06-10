@@ -5,6 +5,15 @@ setlocal
 REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 call %~d0%~p0..\..\..\config.bat
 
+call ..\..\single-neg-test.bat neg97
+@if ERRORLEVEL 1 goto Error
+
+call ..\..\single-neg-test.bat neg96
+@if ERRORLEVEL 1 goto Error
+
+call ..\..\single-neg-test.bat neg95
+@if ERRORLEVEL 1 goto Error
+
 call ..\..\single-neg-test.bat neg46
 @if ERRORLEVEL 1 goto Error
 

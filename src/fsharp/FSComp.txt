@@ -42,6 +42,7 @@ buildCouldNotReadVersionInfoFromMscorlib,"Could not read version from mscorlib.d
 220,buildAssemblyResolutionFailed,"Assembly resolution failure at or near this location"
 221,buildImplicitModuleIsNotLegalIdentifier,"The declarations in this file will be placed in an implicit module '%s' based on the file name '%s'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file."
 222,buildMultiFileRequiresNamespaceOrModule,"Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
+222,noEqualSignAfterModule,"Files in libraries or multiple-file applications must begin with a namespace or module declaration. When using a module declaration at the start of a file the '=' sign is not allowed. If this is a top-level module, consider removing the = to resolve this error."
 223,buildMultipleToplevelModules,"This file contains multiple declarations of the form 'module SomeNamespace.SomeModule'. Only one declaration of this form is permitted in a file. Change your file to use an initial namespace declaration and/or use 'module ModuleName = ...' to define your modules."
 224,buildOptionRequiresParameter,"Option requires parameter: %s"
 225,buildCouldNotFindSourceFile,"Source file '%s' could not be found"

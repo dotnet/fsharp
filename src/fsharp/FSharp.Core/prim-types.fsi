@@ -763,10 +763,8 @@ namespace Microsoft.FSharp.Core
     /// <c>System.Int64</c>.</summary>
     type int64<[<Measure>] 'Measure> = int64
 
-
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
-
 
         /// <summary>Compare two values for equality using partial equivalence relation semantics ([nan] &lt;&gt; [nan])</summary>
         /// <param name="e1">The first value.</param>
