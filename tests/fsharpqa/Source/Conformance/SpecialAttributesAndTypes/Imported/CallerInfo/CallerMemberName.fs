@@ -16,6 +16,8 @@ type MyTy() =
     let typeLetFuncNested () =
         let nestedFunc () = MyTy.GetCallerMemberName()
         nestedFunc ()
+    let anonymousLambda = (fun () -> MyTy.GetCallerMemberName()) ()
+    let asyncVal = async { return MyTy.GetCallerMemberName() } |> Async.RunSynchronously
     do
         MyTy.Check(MyTy.GetCallerMemberName(), Some(".ctor"), "primary ctor")
 
@@ -45,6 +47,8 @@ type MyTy() =
             |> List.head
         MyTy.Check(result, Some("CheckMembers"), "lambda")
         MyTy.Check(functionVal (), Some("functionVal"), "functionVal")
+        MyTy.Check(anonymousLambda, Some("anonymousLambda"), "anonymousLambda")
+        MyTy.Check(asyncVal, Some("asyncVal"), "asyncVal")
         ()
 
     static member GetCallerMemberName([<CallerMemberName>] ?memberName : string) =
@@ -75,6 +79,13 @@ type Extensions =
     [<Extension>]
     static member DotNetExtensionMeth(instance : System.DateTime) =
         MyTy.GetCallerMemberName()
+
+type IMyInterface =
+    abstract member MyInterfaceMethod : unit -> string option
+
+[<AbstractClass>]
+type MyAbstractTy() =
+    abstract MyAbstractMethod : unit -> string option
 
 module Program =
     type System.String with
@@ -146,5 +157,12 @@ module Program =
         let strct = MyStruct(10)
 
         MyTy.Check(1 +++ 2 |> snd, Some("op_PlusPlusPlus"), "operator")
+
+        let obj = { new IMyInterface with
+            member this.MyInterfaceMethod() = MyTy.GetCallerMemberName() }
+        MyTy.Check(obj.MyInterfaceMethod(), Some("MyInterfaceMethod"), "MyInterfaceMethod")
+
+        let obj1 = { new MyAbstractTy() with member x.MyAbstractMethod() = MyTy.GetCallerMemberName() }
+        MyTy.Check(obj1.MyAbstractMethod(), Some("MyAbstractMethod"), "MyAbstractMethod")
 
         0
