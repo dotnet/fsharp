@@ -18,3 +18,5 @@ Conformance/Signatures/SignatureConformance/InternalAccessibility02.fsi
 
 Stress/2766.fs
 Stress/SeqExprCapacity.fs
+
+CompilerOptions/fsc/subsystemversion/dummy.netmodule
