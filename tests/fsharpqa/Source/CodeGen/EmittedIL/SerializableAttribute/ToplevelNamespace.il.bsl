@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:9055
+  .ver 4:4:1:0
 }
 .assembly ToplevelNamespace
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ToplevelNamespace
 {
-  // Offset: 0x00000000 Length: 0x00001856
+  // Offset: 0x00000000 Length: 0x00001858
 }
 .mresource public FSharpOptimizationData.ToplevelNamespace
 {
   // Offset: 0x00001860 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {5706E102-218B-729A-A745-038302E10657}
+// MVID: {57570CF5-218B-729A-A745-0383F50C5757}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02520000
+// Image base: 0x00820000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -214,7 +214,7 @@
     // Code size       14 (0xe)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 7,7 : 10,14 'd:\\KevinRansom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelNamespace.fs'
+    .line 7,7 : 10,14 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelNamespace.fs'
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldarg.1
@@ -572,7 +572,7 @@
                                valuetype [mscorlib]System.Runtime.Serialization.StreamingContext context) cil managed
   {
     // Code size       9 (0x9)
-    .maxstack  10
+    .maxstack  8
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
     IL_0002:  ldarg.2
@@ -1370,7 +1370,7 @@
                                  valuetype [mscorlib]System.Runtime.Serialization.StreamingContext context) cil managed
     {
       // Code size       9 (0x9)
-      .maxstack  10
+      .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -2168,7 +2168,7 @@
                                    valuetype [mscorlib]System.Runtime.Serialization.StreamingContext context) cil managed
       {
         // Code size       9 (0x9)
-        .maxstack  10
+        .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
         IL_0002:  ldarg.2

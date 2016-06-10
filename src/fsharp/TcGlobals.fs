@@ -1010,7 +1010,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   { ilg=ilg
 #if NO_COMPILER_BACKEND
 #else
-    ilxPubCloEnv=EraseClosures.new_cenv(ilg)
+    ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg)
 #endif
     knownIntrinsics                = knownIntrinsics
     knownFSharpCoreModules         = knownFSharpCoreModules

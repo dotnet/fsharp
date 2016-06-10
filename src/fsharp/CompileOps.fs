@@ -3235,8 +3235,12 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
 
     | ParsedImplFileFragment.AnonModule (defs,m)-> 
         let isLast, isExe = isLastCompiland 
-        if not (isLast && isExe ) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
-            errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
+        let lower = String.lowercase filename
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then
+            match defs with
+            | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),trimRangeToLine m))
+            | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
+
         let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespace(modname,true,defs,PreXmlDoc.Empty,[],None,m)
 
@@ -3259,8 +3263,12 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
 
     | ParsedSigFileFragment.AnonModule (defs,m) -> 
         let isLast, isExe = isLastCompiland
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix (String.lowercase filename))) then 
-            errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
+        let lower = String.lowercase filename
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then 
+            match defs with
+            | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),m))
+            | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
+
         let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespaceSig(modname,true,defs,PreXmlDoc.Empty,[],None,m)
 
