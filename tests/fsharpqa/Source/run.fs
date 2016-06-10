@@ -757,7 +757,7 @@ let RunExit envVars = attempt {
     //if (defined($ENV{POSTCMD})) {
     do! match env "POSTCMD" with
         | None -> Success
-        | Some envPRECMD ->
+        | Some envPOSTCMD ->
             // # Do the magic to replace known tokens in the
             // # PRECMD/POSTCMD: for now you can write in env.lst
             // # something like:
@@ -1245,248 +1245,252 @@ let runplImpl cwd initialEnvVars = attempt {
     //}
 
     
+    let notExpectedToError () = attempt {
+        //RunExit(TEST_SKIPPED, "Internal Logic Error(2)") if ($Type == TEST_SEEK_ERROR);
+        do! if (Type = TEST_SEEK_ERROR) then
+                NUnitConf.skip "Internal Logic Error(2)"
+            else
+                Success
+
+        //RunExit(TEST_SKIPPED, "Internal Logic Error(3)") if ($ExitCode);
+        do! if (exitCode <> 0) then
+                NUnitConf.skip "Internal Logic Error(3)"
+            else
+                Success
+    
+        //if($ENV{REDUCED_RUNTIME} ne "1"){
+        do! match env "REDUCED_RUNTIME" with
+            | Some "1" ->
+                Success
+            | _ ->
+                //if((defined $targetName) && (defined $targetType)) {
+                // # check/set PEVerify
+                // my $PEVERIFY = $ENV{PEVERIFY}; 
+                // unless(defined($PEVERIFY)) {
+                //   # Only use peverify if it is in the path
+                //   foreach $_ (split /;/, $ENV{PATH}) {
+                //     $PEVERIFY = "peverify.exe" if(-e "$_\\peverify.exe");
+                //   }
+                //   $ENV{PEVERIFY} = $PEVERIFY;
+                // }
+                //
+                // # Use $ENV{PEVER} if it is defined
+                // my $PEVER_ARG = $ENV{PEVER};
+                //
+                //if (!defined($PEVERIFY)) {
+                //  print "PEVerify ($PEVERIFY) not defined/found, skipping...\n";
+                //} elsif ($PEVER_ARG =~ /\/Exp_Fail/i) {
+                //   # do not run if Exp_Fail
+                //   print "PEVerify not run because test is marked as an expected failure...\n";
+                // } elsif($targetType <= TARGET_DLL) {
+                //   RunExit(TEST_FAIL, "PeVerify Failed the test\n") if (RunCommand("Peverify","$PEVERIFY $targetName $ENV{PEVER}",1));
+                // }
+                //}
+                TODO "REDUCED_RUNTIME <> 1 not implemented"
+                NUnitConf.skip "REDUCED_RUNTIME not implemented"
+        //}
+    
+        // ################################################################################
+        // #
+        // # Running the EXE
+        // #
+        // # Now we scan the output of the EXE if we must
+        let checkRunningExe expectedExeOutput () = attempt {
+        
+            //my $status = TEST_PASS;
+            let status = TEST_PASS
+            //my $param = "";
+            let mutable param = ""
+            //RunExit(TEST_FAIL, "Failed to Find Any Target: $targetName \n") unless ( -e $targetName );
+            do! match fileExists targetName with
+                | None ->
+                    NUnitConf.genericError (sprintf "Failed to Find Any Target: %s \n" targetName)
+                | Some _ ->
+                    Success
+
+            //$param = $CmdLine if defined($CmdLine);
+            TODO "$CmdLine is declare, but it's not initialized before"
+        
+            //@CommandOutput = ();
+            ignore "unused, the CommandOutput now is a return value"
+        
+            //my($StartTime) = time();
+            let StartTime = System.Diagnostics.Stopwatch.StartNew();
+        
+            //# For /3Gb runs, we need to mark exe with /LARGEADDRESSAWARE
+            let markLargAddress exeName = attempt {
+                //RunCommand("Marking exe with /LARGEADDRESSAWARE...","editbin.exe /LARGEADDRESSAWARE $targetName");
+                let! e,o = RunCommand "Marking exe with /LARGEADDRESSAWARE..." ("editbin.exe", (sprintf "/LARGEADDRESSAWARE %s" exeName)) false
+                if e <> 0 then 
+                    return! NUnitConf.errorLevel e (sprintf "Failed mark exe with /LARGEADDRESSAWARE: %s" o)
+                }
+
+            //if(defined($ENV{LARGEADDRESSAWARE})) {
+            do! if env "LARGEADDRESSAWARE" |> Option.isSome then
+                    markLargAddress targetName
+                else 
+                    Success
+            //}
+
+            //my $sim = "";
+            ignore "unused variable"
+        
+            let! exePath = 
+                //if (defined($ENV{SIMULATOR_PIPE})) {
+                if env "SIMULATOR_PIPE" |> Option.isSome then
+                    //# replace known tokens
+                    //$_ = $ENV{SIMULATOR_PIPE};
+                    //s/^\$FSC_PIPE/$FSC_PIPE/;
+                    //s/^\$FSI_PIPE/$FSI_PIPE/;
+                    //s/^\$FSI32_PIPE/$FSI32_PIPE/;
+                    //s/\$ISCFLAGS/$ISCFLAGS/;
+                    //s/^\$CSC_PIPE/$CSC_PIPE/;
+                    //s/^\$VBC_PIPE/$VBC_PIPE/;
+                    //s/\$PLATFORM/$ENV{PLATFORM}/;
+                    TODO "replace variables"
+            
+                    //$sim = $_;
+                    //$ExitCode = RunCommand("Running","$sim $targetName $param");
+                    TODO "SIMULATOR_PIPE not supported, it's not used in fsharpqa tests"
+            
+                    NUnitConf.skip "var SIMULATOR_PIPE not supported"
+                //}
+                else 
+                    let exePath = targetName |> getfullpath
+                    succeed exePath
+
+            do! skipIfContainsRedirection "SOURCE" (exePath, param)
+
+            //$ExitCode = RunCommand("Running","$sim $targetName $param");
+            //NOTE there the $sim is blank
+            let! exitCode, commandOutput = RunCommand "Running" (exePath, param) false
+          
+        
+            //my($DeltaTime) = time() - $StartTime;
+            let DeltaTime = StartTime.Elapsed
+        
+            //LogTime($Sources, $CompileTime, $DeltaTime) if ($TimeTests);
+            do if TimeTests then
+                  LogTime sources CompileTime DeltaTime
+        
+    
+            //my $check_output = scalar(@{$Output});
+
+            //my ($LinesMatched) = 0;
+            //my ($LinesToMatch) = $check_output;
+            //
+            //#parse the output
+            //foreach (@CommandOutput) {
+            //  if ($check_output) {
+            //    my $line = shift @{$Output};
+            //    chop $line eq "\n" || RunExit(TEST_SKIPPED, "Internal error in perl script, expecting newline in \$line \n");
+            //    chop $_ eq "\n" || RunExit(TEST_SKIPPED, "Internal error in perl script, expecting newline in \$_ \n");
+            //
+            //    if (((length($_) == 0) && (length($line) == 0)) ||
+            //         (($_ =~ /$line/) && (length($line) != 0))) {
+            //       # The good
+            //       print("[matched] $_\n");
+            //       $LinesMatched++;  
+            //           } else {
+            //       # The bad
+            //       print("  Error: Expected: [$line]\n");
+            //       print("  Error: Received: [$_]\n\n");
+            //       $status = TEST_FAIL;
+            //    }
+            //
+            //    $check_output = scalar(@{$Output});
+            //  } else {
+            //    # redirect outputs from the exe to runpl.log
+            //    print;
+            //  }
+            //}
+            //print("\n");
+            do! match expectedExeOutput with
+                | None ->
+                    Success
+                | Some [] ->
+                    Success
+                | Some (x :: xs) ->
+                    let possible =
+                        commandOutput.Split([| System.Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
+                        |> Array.skipWhile ((<>) x)
+                        |> Array.truncate (x::xs |> List.length)
+                        |> List.ofArray
+
+                    if (x :: xs) = possible then
+                        printfn "Output match: [passed]"
+                        Success
+                    else
+                        printfn "Output match: [failed]"
+                        printfn "Output:"
+                        printfn "%s" commandOutput
+                        NUnitConf.genericError "exe output doesnt match"
+                    
+        
+            //RunExit(TEST_FAIL, "Generated Test EXE Failed \n") if ($ExitCode);
+            do! if (exitCode <> 0) then
+                    NUnitConf.genericError "Generated Test EXE Failed"
+                else
+                    Success
+
+            //RunExit(TEST_FAIL, "Test EXE had bad output \n") if ($status != TEST_PASS);
+            do! if (status <> TEST_PASS) then
+                    NUnitConf.genericError "Test EXE had bad output"
+                else
+                    Success
+
+            //RunExit(TEST_FAIL, "Test EXE had bad output \n") if ($LinesMatched != $LinesToMatch);
+            TODO "match ouput"
+        //}
+            }
+
+        let checkVerifyStrongName () = attempt {
+            let verifyStrongName () = attempt {
+                //RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStroingName","sn -q -vf $targetName",1);
+                let! e,_ = RunCommand "VerifyStroingName" ("sn", "-q -vf $targetName") true
+                if e <> 0 then
+                    return! NUnitConf.genericError "Assembly failed verification:\n"
+            }
+
+            //if ($VerifyStrongName && $targetType <= TARGET_MOD) {
+            if VerifyStrongName && (targetType <= TARGET_MOD) then
+                return! verifyStrongName()
+            }
+        //}
+
+        let expectedExeOutput =
+            dd |> List.tryPick (function ExeOutputMatch(l) -> Some l | _ -> None)
+
+        // # If this is a compile only run, call post command and exit
+        //if ($compileOnlyRun) {
+        return!
+            if compileOnlyRun then
+                Success
+            else attempt {
+                //if ($targetType == TARGET_EXE) {
+                do! if targetType = TARGET_EXE then
+                        checkRunningExe expectedExeOutput ()
+                    else
+                        Success
+
+                return! checkVerifyStrongName ()
+                }
+        //}
+        }
+
     //if ($ExitCode) {
-    do! if (exitCode <> 0) then
+    return! 
+        if (exitCode <> 0) then
             //RunExit(TEST_SKIPPED, "Internal Logic Error(1)") if ($Type != TEST_SEEK_ERROR);
             if (Type <> TEST_SEEK_ERROR) then
                 //RunExit(TEST_SKIPPED, "Internal Logic Error(1)") 
                 NUnitConf.skip "Internal Logic Error(1)"
             else
                 //RunExit(TEST_PASS);		# Designed to fail, and it did
+                printfn "Designed to fail, and it did"
                 Success
-        else
-            Success
-    //}
-    
-    //RunExit(TEST_SKIPPED, "Internal Logic Error(2)") if ($Type == TEST_SEEK_ERROR);
-    do! if (Type = TEST_SEEK_ERROR) then
-            NUnitConf.skip "Internal Logic Error(2)"
-        else
-            Success
-
-    //RunExit(TEST_SKIPPED, "Internal Logic Error(3)") if ($ExitCode);
-    do! if (exitCode <> 0) then
-            NUnitConf.skip "Internal Logic Error(3)"
-        else
-            Success
-    
-    //if($ENV{REDUCED_RUNTIME} ne "1"){
-    do! match env "REDUCED_RUNTIME" with
-        | Some "1" ->
-            Success
-        | _ ->
-            //if((defined $targetName) && (defined $targetType)) {
-            // # check/set PEVerify
-            // my $PEVERIFY = $ENV{PEVERIFY}; 
-            // unless(defined($PEVERIFY)) {
-            //   # Only use peverify if it is in the path
-            //   foreach $_ (split /;/, $ENV{PATH}) {
-            //     $PEVERIFY = "peverify.exe" if(-e "$_\\peverify.exe");
-            //   }
-            //   $ENV{PEVERIFY} = $PEVERIFY;
-            // }
-            //
-            // # Use $ENV{PEVER} if it is defined
-            // my $PEVER_ARG = $ENV{PEVER};
-            //
-            //if (!defined($PEVERIFY)) {
-            //  print "PEVerify ($PEVERIFY) not defined/found, skipping...\n";
-            //} elsif ($PEVER_ARG =~ /\/Exp_Fail/i) {
-            //   # do not run if Exp_Fail
-            //   print "PEVerify not run because test is marked as an expected failure...\n";
-            // } elsif($targetType <= TARGET_DLL) {
-            //   RunExit(TEST_FAIL, "PeVerify Failed the test\n") if (RunCommand("Peverify","$PEVERIFY $targetName $ENV{PEVER}",1));
-            // }
-            //}
-            TODO "REDUCED_RUNTIME <> 1 not implemented"
-            NUnitConf.skip "REDUCED_RUNTIME not implemented"
-    //}
-    
-    // ################################################################################
-    // #
-    // # Running the EXE
-    // #
-    // # Now we scan the output of the EXE if we must
-    let checkRunningExe expectedExeOutput () = attempt {
-        
-        //my $status = TEST_PASS;
-        let status = TEST_PASS
-        //my $param = "";
-        let mutable param = ""
-        //RunExit(TEST_FAIL, "Failed to Find Any Target: $targetName \n") unless ( -e $targetName );
-        do! match fileExists targetName with
-            | None ->
-                NUnitConf.genericError (sprintf "Failed to Find Any Target: %s \n" targetName)
-            | Some _ ->
-                Success
-
-        //$param = $CmdLine if defined($CmdLine);
-        TODO "$CmdLine is declare, but it's not initialized before"
-        
-        //@CommandOutput = ();
-        ignore "unused, the CommandOutput now is a return value"
-        
-        //my($StartTime) = time();
-        let StartTime = System.Diagnostics.Stopwatch.StartNew();
-        
-        //# For /3Gb runs, we need to mark exe with /LARGEADDRESSAWARE
-        let markLargAddress exeName = attempt {
-            //RunCommand("Marking exe with /LARGEADDRESSAWARE...","editbin.exe /LARGEADDRESSAWARE $targetName");
-            let! e,o = RunCommand "Marking exe with /LARGEADDRESSAWARE..." ("editbin.exe", (sprintf "/LARGEADDRESSAWARE %s" exeName)) false
-            if e <> 0 then 
-                return! NUnitConf.errorLevel e (sprintf "Failed mark exe with /LARGEADDRESSAWARE: %s" o)
-            }
-
-        //if(defined($ENV{LARGEADDRESSAWARE})) {
-        do! if env "LARGEADDRESSAWARE" |> Option.isSome then
-                markLargAddress targetName
-            else 
-                Success
-        //}
-
-        //my $sim = "";
-        ignore "unused variable"
-        
-        let! exePath = 
-            //if (defined($ENV{SIMULATOR_PIPE})) {
-            if env "SIMULATOR_PIPE" |> Option.isSome then
-                //# replace known tokens
-                //$_ = $ENV{SIMULATOR_PIPE};
-                //s/^\$FSC_PIPE/$FSC_PIPE/;
-                //s/^\$FSI_PIPE/$FSI_PIPE/;
-                //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                //s/\$ISCFLAGS/$ISCFLAGS/;
-                //s/^\$CSC_PIPE/$CSC_PIPE/;
-                //s/^\$VBC_PIPE/$VBC_PIPE/;
-                //s/\$PLATFORM/$ENV{PLATFORM}/;
-                TODO "replace variables"
-            
-                //$sim = $_;
-                //$ExitCode = RunCommand("Running","$sim $targetName $param");
-                TODO "SIMULATOR_PIPE not supported, it's not used in fsharpqa tests"
-            
-                NUnitConf.skip "var SIMULATOR_PIPE not supported"
-            //}
-            else 
-                let exePath = targetName |> getfullpath
-                succeed exePath
-
-        do! skipIfContainsRedirection "SOURCE" (exePath, param)
-
-        //$ExitCode = RunCommand("Running","$sim $targetName $param");
-        //NOTE there the $sim is blank
-        let! exitCode, commandOutput = RunCommand "Running" (exePath, param) false
-          
-        
-        //my($DeltaTime) = time() - $StartTime;
-        let DeltaTime = StartTime.Elapsed
-        
-        //LogTime($Sources, $CompileTime, $DeltaTime) if ($TimeTests);
-        do if TimeTests then
-              LogTime sources CompileTime DeltaTime
-        
-    
-        //my $check_output = scalar(@{$Output});
-
-        //my ($LinesMatched) = 0;
-        //my ($LinesToMatch) = $check_output;
-        //
-        //#parse the output
-        //foreach (@CommandOutput) {
-        //  if ($check_output) {
-        //    my $line = shift @{$Output};
-        //    chop $line eq "\n" || RunExit(TEST_SKIPPED, "Internal error in perl script, expecting newline in \$line \n");
-        //    chop $_ eq "\n" || RunExit(TEST_SKIPPED, "Internal error in perl script, expecting newline in \$_ \n");
-        //
-        //    if (((length($_) == 0) && (length($line) == 0)) ||
-        //         (($_ =~ /$line/) && (length($line) != 0))) {
-        //       # The good
-        //       print("[matched] $_\n");
-        //       $LinesMatched++;  
-        //           } else {
-        //       # The bad
-        //       print("  Error: Expected: [$line]\n");
-        //       print("  Error: Received: [$_]\n\n");
-        //       $status = TEST_FAIL;
-        //    }
-        //
-        //    $check_output = scalar(@{$Output});
-        //  } else {
-        //    # redirect outputs from the exe to runpl.log
-        //    print;
-        //  }
-        //}
-        //print("\n");
-        do! match expectedExeOutput with
-            | None ->
-                Success
-            | Some [] ->
-                Success
-            | Some (x :: xs) ->
-                let possible =
-                    commandOutput.Split([| System.Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
-                    |> Array.skipWhile ((<>) x)
-                    |> Array.truncate (x::xs |> List.length)
-                    |> List.ofArray
-
-                if (x :: xs) = possible then
-                    printfn "Output match: [passed]"
-                    Success
-                else
-                    printfn "Output match: [failed]"
-                    printfn "Output:"
-                    printfn "%s" commandOutput
-                    NUnitConf.genericError "exe output doesnt match"
-                    
-        
-        //RunExit(TEST_FAIL, "Generated Test EXE Failed \n") if ($ExitCode);
-        do! if (exitCode <> 0) then
-                NUnitConf.genericError "Generated Test EXE Failed"
-            else
-                Success
-
-        //RunExit(TEST_FAIL, "Test EXE had bad output \n") if ($status != TEST_PASS);
-        do! if (status <> TEST_PASS) then
-                NUnitConf.genericError "Test EXE had bad output"
-            else
-                Success
-
-        //RunExit(TEST_FAIL, "Test EXE had bad output \n") if ($LinesMatched != $LinesToMatch);
-        TODO "match ouput"
-    //}
-        }
-
-    let checkVerifyStrongName () = attempt {
-        let verifyStrongName () = attempt {
-            //RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStroingName","sn -q -vf $targetName",1);
-            let! e,_ = RunCommand "VerifyStroingName" ("sn", "-q -vf $targetName") true
-            if e <> 0 then
-                return! NUnitConf.genericError "Assembly failed verification:\n"
-        }
-
-        //if ($VerifyStrongName && $targetType <= TARGET_MOD) {
-        if VerifyStrongName && (targetType <= TARGET_MOD) then
-            return! verifyStrongName()
-        }
-    //}
-
-    let expectedExeOutput =
-        dd |> List.tryPick (function ExeOutputMatch(l) -> Some l | _ -> None)
-
-    // # If this is a compile only run, call post command and exit
-    //if ($compileOnlyRun) {
-    return!
-        if compileOnlyRun then
-            Success
-        else attempt {
-            //if ($targetType == TARGET_EXE) {
-            do! if targetType = TARGET_EXE then
-                    checkRunningExe expectedExeOutput ()
-                else
-                    Success
-
-            return! checkVerifyStrongName ()
-            }
+        else 
+            notExpectedToError ()
     //}
     
     //exit (1); #safe stop
