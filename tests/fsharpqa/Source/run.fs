@@ -272,7 +272,7 @@ let GetSrc cwd (envVarSOURCE: string) = attempt {
     let mutable s = envVarSOURCE
 
     //s/\$CWD/$cwd/;
-    s <- s.Replace("$CWD", cwd)
+    s <- s.Replace(@"\$CWD", cwd)
 
     //my $source = $_;
     let source = s
