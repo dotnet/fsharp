@@ -1062,8 +1062,8 @@ type ILInstr =
 
   | I_br    of  ILCodeLabel
   | I_jmp   of ILMethodSpec
-  | I_brcmp of ILComparisonInstr * ILCodeLabel * ILCodeLabel (* second label is fall-through *)
-  | I_switch    of (ILCodeLabel list * ILCodeLabel) (* last label is fallthrough *)
+  | I_brcmp of ILComparisonInstr * ILCodeLabel 
+  | I_switch    of ILCodeLabel list  
   | I_ret 
 
   | I_call     of ILTailcall * ILMethodSpec * ILVarArgs
@@ -1126,40 +1126,40 @@ type ILInstr =
   | EI_ldlen_multi      of int32 * int32
 
 
-type ILDebugMapping = 
+
+[<RequireQualifiedAccess>]
+type ILExceptionClause = 
+    | Finally of (ILCodeLabel * ILCodeLabel)
+    | Fault  of (ILCodeLabel * ILCodeLabel)
+    | FilterCatch of (ILCodeLabel * ILCodeLabel) * (ILCodeLabel * ILCodeLabel)
+    | TypeCatch of ILType * (ILCodeLabel * ILCodeLabel)
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILExceptionSpec = 
+    { Range: (ILCodeLabel * ILCodeLabel);
+      Clause: ILExceptionClause }
+
+/// Indicates that a particular local variable has a particular source 
+/// language name within a given set of ranges. This does not effect local 
+/// variable numbering, which is global over the whole method. 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILLocalDebugMapping =
     { LocalIndex: int;
       LocalName: string; }
 
-type ILBasicBlock = 
-    { Label: ILCodeLabel;
-      Instructions: ILInstr[] }
-    member bb.LastInstruction = 
-      let n = bb.Instructions.Length
-      if n = 0 then failwith "last_of_bblock: empty bblock";
-      bb.Instructions.[n - 1]
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILLocalDebugInfo = 
+    { Range: (ILCodeLabel * ILCodeLabel);
+      DebugMappings: ILLocalDebugMapping list }
 
-    member x.Fallthrough = 
-        match x.LastInstruction with 
-        | I_br l | I_brcmp (_,_,l) | I_switch (_,l) -> Some l
-        | _ -> None
-
-
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILCode = 
-    | ILBasicBlock    of ILBasicBlock
-    | GroupBlock    of ILDebugMapping list * ILCode list
-    | RestrictBlock of ILCodeLabel list * ILCode
-    | TryBlock      of ILCode * ILExceptionBlock
+    { Labels: Dictionary<ILCodeLabel,int> 
+      Instrs:ILInstr[] 
+      Exceptions: ILExceptionSpec list 
+      Locals: ILLocalDebugInfo list }
 
-and ILExceptionBlock = 
-    | FaultBlock       of ILCode 
-    | FinallyBlock     of ILCode
-    | FilterCatchBlock of (ILFilterBlock * ILCode) list
-
-and ILFilterBlock = 
-    | TypeFilter of ILType
-    | CodeFilter of ILCode
-
-[<NoComparison; NoEquality>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ILLocal = 
     { Type: ILType;
       IsPinned: bool;
@@ -1169,7 +1169,7 @@ type ILLocals = ILList<ILLocal>
 let emptyILLocals = (ILList.empty : ILLocals)
 let mkILLocals xs = (match xs with [] -> emptyILLocals | _ -> ILList.ofList xs)
 
-[<NoComparison; NoEquality>]
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILMethodBody = 
     { IsZeroInit: bool;
       MaxStack: int32;
@@ -1188,8 +1188,7 @@ type ILMemberAccess =
     | Private 
     | Public 
 
-[<StructuralEquality; StructuralComparison>]
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILFieldInit = 
     | String of string
     | Bool of bool
@@ -1212,8 +1211,7 @@ type ILFieldInit =
 // correspond yet to the ECMA Spec (Partition II, 7.4).  
 // -------------------------------------------------------------------- 
 
-[<RequireQualifiedAccess>]
-[<StructuralEquality; StructuralComparison>]
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType = 
     | Empty
     | Custom of Guid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
@@ -1254,7 +1252,9 @@ type ILNativeType =
     | VariantBool
 
 
-and ILNativeVariant = 
+and 
+  [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+  ILNativeVariant = 
     | Empty
     | Null
     | Variant
@@ -1300,7 +1300,9 @@ and ILNativeVariant =
     | Int                
     | UInt                
 
-type ILSecurityAction = 
+type 
+  [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+  ILSecurityAction = 
     | Request 
     | Demand
     | Assert
@@ -1320,9 +1322,11 @@ type ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILPermission = 
     | PermissionSet of ILSecurityAction * byte[]
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILPermissions =
     | SecurityDecls of ILPermission list
     | SecurityDeclsLazy of Lazy<ILPermission list>
@@ -1356,7 +1360,7 @@ type PInvokeCharEncoding =
     | Unicode
     | Auto
 
-[<NoComparison; NoEquality>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type PInvokeMethod =
     { Where: ILModuleRef;
       Name: string;
@@ -1367,6 +1371,7 @@ type PInvokeMethod =
       ThrowOnUnmappableChar: PInvokeThrowOnUnmappableChar;
       CharBestFit: PInvokeCharBestFit }
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILParameter =
     { Name: string option;
       Type: ILType;
@@ -1382,6 +1387,7 @@ let emptyILParameters = (ILList.empty : ILParameters)
 
 let mkILParametersRaw x = (match x with [] -> emptyILParameters | _ -> ILList.ofList x)
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILReturn = 
     { Marshal: ILNativeType option;
       Type: ILType; 
@@ -1993,190 +1999,10 @@ let andTailness x y =
   match x with Tailcall when y -> Tailcall | _ -> Normalcall
 
 // -------------------------------------------------------------------- 
-// ILAttributes on code blocks (esp. debug info)
-// -------------------------------------------------------------------- 
-
-let formatCodeLabel (x:int) = "L"+string x
-
-module CodeLabels = 
-    let insert (e:ILCodeLabel) l = Zset.add e l
-    let remove e l = Zset.remove e l
-    let fold f s acc = Zset.fold f s acc
-    let add s x = Zset.add s x
-    let addList s xs = Zset.addList s xs
-    let diff l1 l2 = Zset.diff l1 l2
-    let union l1 l2 = Zset.union l1 l2
-    let inter (l1:Zset<ILCodeLabel>) l2 = Zset.inter l1 l2
-    let subset (l1:Zset<ILCodeLabel>) l2 = Zset.subset l1 l2
-    let empty = Zset.empty int_order
-    let isNonEmpty s = not (Zset.isEmpty s)
-    let ofList l = Zset.addList l empty
-    let toList l = Zset.elements l
-
-// -------------------------------------------------------------------- 
 // Basic operations on code.
 // -------------------------------------------------------------------- 
 
-let destinationsOfInstr i = 
-    match i with 
-    | I_leave l | I_br l -> [l]
-    | I_brcmp (_,l1,l2) -> [l1; l2]
-    | I_switch (ls,l) -> CodeLabels.toList (CodeLabels.ofList (l::ls))
-    | I_endfinally | I_endfilter | I_ret | I_throw | I_rethrow 
-    | I_call (Tailcall,_,_)| I_callvirt (Tailcall,_,_)| I_callconstraint (Tailcall,_,_,_)
-    | I_calli (Tailcall,_,_) -> []
-    | _ -> []
-
-let destinationsOfBasicBlock (bblock:ILBasicBlock) = destinationsOfInstr bblock.LastInstruction
-
-let instrIsTailcall i = 
-    match i with 
-    | I_call (Tailcall,_,_)| I_callvirt (Tailcall,_,_) | I_callconstraint (Tailcall,_,_,_) | I_calli (Tailcall,_,_) -> true
-    | _ -> false
-
-let instrIsBasicBlockEnd i = 
-    instrIsTailcall i ||
-    match i with 
-    | I_leave _ | I_br _ | I_brcmp _ | I_switch _ | I_endfinally
-    | I_endfilter | I_ret | I_throw | I_rethrow  ->  true
-    | _ -> false
-
-let checks = false 
-let _ = if checks then dprintn "Warning - Il.checks is on"
-
-let rec accEntriesOfCode c acc =
-    match c with
-    | ILBasicBlock bb -> CodeLabels.add bb.Label acc
-    | GroupBlock (_,l) -> List.foldBack accEntriesOfCode l acc
-    | RestrictBlock (ls,c) -> CodeLabels.union acc (CodeLabels.diff (entriesOfCodeAsSet c) (CodeLabels.ofList ls))
-    | TryBlock (l,_r) -> accEntriesOfCode l acc
-
-and entriesOfCodeAsSet c = 
-    accEntriesOfCode c CodeLabels.empty 
-
-let rec accExitsOfCode c acc =
-    let basicOutsideLabels = 
-        match c with
-        | ILBasicBlock bblock -> CodeLabels.addList (destinationsOfBasicBlock bblock) acc
-        | GroupBlock (_,l) -> List.foldBack accExitsOfCode l acc
-        | RestrictBlock (ls,c) ->  CodeLabels.union acc (CodeLabels.diff (exitsOfCodeAsSet c) (CodeLabels.ofList ls))
-        | TryBlock (l,_r) -> accExitsOfCode l acc
-    CodeLabels.diff basicOutsideLabels (entriesOfCodeAsSet c)
-
-and exitsOfCodeAsSet c = accExitsOfCode c CodeLabels.empty
-
-let entriesOfCode c = CodeLabels.toList (entriesOfCodeAsSet c)
-let exitsOfCode c = CodeLabels.toList (exitsOfCodeAsSet c)
-
-/// Finds all labels defined within this code block, seeing through restrictions.
-/// This assumes that labels are unique within the code blocks, even if hidden behind restrictions.
-///
-/// Repeats in the list indicate this invariant is broken.
-let rec accLabelsOfCode acc c =
-    match c with
-    | ILBasicBlock bb        -> bb.Label::acc
-    | GroupBlock (_,l)     -> List.fold accLabelsOfCode acc l 
-    | RestrictBlock (_ls,c) -> accLabelsOfCode acc c
-    | TryBlock (l,r)       -> let acc = accLabelsOfCode acc l
-                              let acc = accLabelsOfSEH  acc r
-                              acc
-and accLabelsOfSEH acc = function
-    | FaultBlock       code   -> accLabelsOfCode acc code
-    | FinallyBlock     code   -> accLabelsOfCode acc code
-    | FilterCatchBlock fcodes -> List.fold accLabelsOfFilterCode acc fcodes
-      
-and accLabelsOfFilterCode acc = function
-    | TypeFilter _,code    -> accLabelsOfCode acc code
-    | CodeFilter test,code -> let accA = accLabelsOfCode acc code
-                              let accB = accLabelsOfCode accA test
-                              accB
-
-let labelsOfCode code = accLabelsOfCode [] code
-
-(*
-
-From the ECMA spec:
-
-There are only two ways to enter a try block from outside its lexical body:
- - Branching to or falling into the try block's first instruction. The branch may be made using a 37
-conditional branch, an unconditional branch, or a leave instruction. 38
- - Using a leave instruction from that try's catch block. In this case, correct CIL code may 39
-branch to any instruction within the try block, not just its first instruction, so long as that 40
-branch target is not protected by yet another try, nested withing the first 
-*)
-
-
-let checkILCode code = 
-    if checks then 
-        match code with
-        | RestrictBlock (ls,c') -> 
-            (*
-              if not (CodeLabels.subset ls (entriesOfCode c')) then begin
-                dprintn ("* warning: Restricting labels that are not declared in block, e.g. "+ (List.head (CodeLabels.diff ls (entriesOfCode c'))));
-                dprintn ("* warning: Labels in block are: "+ (String.concat "," (entriesOfCode c')));
-                dprintn ("* warning: Labels being restricted are: "+ (String.concat "," ls));
-              end;
-            *)
-            let cls = (CodeLabels.inter (CodeLabels.ofList ls) (exitsOfCodeAsSet c'))
-            if (CodeLabels.isNonEmpty cls) then 
-              dprintn ("* warning: restricting unsatisfied exits from a block, e.g. "+ formatCodeLabel (List.head (CodeLabels.toList cls)));
-        | TryBlock (_l,r) -> 
-            begin match r with 
-            | FaultBlock b | FinallyBlock b -> 
-                if (CodeLabels.isNonEmpty (CodeLabels.inter (exitsOfCodeAsSet b) (entriesOfCodeAsSet b))) then 
-                  dprintn "* warning: exits from fault or finally blocks must leave the block";
-                let n = List.length (entriesOfCode b)
-                if not (n = 1) then dprintn "* warning: zero or more than one entry to a fault or finally block";
-            | FilterCatchBlock r -> 
-                List.iter 
-                  (fun (flt,z) -> 
-                    let m = List.length (entriesOfCode z)
-                    if not (m = 1) then dprintn "* warning: zero or more than one entry to a catch block";
-                    match flt with 
-                    | CodeFilter y -> 
-                        if (CodeLabels.isNonEmpty (exitsOfCodeAsSet y)) then dprintn "* warning: exits exist from filter block - you must always exit using endfinally";
-                        let n = List.length (entriesOfCode y)
-                        if not (n = 1) then dprintn "* warning: zero or more than one entry to a filter block";
-                    | TypeFilter _ty -> ())
-                  r;
-            end;
-        | ILBasicBlock bb ->
-            if (Array.length bb.Instructions) = 0 then dprintn ("* warning: basic block " + formatCodeLabel bb.Label + " is empty")
-            elif not (instrIsBasicBlockEnd (bb.Instructions.[Array.length bb.Instructions - 1])) then failwith "* warning: bblock does not end in an appropriate instruction";
-            
-        | _ -> ()
-    match code with 
-    | RestrictBlock (labs,c) when (isNil labs) -> c 
-    | GroupBlock ([],[c]) -> c 
-    | _ -> code
-
-
-let mkBasicBlock bb = ILBasicBlock bb
-let mkScopeBlock (a,b) = GroupBlock (a,[checkILCode b])
-let mkGroupBlockFromCode (internals,codes) = RestrictBlock (internals,checkILCode (GroupBlock ([],codes)))
-let mkGroupBlock (internals,blocks) = mkGroupBlockFromCode (internals,List.map checkILCode blocks)
-
-let mkRestrictBlock lab c = RestrictBlock (CodeLabels.toList (CodeLabels.remove lab (entriesOfCodeAsSet c)),c)
-let mkTryFinallyBlock (tryblock, enterFinallyLab, finallyBlock) = 
-  TryBlock(checkILCode tryblock, FinallyBlock (checkILCode (mkRestrictBlock enterFinallyLab (checkILCode finallyBlock))))
-
-let mkTryFaultBlock (tryblock, entarFaultLab, faultBlock) = 
-  TryBlock(checkILCode tryblock, FaultBlock (checkILCode (mkRestrictBlock entarFaultLab (checkILCode faultBlock))))
-
-let mkTryMultiFilterCatchBlock (tryblock, clauses) = 
-    TryBlock
-      (checkILCode tryblock, 
-       FilterCatchBlock 
-         (clauses |> List.map (fun (flt, (enter_catch_lab, catchblock)) -> 
-                let fltcode = 
-                  match flt with 
-                  | Choice1Of2 (enter_filter_lab, filterblock) ->
-                      CodeFilter (checkILCode (mkRestrictBlock enter_filter_lab (checkILCode filterblock)))
-                  | Choice2Of2 ty -> 
-                      TypeFilter ty
-                fltcode,
-                checkILCode (mkRestrictBlock enter_catch_lab (checkILCode catchblock)))))
-
+let formatCodeLabel (x:int) = "L"+string x
 
 let new_generator () = 
     let i = ref 0
@@ -2187,60 +2013,33 @@ let new_generator () =
 let codeLabelGenerator = (new_generator () : unit -> ILCodeLabel) 
 let generateCodeLabel x  = codeLabelGenerator x
 
-let uniqueEntryOfCode c = 
-    match entriesOfCode c with 
-    | [] -> failwith ("uniqueEntryOfCode: no entries to code")
-    | [inlab] -> inlab
-    | labs -> failwith ("uniqueEntryOfCode: need one entry to code, found: "+String.concat "," (List.map formatCodeLabel labs))
 
-let uniqueExitOfCode c = 
-    match exitsOfCode c with 
-    | [] -> failwith ("uniqueExitOfCode: no exits from code")
-    | [outlab] -> outlab
-    | labs -> failwith ("uniqueExitOfCode: need one exit from code, found: "+String.concat "," (List.map formatCodeLabel labs))
+let instrIsRet i = 
+    match i with 
+    | I_ret ->  true
+    | _ -> false
 
-let mkNonBranchingInstrs inplab instrs = 
-    checkILCode (mkBasicBlock {Label=inplab; Instructions= Array.ofList instrs})
+let nonBranchingInstrsToCode instrs : ILCode = 
+    let instrs = Array.ofList instrs
+    let instrs = 
+        if instrs.Length <> 0 && instrIsRet (Array.last instrs) then instrs
+        else Array.append instrs  [| I_ret |]
 
-let mkNonBranchingInstrsThen inplab instrs instr = 
-    if nonNil instrs && instrIsBasicBlockEnd (List.last instrs) then failwith "mkNonBranchingInstrsThen: bblock already terminates with a control flow instruction";
-    mkNonBranchingInstrs inplab (instrs @ [ instr ]) 
+    { Labels = Dictionary()
+      Instrs = instrs
+      Exceptions = []
+      Locals = [] }
 
-let mkNonBranchingInstrsThenRet inplab instrs = 
-    mkNonBranchingInstrsThen inplab instrs I_ret
-
-let mkNonBranchingInstrsThenBr inplab instrs lab = 
-    mkNonBranchingInstrsThen inplab instrs (I_br lab)
-
-let nonBranchingInstrsToCode instrs = 
-    let inplab = generateCodeLabel ()
-    if nonNil instrs && instrIsBasicBlockEnd (List.last instrs) then 
-        mkNonBranchingInstrs inplab instrs
-    else
-        mkNonBranchingInstrsThenRet inplab  instrs
-
-let joinCode code1 code2 = 
-    if not (uniqueExitOfCode code1 = uniqueEntryOfCode code2)  then 
-        dprintn "* warning: joinCode: exit of code1 is not entry of code 2";
-    checkILCode 
-      (RestrictBlock ([uniqueExitOfCode code1], 
-                      (checkILCode (mkGroupBlock ([],[ code1; code2 ])))))
 
 // -------------------------------------------------------------------- 
-// Security declarations (2)
+// 
 // -------------------------------------------------------------------- 
 
-let emptyILSecurityDecls = SecurityDecls []
-let mkILSecurityDecls l = match l with [] -> emptyILSecurityDecls | _ -> SecurityDecls l
-let mkILLazySecurityDecls l = SecurityDeclsLazy l
-
-
-// --------------------------------------------------------------------
-// ILX stuff
-// -------------------------------------------------------------------- 
+let emptyILSecurityDecls = ILPermissions.SecurityDecls []
+let mkILSecurityDecls l = match l with [] -> emptyILSecurityDecls | _ -> ILPermissions.SecurityDecls l
+let mkILLazySecurityDecls l = ILPermissions.SecurityDeclsLazy l
 
 let mkILTyvarTy tv = ILType.TypeVar tv
-
 
 let mkILSimpleTypar nm =
    { Name=nm;
@@ -2288,8 +2087,6 @@ let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
 // -------------------------------------------------------------------- 
 // Operations on method tables.
-//
-// REVIEW: this data structure looks substandard
 // -------------------------------------------------------------------- 
 
 let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
@@ -2299,7 +2096,6 @@ let emptyILMethods = mkILMethodsFromArray [| |]
 
 let filterILMethodDefs f (mdefs: ILMethodDefs) = 
     ILMethodDefs (fun () -> mdefs.AsArray |> Array.filter f)
-
 
 // -------------------------------------------------------------------- 
 // Operations and defaults for modules, assemblies etc.
@@ -2937,7 +2733,7 @@ let instILType     i t = instILTypeAux 0 i t
 // MS-IL: Parameters, Return types and Locals
 // -------------------------------------------------------------------- 
 
-let mkILParam (name,ty) =
+let mkILParam (name,ty) : ILParameter =
     { Name=name;
       Default=None;
       Marshal=None;
@@ -2954,7 +2750,7 @@ let mkILReturn ty : ILReturn =
       Type=ty;
       CustomAttrs=emptyILCustomAttrs  }
 
-let mkILLocal ty dbgInfo = 
+let mkILLocal ty dbgInfo : ILLocal = 
     { IsPinned=false;
       Type=ty;
       DebugInfo=dbgInfo }
@@ -2968,12 +2764,12 @@ type ILFieldSpec with
 // Make a method mbody
 // -------------------------------------------------------------------- 
 
-let mkILMethodBody (zeroinit,locals,maxstack,code,tag) = 
-  { IsZeroInit=zeroinit;
-    MaxStack=maxstack;
-    NoInlining=false;
-    Locals= locals ;
-    Code= code;
+let mkILMethodBody (zeroinit,locals,maxstack,code,tag) : ILMethodBody = 
+  { IsZeroInit=zeroinit
+    MaxStack=maxstack
+    NoInlining=false
+    Locals= locals 
+    Code= code
     SourceMarker=tag }
 
 let mkMethodBody (zeroinit,locals,maxstack,code,tag) = MethodBody.IL (mkILMethodBody (zeroinit,locals,maxstack,code,tag))
@@ -3170,7 +2966,7 @@ let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =
 // if one doesn't exist already.
 // -------------------------------------------------------------------- 
 
-let ilmbody_code2code f il  =
+let ilmbody_code2code f (il: ILMethodBody)  =
   {il with Code = f il.Code}
 
 let mdef_code2code f md  =
@@ -3181,10 +2977,11 @@ let mdef_code2code f md  =
     let b = MethodBody.IL (ilmbody_code2code f il)
     {md with mdBody= mkMethBodyAux b }  
 
-let prependInstrsToCode c1 c2 = 
-    let internalLab = generateCodeLabel ()
-    joinCode (checkILCode (mkBasicBlock {Label=internalLab; 
-                                         Instructions=Array.ofList (c1 @ [ I_br (uniqueEntryOfCode c2)])})) c2
+let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) = 
+    let instrs = Array.ofList instrs
+    let n = instrs.Length
+    { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
+              Instrs = Array.append instrs c2.Instrs }
 
 let prependInstrsToMethod new_code md  = 
     mdef_code2code (prependInstrsToCode new_code) md
@@ -3433,20 +3230,6 @@ let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs
 
 
 //-----------------------------------------------------------------------
-// Intermediate parsing structure for exception tables....
-//-----------------------------------------------------------------------
-
-type ILExceptionClause = 
-    | Finally of (ILCodeLabel * ILCodeLabel)
-    | Fault  of (ILCodeLabel * ILCodeLabel)
-    | FilterCatch of (ILCodeLabel * ILCodeLabel) * (ILCodeLabel * ILCodeLabel)
-    | TypeCatch of ILType * (ILCodeLabel * ILCodeLabel)
-
-type ILExceptionSpec = 
-    { exnRange: (ILCodeLabel * ILCodeLabel);
-      exnClauses: ILExceptionClause list }
-
-//-----------------------------------------------------------------------
 // [instructions_to_code] makes the basic block structure of code from
 // a primitive array of instructions.  We
 // do this be iterating over the instructions, pushing new basic blocks 
@@ -3454,536 +3237,16 @@ type ILExceptionSpec =
 // [bbstartToCodeLabelMap].
 //-----------------------------------------------------------------------
 
-type ILLocalSpec = 
-    { locRange: (ILCodeLabel * ILCodeLabel);
-      locInfos: ILDebugMapping list }
-
-type structspec = SEH of ILExceptionSpec | LOCAL of ILLocalSpec 
-
-let delayInsertedToWorkaroundKnownNgenBug _s f = 
-    (* Some random code to prevent inlining of this function *)
-    let mutable res = 10
-    for i = 0 to 2 do 
-       res <- res + 1;
-    //printf "------------------------executing NGEN bug delay '%s', calling 'f' --------------\n" s;
-    let res = f()
-    //printf "------------------------exiting NGEN bug delay '%s' --------------\n" s;
-    res
-
-
-let popRangeM lo hi (m:Zmap<'Key,'U>) =
-    let collect k v (rvs,m) = (v :: rvs) , Zmap.remove k m
-    let rvs,m = Zmap.foldSection lo hi collect m ([],m)
-    List.rev rvs,m
-
-type BasicBlockStartsToCodeLabelsMap(instrs,tryspecs,localspecs,lab2pc) = 
-
-    // Find all the interesting looking labels that form the boundaries of basic blocks. 
-    // These are the destinations of branches and the boundaries of both exceptions and 
-    // those blocks where locals are live. 
-    let bbstartToCodeLabelMap = 
-        let res = ref CodeLabels.empty
-        let add_range (a,b) = res := CodeLabels.insert a (CodeLabels.insert b !res)
-        instrs |> Array.iter (fun i -> res := CodeLabels.addList (destinationsOfInstr i) !res);
-
-        tryspecs |> List.iter (fun espec -> 
-          add_range espec.exnRange;
-          List.iter (function 
-            | Finally r1 | Fault r1 | TypeCatch (_,r1)-> add_range r1
-            | FilterCatch (r1,r2) -> add_range r1; add_range r2) espec.exnClauses);
-
-        localspecs |> List.iter (fun l -> add_range l.locRange) ;
-
-        !res 
-
-    // Construct a map that gives a unique ILCodeLabel for each label that 
-    // might be a boundary of a basic block.  These will be the labels 
-    // for the basic blocks we end up creating. 
-    let lab2clMap = Dictionary<_,_>(10, HashIdentity.Structural) 
-    let pc2clMap = Dictionary<_,_>(10, HashIdentity.Structural) 
-    let addBBstartPc pc pcs cls = 
-        if pc2clMap.ContainsKey pc then 
-            pc2clMap.[pc], pcs, cls
-        else 
-            let cl = generateCodeLabel ()
-            pc2clMap.[pc] <- cl;
-            cl, pc::pcs, CodeLabels.insert cl cls 
-
-    let bbstartPcs, bbstart_code_labs  = 
-      CodeLabels.fold
-        (fun bbstart_lab (pcs, cls) -> 
-          let pc = lab2pc bbstart_lab
-          if logging then dprintf "bblock starts with label %s at pc %d\n" (formatCodeLabel bbstart_lab) pc;
-          let cl,pcs',cls' = addBBstartPc pc pcs cls
-          lab2clMap.[bbstart_lab] <- cl;
-          pcs',
-          cls')
-        bbstartToCodeLabelMap 
-        ([], CodeLabels.empty) 
-    let cl0,bbstartPcs, bbstart_code_labs = addBBstartPc 0 bbstartPcs bbstart_code_labs 
-    
-    
-    member c.InitialCodeLabel = cl0
-    member c.BasicBlockStartPositions = bbstartPcs
-    member c.BasicBlockStartCodeLabels = bbstart_code_labs
-
-    member c.lab2cl bbLab = 
-        try 
-            lab2clMap.[bbLab]
-        with :? KeyNotFoundException -> failwith ("basic block label "+formatCodeLabel bbLab+" not declared")  
-
-    member c.pc2cl pc = 
-        try 
-            pc2clMap.[pc] 
-        with :? KeyNotFoundException -> 
-            failwith ("internal error while mapping pc "+string pc+" to code label")  
-
-    member c.remapLabels i =
-        match i with 
-        | I_leave l -> I_leave(c.lab2cl l)
-        | I_br l -> I_br (c.lab2cl l)
-        | I_brcmp (x,l1,l2) -> I_brcmp(x,c.lab2cl l1, c.lab2cl l2)
-        | I_switch (ls,l) -> I_switch(List.map c.lab2cl ls, c.lab2cl l)
-        | _ -> i 
-
-let disjoint_range (start_pc1,end_pc1) (start_pc2,end_pc2) =
-  ((start_pc1 : int) < start_pc2 && end_pc1 <= start_pc2) ||
-  (start_pc1 >= end_pc2 && end_pc1 > end_pc2) 
-
-let merge_ranges (start_pc1,end_pc1) (start_pc2,end_pc2) =
-  (min (start_pc1:int) start_pc2, max (end_pc1:int) end_pc2) 
-
-let rangeInsideRange (start_pc1,end_pc1) (start_pc2,end_pc2)  =
-  (start_pc1:int) >= start_pc2 && start_pc1 < end_pc2 &&
-  (end_pc1:int) > start_pc2 && end_pc1 <= end_pc2 
-
-let lranges_of_clause cl = 
-  match cl with 
-  | Finally r1 -> [r1]
-  | Fault r1 -> [r1]
-  | FilterCatch (r1,r2) -> [r1;r2]
-  | TypeCatch (_ty,r1) -> [r1]  
-
-  
-type CodeOffsetViewOfLabelledItems(lab2pc) =
-    member x.labelsToRange p = let (l1,l2) = p in lab2pc l1, lab2pc l2 
-
-    member x.lrange_inside_lrange ls1 ls2 = 
-      rangeInsideRange (x.labelsToRange ls1) (x.labelsToRange ls2) 
-      
-    member x.disjoint_lranges ls1 ls2 = 
-      disjoint_range (x.labelsToRange ls1) (x.labelsToRange ls2) 
-
-    member x.clause_inside_lrange cl lr =
-      List.forall (fun lr1 -> x.lrange_inside_lrange lr1 lr) (lranges_of_clause cl) 
-
-    member x.clauses_inside_lrange cls lr = 
-      List.forall 
-        (fun cl -> x.clause_inside_lrange cl lr)
-        cls 
-    
-    member x.tryspec_inside_lrange tryspec1 lr =
-      (x.lrange_inside_lrange tryspec1.exnRange lr &&
-       x.clauses_inside_lrange tryspec1.exnClauses lr) 
-
-    member x.tryspec_inside_clause tryspec1 cl =
-      List.exists (fun lr -> x.tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
-
-    member x.locspec_inside_clause locspec1 cl =
-      List.exists (fun lr -> x.lrange_inside_lrange locspec1.locRange lr) (lranges_of_clause cl) 
-
-    member x.tryspec_inside_tryspec tryspec1 tryspec2 =
-      x.tryspec_inside_lrange tryspec1 tryspec2.exnRange ||
-      List.exists (fun c2 -> x.tryspec_inside_clause tryspec1 c2) tryspec2.exnClauses 
-    
-    member x.locspec_inside_tryspec locspec1 tryspec2 =
-      x.lrange_inside_lrange locspec1.locRange tryspec2.exnRange ||
-      List.exists (fun c2 -> x.locspec_inside_clause locspec1 c2) tryspec2.exnClauses 
-    
-    member x.tryspec_inside_locspec tryspec1 locspec2 =
-      x.tryspec_inside_lrange tryspec1 locspec2.locRange 
-    
-    member x.disjoint_clause_and_lrange cl lr =
-      List.forall (fun lr1 -> x.disjoint_lranges lr1 lr) (lranges_of_clause cl) 
-    
-    member x.disjoint_clauses_and_lrange cls lr = 
-      List.forall (fun cl -> x.disjoint_clause_and_lrange cl lr) cls 
-    
-    member x.disjoint_tryspec_and_lrange tryspec1 lr =
-      (x.disjoint_lranges tryspec1.exnRange lr &&
-       x.disjoint_clauses_and_lrange tryspec1.exnClauses lr) 
-    
-    member x.disjoint_tryspec_and_clause tryspec1 cl =
-      List.forall (fun lr -> x.disjoint_tryspec_and_lrange tryspec1 lr) (lranges_of_clause cl) 
-
-    member x.tryspec_disjoint_from_tryspec tryspec1 tryspec2 =
-      x.disjoint_tryspec_and_lrange tryspec1 tryspec2.exnRange &&
-      List.forall (fun c2 -> x.disjoint_tryspec_and_clause tryspec1 c2) tryspec2.exnClauses 
-    
-    member x.tryspec_disjoint_from_locspec tryspec1 locspec2 =
-      x.disjoint_tryspec_and_lrange tryspec1 locspec2.locRange 
-    
-    member x.locspec_disjoint_from_locspec locspec1 locspec2 =
-      x.disjoint_lranges locspec1.locRange locspec2.locRange 
-    
-    member x.locspec_inside_locspec locspec1 locspec2 =
-      x.lrange_inside_lrange locspec1.locRange locspec2.locRange 
-    
-    member x.structspec_inside_structspec specA specB = (* only for sanity checks, then can be removed *)
-        match specA,specB with
-          | SEH   tryspecA,SEH   tryspecB -> x.tryspec_inside_tryspec tryspecA tryspecB
-          | SEH   tryspecA,LOCAL locspecB -> x.tryspec_inside_locspec tryspecA locspecB
-          | LOCAL locspecA,SEH   tryspecB -> x.locspec_inside_tryspec locspecA tryspecB
-          | LOCAL locspecA,LOCAL locspecB -> x.locspec_inside_locspec locspecA locspecB
-    
-    // extent (or size) is the sum of range extents 
-    // We want to build in increasing containment-order, that's a partial order. 
-    // Size-order implies containment-order, and size-order is a total order. 
-    member x.extent_structspec ss =  
-        let extent_range (start_pc,end_pc) = end_pc - start_pc 
-        let extent_lrange lrange = extent_range (x.labelsToRange lrange)  
-        let extent_locspec locspec = extent_lrange locspec.locRange 
-        let extent_list  extent_item items = List.fold (fun acc item -> acc + extent_item item) 0 items 
-        let extent_list2 extent_item items = List.fold (fun acc item -> acc + extent_item item) 0 items 
-        let extent_clause cl = extent_list extent_lrange (lranges_of_clause cl) 
-        let extent_tryspec tryspec = extent_lrange tryspec.exnRange + (extent_list2 extent_clause tryspec.exnClauses) 
-        
-        match ss with 
-        | LOCAL locspec -> extent_locspec locspec 
-        | SEH tryspec -> extent_tryspec tryspec 
-
-    (* DIAGNOSTICS: START ------------------------------ *)
-    member x.string_of_structspec ss = 
-        let stringOfRange (l1,l2) = 
-          let pc1,pc2 = x.labelsToRange ((l1,l2))
-          formatCodeLabel l1+"("+string pc1+")-"+ formatCodeLabel l2+"("+string pc2+")" 
-        let string_of_clause cl = String.concat "+" (List.map stringOfRange (lranges_of_clause cl)) 
-        let string_of_tryspec tryspec = "tryspec"+ stringOfRange tryspec.exnRange + "--" + String.concat " / " (List.map string_of_clause tryspec.exnClauses) 
-        let string_of_locspec locspec = "local "+(String.concat ";" (locspec.locInfos |> List.map (fun l -> l.LocalName)))+": "+ stringOfRange locspec.locRange 
-        match ss with 
-        | SEH tryspec -> string_of_tryspec tryspec 
-        | LOCAL locspec -> string_of_locspec locspec 
-            
-
-
-// Stage 2b - Given an innermost tryspec, collect together the 
-// blocks covered by it. Preserve the essential ordering of blocks. 
-let blockForInnerTrySpec (codeOffsetView:CodeOffsetViewOfLabelledItems,
-                          coverageOfCodes,
-                          addBlocks,
-                          computeCoveredBlocks,
-                          bbstartToCodeLabelMap:BasicBlockStartsToCodeLabelsMap) tryspec state0 = 
-
-    let (blocks, remainingBasicBlockStarts) = state0
-    let tryBlocks, otherBlocks = computeCoveredBlocks (codeOffsetView.labelsToRange tryspec.exnRange) blocks
-    if isNil tryBlocks then (dprintn "try block specification covers no real code"; state0) else
-    let getClause r otherBlocks = 
-        let clauseBlocks, otherBlocks = computeCoveredBlocks (codeOffsetView.labelsToRange r) otherBlocks
-        if isNil clauseBlocks then 
-          failwith "clause block specification covers no real code";
-        (* The next line computes the code label for the entry to the clause *)
-        let clauseEntryLabel = bbstartToCodeLabelMap.lab2cl (fst r)
-        // Now compute the overall clause, with labels still visible. 
-        let clauseBlock = mkGroupBlock ([],List.map snd clauseBlocks)
-        (* if logging then dprintf "-- clause entry label is %s" clauseEntryLabel; *)
-        (clauseEntryLabel, clauseBlocks, clauseBlock), otherBlocks
-    let tryCodeBlocks = List.map snd tryBlocks
-    let tryEntryLabel = bbstartToCodeLabelMap.lab2cl (fst tryspec.exnRange)
-    let tryHiddn = CodeLabels.remove tryEntryLabel (List.foldBack (entriesOfCodeAsSet >> CodeLabels.union) tryCodeBlocks CodeLabels.empty) 
-    let tryBlock =  mkGroupBlock (CodeLabels.toList tryHiddn,tryCodeBlocks)
-
-    match tryspec.exnClauses with 
-    |  Finally _ :: _ :: _ -> failwith "finally clause combined with others"
-    | [ Finally r ] | [ Fault r ] -> 
-
-        let maker =       
-          match tryspec.exnClauses with
-            [ Finally _ ] -> mkTryFinallyBlock 
-          | [ Fault _ ] -> mkTryFaultBlock 
-          | _ -> failwith ""
-
-        let (clauseEntryLabel, clauseBlocks, clauseBlock), otherBlocks = getClause r otherBlocks
-        let newBlockRange = coverageOfCodes (tryBlocks@clauseBlocks)
-        // The next construction joins the blocks together. 
-        // It automatically hides any internal labels used in the 
-        // clause blocks. Only the entry to the clause is kept visible. 
-        // We hide the entries to the try block up above. 
-        let newBlock =  maker (tryBlock,clauseEntryLabel,clauseBlock)
-        // None of the entries to the clause block are visible outside the 
-        // entire try-clause construct, nor the other entries to the try block 
-        // apart from the one at the top. 
-        let newStarts = CodeLabels.diff remainingBasicBlockStarts (CodeLabels.union tryHiddn (entriesOfCodeAsSet clauseBlock))
-        // Now return the new block, the remaining blocks and the new set 
-        // of entries. 
-        addBlocks otherBlocks [(newBlockRange, newBlock)], newStarts
-
-    | clauses when clauses |> List.forall (function | FilterCatch _ -> true | TypeCatch _ -> true | _ -> false) -> 
-          
-          let clause_infos, otherBlocks (*(prior,posterior)*) = 
-            List.fold 
-              (fun (sofar,otherBlocks) cl -> 
-                match cl with 
-                | FilterCatch(r1,r2) -> 
-                    let ((lab1,_,bl1) as _info1),otherBlocks =  getClause r1 otherBlocks
-                    let info2,otherBlocks =  getClause r2 otherBlocks
-                    (sofar@[(Choice1Of2 (lab1,bl1),info2)]), otherBlocks
-                | TypeCatch(typ,r2) -> 
-                    let info2,otherBlocks = getClause r2 otherBlocks
-                    (sofar@[(Choice2Of2 typ,info2)]), otherBlocks
-                | _ -> failwith "internal error")
-              ([],otherBlocks)
-              clauses
-          let newBlockRange = 
-            // Ignore filter blocks when computing this range 
-            // REVIEW: They must always come before the catch blocks. 
-            coverageOfCodes 
-              (tryBlocks@
-               ((List.collect (fun (_,(_,blocks2,_)) -> blocks2) clause_infos)))
-          
-          // The next construction joins the blocks together. 
-          // It automatically hides any internal labels used in the 
-          // clause blocks. Only the entry to the clause is kept visible. 
-          let newBlock = 
-            mkTryMultiFilterCatchBlock 
-              (tryBlock,
-               List.map 
-                 (fun (choice,(lab2,_,bl2)) -> choice, (lab2,bl2)) 
-                 clause_infos)
-          // None of the entries to the filter or catch blocks are 
-          // visible outside the entire exception construct. 
-          let newStarts =
-            CodeLabels.diff remainingBasicBlockStarts 
-              (CodeLabels.union tryHiddn
-                 (List.foldBack 
-                    (fun (flt,(_,_,ctch_blck)) acc -> 
-                      CodeLabels.union
-                        (match flt with 
-                         | Choice1Of2 (_,flt_block) -> entriesOfCodeAsSet flt_block
-                         | Choice2Of2 _ -> CodeLabels.empty)
-                        (CodeLabels.union (entriesOfCodeAsSet ctch_blck) acc)) 
-                    clause_infos
-                    CodeLabels.empty))
-          // Now return the new block, the remaining blocks and the new set 
-          // of entries. 
-          addBlocks otherBlocks [ (newBlockRange, newBlock)], newStarts
-    | _ -> failwith "invalid pattern of exception constructs" 
-
-
-
-let doStructure' (codeOffsetView:CodeOffsetViewOfLabelledItems,
-                   computeCoveredBlocks,
-                   coverageOfCodes,
-                   addBlocks,
-                   bbstartToCodeLabelMap:BasicBlockStartsToCodeLabelsMap)
-                 structspecs 
-                 blockState =
-
-    (* Stage 2b - Given an innermost tryspec, collect together the *)
-    (* blocks covered by it. Preserve the essential ordering of blocks. *)
-    let blockForInnerLocSpec locspec ((blocks, remainingBasicBlockStarts) as state0) =
-        let scopeBlocks, otherBlocks (*(prior,posterior)*) = computeCoveredBlocks (codeOffsetView.labelsToRange locspec.locRange) blocks
-        if isNil scopeBlocks then (dprintn "scope block specification covers no real code"; state0) else
-        let newBlock =  mkScopeBlock (locspec.locInfos,mkGroupBlock ([],List.map snd scopeBlocks))
-        let newBlockRange = coverageOfCodes scopeBlocks
-        addBlocks otherBlocks [ (newBlockRange, newBlock)], remainingBasicBlockStarts
-
-    // Require items by increasing inclusion-order.
-    // Order by size/extent.
-    // a) size-ordering implies containment-ordering.
-    // b) size-ordering is total, so works with List.sort
-    let buildOrder = Order.orderOn codeOffsetView.extent_structspec int_order
-
-    (* checkOrder: checking is O(n^2) *)
-(*
-    let rec checkOrder = function
-      | []      -> ()
-      | sA::sBs -> List.iter (fun sB ->
-                                if codeOffsetView.structspec_inside_structspec sB sA && not (codeOffsetView.structspec_inside_structspec sA sB) then (
-                                  dprintf "sA = %s\n" (codeOffsetView.string_of_structspec sA);
-                                  dprintf "sB = %s\n" (codeOffsetView.string_of_structspec sB);
-                                  assert false
-                                )) sBs;
-                   checkOrder sBs
-*)
-
-    let structspecs = List.sortWithOrder buildOrder structspecs
-
-    (* if sanity_check_order then checkOrder structspecs; *) (* note: this check is n^2 *)
-    let buildBlock blockState = function
-      | SEH   tryspec ->  blockForInnerTrySpec (codeOffsetView,coverageOfCodes,addBlocks,computeCoveredBlocks,bbstartToCodeLabelMap) tryspec blockState
-      | LOCAL locspec ->  blockForInnerLocSpec locspec blockState
-    List.fold buildBlock blockState structspecs 
-
             
 // REVIEW: this function shows up on performance traces. If we eliminated the last ILX->IL rewrites from the
 // F# compiler we could get rid of this structured code representation from Abstract IL altogether and 
 // never convert F# code into this form.
-let buildILCode methName lab2pc instrs tryspecs localspecs =
+let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
+    { Labels = lab2pc
+      Instrs = instrs
+      Exceptions = tryspecs
+      Locals = localspecs }
 
-    let bbstartToCodeLabelMap = BasicBlockStartsToCodeLabelsMap(instrs,tryspecs,localspecs,lab2pc)
-    let codeOffsetView = CodeOffsetViewOfLabelledItems(lab2pc)
-
-    let basicInstructions = Array.map bbstartToCodeLabelMap.remapLabels instrs
-    
-    (* DIAGNOSTICS: END -------------------------------- *)
-
-    let buildCodeFromInstructionArray instrs =
-
-        // Consume instructions until we hit the end of the basic block, either 
-        // by hitting a control-flow instruction or by hitting the start of the 
-        // next basic block by fall-through. 
-        let rec consumeBBlockInstrs instrs rinstrs (pc:int) nextBBstartPc =
-          (* rinstrs = accumulates instructions in reverse order *)
-          if pc = (Array.length instrs) then 
-              dprintn "* WARNING: basic block at end of method ends without a leave, branch, return or throw. Adding throw\n";
-              pc,List.rev (I_throw :: rinstrs)
-          // The next test is for drop-through at end of bblock, when we just insert 
-          // a branch to the next bblock. 
-          elif (match nextBBstartPc with Some pc' -> pc = pc' | _ -> false) then 
-              if logging then dprintf "-- pushing br, pc = nextBBstartPc = %d\n" pc;
-              pc,List.rev (I_br (bbstartToCodeLabelMap.pc2cl pc) :: rinstrs)
-          else
-              // Otherwise bblocks end with control-flow. 
-              let i = instrs.[pc]
-              let pc' = pc + 1
-              if instrIsBasicBlockEnd i then 
-                  if instrIsTailcall i then 
-                      if pc' = instrs.Length || (match instrs.[pc'] with I_ret -> false | _ -> true) then 
-                          failwithf "a tailcall must be followed by a return, instrs = %A" instrs
-                      elif (match nextBBstartPc with Some pc'' -> pc' = pc'' | _ -> false) then
-                          // In this obscure case, someone branches to the return instruction 
-                          // following the tailcall, so we'd better build a basic block 
-                          // containing just that return instruction. 
-                          pc', List.rev (i :: rinstrs)
-                      else 
-                          // Otherwise skip the return instruction, but keep the tailcall. 
-                          pc'+1, List.rev (i :: rinstrs)
-                  else 
-                    pc', List.rev (i :: rinstrs)
-              else
-                  // recursive case 
-                  consumeBBlockInstrs instrs (i::rinstrs) pc' nextBBstartPc
-
-        (* type block = (int * int) * Code // a local type (alias) would be good, good for intelisense too *)
-        let rec consumeOneBlock bbstartPc nextBBstartPc currentPc =
-          if currentPc = (Array.length instrs) then None
-          elif bbstartPc < currentPc then failwith "internal error: bad basic block structure (missing bblock start marker?)"
-          elif bbstartPc > currentPc then
-            (* dprintn ("* ignoring unreachable instruction in method: "^ methName); *)
-              consumeOneBlock bbstartPc nextBBstartPc (currentPc + 1)
-          else
-              let pc', bblockInstrs = consumeBBlockInstrs instrs [] bbstartPc nextBBstartPc
-              if logging then dprintf "-- making bblock, entry label is %s, length = %d, bbstartPc = %d\n" (formatCodeLabel (bbstartToCodeLabelMap.pc2cl bbstartPc)) (List.length bblockInstrs) bbstartPc;
-              let bblock = mkBasicBlock {Label= bbstartToCodeLabelMap.pc2cl bbstartPc; Instructions=Array.ofList bblockInstrs}
-              
-              let bblockRange = (bbstartPc, pc')
-              // Return the bblock and the range of instructions that the bblock covered. 
-              // Also return any remaining instructions and the pc' for the first 
-              // such instruction. 
-              Some ((bblockRange, bblock), pc')
-
-        let fetchBasicBlocks bbstartToCodeLabelMap currentPc = 
-            let rec loop bbstartToCodeLabelMap currentPc acc =
-                match bbstartToCodeLabelMap with 
-                | [] -> 
-                    (* if currentPc <> Array.length instrs then 
-                       dprintn ("* ignoring instructions at end of method: "+ methName); *)
-                    List.rev acc
-                | h::t -> 
-                    let h2 = match t with [] -> None | h2:: _ -> assert (not (h = h2)); Some h2
-                    match consumeOneBlock h h2 currentPc with
-                    | None -> List.rev acc
-                    | Some (bblock, currentPc') -> loop t currentPc' (bblock :: acc)
-            loop bbstartToCodeLabelMap currentPc []
-
-        let inside range (brange,_) =
-            if rangeInsideRange brange range then true else
-            if disjoint_range brange range then false else
-            failwith "exception block specification overlaps the range of a basic block"
-
-        (* A "blocks" contain blocks, ordered on startPC.
-         * Recall, a block is (range,code) where range=(pcStart,pcLast+1). *)
-        let addBlock m (((startPC,_endPC),_code) as block) =
-            match Zmap.tryFind startPC m with
-            | None        -> Zmap.add startPC [block] m
-            | Some blocks -> Zmap.add startPC (block :: blocks) m in  (* NOTE: may reverse block *)
-
-        let addBlocks m blocks = List.fold addBlock m blocks
-              
-        let mkBlocks blocks =
-            let emptyBlocks = (Zmap.empty int_order :  Zmap<int,((int*int) * ILCode) list>)
-            List.fold addBlock emptyBlocks blocks
-
-        let sanityCheck = false (* linear check    - REVIEW: set false and elim checks *)
-
-        let computeCoveredBlocks ((start_pc,end_pc) as range) (blocks: Zmap<int,((int*int) * ILCode) list> ) =
-            // It is assumed that scopes never overlap.
-            // locinfo scopes could overlap if there is a bug elsewhere.
-            // If overlaps are discovered, an exception is raised. see NOTE: #overlap.
-            let pcCovered,blocks = popRangeM start_pc (end_pc - 1) blocks
-            let coveredBlocks = pcCovered |> List.concat
-            // Look for bad input, e.g. overlapping locinfo scopes. 
-            let overlapBlocks = List.filter (inside range >> not) coveredBlocks
-            if not (isNil overlapBlocks) then notFound(); (* see NOTE: #overlap *)
-            if sanityCheck then (
-              let assertIn  block = assert (inside range block)
-              let assertOut block = assert (not (inside range block))
-              List.iter assertIn coveredBlocks;
-              Zmap.iter (fun _ bs -> List.iter assertOut bs) blocks
-            );
-            coveredBlocks,blocks
-
-        let coverageOfCodes blocks = 
-            match blocks with 
-            | [] -> failwith "start_of_codes"
-            | [(r,_)] -> r 
-            | ((r,_)::t) -> List.foldBack (fun (x,_) acc -> merge_ranges x acc) t r
-        
-        delayInsertedToWorkaroundKnownNgenBug "Delay4i3" <| fun () ->
-
-        let doStructure = doStructure' (codeOffsetView, computeCoveredBlocks,coverageOfCodes,addBlocks,bbstartToCodeLabelMap)
-        
-        (* Apply stage 1. Compute the blocks not taking exceptions into account. *)
-        let bblocks = 
-            fetchBasicBlocks (List.sort bbstartToCodeLabelMap.BasicBlockStartPositions) 0
-
-        let bblocks = mkBlocks bblocks
-        (* Apply stage 2. Compute the overall morphed blocks. *)
-        let morphedBlocks,remaining_entries = 
-            let specs1 = List.map (fun x -> SEH x) tryspecs
-            let specs2 = List.map (fun x -> LOCAL x) localspecs
-
-            try 
-                doStructure (specs1 @ specs2) (bblocks,bbstartToCodeLabelMap.BasicBlockStartCodeLabels) 
-            with :? KeyNotFoundException->
-                // NOTE: #overlap.
-                // Here, "Not_found" indicates overlapping scopes were found.
-                // Maybe the calling code got the locspecs scopes wrong.
-                // Try recovery by discarding locspec info...
-                let string_of_tryspec _tryspec = "tryspec"
-                let stringOfRange (l1,l2) = 
-                  let pc1,pc2 = codeOffsetView.labelsToRange ((l1,l2))
-                  formatCodeLabel l1+"("+string pc1+")-"+ formatCodeLabel l2+"("+string pc2+")"
-                let string_of_locspec locspec = "local "+(String.concat ";" (locspec.locInfos |> List.map (fun l -> l.LocalName)))+": "+ stringOfRange locspec.locRange
-                
-                dprintf "\nERROR: could not find an innermost exception block or local scope, specs = \n%s\nTrying again without locals."
-                  (String.concat "\n" (List.map string_of_tryspec tryspecs @ List.map string_of_locspec localspecs));
-                doStructure specs1 (bblocks,bbstartToCodeLabelMap.BasicBlockStartCodeLabels) 
-
-        delayInsertedToWorkaroundKnownNgenBug "Delay4k" <| fun () ->
-
-        let morphedBlocks = Zmap.values morphedBlocks |> List.concat in (* NOTE: may mixup order *)
-        (* Now join up all the remaining blocks into one block with one entry. *)
-        if logging then dprintn "-- computing entry label";
-        if logging then dprintn ("-- entry label is "+formatCodeLabel bbstartToCodeLabelMap.InitialCodeLabel);
-        mkGroupBlock 
-          (CodeLabels.toList (CodeLabels.remove bbstartToCodeLabelMap.InitialCodeLabel remaining_entries),List.map snd morphedBlocks)
-
-
-    try buildCodeFromInstructionArray basicInstructions
-    with e -> 
-      dprintn ("* error while converting instructions to code for method: " + methName);
-      reraise()
 
 // -------------------------------------------------------------------- 
 // Detecting Delegates
@@ -4475,7 +3738,7 @@ let mkPermissionSet (ilg: ILGlobals) (action,attributes: list<(ILTypeRef * (stri
               yield! z_unsigned_int bytes.Length;
               yield! bytes |]
               
-    PermissionSet(action,bytes)
+    ILPermission.PermissionSet(action,bytes)
 
 
 // Parse an IL type signature argument within a custom attribute blob
@@ -4844,27 +4107,14 @@ and refs_of_instr s x =
     | I_seqpoint _ | EI_ldlen_multi _ ->  ()
       
   
-and refs_of_il_block s c  = 
-    match c with 
-    | ILBasicBlock bb -> Array.iter (refs_of_instr s) bb.Instructions 
-    | GroupBlock (_,l) -> List.iter (refs_of_il_code s) l 
-    | RestrictBlock (_nms,c) -> refs_of_il_code s c 
-    | TryBlock (l,r) -> 
-       refs_of_il_code s l;
-       match r with 
-       | FaultBlock flt -> refs_of_il_code s flt 
-       | FinallyBlock flt -> refs_of_il_code s flt 
-       | FilterCatchBlock clauses -> 
-           clauses |> List.iter (fun (flt,ctch)  -> 
-               refs_of_il_code s ctch;
-               match flt with 
-               | CodeFilter fltcode -> refs_of_il_code s fltcode 
-               |  TypeFilter ty -> refs_of_typ s ty)
+and refs_of_il_code s (c: ILCode)  = 
+    c.Instrs |> Array.iter (refs_of_instr s) 
+    c.Exceptions |> List.iter (fun e -> e.Clause |> (function 
+        | ILExceptionClause.TypeCatch (ilty, _) -> refs_of_typ s ilty
+        | _ -> ()))
 
-and refs_of_il_code s c  = refs_of_il_block s c 
-    
-and refs_of_ilmbody s il = 
-    ILList.iter (refs_of_local s) il.Locals;
+and refs_of_ilmbody s (il: ILMethodBody) = 
+    ILList.iter (refs_of_local s) il.Locals
     refs_of_il_code s il.Code 
     
 and refs_of_local s loc = refs_of_typ s loc.Type

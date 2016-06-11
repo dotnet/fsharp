@@ -7,6 +7,7 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
+open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -240,8 +241,8 @@ let mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy =
 let mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy after = 
     let useHelper = doesRuntimeTypeDiscriminateUseHelper avoidHelpers cuspec alt
     match after with 
-    | I_brcmp (BI_brfalse,_,_) 
-    | I_brcmp (BI_brtrue,_,_) when not useHelper -> 
+    | I_brcmp (BI_brfalse,_) 
+    | I_brcmp (BI_brtrue,_) when not useHelper -> 
         [ I_isinst altTy; after ]
     | _ -> 
         mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy @ [ after ]
@@ -282,8 +283,8 @@ let mkGetTag ilg (cuspec: IlxUnionSpec) =
 
 let mkCeqThen after = 
     match after with 
-    | I_brcmp (BI_brfalse,a,b) -> [I_brcmp (BI_bne_un,a,b)]
-    | I_brcmp (BI_brtrue,a,b) ->  [I_brcmp (BI_beq,a,b)]
+    | I_brcmp (BI_brfalse,a) -> [I_brcmp (BI_bne_un,a)]
+    | I_brcmp (BI_brtrue,a) ->  [I_brcmp (BI_beq,a)]
     | _ -> [AI_ceq; after]
 
 
@@ -377,50 +378,41 @@ type ICodeGen<'Mark> =
     abstract EmitInstrs : ILInstr list -> unit
 
 // TODO: this will be removed
-let genWith g = 
-    let blocks = ResizeArray() // all the blocks emitted so far
-    let instrs = ResizeArray() // the current block being emitted
-    let internalLabels = ResizeArray()
-    let firstLabel = generateCodeLabel()
-    let mutable label = firstLabel
-    let closeBock m = 
-        blocks.Add (mkBasicBlock { Label = label; Instructions=instrs.ToArray() })
-        internalLabels.Add label
-        label <- m
-        instrs.Clear()
-    let cg = 
-            { new ICodeGen<_> with 
-                member __.CodeLabel(m) = m
-                member __.GenerateDelayMark() = generateCodeLabel()
-                member __.GenLocal(ilty) = failwith "not needed"
-                member __.SetMarkToHere(m) = closeBock m
-                member __.EmitInstr x = instrs.Add x
-                member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i }
-    g cg
-    closeBock (generateCodeLabel())
-    let entry = generateCodeLabel()
-    // TODO: what about "I_ret" instruction???
-    mkGroupBlock(internalLabels |> Seq.toList, mkBasicBlock { Label = entry; Instructions = [| I_br firstLabel |] } :: (blocks |> Seq.toList))
+let genWith g : ILCode = 
+    let instrs = ResizeArray() 
+    let lab2pc = Dictionary() 
+    g { new ICodeGen<ILCodeLabel> with 
+            member __.CodeLabel(m) = m
+            member __.GenerateDelayMark() = generateCodeLabel()
+            member __.GenLocal(ilty) = failwith "not needed"
+            member __.SetMarkToHere(m) = lab2pc.[m] <- instrs.Count
+            member __.EmitInstr x = instrs.Add x
+            member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i }
+
+    { Labels = lab2pc
+      Instrs = instrs.ToArray()
+      Exceptions = []
+      Locals = [] }
 
 
-let mkBrIsData ilg (avoidHelpers, cuspec,cidx,tg,failLab) = 
+let mkBrIsNotData ilg (avoidHelpers, cuspec,cidx,tg) = 
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
     if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
-        [ I_brcmp (BI_brtrue,failLab,tg) ] 
+        [ I_brcmp (BI_brtrue,tg) ] 
     elif cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClassAndAnyOtherAlternativesToNull (cuspec,alt) then 
         // in this case we can use a null test
-        [ I_brcmp (BI_brfalse,failLab,tg) ] 
+        [ I_brcmp (BI_brfalse,tg) ] 
     else
         match cuspecRepr.DiscriminationTechnique cuspec  with 
-        | SingleCase -> [ I_br tg ]
-        | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (BI_brfalse,failLab,tg))
-        | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (BI_brfalse,failLab,tg))
+        | SingleCase -> [ ]
+        | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (BI_brfalse,tg))
+        | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (BI_brfalse,tg))
         | TailOrNull -> 
             match cidx with 
-            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (BI_brtrue,failLab,tg)]
-            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (BI_brfalse,failLab,tg)]
+            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (BI_brtrue,tg)]
+            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (BI_brfalse,tg)]
             | _ -> failwith "unexpected"
 
 
@@ -463,7 +455,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
                 let internalLab = cg.GenerateDelayMark()
                 let failLab = cg.GenerateDelayMark ()
                 let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec, alt)
-                let test = I_brcmp ((if cmpNull then BI_brtrue else BI_brfalse),cg.CodeLabel failLab,cg.CodeLabel internalLab)
+                let test = I_brcmp ((if cmpNull then BI_brtrue else BI_brfalse),cg.CodeLabel failLab)
                 let testBlock = 
                     if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
                         [ test ]
@@ -493,7 +485,7 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,cuspec,cidx) =
         if canfail then 
             let outlab = cg.GenerateDelayMark ()
             let internal1 = cg.GenerateDelayMark ()
-            cg.EmitInstrs [AI_dup; I_brcmp (BI_brfalse, cg.CodeLabel outlab, cg.CodeLabel internal1) ];
+            cg.EmitInstrs [AI_dup; I_brcmp (BI_brfalse, cg.CodeLabel outlab) ];
             cg.SetMarkToHere internal1
             cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
             cg.SetMarkToHere outlab
@@ -504,7 +496,7 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,cuspec,cidx) =
         let altTy = tyForAlt cuspec alt
         cg.EmitInstr (I_castclass altTy)
               
-let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases, cont) =
+let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
     let baseTy = baseTyOfUnionSpec cuspec
         
     match cuspecRepr.DiscriminationTechnique cuspec with 
@@ -520,37 +512,38 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases, cont)
             let failLab = cg.GenerateDelayMark ()
             let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec,alt)
      
-            let testInstr = I_brcmp ((if cmpNull then BI_brfalse else BI_brtrue),tg,cg.CodeLabel failLab) 
 
             cg.EmitInstr (mkLdloc locn)
+            let testInstr = I_brcmp ((if cmpNull then BI_brfalse else BI_brtrue),tg) 
             if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
                  cg.EmitInstr testInstr 
             else 
                  cg.EmitInstrs (mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
             cg.SetMarkToHere failLab
-        cg.EmitInstr (I_br cont)
                 
 
     | IntegerTag -> 
         match cases with 
-        | [] -> cg.EmitInstrs  [ AI_pop; I_br cont ]
+        | [] -> cg.EmitInstrs  [ AI_pop ]
         | _ ->
         // Use a dictionary to avoid quadratic lookup in case list
         let dict = System.Collections.Generic.Dictionary<int,_>()
         for (i,case) in cases do dict.[i] <- case
+        let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
             let mutable res = Unchecked.defaultof<_>
             let ok = dict.TryGetValue(i, &res)
-            if ok then res else cont
+            if ok then res else cg.CodeLabel failLab
 
         let dests = Array.mapi emitCase cuspec.AlternativesArray
         cg.EmitInstrs (mkGetTag ilg cuspec)
-        cg.EmitInstr (I_switch (Array.toList dests,cont))
+        cg.EmitInstr (I_switch (Array.toList dests))
+        cg.SetMarkToHere failLab
 
     | SingleCase ->
         match cases with 
         | [(0,tg)] -> cg.EmitInstrs [ AI_pop; I_br tg ]
-        | [] -> cg.EmitInstrs  [ AI_pop; I_br cont ]
+        | [] -> cg.EmitInstrs  [ AI_pop; ]
         | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
 
     | TailOrNull -> 

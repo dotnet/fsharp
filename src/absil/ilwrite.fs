@@ -1604,7 +1604,7 @@ type CodeBuffer =
     member codebuf.RecordAvailBrFixup tg = 
         codebuf.availBrFixups.[tg] <- codebuf.code.Position
 
-module Codebuf = begin
+module Codebuf = 
      // -------------------------------------------------------------------- 
      // Applying branch fixups.  Use short versions of instructions
      // wherever possible.  Sadly we can only determine if we can use a short
@@ -1785,8 +1785,7 @@ module Codebuf = begin
     // We then emit the exception handling specs separately. 
     // nb. ECMA spec says the SEH blocks must be returned inside-out 
     type SEHTree = 
-      | Tip 
-      | Node of (ExceptionClauseSpec option * SEHTree list) list
+      | Node of ExceptionClauseSpec option * SEHTree list
         
 
     // -------------------------------------------------------------------- 
@@ -1850,8 +1849,8 @@ module Codebuf = begin
     let emitTailness (cenv: cenv) codebuf tl = 
         if tl = Tailcall && cenv.emitTailcalls then emitInstrCode codebuf i_tail
 
-    let emitAfterTailcall codebuf tl =
-        if tl = Tailcall then emitInstrCode codebuf i_ret
+    //let emitAfterTailcall codebuf tl =
+    //    if tl = Tailcall then emitInstrCode codebuf i_ret
 
     let emitVolatility codebuf tl = 
         if tl = Volatile then emitInstrCode codebuf i_volatile
@@ -1871,24 +1870,24 @@ module Codebuf = begin
         match instr with
         | si when isNoArgInstr si ->
              emitInstrCode codebuf (encodingsOfNoArgInstr si)
-        | I_brcmp (cmp,tg1,_)  -> 
+        | I_brcmp (cmp,tg1)  -> 
             codebuf.RecordReqdBrFixup ((Lazy.force ILCmpInstrMap).[cmp], Some (Lazy.force ILCmpInstrRevMap).[cmp]) tg1
-        | I_br _ -> ()
+        | I_br tg -> codebuf.RecordReqdBrFixup (i_br,Some i_br_s) tg
         | I_seqpoint s ->   codebuf.EmitSeqPoint cenv s
         | I_leave tg -> codebuf.RecordReqdBrFixup (i_leave,Some i_leave_s) tg
         | I_call  (tl,mspec,varargs)      -> 
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_call (mspec,varargs)
-            emitAfterTailcall codebuf tl
+            //emitAfterTailcall codebuf tl
         | I_callvirt      (tl,mspec,varargs)      -> 
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec,varargs)
-            emitAfterTailcall codebuf tl
+            //emitAfterTailcall codebuf tl
         | I_callconstraint        (tl,ty,mspec,varargs)   -> 
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec,varargs)
-            emitAfterTailcall codebuf tl
+            //emitAfterTailcall codebuf tl
         | I_newobj        (mspec,varargs) -> 
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec,varargs)
         | I_ldftn mspec   -> 
@@ -1900,7 +1899,7 @@ module Codebuf = begin
             emitTailness cenv codebuf tl
             emitInstrCode codebuf i_calli 
             codebuf.EmitUncodedToken (getUncodedToken TableNames.StandAloneSig (GetCallsigAsStandAloneSigIdx cenv env (callsig,varargs)))
-            emitAfterTailcall codebuf tl
+            //emitAfterTailcall codebuf tl
 
         | I_ldarg u16 ->  emitShortUInt16Instr codebuf (i_ldarg_s,i_ldarg) u16 
         | I_starg u16 ->  emitShortUInt16Instr codebuf (i_starg_s,i_starg) u16 
@@ -1992,7 +1991,7 @@ module Codebuf = begin
               | DT_REF  -> i_stind_ref
               | _ -> failwith "stelem")
 
-        | I_switch (labs,_)    ->  codebuf.RecordReqdBrFixups (i_switch,None) labs
+        | I_switch labs    ->  codebuf.RecordReqdBrFixups (i_switch,None) labs
 
         | I_ldfld (al,vol,fspec)  -> 
             emitAlignment codebuf al 
@@ -2093,165 +2092,143 @@ module Codebuf = begin
         |  _ -> failwith "an IL instruction cannot be emitted"
 
 
-    let mkScopeNode cenv (localSigs: _[]) (a,b,ls,ch) = 
-        if (isNil ls || not cenv.generatePdb) then ch
+    let mkScopeNode cenv (localSigs: _[]) (startOffset,endOffset,ls: ILLocalDebugMapping list,childScopes) = 
+        if (isNil ls || not cenv.generatePdb) then childScopes
         else
-          [ { Children= Array.ofList ch
-              StartOffset=a
-              EndOffset=b
+          [ { Children= Array.ofList childScopes
+              StartOffset=startOffset
+              EndOffset=endOffset
               Locals=
-                  Array.ofList
-                    (List.map
-                       (fun x -> { Name=x.LocalName
-                                   Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
-                                   Index= x.LocalIndex } ) 
-                       (List.filter (fun v -> v.LocalName <> "") ls)) } ]
+                  ls |> List.filter (fun v -> v.LocalName <> "")
+                     |> List.map (fun x -> 
+                          { Name=x.LocalName
+                            Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
+                            Index= x.LocalIndex } ) 
+                      |> Array.ofList } ]
             
-    let rec emitCode cenv localSigs codebuf env (susp,code) = 
-        match code with 
-        | TryBlock (c,seh) -> 
-            commitSusp codebuf susp (uniqueEntryOfCode c)
-            let tryStart = codebuf.code.Position
-            let susp,child1,scope1 = emitCode cenv localSigs codebuf env (None,c)
-            commitSuspNoDest codebuf susp
-            let tryFinish = codebuf.code.Position
-            let exnBranches = 
-                match seh with 
-                | FaultBlock flt -> 
-                    let handlerStart = codebuf.code.Position
-                    let susp,child2,scope2 = emitCode cenv localSigs codebuf env (None,flt)
-                    commitSuspNoDest codebuf susp
-                    let handlerFinish = codebuf.code.Position
-                    [ Some (tryStart,(tryFinish - tryStart),
-                            handlerStart,(handlerFinish - handlerStart),
-                            FaultClause), 
-                      [(child2,scope2)] ]
-                      
-                | FinallyBlock flt -> 
-                    let handlerStart = codebuf.code.Position
-                    let susp,child2,scope2 = emitCode cenv localSigs codebuf env (None,flt)
-                    commitSuspNoDest codebuf susp
-                    let handlerFinish = codebuf.code.Position
-                    [ Some (tryStart,(tryFinish - tryStart),
-                            handlerStart,(handlerFinish - handlerStart),
-                            FinallyClause),
-                      [(child2,scope2)] ]
-                      
-                | FilterCatchBlock clauses -> 
-                    clauses |> List.map (fun (flt,ctch) -> 
-                        match flt with 
-                        | TypeFilter typ ->
-                            let handlerStart = codebuf.code.Position
-                            let susp,child2,scope2 = emitCode cenv localSigs codebuf env (None,ctch)
-                            commitSuspNoDest codebuf susp
-                            let handlerFinish = codebuf.code.Position
-                            Some (tryStart,(tryFinish - tryStart),
-                                  handlerStart,(handlerFinish - handlerStart),
-                                  TypeFilterClause (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env typ))),
-                            [(child2,scope2)]
-                        | CodeFilter fltcode -> 
-                            
-                            let filterStart = codebuf.code.Position
-                            let susp,child2,scope2 = emitCode cenv localSigs codebuf env (None,fltcode)
-                            commitSuspNoDest codebuf susp
-                            let handlerStart = codebuf.code.Position
-                            let susp,child3,scope3 = emitCode cenv localSigs codebuf env (None,ctch)
-                            commitSuspNoDest codebuf susp
-                            let handlerFinish = codebuf.code.Position
-                            
-                            Some (tryStart,
-                                  (tryFinish - tryStart),
-                                  handlerStart,
-                                  (handlerFinish - handlerStart),
-                                  FilterClause filterStart),
-                            [(child2,scope2); (child3,scope3)])
-                      
-            (None,
-             Node((None,[child1])::List.map (fun (a,b) -> (a,List.map fst b)) exnBranches), 
-             scope1 @ List.concat ((List.collect (fun (_,b) -> List.map snd b) exnBranches)))
 
-        | RestrictBlock _ | GroupBlock _ -> 
-            // NOTE: ensure tailcalls for critical linear loop using standard continuation technique
-            let rec emitCodeLinear (susp,b) cont =
-                match b with 
-                | RestrictBlock (_,code2) -> 
-                    emitCodeLinear (susp,code2) cont
-                | GroupBlock (locs,codes) -> 
-                    let start = codebuf.code.Position
-                    
-                    // Imperative collectors for the sub-blocks
-                    let newSusp = ref susp
-                    let childSEH = ref []
-                    let childScopes = ref []
-                    // Push the results of collecting one sub-block into the reference cells
-                    let collect (susp,seh,scopes) = 
-                        newSusp := susp
-                        childSEH := seh :: !childSEH
-                        childScopes := scopes :: !childScopes
-                    // Close the collection by generating the (susp,node,scope-node) triple
-                    let close () = 
-                        let fin = codebuf.code.Position
-                        (!newSusp, 
-                         Node([(None,(List.rev !childSEH))]), 
-                         mkScopeNode cenv localSigs (start,fin,locs,List.concat (List.rev !childScopes)))
+    // Used to put local debug scopes and exception handlers into a tree form
+    let rangeInsideRange (start_pc1,end_pc1) (start_pc2,end_pc2)  =
+      (start_pc1:int) >= start_pc2 && start_pc1 < end_pc2 &&
+      (end_pc1:int) > start_pc2 && end_pc1 <= end_pc2 
 
-                    match codes with 
-                    | [c] -> 
-                        // emitCodeLinear sequence of nested blocks
-                        emitCodeLinear (!newSusp,c) (fun results -> 
-                            collect results
-                            cont (close()))
+    let lranges_of_clause cl = 
+      match cl with 
+      | ILExceptionClause.Finally r1 -> [r1]
+      | ILExceptionClause.Fault r1 -> [r1]
+      | ILExceptionClause.FilterCatch (r1,r2) -> [r1;r2]
+      | ILExceptionClause.TypeCatch (_ty,r1) -> [r1]  
 
-                    | codes -> 
-                        // Multiple blocks: leave the linear sequence and process each seperately
-                        codes |> List.iter (fun c -> collect (emitCode cenv localSigs codebuf env (!newSusp,c)))
-                        cont(close())
-                | c -> 
-                    // leave the linear sequence
-                    cont (emitCode cenv localSigs codebuf env (susp,c))
 
-            // OK, process the linear sequence
-            emitCodeLinear (susp,code) (fun x -> x)
+    let labelsToRange (lab2pc : Dictionary<ILCodeLabel, int>) p = let (l1,l2) = p in lab2pc.[l1], lab2pc.[l2]
 
-        | ILBasicBlock bb ->  
-            // Leaf case: one basic block
-            commitSusp codebuf susp bb.Label
-            codebuf.RecordAvailBrFixup bb.Label
-            let instrs = bb.Instructions
-            for i = 0 to instrs.Length - 1 do
-                emitInstr cenv codebuf env instrs.[i]
-            bb.Fallthrough, Tip, []
-            
-    and brToSusp (codebuf: CodeBuffer) dest = codebuf.RecordReqdBrFixup (i_br,Some i_br_s) dest
-              
-    and commitSusp codebuf susp lab = 
-        match susp with 
-        | Some dest when dest <> lab -> brToSusp codebuf dest
-        | _ -> ()
+    let lrange_inside_lrange lab2pc ls1 ls2 = 
+        rangeInsideRange (labelsToRange lab2pc ls1) (labelsToRange lab2pc ls2) 
 
-    and commitSuspNoDest codebuf susp = 
-        match susp with 
-        | Some dest -> brToSusp codebuf dest
-        | _ -> ()
-     
-    // Flatten the SEH tree 
-    let rec emitExceptionHandlerTree codebuf sehTree = 
-        match sehTree with 
-        | Tip -> ()
-        | Node clauses -> List.iter (emitExceptionHandlerTree2 codebuf) clauses
+    let findRoots contains vs = 
+        // For each item, either make it a root or make it a child of an existing root
+        let addToRoot roots x = 
+            // Look to see if 'x' is inside one of the roots
+            let roots, found = 
+                (false, roots) ||> List.mapFold (fun found (r,children) -> 
+                    if found then ((r,children),true)
+                    elif contains x r then ((r,x::children),true) 
+                    else ((r,children),false))
 
-    and emitExceptionHandlerTree2 (codebuf: CodeBuffer) (x,childSEH) = 
+            if found then roots 
+            else 
+                // Find the ones that 'x' encompasses and collapse them
+                let yes, others = roots |> List.partition (fun (r,_) -> contains r x)
+                (x, yes |> List.collect (fun (r,ch) -> r :: ch)) :: others
+    
+        ([], vs) ||> List.fold addToRoot
+
+    let rec makeSEHTree cenv env (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILExceptionSpec list) = 
+
+        let clause_inside_lrange cl lr =
+          List.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
+
+        let tryspec_inside_lrange (tryspec1: ILExceptionSpec) lr =
+          (lrange_inside_lrange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
+
+        let tryspec_inside_clause tryspec1 cl =
+          List.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
+
+        let tryspec_inside_tryspec tryspec1 (tryspec2: ILExceptionSpec) =
+          tryspec_inside_lrange tryspec1 tryspec2.Range ||
+          tryspec_inside_clause tryspec1 tryspec2.Clause
+
+        let roots = findRoots tryspec_inside_tryspec exs
+        let trees = 
+            roots |> List.map (fun (cl,ch) -> 
+                let r1 = labelsToRange lab2pc cl.Range
+                let conv ((s1,e1),(s2,e2)) x = pc2pos.[s1], pc2pos.[e1] - pc2pos.[s1], pc2pos.[s2], pc2pos.[e2] - pc2pos.[s2], x
+                let children = makeSEHTree cenv env pc2pos lab2pc ch
+                let n = 
+                    match cl.Clause with 
+                    | ILExceptionClause.Finally r2 -> 
+                        conv (r1,labelsToRange lab2pc r2) ExceptionClauseKind.FinallyClause
+                    | ILExceptionClause.Fault r2 -> 
+                        conv (r1,labelsToRange lab2pc r2) ExceptionClauseKind.FaultClause
+                    | ILExceptionClause.FilterCatch ((filterStart,_),r3) -> 
+                        conv (r1,labelsToRange lab2pc r3) (ExceptionClauseKind.FilterClause (pc2pos.[lab2pc.[filterStart]]))
+                    | ILExceptionClause.TypeCatch (typ,r2) -> 
+                        conv (r1,labelsToRange lab2pc r2) (TypeFilterClause (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env typ)))
+                SEHTree.Node (Some n, children) )
+
+        trees 
+
+    let rec makeLocalsTree cenv localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) = 
+        let locspec_inside_locspec (locspec1: ILLocalDebugInfo) (locspec2: ILLocalDebugInfo) =
+          lrange_inside_lrange lab2pc locspec1.Range locspec2.Range 
+
+        let roots = findRoots locspec_inside_locspec exs
+
+        let trees = 
+            roots |> List.collect (fun (cl,ch) -> 
+                let (s1,e1) = labelsToRange lab2pc cl.Range
+                let (s1,e1) = pc2pos.[s1], pc2pos.[e1]
+                let children = makeLocalsTree cenv localSigs pc2pos lab2pc ch
+                mkScopeNode cenv localSigs (s1,e1,cl.DebugMappings,children))
+        trees 
+
+
+    // Emit the SEH tree 
+    let rec emitExceptionHandlerTree (codebuf: CodeBuffer) (Node (x,childSEH)) = 
         List.iter (emitExceptionHandlerTree codebuf) childSEH // internal first 
-        match x with 
-        | None -> () 
-        | Some clause -> codebuf.EmitExceptionClause clause
+        x |> Option.iter codebuf.EmitExceptionClause 
+
+    let emitCode cenv localSigs (codebuf: CodeBuffer) env (code: ILCode) = 
+        let instrs = code.Instrs
+        
+        // Build a table mapping Abstract IL pcs to positions in the generated code buffer
+        let pc2pos = Array.zeroCreate (instrs.Length+1)
+        let pc2labs = Dictionary()
+        for (KeyValue(lab,pc)) in code.Labels do
+            if pc2labs.ContainsKey pc then pc2labs.[pc] <- lab :: pc2labs.[pc] else pc2labs.[pc] <- [lab]
+
+        // Emit the instructions
+        for pc = 0 to instrs.Length do
+            if pc2labs.ContainsKey pc then  
+                for lab in pc2labs.[pc] do
+                    codebuf.RecordAvailBrFixup lab
+            pc2pos.[pc] <- codebuf.code.Position
+            if pc < instrs.Length then 
+                match instrs.[pc] with 
+                | I_br l when code.Labels.[l] = pc + 1 -> () // compress I_br to next instruction
+                | i -> emitInstr cenv codebuf env i
+
+        // Build the exceptions and locals information, ready to emit
+        let SEHTree = makeSEHTree cenv env pc2pos code.Labels code.Exceptions
+        List.iter (emitExceptionHandlerTree codebuf) SEHTree
+
+        // Build the locals information, ready to emit
+        let localsTree = makeLocalsTree cenv localSigs pc2pos code.Labels code.Locals
+        localsTree
 
     let EmitTopCode cenv localSigs env nm code = 
         let codebuf = CodeBuffer.Create nm
-        let finalSusp, SEHTree, origScopes = 
-            emitCode cenv localSigs codebuf env (Some (uniqueEntryOfCode code),code)
-        (match finalSusp with Some dest  -> brToSusp codebuf dest | _ -> ())
-        emitExceptionHandlerTree codebuf SEHTree
+        let origScopes =  emitCode cenv localSigs codebuf env code
         let origCode = codebuf.code.Close()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
@@ -2269,8 +2246,6 @@ module Codebuf = begin
               Locals=[| |] }
 
         (newReqdStringFixups,newExnClauses, newCode, newSeqPoints, rootScope)
-
-end
 
 // -------------------------------------------------------------------- 
 // ILMethodBody --> bytes
@@ -2491,7 +2466,7 @@ and GenGenericParamPass4 cenv env idx owner gp =
 // param and return --> Param Row
 // -------------------------------------------------------------------- 
 
-let rec GetParamAsParamRow cenv _env seq param = 
+let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  = 
     let flags = 
         (if param.IsIn then 0x0001 else 0x0000) |||
         (if param.IsOut then 0x0002 else 0x0000) |||
@@ -2504,7 +2479,7 @@ let rec GetParamAsParamRow cenv _env seq param =
            UShort (uint16 seq) 
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
-and GenParamPass3 cenv env seq param = 
+and GenParamPass3 cenv env seq (param: ILParameter) = 
     if param.IsIn=false && param.IsOut=false && param.IsOptional=false && isNone param.Default && isNone param.Name && isNone param.Marshal 
     then ()
     else    
