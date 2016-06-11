@@ -37,6 +37,27 @@ let parseMalformedXml (s: string) =
         with e ->
             Choice2Of2 e
 
+let skipIfContainsRedirection varName (exe, cmdArgs: string) = attempt {
+    if cmdArgs.Contains(">") then
+        return! NUnitConf.skip (sprintf "output/error redirection is not implemented. Var %s => '%s %s'" varName exe cmdArgs)
+    }
+
+
+type RunPlConfig = {
+    compileOnlyRun: bool
+    VerifyStrongName: bool
+    SCFLAGS: string option
+    TAILFLAGS: string option
+    ISCFLAGS: string
+    IFSIFLAGS: string
+    FSC_PIPE: string
+    FSI_PIPE: string
+    FSI32_PIPE: string
+    CSC_PIPE: string
+    VBC_PIPE: string
+    envVars: Map<string,string>
+    }
+
 (** PERL NOTES
 
 `-e $path`
@@ -729,7 +750,7 @@ let LogTime logFile src (compileTime: TimeSpan) (runTime: TimeSpan) =
 // # RunExit -- Exits the script with the specified value.  
 // # 
 //sub RunExit {
-let RunExit cmds cwd envVars = attempt {
+let RunExit cmds cwd (cfg: RunPlConfig) = attempt {
     //my (
     //    $exitVal,		# Our exit value
     //    $cmtStr,		# Comment string to print before exit
@@ -737,7 +758,10 @@ let RunExit cmds cwd envVars = attempt {
     ignore "$exitVal is useless, we use NUnit results, not int exit code"
     ignore "$cmtStr is useless, was the skip/error message, already managed by attempt and NUnitConf.genericError/skip"
 
-    let env key = envVars |> Map.tryFind key
+    let env key = cfg.envVars |> Map.tryFind key
+
+    //shadow some function, to have same argument as perl script
+    let RunCommand = RunCommand cwd cfg.envVars
 
     //my %status_hash = (
     //       0 => "PASS",
@@ -762,7 +786,7 @@ let RunExit cmds cwd envVars = attempt {
             match cmds |> Map.tryFind envPOSTCMD with
             | Some cmdImpl ->
                 printfn "using override for '%s'" envPOSTCMD
-                cmdImpl cwd envVars
+                cmdImpl cwd cfg
             | None -> attempt {
                 // # Do the magic to replace known tokens in the
                 // # PRECMD/POSTCMD: for now you can write in env.lst
@@ -770,37 +794,33 @@ let RunExit cmds cwd envVars = attempt {
                 // #    SOURCE=foo.fs POSTCMD="\$FSC_PIPE bar.fs"
                 // # and it will expanded into $FSC_PIPE before invoking it
                 //$_ = $ENV{POSTCMD};
-                (*
+
                 let post =
                     envPOSTCMD
                     //s/^\$FSC_PIPE/$FSC_PIPE/;
-                    |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
+                    |> stringReplace "\\$FSC_PIPE" cfg.FSC_PIPE 
                     //s/^\$FSI_PIPE/$FSI_PIPE/;
-                    |> stringReplace "\\$FSI_PIPE" FSI_PIPE 
+                    |> stringReplace "\\$FSI_PIPE" cfg.FSI_PIPE 
                     //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                    |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE 
+                    |> stringReplace "\\$FSI32_PIPE" cfg.FSI32_PIPE 
                     //s/^\$CSC_PIPE/$CSC_PIPE/;
-                    |> stringReplace "\\$CSC_PIPE" CSC_PIPE 
+                    |> stringReplace "\\$CSC_PIPE" cfg.CSC_PIPE 
                     //s/^\$VBC_PIPE/$VBC_PIPE/;
-                    |> stringReplace "\\$VBC_PIPE" VBC_PIPE
+                    |> stringReplace "\\$VBC_PIPE" cfg.VBC_PIPE
             
                 let exe, cmdArgs = post |> splitAtFirst Char.IsWhiteSpace
                 let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
 
-                //do! skipIfContainsRedirection "POSTCMD" (exe, cmdArgsString)
+                do! skipIfContainsRedirection "POSTCMD" (exe, cmdArgsString)
 
                 //if (RunCommand("POSTCMD",$_,1)){
                 //     $exitVal = TEST_FAIL;
                 //     $test_result = TEST_FAIL;
                 //     $exit_str .= "Fail to execute the POSTCMD. ";
                 //}
-                //let! e,o = RunCommand "POSTCMD" (exe, cmdArgsString) true
-                //if e <> 0
-                //then return! NUnitConf.genericError (sprintf "Fail to execute the POSTCMD %s" o)
-                *)
-
-                TODO "implement POSTCMD"
-                return! NUnitConf.skip (sprintf "POSTCMD not implemented: %s" envPOSTCMD)
+                let! e,o = RunCommand "POSTCMD" (exe, cmdArgsString) true
+                if e <> 0
+                then return! NUnitConf.genericError (sprintf "Fail to execute the POSTCMD %s" o)
 
                 }
     //}
@@ -878,7 +898,7 @@ let GetCurrentPlatform () =
     ignore "useless, it's calculated from another function"      
 
 
-let runplImpl cmds cwd initialEnvVars = attempt {
+let readRunplConfig cwd initialEnvVars = attempt {
 
     let mutable envVars = initialEnvVars
 
@@ -898,11 +918,9 @@ let runplImpl cmds cwd initialEnvVars = attempt {
     let GetExpectedTargetInfo = GetExpectedTargetInfo cwd
     let GetExpectedResults = GetExpectedResults cwd
 
-    let LogTime = 
-        //my($dir) = $main::root;
-        //open(TIMELOGFILE, ">>$dir\\timing.log");
-        let logFile = __SOURCE_DIRECTORY__ ++ "timing.log"
-        LogTime logFile
+    //my($dir) = $main::root;
+    //open(TIMELOGFILE, ">>$dir\\timing.log");
+    ignore "useless, done by nunit"
 
     // # run.pl
     
@@ -1057,11 +1075,39 @@ let runplImpl cmds cwd initialEnvVars = attempt {
     let VBC_PIPE = envOrDefault "VBC_PIPE" VBC_NAME
     envSet "VBC_PIPE" VBC_PIPE
 
-    let skipIfContainsRedirection varName (exe, cmdArgs: string) = attempt {
-        if cmdArgs.Contains(">") then
-            return! NUnitConf.skip (sprintf "output/error redirection is not implemented. Var %s => '%s %s'" varName exe cmdArgs)
-        }
+    return { compileOnlyRun = compileOnlyRun
+             VerifyStrongName = VerifyStrongName
+             SCFLAGS = SCFLAGS
+             TAILFLAGS = TAILFLAGS
+             ISCFLAGS = ISCFLAGS
+             IFSIFLAGS = IFSIFLAGS
+             FSC_PIPE = FSC_PIPE
+             FSI_PIPE = FSI_PIPE
+             FSI32_PIPE = FSI32_PIPE
+             CSC_PIPE = CSC_PIPE
+             VBC_PIPE = VBC_PIPE
+             envVars = envVars }
+    }
+
         
+let runplImpl cmds cwd (cfg: RunPlConfig) = attempt {
+
+    let mutable envVars = cfg.envVars
+
+    let env key = envVars |> Map.tryFind key
+    let envOrDefault key def = env key |> Option.fold (fun s t -> t) def
+    let envOrFail key = env key |> function Some x -> x | None -> failwithf "environment variable '%s' required " key
+    
+    let unlink = Commands.rm cwd
+    let fileExists = Commands.fileExists cwd
+    let getfullpath = Commands.getfullpath cwd
+    
+    //shadow some function, to have same argument as perl script
+    let RunCommand = RunCommand cwd envVars
+    let RunCompilerCommand = RunCompilerCommand cwd envVars
+    let GetExpectedTargetInfo = GetExpectedTargetInfo cwd
+    let GetExpectedResults = GetExpectedResults cwd
+
     
     //#
     //# Run pre-command if any
@@ -1073,7 +1119,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
             match cmds |> Map.tryFind envPRECMD with
             | Some cmdImpl ->
                 printfn "using override for '%s'" envPRECMD
-                cmdImpl cwd envVars
+                cmdImpl cwd cfg
             | None -> attempt {
                 // # Do the magic to replace known tokens in the
                 // # PRECMD/POSTCMD: for now you can write in env.lst
@@ -1084,17 +1130,17 @@ let runplImpl cmds cwd initialEnvVars = attempt {
                 let pre =
                     envPRECMD
                     //s/^\$FSC_PIPE/$FSC_PIPE/;
-                    |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
+                    |> stringReplace "\\$FSC_PIPE" cfg.FSC_PIPE 
                     //s/^\$FSI_PIPE/$FSI_PIPE/;
-                    |> stringReplace "\\$FSI_PIPE" FSI_PIPE
+                    |> stringReplace "\\$FSI_PIPE" cfg.FSI_PIPE
                     //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                    |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE
+                    |> stringReplace "\\$FSI32_PIPE" cfg.FSI32_PIPE
                     //s/\$ISCFLAGS/$ISCFLAGS/;
-                    |> stringReplace "\\$ISCFLAGS" ISCFLAGS
+                    |> stringReplace "\\$ISCFLAGS" cfg.ISCFLAGS
                     //s/^\$CSC_PIPE/$CSC_PIPE/;
-                    |> stringReplace "\\$CSC_PIPE" CSC_PIPE
+                    |> stringReplace "\\$CSC_PIPE" cfg.CSC_PIPE
                     //s/^\$VBC_PIPE/$VBC_PIPE/;
-                    |> stringReplace "\\$VBC_PIPE" VBC_PIPE
+                    |> stringReplace "\\$VBC_PIPE" cfg.VBC_PIPE
 
                 let exe, cmdArgs = pre |> splitAtFirst Char.IsWhiteSpace
                 let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
@@ -1136,7 +1182,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
         match env "FSIMODE" with
         | None | Some "" ->
             //$compiler_command = "$FSC_PIPE $ISCFLAGS $SCFLAGS $Sources $TAILFLAGS";
-            return FSC_PIPE, [ Some ISCFLAGS; SCFLAGS; Some sources; TAILFLAGS ] |> concatEmpty
+            return cfg.FSC_PIPE, [ Some cfg.ISCFLAGS; cfg.SCFLAGS; Some sources; cfg.TAILFLAGS ] |> concatEmpty
         //} else {
         | Some _ ->
             // # don't use hosted compiler for FSI tests
@@ -1150,15 +1196,15 @@ let runplImpl cmds cwd initialEnvVars = attempt {
             //} elsif($ENV{FSIMODE} eq "EXEC") {
             | Some "EXEC" ->
                 //$compiler_command = "$FSI_PIPE --exec $IFSIFLAGS $SCFLAGS $Sources $TAILFLAGS";
-                return FSI_PIPE, [ Some "--exec"; Some IFSIFLAGS; SCFLAGS; Some sources; TAILFLAGS ] |> concatEmpty 
+                return cfg.FSI_PIPE, [ Some "--exec"; Some cfg.IFSIFLAGS; cfg.SCFLAGS; Some sources; cfg.TAILFLAGS ] |> concatEmpty 
             //} elsif($ENV{FSIMODE} eq "FEED") {
             | Some "FEED" ->
                 //$compiler_command = "$FSI_PIPE $IFSIFLAGS $SCFLAGS $Sources $TAILFLAGS";
-                return FSI_PIPE, [ Some IFSIFLAGS; SCFLAGS; Some sources; TAILFLAGS ] |> concatEmpty
+                return cfg.FSI_PIPE, [ Some cfg.IFSIFLAGS; cfg.SCFLAGS; Some sources; cfg.TAILFLAGS ] |> concatEmpty
             //} else { # default to FEED
             | _ ->
                 //$compiler_command = "$FSI_PIPE $IFSIFLAGS $SCFLAGS $Sources $TAILFLAGS";
-                return FSI_PIPE, [ Some IFSIFLAGS; SCFLAGS; Some sources; TAILFLAGS ] |> concatEmpty
+                return cfg.FSI_PIPE, [ Some cfg.IFSIFLAGS; cfg.SCFLAGS; Some sources; cfg.TAILFLAGS ] |> concatEmpty
             //}
         //}
         }
@@ -1251,7 +1297,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
             NUnitConf.genericError (sprintf "expect not match failed: %A" matched)
     
     //my ($targetName, $targetType) = &GetExpectedTargetInfo($Sources, $SCFLAGS);
-    let! targetName, targetType = GetExpectedTargetInfo sources (SCFLAGS |> function Some s -> s | None -> "")
+    let! targetName, targetType = GetExpectedTargetInfo sources (cfg.SCFLAGS |> function Some s -> s | None -> "")
     
     //if ($ExitCode && ($Type < TEST_SEEK_ERROR)) {
     do! if ((exitCode <> 0) && (Type < TEST_SEEK_ERROR)) then
@@ -1398,9 +1444,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
             let DeltaTime = StartTime.Elapsed
         
             //LogTime($Sources, $CompileTime, $DeltaTime) if ($TimeTests);
-            do if TimeTests then
-                  LogTime sources CompileTime DeltaTime
-        
+            ignore "useless, done by nunit"
     
             //my $check_output = scalar(@{$Output});
 
@@ -1481,7 +1525,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
             }
 
             //if ($VerifyStrongName && $targetType <= TARGET_MOD) {
-            if VerifyStrongName && (targetType <= TARGET_MOD) then
+            if cfg.VerifyStrongName && (targetType <= TARGET_MOD) then
                 return! verifyStrongName()
             }
         //}
@@ -1492,7 +1536,7 @@ let runplImpl cmds cwd initialEnvVars = attempt {
         // # If this is a compile only run, call post command and exit
         //if ($compileOnlyRun) {
         return!
-            if compileOnlyRun then
+            if cfg.compileOnlyRun then
                 Success
             else attempt {
                 //if ($targetType == TARGET_EXE) {
@@ -1527,9 +1571,11 @@ let runplImpl cmds cwd initialEnvVars = attempt {
 
 
 let runpl cmds cwd initialEnvVars = attempt {
-    do! runplImpl cmds cwd initialEnvVars
+    let! cfg = readRunplConfig cwd initialEnvVars
+
+    do! runplImpl cmds cwd cfg
 
     //test is ok, let's check runExit
-    return! RunExit cmds cwd initialEnvVars
+    return! RunExit cmds cwd cfg
 
     }

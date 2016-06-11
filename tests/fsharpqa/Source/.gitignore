@@ -3,6 +3,7 @@
 *.exe
 *.dll
 *.pdb
+*.il
 
 # test specific
 
@@ -20,3 +21,5 @@ Stress/2766.fs
 Stress/SeqExprCapacity.fs
 
 CompilerOptions/fsc/subsystemversion/dummy.netmodule
+
+CompilerOptions/fsi/help/help.txt
