@@ -30,7 +30,7 @@ let runplWithCmds cmds = attempt {
     printfn "All env var:"
     allVars |> Map.iter (printfn "%s=%s")
 
-    do! RunPl.runpl dir allVars 
+    do! RunPl.runpl cmds dir allVars 
 
     }
 

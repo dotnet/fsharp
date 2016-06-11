@@ -729,7 +729,7 @@ let LogTime logFile src (compileTime: TimeSpan) (runTime: TimeSpan) =
 // # RunExit -- Exits the script with the specified value.  
 // # 
 //sub RunExit {
-let RunExit envVars = attempt {
+let RunExit cmds cwd envVars = attempt {
     //my (
     //    $exitVal,		# Our exit value
     //    $cmtStr,		# Comment string to print before exit
@@ -758,46 +758,51 @@ let RunExit envVars = attempt {
     //if (defined($ENV{POSTCMD})) {
     do! match env "POSTCMD" with
         | None -> Success
-        | Some envPOSTCMD -> attempt {
-            // # Do the magic to replace known tokens in the
-            // # PRECMD/POSTCMD: for now you can write in env.lst
-            // # something like:
-            // #    SOURCE=foo.fs POSTCMD="\$FSC_PIPE bar.fs"
-            // # and it will expanded into $FSC_PIPE before invoking it
-            //$_ = $ENV{POSTCMD};
-            (*
-            let post =
-                envPOSTCMD
-                //s/^\$FSC_PIPE/$FSC_PIPE/;
-                |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
-                //s/^\$FSI_PIPE/$FSI_PIPE/;
-                |> stringReplace "\\$FSI_PIPE" FSI_PIPE 
-                //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE 
-                //s/^\$CSC_PIPE/$CSC_PIPE/;
-                |> stringReplace "\\$CSC_PIPE" CSC_PIPE 
-                //s/^\$VBC_PIPE/$VBC_PIPE/;
-                |> stringReplace "\\$VBC_PIPE" VBC_PIPE
+        | Some envPOSTCMD ->
+            match cmds |> Map.tryFind envPOSTCMD with
+            | Some cmdImpl ->
+                printfn "using override for '%s'" envPOSTCMD
+                cmdImpl cwd envVars
+            | None -> attempt {
+                // # Do the magic to replace known tokens in the
+                // # PRECMD/POSTCMD: for now you can write in env.lst
+                // # something like:
+                // #    SOURCE=foo.fs POSTCMD="\$FSC_PIPE bar.fs"
+                // # and it will expanded into $FSC_PIPE before invoking it
+                //$_ = $ENV{POSTCMD};
+                (*
+                let post =
+                    envPOSTCMD
+                    //s/^\$FSC_PIPE/$FSC_PIPE/;
+                    |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
+                    //s/^\$FSI_PIPE/$FSI_PIPE/;
+                    |> stringReplace "\\$FSI_PIPE" FSI_PIPE 
+                    //s/^\$FSI32_PIPE/$FSI32_PIPE/;
+                    |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE 
+                    //s/^\$CSC_PIPE/$CSC_PIPE/;
+                    |> stringReplace "\\$CSC_PIPE" CSC_PIPE 
+                    //s/^\$VBC_PIPE/$VBC_PIPE/;
+                    |> stringReplace "\\$VBC_PIPE" VBC_PIPE
             
-            let exe, cmdArgs = post |> splitAtFirst Char.IsWhiteSpace
-            let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
+                let exe, cmdArgs = post |> splitAtFirst Char.IsWhiteSpace
+                let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
 
-            //do! skipIfContainsRedirection "POSTCMD" (exe, cmdArgsString)
+                //do! skipIfContainsRedirection "POSTCMD" (exe, cmdArgsString)
 
-            //if (RunCommand("POSTCMD",$_,1)){
-            //     $exitVal = TEST_FAIL;
-            //     $test_result = TEST_FAIL;
-            //     $exit_str .= "Fail to execute the POSTCMD. ";
-            //}
-            //let! e,o = RunCommand "POSTCMD" (exe, cmdArgsString) true
-            //if e <> 0
-            //then return! NUnitConf.genericError (sprintf "Fail to execute the POSTCMD %s" o)
-            *)
+                //if (RunCommand("POSTCMD",$_,1)){
+                //     $exitVal = TEST_FAIL;
+                //     $test_result = TEST_FAIL;
+                //     $exit_str .= "Fail to execute the POSTCMD. ";
+                //}
+                //let! e,o = RunCommand "POSTCMD" (exe, cmdArgsString) true
+                //if e <> 0
+                //then return! NUnitConf.genericError (sprintf "Fail to execute the POSTCMD %s" o)
+                *)
 
-            TODO "implement POSTCMD"
-            return! NUnitConf.skip (sprintf "POSTCMD not implemented: %s" envPOSTCMD)
+                TODO "implement POSTCMD"
+                return! NUnitConf.skip (sprintf "POSTCMD not implemented: %s" envPOSTCMD)
 
-            }
+                }
     //}
     
     //if (exists($ENV{SKIPTEST})) {
@@ -873,7 +878,7 @@ let GetCurrentPlatform () =
     ignore "useless, it's calculated from another function"      
 
 
-let runplImpl cwd initialEnvVars = attempt {
+let runplImpl cmds cwd initialEnvVars = attempt {
 
     let mutable envVars = initialEnvVars
 
@@ -1064,38 +1069,43 @@ let runplImpl cwd initialEnvVars = attempt {
     //if (exists($ENV{PRECMD})) {
     do! match env "PRECMD" with
         | None -> Success
-        | Some envPRECMD -> attempt {
-            // # Do the magic to replace known tokens in the
-            // # PRECMD/POSTCMD: for now you can write in env.lst
-            // # something like:
-            // #    SOURCE=foo.fs PRECMD="\$FSC_PIPE bar.fs"
-            // # and it will expanded into $FSC_PIPE before invoking it
-            //$_ = $ENV{PRECMD};
-            let pre =
-                envPRECMD
-                //s/^\$FSC_PIPE/$FSC_PIPE/;
-                |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
-                //s/^\$FSI_PIPE/$FSI_PIPE/;
-                |> stringReplace "\\$FSI_PIPE" FSI_PIPE
-                //s/^\$FSI32_PIPE/$FSI32_PIPE/;
-                |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE
-                //s/\$ISCFLAGS/$ISCFLAGS/;
-                |> stringReplace "\\$ISCFLAGS" ISCFLAGS
-                //s/^\$CSC_PIPE/$CSC_PIPE/;
-                |> stringReplace "\\$CSC_PIPE" CSC_PIPE
-                //s/^\$VBC_PIPE/$VBC_PIPE/;
-                |> stringReplace "\\$VBC_PIPE" VBC_PIPE
+        | Some envPRECMD -> 
+            match cmds |> Map.tryFind envPRECMD with
+            | Some cmdImpl ->
+                printfn "using override for '%s'" envPRECMD
+                cmdImpl cwd envVars
+            | None -> attempt {
+                // # Do the magic to replace known tokens in the
+                // # PRECMD/POSTCMD: for now you can write in env.lst
+                // # something like:
+                // #    SOURCE=foo.fs PRECMD="\$FSC_PIPE bar.fs"
+                // # and it will expanded into $FSC_PIPE before invoking it
+                //$_ = $ENV{PRECMD};
+                let pre =
+                    envPRECMD
+                    //s/^\$FSC_PIPE/$FSC_PIPE/;
+                    |> stringReplace "\\$FSC_PIPE" FSC_PIPE 
+                    //s/^\$FSI_PIPE/$FSI_PIPE/;
+                    |> stringReplace "\\$FSI_PIPE" FSI_PIPE
+                    //s/^\$FSI32_PIPE/$FSI32_PIPE/;
+                    |> stringReplace "\\$FSI32_PIPE" FSI32_PIPE
+                    //s/\$ISCFLAGS/$ISCFLAGS/;
+                    |> stringReplace "\\$ISCFLAGS" ISCFLAGS
+                    //s/^\$CSC_PIPE/$CSC_PIPE/;
+                    |> stringReplace "\\$CSC_PIPE" CSC_PIPE
+                    //s/^\$VBC_PIPE/$VBC_PIPE/;
+                    |> stringReplace "\\$VBC_PIPE" VBC_PIPE
 
-            let exe, cmdArgs = pre |> splitAtFirst Char.IsWhiteSpace
-            let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
+                let exe, cmdArgs = pre |> splitAtFirst Char.IsWhiteSpace
+                let cmdArgsString = cmdArgs |> function Some s -> s | None -> ""
 
-            do! skipIfContainsRedirection "PRECMD" (exe, cmdArgsString)
+                do! skipIfContainsRedirection "PRECMD" (exe, cmdArgsString)
 
-            let! e,o = RunCommand "PRECMD" (exe, cmdArgsString) true
-            //RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
-            if e <> 0
-            then return! NUnitConf.genericError (sprintf "Fail to execute the PRECMD %s" o)
-            }
+                let! e,o = RunCommand "PRECMD" (exe, cmdArgsString) true
+                //RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
+                if e <> 0
+                then return! NUnitConf.genericError (sprintf "Fail to execute the PRECMD %s" o)
+                }
         //}
     
     //# Normal testing begins 
@@ -1516,10 +1526,10 @@ let runplImpl cwd initialEnvVars = attempt {
     }
 
 
-let runpl cwd initialEnvVars = attempt {
-    do! runplImpl cwd initialEnvVars
+let runpl cmds cwd initialEnvVars = attempt {
+    do! runplImpl cmds cwd initialEnvVars
 
     //test is ok, let's check runExit
-    return! RunExit initialEnvVars
+    return! RunExit cmds cwd initialEnvVars
 
     }

@@ -96,15 +96,38 @@ module pdb =
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/pdb")>]
     let pdb () = check(attempt {
         
-        let precmdText = "IF EXIST pdb01x.pdb  DEL pdb01x.pdb"
-        let ``IF EXIST pdb01x.pdb  DEL pdb01x.pdb`` workDir envVars = attempt {
+        let ``IF EXIST {file}  DEL {file}`` fileName workDir envVars = attempt {
             let fileExists = Commands.fileExists workDir >> Option.isSome
             let del = Commands.rm workDir
 
-            if fileExists "pdb01x.pdb" then del "pdb01x.pdb"
+            if fileExists fileName then del fileName
             }
 
-        do! [ "IF EXIST pdb01x.pdb  DEL pdb01x.pdb", ``IF EXIST pdb01x.pdb  DEL pdb01x.pdb`` ]
+        let ``IF     EXIST {file} EXIT 1`` fileName workDir envVars = attempt {
+            let fileExists = Commands.fileExists workDir >> Option.isSome
+
+            return! 
+                if fileExists fileName 
+                then NUnitConf.genericError (sprintf "Found not expected file '%s'" fileName)
+                else Success
+            }
+
+        let ``IF NOT EXIST {file} EXIT 1`` fileName workDir envVars = attempt {
+            let fileExists = Commands.fileExists workDir >> Option.isSome
+
+            return!
+                if not (fileExists fileName)
+                then NUnitConf.genericError (sprintf "Not found expected file '%s'" fileName)
+                else Success
+            }
+
+        do! [ "IF EXIST pdb01.pdb DEL pdb01.pdb",    ``IF EXIST {file}  DEL {file}`` "pdb01.pdb"
+              "IF EXIST pdb01.pdb   DEL pdb01.pdb",  ``IF EXIST {file}  DEL {file}`` "pdb01.pdb"
+              "IF EXIST pdb01x.pdb  DEL pdb01x.pdb", ``IF EXIST {file}  DEL {file}`` "pdb01x.pdb"
+              "IF     EXIST pdb01x.pdb EXIT 1",      ``IF     EXIST {file} EXIT 1`` "pdb01x.pdb"
+              "IF     EXIST pdb01.pdb EXIT 1",       ``IF     EXIST {file} EXIT 1`` "pdb01.pdb"
+              "IF NOT EXIST pdb01.pdb EXIT 1",       ``IF NOT EXIST {file} EXIT 1`` "pdb01.pdb"
+              "IF NOT EXIST pdb01x.pdb EXIT 1",      ``IF NOT EXIST {file} EXIT 1`` "pdb01x.pdb" ]
             |> Map.ofList
             |> runplWithCmds
 
