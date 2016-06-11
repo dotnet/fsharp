@@ -1573,6 +1573,13 @@ let runplImpl cmds cwd (cfg: RunPlConfig) = attempt {
 let runpl cmds cwd initialEnvVars = attempt {
     let! cfg = readRunplConfig cwd initialEnvVars
 
+    let cfg2 = TestConfig.config cfg.envVars
+
+    let cfg = 
+        { cfg with 
+            envVars = cfg.envVars 
+                      |> Map.add "ILDASM" cfg2.ILDASM }
+
     do! runplImpl cmds cwd cfg
 
     //test is ok, let's check runExit
