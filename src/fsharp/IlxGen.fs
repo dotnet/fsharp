@@ -79,12 +79,8 @@ let ChooseParamNames fieldNamesAndTypes =
 let markup s = s |> Seq.mapi (fun i x -> i,x) 
 
 // Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs 
-let rec CheckCodeDoesSomething code = 
-    match code with 
-    | ILBasicBlock bb -> Array.fold (fun x i -> x || match i with (AI_ldnull | AI_nop | AI_pop) | I_ret |  I_seqpoint _ -> false | _ -> true) false bb.Instructions
-    | GroupBlock (_,codes) -> List.exists CheckCodeDoesSomething codes
-    | RestrictBlock (_,code) -> CheckCodeDoesSomething code
-    | TryBlock _ -> true 
+let rec CheckCodeDoesSomething (code: ILCode) = 
+    code.Instrs |> Array.exists (function AI_ldnull | AI_nop | AI_pop | I_ret |  I_seqpoint _ -> false | _ -> true) 
 
 let ChooseFreeVarNames takenNames ts =
     let tns = List.map (fun t -> (t,None)) ts
@@ -1295,10 +1291,10 @@ type CodeGenBuffer(m:range,
     let codeLabelToPC : Dictionary<ILCodeLabel,int> = new Dictionary<_,_>(10)
     let codeLabelToCodeLabel : Dictionary<ILCodeLabel,ILCodeLabel> = new Dictionary<_,_>(10)
     
-    let rec computeCodeLabelToPC n lbl = 
+    let rec lab2pc n lbl = 
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph",m))
         if codeLabelToCodeLabel.ContainsKey lbl then 
-            computeCodeLabelToPC (n+1) codeLabelToCodeLabel.[lbl]
+            lab2pc (n+1) codeLabelToCodeLabel.[lbl]
         else
            codeLabelToPC.[lbl] 
     
@@ -1463,7 +1459,8 @@ type CodeGenBuffer(m:range,
                 instrs
         ResizeArray.toList locals ,
         maxStack,
-        (computeCodeLabelToPC 0),
+        (Dictionary.ofList [ for kvp in codeLabelToPC -> (kvp.Key, lab2pc 0 kvp.Key) 
+                             for kvp in codeLabelToCodeLabel -> (kvp.Key, lab2pc 0 kvp.Key) ] ),
         instrs,
         ResizeArray.toList exnSpecs,
         isSome seqpoint
@@ -1560,15 +1557,15 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
                                      liveLocals=IntMap.empty();  
                                      innerVals = innerVals};
 
-    let locals,maxStack,computeCodeLabelToPC,code,exnSpecs,hasSequencePoints = cgbuf.Close()
+    let locals,maxStack,lab2pc,code,exnSpecs,hasSequencePoints = cgbuf.Close()
     
-    let localDebugSpecs = 
+    let localDebugSpecs : ILLocalDebugInfo list = 
         locals
         |> List.mapi (fun i (nms,_) -> List.map (fun nm -> (i,nm)) nms)
         |> List.concat
         |> List.map (fun (i,(nm,(start,finish))) -> 
-            { locRange=(start.CodeLabel, finish.CodeLabel);
-              locInfos= [{ LocalIndex=i; LocalName=nm }] })
+            { Range=(start.CodeLabel, finish.CodeLabel);
+              DebugMappings= [{ LocalIndex=i; LocalName=nm }] })
 
     let ilLocals =
         locals
@@ -1586,27 +1583,19 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
 
     (ilLocals, 
      maxStack,
-     computeCodeLabelToPC,
+     lab2pc,
      code,
      exnSpecs,
      localDebugSpecs,
      hasSequencePoints)
 
 let CodeGenMethod cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m) = 
-    (* Codegen the method. REVIEW: change this to generate the AbsIL code tree directly... *)
 
-    let locals,maxStack,computeCodeLabelToPC,instrs,exns,localDebugSpecs,hasSequencePoints = 
+    let locals,maxStack,lab2pc,instrs,exns,localDebugSpecs,hasSequencePoints = 
       CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m)
-
-    let dump() = 
-       instrs |> Array.iteri (fun i instr -> dprintf "%s: %d: %A\n" methodName i instr);
-   
-    let lab2pc lbl = try computeCodeLabelToPC lbl with _ ->  errorR(Error(FSComp.SR.ilLabelNotFound(formatCodeLabel lbl),m)); dump(); 676767
 
     let code =  IL.buildILCode methodName lab2pc instrs exns localDebugSpecs
     
-    let code = IL.checkILCode code
-
     // Attach a source range to the method. Only do this is it has some sequence points, because .NET 2.0/3.5 
     // ILDASM has issues if you emit symbols with a source range but without any sequence points
     let sourceRange = if hasSequencePoints then GenPossibleILSourceMarker cenv m else None
@@ -2759,8 +2748,8 @@ and GenTryCatch cenv cgbuf eenv (e1,vf:Val,ef,vh:Val,eh,m,resty,spTry,spWith) se
                ILExceptionClause.TypeCatch(cenv.g.ilg.typ_Object, handlerMarks)
 
        cgbuf.EmitExceptionClause
-         { exnClauses = [ seh ];
-           exnRange= tryMarks } ;
+         { Clause = seh;
+           Range= tryMarks } ;
 
        CG.SetMarkToHere cgbuf afterHandler;
        CG.SetStack cgbuf [];
@@ -2795,16 +2784,16 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr,handlerExpr,m,resty,spTry,spFinally)
        let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
        let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
        cgbuf.EmitExceptionClause
-         { exnClauses = [ ILExceptionClause.Finally(handlerMarks) ];
-           exnRange   = tryMarks } ;
+         { Clause = ILExceptionClause.Finally(handlerMarks)
+           Range   = tryMarks } 
 
-       CG.SetMarkToHere cgbuf afterHandler;
-       CG.SetStack cgbuf [];
+       CG.SetMarkToHere cgbuf afterHandler
+       CG.SetStack cgbuf []
 
        // Restore the stack and load the result 
-       cgbuf.EmitStartOfHiddenCode();
-       EmitRestoreStack cgbuf stack; 
-       EmitGetLocal cgbuf ilResultTy whereToSave;
+       cgbuf.EmitStartOfHiddenCode()
+       EmitRestoreStack cgbuf stack 
+       EmitGetLocal cgbuf ilResultTy whereToSave
        GenSequel cenv eenv.cloc cgbuf sequel
    ) 
 
@@ -2848,7 +2837,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
         EmitSetLocal cgbuf finishIdx
         EmitGetLocal cgbuf cenv.g.ilg.typ_int32 finishIdx
         GenGetLocalVal cenv cgbuf eenvinner e2.Range v None;        
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp ((if isUp then BI_blt else BI_bgt),finish.CodeLabel,inner.CodeLabel));
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp ((if isUp then BI_blt else BI_bgt),finish.CodeLabel));
     
     else
         CG.EmitInstr cgbuf (pop 0) Push0 (I_br test.CodeLabel);
@@ -2873,7 +2862,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     CG.EmitSeqPoint cgbuf  e2.Range;
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None;
     let cmp = match dir with FSharpForLoopUp | FSharpForLoopDown -> BI_bne_un | CSharpForLoopUp -> BI_blt
-    let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel,finish.CodeLabel) ]));
+    let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel) ]));
 
     if isFSharpStyle then 
         EmitGetLocal cgbuf cenv.g.ilg.typ_int32  finishIdx
@@ -2896,7 +2885,6 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     
 and GenWhileLoop cenv cgbuf eenv (spWhile,e1,e2,m) sequel =
     let finish = CG.GenerateDelayMark cgbuf "while_finish" 
-    let inner = CG.GenerateDelayMark cgbuf "while_inner" 
     let startTest = CG.GenerateMark cgbuf "startTest"
     
     match spWhile with 
@@ -2904,8 +2892,7 @@ and GenWhileLoop cenv cgbuf eenv (spWhile,e1,e2,m) sequel =
     | NoSequencePointAtWhileLoop -> ()
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do' 
-    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse,finish.CodeLabel,inner.CodeLabel) ]));
-    CG.SetMarkToHere cgbuf inner; 
+    GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse,finish.CodeLabel) ]));
     
     GenExpr cenv cgbuf eenv SPAlways e2 (DiscardThen (Br startTest));
     CG.SetMarkToHere cgbuf finish; 
@@ -3000,11 +2987,11 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa) 
     | ([ AI_ceq ],
        [arg1; Expr.Const((Const.Bool false | Const.SByte 0y| Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy| Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL),_,_) ], 
-       CmpThenBrOrContinue(1, [I_brcmp (((BI_brfalse | BI_brtrue) as bi) , label1,label2) ]),
+       CmpThenBrOrContinue(1, [I_brcmp (((BI_brfalse | BI_brtrue) as bi),label1) ]),
        _) ->
 
             let bi = match bi with BI_brtrue -> BI_brfalse | _ -> BI_brtrue
-            GenExpr cenv cgbuf eenv SPSuppress arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi, label1,label2) ]))
+            GenExpr cenv cgbuf eenv SPSuppress arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi,label1) ]))
 
     // Query; when do we get a 'ret' in IL assembly code?
     | [ I_ret ], [arg1],sequel,[_ilRetTy] -> 
@@ -3034,8 +3021,7 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
             let after1 = CG.GenerateDelayMark cgbuf ("fake_join")
             let after2 = CG.GenerateDelayMark cgbuf ("fake_join")
             let after3 = CG.GenerateDelayMark cgbuf ("fake_join")
-            CG.EmitInstrs cgbuf (pop 0) Push0 [mkLdcInt32 0; 
-                                     I_brcmp (BI_brfalse,after2.CodeLabel,after1.CodeLabel); ];
+            CG.EmitInstrs cgbuf (pop 0) Push0 [mkLdcInt32 0; I_brcmp (BI_brfalse,after2.CodeLabel); ];
 
             CG.SetMarkToHere cgbuf after1;
             CG.EmitInstrs cgbuf (pop 0) (Push [ilRetTy]) [AI_ldnull;  I_unbox_any ilRetTy; I_br after3.CodeLabel ];
@@ -3056,29 +3042,29 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
 
       // NOTE: THESE ARE NOT VALID ON FLOATING POINT DUE TO NaN.  Hence INLINE ASM ON FP. MUST BE CAREFULLY WRITTEN  
 
-      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge,label1,label2));
-      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble,label1, label2));
-      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge_un,label1,label2));
-      | [ AI_cgt_un ], CmpThenBrOrContinue(1, [I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble_un,label1, label2));
-      | [ AI_ceq ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1,label2) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bne_un,label1, label2));
+      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge,label1));
+      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble,label1));
+      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge_un,label1));
+      | [ AI_cgt_un ], CmpThenBrOrContinue(1, [I_brcmp (BI_brfalse, label1) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble_un,label1));
+      | [ AI_ceq ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brfalse, label1) ]) when not (anyfpType (tyOfExpr g args.Head)) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bne_un,label1));
         
       // THESE ARE VALID ON FP w.r.t. NaN 
         
-      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt,label1, label2));
-      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt,label1, label2));
-      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt_un,label1, label2));
-      | [ AI_cgt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1,label2) ]) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt_un,label1, label2));
-      | [ AI_ceq ], CmpThenBrOrContinue(1, [ I_brcmp (BI_brtrue, label1,label2) ]) ->
-        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_beq,label1, label2));
+      | [ AI_clt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1) ]) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt,label1));
+      | [ AI_cgt ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1) ]) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt,label1));
+      | [ AI_clt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1) ]) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt_un,label1));
+      | [ AI_cgt_un ], CmpThenBrOrContinue(1,[ I_brcmp (BI_brtrue, label1) ]) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt_un,label1));
+      | [ AI_ceq ], CmpThenBrOrContinue(1, [ I_brcmp (BI_brtrue, label1) ]) ->
+        CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_beq,label1));
       | _ -> 
         // Failing that, generate the real IL leaving value(s) on the stack 
         CG.EmitInstrs cgbuf (pop args.Length) (Push ilReturnTys) ilAfterInst;
@@ -3318,7 +3304,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
 // Generate object expressions as ILX "closures"
 //-------------------------------------------------------------------------- 
 
-and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) = 
+and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
     let inFlag2,outFlag2,optionalFlag2,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
     { Name=nm;
@@ -4139,7 +4125,7 @@ and GenMatch cenv cgbuf eenv (spBind,_exprm,tree,targets,m,ty) sequel =
 
 // Accumulate the decision graph as we go
 and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel = 
-    let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf (CG.GenerateDelayMark cgbuf "start_dtree") stackAtTargets eenv tree targets repeatSP (IntMap.empty()) sequel
+    let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets repeatSP (IntMap.empty()) sequel
     GenPostponedDecisionTreeTargets cenv cgbuf stackAtTargets targetInfos sequel
     
 and TryFindTargetInfo targetInfos n =  
@@ -4147,11 +4133,15 @@ and TryFindTargetInfo targetInfos n =
     | Some (targetInfo,_) -> Some targetInfo
     | None -> None
 
-and GenDecisionTreeAndTargetsInner cenv cgbuf inplab stackAtTargets eenv tree targets repeatSP targetInfos sequel = 
+/// When inplabOpt is None, we are assuming a branch or fallthrough to the current code location
+///
+/// When inplabOpt is "Some inplab", we are assuming an existing branch to "inplab" and can optionally
+/// set inplab to point to another location if no codegen is required. 
+and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets repeatSP targetInfos sequel = 
     CG.SetStack cgbuf stackAtTargets;              // Set the expected initial stack.
     match tree with 
     | TDBind(bind,rest) -> 
-       CG.SetMarkToHere cgbuf inplab;
+       match inplabOpt with Some inplab -> CG.SetMarkToHere cgbuf inplab | None -> ()
        let startScope,endScope as scopeMarks = StartDelayedLocalScope "dtreeBind" cgbuf
        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
        let sp = GenSequencePointForBind cenv cgbuf eenv bind
@@ -4161,32 +4151,32 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplab stackAtTargets eenv tree ta
        // we effectively lose an EndLocalScope for all dtrees that go to the same target 
        // So we just pretend that the variable goes out of scope here. 
        CG.SetMarkToHere cgbuf endScope;
-       let bodyLabel = CG.GenerateDelayMark cgbuf "decisionTreeBindBody"
-       CG.EmitInstr cgbuf (pop 0) Push0 (I_br bodyLabel.CodeLabel); 
-       GenDecisionTreeAndTargetsInner cenv cgbuf bodyLabel stackAtTargets eenv rest targets repeatSP targetInfos sequel
+       GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv rest targets repeatSP targetInfos sequel
 
     | TDSuccess (es,targetIdx) ->  
-       GenDecisionTreeSuccess cenv cgbuf inplab stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel 
+       GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel 
 
     | TDSwitch(e, cases, dflt,m)  -> 
-       GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases dflt m targets repeatSP targetInfos sequel 
+       GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets repeatSP targetInfos sequel 
 
 and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree";
     targets.[n]
 
-and GenDecisionTreeSuccess cenv cgbuf inplab stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel = 
+and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets repeatSP targetInfos sequel = 
     let (TTarget(vs,successExpr,spTarget)) = GetTarget targets targetIdx
     match TryFindTargetInfo targetInfos targetIdx with
-    | Some (_,targetMarkAfterBinds,eenvAtTarget,_,_,_,_,_,_,_) ->
+    | Some (_,targetMarkAfterBinds:Mark,eenvAtTarget,_,_,_,_,_,_,_) ->
 
         // If not binding anything we can go directly to the targetMarkAfterBinds point 
         // This is useful to avoid lots of branches e.g. in match A | B | C -> e 
         // In this case each case will just go straight to "e" 
         if FlatList.isEmpty vs then 
-            CG.SetMark cgbuf inplab targetMarkAfterBinds;
+            match inplabOpt with 
+            | None -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel); 
+            | Some inplab -> CG.SetMark cgbuf inplab targetMarkAfterBinds;
         else 
-            CG.SetMarkToHere cgbuf inplab;
+            match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab;
             repeatSP();
             // It would be better not to emit any expressions here, and instead push these assignments into the postponed target
             // However not all targets are currently postponed (we only postpone in debug code), pending further testing of the performance
@@ -4199,7 +4189,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplab stackAtTargets eenv es targetIdx ta
 
     | None -> 
 
-        CG.SetMarkToHere cgbuf inplab;
+        match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab;
         let targetMarkBeforeBinds = CG.GenerateDelayMark cgbuf "targetBeforeBinds"
         let targetMarkAfterBinds = CG.GenerateDelayMark cgbuf "targetAfterBinds"
         let startScope,endScope as scopeMarks = StartDelayedLocalScope "targetBinds" cgbuf
@@ -4249,9 +4239,9 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBefore
     GenExpr cenv cgbuf eenvAtTarget spExpr successExpr (EndLocalScope(sequel,endScope));
 
 
-and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel = 
+and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets repeatSP targetInfos sequel = 
     let m = e.Range
-    CG.SetMarkToHere cgbuf inplab;
+    match inplabOpt with None -> () | Some inplab -> CG.SetMarkToHere cgbuf inplab;
 
     repeatSP();
     match cases with 
@@ -4274,10 +4264,6 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
 
       | _ ->  
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
-        let defaultLabel = 
-            match defaultTargetOpt with 
-            | None -> List.head caseLabels 
-            | Some _ -> CG.GenerateDelayMark cgbuf "switch_dflt"
         let firstDiscrim =  cases.Head.Discriminator
         match firstDiscrim with 
         // Iterated tests, e.g. exception constructors, nulltests, typetests and active patterns.
@@ -4304,8 +4290,8 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
                   GenExpr cenv cgbuf eenv SPSuppress e Continue;
                   BI_brtrue
               | _ -> failwith "internal error: GenDecisionTreeSwitch"
-            CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi,(List.head caseLabels).CodeLabel,defaultLabel.CodeLabel));
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos caseLabels cases defaultTargetOpt defaultLabel sequel
+            CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi,(List.head caseLabels).CodeLabel));
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
         | Test.ActivePatternCase _ -> error(InternalError("internal error in codegen: Test.ActivePatternCase",switchm))
         | Test.UnionCase (hdc,tyargs) -> 
@@ -4319,9 +4305,9 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
                   | _ -> failwith "error: mixed constructor/const test?") 
             
             let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib hdc.TyconRef
-            EraseUnions.emitDataSwitch cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers,cuspec,dests,defaultLabel.CodeLabel);
+            EraseUnions.emitDataSwitch cenv.g.ilg (UnionCodeGen cgbuf) (avoidHelpers,cuspec,dests);
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos caseLabels cases defaultTargetOpt defaultLabel sequel
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
               
         | Test.Const c ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue;
@@ -4361,23 +4347,23 @@ and GenDecisionTreeSwitch cenv cgbuf inplab stackAtTargets eenv e cases defaultT
                     if mn <> 0 then 
                       CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_int32]) [ mkLdcInt32 mn];
                       CG.EmitInstrs cgbuf (pop 1) Push0 [ AI_sub ];
-                    CG.EmitInstr cgbuf (pop 1) Push0 (I_switch (destinationLabels, defaultLabel.CodeLabel));
+                    CG.EmitInstr cgbuf (pop 1) Push0 (I_switch destinationLabels);
                 else
                   error(InternalError("non-dense integer matches not implemented in codegen - these should have been removed by the pattern match compiler",switchm));
-                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos caseLabels cases defaultTargetOpt defaultLabel sequel
+                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv  targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel
             | _ -> error(InternalError("these matches should never be needed",switchm))
 
-and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos caseLabels cases defaultTargetOpt defaultLabel sequel =
+and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv targets repeatSP targetInfos defaultTargetOpt caseLabels cases sequel =
     assert(cgbuf.GetCurrentStack() = stackAtTargets); // cgbuf stack should be unchanged over tests. [bug://1750].
 
     let targetInfos = 
         match defaultTargetOpt with 
-        | Some defaultTarget -> GenDecisionTreeAndTargetsInner cenv cgbuf defaultLabel stackAtTargets eenv defaultTarget targets repeatSP targetInfos sequel
+        | Some defaultTarget -> GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv defaultTarget targets repeatSP targetInfos sequel
         | None -> targetInfos
 
     let targetInfos = 
         (targetInfos, caseLabels, cases) |||> List.fold2 (fun targetInfos caseLabel (TCase(_,caseTree)) -> 
-            GenDecisionTreeAndTargetsInner cenv cgbuf caseLabel stackAtTargets eenv caseTree targets repeatSP targetInfos sequel)
+            GenDecisionTreeAndTargetsInner cenv cgbuf (Some caseLabel) stackAtTargets eenv caseTree targets repeatSP targetInfos sequel)
     targetInfos 
 
 // Used for the peephole optimization below
@@ -4415,27 +4401,26 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
              | _ -> failwith "internal error: GenDecisionTreeTest during bool elim"
 
     | _ ->
-        let success = CG.GenerateDelayMark cgbuf "testSuccess"
         let failure = CG.GenerateDelayMark cgbuf "testFailure"
-        (match tester with 
+        match tester with 
         | None -> 
-            (* generate the expression, then test it for "false" *)
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel, success.CodeLabel) ]));
+            // generate the expression, then test it for "false" 
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (BI_brfalse, failure.CodeLabel) ]));
 
-        (* Turn 'isdata' tests that branch into EI_brisdata tests *)
+        // Turn 'isdata' tests that branch into EI_brisdata tests 
         | Some (_,_,Choice1Of2 (avoidHelpers,cuspec,idx)) ->
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData cenv.g.ilg (avoidHelpers,cuspec, idx, success.CodeLabel, failure.CodeLabel)));
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsNotData cenv.g.ilg (avoidHelpers,cuspec, idx, failure.CodeLabel)));
 
         | Some (pops,pushes,i) ->
-            GenExpr cenv cgbuf eenv SPSuppress e Continue;
+            GenExpr cenv cgbuf eenv SPSuppress e Continue
             match i with 
             | Choice1Of2 (avoidHelpers,cuspec,idx) -> CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData cenv.g.ilg (avoidHelpers, cuspec, idx))
-            | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i;
-            CG.EmitInstr cgbuf (pop 1) Push0  (I_brcmp (BI_brfalse, failure.CodeLabel, success.CodeLabel)));
+            | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
+            CG.EmitInstr cgbuf (pop 1) Push0  (I_brcmp (BI_brfalse, failure.CodeLabel))
 
-        let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf success stackAtTargets eenv successTree targets repeatSP targetInfos sequel
+        let targetInfos = GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets repeatSP targetInfos sequel
 
-        GenDecisionTreeAndTargetsInner cenv cgbuf failure stackAtTargets eenv failureTree targets repeatSP targetInfos sequel 
+        GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets repeatSP targetInfos sequel 
 
 //-------------------------------------------------------------------------
 // Generate letrec bindings
@@ -4884,7 +4869,7 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
             | None -> 
                 None, takenNames
             
-        let param = 
+        let param : ILParameter = 
             { Name=nmOpt;
               Type= ilArgTy;  
               Default=None; (* REVIEW: support "default" attributes *)   

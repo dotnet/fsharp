@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 3:47:41:9055
+  .ver 3:47:41:0
 }
 .assembly ToplevelModuleP
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ToplevelModuleP
 {
-  // Offset: 0x00000000 Length: 0x0000114D
+  // Offset: 0x00000000 Length: 0x0000114F
 }
 .mresource public FSharpOptimizationData.ToplevelModuleP
 {
   // Offset: 0x00001158 Length: 0x000003FE
 }
 .module ToplevelModuleP.dll
-// MVID: {5706E103-5A3A-8E4D-A745-038303E10657}
+// MVID: {575BE155-5A3A-8E4D-A745-038355E15B57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x005F0000
+// Image base: 0x009B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -219,7 +219,7 @@
       // Code size       14 (0xe)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 14,18 'd:\\KevinRansom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelModule.fs'
+      .line 6,6 : 14,18 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelModule.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -1692,8 +1692,8 @@
   {
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] string greeting,
-             [1] string V_1)
+    .locals init ([0] string V_0,
+             [1] string greeting)
     .line 12,12 : 9,31 ''
     IL_0000:  nop
     IL_0001:  call       string ABC::get_greeting()

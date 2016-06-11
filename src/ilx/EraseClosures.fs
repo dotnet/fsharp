@@ -281,21 +281,21 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
              
             buildApp true [] apps 
 
-// Fix up I_ret instruction. Generalise to selected instr.
+// Fix up I_ret instruction. Generalise to selected instr. Remove tailcalls.
 let convReturnInstr ty instr = 
     match instr with 
     | I_ret -> [I_box ty;I_ret]
+    | I_call (_,mspec,varargs) -> [I_call (Normalcall,mspec,varargs)]
+    | I_callvirt (_,mspec,varargs) -> [I_callvirt (Normalcall,mspec,varargs)]
+    | I_callconstraint (_,ty,mspec,varargs) ->  [I_callconstraint (Normalcall,ty,mspec,varargs)]
+    | I_calli (_,csig,varargs) ->  [I_calli (Normalcall,csig,varargs)]
     | _     -> [instr]
         
-let convILMethodBody (thisClo,boxReturnTy) il = 
-    let tmps = ILLocalsAllocator il.Locals.Length
-    let locals = il.Locals
-    // Add a local to keep the result value of a thunk while storing it 
-    // into the result field and returning it. 
-    // Record the local slot number in the environment passed in thisClo 
+let convILMethodBody (thisClo,boxReturnTy) (il: ILMethodBody) = 
+    // This increase in maxstack is historical, though it's harmless 
     let newMax = 
         match thisClo with 
-        | Some _ -> il.MaxStack+2 (* for calls *)
+        | Some _ -> il.MaxStack+2 
         | None -> il.MaxStack
     let code = il.Code
     // Box before returning? e.g. in the case of a TyFunc returning a struct, which 
@@ -304,10 +304,7 @@ let convILMethodBody (thisClo,boxReturnTy) il =
         match boxReturnTy with
         | None    -> code
         | Some ty -> morphILInstrsInILCode (convReturnInstr ty) code
-    {il with MaxStack=newMax;  
-             IsZeroInit=true;
-             Code= code ;
-             Locals = ILList.ofList (ILList.toList locals @ tmps.Close()) }
+    {il with MaxStack=newMax; IsZeroInit=true; Code= code }
 
 let convMethodBody thisClo = function
     | MethodBody.IL il -> MethodBody.IL (convILMethodBody (thisClo,None) il)

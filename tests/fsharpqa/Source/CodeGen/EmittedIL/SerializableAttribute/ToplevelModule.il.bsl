@@ -36,13 +36,13 @@
   // Offset: 0x00001158 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {57570CF0-37F5-C118-A745-0383F00C5757}
+// MVID: {575BE147-37F5-C118-A745-038347E15B57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01340000
+// Image base: 0x00620000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1720,8 +1720,8 @@
   {
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] string greeting,
-             [1] string V_1)
+    .locals init ([0] string V_0,
+             [1] string greeting)
     .line 12,12 : 9,31 ''
     IL_0000:  nop
     IL_0001:  call       string ABC::get_greeting()

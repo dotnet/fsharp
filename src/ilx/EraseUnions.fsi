@@ -13,7 +13,7 @@ val mkNewData : ILGlobals -> IlxUnionSpec * int -> ILInstr list
 val mkIsData : ILGlobals -> bool * IlxUnionSpec * int -> ILInstr list
 val mkLdData : bool * IlxUnionSpec * int * int -> ILInstr list
 val mkStData : IlxUnionSpec * int * int -> ILInstr list
-val mkBrIsData : ILGlobals -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel -> ILInstr list
+val mkBrIsNotData : ILGlobals -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
 val mkClassUnionDef : ILGlobals -> ILTypeRef -> ILTypeDef -> IlxUnionInfo -> ILTypeDef
 val GetILTypeForAlternative : IlxUnionSpec -> int -> ILType
 
@@ -27,4 +27,4 @@ type ICodeGen<'Mark> =
 
 val emitCastData : ILGlobals -> ICodeGen<'Mark> -> canfail: bool * IlxUnionSpec * int -> unit
 val emitLdDataTag : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec -> unit
-val emitDataSwitch : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel -> unit
+val emitDataSwitch : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list -> unit
