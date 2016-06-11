@@ -577,7 +577,7 @@ let rec goutput_instr env os inst =
   match inst with
   | si when isNoArgInstr si ->
        output_lid os (wordsOfNoArgInstr si)
-  | I_brcmp (cmp,tg1,_tg2)  -> 
+  | I_brcmp (cmp,tg1)  -> 
       output_string os 
           (match cmp with 
           | BI_beq -> "beq"
@@ -640,7 +640,7 @@ let rec goutput_instr env os inst =
       output_string os "stind.";
       output_basic_type os dt 
   | I_stloc u16 -> output_string os "stloc"; output_short_u16 os u16
-  | I_switch (l,_dflt) -> output_string os "switch "; output_parens (output_seq "," output_code_label) os l
+  | I_switch l -> output_string os "switch "; output_parens (output_seq "," output_code_label) os l
   | I_callvirt  (tl,mspec,varargs) -> 
       output_tailness os tl;
       output_string os "callvirt ";
@@ -759,81 +759,16 @@ let rec goutput_instr env os inst =
       output_string os "<printing for this instruction is not implemented>"
 
 
-let goutput_ilmbody env os il =
+let goutput_ilmbody env os (il: ILMethodBody) =
   if il.IsZeroInit then output_string os " .zeroinit\n";
   output_string os " .maxstack ";
   output_i32 os il.MaxStack;
   output_string os "\n";
-  let output_susp os susp = 
-    match susp with
-    | Some s -> 
-        output_string os "\nbr "; output_code_label os s; output_string os "\n" 
-    | _ -> () 
-  let commit_susp os susp lab = 
-    match susp with
-    | Some s when s <> lab -> output_susp os susp
-    | _ -> () 
   if il.Locals.Length  <> 0 then 
     output_string os " .locals(";
     output_seq ",\n " (goutput_local env)  os il.Locals
     output_string os ")\n"
   
-  // Print the code by left-to-right traversal 
-  let rec goutput_block env os (susp,block) = 
-    match block with 
-    | ILBasicBlock bb ->  
-        commit_susp os susp bb.Label;
-        output_code_label os bb.Label; output_string os ": \n"  ;
-        Array.iter (fun i -> goutput_instr env os i; output_string os "\n") bb.Instructions;
-        bb.Fallthrough
-    | GroupBlock (_,l) -> 
-        let new_susp = ref susp 
-        List.iter (fun c -> new_susp := goutput_code env os (!new_susp,c)) l;
-        !new_susp
-    | RestrictBlock (_,c) -> goutput_code env os (susp,c)
-    | TryBlock (c,seh) -> 
-
-      commit_susp os susp (uniqueEntryOfCode c);
-      output_string os " .try {\n";
-      let susp = goutput_code env os (None,c) 
-      if (susp <> None) then output_string os "// warning: fallthrough at end of try\n";
-      output_string os "\n}";
-      match seh with 
-      |  FaultBlock flt -> 
-          output_string os "fault {\n";
-          output_susp os (goutput_code env os (None,flt));
-          output_string os "\n}"
-      | FinallyBlock flt -> 
-          output_string os "finally {\n";
-          output_susp os (goutput_code env os (None,flt));
-          output_string os "\n}";
-      | FilterCatchBlock clauses -> 
-          List.iter 
-             (fun (flt,ctch) -> 
-                match flt with 
-                    | TypeFilter typ ->
-                        output_string os " catch ";
-                        goutput_typ_with_shortened_class_syntax env os typ;
-                        output_string os "{\n";
-                        output_susp os (goutput_code env os (None,ctch));
-                        output_string os "\n}"
-                    | CodeFilter fltcode -> 
-                        output_string os "filter {\n";
-                        output_susp os (goutput_code env os (None,fltcode));
-                        output_string os "\n} catch {\n";
-                        output_susp os (goutput_code env os (None,ctch));
-                        output_string os "\n}";)
-             clauses
-      None
-
-  and goutput_code env os (susp,code) =
-    goutput_block env os (susp,code)
-
-  let goutput_topcode env os code = 
-    let final_susp = goutput_code env os (Some (uniqueEntryOfCode code),code) 
-    (match final_susp with Some s  -> output_string os "\nbr "; output_code_label os s; output_string os "\n" | _ -> ())
-
-  goutput_topcode env os il.Code;
 
 let goutput_mbody is_entrypoint env os md =
   match md.mdCodeKind with 

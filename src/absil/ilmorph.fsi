@@ -21,5 +21,5 @@ val morphILScopeRefsInILModuleMemoized: ILGlobals -> (ILScopeRef -> ILScopeRef) 
 
 val morphILInstrsInILCode: (ILInstr -> ILInstr list) -> ILCode -> ILCode
 
-val enablemorphCustomAttributeData : unit -> unit
-val disablemorphCustomAttributeData : unit -> unit
+val enableMorphCustomAttributeData : unit -> unit
+val disableMorphCustomAttributeData : unit -> unit
