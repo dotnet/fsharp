@@ -3,6 +3,7 @@ module ``FSharpQA-Tests-CompilerOptions-fsc``
 open NUnit.Framework
 
 open NUnitConf
+open PlatformHelpers
 open RunPlTest
 
 module Removed =
@@ -93,7 +94,22 @@ module out =
 module pdb =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/pdb")>]
-    let pdb () = runpl |> check 
+    let pdb () = check(attempt {
+        
+        let precmdText = "IF EXIST pdb01x.pdb  DEL pdb01x.pdb"
+        let ``IF EXIST pdb01x.pdb  DEL pdb01x.pdb`` workDir envVars = attempt {
+            let fileExists = Commands.fileExists workDir >> Option.isSome
+            let del = Commands.rm workDir
+
+            if fileExists "pdb01x.pdb" then del "pdb01x.pdb"
+            }
+
+        do! [ "IF EXIST pdb01x.pdb  DEL pdb01x.pdb", ``IF EXIST pdb01x.pdb  DEL pdb01x.pdb`` ]
+            |> Map.ofList
+            |> runplWithCmds
+
+        })
+    
 
 module platform =
 

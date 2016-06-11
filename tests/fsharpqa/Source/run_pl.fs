@@ -8,7 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let runpl = attempt {
+let runplWithCmds cmds = attempt {
 
     let { Directory = dir; Config = cfg } = FSharpTestSuite.testContext ()
     let! vars = FSharpQATestSuite.envLstData ()
@@ -33,3 +33,5 @@ let runpl = attempt {
     do! RunPl.runpl dir allVars 
 
     }
+
+let runpl = runplWithCmds Map.empty
