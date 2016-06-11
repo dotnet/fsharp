@@ -98,8 +98,8 @@ if /i not "%2"=="-ngen" goto :donengen
 "%NGEN32%" executeQueuedItems 1
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" /queue:1
-    "%NGEN64%" install "%BINDIR%\FSharp.Build.dll" /queue:1
+    "%NGEN64%" install "%BINDIR%\fsiAnyCpu.exe" %NGEN_FLAGS% /queue:1
+    "%NGEN64%" install "%BINDIR%\FSharp.Build.dll" %NGEN_FLAGS% /queue:1
     "%NGEN64%" executeQueuedItems 1
 )
 
