@@ -1,6 +1,6 @@
 use vs
 
-package name=Microsoft.FSharp
+package name=Microsoft.FSharp.Vsix
         version=4.1
         vs.package.chip=neutral
         vs.package.language=en-us
