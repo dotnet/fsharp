@@ -28,8 +28,8 @@ type IlxUnionField(fd: ILFieldDef) =
     
 
 type IlxUnionAlternative = 
-    { altName: string;
-      altFields: IlxUnionField[];
+    { altName: string
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
@@ -85,14 +85,14 @@ let rec instLambdasAux n inst = function
 let instLambdas i t = instLambdasAux 0 i t
 
 type IlxClosureFreeVar = 
-    { fvName: string ; 
-      fvCompilerGenerated:bool; 
+    { fvName: string  
+      fvCompilerGenerated:bool 
       fvType: ILType }
 
 let mkILFreeVar (name,compgen,ty) = 
-    { fvName=name;
-      fvCompilerGenerated=compgen;
-      fvType=ty; }
+    { fvName=name
+      fvCompilerGenerated=compgen
+      fvType=ty }
 
 
 type IlxClosureRef = 
@@ -117,25 +117,25 @@ type IlxClosureSpec =
 
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas;
-      cloFreeVars: IlxClosureFreeVar[];  
-      cloCode: Lazy<ILMethodBody>;
+    { cloStructure: IlxClosureLambdas
+      cloFreeVars: IlxClosureFreeVar[]  
+      cloCode: Lazy<ILMethodBody>
       cloSource: ILSourceMarker option}
 
 type IlxUnionInfo = 
     { /// is the representation public? 
-      cudReprAccess: ILMemberAccess; 
+      cudReprAccess: ILMemberAccess 
       /// are the representation public? 
-      cudHelpersAccess: ILMemberAccess; 
+      cudHelpersAccess: ILMemberAccess 
       /// generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers; 
+      cudHasHelpers: IlxUnionHasHelpers 
       /// generate the helpers? 
-      cudDebugProxies: bool; 
-      cudDebugDisplayAttributes: ILAttribute list;
-      cudAlternatives: IlxUnionAlternative array;
-      cudNullPermitted: bool;
+      cudDebugProxies: bool 
+      cudDebugDisplayAttributes: ILAttribute list
+      cudAlternatives: IlxUnionAlternative[]
+      cudNullPermitted: bool
       /// debug info for generated code for classunions 
-      cudWhere: ILSourceMarker option; }
+      cudWhere: ILSourceMarker option }
 
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types
