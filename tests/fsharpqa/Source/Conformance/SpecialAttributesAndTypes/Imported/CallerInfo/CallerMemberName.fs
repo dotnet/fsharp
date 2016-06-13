@@ -16,8 +16,6 @@ type MyTy() =
     let typeLetFuncNested () =
         let nestedFunc () = MyTy.GetCallerMemberName()
         nestedFunc ()
-    let anonymousLambda = (fun () -> MyTy.GetCallerMemberName()) ()
-    let asyncVal = async { return MyTy.GetCallerMemberName() } |> Async.RunSynchronously
     do
         MyTy.Check(MyTy.GetCallerMemberName(), Some(".ctor"), "primary ctor")
 
@@ -47,8 +45,6 @@ type MyTy() =
             |> List.head
         MyTy.Check(result, Some("CheckMembers"), "lambda")
         MyTy.Check(functionVal (), Some("functionVal"), "functionVal")
-        MyTy.Check(anonymousLambda, Some("anonymousLambda"), "anonymousLambda")
-        MyTy.Check(asyncVal, Some("asyncVal"), "asyncVal")
         ()
 
     static member GetCallerMemberName([<CallerMemberName>] ?memberName : string) =
@@ -165,4 +161,9 @@ module Program =
         let obj1 = { new MyAbstractTy() with member x.MyAbstractMethod() = MyTy.GetCallerMemberName() }
         MyTy.Check(obj1.MyAbstractMethod(), Some("MyAbstractMethod"), "MyAbstractMethod")
 
+        let asyncVal = async { return MyTy.GetCallerMemberName() } |> Async.RunSynchronously
+        MyTy.Check(asyncVal, Some("main"), "asyncVal")
+
+        let anonymousLambda = fun () -> MyTy.GetCallerMemberName()
+        MyTy.Check(anonymousLambda(), Some("main"), "anonymousLambda")
         0
