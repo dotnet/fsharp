@@ -19,6 +19,8 @@ type MyTy() =
         nestedFunc ()
     do
         MyTy.Check(MyTy.GetCallerMemberName(), Some(".ctor"), "primary ctor")
+    static do
+        MyTy.Check(MyTy.GetCallerMemberName(), Some(".cctor"), "static ctor")
 
     new(i : int) =
         MyTy.Check(MyTy.GetCallerMemberName(), Some(".ctor"), ".NET ctor")
