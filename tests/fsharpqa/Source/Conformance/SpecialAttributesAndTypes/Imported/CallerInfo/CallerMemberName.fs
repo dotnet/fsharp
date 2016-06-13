@@ -1,5 +1,6 @@
 namespace Test
 
+open System
 open System.Runtime.CompilerServices
 open System.Reflection
 open CSharpLib
@@ -156,14 +157,17 @@ module Program =
 
         let obj = { new IMyInterface with
             member this.MyInterfaceMethod() = MyTy.GetCallerMemberName() }
-        MyTy.Check(obj.MyInterfaceMethod(), Some("MyInterfaceMethod"), "MyInterfaceMethod")
+        MyTy.Check(obj.MyInterfaceMethod(), Some("MyInterfaceMethod"), "Object expression from interface")
 
         let obj1 = { new MyAbstractTy() with member x.MyAbstractMethod() = MyTy.GetCallerMemberName() }
-        MyTy.Check(obj1.MyAbstractMethod(), Some("MyAbstractMethod"), "MyAbstractMethod")
+        MyTy.Check(obj1.MyAbstractMethod(), Some("MyAbstractMethod"), "Object expression from abstract type")
 
         let asyncVal = async { return MyTy.GetCallerMemberName() } |> Async.RunSynchronously
-        MyTy.Check(asyncVal, Some("main"), "asyncVal")
+        MyTy.Check(asyncVal, Some("main"), "Async computation expression value")
 
         let anonymousLambda = fun () -> MyTy.GetCallerMemberName()
-        MyTy.Check(anonymousLambda(), Some("main"), "anonymousLambda")
+        MyTy.Check(anonymousLambda(), Some("main"), "Anonymous lambda")
+
+        let delegateVal = new Func<string option>(fun () -> MyTy.GetCallerMemberName())
+        MyTy.Check(delegateVal.Invoke(), Some("main"), "Delegate value")
         0
