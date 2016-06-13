@@ -22,8 +22,8 @@ type IlxUnionField =
     member ILField : ILFieldDef
     
 type IlxUnionAlternative = 
-    { altName: string;
-      altFields: IlxUnionField[];
+    { altName: string
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member FieldDefs : IlxUnionField[]
@@ -64,8 +64,8 @@ type IlxClosureLambdas =
     | Lambdas_return of ILType
 
 type IlxClosureFreeVar = 
-    { fvName: string ; 
-      fvCompilerGenerated:bool; 
+    { fvName: string  
+      fvCompilerGenerated:bool 
       fvType: ILType }
 
 type IlxClosureRef = 
@@ -94,24 +94,24 @@ type IlxClosureApps =
 // -------------------------------------------------------------------- 
 
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas;
-      cloFreeVars: IlxClosureFreeVar[];  
-      cloCode: Lazy<ILMethodBody>;
+    { cloStructure: IlxClosureLambdas
+      cloFreeVars: IlxClosureFreeVar[]  
+      cloCode: Lazy<ILMethodBody>
       cloSource: ILSourceMarker option}
 
 type IlxUnionInfo = 
     { /// Is the representation public? 
-      cudReprAccess: ILMemberAccess; 
+      cudReprAccess: ILMemberAccess 
       /// Are the representation helpers public? 
-      cudHelpersAccess: ILMemberAccess; 
+      cudHelpersAccess: ILMemberAccess 
       /// Generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers; 
-      cudDebugProxies: bool; 
-      cudDebugDisplayAttributes: ILAttribute list;
-      cudAlternatives: IlxUnionAlternative[];
-      cudNullPermitted: bool;
+      cudHasHelpers: IlxUnionHasHelpers 
+      cudDebugProxies: bool 
+      cudDebugDisplayAttributes: ILAttribute list
+      cudAlternatives: IlxUnionAlternative[]
+      cudNullPermitted: bool
       /// Debug info for generated code for classunions.
-      cudWhere: ILSourceMarker option;  
+      cudWhere: ILSourceMarker option  
     }
 
 // -------------------------------------------------------------------- 
