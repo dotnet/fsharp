@@ -173,8 +173,10 @@ let RunCommand cwd envVars msg (exe, cmdArgs) dumpOutput = attempt {
     //open(COMMAND,"$cmd 2>&1 |") or RunExit(TEST_FAIL, "Command Process Couldn't Be Created: $! Returned $? \n");
     //@CommandOutput = <COMMAND>;
     //close COMMAND;
+    let exePath = if fileExists exe |> Option.isSome then exe |> getfullpath else exe
+
     let tempOut = IO.Path.GetTempFileName()
-    let result = ``exec 2>1 1>a`` tempOut exe cmdArgs
+    let result = ``exec 2>1 1>a`` tempOut exePath cmdArgs
     let cmdExitCode = match result with CmdResult.ErrorLevel(_, x) -> x | CmdResult.Success -> 0
     let CommandOutput = tempOut |> IO.File.ReadAllText
 
