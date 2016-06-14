@@ -27,8 +27,8 @@ let runplWithCmdsOverride cmdsOverride = attempt {
         |> List.append ["REDUCED_RUNTIME", "1"] //the peverify it's not implemented
         |> Map.ofList
 
-    printfn "All env var:"
-    allVars |> Map.iter (printfn "%s=%s")
+    //printfn "All env var:"
+    //allVars |> Map.iter (printfn "%s=%s")
 
     do! RunPl.runpl cmdsOverride dir allVars 
 
