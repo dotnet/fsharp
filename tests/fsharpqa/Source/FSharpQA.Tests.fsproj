@@ -106,6 +106,7 @@
     <Compile Include="Conformance\PatternMatching\test_Conformance_PatternMatching.fs" />
     <Compile Include="Conformance\Signatures\test_Conformance_Signatures.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\test_Conformance_SpecialAttributesAndTypes.fs" />
+    <Compile Include="Conformance\TypeForwarding\Cycle\BuildAssembly.bat.fs" />
     <Compile Include="Conformance\TypeForwarding\test_Conformance_TypeForwarding.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\test_Conformance_TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\test_Conformance_UnitsOfMeasure.fs" />

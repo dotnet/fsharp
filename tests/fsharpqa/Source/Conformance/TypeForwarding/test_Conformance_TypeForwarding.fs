@@ -17,7 +17,41 @@ module Class =
 module Cycle =
 
     [<Test; FSharpQASuiteTest("Conformance/TypeForwarding/Cycle")>]
-    let Cycle () = runpl |> check
+    let Cycle () = check(attempt { 
+
+        let ``checkForward.bat`` exeToRun anotherExitCodeOk workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} (p |> Commands.getfullpath workDir)
+
+            // @echo off
+            ignore "useless"
+
+            // call %1
+            return! match exec exeToRun "" with
+                    // if errorlevel == 1 exit 1
+                    | CmdResult.ErrorLevel (m, 1) -> NUnitConf.genericError (sprintf "Exit code was %d: %s" 1 m)
+                    // if errorlevel == 0 exit -1
+                    | CmdResult.Success -> NUnitConf.genericError (sprintf "Exit code was %d" 0)
+                    // if errorlevel == -1 exit 0
+                    | CmdResult.ErrorLevel (_, -1) -> succeed ()
+                    // if errorlevel == %2 exit 0
+                    | CmdResult.ErrorLevel (_, n) when (Some (n.ToString())) = anotherExitCodeOk -> succeed ()
+                    // exit 1
+                    | CmdResult.ErrorLevel (m, x) -> NUnitConf.genericError (sprintf "Exit code was %d: '%s'" x m)
+            }
+
+
+        let cmds cmd = 
+            match cmd with
+            | StartsWith "BuildAssembly.bat " code ->
+                Some (``Conformance-TypeForwarding-Cycle-BuildAssembly``.run code)
+            | StartsWith "checkForward.bat " exeAndArgs ->
+                let exe, arg1 = exeAndArgs |> splitAtFirst ((=) ' ')
+                Some (``checkForward.bat`` exe arg1)
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 
 module Delegate =
