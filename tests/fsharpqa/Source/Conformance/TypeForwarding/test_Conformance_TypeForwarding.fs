@@ -35,7 +35,53 @@ module Interface =
 module Nested =
 
     [<Test; FSharpQASuiteTest("Conformance/TypeForwarding/Nested")>]
-    let Nested () = runpl |> check
+    let Nested () = check(attempt {
+        let ``BuildCSharp.bat`` param workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} p >> checkResult
+            let csc = Commands.csc exec cfg.CSC_PIPE
+
+            // @echo off
+            ignore "useless"
+
+            // SET PARAM=%1
+            ignore "from arguments"
+
+            // csc /t:library %PARAM%_Forwarder.cs
+            do! csc "/t:library" [ sprintf "%s_Forwarder.cs" param ]
+
+            // csc /define:FORWARD /t:library /r:%PARAM%_Forwarder.dll %PARAM%_Library.cs
+            do! csc (sprintf "/define:FORWARD /t:library /r:%s_Forwarder.dll" param) [ sprintf "%s_Library.cs" param ]
+            
+            }
+
+        let ``checkForward.bat`` exeToRun workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} (p |> Commands.getfullpath workDir)
+
+            // @echo off
+            ignore "useless"
+
+            // call %1
+            return! match exec exeToRun "" with
+                    // if errorlevel == 1 exit 1
+                    | CmdResult.ErrorLevel (m, 1) -> NUnitConf.genericError (sprintf "Exit code was %d: %s" 1 m)
+                    // if errorlevel == 0 exit -1
+                    | CmdResult.Success -> NUnitConf.genericError (sprintf "Exit code was %d" 0)
+                    // if errorlevel == -1 exit 0
+                    | CmdResult.ErrorLevel (_, -1) -> succeed ()
+                    // exit 1
+                    | CmdResult.ErrorLevel (m, x) -> NUnitConf.genericError (sprintf "Exit code was %d: '%s'" x m)
+            }
+
+        let cmds cmd = 
+            match cmd with
+            | "BuildCSharp.bat Nested" -> Some (``BuildCSharp.bat`` "Nested")
+            | StartsWith "checkForward.bat " exeName ->
+                Some (``checkForward.bat`` exeName)
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 
 module Struct =
@@ -58,7 +104,7 @@ module Struct =
             }
 
         let ``checkForward.bat`` exeToRun workDir (cfg: RunPl.RunPlConfig) = attempt {
-            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} p
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} (p |> Commands.getfullpath workDir)
 
             // @echo off
             ignore "useless"
@@ -76,7 +122,7 @@ module Struct =
             }
 
         let ``CheckRuntimeException.bat`` p1 p2 p3 workDir (cfg: RunPl.RunPlConfig) = attempt {
-            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} p
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} (p |> Commands.getfullpath workDir)
             
             return! 
                 // is32bitruntime.exe
