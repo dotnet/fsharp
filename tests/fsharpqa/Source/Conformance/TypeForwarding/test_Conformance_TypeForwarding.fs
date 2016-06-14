@@ -151,7 +151,28 @@ module Delegate =
 module Interface =
 
     [<Test; FSharpQASuiteTest("Conformance/TypeForwarding/Interface")>]
-    let Interface () = runpl |> check
+    let Interface () = check(attempt {
+        let ``BuildAssembly.bat`` workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} p >> checkResult
+            let csc = Commands.csc exec cfg.CSC_PIPE
+            
+            // @echo off
+            ignore "useless"
+
+            // csc /t:library Interface_Forwarder.cs
+            do! csc "/t:library" [ "Interface_Forwarder.cs" ]
+            // csc /define:FORWARD /t:library /r:Interface_Forwarder.dll Interface_Library.cs
+            do! csc "/define:FORWARD /t:library /r:Interface_Forwarder.dll" [ "Interface_Library.cs" ]
+            }
+
+        let cmds cmd = 
+            match cmd with
+            | "BuildAssembly.bat" -> Some ``BuildAssembly.bat``
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 
 module Nested =
