@@ -8,7 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let runplWithCmds cmds = attempt {
+let runplWithCmdsOverride cmdsOverride = attempt {
 
     let { Directory = dir; Config = cfg } = FSharpTestSuite.testContext ()
     let! vars = FSharpQATestSuite.envLstData ()
@@ -30,8 +30,20 @@ let runplWithCmds cmds = attempt {
     printfn "All env var:"
     allVars |> Map.iter (printfn "%s=%s")
 
-    do! RunPl.runpl cmds dir allVars 
+    do! RunPl.runpl cmdsOverride dir allVars 
 
     }
 
-let runpl = runplWithCmds Map.empty
+let runplWithCmds cmds =
+    let cmdOverride c = cmds |> Map.tryFind c
+    runplWithCmdsOverride cmdOverride
+
+let runpl = runplWithCmdsOverride (fun _ -> None)
+
+let (|StartsWith|_|) (prefix: string) (input: string) =
+    match input.IndexOf(prefix) with
+    | i when i >= 0 ->
+        match i + prefix.Length with
+        | fromIndex when fromIndex <= input.Length -> Some (input.Substring(fromIndex))
+        | _ -> None
+    | _ -> None

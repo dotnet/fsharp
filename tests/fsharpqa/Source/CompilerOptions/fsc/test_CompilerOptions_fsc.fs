@@ -167,7 +167,23 @@ module staticlink =
 module subsystemversion =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/subsystemversion")>]
-    let subsystemversion () = runpl |> check 
+    let subsystemversion () = check(attempt {
+        let checkSubsystemVersion assemblyToCheck expectedValue workDir (cfg: RunPl.RunPlConfig) = 
+            CheckSubsystemVersion.run workDir cfg.envVars assemblyToCheck expectedValue
+
+        let cmds cmd = 
+            match cmd with
+            | StartsWith("CheckSubsystemVersion.bat dummy.exe ") p ->
+                Some (checkSubsystemVersion "dummy.exe" (p.Trim()))
+            | StartsWith("CheckSubsystemVersion.bat dummy.dll ") p ->
+                Some (checkSubsystemVersion "dummy.dll" (p.Trim()))
+            | StartsWith("CheckSubsystemVersion.bat dummy.netmodule ") p ->
+                Some (checkSubsystemVersion "dummy.netmodule" (p.Trim()))
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 module tailcalls =
 

@@ -101,6 +101,10 @@ let msbuild exec msbuildExe flags srcFiles =
 let resgen exec resgenExe flags sources =
     exec resgenExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
 
+// %LINK_EXE% /dump /headers %AssemblyPath%
+let link exec linkExe flags sources =
+    exec linkExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
+
 let internal quotepath (p: FilePath) =
     let quote = '"'.ToString()
     if p.Contains(" ") 

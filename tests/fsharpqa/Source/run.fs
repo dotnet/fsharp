@@ -750,7 +750,7 @@ let LogTime logFile src (compileTime: TimeSpan) (runTime: TimeSpan) =
 // # RunExit -- Exits the script with the specified value.  
 // # 
 //sub RunExit {
-let RunExit cmds cwd (cfg: RunPlConfig) = attempt {
+let RunExit cmdsOverride cwd (cfg: RunPlConfig) = attempt {
     //my (
     //    $exitVal,		# Our exit value
     //    $cmtStr,		# Comment string to print before exit
@@ -783,7 +783,7 @@ let RunExit cmds cwd (cfg: RunPlConfig) = attempt {
     do! match env "POSTCMD" with
         | None -> Success
         | Some envPOSTCMD ->
-            match cmds |> Map.tryFind envPOSTCMD with
+            match cmdsOverride envPOSTCMD with
             | Some cmdImpl ->
                 printfn "using override for '%s'" envPOSTCMD
                 cmdImpl cwd cfg
@@ -1090,7 +1090,7 @@ let readRunplConfig cwd initialEnvVars = attempt {
     }
 
         
-let runplImpl cmds cwd (cfg: RunPlConfig) = attempt {
+let runplImpl cmdsOverride cwd (cfg: RunPlConfig) = attempt {
 
     let mutable envVars = cfg.envVars
 
@@ -1116,7 +1116,7 @@ let runplImpl cmds cwd (cfg: RunPlConfig) = attempt {
     do! match env "PRECMD" with
         | None -> Success
         | Some envPRECMD -> 
-            match cmds |> Map.tryFind envPRECMD with
+            match cmdsOverride envPRECMD with
             | Some cmdImpl ->
                 printfn "using override for '%s'" envPRECMD
                 cmdImpl cwd cfg
@@ -1570,7 +1570,7 @@ let runplImpl cmds cwd (cfg: RunPlConfig) = attempt {
     }
 
 
-let runpl cmds cwd initialEnvVars = attempt {
+let runpl cmdOverride cwd initialEnvVars = attempt {
     let! cfg = readRunplConfig cwd initialEnvVars
 
     let cfg2 = TestConfig.config cfg.envVars
@@ -1580,9 +1580,9 @@ let runpl cmds cwd initialEnvVars = attempt {
             envVars = cfg.envVars 
                       |> Map.add "ILDASM" cfg2.ILDASM }
 
-    do! runplImpl cmds cwd cfg
+    do! runplImpl cmdOverride cwd cfg
 
     //test is ok, let's check runExit
-    return! RunExit cmds cwd cfg
+    return! RunExit cmdOverride cwd cfg
 
     }
