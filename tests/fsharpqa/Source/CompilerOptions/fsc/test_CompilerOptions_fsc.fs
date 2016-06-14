@@ -59,7 +59,23 @@ module help =
 module highentropyva =
 
     [<Test; FSharpQASuiteTest("CompilerOptions/fsc/highentropyva")>]
-    let highentropyva () = runpl |> check 
+    let highentropyva () = check(attempt {
+        let checkHighEntropyASLR assemblyToCheck (expectedValue: bool) workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let! f = CheckHighEntropyASLR.run workDir cfg.envVars assemblyToCheck
+            Assert.AreEqual(expectedValue, f)
+            }
+
+        let cmds cmd = 
+            match cmd with
+            | "CheckHighEntropyASLR.bat dummy.exe yes" ->
+                Some (checkHighEntropyASLR "dummy.exe" true)
+            | "CheckHighEntropyASLR.bat dummy.exe no" ->
+                Some (checkHighEntropyASLR "dummy.exe" false)
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 module invalid =
 

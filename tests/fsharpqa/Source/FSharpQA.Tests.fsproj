@@ -91,6 +91,7 @@
     <Compile Include="CodeGen\test_CodeGen.fs" />
     <Compile Include="CodeGen\EmittedIL\test_codegen_emittedil.fs" />
     <Compile Include="CompilerOptions\fsc\subsystemversion\CheckSubsystemVersion.bat.fs" />
+    <Compile Include="CompilerOptions\fsc\highentropyva\CheckHighEntropyASLR.bat.fs" />
     <Compile Include="CompilerOptions\fsc\test_CompilerOptions_fsc.fs" />
     <Compile Include="CompilerOptions\fsi\test_CompilerOptions_fsi.fs" />
     <Compile Include="Conformance\BasicGrammarElements\test_Conformance_BasicGrammarElements.fs" />
