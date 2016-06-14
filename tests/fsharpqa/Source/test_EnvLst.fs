@@ -11,9 +11,11 @@ module ParseLine =
     let permutations () =
         [ TestCaseData("\tSOURCE=a", [ "SOURCE", "a" ])
           TestCaseData("\tSOURCE=\"a file\"", [ "SOURCE", "a file" ])
-          TestCaseData("\tSOURCE=\"a file with \\\"escaped values\\\" \"", [ "SOURCE", "a file with \\\"escaped values\\\" " ])
-          TestCaseData("\tV1=parse V2=multiple V3=\"values works\"", [ "V1","parse"; "V2","multiple"; "V3","values works" ])
-        ]
+          TestCaseData("\tSOURCE=\"a file with \\\"escaped values\\\" \"", [ "SOURCE", "a file with \"escaped values\" " ])
+          TestCaseData("\tSOURCE=\"--subsystemversion:\\\"\\\" \"", [ "SOURCE", "--subsystemversion:\"\" " ])
+          TestCaseData("\tSOURCE=\"--dir:a\\\\b\"", [ "SOURCE", "--dir:a\\b" ])
+          TestCaseData("\tSOURCE=--dir:a\\\\b", [ "SOURCE", "--dir:a\\\\b" ])
+          TestCaseData("\tV1=parse V2=multiple V3=\"values works\"", [ "V1","parse"; "V2","multiple"; "V3","values works" ]) ]
 
     [<Test; TestCaseSource("permutations")>]
     let ``parse should split vars`` line expected =
