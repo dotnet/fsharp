@@ -671,7 +671,7 @@ let GetExpectedTargetInfo cwd (_sources: string) _SCFLAGS = attempt {
     
     do match _SCFLAGS with
        //if ($_SCFLAGS =~ /.*(--target:|-a)((\w*)|$)/i) {
-       | Regex @".*(--target:|-a)((\w*)|$)" [ d1; d2 ] ->
+       | Regex @".*(--target:|-a)((\w*)|$)" [ d1; d2; _d3 ] ->
            // #figure out targetname from SCFLAGS
            //if("$1" eq "-a") {
            if (d1 = "-a") then
