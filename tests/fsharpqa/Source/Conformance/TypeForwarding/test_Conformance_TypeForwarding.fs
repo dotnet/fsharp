@@ -124,7 +124,28 @@ module Cycle =
 module Delegate =
 
     [<Test; FSharpQASuiteTest("Conformance/TypeForwarding/Delegate")>]
-    let Delegate () = runpl |> check
+    let Delegate () = check(attempt {
+        let ``BuildAssembly.bat`` workDir (cfg: RunPl.RunPlConfig) = attempt {
+            let exec p = Command.exec workDir cfg.envVars { Output = Inherit; Input = None} p >> checkResult
+            let csc = Commands.csc exec cfg.CSC_PIPE
+            
+            // @echo off
+            ignore "useless"
+
+            // csc /t:library Delegate_Forwarder.cs
+            do! csc "/t:library" [ "Delegate_Forwarder.cs" ]
+            // csc /define:FORWARD /t:library /r:Delegate_Forwarder.dll Delegate_Library.cs
+            do! csc "/define:FORWARD /t:library /r:Delegate_Forwarder.dll" [ "Delegate_Library.cs" ]
+            }
+
+        let cmds cmd = 
+            match cmd with
+            | "BuildAssembly.bat" -> Some ``BuildAssembly.bat``
+            | _ -> None
+
+        do! runplWithCmdsOverride cmds
+
+        })
 
 
 module Interface =
