@@ -130,14 +130,17 @@ let mkThatVarBind g m ty thataddrv expr =
 
 let mkBindThatAddr g m ty thataddrv thatv thate expr =
     if isStructTy g ty then
-        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr
+        // let thataddrv = &thatv
+        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr  
     else
-        mkCompGenLet m thataddrv thate expr
+        // let thataddrv = that
+        mkCompGenLet m thataddrv thate expr 
 
-let mkBindThatAddrIfNeeded g m ty thataddrvOpt thatv thate expr =
+let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
     match thataddrvOpt with 
     | None -> expr
     | Some thataddrv ->
+        // let thataddrv = &thatv
         mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr
 
 let mkDerefThis g m (thisv: Val) thise =
@@ -221,7 +224,7 @@ let mkRecdCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_,thate) com
     let fields = tycon.AllInstanceFieldsAsList
     let tinst,ty = mkMinimalTy g tcref
     let tcv,tce = mkCompGenLocal m "objTemp" ty    // let tcv = thate
-    let thataddrv,thataddre = mkThatAddrLocal g m tce ty      // let thataddrv = &tcv, if a struct
+    let thataddrv,thataddre = mkThatAddrLocal g m ty      // let thataddrv = &tcv, if a struct
     
     let mkTest (fspec:RecdField) = 
         let fty = fspec.FormalType 
@@ -448,7 +451,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
                tagsEqTested) 
 
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise thatcaste expr
-    let expr = mkBindThatAddrIfNeeded g m ty thataddrvOpt tcv tce expr
+    let expr = mkBindThatAddrIfNeeded m thataddrvOpt tcv expr
     let expr = mkCompGenLet m tcv thatcaste expr
     expr
     
