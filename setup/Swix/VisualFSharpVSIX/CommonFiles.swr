@@ -10,15 +10,11 @@ vs.localizedResources
                        title="Visual F# Tools"
                        description="Deploy Visual F# Tools templates to Visual Studio"
 
-folder "InstallDir:\MSBuild\15.0"
-  file source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
-  file source="$(BinariesFolder)\setup\resources\Microsoft.Portable.FSharp.Shim.targets"
+folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
+  file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
+  file "Microsoft.Portable.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.Portable.FSharp.Shim.targets"
 
-folder "InstallDir:\MSBuild\15.0\Bin"
-  file source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
-  file source="$(BinariesFolder)\setup\resources\Microsoft.Portable.FSharp.Shim.targets"
-
-folder "InstallDir:\Common7\IDE\PublicAssemblies"
+folder "InstallDir:Common7\IDE\PublicAssemblies"
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
