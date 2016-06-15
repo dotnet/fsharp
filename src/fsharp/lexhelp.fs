@@ -312,16 +312,13 @@ module Keywords =
         
     let KeywordToken s = keywordTable.[s]
 
-    /// ++GLOBAL MUTABLE STATE. Note this is a deprecated, undocumented command line option anyway, we can ignore it.
-    let mutable permitFsharpKeywords = true
-
     let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
             warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange));
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
-        if not permitFsharpKeywords && List.contains s unreserveWords then
+        if List.contains s unreserveWords then
             // You can assume this condition never fires - this is a deprecated, undocumented command line option anyway, we can ignore it.
             IdentifierToken args lexbuf s
         else
