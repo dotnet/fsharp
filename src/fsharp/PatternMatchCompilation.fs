@@ -375,7 +375,7 @@ let getDiscrimOfPattern g tpinst t =
     | TPat_array (args,ty,_m) -> 
         Some(Test.ArrayLength (args.Length,ty))
     | TPat_query ((pexp,resTys,apatVrefOpt,idx,apinfo),_,_m) -> 
-        Some(Test.ActivePatternCase (pexp, instTypes tpinst resTys, apatVrefOpt,idx,apinfo))
+        Some(Test.ActivePatternCase (pexp, instTypes tpinst resTys, apatVrefOpt, idx, apinfo))
     | _ -> None
 
 let constOfDiscrim discrim =
@@ -897,6 +897,21 @@ let CompilePatternBasic
              let appexp = mkIsInst tgty argexp matchm
              Some(vexp),Some(mkInvisibleBind v appexp)
 
+          // Any match on a struct union must take the address of its input
+         | EdgeDiscrim(_i',(Test.UnionCase (ucref, _)),_) :: _rest 
+                 when (isNil topgtvs && ucref.Tycon.IsStructRecordOrUnionTycon) ->
+
+             let argexp = GetSubExprOfInput subexpr
+             let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
+             match vOpt with 
+             | None -> None, None
+             | Some (v,e) -> 
+                 if topv.IsMemberOrModuleBinding then 
+                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+                 Some addrexp, Some (mkInvisibleBind v e) 
+             
+
+
 #if OPTIMIZE_LIST_MATCHING
          | [EdgeDiscrim(_, ListConsDiscrim g tinst,m); EdgeDiscrim(_, ListEmptyDiscrim g _, _)]
          | [EdgeDiscrim(_, ListEmptyDiscrim g _, _); EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
@@ -915,7 +930,7 @@ let CompilePatternBasic
 #endif
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern. 
-         | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_resPreBindOpt,_,apinfo)),m) :: _) ->
+         | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_,_,apinfo)),m) :: _) ->
              if debug then dprintf "Building result var for active pattern...\n";
              
              if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m));
@@ -957,13 +972,14 @@ let CompilePatternBasic
 #endif
                                                           (isNil topgtvs && 
                                                            not topv.IsMemberOrModuleBinding && 
+                                                           not ucref.Tycon.IsStructRecordOrUnionTycon  &&
                                                            ucref.UnionCase.RecdFields.Length >= 1 && 
                                                            ucref.Tycon.UnionCasesArray.Length > 1) ->
 
                        let v,vexp = mkCompGenLocal m "unionCase" (mkProvenUnionCaseTy ucref tinst)
                        let argexp = GetSubExprOfInput subexpr
-                       let appexp = mkUnionCaseProof(argexp, ucref,tinst,m)
-                       Some(vexp),Some(mkInvisibleBind v appexp)
+                       let appexp = mkUnionCaseProof (argexp, ucref,tinst,m)
+                       Some vexp,Some(mkInvisibleBind v appexp)
                      | _ -> 
                        None,None
                  
@@ -1052,11 +1068,14 @@ let CompilePatternBasic
                     if (hasParam && i = i') || (discrimsEq g discrim (Option.get (getDiscrimOfPattern pat))) then
                         let aparity = apinfo.Names.Length
                         let accessf' j tpinst _e' = 
+                            assert resPreBindOpt.IsSome
                             if aparity <= 1 then 
                                 Option.get resPreBindOpt 
                             else
                                 let ucref = mkChoiceCaseRef g m aparity idx
-                                mkUnionCaseFieldGetUnproven(Option.get resPreBindOpt,ucref,instTypes tpinst resTys,j,exprm)
+                                // TODO: In the future we will want active patterns to be able to return struct-unions
+                                //       In that eventuality, we need to check we are taking the address correctly
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get resPreBindOpt,ucref,instTypes tpinst resTys,j,exprm)
                         mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
 
                     elif hasParam then
@@ -1068,7 +1087,9 @@ let CompilePatternBasic
                 else 
                     if i = i' then
                             let accessf' _j tpinst _ =  
-                                mkUnionCaseFieldGetUnproven(Option.get resPreBindOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                // TODO: In the future we will want active patterns to be able to return struct-unions
+                                //       In that eventuality, we need to check we are taking the address correctly
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get resPreBindOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
                     else 
                         // Successful active patterns  don't refute other patterns
@@ -1080,12 +1101,12 @@ let CompilePatternBasic
                     let accessf' j tpinst e' = 
 #if OPTIMIZE_LIST_MATCHING
                         match resPreBindOpt with 
-                        | Some e -> mkUnionCaseFieldGetProven(e,ucref1,tinst,j,exprm)
+                        | Some e -> mkUnionCaseFieldGetProvenViaExprAddr g (e,ucref1,tinst,j,exprm)
                         | None -> 
 #endif
                         match resPostBindOpt with 
-                        | Some e -> mkUnionCaseFieldGetProven(e,ucref1,tinst,j,exprm)
-                        | None -> mkUnionCaseFieldGetUnproven(accessf tpinst e',ucref1,instTypes tpinst tyargs,j,exprm)
+                        | Some e -> mkUnionCaseFieldGetProvenViaExprAddr (e,ucref1,tinst,j,exprm)
+                        | None -> mkUnionCaseFieldGetUnprovenViaExprAddr (accessf tpinst e',ucref1,instTypes tpinst tyargs,j,exprm)
                         
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathUnionConstr(path,ucref1,tyargs,j))
                 | Test.UnionCase _ ->

@@ -1302,3 +1302,4 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3197,etMissingStaticArgumentsToMethod,"This provided method requires static parameters"
 3198,considerUpcast,"The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using 'upcast' instead of 'downcast'."
 3198,considerUpcastOperator,"The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using the :> (upcast) operator instead of the :?> (downcast) operator."
+3199,tcStructUnionMultiCase,"A union type which is a struct must have only one case."

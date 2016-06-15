@@ -1320,7 +1320,8 @@ and OpHasEffect g op =
     | TOp.ExnFieldGet(ecref,n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
-    | TOp.ValFieldGetAddr _rfref  -> true (* check *)
+    | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable (* data is immutable, so taking address is ok *)
+    | TOp.UnionCaseFieldGetAddr _ -> false (* data is immutable, so taking address is ok  *)
     | TOp.LValueOp (LGetAddr,lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
@@ -1928,6 +1929,7 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
       | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryCatch _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet | TOp.Coerce | TOp.Reraise
+      | TOp.UnionCaseFieldGetAddr _   
       | TOp.ExnFieldSet _ -> 1,valu
       | TOp.Recd (ctorInfo,tcref) ->
           let finfos = tcref.AllInstanceFieldsAsList
