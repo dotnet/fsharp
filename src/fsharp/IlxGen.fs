@@ -965,11 +965,10 @@ let rec AddBindingsForModuleDefs allocVal (cloc:CompileLocation) eenv  mdefs =
 
 and AddBindingsForModuleDef allocVal cloc eenv x = 
     match x with 
-    | TMDefRec(tycons,vbinds,mbinds,_) -> 
-        let eenv = FlatList.foldBack (allocVal cloc) (valsOfBinds vbinds) eenv
+    | TMDefRec(_isRec,tycons,mbinds,_) -> 
         (* Virtual don't have 'let' bindings and must be added to the environment *)
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
-        let eenv = List.foldBack (AddBindingsForSubModules allocVal cloc) mbinds eenv
+        let eenv = List.foldBack (AddBindingsForModule allocVal cloc) mbinds eenv
         eenv
     | TMDefLet(bind,_) -> 
         allocVal cloc bind.Var eenv
@@ -980,12 +979,16 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
     | TMDefs(mdefs) -> 
         AddBindingsForModuleDefs allocVal cloc eenv  mdefs 
 
-and AddBindingsForSubModules allocVal cloc (ModuleOrNamespaceBinding(mspec, mdef)) eenv = 
-    let cloc = 
-        if mspec.IsNamespace then cloc 
-        else CompLocForFixedModule cloc.clocQualifiedNameOfFile cloc.clocTopImplQualifiedName mspec
+and AddBindingsForModule allocVal cloc x eenv = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind -> 
+        allocVal cloc bind.Var eenv
+    | ModuleOrNamespaceBinding.Module (mspec, mdef) -> 
+        let cloc = 
+            if mspec.IsNamespace then cloc 
+            else CompLocForFixedModule cloc.clocQualifiedNameOfFile cloc.clocTopImplQualifiedName mspec
         
-    AddBindingsForModuleDef allocVal cloc eenv mdef
+        AddBindingsForModuleDef allocVal cloc eenv mdef
 
 and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs = 
     FlatList.foldBack allocVal vs eenv
@@ -5689,13 +5692,12 @@ and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv  mdefs =
     
 and GenModuleDef cenv (cgbuf:CodeGenBuffer) qname lazyInitInfo eenv  x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,m) -> 
+    | TMDefRec(_isRec,tycons,mbinds,m) -> 
         tycons |> List.iter (fun tc -> 
             if tc.IsExceptionDecl 
             then GenExnDef cenv cgbuf.mgbuf eenv m tc 
-            else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc) ;
-        GenLetRecBinds cenv cgbuf eenv (binds,m);
-        mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv) 
+            else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc)
+        mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m) 
 
     | TMDefLet(bind,_) -> 
         GenBindings cenv cgbuf eenv (FlatList.one bind)
@@ -5711,7 +5713,11 @@ and GenModuleDef cenv (cgbuf:CodeGenBuffer) qname lazyInitInfo eenv  x =
 
 
 // Generate a module binding
-and GenModuleBinding cenv (cgbuf:CodeGenBuffer) (qname:QualifiedNameOfFile) lazyInitInfo eenv (ModuleOrNamespaceBinding (mspec, mdef)) = 
+and GenModuleBinding cenv (cgbuf:CodeGenBuffer) (qname:QualifiedNameOfFile) lazyInitInfo eenv m x = 
+  match x with 
+  | ModuleOrNamespaceBinding.Binding bind -> 
+    GenLetRecBinds cenv cgbuf eenv ([bind],m);
+  | ModuleOrNamespaceBinding.Module (mspec, mdef) ->
     let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
     let eenvinner = 
