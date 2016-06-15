@@ -222,7 +222,7 @@ let mkRecdCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_,thate) com
           (mkRecdFieldGetViaExprAddr(thataddre, fref, tinst, m))
     let expr = mkCompareTestConjuncts g m (List.map mkTest fields) 
 
-    let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise tce expr
+    let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise thate expr
 
     let expr = mkBindThatAddr g m ty thataddrv tcv tce expr
     // will be optimized away if not necessary
@@ -436,7 +436,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatv,that
                (mkUnionCaseTagGetViaExprAddr (thataddre,tcref,tinst,m))
                tagsEqTested) 
 
-    let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise tce expr
+    let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise thate expr
     let expr = mkBindThatAddr g m ty thataddrv tcv tce expr
     // will be optimized away if not necessary
     let expr = mkCompGenLet m tcv thate expr
