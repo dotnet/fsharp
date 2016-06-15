@@ -306,7 +306,7 @@ module Keywords =
 
     let keywordTable = 
         let tab = System.Collections.Generic.Dictionary<string,token>(100)
-        for (_mode,keyword,token) in keywordList do 
+        for _,keyword,token in keywordList do 
             tab.Add(keyword,token)
         tab
         
@@ -318,13 +318,14 @@ module Keywords =
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
-        let mutable v = Unchecked.defaultof<_>
-        if keywordTable.TryGetValue(s, &v) then 
-            if (match v with RESERVED -> true | _ -> false) then
+        match keywordTable.TryGetValue s with
+        | true,v ->
+            match v with 
+            | RESERVED ->
                 warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange));
                 IdentifierToken args lexbuf s
-            else v
-        else 
+            | _ -> v
+        | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
                 let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
