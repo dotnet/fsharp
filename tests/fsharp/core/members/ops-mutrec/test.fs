@@ -1,5 +1,10 @@
 // #Conformance #MemberDefinitions #Overloading #ComputationExpressions 
 
+//---------------------------------------------------------------
+// Same test as "members\ops" but with "rec" added 
+
+module rec OpsMutrec  // <-----  NOTE THE "rec"
+
 open Microsoft.FSharp.Math
 
 let failures = ref false
@@ -361,18 +366,18 @@ module TraitCallsAndConstructors =
     let inline clone (v : ^a) = (^a : (new : string * Exception -> ^a) ("", v))
     let _ : InvalidOperationException = clone (InvalidOperationException())
     type Base(x : float) =
-        member this.x = x
+        member this.x : float = x
      
-    let inline (~-) (v:^a) = (^a:(new : float -> ^a)(-(v:>Base).x))
+    let inline (~-.) (v:^b) = (^b:(new : float -> ^b)(-((v:>Base).x)))
      
     type Inherited(x : float) =
         inherit Base(x)
      
-    let aBase = Base(5.0)
-    let aInherited = Inherited(5.0)
+    //let aBase = Base(5.0)
+    //let aInherited = Inherited(5.0)
      
      
-    let _ : Inherited = -aInherited
+    //let _ : Inherited = -aInherited
 
 
 let _ = 
