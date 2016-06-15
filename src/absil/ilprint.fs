@@ -439,12 +439,12 @@ let goutput_alternative_ref env os (alt: IlxUnionAlternative) =
   output_id os alt.Name; 
   alt.FieldDefs |> Array.toList |> output_parens (output_seq "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
 
-let goutput_curef env os (IlxUnionRef(tref,alts,_,_)) =
+let goutput_curef env os (IlxUnionRef(_,tref,alts,_,_)) =
   output_string os " .classunion import ";
   goutput_tref env os tref;
   output_parens (output_seq "," (goutput_alternative_ref env)) os (Array.toList alts)
     
-let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(tref,_,_,_),i)) =
+let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),i)) =
   output_string os "class /* classunion */ ";
   goutput_tref env os  tref;
   goutput_gactuals env os i

@@ -473,7 +473,8 @@ and GenUnionRef amap m g (tcref: TyconRef) =
                         altFields=GenUnionCaseRef amap m g tyenvinner i cspec.RecdFieldsArray })
               let nullPermitted = IsUnionTypeWithNullAsTrueValue g tycon
               let hasHelpers = ComputeUnionHasHelpers g tcref
-              IlxUnionRef(tref,alternatives,nullPermitted,hasHelpers))
+              let boxity = (if tcref.IsStructOrEnumTycon then ILBoxity.AsValue else ILBoxity.AsObject)
+              IlxUnionRef(boxity, tref,alternatives,nullPermitted,hasHelpers))
 
 and ComputeUnionHasHelpers g (tcref : TyconRef) = 
     if tyconRefEq g tcref g.unit_tcr_canon then NoHelpers
@@ -1751,6 +1752,8 @@ let rec GenExpr cenv (cgbuf:CodeGenBuffer) eenv sp expr sequel =
           GenGetExnField cenv cgbuf eenv (e,ecref,n,m) sequel
       | TOp.UnionCaseFieldGet(ucref,n),[e],_ -> 
           GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
+      | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> 
+          GenGetUnionCaseFieldAddr cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
       | TOp.UnionCaseTagGet ucref,[e],_ -> 
           GenGetUnionCaseTag cenv cgbuf eenv (e,ucref,tyargs,m) sequel
       | TOp.UnionCaseProof ucref,[e],_ -> 
@@ -2181,18 +2184,29 @@ and GenUnionCaseProof cenv cgbuf eenv (e,ucref,tyargs,m) sequel =
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
     let fty = EraseUnions.GetILTypeForAlternative cuspec idx 
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,cuspec,idx)
+    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,avoidHelpers,cuspec,idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [fty]) [ ]  // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel =
-    assert (isProvenUnionCaseTy (tyOfExpr cenv.g e));
+    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr cenv.g e));
     
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
     CG.EmitInstrs cgbuf (pop 1) (Push [fty]) (EraseUnions.mkLdData (avoidHelpers, cuspec, idx, n));
+    GenSequel cenv eenv.cloc cgbuf sequel
+
+and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel =
+    assert (ucref.Tycon.IsStructOrEnumTycon || isProvenUnionCaseTy (tyOfExpr cenv.g e));
+    
+    GenExpr cenv cgbuf eenv SPSuppress e Continue;
+    let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
+    let fty = actualTypOfIlxUnionField cuspec idx n
+    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    CG.EmitInstrs cgbuf (pop 1) (Push [ILType.Byref fty]) (EraseUnions.mkLdDataAddr (avoidHelpers, cuspec, idx, n));
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
@@ -2206,7 +2220,8 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
 and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel = 
     GenExpr cenv cgbuf eenv SPSuppress e Continue;
     let cuspec,idx = GenUnionCaseSpec cenv.amap m cenv.g eenv.tyenv ucref tyargs
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,cuspec,idx)
+    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,avoidHelpers,cuspec,idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.EnclosingType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue;
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n));
@@ -4247,12 +4262,17 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None eenv (if b then successTree else  failureTree) (if b then failureTree else successTree) targets repeatSP targetInfos sequel 
 
-      // optimize a single test for a type constructor to an "isdata" test - much 
+      // // Remove a single test for a union case . Union case tests are always exa
+      //| [ TCase(Test.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone)  ->  
+      //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
+      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [cenv.g.ilg.typ_bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+
+      // Optimize a single test for a union case to an "isdata" test - much 
       // more efficient code, and this case occurs in the generated equality testers where perf is important 
-      | TCase(Test.UnionCase(c,tyargs), successTree) :: rest when List.length rest = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
+      | TCase(Test.UnionCase(c,tyargs), successTree) :: rest when rest.Length = (match defaultTargetOpt with None -> 1 | Some _ -> 0)  ->  
         let failureTree = 
             match defaultTargetOpt with 
-            | None -> cases.Tail.Head.CaseTree
+            | None -> rest.Head.CaseTree
             | Some tg -> tg
         let cuspec = GenUnionSpec cenv.amap m cenv.g eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
@@ -6116,7 +6136,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | TTyconInterface  -> ILTypeDefKind.Interface
                | TTyconEnum       -> ILTypeDefKind.Enum 
                | TTyconDelegate _ -> ILTypeDefKind.Delegate 
-           | TRecdRepr _ when tycon.IsStructRecordTycon -> ILTypeDefKind.ValueType
+           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField = 
@@ -6285,13 +6305,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                          (true,emptyILLocals,2,
                                                           nonBranchingInstrsToCode 
                                                             ([ // load the hardwired format string
-                                                               I_ldstr "%+0.8A";  
+                                                               yield I_ldstr "%+0.8A";  
                                                                // make the printf format object
-                                                               mkNormalNewobj newFormatMethSpec;
+                                                               yield mkNormalNewobj newFormatMethSpec;
                                                                // call sprintf
-                                                               mkNormalCall sprintfMethSpec; 
+                                                               yield mkNormalCall sprintfMethSpec; 
                                                                // call the function returned by sprintf
-                                                               mkLdarg0 ] @
+                                                               yield mkLdarg0 
+                                                               if ilThisTy.Boxity = ILBoxity.AsValue then
+                                                                  yield mkNormalLdobj ilThisTy  ] @
                                                              callInstrs),
                                                           None))
                       yield ilMethodDef |> AddSpecialNameFlag |> AddNonUserCompilerGeneratedAttribs cenv.g
@@ -6319,7 +6341,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      relevantFields
                      |> List.map (fun (_,ilFieldName,_,_,_,ilPropType,_,fspec) -> (fspec.Name,ilFieldName,ilPropType))
 
-                 let isStructRecord = tycon.IsStructRecordTycon
+                 let isStructRecord = tycon.IsStructRecordOrUnionTycon
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(cenv.g.ilg.tspec_Object)
@@ -6506,7 +6528,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      InitSemantics=ILTypeInit.BeforeField;      
                      IsSealed=true;
                      IsAbstract=false;
-                     tdKind= ILTypeDefKind.Class
+                     tdKind= (if tycon.IsStructOrEnumTycon then ILTypeDefKind.ValueType else ILTypeDefKind.Class)
                      Fields = ilFields;
                      Events= ilEvents;
                      Properties = ilProperties;
@@ -6518,7 +6540,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      NestedTypes=emptyILTypeDefs;
                      Encoding= ILDefaultPInvokeEncoding.Auto;
                      Implements= mkILTypes ilIntfTys;
-                     Extends= Some cenv.g.ilg.typ_Object;
+                     Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.ilg.typ_ValueType else cenv.g.ilg.typ_Object)
                      SecurityDecls= emptyILSecurityDecls;
                      HasSecurity=false }
                let tdef2 = EraseUnions.mkClassUnionDef cenv.g.ilg tref tdef cuinfo

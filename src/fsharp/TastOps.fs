@@ -1181,24 +1181,32 @@ let mkStaticRecdFieldGetAddr(fref,tinst,m)          = Expr.Op (TOp.ValFieldGetAd
 let mkStaticRecdFieldGet(fref,tinst,m)               = Expr.Op (TOp.ValFieldGet(fref), tinst, [],m)
 let mkStaticRecdFieldSet(fref,tinst,e,m)             = Expr.Op (TOp.ValFieldSet(fref), tinst, [e],m)
 
-let mkRecdFieldSetViaExprAddr(e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
+let mkRecdFieldSetViaExprAddr (e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
 
-let mkUnionCaseTagGet(e1,cref,tinst,m)                = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
-let mkUnionCaseProof(e1,cref,tinst,m)                  = Expr.Op (TOp.UnionCaseProof(cref), tinst, [e1],m)
+let mkUnionCaseTagGetViaExprAddr (e1,cref,tinst,m)      = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
 
-/// Build a 'get' expression for something we've already determined to be a particular union case, and where the
-/// input expression has 'TType_ucase', which is an F# compiler internal "type"
-let mkUnionCaseFieldGetProven(e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGet(cref,j), tinst, [e1],m)
+/// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
+let mkUnionCaseProof (e1,cref:UnionCaseRef,tinst,m)     = if cref.Tycon.IsStructOrEnumTycon then e1 else Expr.Op (TOp.UnionCaseProof(cref), tinst, [e1],m)
+
+/// Build a 'TOp.UnionCaseFieldGet' expression for something we've already determined to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case.  For struct-unions,
+/// the input should be the address of the expression.
+let mkUnionCaseFieldGetProvenViaExprAddr (e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGet(cref,j), tinst, [e1],m)
+
+/// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
+let mkUnionCaseFieldGetAddrProvenViaExprAddr (e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGetAddr(cref,j), tinst, [e1],m)
 
 /// Build a 'get' expression for something we've already determined to be a particular union case, but where 
 /// the static type of the input is not yet proven to be that particular union case. This requires a type
 /// cast to 'prove' the condition.
-let mkUnionCaseFieldGetUnproven(e1,cref,tinst,j,m)  = mkUnionCaseFieldGetProven(mkUnionCaseProof(e1,cref,tinst,m),cref,tinst,j,m)
+let mkUnionCaseFieldGetUnprovenViaExprAddr (e1,cref,tinst,j,m)  = mkUnionCaseFieldGetProvenViaExprAddr(mkUnionCaseProof(e1,cref,tinst,m),cref,tinst,j,m)
 
-let mkUnionCaseFieldSet(e1,cref,tinst,j,e2,m)         = Expr.Op (TOp.UnionCaseFieldSet(cref,j), tinst, [e1;e2],m)
+let mkUnionCaseFieldSet (e1,cref,tinst,j,e2,m)         = Expr.Op (TOp.UnionCaseFieldSet(cref,j), tinst, [e1;e2],m)
 
-let mkExnCaseFieldGet(e1,ecref,j,m)             = Expr.Op (TOp.ExnFieldGet(ecref,j), [],[e1],m)
-let mkExnCaseFieldSet(e1,ecref,j,e2,m)          = Expr.Op (TOp.ExnFieldSet(ecref,j), [],[e1;e2],m)
+let mkExnCaseFieldGet (e1,ecref,j,m)             = Expr.Op (TOp.ExnFieldGet(ecref,j), [],[e1],m)
+let mkExnCaseFieldSet (e1,ecref,j,e2,m)          = Expr.Op (TOp.ExnFieldSet(ecref,j), [],[e1;e2],m)
 
 let mkDummyLambda g (e:Expr,ety) = 
     let m = e.Range
@@ -1309,6 +1317,9 @@ let actualTyOfRecdFieldForTycon tycon tinst (fspec:RecdField) =
 
 let actualTyOfRecdFieldRef (fref:RecdFieldRef) tinst = 
     actualTyOfRecdFieldForTycon fref.Tycon tinst fref.RecdField
+
+let actualTyOfUnionFieldRef (fref:UnionCaseRef) n tinst = 
+    actualTyOfRecdFieldForTycon fref.Tycon tinst (fref.FieldByIndex(n))
 
     
 //---------------------------------------------------------------------------
@@ -4130,6 +4141,7 @@ and accFreeInOp opts op acc =
     // Things containing just a union case reference
     | TOp.UnionCaseProof cr 
     | TOp.UnionCase cr 
+    | TOp.UnionCaseFieldGetAddr (cr,_) 
     | TOp.UnionCaseFieldGet (cr,_) 
     | TOp.UnionCaseFieldSet (cr,_) -> accFreeUnionCaseRef opts cr acc
 
@@ -4538,7 +4550,7 @@ and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
                     List.map (remapMethod g compgen tmenvinner) overrides,
                     List.map (remapInterfaceImpl g compgen tmenvinner) iimpls,m) 
 
-    // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdField below.
+    // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdFieldRef below.
     // This is "ok", in the sense that it is always valid to fix these up to be uses
     // of a temporary local, e.g.
     //       &(E.RF) --> let mutable v = E.RF in &v
@@ -4551,6 +4563,15 @@ and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
         let arg = remapExpr g compgen tmenv arg 
         let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr(arg,rfref,tinst,m)) (mkValAddr m (mkLocalValRef tmp))
+
+    | Expr.Op (TOp.UnionCaseFieldGetAddr (uref,cidx),tinst,[arg],m) when 
+          not (uref.FieldByIndex(cidx).IsMutable) && 
+          not (entityRefInThisAssembly g.compilingFslib uref.TyconRef) -> 
+
+        let tinst = remapTypes tmenv tinst 
+        let arg = remapExpr g compgen tmenv arg 
+        let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
+        mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr(arg,uref,tinst,cidx,m)) (mkValAddr m (mkLocalValRef tmp))
 
     | Expr.Op (op,tinst,args,m) -> 
         let op' = remapOp tmenv op 
@@ -5102,6 +5123,7 @@ let rec tyOfExpr g e =
         | TOp.ValFieldGet(fref) -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet),_)) ->g.unit_ty
         | TOp.UnionCaseTagGet _ -> g.int_ty
+        | TOp.UnionCaseFieldGetAddr(cref,j) -> mkByrefTy g (actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j))
         | TOp.UnionCaseFieldGet(cref,j) -> actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j)
         | TOp.ExnFieldGet(ecref,j) -> recdFieldTyOfExnDefRefByIdx ecref j
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
@@ -5326,7 +5348,7 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 
 
 //-------------------------------------------------------------------------
-// mkExprAddrOfExpr
+// mkExprAddrOfExprAux
 //------------------------------------------------------------------------- 
 
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
@@ -5370,48 +5392,61 @@ let MustTakeAddressOfVal g (v:ValRef) =
     // We can only take the address of mutable values in the same assembly
     valRefInThisAssembly g.compilingFslib v
 
-let MustTakeAddressOfRecdField (rfref: RecdFieldRef) = 
+let MustTakeAddressOfRecdField (rf: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
-    not rfref.RecdField.IsStatic && 
-    rfref.RecdField.IsMutable
+    not rf.IsStatic && 
+    rf.IsMutable
 
-let CanTakeAddressOfRecdField g (rfref: RecdFieldRef) mut tinst =
+let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecdField rfref.RecdField
+
+let CanTakeAddressOfRecdFieldRef g (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
     isRecdOrStuctTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
+let CanTakeAddressOfUnionFieldRef g (uref: UnionCaseRef) mut tinst cidx =
+    mut <> DefinitelyMutates && 
+    // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
+    entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
+    isRecdOrStuctTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
-let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
-    if not mustTakeAddress then (fun x -> x),e else
+
+let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
+    if not mustTakeAddress then None,e else
     match e with 
     // LVALUE: "x" where "x" is byref 
     | Expr.Op (TOp.LValueOp (LByrefGet, v), _,[], m) -> 
-        (fun x -> x), exprForValRef m v
+        None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
     | Expr.Val(v, _,m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut ->
-        (fun x -> x), mkValAddr m v
-    // LVALUE: "x" where "e.x" is mutable record field. "e" may be an lvalue 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst,[e],m) when MustTakeAddressOfRecdField rfref || CanTakeAddressOfRecdField g rfref mut tinst ->
+        None, mkValAddr m v
+    // LVALUE: "x" where "e.x" is record field. 
+    | Expr.Op (TOp.ValFieldGet rfref, tinst,[e],m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
         let exprty = tyOfExpr g e
-        let wrap,expra = mkExprAddrOfExpr g (isStructTy g exprty) false mut e None m
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap, mkRecdFieldGetAddrViaExprAddr(expra,rfref,tinst,m)
+    // LVALUE: "x" where "e.x" is union field
+    | Expr.Op (TOp.UnionCaseFieldGet (uref,cidx), tinst,[e],m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g uref mut tinst cidx ->
+        let exprty = tyOfExpr g e
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
+        wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(expra,uref,tinst,cidx,m)
 
     // LVALUE: "x" where "e.x" is a .NET static field. 
     | Expr.Op (TOp.ILAsm ([IL.I_ldsfld(_vol,fspec)],[ty2]), tinst,[],m) -> 
-        (fun x -> x),Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)],[mkByrefTy g ty2]), tinst,[],m)
+        None,Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)],[mkByrefTy g ty2]), tinst,[],m)
 
     // LVALUE: "x" where "e.x" is a .NET instance field. "e" may be an lvalue 
     | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align,_vol,fspec)],[ty2]), tinst,[e],m) 
        -> 
         let exprty = tyOfExpr g e
-        let wrap,expra = mkExprAddrOfExpr g (isStructTy g exprty) false mut e None m
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap,Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)],[mkByrefTy g ty2]), tinst,[expra],m)
 
     // LVALUE: "x" where "x" is mutable static field. 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst,[],m) when MustTakeAddressOfRecdField rfref || CanTakeAddressOfRecdField g rfref mut tinst ->
-        (fun x -> x), mkStaticRecdFieldGetAddr(rfref,tinst,m)
+    | Expr.Op (TOp.ValFieldGet rfref, tinst,[],m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
+        None, mkStaticRecdFieldGetAddr(rfref,tinst,m)
 
     // LVALUE:  "e.[n]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],[aexpr;nexpr],_) 
@@ -5423,7 +5458,7 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             match addrExprVal with
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+        None, Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
 
     // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_) 
@@ -5436,7 +5471,7 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
             
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],(aexpr::args),m)
+        None, Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],(aexpr::args),m)
 
     // Give a nice error message for DefinitelyMutates on immutable values, or mutable values in other assemblies
     | Expr.Val(v, _,m) when mut = DefinitelyMutates
@@ -5457,15 +5492,24 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             | PossiblyMutates -> 
                 warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(),m));
         let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" ty
-        (fun rest -> mkCompGenLet m tmp e rest), (mkValAddr m (mkLocalValRef tmp))        
+        Some (tmp,e), (mkValAddr m (mkLocalValRef tmp))        
+
+let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
+    let optBind, addre = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
+    match optBind with 
+    | None -> (fun x -> x), addre
+    | Some (tmp,rval) -> (fun x -> mkCompGenLet m tmp rval x), addre
 
 let mkRecdFieldGet g (e,fref:RecdFieldRef,tinst,m) = 
+    assert (not (isByrefTy g (tyOfExpr g e)))
     let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkRecdFieldGetViaExprAddr(e',fref,tinst,m))
 
-let mkRecdFieldSet g (e,fref:RecdFieldRef,tinst,e2,m) = 
-    let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false DefinitelyMutates e None m
-    wrap (mkRecdFieldSetViaExprAddr(e',fref,tinst,e2,m))
+let mkUnionCaseFieldGetUnproven g (e,cref:UnionCaseRef,tinst,j,m) = 
+    assert (not (isByrefTy g (tyOfExpr g e)))
+    let wrap,e' = mkExprAddrOfExpr g cref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
+    wrap (mkUnionCaseFieldGetUnprovenViaExprAddr (e',cref,tinst,j,m))
+
 
 let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty],args,m)
 
@@ -5505,12 +5549,13 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
-            (mkUnionCaseFieldGetUnproven(access,c,tinst,n,m), 
+            (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
                let tcref = c.TyconRef
-               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
-               mkUnionCaseFieldSet(access,c,tinst,n,e,m))))
+               if not (c.FieldByIndex(n)).IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
+                 errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
+               mkUnionCaseFieldSet (access,c,tinst,n,e,m))))
 
   | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
       (tcref.TrueInstanceFieldsAsRefList, args) ||> List.iter2 (fun fref arg -> 
@@ -5521,7 +5566,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                // NICE: it would be better to do this check in the type checker 
                if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName),m));
-               mkRecdFieldSet g (access,fref,tinst,e,m))) arg )
+               mkRecdFieldSetViaExprAddr (access,fref,tinst,e,m))) arg )
   | Expr.Val _
   | Expr.Lambda _
   | Expr.Obj _
@@ -5850,8 +5895,8 @@ let mkRecordExpr g (lnk,tcref,tinst,rfrefs:RecdFieldRef list,args,m) =
 //------------------------------------------------------------------------- 
  
 let mkRefCell     g m ty e = mkRecordExpr g (RecdExpr,g.refcell_tcr_canon,[ty],[mkRefCellContentsRef g],[e],m)
-let mkRefCellGet g m ty e = mkRecdFieldGet g (e,mkRefCellContentsRef g,[ty],m)
-let mkRefCellSet g m ty e1 e2 = mkRecdFieldSet g (e1,mkRefCellContentsRef g,[ty],e2,m)
+let mkRefCellGet g m ty e = mkRecdFieldGetViaExprAddr (e,mkRefCellContentsRef g,[ty],m)
+let mkRefCellSet g m ty e1 e2 = mkRecdFieldSetViaExprAddr (e1,mkRefCellContentsRef g,[ty],e2,m)
 
 let mkNil g m ty = mkUnionCaseExpr (g.nil_ucref,[ty],[],m)
 let mkCons g ty h t = mkUnionCaseExpr (g.cons_ucref,[ty],[h;t],unionRanges h.Range t.Range)
@@ -7843,8 +7888,8 @@ let DetectAndOptimizeForExpression g option expr =
             let elemTy                      = destListTy g enumerableTy
 
             let guardExpr                   = mkNonNullTest g m nextExpr
-            let headOrDefaultExpr           = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
-            let tailOrNullExpr              = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
+            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
+            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
             let bodyExpr                    =
                 mkCompGenLet m elemVar headOrDefaultExpr
                     (mkCompGenSequential mBody
