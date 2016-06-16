@@ -1,0 +1,178 @@
+# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+[$RootKey$\ShellFileAssociations]
+".fs"="VisualStudio.fs.15.0"
+".fsi"="VisualStudio.fsi.15.0"
+".fsscript"="VisualStudio.fsscript.15.0"
+".fsx"="VisualStudio.fsx.15.0"
+".fsproj"="VisualStudio.Launcher.fsproj.15.0"
+
+[$RootKey$\Services\{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}]
+"Name"="F#"
+@="{871d2a70-12a2-4e42-9440-425dd92a4116}"
+
+[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{e847195f-56ff-fbc3-d0f2-f7254fb9439c}]
+"Name"="FSharp.Core"
+"PublicKeyToken"="b03f5f7f11d50a3a"
+"OldVersion"="2.0.0.0-4.4.0.0"
+"NewVersion"="4.4.1.0"
+"Culture"="neutral"
+
+[$RootKey$\Projects\{A1591282-1198-4647-A2B1-27E5FF5F6F3B}\LanguageTemplates]
+"{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"
+
+[$RootKey$\Projects\{76B279E8-36ED-494E-B145-5344F8DEFCB6}]
+"Language(VsTemplate)"="FSharp"
+"Package"="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}"
+"ShowOnlySpecifiedTemplates(VsTemplate)"="00000000"
+"TemplateGroupIDs(VsTemplate)"="Silverlight"
+@="F# Silverlight Project Templates"
+
+[$RootKey$\Projects\{76B279E8-36ED-494E-B145-5344F8DEFCB6}\SilverlightProperties]
+"CodeFileExtension"=".fs"
+"TemplateFolder"="FSharp"
+"DefaultProjectTemplate"="SilverlightLibrary\SilverlightLibrary.vstemplate"
+"LanguageDisplayString"="Visual F#"
+"PropertyPagesToRemove"="{6D2D9B56-2691-4624-A1BF-D07A14594748};{9CFBEB2A-6824-43e2-BD3B-B112FEBC3772}"
+
+[$RootKey$\InstalledProducts\Microsoft Visual F#]
+"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
+"ProductDetails"="#9002"
+"LogoID"="#400"
+"UseVSProductID"="1"
+@="#9001"
+
+[$RootKey$\AD7Metrics\ExpressionEvaluator\{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}\{994B45C4-E6E9-11D2-903F-00C04FA302A1}]
+"CLSID"="{60F5556F-7EBC-4992-8E83-E9B49187FDE3}"
+"Language"="F#"
+"Name"="F#"
+"PreloadModules"="1" 
+"CacheFile"="attribcache90.bin" 
+"GlobalVisualizersDirectory"="$(reg.MODULE_DIR)" 
+"HelperObject"="{5749A995-CBC2-4de4-86AF-C934D5E57BB9}" 
+"HostAssemblyName"="$(reg.VisualizerAssemblyName)" 
+"HostAssemblyRelativeLocation"="PublicAssemblies" 
+"HostAssemblyFile"="Microsoft.VisualStudio.DebuggerVisualizers.dll" 
+"HostClassName"="Microsoft.VisualStudio.DebuggerVisualizers.DebugViewerShim.DebugeeHost" 
+"ViewerClassRef"="Microsoft.VisualStudio.DebuggerVisualizers.DebugViewerShim.ManagedShim, $(reg.VisualizerAssemblyName)" 
+"ObjectSourceClassRef"="Microsoft.VisualStudio.DebuggerVisualizers.VisualizerObjectSource, $(reg.VisualizerAssemblyName)" 
+"UnmanagedViewer"="{0A9F2A56-3827-42dc-8A8F-B594879873AF}" 
+"VSUserDataLocationKey"="$(reg.REGROOT)" 
+"VSUserDataLocationValue"="VisualStudioLocation" 
+"VisualizersDirectoryName"="Visualizers" 
+"VisualizersOriginalDirectoryName"="Original" 
+"DefaultVSLocation"="Microsoft Visual Studio 15" 
+"AssertToggleObject"="System.Diagnostics.TraceInternal.listeners.list._items[\[]0[\]]" 
+"AssertToggleField"="assertUIEnabled" 
+"AssertToggleInit"="((System.Diagnostics.DefaultTraceListener)System.Diagnostics.TraceInternal.Listeners[\[]0[\]]).AssertUiEnabled" 
+"LoadRuntimeExpression1"="System.Type.GetType(&quot;Microsoft.VisualStudio.Debugger.Runtime.Main, Microsoft.VisualStudio.Debugger.Runtime, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&quot;)" 
+"LoadRuntimeExpression2"="Microsoft.VisualStudio.Debugger.Runtime.Main.Initialize((System.IntPtr)0x%p)" 
+"LoadInShimManagedEE"="1" 
+"TracingExpression1"="System.Type.GetType(&quot;Microsoft.VisualStudio.Debugger.Runtime.Tracing, Microsoft.VisualStudio.Debugger.Runtime, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&quot;)" 
+"TracingExpression2"="Microsoft.VisualStudio.Debugger.Runtime.Tracing.Refresh(@&quot;%s&quot;)" 
+
+[$RootKey$\AD7Metrics\ExpressionEvaluator\{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}\{994B45C4-E6E9-11D2-903F-00C04FA302A1}\Engine]
+"0"="{449EC4CC-30D2-4032-9256-EE18EB41B62B}" 
+"1"="{92EF0900-2251-11D2-B72E-0000F87572EF}" 
+
+[$RootKey$\Packages\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}]
+"ProductVersion"="4.1"
+"ProductName"="Visual F#"
+"CompanyName"="Microsoft Corp."
+
+[$RootKey$\Menus]
+"{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"=", 1000.ctmenu, 1"
+
+[$RootKey$\CLSID\{e1194663-db3c-49eb-8b45-276fcdc440ea}]
+"InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
+"Class"="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpBuildPropertyPage"
+"Assembly"="FSharp.ProjectSystem.FSharp, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpBuildPropertyPage"
+
+[$RootKey$\CLSID\{6d2d9b56-2691-4624-a1bf-d07a14594748}]
+"InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
+"Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpApplicationPropPageComClass"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.Editors.PropertyPages.FSharpApplicationPropPageComClass"
+
+[$RootKey$\CLSID\{dd84aa8f-71bb-462a-8ef8-c9992cb325b7}]
+"InprocServer32"="$System$mscoree.dll"
+"Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildEventsPropPageComClass"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildEventsPropPageComClass"
+
+[$RootKey$\CLSID\{fac0a17e-2e70-4211-916a-0d34fb708bff}]
+"InprocServer32"="$System$mscoree.dll"
+"Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildPropPageComClass"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.Editors.PropertyPages.FSharpBuildPropPageComClass"
+
+[$RootKey$\CLSID\{9cfbeb2a-6824-43e2-bd3b-b112febc3772}]
+"InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
+"Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpDebugPropPageComClass"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.Editors.PropertyPages.FSharpDebugPropPageComClass"
+
+[$RootKey$\CLSID\{df16b1a2-0e91-4499-ae60-c7144e614bf1}]
+"InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
+"Class"="Microsoft.VisualStudio.Editors.PropertyPages.FSharpReferencePathsPropPageComClass"
+"Assembly"="FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+"ThreadingModel"="Both"
+@="Microsoft.VisualStudio.Editors.PropertyPages.FSharpReferencePathsPropPageComClass"
+
+[$RootKey$\Projects\{f2a71f9b-5d33-465a-a702-920d77279786}]
+"DisplayName"="Visual F#"
+"DisplayProjectFileExtensions"="#6002"
+"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
+"DefaultProjectExtension"="fsproj"
+"PossibleProjectExtensions"="fsproj"
+"ProjectTemplatesDir"="\.\NullPath"
+"Language(VsTemplate)"="FSharp"
+@="FSharpProjectFactory"
+
+[$RootKey$\Projects\{f2a71f9b-5d33-465a-a702-920d77279786}\Filters\F# Code Files]
+"CommonOpenFilesFilter"="1"
+"SortPriority"="2000"
+@="#6003"
+
+[$RootKey$\Projects\{f2a71f9b-5d33-465a-a702-920d77279786}\AddItemTemplates\TemplateDirs\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}\/1]
+"SortPriority"="32"
+"TemplatesDir"="\.\NullPath"
+@="#6007"
+
+[$RootKey$\Projects\{4ead5bc6-47f1-4fcb-823d-0cd64302d5b9}\WebApplicationProperties]
+"CodeBehindCodeGenerator"="{00000000-0000-0000-0000-000000000000}"
+
+[$RootKey$\NewProjectTemplates\TemplateDirs\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}\/1]
+"SortPriority"="31"
+"TemplatesDir"="\.\NullPath"
+"DeveloperActivity"="Visual F#"
+@="Visual F#"
+
+[$RootKey$\Services\{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}]
+"Name"="FSharpInteractive"
+@="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
+
+[$RootKey$\AutomationProperties\TextEditor\FSharp]
+"Package"="{F5E7E720-1401-11D1-883B-0000F87579D2}"
+"Name"="F#"
+"ProfileSave"="1"
+"VSSettingsMigration"="1"
+@="F#"
+
+[$RootKey$\Languages\Language Services\FSharpInteractive]
+"Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
+"NotALanguage"="1"
+@="{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}"
+
+[$RootKey$\FontAndColors\FSharpInteractive]
+"Category"="{00CCEE86-3140-4E06-A65A-A92665A40D6F}"  
+"Package"="{F5E7E71D-1401-11D1-883B-0000F87579D2}"  
+"ToolWindowPackage"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"    
+"NameID"="9027"
+@="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"

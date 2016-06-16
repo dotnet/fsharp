@@ -58,7 +58,7 @@ module internal PrintUtilities =
 
     let applyMaxMembers maxMembers (alldecls : _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> Seq.truncate n |> Seq.toList) @ [wordL "..."] 
+        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL "..."] 
         | _ -> alldecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)
@@ -516,8 +516,6 @@ module private PrintIL =
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
                 | _      -> comment "`Invoke` method could not be found"
             wordL "delegate" ^^ wordL "of" ^^ rhs
-
-        | ILTypeDefKind.Other _   -> comment "cannot show type"
           
     and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ILTypeDef) =
         let name     = adjustILName typeDef.Name
@@ -1383,11 +1381,11 @@ module private TastDefinitionPrinting =
     /// When repn is class or datatype constructors (not single one).
     let breakTypeDefnEqn repr =
         match repr with 
-        | TFsObjModelRepr _ -> true
-        | TFiniteUnionRepr r    -> r.CasesTable.UnionCasesAsList.Length > 1
+        | TFSharpObjectRepr _ -> true
+        | TUnionRepr r    -> r.CasesTable.UnionCasesAsList.Length > 1
         | TRecdRepr _ -> true
         | TAsmRepr _ 
-        | TILObjModelRepr _  
+        | TILObjectRepr _  
         | TMeasureableRepr _ 
 #if EXTENSIONTYPING
         | TProvidedTypeExtensionPoint _
@@ -1594,7 +1592,7 @@ module private TastDefinitionPrinting =
           let adhoc = adhoc |> List.sortBy sortKey
           let iimpls = 
               match tycon.TypeReprInfo with 
-              | TFsObjModelRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+              | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
               | _ -> tycon.ImmediateInterfacesOfFSharpTycon
           let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
           // if TTyconInterface, the iimpls should be printed as inherited interfaces 
@@ -1613,11 +1611,11 @@ module private TastDefinitionPrinting =
           let repr = tycon.TypeReprInfo
           match repr with 
           | TRecdRepr _ 
-          | TFiniteUnionRepr _  
-          | TFsObjModelRepr _ 
+          | TUnionRepr _  
+          | TFSharpObjectRepr _ 
           | TAsmRepr _         
           | TMeasureableRepr _
-          | TILObjModelRepr _ -> 
+          | TILObjectRepr _ -> 
               let brk  = nonNil memberLs || breakTypeDefnEqn repr
               let rhsL =                     
                   let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
@@ -1628,7 +1626,7 @@ module private TastDefinitionPrinting =
                       let recdL = tycon.TrueFieldsAsList |> List.map recdFieldRefL |> applyMaxMembers denv.maxMembers |> aboveListL |> braceL
                       Some (addMembersAsWithEnd (addReprAccessL recdL))
                         
-                  | TFsObjModelRepr r -> 
+                  | TFSharpObjectRepr r -> 
                       match r.fsobjmodel_kind with 
                       | TTyconDelegate (TSlotSig(_,_, _,_,paraml, rty)) ->
                           let rty = GetFSharpViewOfReturnType denv.g rty
@@ -1675,18 +1673,18 @@ module private TastDefinitionPrinting =
                                   let declsL = aboveListL alldecls
                                   let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL "end" | None -> declsL
                                   Some declsL
-                  | TFiniteUnionRepr _        -> 
+                  | TUnionRepr _        -> 
                       let layoutUnionCases = tycon.UnionCasesAsList |> layoutUnionCases denv |> applyMaxMembers denv.maxMembers |> aboveListL
                       Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
                   | TAsmRepr _                      -> 
                       Some (wordL "(# \"<Common IL Type Omitted>\" #)")
                   | TMeasureableRepr ty                 ->
                       Some (layoutType denv ty)
-                  | TILObjModelRepr (_,_,td) -> 
+                  | TILObjectRepr (_,_,td) -> 
                       Some (PrintIL.layoutILTypeDef denv td)
                   | _  -> None
 
-              let brk  = match tycon.TypeReprInfo with | TILObjModelRepr _ -> true | _  -> brk
+              let brk  = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _  -> brk
               match rhsL with 
               | None  -> lhsL
               | Some rhsL -> 
@@ -1743,8 +1741,8 @@ module private InferredSigPrinting =
 
         let rec isConcreteNamespace x = 
             match x with 
-            | TMDefRec(tycons,binds,mbinds,_) -> 
-                nonNil tycons || not (FlatList.isEmpty binds) || (mbinds |> List.exists (fun (ModuleOrNamespaceBinding(x,_)) -> not x.IsNamespace))
+            | TMDefRec(_,tycons,mbinds,_) -> 
+                nonNil tycons || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
             | TMDefLet _  -> true
             | TMDefDo _  -> true
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
@@ -1760,16 +1758,16 @@ module private InferredSigPrinting =
             let filterVal    (v:Val) = not v.IsCompilerGenerated && isNone v.MemberInfo
             let filterExtMem (v:Val) = v.IsExtensionMember
             match x with 
-            | TMDefRec(tycons,binds,mbinds,_) -> 
+            | TMDefRec(_,tycons,mbinds,_) -> 
                   TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
-                  (binds |> valsOfBinds |> List.filter filterExtMem |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
-                  (binds |> valsOfBinds |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.layoutValOrMember denv)   |> aboveListL) @@
-                  (mbinds |> List.map (imbindL denv) |> aboveListL)
+                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterExtMem |> TastDefinitionPrinting.layoutExtensionMembers denv) @@
+                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) |> valsOfBinds |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.layoutValOrMember denv)   |> aboveListL) @@
+                  (mbinds |> List.choose (function ModuleOrNamespaceBinding.Module (mspec,def) -> Some (mspec,def) | _ -> None) |> List.map (imbindL denv) |> aboveListL)
             | TMDefLet(bind,_) -> ([bind.Var] |> List.filter filterVal    |> List.map (PrintTastMemberOrVals.layoutValOrMember denv) |> aboveListL)
             | TMDefs defs -> imdefsL denv defs
             | TMDefDo _  -> emptyL
             | TMAbstract mexpr -> imexprLP denv mexpr
-        and imbindL denv  (ModuleOrNamespaceBinding(mspec, def)) = 
+        and imbindL denv  (mspec, def) = 
             let nm =  mspec.DemangledModuleOrNamespaceName
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
             let outerPath = mspec.CompilationPath.AccessPath

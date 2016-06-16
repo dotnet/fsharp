@@ -42,6 +42,7 @@
 /tests/fsharpqa/Source/*FSharpQA_Failures.env
 /tests/fsharpqa/Source/*FSharpQA_Failures.lst
 /tests/**/FSharp.Core.dll
+/tests/fsharp/typecheck/sigs/neg94-pre.dll
 lib/debug
 lib/release
 lib/proto
@@ -79,6 +80,7 @@ ossreadme*.txt
 *.mdf
 *.ldf
 *.cto
+*.vstman
 project.lock.json
 lkg/bin
 lkg/FSharp-14.0.23413.0/bin/Fsi.exe.config

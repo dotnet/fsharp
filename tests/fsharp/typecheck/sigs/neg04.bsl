@@ -69,55 +69,55 @@ neg04.fs(121,12,121,16): typecheck error FS0193: Type constraint mismatch. The t
     'R'    
 is not compatible with type
     'IBar'    
-The type 'R' is not compatible with the type 'IBar'
+
 
 neg04.fs(126,12,126,16): typecheck error FS0193: Type constraint mismatch. The type 
     'U'    
 is not compatible with type
     'IBar'    
-The type 'U' is not compatible with the type 'IBar'
+
 
 neg04.fs(131,12,131,21): typecheck error FS0193: Type constraint mismatch. The type 
     'Struct'    
 is not compatible with type
     'IBar'    
-The type 'Struct' is not compatible with the type 'IBar'
+
 
 neg04.fs(135,10,135,16): typecheck error FS0193: Type constraint mismatch. The type 
     'R'    
 is not compatible with type
     'IBar'    
-The type 'R' is not compatible with the type 'IBar'
+
 
 neg04.fs(138,10,138,16): typecheck error FS0193: Type constraint mismatch. The type 
     'U'    
 is not compatible with type
     'IBar'    
-The type 'U' is not compatible with the type 'IBar'
+
 
 neg04.fs(141,10,141,21): typecheck error FS0193: Type constraint mismatch. The type 
     'Struct'    
 is not compatible with type
     'IBar'    
-The type 'Struct' is not compatible with the type 'IBar'
+
 
 neg04.fs(144,10,144,25): typecheck error FS0193: Type constraint mismatch. The type 
     'int * int'    
 is not compatible with type
     'IBar'    
-The type 'int * int' is not compatible with the type 'IBar'
+
 
 neg04.fs(147,10,147,20): typecheck error FS0193: Type constraint mismatch. The type 
     'int []'    
 is not compatible with type
     'IBar'    
-The type 'int []' is not compatible with the type 'IBar'
+
 
 neg04.fs(150,10,150,26): typecheck error FS0193: Type constraint mismatch. The type 
     'int -> int'    
 is not compatible with type
     'IBar'    
-The type 'int -> int' is not compatible with the type 'IBar'
+
 
 neg04.fs(159,47,159,57): typecheck error FS0692: This function value is being used to construct a delegate type whose signature includes a byref argument. You must use an explicit lambda expression taking 1 arguments.
 

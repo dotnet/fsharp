@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:NetFx="http://schemas.microsoft.com/wix/NetFxExtension">
+
+	<Fragment>
+		<PropertyRef Id="VS15_ROOT_FOLDER" />
+		<PropertyRef Id="MSBUILD15_ROOT_FOLDER" />
+		
+		<ComponentGroup Id="Compiler_PublicAssemblies">		
+		
+			<ComponentRef Id="Compiler_PublicAssemblies_FSharp.Core.dll" />		
+
+			<?if $(var.Lang) != ENU ?>
+			<ComponentRef Id="Compiler_PublicAssemblies_FSharp.Core.dll_$(var.Lang)" />
+			<?endif ?>
+
+		</ComponentGroup>
+
+		<DirectoryRef Id="VS15_Common7_IDE_PublicAssemblies">
+
+			<Component Id="Compiler_PublicAssemblies_FSharp.Core.dll" Guid="$(fsharp.guid(Compiler_PublicAssemblies_FSharp.Core.dll, $(var.Lang)))">
+				<File Id="Compiler_PublicAssemblies_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
+					<NetFx:NativeImage Id="Compiler_PublicAssemblies_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" />
+				</File>
+				<File Id="Compiler_PublicAssemblies_FSharp.Core.sigdata" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
+				<File Id="Compiler_PublicAssemblies_FSharp.Core.optdata" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+			</Component>
+
+			<?if $(var.Lang) != ENU ?>
+
+			<Component Id="Compiler_PublicAssemblies_FSharp.Core.dll_$(var.Lang)" Guid="$(fsharp.guid(Compiler_PublicAssemblies_FSharp.Core.dll_$(var.Lang), $(var.Lang)))">
+				<File Id="Compiler_PublicAssemblies_FSharp.Core.dll_$(var.Lang)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" />
+			</Component>
+
+			<?endif ?>
+			
+		</DirectoryRef>
+	</Fragment>
+</Wix>

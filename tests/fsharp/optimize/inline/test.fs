@@ -31,3 +31,11 @@ let testAccessingSomethingInlinableThatUsesAPrivateInlinedConstructFromAThirdMod
 //let testAccessingSomethingInlinableThatUsesAInternalConstructFromAnInternalsVisibleToAssembly = 
 //    Bar().BarMethod()
 
+let testVector3StructRecord v1 v2 =
+    Vector3StructRecord.dot v1 v2
+
+let testVector3StructRecordMutableField v1 v2 =
+    Vector3StructRecordMutableField.dot v1 v2
+
+let testVector3StructRecordGeneric v1 v2 =
+    Vector3StructRecordGeneric.dot v1 v2

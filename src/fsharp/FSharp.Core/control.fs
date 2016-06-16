@@ -908,8 +908,8 @@ namespace Microsoft.FSharp.Control
             resultA()
 
         /// Implement use/Dispose
-        let usingA (r:'T :> IDisposable) f =  
-            tryFinallyA (fun () -> r.Dispose()) (callA f r)
+        let usingA (r:'T :> IDisposable) (f:'T -> Async<'a>) : Async<'a> =
+            tryFinallyA (fun () -> Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose r) (callA f r)
 
         let ignoreA p = 
             bindA p (fun _ -> doneA)
@@ -1553,7 +1553,7 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        args.aux.ccont (new OperationCanceledException())
+                        args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException()))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else

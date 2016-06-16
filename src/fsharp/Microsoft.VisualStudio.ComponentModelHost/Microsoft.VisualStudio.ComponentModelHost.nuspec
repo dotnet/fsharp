@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.VisualStudio.CompilerModelHost</id>
+        <description>XXXX</description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>http://www.microsoft.com</licenseUrl>
+        <projectUrl>http://www.microsoft.com</projectUrl>
+        <tags>$tags$</tags>
+    </metadata>
+    <files>
+        <file src="Microsoft.VisualStudio.ComponentModelHost.dll" target="lib" />
+    </files>
+</package>

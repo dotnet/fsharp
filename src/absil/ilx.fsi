@@ -22,8 +22,8 @@ type IlxUnionField =
     member ILField : ILFieldDef
     
 type IlxUnionAlternative = 
-    { altName: string;
-      altFields: IlxUnionField[];
+    { altName: string
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member FieldDefs : IlxUnionField[]
@@ -64,8 +64,8 @@ type IlxClosureLambdas =
     | Lambdas_return of ILType
 
 type IlxClosureFreeVar = 
-    { fvName: string ; 
-      fvCompilerGenerated:bool; 
+    { fvName: string  
+      fvCompilerGenerated:bool 
       fvType: ILType }
 
 type IlxClosureRef = 
@@ -89,58 +89,30 @@ type IlxClosureApps =
     | Apps_app of ILType * IlxClosureApps 
     | Apps_done of ILType
 
-/// ILX extensions to the instruction set.
-type IlxInstr = 
-    | EI_lddata of (* avoidHelpers: *) bool * IlxUnionSpec * int * int
-    | EI_isdata of (* avoidHelpers: *) bool * IlxUnionSpec * int
-    | EI_brisdata of (* avoidHelpers: *) bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel
-    | EI_castdata of bool * IlxUnionSpec * int
-    | EI_stdata of IlxUnionSpec * int * int
-    | EI_datacase of (* avoidHelpers: *) bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel (* last label is fallthrough *)
-    | EI_lddatatag of (* avoidHelpers: *) bool * IlxUnionSpec
-    | EI_newdata of IlxUnionSpec * int
-    | EI_callfunc of ILTailcall * IlxClosureApps
-
-val mkIlxExtInstr: (IlxInstr -> IlxExtensionInstr)
-val isIlxExtInstr: (IlxExtensionInstr -> bool)
-val destIlxExtInstr: (IlxExtensionInstr -> IlxInstr)
-
-val mkIlxInstr: IlxInstr -> ILInstr
-
 // -------------------------------------------------------------------- 
 // ILX extensions to the kinds of type definitions available
 // -------------------------------------------------------------------- 
 
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas;
-      cloFreeVars: IlxClosureFreeVar[];  
-      cloCode: Lazy<ILMethodBody>;
+    { cloStructure: IlxClosureLambdas
+      cloFreeVars: IlxClosureFreeVar[]  
+      cloCode: Lazy<ILMethodBody>
       cloSource: ILSourceMarker option}
 
-and IlxUnionInfo = 
+type IlxUnionInfo = 
     { /// Is the representation public? 
-      cudReprAccess: ILMemberAccess; 
+      cudReprAccess: ILMemberAccess 
       /// Are the representation helpers public? 
-      cudHelpersAccess: ILMemberAccess; 
+      cudHelpersAccess: ILMemberAccess 
       /// Generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers; 
-      cudDebugProxies: bool; 
-      cudDebugDisplayAttributes: ILAttribute list;
-      cudAlternatives: IlxUnionAlternative[];
-      cudNullPermitted: bool;
+      cudHasHelpers: IlxUnionHasHelpers 
+      cudDebugProxies: bool 
+      cudDebugDisplayAttributes: ILAttribute list
+      cudAlternatives: IlxUnionAlternative[]
+      cudNullPermitted: bool
       /// Debug info for generated code for classunions.
-      cudWhere: ILSourceMarker option;  
+      cudWhere: ILSourceMarker option  
     }
-
-type IlxTypeDefKind = 
-   | Closure of IlxClosureInfo
-   | Union of IlxUnionInfo
-
-val mkIlxExtTypeDefKind: (IlxTypeDefKind -> IlxExtensionTypeKind)
-val isIlxExtTypeDefKind: (IlxExtensionTypeKind -> bool)
-val destIlxExtTypeDefKind: (IlxExtensionTypeKind -> IlxTypeDefKind)
-
-val mkIlxTypeDefKind: IlxTypeDefKind -> ILTypeDefKind
 
 // -------------------------------------------------------------------- 
 // MS-ILX constructs: Closures, thunks, classunions

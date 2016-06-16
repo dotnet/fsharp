@@ -1,0 +1,16 @@
+use vs
+
+package name=Microsoft.FSharp
+        version=4.1
+        vs.package.chip=neutral
+        vs.package.language=en-us
+        vs.package.type=vsix
+        vs.package.vsixId=VisualFSharp
+
+vs.localizedResources
+  vs.localizedResource language=en-us
+                       title="Visual F# Tools"
+                       description="Deploy Visual F# Tools templates to Visual Studio"
+
+vs.payloads
+  vs.payload source=$(InsertionFolder)\vsix\VisualFSharpVsix.Professional.vsix

@@ -1671,9 +1671,9 @@ and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with 
     | TRecdRepr fs             -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TFiniteUnionRepr x       -> p_byte 1 st; p_byte 1 st; p_list p_unioncase_spec (Array.toList x.CasesTable.CasesByIndex) st; false
+    | TUnionRepr x       -> p_byte 1 st; p_byte 1 st; p_list p_unioncase_spec (Array.toList x.CasesTable.CasesByIndex) st; false
     | TAsmRepr ilty            -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
-    | TFsObjModelRepr r        -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
+    | TFSharpObjectRepr r        -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty      -> p_byte 1 st; p_byte 4 st; p_typ ty st; false
     | TNoRepr                  -> p_byte 0 st; false
 #if EXTENSIONTYPING
@@ -1686,7 +1686,7 @@ and p_tycon_repr x st =
             p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),emptyILGenericArgs))) st; true
     | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
 #endif
-    | TILObjModelRepr (_,_,td) -> error (Failure("Unexpected IL type definition"+td.Name))
+    | TILObjectRepr (_,_,td) -> error (Failure("Unexpected IL type definition"+td.Name))
 
 and p_tycon_objmodel_data x st = 
   p_tup3 p_tycon_objmodel_kind (p_vrefs "vslots") p_rfield_table 
@@ -1897,7 +1897,7 @@ and u_tycon_repr st =
                             | h::t -> let nestedTypeDef = tdefs.FindByName h
                                       find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs,ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
-                        TILObjModelRepr(st.iilscope,nestedILTypeDefs,ilTypeDef)
+                        TILObjectRepr(st.iilscope,nestedILTypeDefs,ilTypeDef)
                     with _ -> 
                         System.Diagnostics.Debug.Assert(false, sprintf "failed to find IL backing metadata for cross-assembly generated type %s" iltref.FullName)
                         TNoRepr
@@ -1905,7 +1905,7 @@ and u_tycon_repr st =
                     TAsmRepr v)
         | 3 -> 
             let v = u_tycon_objmodel_data  st 
-            (fun _flagBit -> TFsObjModelRepr v)
+            (fun _flagBit -> TFSharpObjectRepr v)
         | 4 -> 
             let v = u_typ st 
             (fun _flagBit -> TMeasureableRepr v)

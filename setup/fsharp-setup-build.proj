@@ -1,0 +1,54 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+    <Import Project="..\src\Microbuild.Settings.targets" />
+
+    <PropertyGroup>
+        <SetupRootFolder>.</SetupRootFolder>
+        <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+        <Languages Condition="'$(Languages)' == ''">ENU</Languages>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <SetupLanguages Include="$(Languages.Split(','))" />
+    </ItemGroup>
+
+    <Import Project="FSharp.Setup.props" />
+
+    <Target Name="Build">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Build" />
+        
+        <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Rebuild" Properties="Lang=%(SetupLanguages.Identity)"/>
+        
+        <MSBuild Projects="Insertion\FSharp.SDK\FSharp.SDK.swixproj" Targets="Build" />
+        <MSBuild Projects="Insertion\VisualFSharpVSIX\VisualFSharpVSIX.swixproj" Targets="Build" />
+        <MSBuild Projects="Insertion\Insertion.vsmanproj" Targets="Build" />
+    </Target>
+    
+    <Target Name="Rebuild">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Rebuild" />
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Rebuild" Properties="Lang=%(SetupLanguages.Identity)"/>        
+        <MSBuild Projects="Insertion\FSharp.SDK\FSharp.SDK.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Insertion\VisualFSharpVSIX\VisualFSharpVSIX.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Insertion\Insertion.vsmanproj" Targets="Rebuild" />
+    </Target>
+    
+    <Target Name="Clean">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Clean" />
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Clean" Properties="Lang=%(SetupLanguages.Identity)"/>        
+        <MSBuild Projects="Insertion\FSharp.SDK\FSharp.SDK.swixproj" Targets="Clean" />
+        <MSBuild Projects="Insertion\VisualFSharpVSIX\VisualFSharpVSIX.swixproj" Targets="Clean" />
+        <MSBuild Projects="Insertion\Insertion.vsmanproj" Targets="Clean" />
+    </Target>
+    
+    <Target Name="CopyLocalizationResources" BeforeTargets="Build">
+        <ItemGroup>
+            <SetupLocalizationResources Include="resources\**\*.*" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(SetupLocalizationResources)"
+              DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+</Project>
+

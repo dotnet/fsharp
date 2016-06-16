@@ -3,6 +3,7 @@
 Imports System
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
+Imports Microsoft.VisualStudio.Shell
 
 '/* F# additions: begin. */
 <Assembly: AssemblyDescription("FSharp.ProjectSystem.Base.dll")>
@@ -12,3 +13,5 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyProduct("Microsoft\x00ae F#")>
 <Assembly: AssemblyConfiguration("")>
 <Assembly: AssemblyCulture("")>
+
+<Assembly: ProvideCodeBase(CodeBase := "$PackageFolder$\\FSharp.ProjectSystem.PropertyPages.dll")>
