@@ -1288,10 +1288,9 @@ module Pass4_RewriteAssembly =
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
     and TransModuleDef penv (z: RewriteState) x : ModuleOrNamespaceExpr * RewriteState = 
         match x with 
-        | TMDefRec(tycons,binds,mbinds,m) -> 
-            let binds,z = TransValBindings penv z binds
+        | TMDefRec(isRec,tycons,mbinds,m) -> 
             let mbinds,z = TransModuleBindings penv z mbinds
-            TMDefRec(tycons,binds,mbinds,m),z
+            TMDefRec(isRec,tycons,mbinds,m),z
         | TMDefLet(bind,m)            -> 
             let bind,z = TransValBinding penv z bind
             TMDefLet(bind,m),z
@@ -1305,9 +1304,14 @@ module Pass4_RewriteAssembly =
             let mexpr,z = TransModuleExpr penv z mexpr
             TMAbstract(mexpr),z
     and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
-    and TransModuleBinding penv z (ModuleOrNamespaceBinding(nm, rhs)) =
-        let rhs,z = TransModuleDef penv z rhs
-        ModuleOrNamespaceBinding(nm,rhs),z
+    and TransModuleBinding penv z x = 
+        match x with 
+        | ModuleOrNamespaceBinding.Binding bind -> 
+            let bind,z = TransValBinding penv z bind
+            ModuleOrNamespaceBinding.Binding bind,z
+        | ModuleOrNamespaceBinding.Module(nm, rhs) -> 
+            let rhs,z = TransModuleDef penv z rhs
+            ModuleOrNamespaceBinding.Module(nm,rhs),z
 
     let TransImplFile penv z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) =        
         let moduleExpr,z = TransModuleExpr penv z moduleExpr

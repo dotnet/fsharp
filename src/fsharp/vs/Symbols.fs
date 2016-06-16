@@ -370,7 +370,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.FSharpDelegateSignature =
         checkIsResolved()
         match entity.TypeReprInfo with 
-        | TFsObjModelRepr r when entity.IsFSharpDelegateTycon -> 
+        | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
             | TTyconDelegate ss -> FSharpDelegateSignature(cenv,  ss)
             | _ -> invalidOp "not a delegate type"

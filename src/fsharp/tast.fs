@@ -372,7 +372,7 @@ type EntityFlags(flags:int64) =
     /// This bit represents a F# record that is a value type, or a struct record.
     member x.IsStructRecordType                  = (flags       &&&     0b00000100000L) <> 0x0L
 
-    /// This bit is reserved for us in the pickle format, see pickle.fs, it's bing listed here to stop it ever being used for anything else
+    /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
 
     /// Get the flags as included in the F# binary metadata
@@ -681,7 +681,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TRecdRepr x | TFsObjModelRepr {fsobjmodel_rfields=x} -> x
+        | TRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
         |  _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -717,12 +717,12 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TFiniteUnionRepr _ -> true |  _ -> false
+    member x.IsUnionTycon = match x.TypeReprInfo with | TUnionRepr _ -> true |  _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TFiniteUnionRepr x -> Some x 
+        | TUnionRepr x -> Some x 
         |  _ -> None
 
     /// Get the union cases for a type, if any
@@ -759,15 +759,15 @@ type Entity =
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpObjectModelTypeInfo = 
          match x.TypeReprInfo with 
-         | TFsObjModelRepr x -> x 
+         | TFSharpObjectRepr x -> x 
          |  _ -> assert false; failwith "not an F# object model type definition"
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
-    member x.IsILTycon = match x.TypeReprInfo with | TILObjModelRepr _ -> true |  _ -> false
+    member x.IsILTycon = match x.TypeReprInfo with | TILObjectRepr _ -> true |  _ -> false
 
     /// Get the Abstract IL scope, nesting and metadata for this 
     /// type definition, assuming it is backed by Abstract IL metadata.
-    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjModelRepr (a,b,c) -> (a,b,c) |  _ -> assert false; failwith "not a .NET type definition"
+    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr (a,b,c) -> (a,b,c) |  _ -> assert false; failwith "not a .NET type definition"
 
     /// Get the Abstract IL metadata for this type definition, assuming it is backed by Abstract IL metadata.
     member x.ILTyconRawMetadata = let _,_,td = x.ILTyconInfo in td
@@ -779,7 +779,7 @@ type Entity =
     member x.IsStructRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> x.Data.entity_flags.IsStructRecordType | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
-    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFsObjModelRepr _ -> true |  _ -> false
+    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true |  _ -> false
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
     /// an assembly-code representation for the type, e.g. the primitive array type constructor.
@@ -823,7 +823,7 @@ type Entity =
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
         | TRecdRepr _ -> x.IsStructRecordTycon
-        | TFsObjModelRepr info ->
+        | TFSharpObjectRepr info ->
             match info.fsobjmodel_kind with
             | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
             | TTyconStruct | TTyconEnum -> true
@@ -938,7 +938,7 @@ type Entity =
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
                         match x.TypeReprInfo with 
-                        | TILObjModelRepr (ilScopeRef,ilEnclosingTypeDefs,ilTypeDef) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
+                        | TILObjectRepr (ilScopeRef,ilEnclosingTypeDefs,ilTypeDef) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
@@ -963,6 +963,8 @@ type Entity =
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.Data.entity_attribs <- attribs
 
+    /// Sets the rigidity of a type variable
+    member x.SetIsStructRecordType b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
 
 and 
@@ -1125,18 +1127,18 @@ and
     TyconRepresentation = 
 
     /// Indicates the type is a class, struct, enum, delegate or interface 
-    | TFsObjModelRepr    of TyconObjModelData
+    | TFSharpObjectRepr    of TyconObjModelData
 
     /// Indicates the type is a record 
     | TRecdRepr          of TyconRecdFields
 
     /// Indicates the type is a discriminated union 
-    | TFiniteUnionRepr   of TyconUnionData 
+    | TUnionRepr   of TyconUnionData 
 
-    /// TILObjModelRepr(scope, nesting, definition)
+    /// TILObjectRepr(scope, nesting, definition)
     ///
     /// Indicates the type is a type from a .NET assembly without F# metadata.
-    | TILObjModelRepr    of ILScopeRef * ILTypeDef list * ILTypeDef 
+    | TILObjectRepr    of ILScopeRef * ILTypeDef list * ILTypeDef 
 
     /// Indicates the type is implemented as IL assembly code using the given closed Abstract IL type 
     | TAsmRepr           of ILType
@@ -3978,12 +3980,15 @@ and ModuleOrNamespaceExpr =
     | TMDefLet   of Binding * range
     /// Indicates the module fragment is an evaluation of expression for side-effects
     | TMDefDo   of Expr * range
-    /// Indicates the module fragment is a 'rec' definition of types, values and modules
-    | TMDefRec   of Tycon list * Bindings * ModuleOrNamespaceBinding list * range
+    /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
+    | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
 /// A named module-or-namespace-fragment definition 
-and ModuleOrNamespaceBinding = 
-    | ModuleOrNamespaceBinding of 
+and [<RequireQualifiedAccess>] 
+    ModuleOrNamespaceBinding = 
+    //| Do of Expr 
+    | Binding of Binding 
+    | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
          ModuleOrNamespace * 
@@ -4516,7 +4521,7 @@ let MakeUnionCases ucs : TyconUnionData =
     { CasesTable=MakeUnionCasesTable ucs 
       CompiledRepresentation=newCache() }
 
-let MakeUnionRepr ucs = TFiniteUnionRepr (MakeUnionCases ucs)
+let MakeUnionRepr ucs = TUnionRepr (MakeUnionCases ucs)
 
 let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,attribs,eqDep,compDep) = 
     Typar.New
@@ -4587,7 +4592,7 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_other_range = None }
 
     
-let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordType, mtyp) =
+let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
     let stamp = newStamp() 
     Tycon.New "tycon"
       { entity_stamp=stamp
@@ -4596,7 +4601,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_kind=kind
         entity_range=m
         entity_other_range=None
-        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordType=isStructRecordType)
+        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_abbrev = None
@@ -4617,9 +4622,9 @@ let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
 
     // NOTE: hasSelfReferentialCtor=false is an assumption about mscorlib
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
-    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, false, mtyp)
+    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
 
-    tycon.Data.entity_tycon_repr <- TILObjModelRepr (scoref,enc,tdef)
+    tycon.Data.entity_tycon_repr <- TILObjectRepr (scoref,enc,tdef)
     tycon.TypeContents.tcaug_closed <- true
     tycon
 
