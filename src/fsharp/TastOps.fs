@@ -5041,14 +5041,14 @@ and remarkBind m (TBind(v,repr,_)) =
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let ucaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> ucaseAllocObservable
+let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
+let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
-    if tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
+    if tycon.IsUnionTycon then 
+        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+    elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
         tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
-    elif tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists ucaseAllocObservable
     else
         false
 
@@ -5374,7 +5374,7 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStuctTyImmutable g ty =
+let isRecdOrStructTyImmutable g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
@@ -5393,7 +5393,7 @@ let isRecdOrStuctTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStuctTyImmutable implies PossiblyMutates or NeverMutates
+// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
 //
 // We only do this for true local or closure fields because we can't take adddresses of immutable static 
 // fields across assemblies.
@@ -5404,7 +5404,7 @@ let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStuctTyImmutable g v.Type 
+     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal g (v:ValRef) = 
@@ -5423,13 +5423,13 @@ let CanTakeAddressOfRecdFieldRef g (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStuctTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef g (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStuctTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
@@ -5511,7 +5511,10 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(),m));
             | PossiblyMutates -> 
                 warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(),m));
-        let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" ty
+        let tmp,_ = 
+            match mut with 
+            | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 
+            | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
         Some (tmp,e), (mkValAddr m (mkLocalValRef tmp))        
 
 let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
