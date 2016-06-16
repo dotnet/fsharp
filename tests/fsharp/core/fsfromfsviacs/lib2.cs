@@ -32,6 +32,10 @@ public class Lib2
     public static FSharpRef<int> ri1 = new FSharpRef<int>(3);
     public static FSharpRef<Lib.recd1> rr1 = new FSharpRef<Lib.recd1>(r1);
 
+    public static Lib.StructUnionsTests.U0 u0 = Lib.StructUnionsTests.U0.U0;
+    public static Lib.StructUnionsTests.U1 u1 = Lib.StructUnionsTests.U1.NewU1(3);
+    public static Lib.StructUnionsTests.U2 u2 = Lib.StructUnionsTests.U2.NewU2(3,4);
+
     static Lib2() {     r3.recd3field3 = r3; }
 
 }

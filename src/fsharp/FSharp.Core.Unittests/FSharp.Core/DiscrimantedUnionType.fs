@@ -226,3 +226,26 @@ let ``struct unions hold [<NoComparison>] [<NoEquality>] metadata`` () =
     Assert.IsTrue (hasAttribute<NoComparisonStructUnion,NoComparisonAttribute>())
     Assert.IsTrue (hasAttribute<NoComparisonStructUnion,NoEqualityAttribute>())
 
+
+let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnionCase, and we get the fields`` () =
+    let cases = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(typeof<StructUnion>)
+
+    Assert.AreEqual (1, cases.Length)
+    let case = cases.[0]
+
+    Assert.AreEqual ("SU", case.Name)
+    
+    let structUnion = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion (case, [|box 1234; box 3456|])
+
+    Assert.IsTrue (structUnion.GetType().IsValueType)
+
+    let fieldVals = Microsoft.FSharp.Reflection.FSharpValue.GetUnionFields(structUnion, typeof<StructUnion>)
+
+    Assert.AreEqual (2, fieldVals.Length)
+
+    let c = (fieldVals.[0] :?> int)
+    Assert.AreEqual (1234, c)
+
+    let c2 = (fieldVals.[1] :?> int)
+    Assert.AreEqual (3456, c2)
+
