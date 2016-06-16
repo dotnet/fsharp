@@ -1039,7 +1039,7 @@ type DeclKind =
     | IntrinsicExtensionBinding 
     /// Extensions to a type in a different assembly
     | ExtrinsicExtensionBinding 
-    | ClassLetBinding 
+    | ClassLetBinding of (* isStatic *) bool
     | ObjectExpressionOverrideBinding
     | ExpressionBinding 
 
@@ -1048,7 +1048,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> false
+        | ClassLetBinding _ -> false
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
@@ -1059,7 +1059,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
@@ -1079,7 +1079,7 @@ type DeclKind =
             | None -> AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.Property
         | IntrinsicExtensionBinding  -> AttributeTargets.Method ||| AttributeTargets.Property
         | ExtrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property
-        | ClassLetBinding -> AttributeTargets.Field ||| AttributeTargets.Method
+        | ClassLetBinding _ -> AttributeTargets.Field ||| AttributeTargets.Method
         | ExpressionBinding -> enum 0 // indicates attributes not allowed on expression 'let' bindings
 
     // Note: now always true
@@ -1088,7 +1088,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> true
         
@@ -1097,7 +1097,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> false 
 
@@ -1106,7 +1106,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> OverridesOK
         | IntrinsicExtensionBinding -> WarnOnOverrides
         | ExtrinsicExtensionBinding -> ErrorOnOverrides
-        | ClassLetBinding -> ErrorOnOverrides 
+        | ClassLetBinding _ -> ErrorOnOverrides 
         | ObjectExpressionOverrideBinding -> OverridesOK
         | ExpressionBinding -> ErrorOnOverrides 
 
@@ -9650,7 +9650,8 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                     | MemberKind.Constructor -> Some(".ctor")
                     | _ -> Some(name.idText)
                 | _ -> Some(name.idText)
-            | ClassLetBinding, DoBinding, _ -> Some(".ctor")
+            | ClassLetBinding(false), DoBinding, _ -> Some(".ctor")
+            | ClassLetBinding(true), DoBinding, _ -> Some(".cctor")
             | ModuleOrMemberBinding, StandaloneExpression, _ -> Some(".cctor")
             | _, _, _ -> envinner.eCallerMemberName
 
@@ -9686,8 +9687,10 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
         if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning(mBinding))
 
         if isVolatile then 
-            if declKind <> ClassLetBinding then 
-                errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(),mBinding))
+            match declKind with
+            | ClassLetBinding(_) -> ()
+            | _ -> errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(),mBinding))
+
             if (not isMutable || isThreadStatic) then 
                 errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(),mBinding))
 
@@ -11546,7 +11549,7 @@ module IncrClassChecking = begin
             // --- Create this for use inside constructor 
             let thisId  = ident ("this",m)
             let thisValScheme  = ValScheme(thisId,NonGenericTypeScheme(thisTy),None,None,false,ValInline.Never,CtorThisVal,None,true,false,false,false)
-            let thisVal    = MakeAndPublishVal cenv env (ParentNone,false,ClassLetBinding,ValNotInRecScope,thisValScheme,[],XmlDoc.Empty,None,false)
+            let thisVal    = MakeAndPublishVal cenv env (ParentNone,false,ClassLetBinding(false),ValNotInRecScope,thisValScheme,[],XmlDoc.Empty,None,false)
             thisVal
 
         {TyconRef                         = tcref
@@ -12530,14 +12533,14 @@ module TyconBindingChecking = begin
                                 if isRec then
                                 
                                     // Type check local recursive binding 
-                                    let binds = binds |> List.map (fun bind -> RecBindingDefn(ExprContainerInfo,NoNewSlots,ClassLetBinding,bind))
+                                    let binds = binds |> List.map (fun bind -> RecBindingDefn(ExprContainerInfo,NoNewSlots,ClassLetBinding(isStatic),bind))
                                     let binds,env,tpenv = TcLetrec ErrorOnOverrides cenv envForBinding tpenv (binds,scopem(*bindsm*),scopem)
                                     let bindRs = [IncrClassBindingGroup(binds,isStatic,true)]
                                     binds,bindRs,env,tpenv 
                                 else
 
                                     // Type check local binding 
-                                    let binds,env,tpenv = TcLetBindings cenv envForBinding ExprContainerInfo ClassLetBinding tpenv (binds,bindsm,scopem)
+                                    let binds,env,tpenv = TcLetBindings cenv envForBinding ExprContainerInfo (ClassLetBinding(isStatic)) tpenv (binds,bindsm,scopem)
                                     let binds,bindRs = 
                                         binds 
                                         |> List.map (function
