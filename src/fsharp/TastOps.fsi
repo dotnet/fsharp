@@ -1046,7 +1046,7 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
-val isUnionCaseAllocObservable : UnionCaseRef -> bool
+val isUnionCaseRefAllocObservable : UnionCaseRef -> bool
 val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
 val isExnAllocObservable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
