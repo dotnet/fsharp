@@ -317,7 +317,7 @@ module Keywords =
 
     let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
-            warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange));
+            raise(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange));
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
