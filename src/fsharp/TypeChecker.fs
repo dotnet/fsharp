@@ -12759,7 +12759,7 @@ module MutRecBindingChecking =
                                 if isRec then
                                 
                                     // Type check local recursive binding 
-                                    let binds = binds |> List.map (fun bind -> RecBindingDefnInfo(ExprContainerInfo,NoNewSlots,ClassLetBinding(isStatic),bind))
+                                    let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo,NoNewSlots,ClassLetBinding(isStatic),bind))
                                     let binds,env,tpenv = TcLetrec ErrorOnOverrides cenv envForBinding tpenv (binds,scopem(*bindsm*),scopem)
                                     let bindRs = [IncrClassBindingGroup(binds,isStatic,true)]
                                     binds,bindRs,env,tpenv 
