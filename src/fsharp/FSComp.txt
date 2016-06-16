@@ -1309,5 +1309,4 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3201,tcModuleAbbrevFirstInMutRec,"In a recursive declaration group, module abbreviations must come after all 'open' declarations and before other declarations"
 3202,tcUnsupportedMutRecDecl,"This declaration is not supported in recursive declaration groups"
 3203,parsInvalidUseOfRec,"Invalid use of 'rec' keyword"
-3204,considerUpcastOperator,"The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using the :> (upcast) operator instead of the :?> (downcast) operator."
-3205,CallerMemberNameIsOverriden,"The CallerMemberNameAttribute applied to parameter '%s' will have no effect. It is overridden by the CallerFilePathAttribute."
+3204,CallerMemberNameIsOverriden,"The CallerMemberNameAttribute applied to parameter '%s' will have no effect. It is overridden by the CallerFilePathAttribute."
