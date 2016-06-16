@@ -375,7 +375,6 @@ copy lkg\FSharp-14.0.23413.0\bin\fsharp.build.dll tools\fsharp.build.dll
 :: Build Proto
 if NOT EXIST Proto\bin\fsc.dll (set BUILD_PROTO=1)
 
-
 rem The buildtools currently do not deploy crossgen to the tools directory it should.  Note "1.0.2-rc2-24027"
 if NOT EXIST Tools\crossgen.exe (
     copy packages\runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR\1.0.2-rc2-24027\tools\crossgen.exe Tools
@@ -469,6 +468,7 @@ if '%TEST_NET40_COREUNIT%' == '0' (
         )
     )
 )
+
 if '%TEST_CORECLR%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% coreunitcoreclr %TEST_TAGS% 
     @if ERRORLEVEL 1 (
@@ -483,6 +483,7 @@ if '%TEST_CORECLR%' == '1' (
         goto :failed_tests
     )
 )
+
 if '%TEST_VS%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
     if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests

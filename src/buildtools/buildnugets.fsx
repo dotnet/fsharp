@@ -10,23 +10,12 @@ try
     // Command line arguments
     //=========================================================================================
 
-    // Try head was introduced in F# 4.0
-    let tryHead (source : seq<_>) =
-        let checkNonNull argName arg = 
-            match box arg with 
-            | null -> nullArg argName 
-            | _ -> ()
-        checkNonNull "source" source
-        use e = source.GetEnumerator() 
-        if (e.MoveNext()) then Some e.Current
-        else None
-
     let usage = @"usage: BuildNuGets.fsx --version:<build-version> -nuspec:<nuspec-path> --binaries:<binaries-dir>"
 
     let Arguments = fsi.CommandLineArgs |> Seq.skip 1
 
     let GetArgumentFromCommandLine switchName defaultValue = 
-        match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> tryHead with
+        match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Seq.tryHead with
         | Some(file) -> if file.Length <> 0 then file else defaultValue
         | _ -> defaultValue
 
@@ -47,11 +36,11 @@ try
     // Build Nuget Package
     //=========================================================================================
     let author =     @"Microsoft"
-    let licenseUrl = @"https://github.com/Microsoft/visualfsharp/blob/master/License.txt"
+    let licenseUrl = @"http:\\www.microsoft.com"
     let projectUrl = @"https://github.com/Microsoft/visualfsharp"
-    let tags =       @"Visual F# Compiler FSharp coreclr functional programming"
+    let tags =       @"visual,fsharp,functional,programming"
 
-    let nugetArgs = sprintf "pack %s -BasePath \"%s\" -OutputDirectory \"%s\" -ExcludeEmptyDirectories -prop licenseUrl=\"%s\" -prop version=\"%s\" -prop authors=\"%s\" -prop projectURL=\"%s\" -prop tags=\"%s\" -Verbosity detailed"
+    let nugetArgs = sprintf "pack %s -BasePath \"%s\" -OutputDirectory \"%s\" -ExcludeEmptyDirectories -prop licenseUrl=\"%s\" -prop version=%s -prop authors=\"%s\" -prop projectURL=\"%s\" -prop tags=\"%s\" -Verbosity detailed"
                             nuspec
                             layouts
                             output
