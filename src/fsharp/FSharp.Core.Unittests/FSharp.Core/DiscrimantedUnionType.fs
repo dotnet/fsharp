@@ -239,7 +239,7 @@ let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnion
 
     Assert.IsTrue (structUnion.GetType().IsValueType)
 
-    let fieldVals = Microsoft.FSharp.Reflection.FSharpValue.GetUnionFields(structUnion, typeof<StructUnion>)
+    let _uc, fieldVals = Microsoft.FSharp.Reflection.FSharpValue.GetUnionFields(structUnion, typeof<StructUnion>)
 
     Assert.AreEqual (2, fieldVals.Length)
 
