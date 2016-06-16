@@ -2,196 +2,48 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Morphs 
 
+open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-
-type 'T morph = 'T -> 'T
-
-type EnclosingTypeDefs = ILTypeDef list * ILTypeDef
-
-let checking = false 
-let notlazy v = Lazy.CreateFromValue v
 
 let mutable morphCustomAttributeData = false
 
-let enablemorphCustomAttributeData() = 
+let enableMorphCustomAttributeData() = 
     morphCustomAttributeData <- true
 
-let disablemorphCustomAttributeData() =
+let disableMorphCustomAttributeData() =
     morphCustomAttributeData <- false
 
-let mdef_code2code f md  =
-    let code = 
-        match md.mdBody.Contents with 
-        | MethodBody.IL il-> il 
-        | _ -> failwith "mdef_code2code - method not IL"  
-    let code' = MethodBody.IL {code with Code = f code.Code} 
-    {md with mdBody=  mkMethBodyAux code'}  
+let code_instr2instr f (code: ILCode) = {code with Instrs= Array.map f code.Instrs}
 
-let code_block2block f (c:ILCode) = checkILCode (f c)
-
-let bblock_instr2instr f bb = 
-    let instrs = bb.Instructions 
-    let len = Array.length instrs 
-    let res = Array.zeroCreate len 
-    for i = 0 to len - 1 do 
-        res.[i] <- f instrs.[i]
-    {bb with Instructions=res}
-
-// This is quite performance critical 
-let bblock_instr2instrs f bb = 
-    let instrs = bb.Instructions 
-    let mutable codebuf = Array.zeroCreate (Array.length instrs) 
-    let mutable codebuf_size = 0 
+let code_instr2instrs f (code: ILCode) = 
+    let instrs = code.Instrs
+    let codebuf = ResizeArray()
+    let adjust = Dictionary()
+    let mutable old = 0
+    let mutable nw = 0
     for instr in instrs do 
+        adjust.[old] <- nw
         let instrs : list<_> = f instr
         for instr2 in instrs do
-            let sz = codebuf_size 
-            let old_buf_size = Array.length codebuf 
-            let new_size = sz + 1
-            if new_size > old_buf_size then
-              let old = codebuf 
-              let new' = Array.zeroCreate (max new_size (old_buf_size * 4)) 
-              Array.blit old 0 new' 0 sz
-              codebuf <- new'
-              
-            codebuf.[sz] <- instr2
-            codebuf_size <- codebuf_size + 1 
-          
-    {bb with Instructions = Array.sub codebuf 0 codebuf_size}
+            codebuf.Add instr2
+            nw <- nw + 1
+        old <- old + 1
+    adjust.[old] <- nw          
+    { code with 
+         Instrs = codebuf.ToArray()
+         Labels = Dictionary.ofList [ for kvp in code.Labels -> kvp.Key, adjust.[kvp.Value] ] }
 
-// Map each instruction in a basic block to a more complicated block that 
-// may involve internal branching, but which will still have one entry 
-// label and one exit label. This is used, for example, when macro-expanding 
-// complicated high-level ILX instructions. 
-// The morphing function is told the name of the input and output labels 
-// that must be used for the generated block. 
-// Optimize the case where an instruction gets mapped to a 
-// straightline sequence of instructions by allowing the morphing 
-// function to return a special result for this case. 
-// 
-// Let [i] be the instruction being morphed.  If [i] is a control-flow 
-// then instruction then [f] must return either a control-flow terminated 
-// sequence of instructions or a block both of which must targets the same labels 
-// (or a subset of the labels) targeted in [i].  If [i] 
-// is not a if not a control-flow instruction then [f] 
-// must return a block targeting the given output label. 
 
-let rec countAccInstrs (xss:ILInstr list list) acc = 
-    match xss with 
-    | [] -> acc
-    | xs :: rest -> countAccInstrs rest (acc + List.length xs)
 
-let rec commitAccInstrsAux (xs:ILInstr list) (arr:ILInstr[]) i = 
-    match xs with 
-    | [] -> ()
-    | x :: rest -> arr.[i] <- x; commitAccInstrsAux rest arr (i+1)
-    
-// Fill in the array chunk by chunk from the end and work backwards
-let rec commitAccInstrs xss arr i = 
-    match xss with 
-    | [] -> assert (i = 0)
-    | xs :: rest -> 
-        let n = List.length xs
-        commitAccInstrsAux xs arr (i - n)
-        commitAccInstrs rest arr (i - n)
-    
-// Write the accumulated instructions into an array. The fragments come in in reverse order.
-let commitAccBasicBlock (sofar: ILInstr list list) = 
-    let n = countAccInstrs sofar 0
-    let arr = Array.zeroCreate n 
-    commitAccInstrs sofar arr n
-    arr
-
-[<Struct; NoComparison; NoEquality>]
-type InstrMorph(isInstrs:bool, instrs:ILInstr list, code: ILCode) = 
-    new (instrs:ILInstr list) = InstrMorph(true,instrs,Unchecked.defaultof<_>)
-    new (code:ILCode) = InstrMorph(false,Unchecked.defaultof<_>,code)
-    member x.IsInstrs = isInstrs
-    member x.Instrs = instrs
-    member x.Code = code
-    
-let rec bblockLoop f bb currBBlockInpLabel currInpLabel currOutLabel sofar instrs = 
-    match instrs with 
-    | (i::rest) -> 
-        let res : InstrMorph = f currInpLabel currOutLabel i 
-        if res.IsInstrs then
-          // First possibility: return a list of instructions.  No addresses get consumed. 
-            bblockLoop f bb currBBlockInpLabel currInpLabel currOutLabel (res.Instrs :: sofar) rest
-        else
-          let middle_bblock = res.Code
-          let before_bblock = 
-            let instrs = commitAccBasicBlock ([I_br currInpLabel] :: sofar) 
-            mkBasicBlock {Label=currBBlockInpLabel;Instructions=instrs} 
-          if checking && uniqueEntryOfCode middle_bblock <> currInpLabel then 
-            dprintn ("*** warning when transforming bblock "^formatCodeLabel bb.Label^": bblock2code_instr2code: input label of returned block does not match the expected label while converting an instruction to a block.");
-          let afterBlocks = 
-              match rest with 
-              | [] -> [] // the bblock has already been transformed 
-              | _ -> 
-                  let newInLab = generateCodeLabel () 
-                  let newOutLab = generateCodeLabel () 
-                  [ bblockLoop f bb currOutLabel newInLab newOutLab [] rest ]
-           
-          checkILCode 
-              (mkGroupBlock 
-                 ( currInpLabel :: (match rest with [] -> [] | _ -> [ currOutLabel ]),
-                  before_bblock ::  middle_bblock :: afterBlocks))
-    | [] -> 
-       let instrs = commitAccBasicBlock sofar 
-       mkBasicBlock {Label=currBBlockInpLabel;Instructions=instrs} 
-
-let bblock2code_instr2code (f:ILCodeLabel -> ILCodeLabel -> ILInstr -> InstrMorph) bb = 
-    bblockLoop f bb bb.Label (generateCodeLabel ()) (generateCodeLabel ()) [] (Array.toList bb.Instructions)
-
-let rec block_bblock2code_typ2typ ((fbb,fty) as f) x =
-    match x with
-    | ILBasicBlock bblock -> fbb bblock
-    | GroupBlock (locs,l) -> GroupBlock(locs,List.map (code_bblock2code_typ2typ f) l)
-    | TryBlock (tryb,seh) ->
-        let seh = 
-            match seh with 
-            | FaultBlock b -> FaultBlock (code_bblock2code_typ2typ f  b)
-            | FinallyBlock b -> FinallyBlock (code_bblock2code_typ2typ f  b)
-            | FilterCatchBlock clsl -> 
-                FilterCatchBlock 
-                  (List.map (fun (flt,ctch) -> 
-                    (match flt with 
-                      CodeFilter fltcode -> CodeFilter (code_bblock2code_typ2typ f fltcode)
-                    | TypeFilter ty -> TypeFilter (fty ty)), 
-                    code_bblock2code_typ2typ f ctch) clsl)
-        TryBlock (code_bblock2code_typ2typ f tryb,seh)
-    | RestrictBlock (ls,c) -> RestrictBlock (ls,code_bblock2code_typ2typ f c)
-
-and code_bblock2code_typ2typ f (c:ILCode) = checkILCode (block_bblock2code_typ2typ f c)
-let topcode_bblock2code_typ2typ f (c:ILCode) = code_bblock2code_typ2typ f c
-
-let rec block_bblock2code f x =
-    match x with
-    | ILBasicBlock bblock -> f bblock
-    | GroupBlock (locs,l) -> GroupBlock(locs,List.map (code_bblock2code f) l)
-    | TryBlock (tryb,seh) ->
-        TryBlock (code_bblock2code f tryb,
-                  begin match seh with 
-                  | FaultBlock b -> FaultBlock (code_bblock2code f  b)
-                  | FinallyBlock b -> FinallyBlock (code_bblock2code f  b)
-                  | FilterCatchBlock clsl -> 
-                      FilterCatchBlock 
-                        (List.map (fun (flt,ctch) -> 
-                          (match flt with 
-                           |CodeFilter fltcode -> CodeFilter (code_bblock2code f fltcode)
-                           | TypeFilter _ty -> flt), 
-                          code_bblock2code f ctch) clsl)
-                  end)
-    | RestrictBlock (ls,c) -> RestrictBlock (ls,code_bblock2code f c)
-
-and code_bblock2code f (c:ILCode) = checkILCode (block_bblock2code f c)
-let topcode_bblock2code f (c:ILCode) = code_bblock2code f c
+let code_instr2instr_typ2typ  (finstr,fty) (c:ILCode) = 
+    let c = code_instr2instr finstr c
+    { c with 
+           Exceptions = c.Exceptions |> List.map (fun e -> { e with Clause = e.Clause |> (function ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fty ilty, b) | cl -> cl) }) } 
 
 // --------------------------------------------------------------------
 // Standard morphisms - mapping types etc.
@@ -255,10 +107,10 @@ let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) =
                        returnType= f x.ReturnType)
 
 
-type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec, IlxUnionSpec>
+type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
 let mspec_typ2typ (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
-    mkILMethSpecForMethRefInTyRaw(mref_typ2typ (fformalty (Choice1Of3 x)) x.MethodRef,
+    mkILMethSpecForMethRefInTyRaw(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
                                   factualty x.EnclosingType, 
                                   typs_typ2typ factualty  x.GenericArgs)
 
@@ -267,7 +119,7 @@ let fref_typ2typ (f: ILType -> ILType) x =
              Type= f x.Type }
 
 let fspec_typ2typ ((factualty,(fformalty : formal_scopeCtxt -> ILType -> ILType))) x = 
-    { FieldRef=fref_typ2typ (fformalty (Choice2Of3 x)) x.FieldRef;
+    { FieldRef=fref_typ2typ (fformalty (Choice2Of2 x)) x.FieldRef;
       EnclosingType= factualty x.EnclosingType }
 
 let rec celem_typ2typ f celem =
@@ -301,18 +153,8 @@ let cattrs_typ2typ ilg f (cs: ILAttributes) =
 let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
     {fd with Type=ftype fd.Type; 
              CustomAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs}
-let altfdef_typ2typ ilg ftype (fd: IlxUnionField) = 
-    IlxUnionField( fdef_typ2typ ilg ftype fd.ILField)
-
-let alts_typ2typ ilg f alts = 
-  Array.map (fun alt -> { alt with altFields = Array.map (altfdef_typ2typ ilg f)  alt.altFields;
-                                   altCustomAttrs = cattrs_typ2typ ilg f alt.altCustomAttrs }) alts
-
-let curef_typ2typ ilg f (IlxUnionRef(s,alts,nullPermitted,helpers)) =
-  IlxUnionRef(s,alts_typ2typ ilg f alts,nullPermitted,helpers)
 
 let local_typ2typ f (l: ILLocal) = {l with Type = f l.Type}
-let freevar_typ2typ f l = {l with fvType = f l.fvType}
 let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (ILList.map f) varargs
 (* REVIEW: convert varargs *)
 let morphILTypesInILInstr ((factualty,fformalty)) i = 
@@ -363,20 +205,12 @@ let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 (* use this when the conversion produces just one type... *)
 let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
 
-let morphExpandILTypeDefs f (m:ILTypeDefs) = 
-  mkILTypeDefs (List.collect f m.AsList)
-
-let morphILTypeDefsInILModule typesf m = 
-    {m with TypeDefs=typesf m.TypeDefs}
-
 let locals_typ2typ f ls = ILList.map (local_typ2typ f) ls
-let freevars_typ2typ f ls = Array.map (freevar_typ2typ f) ls
 
-let ilmbody_bblock2code_typ2typ_maxstack2maxstack fs il = 
-    let (finstr,ftype,fmaxstack) = fs 
-    {il with Code=topcode_bblock2code_typ2typ (finstr,ftype) il.Code;
-             Locals = locals_typ2typ ftype il.Locals;
-             MaxStack = fmaxstack il.MaxStack }
+let ilmbody_instr2instr_typ2typ fs (il: ILMethodBody) = 
+    let (finstr,ftype) = fs 
+    {il with Code=code_instr2instr_typ2typ (finstr,ftype) il.Code;
+             Locals = locals_typ2typ ftype il.Locals }
 
 let morphILMethodBody (filmbody) (x: ILLazyMethodBody) = 
     let c = 
@@ -401,20 +235,6 @@ let mdef_typ2typ_ilmbody2ilmbody ilg fs md  =
 let fdefs_typ2typ ilg f x = fdefs_fdef2fdef (fdef_typ2typ ilg f) x
 
 let mdefs_typ2typ_ilmbody2ilmbody ilg fs x = morphILMethodDefs (mdef_typ2typ_ilmbody2ilmbody ilg fs) x
-
-let cuinfo_typ2typ ilg ftype cud = 
-    { cud with cudAlternatives = alts_typ2typ ilg ftype cud.cudAlternatives; } 
-
-
-let cloinfo_typ2typ_ilmbody2ilmbody fs clo = 
-    let (ftype,filmbody) = fs 
-    let c' = filmbody None (Lazy.force clo.cloCode) 
-    { clo with cloFreeVars = freevars_typ2typ ftype clo.cloFreeVars;
-               cloCode=notlazy c' }
-
-let morphIlxClosureInfo f clo = 
-    let c' = f (Lazy.force clo.cloCode) 
-    { clo with cloCode=notlazy c' }
 
 let mimpl_typ2typ f e =
     { Overrides = ospec_typ2typ f e.Overrides;
@@ -443,7 +263,7 @@ let edefs_typ2typ ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_typ2ty
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)
 
 let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td = 
-   let (ftype,filmbody,fmdefs) = fs 
+   let (ftype,fmdefs) = fs 
    let ftype' = ftype (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
    let fdefs' = fdefs_typ2typ ilg ftype' td.Fields 
@@ -457,13 +277,6 @@ let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td =
             Events = edefs_typ2typ ilg ftype' td.Events; 
             Properties = pdefs_typ2typ ilg ftype' td.Properties;
             CustomAttrs = cattrs_typ2typ ilg ftype' td.CustomAttrs;
-            tdKind =
-               match td.tdKind with
-               | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-                   match destIlxExtTypeDefKind e with 
-                   | IlxTypeDefKind.Closure i -> mkIlxTypeDefKind (IlxTypeDefKind.Closure (cloinfo_typ2typ_ilmbody2ilmbody (ftype',filmbody (enc,td)) i))
-                   | IlxTypeDefKind.Union i -> mkIlxTypeDefKind (IlxTypeDefKind.Union (cuinfo_typ2typ ilg ftype' i))
-               | _ -> td.tdKind
   }
 
 and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs = 
@@ -476,38 +289,24 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
     { m with CustomAttrs = cattrs_typ2typ ilg f m.CustomAttrs }
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg
-    ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),
-     (filmbody: ILModuleDef -> ILTypeDef list * ILTypeDef -> ILMethodDef option -> ILMethodBody -> ILMethodBody),
-     fmdefs) m = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 
-    let ftdefs = 
-      tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg []
-        (ftype m,
-         filmbody m,
-         fmdefs m) 
+    let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m) 
 
     { m with TypeDefs=ftdefs m.TypeDefs;
              CustomAttrs=cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs;
              Manifest=Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest  }
     
-let module_bblock2code_typ2typ_maxstack2maxstack ilg fs x = 
-    let (fbblock,ftype,fmaxstack) = fs 
-    let filmbody modCtxt tdefCtxt mdefCtxt =
-      ilmbody_bblock2code_typ2typ_maxstack2maxstack 
-        (fbblock modCtxt tdefCtxt mdefCtxt, 
-         ftype modCtxt (Some tdefCtxt) mdefCtxt,
-         fmaxstack modCtxt tdefCtxt mdefCtxt) 
+let module_instr2instr_typ2typ ilg fs x = 
+    let (fcode,ftype) = fs 
+    let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_typ2typ (fcode modCtxt tdefCtxt mdefCtxt, ftype modCtxt (Some tdefCtxt) mdefCtxt) 
     let fmdefs modCtxt tdefCtxt = mdefs_typ2typ_ilmbody2ilmbody ilg (ftype modCtxt (Some tdefCtxt), filmbody modCtxt tdefCtxt) 
-    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg (ftype, filmbody, fmdefs) x 
+    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg (ftype, fmdefs) x 
 
-let module_bblock2code_typ2typ ilg (f1,f2) x = 
-  module_bblock2code_typ2typ_maxstack2maxstack ilg (f1, f2, (fun _modCtxt _tdefCtxt _mdefCtxt x -> x)) x
 let morphILInstrsAndILTypesInILModule ilg (f1,f2) x = 
-  module_bblock2code_typ2typ ilg ((fun modCtxt tdefCtxt mdefCtxt  i -> mkBasicBlock (bblock_instr2instr (f1 modCtxt tdefCtxt mdefCtxt) i)), f2) x
+  module_instr2instr_typ2typ ilg (f1, f2) x
 
-let morphILInstrsInILCode f x = topcode_bblock2code (fun i -> mkBasicBlock (bblock_instr2instrs f i)) x
-let morphExpandILInstrsInILCode f x = topcode_bblock2code (bblock2code_instr2code f) x
+let morphILInstrsInILCode f x = code_instr2instrs f x
 
 let morphILTypeInILModule ilg ftype y = 
     let finstr modCtxt tdefCtxt mdefCtxt =

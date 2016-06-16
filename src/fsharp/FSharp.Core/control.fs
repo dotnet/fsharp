@@ -908,8 +908,8 @@ namespace Microsoft.FSharp.Control
             resultA()
 
         /// Implement use/Dispose
-        let usingA (r:'T :> IDisposable) f =  
-            tryFinallyA (fun () -> r.Dispose()) (callA f r)
+        let usingA (r:'T :> IDisposable) (f:'T -> Async<'a>) : Async<'a> =
+            tryFinallyA (fun () -> Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose r) (callA f r)
 
         let ignoreA p = 
             bindA p (fun _ -> doneA)

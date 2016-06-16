@@ -344,6 +344,6 @@
     <ItemGroup>
         <VsixPath Include="$(OutDir)$(AssemblyName).vsix" />
     </ItemGroup>
-    <Copy SourceFiles="@(VsixPath)" DestinationFiles="@(VsixPath->'$(FSharpSourcesRoot)\..\$(Configuration)\insertion\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(VsixPath)" DestinationFiles="@(VsixPath->'$(FSharpSourcesRoot)\..\$(Configuration)\insertion\vsix\%(Filename)%(Extension)')" />
   </Target>
 </Project>

@@ -1570,7 +1570,7 @@ module StaticLinker =
               ReportTime tcConfig "Static link";
 
 #if EXTENSIONTYPING
-              Morphs.enablemorphCustomAttributeData()
+              Morphs.enableMorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (tcImports, providerGeneratedAssemblies) 
 
               // Transform the ILTypeRefs references in the IL of all provider-generated assemblies so that the references
@@ -1692,7 +1692,7 @@ module StaticLinker =
 
                   providerGeneratedILModules, ilxMainModule
              
-              Morphs.disablemorphCustomAttributeData()
+              Morphs.disableMorphCustomAttributeData()
 #else
               let providerGeneratedILModules = []
 #endif
@@ -2028,20 +2028,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     
     Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxMainModule,signingInfo,exiter)
 
-let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) = 
-      
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
-    
-    ReportTime tcConfig "ILX -> IL (Unions)"; 
-    let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
-    ReportTime tcConfig "ILX -> IL (Funcs)"; 
-    let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
-
-    AbortOnError(errorLogger,tcConfig,exiter)
-    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
-  
-
-let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter:Exiter)) = 
+let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
     let ilxMainModule =  
         try  staticLinker ilxMainModule
@@ -2079,7 +2066,6 @@ let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProv
     |> main1
     |> main2
     |> main2b
-    |> main2c
     |> main3 
     |> main4
 

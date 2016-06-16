@@ -136,7 +136,7 @@ module internal AstTraversal =
                 let path = TraverseStep.Module m :: path
                 match m with
                 | SynModuleDecl.ModuleAbbrev(_ident, _longIdent, _range) -> None
-                | SynModuleDecl.NestedModule(_synComponentInfo, synModuleDecls, _, _range) -> synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick decl
+                | SynModuleDecl.NestedModule(_synComponentInfo, _isRec, synModuleDecls, _, _range) -> synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick decl
                 | SynModuleDecl.Let(_, synBindingList, _range) -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick decl
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
@@ -147,7 +147,7 @@ module internal AstTraversal =
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
             visitor.VisitModuleDecl(defaultTraverse, decl)
 
-        and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
+        and traverseSynModuleOrNamespace path (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
             let path = TraverseStep.ModuleOrNamespace mors :: path
             synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick range mors
         and traverseSynExpr path (expr:SynExpr) =
@@ -455,12 +455,16 @@ module internal AstTraversal =
             let path = TraverseStep.TypeDefn tydef :: path
             [
                 match synTypeDefnRepr with
-                | ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
+                | SynTypeDefnRepr.Exception _ -> 
+                    // This node is generated in TypeChecker.fs, not in the AST.  
+                    // But note exception declarations are missing from this tree walk.
+                    () 
+                | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
                     // traverse inherit function is used to capture type specific data required for processing Inherit part
                     let traverseInherit (synType : SynType, range : range) = 
                         visitor.VisitInheritSynMemberDefn(synComponentInfo, synTypeDefnKind, synType, synMemberDefns, range)
                     yield! synMemberDefns |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit
-                | Simple(synTypeDefnSimpleRepr, _range) -> 
+                | SynTypeDefnRepr.Simple(synTypeDefnSimpleRepr, _range) -> 
                     match synTypeDefnSimpleRepr with
                     | SynTypeDefnSimpleRepr.TypeAbbrev(_,synType,m) ->
                         yield dive synTypeDefnRepr synTypeDefnRepr.Range (fun _ -> visitor.VisitTypeAbbrev(synType,m))

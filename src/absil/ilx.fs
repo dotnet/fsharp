@@ -28,8 +28,8 @@ type IlxUnionField(fd: ILFieldDef) =
     
 
 type IlxUnionAlternative = 
-    { altName: string;
-      altFields: IlxUnionField[];
+    { altName: string
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
@@ -85,14 +85,14 @@ let rec instLambdasAux n inst = function
 let instLambdas i t = instLambdasAux 0 i t
 
 type IlxClosureFreeVar = 
-    { fvName: string ; 
-      fvCompilerGenerated:bool; 
+    { fvName: string  
+      fvCompilerGenerated:bool 
       fvType: ILType }
 
 let mkILFreeVar (name,compgen,ty) = 
-    { fvName=name;
-      fvCompilerGenerated=compgen;
-      fvType=ty; }
+    { fvName=name
+      fvCompilerGenerated=compgen
+      fvType=ty }
 
 
 type IlxClosureRef = 
@@ -115,71 +115,27 @@ type IlxClosureSpec =
         mkILCtorMethSpecForTy (cloTy,fields |> Array.map (fun fv -> fv.fvType) |> Array.toList)
 
 
-type IlxInstr = 
-  // Discriminated unions
-  | EI_castdata of bool * IlxUnionSpec * int
-  | EI_datacase of avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel
-  | EI_lddatatag of avoidHelpers:bool * IlxUnionSpec
-  
-
-let destinations i =
-  match i with 
-  |  (EI_datacase (_,_,ls,l)) -> 
-        let hashSet = System.Collections.Generic.HashSet<_>(HashIdentity.Structural)
-        [yield l
-         for (_,l) in ls do
-            if hashSet.Add l then
-                yield l]
-  | _ -> []
-
-let fallthrough i = 
-  match i with 
-  |  (EI_datacase (_,_,_,l)) -> Some l
-  | _ -> None
-
-let remapIlxLabels lab2cl i = 
-  match i with 
-    | EI_datacase (z,x,ls,l) -> EI_datacase (z,x,List.map (fun (y,l) -> (y,lab2cl l)) ls, lab2cl l)
-    | _ -> i
-
-let (mkIlxExtInstr,isIlxExtInstr,destIlxExtInstr) = 
-  RegisterInstructionSetExtension  
-    { instrExtDests=destinations
-      instrExtFallthrough=fallthrough
-      instrExtRelabel=remapIlxLabels }
-
-let mkIlxInstr i = I_other (mkIlxExtInstr i)
-
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas;
-      cloFreeVars: IlxClosureFreeVar[];  
-      cloCode: Lazy<ILMethodBody>;
+    { cloStructure: IlxClosureLambdas
+      cloFreeVars: IlxClosureFreeVar[]  
+      cloCode: Lazy<ILMethodBody>
       cloSource: ILSourceMarker option}
 
-and IlxUnionInfo = 
+type IlxUnionInfo = 
     { /// is the representation public? 
-      cudReprAccess: ILMemberAccess; 
+      cudReprAccess: ILMemberAccess 
       /// are the representation public? 
-      cudHelpersAccess: ILMemberAccess; 
+      cudHelpersAccess: ILMemberAccess 
       /// generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers; 
+      cudHasHelpers: IlxUnionHasHelpers 
       /// generate the helpers? 
-      cudDebugProxies: bool; 
-      cudDebugDisplayAttributes: ILAttribute list;
-      cudAlternatives: IlxUnionAlternative array;
-      cudNullPermitted: bool;
+      cudDebugProxies: bool 
+      cudDebugDisplayAttributes: ILAttribute list
+      cudAlternatives: IlxUnionAlternative[]
+      cudNullPermitted: bool
       /// debug info for generated code for classunions 
-      cudWhere: ILSourceMarker option; }
-
-type IlxTypeDefKind = 
- | Closure of IlxClosureInfo
- | Union of IlxUnionInfo
-
-let (mkIlxExtTypeDefKind,isIlxExtTypeDefKind,destIlxExtTypeDefKind) = 
-  (RegisterTypeDefKindExtension TypeDefKindExtension : (IlxTypeDefKind -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> IlxTypeDefKind) )
-
-let mkIlxTypeDefKind i = ILTypeDefKind.Other (mkIlxExtTypeDefKind i)
+      cudWhere: ILSourceMarker option }
 
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types
