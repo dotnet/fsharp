@@ -107,6 +107,7 @@
       <Language ParameterType="System.String" Required="true" />
       <ProductVersion ParameterType="System.String" Required="true" />
       <BuildNumber ParameterType="System.String" Required="true" />
+      <AssemblyName ParameterType="System.String" Required="true" />
       <AssemblyFileVersionPath ParameterType="System.String" Output="true" />
     </ParameterGroup>
     
@@ -155,9 +156,18 @@
                 throw new ArgumentException("Language " + Language + " is not supported");
         }
         
-        AssemblyFileVersionPath = Path.GetTempFileName() + "." + Language;
-        Log.LogMessage("Generating AssemblyFileVersion file: " + AssemblyFileVersionPath, MessageImportance.High);
-        File.WriteAllText(AssemblyFileVersionPath, stringBuilder.ToString());
+        var fileContents = stringBuilder.ToString();
+        AssemblyFileVersionPath = Path.Combine(Path.GetTempPath(), string.Join(".", AssemblyName, "AssemblyFileVersion", Language));
+        
+        if (File.Exists(AssemblyFileVersionPath) && File.ReadAllText(AssemblyFileVersionPath) == fileContents)
+        {
+            Log.LogMessage("Assembly file version already exists. Using: " + AssemblyFileVersionPath, MessageImportance.High);
+        }
+        else
+        {
+            Log.LogMessage("Generating AssemblyFileVersion file: " + AssemblyFileVersionPath, MessageImportance.High);
+            File.WriteAllText(AssemblyFileVersionPath, fileContents);
+        }
         ]]>
       </Code>
     </Task>
@@ -199,6 +209,7 @@
       Language="$(MicroBuildAssemblyFileLanguage)"
       ProductVersion="$(MicroBuildAssemblyVersion)"
       BuildNumber="$(BUILD_BUILDNUMBER)"
+      AssemblyName="$(AssemblyName)"
       Condition="'$(MicroBuildAssemblyFileLanguage)' != '' and '$(MicroBuildAssemblyVersion)' != ''">
       <Output TaskParameter="AssemblyFileVersionPath" PropertyName="AssemblyFileVersionPath"/>
     </GenerateAssemblyFileVersionTask>
