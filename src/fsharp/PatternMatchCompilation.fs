@@ -493,7 +493,7 @@ let (|ListEmptyDiscrim|_|) g = function
 ///   - Compact integer switches become a single switch.  Non-compact integer
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as Test.IsInst.
-let rec BuildSwitch resPreBindOpt g expr edges dflt m =
+let rec BuildSwitch inpExprOpt g expr edges dflt m =
     if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt); 
     match edges,dflt with 
     | [], None      -> failwith "internal error: no edges and no default"
@@ -505,12 +505,12 @@ let rec BuildSwitch resPreBindOpt g expr edges dflt m =
     // 'isinst' tests where we have stored the result of the 'isinst' in a variable 
     // In this case the 'expr' already holds the result of the 'isinst' test. 
 
-    | (TCase(Test.IsInst _,success)):: edges, dflt  when isSome resPreBindOpt -> 
+    | (TCase(Test.IsInst _,success)):: edges, dflt  when isSome inpExprOpt -> 
         TDSwitch(expr,[TCase(Test.IsNull,BuildSwitch None g expr edges dflt m)],Some success,m)    
         
     // isnull and isinst tests
     | (TCase((Test.IsNull | Test.IsInst _),_) as edge):: edges, dflt  -> 
-        TDSwitch(expr,[edge],Some (BuildSwitch resPreBindOpt g expr edges dflt m),m)    
+        TDSwitch(expr,[edge],Some (BuildSwitch inpExprOpt g expr edges dflt m),m)    
 
 #if OPTIMIZE_LIST_MATCHING
     // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable 
@@ -519,7 +519,7 @@ let rec BuildSwitch resPreBindOpt g expr edges dflt m =
     | [TCase(ListEmptyDiscrim g tinst, emptyCase)], Some consCase 
     | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
     | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
-                     when isSome resPreBindOpt -> 
+                     when isSome inpExprOpt -> 
         TDSwitch(expr, [TCase(Test.IsNull, emptyCase)], Some consCase, m)    
 #endif
                 
@@ -792,10 +792,10 @@ let CompilePatternBasic
                     if debug then dprintf "chooseSimultaneousEdgeSet\n";
                     let simulSetOfEdgeDiscrims,fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
-                    let resPreBindOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr    
+                    let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr    
                             
                     // For each case, recursively compile the residue decision trees that result if that case successfully matches 
-                    let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims resPreBindOpt 
+                    let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt 
                           
                     assert (nonNil(simulSetOfCases));
 
@@ -812,8 +812,8 @@ let CompilePatternBasic
 
                     // OK, build the whole tree and whack on the binding if any 
                     let finalDecisionTree = 
-                        let inpExprToSwitch = (match resPreBindOpt with Some vexp -> vexp | None -> GetSubExprOfInput subexpr)
-                        let tree = BuildSwitch resPreBindOpt g inpExprToSwitch simulSetOfCases defaultTreeOpt matchm
+                        let inpExprToSwitch = (match inpExprOpt with Some vexp -> vexp | None -> GetSubExprOfInput subexpr)
+                        let tree = BuildSwitch inpExprOpt g inpExprToSwitch simulSetOfCases defaultTreeOpt matchm
                         match bindOpt with 
                         | None -> tree
                         | Some bind -> TDBind (bind,tree)
@@ -904,7 +904,7 @@ let CompilePatternBasic
              let argexp = GetSubExprOfInput subexpr
              let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
              match vOpt with 
-             | None -> None, None
+             | None -> Some addrexp, None
              | Some (v,e) -> 
                  if topv.IsMemberOrModuleBinding then 
                      AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
@@ -945,7 +945,7 @@ let CompilePatternBasic
           | _ -> None,None
                             
 
-    and CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims (resPreBindOpt: Expr option) =
+    and CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims (inpExprOpt: Expr option) =
 
         ([],simulSetOfEdgeDiscrims) ||> List.collectFold (fun taken (EdgeDiscrim(i',discrim,m)) -> 
              // Check to see if we've already collected the edge for this case, in which case skip it. 
@@ -968,7 +968,7 @@ let CompilePatternBasic
                      match discrim with 
                      | Test.UnionCase (ucref, tinst) when 
 #if OPTIMIZE_LIST_MATCHING
-                                                           isNone resPreBindOpt &&
+                                                           isNone inpExprOpt &&
 #endif
                                                           (isNil topgtvs && 
                                                            not topv.IsMemberOrModuleBinding && 
@@ -1000,7 +1000,7 @@ let CompilePatternBasic
                  // Project a successful edge through the frontiers. 
                  let investigation = Investigation(i',discrim,path)
 
-                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSucccessfulInvestigation resPreBindOpt resPostBindOpt investigation) 
+                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt investigation) 
                  let tree = InvestigateFrontiers refuted frontiers
                  // Bind the resVar for the union case, if we have one
                  let tree = 
@@ -1042,7 +1042,7 @@ let CompilePatternBasic
           
     // Build a new frontier that represents the result of a successful investigation 
     // at rule point (i',discrim,path) 
-    and GenerateNewFrontiersAfterSucccessfulInvestigation resPreBindOpt resPostBindOpt (Investigation(i',discrim,path)) (Frontier (i, active,valMap) as frontier) =
+    and GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i',discrim,path)) (Frontier (i, active,valMap) as frontier) =
         if debug then dprintf "projecting success of investigation encompassing rule %d through rule %d \n" i' i;
 
         if (isMemOfActives path active) then
@@ -1068,14 +1068,14 @@ let CompilePatternBasic
                     if (hasParam && i = i') || (discrimsEq g discrim (Option.get (getDiscrimOfPattern pat))) then
                         let aparity = apinfo.Names.Length
                         let accessf' j tpinst _e' = 
-                            assert resPreBindOpt.IsSome
+                            assert inpExprOpt.IsSome
                             if aparity <= 1 then 
-                                Option.get resPreBindOpt 
+                                Option.get inpExprOpt 
                             else
                                 let ucref = mkChoiceCaseRef g m aparity idx
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
-                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get resPreBindOpt,ucref,instTypes tpinst resTys,j,exprm)
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt,ucref,instTypes tpinst resTys,j,exprm)
                         mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
 
                     elif hasParam then
@@ -1089,7 +1089,7 @@ let CompilePatternBasic
                             let accessf' _j tpinst _ =  
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
-                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get resPreBindOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
                     else 
                         // Successful active patterns  don't refute other patterns
@@ -1098,15 +1098,15 @@ let CompilePatternBasic
             | TPat_unioncase (ucref1, tyargs, argpats,_) -> 
                 match discrim with 
                 | Test.UnionCase (ucref2, tinst) when g.unionCaseRefEq ucref1 ucref2 ->
-                    let accessf' j tpinst e' = 
-#if OPTIMIZE_LIST_MATCHING
-                        match resPreBindOpt with 
-                        | Some e -> mkUnionCaseFieldGetProvenViaExprAddr g (e,ucref1,tinst,j,exprm)
-                        | None -> 
-#endif
+                    let accessf' j tpinst exprIn = 
                         match resPostBindOpt with 
                         | Some e -> mkUnionCaseFieldGetProvenViaExprAddr (e,ucref1,tinst,j,exprm)
-                        | None -> mkUnionCaseFieldGetUnprovenViaExprAddr (accessf tpinst e',ucref1,instTypes tpinst tyargs,j,exprm)
+                        | None -> 
+                            let exprIn = 
+                                match inpExprOpt with 
+                                | Some addrexp -> addrexp
+                                | None -> accessf tpinst exprIn
+                            mkUnionCaseFieldGetUnprovenViaExprAddr (exprIn,ucref1,instTypes tpinst tyargs,j,exprm)
                         
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathUnionConstr(path,ucref1,tyargs,j))
                 | Test.UnionCase _ ->
@@ -1119,7 +1119,7 @@ let CompilePatternBasic
             | TPat_array (argpats,ty,_) -> 
                 match discrim with
                 | Test.ArrayLength (n,_) when List.length argpats = n ->
-                    let accessf' j tpinst e' = mkCallArrayGet g exprm ty (accessf tpinst e') (mkInt g exprm j)
+                    let accessf' j tpinst exprIn = mkCallArrayGet g exprm ty (accessf tpinst exprIn) (mkInt g exprm j)
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathArray(path,ty,List.length argpats,j))
                 // Successful length tests refute all other lengths
                 | Test.ArrayLength _ -> 
@@ -1130,7 +1130,7 @@ let CompilePatternBasic
             | TPat_exnconstr (ecref, argpats,_) -> 
                 match discrim with 
                 | Test.IsInst (_srcTy,tgtTy) when typeEquiv g (mkAppTy ecref []) tgtTy ->
-                    let accessf' j tpinst e' = mkExnCaseFieldGet(accessf tpinst e',ecref,j,exprm)
+                    let accessf' j tpinst exprIn = mkExnCaseFieldGet(accessf tpinst exprIn,ecref,j,exprm)
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathExnConstr(path,ecref,j))
                 | _ -> 
                     // Successful type tests against one sealed type refute all other sealed types
@@ -1142,16 +1142,16 @@ let CompilePatternBasic
                 | Test.IsInst (_srcTy,tgtTy2) when typeEquiv g tgtTy1 tgtTy2  ->
                     match pbindOpt with 
                     | Some pbind -> 
-                        let accessf' tpinst e' = 
+                        let accessf' tpinst exprIn = 
                             // Fetch the result from the place where we saved it, if possible
-                            match resPreBindOpt with 
+                            match inpExprOpt with 
                             | Some e -> e 
                             | _ -> 
                                 // Otherwise call the helper
-                               mkCallUnboxFast g exprm (instType tpinst tgtTy1) (accessf tpinst e')
+                               mkCallUnboxFast g exprm (instType tpinst tgtTy1) (accessf tpinst exprIn)
 
-                        let (v,e') =  BindSubExprOfInput g amap topgtvs pbind exprm (SubExpr(accessf',ve))
-                        [Frontier (i, active', valMap.Add v e' )]
+                        let (v,exprIn) =  BindSubExprOfInput g amap topgtvs pbind exprm (SubExpr(accessf',ve))
+                        [Frontier (i, active', valMap.Add v exprIn )]
                     | None -> 
                         [Frontier (i, active', valMap)]
                     
@@ -1190,17 +1190,17 @@ let CompilePatternBasic
         | TPat_wild _ -> 
             BindProjectionPatterns [] s 
         | TPat_as(p',pbind,m) -> 
-            let (v,e') =  BindSubExprOfInput g amap topgtvs pbind m subExpr
-            BindProjectionPattern (Active(path,subExpr,p')) (accActive,accValMap.Add v e' )
+            let (v,subExpr') =  BindSubExprOfInput g amap topgtvs pbind m subExpr
+            BindProjectionPattern (Active(path,subExpr,p')) (accActive,accValMap.Add v subExpr' )
         | TPat_tuple(ps,tyargs,_m) ->
-            let accessf' j tpinst e' = mkTupleFieldGet(accessf tpinst e',instTypes tpinst tyargs,j,exprm)
+            let accessf' j tpinst exprIn = mkTupleFieldGet(accessf tpinst exprIn,instTypes tpinst tyargs,j,exprm)
             let pathBuilder path j = PathTuple(path,tyargs,j)
             let newActives = List.mapi (mkSubActive pathBuilder accessf') ps
             BindProjectionPatterns newActives s 
         | TPat_recd(tcref,tinst,ps,_m) -> 
             let newActives = 
                 (ps,tcref.TrueInstanceFieldsAsRefList) ||> List.mapi2 (fun j p fref -> 
-                    let accessf' fref _j tpinst e' = mkRecdFieldGet g (accessf tpinst e',fref,instTypes tpinst tinst,exprm)
+                    let accessf' fref _j tpinst exprIn = mkRecdFieldGet g (accessf tpinst exprIn,fref,instTypes tpinst tinst,exprm)
                     let pathBuilder path j = PathRecd(path,tcref,tinst,j)
                     mkSubActive pathBuilder (accessf' fref) j p) 
             BindProjectionPatterns newActives s 

@@ -266,8 +266,8 @@ module FsFromCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a --doc:lib.xml -o:lib.dll -g lib.ml
-        do! fsc "%s -a --doc:lib.xml -o:lib.dll -g" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a --doc:lib.xml -o:lib.dll -g lib.fs
+        do! fsc "%s -a --doc:lib.xml -o:lib.dll -g" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"
@@ -275,8 +275,8 @@ module FsFromCs =
         // %CSC% /nologo /r:"%FSCOREDLLPATH%" /r:System.Core.dll /r:lib.dll /out:test.exe test.cs 
         do! csc """/nologo /r:"%s" /r:System.Core.dll /r:lib.dll /out:test.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
-        // "%FSC%" %fsc_flags% -a --doc:lib--optimize.xml -o:lib--optimize.dll -g lib.ml
-        do! fsc """%s -a --doc:lib--optimize.xml -o:lib--optimize.dll -g""" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a --doc:lib--optimize.xml -o:lib--optimize.dll -g lib.fs
+        do! fsc """%s -a --doc:lib--optimize.xml -o:lib--optimize.dll -g""" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib--optimize.dll
         do! peverify "lib--optimize.dll"
@@ -316,8 +316,8 @@ module FsFromFsViaCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.ml
-        do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.fs
+        do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"

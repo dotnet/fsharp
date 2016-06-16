@@ -905,6 +905,8 @@ let mkClassUnionDef ilg tref td cud =
         | SingleCase | RuntimeTypes | TailOrNull -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
 
+    let isStruct = match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false
+
     let selfFields, selfMeths, selfProps = 
 
         [ for alt in cud.cudAlternatives do 
@@ -912,9 +914,7 @@ let mkClassUnionDef ilg tref td cud =
         // TODO
             let fields = alt.FieldDefs |> Array.toList |> List.map mkUnionCaseFieldId 
             let baseInit = 
-                match td.tdKind with 
-                | ILTypeDefKind.ValueType -> None
-                | _ -> 
+                if isStruct then None else
                 match td.Extends with 
                 | None -> Some ilg.tspec_Object 
                 | Some typ -> Some typ.TypeSpec
@@ -936,7 +936,7 @@ let mkClassUnionDef ilg tref td cud =
     let selfAndTagFields = 
         [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
               let fdef = mkHiddenGeneratedInstanceFieldDef ilg (fldName,fldTy, None, ILMemberAccess.Assembly)
-              yield { fdef with IsInitOnly=isTotallyImmutable } ]
+              yield { fdef with IsInitOnly= (not isStruct && isTotallyImmutable) } ]
 
     let ctorMeths =
         if (isNil selfFields && isNil tagFieldsInObject && nonNil selfMeths)
