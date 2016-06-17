@@ -372,7 +372,7 @@ type EntityFlags(flags:int64) =
     /// This bit represents a F# record that is a value type, or a struct record.
     member x.IsStructRecordType                  = (flags       &&&     0b00000100000L) <> 0x0L
 
-    /// This bit is reserved for us in the pickle format, see pickle.fs, it's bing listed here to stop it ever being used for anything else
+    /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
 
     /// Get the flags as included in the F# binary metadata
@@ -963,6 +963,8 @@ type Entity =
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.Data.entity_attribs <- attribs
 
+    /// Sets the rigidity of a type variable
+    member x.SetIsStructRecordType b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
 
 and 
@@ -3978,12 +3980,15 @@ and ModuleOrNamespaceExpr =
     | TMDefLet   of Binding * range
     /// Indicates the module fragment is an evaluation of expression for side-effects
     | TMDefDo   of Expr * range
-    /// Indicates the module fragment is a 'rec' definition of types, values and modules
-    | TMDefRec   of Tycon list * Bindings * ModuleOrNamespaceBinding list * range
+    /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
+    | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
 /// A named module-or-namespace-fragment definition 
-and ModuleOrNamespaceBinding = 
-    | ModuleOrNamespaceBinding of 
+and [<RequireQualifiedAccess>] 
+    ModuleOrNamespaceBinding = 
+    //| Do of Expr 
+    | Binding of Binding 
+    | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
          ModuleOrNamespace * 
@@ -4587,7 +4592,7 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_other_range = None }
 
     
-let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordType, mtyp) =
+let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
     let stamp = newStamp() 
     Tycon.New "tycon"
       { entity_stamp=stamp
@@ -4596,7 +4601,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_kind=kind
         entity_range=m
         entity_other_range=None
-        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordType=isStructRecordType)
+        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_abbrev = None
@@ -4617,7 +4622,7 @@ let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
 
     // NOTE: hasSelfReferentialCtor=false is an assumption about mscorlib
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
-    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, false, mtyp)
+    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
 
     tycon.Data.entity_tycon_repr <- TILObjectRepr (scoref,enc,tdef)
     tycon.TypeContents.tcaug_closed <- true

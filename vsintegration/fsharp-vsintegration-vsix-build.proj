@@ -25,9 +25,5 @@
     <MSBuild Projects="@(TemplatesProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
     <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />    
     <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration)" />
-    
-    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);ShippingSku=Desktop" />
-    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);ShippingSku=WebDevelopment" />
-    <MSBuild Projects="@(VsixProjects)" Targets="Build" Properties="Configuration=$(Configuration);ShippingSku=Professional" />
   </Target>
 </Project>

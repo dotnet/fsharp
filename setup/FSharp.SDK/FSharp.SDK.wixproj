@@ -39,14 +39,13 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="$(SetupRootFolder)\Common.Wix.Properties.wxs" />
+    <Compile Include="Common.Wix.Properties.wxs" />
     
     <Compile Include="FSharp.SDK.wxs" />
     
     <Compile Include="component-groups\Redist_ManagedFiles.wxs" />
     <Compile Include="component-groups\Compiler_SDK.wxs" />
     <Compile Include="component-groups\Compiler_OtherResources.wxs" />
-    <Compile Include="component-groups\Compiler_PublicAssemblies.wxs" />
     <Compile Include="component-groups\Langpack_ManagedFiles.wxs" />
   </ItemGroup>
   
@@ -68,6 +67,6 @@
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
   
-    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\insertion\msi\$(Lang)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(Lang)%(Extension)')" />
   </Target>
 </Project>
