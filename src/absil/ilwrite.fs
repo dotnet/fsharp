@@ -537,11 +537,12 @@ type TypeDefTableKey = TdKey of string list (* enclosing *) * string (* type nam
 type MetadataTable =
     | Shared of MetadataTable<SharedRow>
     | Unshared of MetadataTable<UnsharedRow>
-    member t.FindOrAddSharedEntry(x) = match t with Shared u -> u.FindOrAddSharedEntry(x) | _ -> failwith "incorrect table kind"
-    member t.AddSharedEntry(x) = match t with | Shared u -> u.AddSharedEntry(x) | _ -> failwith "incorrect table kind"
-    member t.AddUnsharedEntry(x) = match t with Unshared u -> u.AddUnsharedEntry(x) | _ -> failwith "shared"
-    member t.EntriesAsArray = match t with Shared u -> u.EntriesAsArray | _ -> failwith "incorrect table kind"
-    member t.SetRowsOfTable rows = match t with Shared u -> u.SetRowsOfTable rows | _ -> failwith "incorrect table kind"
+    member t.FindOrAddSharedEntry(x) = match t with Shared u -> u.FindOrAddSharedEntry(x) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.AddSharedEntry(x) = match t with | Shared u -> u.AddSharedEntry(x) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.AddUnsharedEntry(x) = match t with Unshared u -> u.AddUnsharedEntry(x) | Shared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.RowsOfSharedTable = match t with Shared u -> u.EntriesAsArray | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.RowsOfUnsharedTable = match t with Unshared u -> u.EntriesAsArray | Shared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.SetRowsOfSharedTable rows = match t with Shared u -> u.SetRowsOfTable (Array.map SharedRow rows) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
     member t.Count = match t with Unshared u -> u.Count | Shared u -> u.Count 
 
 
@@ -2900,18 +2901,19 @@ let rowElemCompare (e1: RowElement) (e2: RowElement) =
     if c <> 0 then c else 
     compare e1.Tag e2.Tag
 
+let TableRequiresSorting tab = 
+    List.memAssoc tab sortedTableInfo 
+
 let SortTableRows tab (rows:SharedRow[]) = 
-    if List.memAssoc tab sortedTableInfo then
-        let rows = rows |> Array.map (fun row -> row.GenericRow)
-        let col = List.assoc tab sortedTableInfo
-        rows 
-           // This needs to be a stable sort, so we use Lsit.sortWith
-           |> Array.toList
-           |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
-           |> Array.ofList
-           |> Array.map SharedRow
-    else 
-        rows
+    assert (TableRequiresSorting tab)
+    let rows = rows |> Array.map (fun row -> row.GenericRow)
+    let col = List.assoc tab sortedTableInfo
+    rows 
+        // This needs to be a stable sort, so we use Lsit.sortWith
+        |> Array.toList
+        |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
+        |> Array.ofList
+        //|> Array.map SharedRow
 
 let timestamp = absilWriteGetTimeStamp ()
 
@@ -2932,7 +2934,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params. 
     // Note this mutates the rows in a table.  'SetRowsOfTable' clears 
     // the key --> index map since it is no longer valid 
-    cenv.GetTable(TableNames.GenericParam).SetRowsOfTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).EntriesAsArray))
+    cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).RowsOfSharedTable))
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
@@ -3015,7 +3017,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
     let userStrings = cenv.userStrings.EntriesAsArray |> Array.map System.Text.Encoding.Unicode.GetBytes
     let blobs =       cenv.blobs.EntriesAsArray
     let guids =       cenv.guids.EntriesAsArray
-    let tables =      cenv.tables |> Array.map (fun t -> t.EntriesAsArray)
+    let tables =      cenv.tables 
     let code =        cenv.GetCode() 
     // turn idx tbls into token maps 
     let mappings =
@@ -3092,7 +3094,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
       generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
-    let tableSize (tab: TableName) = tables.[tab.Index].Length
+    let tableSize (tab: TableName) = tables.[tab.Index].Count
 
    // Now place the code 
     let codeSize = code.Length
@@ -3148,7 +3150,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let (valid1,valid2),_ = 
        (((0,0), 0), tables) ||> Array.fold (fun ((valid1,valid2) as valid,n) rows -> 
           let valid = 
-              if  rows.Length = 0 then valid else
+              if  rows.Count = 0 then valid else
               ( (if n < 32 then  valid1 ||| (1 <<< n     ) else valid1),
                 (if n >= 32 then valid2 ||| (1 <<< (n-32)) else valid2) )
           (valid,n+1))
@@ -3211,7 +3213,10 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     reportTime showTimes "Build String/Blob Address Tables"
 
     let sortedTables = 
-      Array.init 64 (fun i -> tables.[i] |>  SortTableRows (TableName.FromIndex i))
+      Array.init 64 (fun i -> 
+          let tab = tables.[i]
+          let tabName = TableName.FromIndex i
+          if TableRequiresSorting tabName then SortTableRows tabName tab.RowsOfSharedTable else tab.RowsOfUnsharedTable |> Array.map (fun u -> u.GenericRow))
       
     reportTime showTimes "Sort Tables"
 
@@ -3333,7 +3338,6 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
       // The tables themselves 
         for rows in sortedTables do
             for row in rows do 
-                let row = row.GenericRow
                 for x in row do 
                     // Emit the coded token for the array element 
                     let t = x.Tag
