@@ -2,58 +2,15 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-	<!-- Common Properties -->
-	<Fragment>
-		<PropertyRef Id="NETFRAMEWORK40FULLINSTALLROOTDIR"/>
-		<Condition Message="This application requires .NET Framework. Please install the .NET Framework then run this installer again.">
-			<![CDATA[Installed OR NETFRAMEWORK40FULLINSTALLROOTDIR]]>
-		</Condition>
-	</Fragment>
-
 	<!-- Common Variables -->
 	<Fragment>
 		<?define LangLCID = $(fsharp.localeToId($(var.Lang))) ?>
 		<?define LangCulture = $(fsharp.localeToCulture($(var.Lang))) ?>
 	</Fragment>
 	
-	<!-- Common Registry Keys -->
-	<Fragment>
-		<Property Id="VS15_ROOT_FOLDER" Secure="yes">
-			<RegistrySearch Id="SearchForVS15RootPath" Root="HKLM" Key="Software\Microsoft\VisualStudio\SxS\VS7" Name="15.0" Type="raw" />
-		</Property>
-		<Condition Message="Visual Studio 15.0 Installation not found">
-			<![CDATA[VS15_ROOT_FOLDER]]>
-		</Condition>
-		
-		<Property Id="MSBUILD15_ROOT_FOLDER" Secure="yes">
-			<RegistrySearch Id="SearchForMSBUILD15RootPath" Root="HKLM" Key="Software\Microsoft\MSBuild\ToolsVersions\15.0" Name="MSBuildToolsRoot" Type="raw" />
-		</Property>
-		<Condition Message="MSBuild 15.0 Installation not found">
-			<![CDATA[MSBUILD15_ROOT_FOLDER]]>
-		</Condition>
-	</Fragment>
-
 	<!-- Common Folders -->
 	<Fragment>	
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="VS15_ROOT_FOLDER" Name="VS15_ROOT_FOLDER">
-				<Directory Id="VS15_Common7" Name="Common7">
-					<Directory Id="VS15_Common7_IDE" Name="IDE">
-						<Directory Id="VS15_Common7_IDE_PublicAssemblies" Name="PublicAssemblies" />
-					</Directory>
-				</Directory>
-			</Directory>
-			
-			<Directory Id="MSBUILD15_ROOT_FOLDER" Name="MSBUILD15_ROOT_FOLDER">
-				<Directory Id="MSBuild_Microsoft" Name="Microsoft">
-					<Directory Id="MSBuild_Microsoft_VisualStudio" Name="VisualStudio">
-						<Directory Id="MSBuild_Microsoft_VisualStudio_v15.0" Name="v15.0">
-							<Directory Id="MSBuild_Microsoft_VisualStudio_v15.0_FSharp" Name="FSharp" />
-						</Directory>
-					</Directory>
-				</Directory>
-			</Directory>
-
 			<Directory Id="ProgramFilesFolder" Name="Program Files">
 				<Directory Id="ReferenceAssemblies" Name="Reference Assemblies">
 					<Directory Id="ReferenceAssemblies_Microsoft" Name="Microsoft">

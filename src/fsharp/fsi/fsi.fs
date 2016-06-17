@@ -956,7 +956,7 @@ type internal FsiDynamicCompiler
         let i = nextFragmentId()
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
-        let impl = SynModuleOrNamespace(prefix,(* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
+        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, (* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
         let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(true (* isLastCompiland *), false (* isExe *)) ))
         let istate,tcEnvAtEndOfLastInput = ProcessInputs (istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 

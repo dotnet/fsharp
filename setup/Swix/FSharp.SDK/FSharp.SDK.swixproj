@@ -6,16 +6,18 @@
     <OutputLocalized>false</OutputLocalized>
     <OutputType>manifest</OutputType>
     <IsPackage>true</IsPackage>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion\json</OutputPath>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);InsertionFolder=$(FSharpSourcesRoot)\..\$(Configuration)\insertion</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
-    <Package Include="VisualFSharpVSIX.swr" />
+    <Package Include="Files.swr" />
   </ItemGroup>
 </Project>

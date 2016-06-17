@@ -51,15 +51,8 @@
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpVsix</RootNamespace>
     <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</RootBinPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(ShippingSku)' == ''">
     <AssemblyName>VisualFSharpVsix</AssemblyName>
     <OutputPath>$(RootBinPath)</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ShippingSku)' != ''">
-    <AssemblyName>VisualFSharpVsix.$(ShippingSku)</AssemblyName>
-    <OutputPath>$(RootBinPath)\ShippingSkus\$(ShippingSku)</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -80,12 +73,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Source.extension.vsixmanifest" Condition="'$(ShippingSku)' == ''">
+    <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
-    </None>
-    <None Include="ShippingManifests\$(ShippingSku)\Source.extension.vsixmanifest" Condition="'$(ShippingSku)' != ''">
-      <SubType>Designer</SubType>
-      <Link>Source.extension.vsixmanifest</Link>
     </None>
     <Content Include="RegisterFsharpPackage.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -98,7 +87,7 @@
     </Content>
   </ItemGroup>
   
-  <ItemGroup Condition="'$(ShippingSku)' == '' or '$(ShippingSku)' == 'Professional'">
+  <ItemGroup>
     <Content Include="$(RootBinPath)\ProjectTemplates\SilverlightProject\SilverlightProject.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -141,42 +130,6 @@
     </Content>
   </ItemGroup>
   
-  <ItemGroup Condition="'$(ShippingSku)' == 'Desktop'">
-    <Content Include="$(RootBinPath)\ProjectTemplates\TutorialProject\TutorialProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\TutorialProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\ConsoleProject\ConsoleProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\ConsoleProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\LibraryProject\LibraryProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\LibraryProject.zip</Link>
-    </Content>
-  </ItemGroup>
-  
-  <ItemGroup Condition="'$(ShippingSku)' == 'WebDevelopment'">
-    <Content Include="$(RootBinPath)\ProjectTemplates\TutorialProject\TutorialProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\TutorialProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\SilverlightProject\SilverlightProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\SilverlightProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\LibraryProject\LibraryProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\LibraryProject.zip</Link>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <Content Include="$(RootBinPath)\ItemTemplates\AppConfig\AppConfig.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -330,20 +283,4 @@
 
   <Import Project="$(VSSourcesRoot)\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).vsix" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>VsixSHA2</Authenticode>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
-  
-  <Target Name="CopyVsixToInsertionFolder" AfterTargets="SignFiles" Condition="'$(ShippingSku)' != ''">
-    <ItemGroup>
-        <VsixPath Include="$(OutDir)$(AssemblyName).vsix" />
-    </ItemGroup>
-    <Copy SourceFiles="@(VsixPath)" DestinationFiles="@(VsixPath->'$(FSharpSourcesRoot)\..\$(Configuration)\insertion\vsix\%(Filename)%(Extension)')" />
-  </Target>
 </Project>
