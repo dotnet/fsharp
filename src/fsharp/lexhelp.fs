@@ -218,6 +218,7 @@ module Keywords =
       FSHARP, "extern"     ,EXTERN;
       ALWAYS, "false"      ,FALSE;
       ALWAYS, "finally"    ,FINALLY;
+      FSHARP, "fixed"      ,FIXED;
       ALWAYS, "for"        ,FOR;
       ALWAYS, "fun"        ,FUN;
       ALWAYS, "function"   ,FUNCTION;
@@ -284,7 +285,7 @@ module Keywords =
         [ "atomic"; "break"; 
           "checked"; "component"; "constraint"; "constructor"; "continue"; 
           "eager"; 
-          "fixed"; "fori"; "functor"; 
+          "fori"; "functor"; 
           "include";  
           "measure"; "method"; "mixin"; 
           "object"; 
