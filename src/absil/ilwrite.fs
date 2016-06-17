@@ -353,6 +353,8 @@ let equalRows (elems:RowElement[]) (elems2:RowElement[]) =
     ok
 
 
+type GenericRow = RowElement[]
+
 /// This is the representation of shared rows is used for most shared row types.
 /// Rows ILAssemblyRef and ILMethodRef are very common and are given their own
 /// representations.
@@ -537,12 +539,11 @@ type TypeDefTableKey = TdKey of string list (* enclosing *) * string (* type nam
 type MetadataTable =
     | Shared of MetadataTable<SharedRow>
     | Unshared of MetadataTable<UnsharedRow>
-    member t.FindOrAddSharedEntry(x) = match t with Shared u -> u.FindOrAddSharedEntry(x) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
-    member t.AddSharedEntry(x) = match t with | Shared u -> u.AddSharedEntry(x) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
-    member t.AddUnsharedEntry(x) = match t with Unshared u -> u.AddUnsharedEntry(x) | Shared u -> failwithf "incorrect table kind, u.name = %s" u.name
-    member t.RowsOfSharedTable = match t with Shared u -> u.EntriesAsArray | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
-    member t.RowsOfUnsharedTable = match t with Unshared u -> u.EntriesAsArray | Shared u -> failwithf "incorrect table kind, u.name = %s" u.name
-    member t.SetRowsOfSharedTable rows = match t with Shared u -> u.SetRowsOfTable (Array.map SharedRow rows) | Unshared u -> failwithf "incorrect table kind, u.name = %s" u.name
+    member t.FindOrAddSharedEntry(x) = match t with Shared u -> u.FindOrAddSharedEntry(x) | Unshared u -> failwithf "FindOrAddSharedEntry: incorrect table kind, u.name = %s" u.name
+    member t.AddSharedEntry(x) = match t with | Shared u -> u.AddSharedEntry(x) | Unshared u -> failwithf "AddSharedEntry: incorrect table kind, u.name = %s" u.name
+    member t.AddUnsharedEntry(x) = match t with Unshared u -> u.AddUnsharedEntry(x) | Shared u -> failwithf "AddUnsharedEntry: incorrect table kind, u.name = %s" u.name
+    member t.GenericRowsOfTable = match t with Unshared u -> u.EntriesAsArray |> Array.map (fun x -> x.GenericRow) | Shared u -> u.EntriesAsArray |> Array.map (fun x -> x.GenericRow) 
+    member t.SetRowsOfSharedTable rows = match t with Shared u -> u.SetRowsOfTable (Array.map SharedRow rows) | Unshared u -> failwithf "SetRowsOfSharedTable: incorrect table kind, u.name = %s" u.name
     member t.Count = match t with Unshared u -> u.Count | Shared u -> u.Count 
 
 
@@ -2904,9 +2905,8 @@ let rowElemCompare (e1: RowElement) (e2: RowElement) =
 let TableRequiresSorting tab = 
     List.memAssoc tab sortedTableInfo 
 
-let SortTableRows tab (rows:SharedRow[]) = 
+let SortTableRows tab (rows:GenericRow[]) = 
     assert (TableRequiresSorting tab)
-    let rows = rows |> Array.map (fun row -> row.GenericRow)
     let col = List.assoc tab sortedTableInfo
     rows 
         // This needs to be a stable sort, so we use Lsit.sortWith
@@ -2934,7 +2934,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params. 
     // Note this mutates the rows in a table.  'SetRowsOfTable' clears 
     // the key --> index map since it is no longer valid 
-    cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).RowsOfSharedTable))
+    cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).GenericRowsOfTable))
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
@@ -3216,7 +3216,8 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
       Array.init 64 (fun i -> 
           let tab = tables.[i]
           let tabName = TableName.FromIndex i
-          if TableRequiresSorting tabName then SortTableRows tabName tab.RowsOfSharedTable else tab.RowsOfUnsharedTable |> Array.map (fun u -> u.GenericRow))
+          let rows = tab.GenericRowsOfTable
+          if TableRequiresSorting tabName then SortTableRows tabName rows else rows)
       
     reportTime showTimes "Sort Tables"
 
