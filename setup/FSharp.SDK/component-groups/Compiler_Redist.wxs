@@ -23,7 +23,7 @@
 
 		<DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0">
 
-			<Component Id="Compiler_Redist_FSharp.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Core.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Core.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
@@ -31,67 +31,67 @@
 				<File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
 			</Component>
 
-			<Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Build.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Build.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Build.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_FSharp.Compiler.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Compiler.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Compiler.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Interactive.Settings.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Data.TypeProviders.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Data.TypeProviders.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Source="$(var.FSharpTypeProvidersRedistDir)\content\4.3.0.0\FSharp.Data.TypeProviders.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Data.TypeProviders.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_fsc.exe" Guid="$(fsharp.guid(Compiler_Redist_fsc.exe, $(var.Lang)))">
+			<Component Id="Compiler_Redist_fsc.exe" Guid="$(fsharp.guid(Compiler_Redist_fsc.exe, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_fsc.exe" Source="$(var.BinariesDir)\net40\bin\fsc.exe" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_fsc.Native.exe" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_fsi.exe" Guid="$(fsharp.guid(Compiler_Redist_fsi.exe, $(var.Lang)))">
+			<Component Id="Compiler_Redist_fsi.exe" Guid="$(fsharp.guid(Compiler_Redist_fsi.exe, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_fsi.exe" Source="$(var.BinariesDir)\net40\bin\fsi.exe" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_fsi.Native.exe" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_fsiAnyCPU.exe" Guid="$(fsharp.guid(Compiler_Redist_fsiAnyCPU.exe, $(var.Lang)))">
+			<Component Id="Compiler_Redist_fsiAnyCPU.exe" Guid="$(fsharp.guid(Compiler_Redist_fsiAnyCPU.exe, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_fsiAnyCPU.exe" Source="$(var.BinariesDir)\net40\bin\fsiAnyCPU.exe" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_fsiAnyCPU.Native.exe" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
 
-			<Component Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Server.Shared.dll, $(var.Lang)))">
+			<Component Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Server.Shared.dll, $(var.LocaleCode)))">
 				<File Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Server.Shared.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Server.Shared.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>			
 
-            <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.Lang)))">
+            <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.LocaleCode)))">
                 <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.targets" />
             </Component>
 			
-            <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.Lang)))">
+            <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.LocaleCode)))">
                 <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
             </Component>
 			
-            <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.Lang)))">
+            <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.LocaleCode)))">
                 <File Id="Compiler_Redist_SupportedRuntimes.xml" Source="$(var.FSharpTreeRoot)\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" />
             </Component>
 			
-			<Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.Lang)))">
+			<Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
 				<RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
 					<RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
 				</RegistryKey>

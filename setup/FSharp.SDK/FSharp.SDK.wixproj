@@ -21,7 +21,11 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);Lang=$(Lang)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleCode=$(LocaleCode)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleId=$(LocaleId)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleRegion=$(LocaleRegion)</DefineConstants>
+    <DefineConstants>$(DefineConstants);IsLangPack=$(IsLangPack)</DefineConstants>
+    
     <DefineConstants>$(DefineConstants);BinariesDir=$(BinariesDir)</DefineConstants>
     <DefineConstants>$(DefineConstants);FSharpTreeRoot=$(FSharpTreeRoot)</DefineConstants>
     <DefineConstants>$(DefineConstants);FSharpCoreRedistDir=$(FSharpCoreRedistDir)</DefineConstants>
@@ -43,12 +47,12 @@
     
     <Compile Include="FSharp.SDK.wxs" />
     
-    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Compiler_Redist.wxs" />
-    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Compiler_OtherResources.wxs" />
-    <Compile Condition="'$(Lang)' != 'ENU'" Include="component-groups\Compiler_LangPack.wxs" />
+    <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Compiler_Redist.wxs" />
+    <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Compiler_OtherResources.wxs" />
+    <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Compiler_LangPack.wxs" />
     
-    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Runtime_Redist.wxs" />
-    <Compile Condition="'$(Lang)' != 'ENU'" Include="component-groups\Runtime_LangPack.wxs" />
+    <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Runtime_Redist.wxs" />
+    <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Runtime_LangPack.wxs" />
   </ItemGroup>
   
   <ItemGroup>
@@ -60,8 +64,11 @@
   <Import Project="$(WixInstallPath)\wix.targets" />
   <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
   
-  <Target Name="CheckLangExists" BeforeTargets="Compile">
-    <Error Condition="'$(Lang)' == ''" Text="A 'Lang' property must be passed to the project to attach the correct localization assemblies" />
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Compile">
+    <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
+    <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
+    <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
+    <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
   </Target>
 
   <Target Name="CopyMsiToInsertionFolder" AfterTargets="SignFiles">
@@ -69,6 +76,6 @@
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
   
-    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(Lang)%(Extension)')" />
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(LocaleRegion.ToUpper())%(Extension)')" />
   </Target>
 </Project>
