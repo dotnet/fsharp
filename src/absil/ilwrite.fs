@@ -603,7 +603,7 @@ type cenv =
 let FindOrAddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).FindOrAddSharedEntry x
 
 // Shared rows must be hash-cons'd to be made unique (no duplicates according to contents)
-let AddSimpleSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).AddSharedEntry x
+let AddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).AddSharedEntry x
 
 // Unshared rows correspond to definition elements (e.g. a ILTypeDef or a ILMethodDef)
 let AddUnsharedRow (cenv:cenv) tbl (x:UnsharedRow) = cenv.GetTable(tbl).AddUnsharedEntry x
@@ -2428,7 +2428,7 @@ and GenGenericParamConstraintPass4 cenv env gpidx ty =
 and GenGenericParamPass3 cenv env idx owner gp = 
     // here we just collect generic params, its constraints\custom attributes will be processed on pass4
     // shared since we look it up again below in GenGenericParamPass4
-    AddSimpleSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp) 
+    AddSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp) 
     |> ignore
 
 
