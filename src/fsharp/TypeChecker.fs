@@ -2946,6 +2946,17 @@ let BuildDisposableCleanup cenv env m (v:Val) =
         let inpe = mkCoerceExpr(exprForVal v.Range v,cenv.g.obj_ty,m,v.Type)
         mkIsInstConditional cenv.g m cenv.g.system_IDisposable_typ inpe disposeObjVar disposeExpr (mkUnit cenv.g m) 
 
+/// Build call to get_OffsetToStringData as part of 'fixed'
+let BuildOffsetToStringData cenv env m = 
+    let ad = env.eAccessRights
+    let offsetToStringDataMethod = 
+        match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "get_OffsetToStringData" cenv.g.system_RuntimeHelpers_typ with 
+        | [x] ->  x 
+        | _ -> error(Error(FSComp.SR.tcCouldNotFindOffsetToStringData(),m)) 
+
+    let offsetExpr,_ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false offsetToStringDataMethod NormalValUse [] [] []    
+    offsetExpr
+
 let BuildILFieldGet g amap m objExpr (finfo:ILFieldInfo) = 
     let fref = finfo.ILFieldRef
     let isValueType = finfo.IsValueType
@@ -9775,6 +9786,62 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
         let tp',tpenv = TcTypar cenv env NewTyparsOK tpenv tp
         TTyconIsStruct(mkTyparTy tp'),tpenv
 
+
+/// Fix up the r.h.s. of a 'use x = fixed expr' 
+and TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding) =
+    match overallExprTy with 
+    | ty when isByrefTy cenv.g ty -> 
+        let okByRef = 
+            match stripExpr rhsExprChecked  with 
+            | Expr.Op (op,tyargs,args,_) ->
+                    match op,tyargs,args with 
+                    | TOp.ValFieldGetAddr rfref,_,[_] -> not rfref.Tycon.IsStructOrEnumTycon
+                    | TOp.ILAsm ([ I_ldflda (fspec)],_),_,_  -> fspec.EnclosingType.Boxity = ILBoxity.AsObject
+                    | TOp.ILAsm ([ I_ldelema _],_),_,_ -> true
+                    | TOp.RefAddrGet _,_,_ -> true
+                    | _ -> false
+            | _ -> false
+        if not okByRef then 
+            error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
+        UnifyTypes cenv env mBinding overallExprTy overallPatTy
+        rhsExprChecked 
+   
+    | ty when isStringTy cenv.g ty -> 
+        let charPtrTy = (mkNativePtrType cenv.g cenv.g.char_ty)
+        UnifyTypes cenv env mBinding charPtrTy overallPatTy
+        let stringObjAsPtr = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ charPtrTy ]),[],[rhsExprChecked],mBinding)
+        // For strings 'use x = fixed str', we actually generate two pinned variables
+        //    let pinned x = 
+        //        let pinned tmp = (char*) str
+        //        tmp + get_OffsettoStringData()
+        // This is the easiest codegen for F#
+
+        // Store the string into a pinned local
+        mkCompGenLetIn mBinding "pinnedString" charPtrTy stringObjAsPtr (fun (v,ve) -> 
+            v.SetIsFixed()
+            let addrOffset = BuildOffsetToStringData cenv env mBinding
+            let stringPlusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ charPtrTy ]),[],[ve; addrOffset],mBinding)
+            // check for non-null
+            mkNullTest cenv.g mBinding ve ve stringPlusOffset)
+
+    | ty when isArray1DTy cenv.g ty -> 
+        let elemTy = destArrayTy cenv.g overallExprTy
+        let elemPtrTy = mkByrefTy cenv.g elemTy
+        UnifyTypes cenv env mBinding elemPtrTy overallPatTy
+        // Store the array into a local
+        mkCompGenLetIn mBinding "tmpArray" overallExprTy rhsExprChecked (fun (_,ve) -> 
+            // This is &arr.[0]
+            let elemZeroAddress = mkArrayElemAddress cenv.g (ILReadonly.NormalAddress,false,ILArrayShape.SingleDimensional,elemTy,ve,mkInt32 cenv.g mBinding 0,mBinding)
+            // check for non-null and non-empty
+            let zero = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_U], [ elemPtrTy ]),[],[mkInt32 cenv.g mBinding 0],mBinding)
+            // This is arr.Length
+            let arrayLengthExpr =  mkCallArrayLength  cenv.g mBinding elemTy ve 
+            mkNullTest cenv.g mBinding ve zero (mkNullTest cenv.g mBinding arrayLengthExpr zero elemZeroAddress))
+
+
+    | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
+
+
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and 
 and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars,(ExplicitTyparInfo(_,declaredTypars,_) as flex)) bind =
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
@@ -9896,29 +9963,26 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
         // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s. 
         let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = MemberKind.Constructor | _ -> false)
 
-        let tc = 
-            if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo)
-            else TcExprThatCantBeCtorBody
-
         // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
         // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
-        let rhsExpr',tpenv = 
+        let rhsExprChecked,tpenv = 
             let atTopNonLambdaDefn = 
                 DeclKind.IsModuleOrMemberOrExtensionBinding declKind && 
                 (match rhsExpr with SynExpr.Lambda _ -> false | _ -> true) && 
                 synExprContainsError rhsExpr
-            conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () -> 
-                tc cenv overallExprTy envinner tpenv rhsExpr)
 
-        if isFixed then 
-            match overallExprTy with 
-            | ty when isByrefTy cenv.g ty -> UnifyTypes cenv env mBinding overallExprTy overallPatTy
-            | ty when isStringTy cenv.g ty -> UnifyTypes cenv env mBinding (mkNativePtrType cenv.g cenv.g.char_ty) overallPatTy
-            | ty when isArray1DTy cenv.g ty -> UnifyTypes cenv env mBinding (mkByrefTy cenv.g (destArrayTy cenv.g overallExprTy)) overallPatTy
-            | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
+            conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () -> 
+
+                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv overallExprTy envinner tpenv rhsExpr
+                else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
 
         if bkind = StandaloneExpression && not cenv.isScript then 
-            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy (Some rhsExpr') |> ignore<bool>
+            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy (Some rhsExprChecked) |> ignore<bool>
+
+        // Fix up the r.h.s. expression for 'fixed'
+        let rhsExprChecked =
+            if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
+            else rhsExprChecked
 
         // Assert the return type of an active pattern
         match apinfoOpt with 
@@ -9940,7 +10004,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
         if hasLiteralAttr && nonNil declaredTypars then 
             errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(),mBinding))
 
-        CheckedBindingInfo(inlineFlag,true,valAttribs,doc,tcPatPhase2,flex,nameToPrelimValSchemeMap,rhsExpr',argAndRetAttribs,overallPatTy,mBinding,spBind,compgen,konst,isFixed),tpenv
+        CheckedBindingInfo(inlineFlag,true,valAttribs,doc,tcPatPhase2,flex,nameToPrelimValSchemeMap,rhsExprChecked,argAndRetAttribs,overallPatTy,mBinding,spBind,compgen,konst,isFixed),tpenv
 
 and TcLiteral cenv overallTy env tpenv (attrs,synLiteralValExpr) = 
     let hasLiteralAttr = HasFSharpAttribute cenv.g cenv.g.attrib_LiteralAttribute attrs
@@ -10233,13 +10297,13 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
         let prelimRecValues = NameMap.map fst values
         
         // Now bind the r.h.s. to the l.h.s. 
-        let rhse = mkTypeLambda m generalizedTypars (rhsExpr,tauTy)
+        let rhsExpr = mkTypeLambda m generalizedTypars (rhsExpr,tauTy)
 
         match pat' with 
         // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit' 
 
         | (TPat_wild _ | TPat_const (Const.Unit,_)) when not isUse && not isFixed && isNil generalizedTypars ->
-            let mk_seq_bind (tm,tmty) = (mkSequential SequencePointsAtSeq m rhse tm, tmty)
+            let mk_seq_bind (tm,tmty) = (mkSequential SequencePointsAtSeq m rhsExpr tm, tmty)
             (mk_seq_bind << mkf_sofar,env,tpenv)
             
         | _ -> 
@@ -10251,7 +10315,8 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                 | TPat_as (pat1,PBind(v,TypeScheme(generalizedTypars',_)),_) 
                     when List.lengthsEqAndForall2 typarRefEq generalizedTypars generalizedTypars' -> 
                       
-                      if isFixed then v.SetIsFixed()
+                      if isFixed then 
+                          v.SetIsFixed()
                       v, pat1
 
                 | _ when mustinline(inlineFlag)  -> error(Error(FSComp.SR.tcInvalidInlineSpecification(),m))
@@ -10265,25 +10330,28 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                     // type checker that anything related to binding module-level values is marked with an 
                     // val_repr_info, val_actual_parent and is_topbind
                     if (DeclKind.MustHaveArity declKind) then 
-                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g tmp rhse)
+                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g tmp rhsExpr)
                     tmp,pat'
 
-        let mkRhsBind (tm,tmty) = (mkLet spBind m tmp rhse tm),tmty
-        let allValsDefinedByPattern = (NameMap.range prelimRecValues |> FlatList.ofList)
-        let mkPatBind (tm,tmty) =
-            let valsDefinedByMatching = FlatListSet.remove valEq tmp allValsDefinedByPattern
-            let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (tmp,generalizedTypars) [TClause(pat'',None,TTarget(valsDefinedByMatching,tm,SuppressSequencePointAtTarget),m)] tauTy tmty
-            let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
-            matchx,tmty
+        let mkRhsBind (bodyExpr,bodyExprTy) = 
+            let letExpr = mkLet spBind m tmp rhsExpr bodyExpr
+            letExpr,bodyExprTy
 
-        let mkCleanup (tm,tmty) =
+        let allValsDefinedByPattern = (NameMap.range prelimRecValues |> FlatList.ofList)
+        let mkPatBind (bodyExpr,bodyExprTy) =
+            let valsDefinedByMatching = FlatListSet.remove valEq tmp allValsDefinedByPattern
+            let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (tmp,generalizedTypars) [TClause(pat'',None,TTarget(valsDefinedByMatching,bodyExpr,SuppressSequencePointAtTarget),m)] tauTy bodyExprTy
+            let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
+            matchx,bodyExprTy
+
+        let mkCleanup (bodyExpr,bodyExprTy) =
             if isUse && not isFixed then 
-                (allValsDefinedByPattern,(tm,tmty)) ||> FlatList.foldBack (fun v (tm,tmty) ->
+                (allValsDefinedByPattern,(bodyExpr,bodyExprTy)) ||> FlatList.foldBack (fun v (bodyExpr,bodyExprTy) ->
                     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_typ v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
-                    mkTryFinally cenv.g (tm,cleanupE,m,tmty,SequencePointInBodyOfTry,NoSequencePointAtFinally),tmty)
+                    mkTryFinally cenv.g (bodyExpr,cleanupE,m,bodyExprTy,SequencePointInBodyOfTry,NoSequencePointAtFinally),bodyExprTy)
             else 
-                (tm,tmty)
+                (bodyExpr,bodyExprTy)
                 
         ((mkRhsBind << mkPatBind << mkCleanup << mkf_sofar),
          AddLocalValMap cenv.tcSink scopem prelimRecValues env,

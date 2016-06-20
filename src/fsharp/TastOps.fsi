@@ -196,6 +196,8 @@ val mkExnCaseFieldGet              : Expr * TyconRef               * int        
 val mkUnionCaseFieldSet            : Expr * UnionCaseRef   * TypeInst * int  * Expr * range -> Expr
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
+val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType * Expr * Expr * range -> Expr
+
 //-------------------------------------------------------------------------
 // Compiled view of tuples
 //------------------------------------------------------------------------- 

@@ -1254,6 +1254,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b:Binding,binfo) =
     not (cenv.settings.EliminateUnusedBindings()) ||
     isSome v.MemberInfo ||
     binfo.HasEffect || 
+    v.IsFixed ||
     Zset.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
@@ -1344,6 +1345,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1,e1,spBind)) e2 _m  =
     if not (cenv.optimizing && cenv.settings.EliminateImmediatelyConsumedLocals()) && 
        not vspec1.IsCompilerGenerated then 
        None 
+    elif vspec1.IsFixed then None 
     else
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e" 
         // REVIEW: enhance this by general elimination of bindings to 
