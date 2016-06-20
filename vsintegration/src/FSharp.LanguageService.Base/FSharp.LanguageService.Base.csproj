@@ -10,6 +10,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</ProjectGuid>
     <OutputType>Library</OutputType>
