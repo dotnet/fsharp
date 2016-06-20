@@ -23,7 +23,6 @@
 			<ComponentGroupRef Id="Compiler_LangPack" />
             <?else ?>
 			<ComponentGroupRef Id="Compiler_Redist" />
-			<ComponentGroupRef Id="Compiler_OtherResources" />
             <?endif ?>
 		</Feature>
 		

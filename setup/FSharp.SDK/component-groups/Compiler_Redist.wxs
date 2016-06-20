@@ -19,6 +19,10 @@
 			<ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
 			<ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
 			
+			<ComponentRef Id="Compiler_Redist_OtherResources_Redist.txt" />
+			<ComponentRef Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" />
+			<ComponentRef Id="Compiler_Redist_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" />
+			
 		</ComponentGroup>
 
 		<DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0">
@@ -104,5 +108,23 @@
 				</RegistryKey>
 			</Component>
 		</DirectoryRef>
+        
+        <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
+            <Component Id="Compiler_Redist_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_OtherResources_Redist.txt" Source="$(var.FSharpCoreRedistDir)\content\Redist.txt" />
+            </Component>
+        </DirectoryRef>
+		
+        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses">
+			<Component Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" Guid="$(fsharp.guid(Compiler_OtherResources_ThirdPartyNotices.txt, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" Source="$(var.BinariesDir)\setup\resources\ThirdPartyNotices.txt" />
+            </Component>
+        </DirectoryRef>
+		
+        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses_$(var.LocaleId)">
+            <Component Id="Compiler_Redist_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" Guid="$(fsharp.guid(Compiler_OtherResources_FSharp_eula.$(var.LocaleCode).rtf, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" Source="$(var.BinariesDir)\setup\resources\eula\VF_EULA.$(var.LocaleCode).rtf" />
+            </Component>
+        </DirectoryRef>
 	</Fragment>
 </Wix>
