@@ -43,10 +43,12 @@
     
     <Compile Include="FSharp.SDK.wxs" />
     
-    <Compile Include="component-groups\Redist_ManagedFiles.wxs" />
-    <Compile Include="component-groups\Compiler_SDK.wxs" />
-    <Compile Include="component-groups\Compiler_OtherResources.wxs" />
-    <Compile Include="component-groups\Langpack_ManagedFiles.wxs" />
+    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Compiler_Redist.wxs" />
+    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Compiler_OtherResources.wxs" />
+    <Compile Condition="'$(Lang)' != 'ENU'" Include="component-groups\Compiler_LangPack.wxs" />
+    
+    <Compile Condition="'$(Lang)' == 'ENU'" Include="component-groups\Runtime_Redist.wxs" />
+    <Compile Condition="'$(Lang)' != 'ENU'" Include="component-groups\Runtime_LangPack.wxs" />
   </ItemGroup>
   
   <ItemGroup>
