@@ -9822,7 +9822,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, m
             let addrOffset = BuildOffsetToStringData cenv env mBinding
             let stringPlusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ charPtrTy ]),[],[ve; addrOffset],mBinding)
             // check for non-null
-            mkNullTest cenv.g mBinding ve ve stringPlusOffset)
+            mkNullTest cenv.g mBinding ve stringPlusOffset ve)
 
     | ty when isArray1DTy cenv.g ty -> 
         let elemTy = destArrayTy cenv.g overallExprTy
@@ -9833,11 +9833,10 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, m
             // This is &arr.[0]
             let elemZeroAddress = mkArrayElemAddress cenv.g (ILReadonly.NormalAddress,false,ILArrayShape.SingleDimensional,elemTy,ve,mkInt32 cenv.g mBinding 0,mBinding)
             // check for non-null and non-empty
-            let zero = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_U], [ elemPtrTy ]),[],[mkInt32 cenv.g mBinding 0],mBinding)
+            let zero = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_U], [ cenv.g.nativeint_ty ]),[],[mkInt32 cenv.g mBinding 0],mBinding)
             // This is arr.Length
             let arrayLengthExpr =  mkCallArrayLength  cenv.g mBinding elemTy ve 
-            mkNullTest cenv.g mBinding ve zero (mkNullTest cenv.g mBinding arrayLengthExpr zero elemZeroAddress))
-
+            mkNullTest cenv.g mBinding ve (mkNullTest cenv.g mBinding arrayLengthExpr elemZeroAddress zero) zero )
 
     | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
 
