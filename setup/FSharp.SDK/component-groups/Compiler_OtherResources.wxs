@@ -7,25 +7,25 @@
 
 			<ComponentRef Id="Compiler_OtherResources_Redist.txt" />
 			<ComponentRef Id="Compiler_OtherResources_ThirdPartyNotices.txt" />
-			<ComponentRef Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" />
+			<ComponentRef Id="Compiler_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" />
 			
 		</ComponentGroup>
         
         <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
-            <Component Id="Compiler_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.Lang)))">
+            <Component Id="Compiler_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.LocaleCode)))">
                 <File Id="Compiler_OtherResources_Redist.txt" Source="$(var.FSharpCoreRedistDir)\content\Redist.txt" />
             </Component>
         </DirectoryRef>
 		
         <DirectoryRef Id="MicrosoftSDKs_FS_Licenses">
-			<Component Id="Compiler_OtherResources_ThirdPartyNotices.txt" Guid="$(fsharp.guid(Compiler_OtherResources_ThirdPartyNotices.txt, $(var.Lang)))">
+			<Component Id="Compiler_OtherResources_ThirdPartyNotices.txt" Guid="$(fsharp.guid(Compiler_OtherResources_ThirdPartyNotices.txt, $(var.LocaleCode)))">
                 <File Id="Compiler_OtherResources_ThirdPartyNotices.txt" Source="$(var.BinariesDir)\setup\resources\ThirdPartyNotices.txt" />
             </Component>
         </DirectoryRef>
 		
-        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses_$(fsharp.localeToId($(var.Lang)))">
-            <Component Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" Guid="$(fsharp.guid(Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf, $(var.Lang)))">
-                <File Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" Source="$(var.BinariesDir)\setup\resources\eula\VF_EULA.$(var.Lang).rtf" />
+        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses_$(var.LocaleId)">
+            <Component Id="Compiler_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" Guid="$(fsharp.guid(Compiler_OtherResources_FSharp_eula.$(var.LocaleCode).rtf, $(var.LocaleCode)))">
+                <File Id="Compiler_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" Source="$(var.BinariesDir)\setup\resources\eula\VF_EULA.$(var.LocaleCode).rtf" />
             </Component>
         </DirectoryRef>
 	</Fragment>
