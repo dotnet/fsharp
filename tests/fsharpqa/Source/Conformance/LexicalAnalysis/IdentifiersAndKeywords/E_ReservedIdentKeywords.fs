@@ -10,7 +10,7 @@ let constraint = 10
 let constructor  = 10
 let continue = 10
 let eager = 10
-let fixed = 10
+
 let fori = 10
 let functor = 10
 let include  = 10
@@ -39,7 +39,6 @@ let volatile  = 10
 //<Expects span="(10,5-10,16) status="warning" id="FS0046">The identifier 'constructor' is reserved for future use by F#</Expects>
 //<Expects span="(11,5-11,13) status="warning" id="FS0046">The identifier 'continue' is reserved for future use by F#</Expects>
 //<Expects span="(12,5-12,10) status="warning" id="FS0046">The identifier 'eager' is reserved for future use by F#</Expects>
-//<Expects span="(13,5-13,10) status="warning" id="FS0046">The identifier 'fixed' is reserved for future use by F#</Expects>
 //<Expects span="(14,5-14,9) status="warning" id="FS0046">The identifier 'fori' is reserved for future use by F#</Expects>
 //<Expects span="(15,5-15,12) status="warning" id="FS0046">The identifier 'functor' is reserved for future use by F#</Expects>
 //<Expects span="(16,5-16,12) status="warning" id="FS0046">The identifier 'include' is reserved for future use by F#</Expects>
