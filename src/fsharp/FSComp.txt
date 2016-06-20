@@ -1307,4 +1307,5 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3201,tcModuleAbbrevFirstInMutRec,"In a recursive declaration group, module abbreviations must come after all 'open' declarations and before other declarations"
 3202,tcUnsupportedMutRecDecl,"This declaration is not supported in recursive declaration groups"
 3203,parsInvalidUseOfRec,"Invalid use of 'rec' keyword"
-3204,tcFixedNotAllowed,"'fixed' may only be used in a declaration of the form 'use x = fixed array-or-address-or-string-expression'"
+3204,tcFixedNotAllowed,"Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'"
+3205,tcCouldNotFindOffsetToStringData,"Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression."

@@ -1181,6 +1181,8 @@ let mkStaticRecdFieldGetAddr(fref,tinst,m)          = Expr.Op (TOp.ValFieldGetAd
 let mkStaticRecdFieldGet(fref,tinst,m)               = Expr.Op (TOp.ValFieldGet(fref), tinst, [],m)
 let mkStaticRecdFieldSet(fref,tinst,e,m)             = Expr.Op (TOp.ValFieldSet(fref), tinst, [e],m)
 
+let mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m) = Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+
 let mkRecdFieldSetViaExprAddr(e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
 
 let mkUnionCaseTagGet(e1,cref,tinst,m)                = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
@@ -5443,7 +5445,7 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             match addrExprVal with
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+        (fun x -> x), mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m)
 
     // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_) 

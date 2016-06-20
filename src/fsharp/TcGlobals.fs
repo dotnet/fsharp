@@ -218,6 +218,7 @@ type public TcGlobals =
       system_Array_typ             : TType 
       system_Object_typ            : TType 
       system_IDisposable_typ       : TType 
+      system_RuntimeHelpers_typ       : TType 
       system_Value_typ             : TType 
       system_Delegate_typ          : TType
       system_MulticastDelegate_typ : TType
@@ -616,6 +617,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let sysLinq = ["System";"Linq"]
   let sysCollections = ["System";"Collections"]
   let sysGenerics = ["System";"Collections";"Generic"]
+  let sysCompilerServices = ["System";"Runtime";"CompilerServices"]
 
   let lazy_tcr = mkSysTyconRef sys "Lazy`1"
   let fslib_IEvent2_tcr        = mk_MFControl_tcref fslibCcu "IEvent`2"
@@ -1099,6 +1101,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     system_Array_typ     = mkSysNonGenericTy sys "Array"
     system_Object_typ    = mkSysNonGenericTy sys "Object"
     system_IDisposable_typ    = mkSysNonGenericTy sys "IDisposable"
+    system_RuntimeHelpers_typ    = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
     system_Value_typ     = mkSysNonGenericTy sys "ValueType"
     system_Delegate_typ     = mkSysNonGenericTy sys "Delegate"
     system_MulticastDelegate_typ     = mkSysNonGenericTy sys "MulticastDelegate"

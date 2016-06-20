@@ -1569,7 +1569,7 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
 
     let ilLocals =
         locals
-        |> List.map (fun (infos, ty,isFixed) ->
+        |> List.map (fun (infos, ty, isFixed) ->
           let loc = 
             // in interactive environment, attach name and range info to locals to improve debug experience
             if cenv.opts.isInteractive && cenv.opts.generateDebugSymbols then
