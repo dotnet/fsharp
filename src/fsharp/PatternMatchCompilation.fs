@@ -462,20 +462,16 @@ let ChooseInvestigationPointLeftToRight frontiers =
 
 
 
-#if OPTIMIZE_LIST_MATCHING
+#if !OLD_LIST_MATCHING
 // This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h::t -> ... | [] -> ..."
 // The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
 
 let (|ListConsDiscrim|_|) g = function
-     | (Test.UnionCase (ucref,tinst))
-                (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> Some tinst
+     | (Test.UnionCase (ucref,tinst)) when g.unionCaseRefEq ucref g.cons_ucref -> Some tinst
      | _ -> None
 
-let (|ListEmptyDiscrim|_|) g = function
-     | (Test.UnionCase (ucref,tinst))
-                (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> Some tinst 
+let (|ListNilDiscrim|_|) g = function
+     | (Test.UnionCase (ucref,tinst)) when g.unionCaseRefEq ucref g.nil_ucref -> Some tinst 
      | _ -> None
 #endif
 
@@ -494,7 +490,6 @@ let (|ListEmptyDiscrim|_|) g = function
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as Test.IsInst.
 let rec BuildSwitch inpExprOpt g expr edges dflt m =
-    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt); 
     match edges,dflt with 
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt      (* NOTE: first time around, edges<>[] *)
@@ -512,13 +507,14 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     | (TCase((Test.IsNull | Test.IsInst _),_) as edge):: edges, dflt  -> 
         TDSwitch(expr,[edge],Some (BuildSwitch inpExprOpt g expr edges dflt m),m)    
 
-#if OPTIMIZE_LIST_MATCHING
-    // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable 
-    // In this case the 'expr' already holds the result of the 'isinst' test. 
-    | [TCase(ListConsDiscrim g tinst, consCase)], Some emptyCase 
-    | [TCase(ListEmptyDiscrim g tinst, emptyCase)], Some consCase 
-    | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
-    | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
+#if !OLD_LIST_MATCHING
+    // 'cons/nil' tests where we have stored the result of TailOrNull in an inpExprOpt pre-bound variable.
+    // In this case the 'expr' already holds the result of the 'tail', and the switch can be an IsNull test on that
+    // value.
+    | [TCase(ListConsDiscrim g _, consCase)], Some emptyCase 
+    | [TCase(ListNilDiscrim g _, emptyCase)], Some consCase 
+    | [TCase(ListNilDiscrim g _, emptyCase); TCase(ListConsDiscrim g _, consCase)], None
+    | [TCase(ListConsDiscrim g _, consCase); TCase(ListNilDiscrim g _, emptyCase)], None
                      when isSome inpExprOpt -> 
         TDSwitch(expr, [TCase(Test.IsNull, emptyCase)], Some consCase, m)    
 #endif
@@ -792,7 +788,7 @@ let CompilePatternBasic
                     if debug then dprintf "chooseSimultaneousEdgeSet\n";
                     let simulSetOfEdgeDiscrims,fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
-                    let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr    
+                    let inpExprOpt, bindOpt =  ChoosePreBinder simulSetOfEdgeDiscrims subexpr    
                             
                     // For each case, recursively compile the residue decision trees that result if that case successfully matches 
                     let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt 
@@ -912,20 +908,23 @@ let CompilePatternBasic
              
 
 
-#if OPTIMIZE_LIST_MATCHING
-         | [EdgeDiscrim(_, ListConsDiscrim g tinst,m); EdgeDiscrim(_, ListEmptyDiscrim g _, _)]
-         | [EdgeDiscrim(_, ListEmptyDiscrim g _, _); EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
+#if !OLD_LIST_MATCHING
+    // 'cons/nil' tests: we store the result of TailOrNull in an inpExprOpt pre-bound variable.
+    // The switch can be an IsNull test on that value.
+         | [EdgeDiscrim(_, ListConsDiscrim g tinst,m); EdgeDiscrim(_, ListNilDiscrim g _, _)]
+         | [EdgeDiscrim(_, ListNilDiscrim g _, _); EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
          | [EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
-         | [EdgeDiscrim(_, ListEmptyDiscrim g tinst, m)]
-                    (* check we can use a simple 'isinst' instruction *)
+         | [EdgeDiscrim(_, ListNilDiscrim g tinst, m)]
                     when isNil topgtvs ->
 
-             let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
-             let v,vexp = mkCompGenLocal m "unionTestResult" ucaseTy
+             let listTy = mkListTy g (List.head tinst)
+             let v,vexp = mkCompGenLocal m "tailOrNullResult" listTy
              if topv.IsMemberOrModuleBinding then 
                  AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+             // Get the input
              let argexp = GetSubExprOfInput subexpr
-             let appexp = mkIsInst ucaseTy argexp matchm
+             // Get the TailOrNull field
+             let appexp = mkUnionCaseFieldGetUnprovenViaExprAddr(argexp,g.cons_ucref,tinst,1,matchm)
              Some vexp,Some (mkInvisibleBind v appexp)
 #endif
 
@@ -967,7 +966,7 @@ let CompilePatternBasic
                  let resPostBindOpt,ucaseBindOpt =
                      match discrim with 
                      | Test.UnionCase (ucref, tinst) when 
-#if OPTIMIZE_LIST_MATCHING
+#if !OLD_LIST_MATCHING
                                                            isNone inpExprOpt &&
 #endif
                                                           (isNil topgtvs && 
@@ -1102,11 +1101,22 @@ let CompilePatternBasic
                         match resPostBindOpt with 
                         | Some e -> mkUnionCaseFieldGetProvenViaExprAddr (e,ucref1,tinst,j,exprm)
                         | None -> 
-                            let exprIn = 
-                                match inpExprOpt with 
-                                | Some addrexp -> addrexp
-                                | None -> accessf tpinst exprIn
-                            mkUnionCaseFieldGetUnprovenViaExprAddr (exprIn,ucref1,instTypes tpinst tyargs,j,exprm)
+#if !OLD_LIST_MATCHING
+                            if g.unionCaseRefEq ucref1 g.cons_ucref then
+                                if j = 0 then 
+                                    let exprIn = accessf tpinst exprIn
+                                    mkUnionCaseFieldGetUnprovenViaExprAddr (exprIn,ucref1,instTypes tpinst tyargs,j,exprm)
+                                else 
+                                    assert (j = 1)
+                                    assert inpExprOpt.IsSome
+                                    inpExprOpt.Value // use the saved value of TailOrNull for the tail projection
+                            else 
+#endif
+                                let exprIn = 
+                                    match inpExprOpt with 
+                                    | Some addrexp -> addrexp
+                                    | None -> accessf tpinst exprIn
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (exprIn,ucref1,instTypes tpinst tyargs,j,exprm)
                         
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathUnionConstr(path,ucref1,tyargs,j))
                 | Test.UnionCase _ ->
