@@ -14,29 +14,29 @@
 		<MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A newer version of this product is already installed." Schedule="afterInstallInitialize" />
 		<MediaTemplate EmbedCab="yes" />
 
-		<Feature Id="Redist_Feature"
-				 Title="Microsoft Visual F# Runtime for .NET"
-				 Description="Runtime components for F# compiled binaries."
-				 Display="hidden">
-
-			<ComponentGroupRef Id="Redist_ManagedFiles" />
-		</Feature>
-
 		<Feature Id="Compiler_Feature"
 				 AllowAdvertise="no"
 				 Description="Installs the Visual F# programming language and all associated components."
 				 Title="Visual F#">
 
-			<ComponentGroupRef Id="Compiler_SDK" />
+            <?if $(var.Lang) = ENU ?>
+			<ComponentGroupRef Id="Compiler_Redist" />
 			<ComponentGroupRef Id="Compiler_OtherResources" />
+            <?else ?>
+			<ComponentGroupRef Id="Compiler_LangPack" />
+            <?endif ?>
 		</Feature>
 		
-        <Feature Id="Langpack_Feature"
-				 Title="Microsoft Visual F# Runtime Langpack for .NET 4.0"
-				 Description="Langpack for F# Runtime $(var.ProductVersion)"
+        <Feature Id="Runtime_Feature"
+				 Title="Microsoft Visual F# Runtime for .NET"
+				 Description="Runtime components for F# compiled binaries."
 				 Display="hidden">
 				 
-            <ComponentGroupRef Id="Langpack_ManagedFiles"   />
+            <?if $(var.Lang) = ENU ?>
+            <ComponentGroupRef Id="Runtime_Redist"   />
+            <?else ?>
+            <ComponentGroupRef Id="Runtime_LangPack"   />
+            <?endif ?>
         </Feature>
 	</Product>
 </Wix>
