@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
+echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
 echo.
 echo No arguments default to 'build' 
 echo.
@@ -150,10 +150,10 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_VS=1
 
     set TEST_COMPILERUNIT=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_NET40_COREUNIT=0
+    set TEST_PORTABLE_COREUNIT=0
     set TEST_CORECLR=0
-    set TEST_FSHARPQA_SUITE=0
+    set TEST_FSHARPQA_SUITE=1
     set TEST_FSHARP_SUITE=0
     set TEST_VS=1
     set TEST_TAGS=
@@ -166,8 +166,8 @@ if /i '%ARG%' == 'ci_part2' (
     set BUILD_PORTABLE=1
 
     set TEST_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
-    set TEST_PORTABLE_COREUNIT=0
+    set TEST_NET40_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT=1
     set TEST_CORECLR=1
     set TEST_FSHARPQA_SUITE=0
     set TEST_FSHARP_SUITE=1
@@ -175,21 +175,6 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_TAGS=
 )
 
-if /i '%ARG%' == 'ci_part3' (
-    set BUILD_PROTO=1
-    set SKIP_EXPENSIVE_TESTS=1
-    set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
-
-    set TEST_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
-    set TEST_PORTABLE_COREUNIT=0
-    set TEST_CORECLR=0
-    set TEST_FSHARPQA_SUITE=1
-    set TEST_FSHARP_SUITE=0
-    set TEST_VS=0
-    set TEST_TAGS=
-)
 
 if /i '%ARG%' == 'coreclr' (
     set BUILD_CORECLR=1
