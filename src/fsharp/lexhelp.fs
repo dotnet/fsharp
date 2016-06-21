@@ -306,15 +306,12 @@ module Keywords =
         keywordList |> List.map (fun (_, w, _) -> w) 
 
     let keywordTable = 
-        // TODO: this doesn't need to be a multi-map, a dictionary will do
         let tab = System.Collections.Generic.Dictionary<string,token>(100)
-        for (_mode,keyword,token) in keywordList do tab.Add(keyword,token)
+        for _,keyword,token in keywordList do 
+            tab.Add(keyword,token)
         tab
         
     let KeywordToken s = keywordTable.[s]
-
-    /// ++GLOBAL MUTABLE STATE. Note this is a deprecated, undocumented command line option anyway, we can ignore it.
-    let mutable permitFsharpKeywords = true
 
     let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
@@ -322,32 +319,31 @@ module Keywords =
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
-        if not permitFsharpKeywords && List.contains s unreserveWords then
-            // You can assume this condition never fires - this is a deprecated, undocumented command line option anyway, we can ignore it.
-            IdentifierToken args lexbuf s
-        else
-          let mutable v = Unchecked.defaultof<_>
-          if keywordTable.TryGetValue(s, &v) then 
-              if (match v with RESERVED -> true | _ -> false) then
-                  warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange));
-                  IdentifierToken args lexbuf s
-              else v
-          else 
+        match keywordTable.TryGetValue s with
+        | true,v ->
+            match v with 
+            | RESERVED ->
+                warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange));
+                IdentifierToken args lexbuf s
+            | _ -> v
+        | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
                 let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
-                let dirname  = if filename = stdinMockFilename then
-                                   System.IO.Directory.GetCurrentDirectory()
-                               else
-                                   filename |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
-                                            |> System.IO.Path.GetDirectoryName
+                let dirname = 
+                    if filename = stdinMockFilename then
+                        System.IO.Directory.GetCurrentDirectory()
+                    else
+                        filename 
+                        |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
+                        |> System.IO.Path.GetDirectoryName
                 KEYWORD_STRING dirname
             | "__SOURCE_FILE__" -> 
-               KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
-               KEYWORD_STRING (string lexbuf.StartPos.Line)
+                KEYWORD_STRING (string lexbuf.StartPos.Line)
             | _ -> 
-               IdentifierToken args lexbuf s
+                IdentifierToken args lexbuf s
 
     /// A utility to help determine if an identifier needs to be quoted 
     let QuoteIdentifierIfNeeded (s : string) : string =
