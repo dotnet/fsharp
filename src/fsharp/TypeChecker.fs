@@ -9786,13 +9786,16 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
         let tp',tpenv = TcTypar cenv env NewTyparsOK tpenv tp
         TTyconIsStruct(mkTyparTy tp'),tpenv
 
+/// Emit a conv.i instruction
+and mkConvToNativeInt g e m = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ g.nativeint_ty ]),[],[e],m)
 
 /// Fix up the r.h.s. of a 'use x = fixed expr' 
-and TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding) =
+and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBinding) =
+    warning(PossibleUnverifiableCode(mBinding))
     match overallExprTy with 
     | ty when isByrefTy cenv.g ty -> 
         let okByRef = 
-            match stripExpr rhsExprChecked  with 
+            match stripExpr fixedExpr  with 
             | Expr.Op (op,tyargs,args,_) ->
                     match op,tyargs,args with 
                     | TOp.ValFieldGetAddr rfref,_,[_] -> not rfref.Tycon.IsStructOrEnumTycon
@@ -9803,40 +9806,59 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, m
             | _ -> false
         if not okByRef then 
             error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
-        UnifyTypes cenv env mBinding overallExprTy overallPatTy
-        rhsExprChecked 
-   
-    | ty when isStringTy cenv.g ty -> 
-        let charPtrTy = (mkNativePtrType cenv.g cenv.g.char_ty)
-        UnifyTypes cenv env mBinding charPtrTy overallPatTy
-        let stringObjAsPtr = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_I], [ charPtrTy ]),[],[rhsExprChecked],mBinding)
-        // For strings 'use x = fixed str', we actually generate two pinned variables
-        //    let pinned x = 
-        //        let pinned tmp = (char*) str
-        //        tmp + get_OffsettoStringData()
-        // This is the easiest codegen for F#
 
-        // Store the string into a pinned local
-        mkCompGenLetIn mBinding "pinnedString" charPtrTy stringObjAsPtr (fun (v,ve) -> 
+        let elemTy = destByrefTy cenv.g overallExprTy
+        UnifyTypes cenv env mBinding (mkNativePtrTy cenv.g elemTy) overallPatTy
+        mkCompGenLetIn mBinding "pinnedByref" ty fixedExpr  (fun (v,ve) -> 
+            v.SetIsFixed()
+            mkConvToNativeInt cenv.g ve mBinding)
+          
+    | ty when isStringTy cenv.g ty -> 
+        let charPtrTy = mkNativePtrTy cenv.g cenv.g.char_ty
+        UnifyTypes cenv env mBinding charPtrTy overallPatTy
+        //
+        //    let ptr : nativeptr<char> = 
+        //        let pinned s = str
+        //        (nativeptr)s + get_OffsettoStringData()
+
+        mkCompGenLetIn mBinding "pinnedString" cenv.g.string_ty fixedExpr (fun (v,ve) -> 
             v.SetIsFixed()
             let addrOffset = BuildOffsetToStringData cenv env mBinding
-            let stringPlusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ charPtrTy ]),[],[ve; addrOffset],mBinding)
+            let stringAsNativeInt = mkConvToNativeInt cenv.g ve mBinding
+            let plusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ cenv.g.nativeint_ty ]),[],[stringAsNativeInt; addrOffset],mBinding)
             // check for non-null
-            mkNullTest cenv.g mBinding ve stringPlusOffset ve)
+            mkNullTest cenv.g mBinding ve plusOffset ve)
 
     | ty when isArray1DTy cenv.g ty -> 
         let elemTy = destArrayTy cenv.g overallExprTy
-        let elemPtrTy = mkByrefTy cenv.g elemTy
+        let elemPtrTy = mkNativePtrTy cenv.g elemTy
         UnifyTypes cenv env mBinding elemPtrTy overallPatTy
-        // Store the array into a local
-        mkCompGenLetIn mBinding "tmpArray" overallExprTy rhsExprChecked (fun (_,ve) -> 
+
+        // let ptr : nativeptr<elem> = 
+        //   let tmpArray : elem[] = arr
+        //   if nonNull tmpArray then
+        //      if tmpArray.Length <> 0 then
+        //         let pinned tmpArrayByref : byref<elem> = &arr.[0]
+        //         (nativeint) tmpArrayByref
+        //      else 
+        //         (nativeint) 0
+        //   else 
+        //      (nativeint) 0
+        //
+        mkCompGenLetIn mBinding "tmpArray" overallExprTy fixedExpr (fun (_,ve) -> 
             // This is &arr.[0]
             let elemZeroAddress = mkArrayElemAddress cenv.g (ILReadonly.NormalAddress,false,ILArrayShape.SingleDimensional,elemTy,ve,mkInt32 cenv.g mBinding 0,mBinding)
             // check for non-null and non-empty
-            let zero = Expr.Op (TOp.ILAsm ([ AI_conv ILBasicType.DT_U], [ cenv.g.nativeint_ty ]),[],[mkInt32 cenv.g mBinding 0],mBinding)
+            let zero = mkConvToNativeInt cenv.g (mkInt32 cenv.g mBinding 0) mBinding  
             // This is arr.Length
             let arrayLengthExpr =  mkCallArrayLength  cenv.g mBinding elemTy ve 
-            mkNullTest cenv.g mBinding ve (mkNullTest cenv.g mBinding arrayLengthExpr elemZeroAddress zero) zero )
+            mkNullTest cenv.g mBinding ve 
+                (mkNullTest cenv.g mBinding arrayLengthExpr 
+                    (mkCompGenLetIn mBinding "pinnedByref" (mkByrefTy cenv.g elemTy) elemZeroAddress (fun (v,ve) -> 
+                       v.SetIsFixed()
+                       (mkConvToNativeInt cenv.g ve mBinding)))
+                    zero) 
+                zero)
 
     | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
 
@@ -10314,8 +10336,6 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                 | TPat_as (pat1,PBind(v,TypeScheme(generalizedTypars',_)),_) 
                     when List.lengthsEqAndForall2 typarRefEq generalizedTypars generalizedTypars' -> 
                       
-                      if isFixed then 
-                          v.SetIsFixed()
                       v, pat1
 
                 | _ when mustinline(inlineFlag)  -> error(Error(FSComp.SR.tcInvalidInlineSpecification(),m))

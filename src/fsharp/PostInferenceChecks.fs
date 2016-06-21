@@ -643,19 +643,19 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         CheckExpr cenv env e1 
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 
-        CheckTypeNoByrefs cenv env m ty;
-        CheckDecisionTree cenv env dtree;
-        CheckDecisionTreeTargets cenv env targets context;
+        CheckTypePermitByrefs cenv env m ty // computed byrefs allowed at each branch
+        CheckDecisionTree cenv env dtree
+        CheckDecisionTreeTargets cenv env targets context
     | Expr.LetRec (binds,e,_,_) ->  
         BindVals cenv (valsOfBinds binds)
-        CheckBindings cenv env binds;
+        CheckBindings cenv env binds
         CheckExpr cenv env e
     | Expr.StaticOptimization (constraints,e2,e3,m) -> 
-        CheckExpr cenv env e2;
-        CheckExpr cenv env e3;
+        CheckExpr cenv env e2
+        CheckExpr cenv env e3
         constraints |> List.iter (function
             | TTyconEqualsTycon(ty1,ty2) -> 
-                CheckTypeNoByrefs cenv env m ty1;
+                CheckTypeNoByrefs cenv env m ty1
                 CheckTypeNoByrefs cenv env m ty2
             | TTyconIsStruct(ty1) -> 
                 CheckTypeNoByrefs cenv env m ty1)
@@ -668,8 +668,8 @@ and CheckMethods cenv env baseValOpt l =
 and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,e,m)) = 
     let env = BindTypars cenv.g env tps 
     let vs = List.concat vs
-    CheckAttribs cenv env attribs;
-    CheckNoReraise cenv None e;
+    CheckAttribs cenv env attribs
+    CheckNoReraise cenv None e
     CheckEscapes cenv true m (match baseValOpt with Some x -> x:: vs | None -> vs) e |> ignore
     CheckExpr cenv env e
 
@@ -682,13 +682,13 @@ and CheckInterfaceImpl cenv env baseValOpt (_ty,overrides) =
 
 and CheckExprOp cenv env (op,tyargs,args,m) context =
     let limitedCheck() = 
-        if env.limited then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m));
-    List.iter (CheckTypePermitByrefs cenv env m) tyargs;
+        if env.limited then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
+    List.iter (CheckTypePermitByrefs cenv env m) tyargs
     (* Special cases *)
     match op,tyargs,args,context with 
     // Handle these as special cases since mutables are allowed inside their bodies 
     | TOp.While _,_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)],_  ->
-        CheckTypeInstNoByrefs cenv env m tyargs; 
+        CheckTypeInstNoByrefs cenv env m tyargs 
         CheckExprs cenv env [e1;e2]
 
     | TOp.TryFinally _,[_],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)],_ ->
@@ -772,6 +772,8 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
                   errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m));
                 CheckExprInContext cenv env lhsArray DirectArg  (* permit byref for lhs lvalue *)
                 CheckExprs cenv env indices
+            | [ AI_conv _ ],_ ->
+                CheckExprDirectArgs cenv env args (* permit byref for args to conv *)
             | _instrs ->
                 CheckExprs cenv env args  
         end

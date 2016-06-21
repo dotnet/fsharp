@@ -536,7 +536,7 @@ let rec sizeMeasure g ms =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkNativePtrType g ty = TType_app (g.nativeptr_tcr, [ty])
+let mkNativePtrTy g ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
 
 let mkArrayTy g rank ty m =
@@ -1458,6 +1458,7 @@ let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> t
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
 let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                        | _ -> false) 
+let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
 let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false) 
 #if EXTENSIONTYPING
@@ -2653,6 +2654,7 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 //------------------------------------------------------------------------- 
 
 let destByrefTy g ty   = if isByrefTy g ty then List.head (argsOfAppTy g ty) else failwith "destByrefTy: not a byref type"
+let destNativePtrTy g ty   = if isNativePtrTy g ty then List.head (argsOfAppTy g ty) else failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty   = 
     match tryDestAppTy g ty with 
