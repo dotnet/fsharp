@@ -10,65 +10,71 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PkgDefProjects Include="..\src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
-        <PkgDefProjects Include="..\src\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
-        <PkgDefProjects Include="..\vsintegration\src\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj" />
+        <SetupProjects Include="FSharp.SDK.wixproj">
+            <ProjectPath>FSharp.SDK\FSharp.SDK.wixproj</ProjectPath>
+            <VSSku>None</VSSku>
+        </SetupProjects>
+        <SetupProjects Include="FSharp.SDK.wixproj">
+            <ProjectPath>FSharp.SDK\FSharp.SDK.wixproj</ProjectPath>
+            <VSSku>None</VSSku>
+        </SetupProjects>
+        <SetupProjects Include="FSharp.SDK.swixproj">
+            <ProjectPath>Swix\FSharp.SDK\FSharp.SDK.swixproj</ProjectPath>
+            <VSSku>None</VSSku>
+        </SetupProjects>
+        <SetupProjects Include="VisualFSharpVSIX.Professional.swixproj">
+            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
+            <VSSku>Professional</VSSku>
+        </SetupProjects>
+        
+        <!-- This is disabled for now
+        <SetupProjects Include="VisualFSharpVSIX.Desktop.swixproj">
+            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
+            <VSSku>Desktop</VSSku>
+        </SetupProjects>
+        <SetupProjects Include="VisualFSharpVSIX.WebDevelopment.swixproj">
+            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
+            <VSSku>WebDevelopment</VSSku>
+        </SetupProjects>
+        -->
     </ItemGroup>
     
     <Import Project="FSharp.Setup.props" />
+    
+    <Target Name="CrossJoinSetupProjects">
+        <CreateItem Include="@(SetupLanguages)" AdditionalMetadata="ProjectPath=%(SetupProjects.ProjectPath);VSSku=%(SetupProjects.VSSku)">
+            <Output ItemName="LocalizedSetupProjects" TaskParameter="Include"/>
+        </CreateItem>
+    </Target>
 
-    <Target Name="Build">
+    <Target Name="Build" DependsOnTargets="CrossJoinSetupProjects">
         <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Build" />
             
         <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
-        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj"
+        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(SetupLanguages.LocaleCode);LocaleId=%(SetupLanguages.LocaleId);LocaleRegion=%(SetupLanguages.LocaleRegion);IsLangPack=%(SetupLanguages.IsLangPack)"/>
+                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
 
-        <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
-            
-        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Build" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Build" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Build" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Build" />
         <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Build" />
     </Target>
     
-    <Target Name="Rebuild">
+    <Target Name="Rebuild" DependsOnTargets="CrossJoinSetupProjects">
         <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Rebuild" />
-        
-        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj"
+            
+        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(SetupLanguages.LocaleCode);LocaleId=%(SetupLanguages.LocaleId);LocaleRegion=%(SetupLanguages.LocaleRegion);IsLangPack=%(SetupLanguages.IsLangPack)"/>
-        
-        <MSBuild Projects="@(PkgDefProjects)" Targets="Rebuild;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
-        
-        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Rebuild" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Rebuild" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Rebuild" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Rebuild" />
+                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
+
         <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Rebuild" />
     </Target>
     
-    <Target Name="Clean">
+    <Target Name="Clean" DependsOnTargets="CrossJoinSetupProjects">
         <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Clean" />
-        
-        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj"
+            
+        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
                  Targets="Clean"
-                 Properties="LocaleCode=%(SetupLanguages.LocaleCode);LocaleId=%(SetupLanguages.LocaleId);LocaleRegion=%(SetupLanguages.LocaleRegion);IsLangPack=%(SetupLanguages.IsLangPack)"/>
-        
-        <MSBuild Projects="@(PkgDefProjects)" Targets="Clean" Properties="Configuration=$(Configuration)" />  
-        
-        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Clean" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Clean" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Clean" />
-        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Clean" />
+                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
+
         <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Clean" />
     </Target>
     
