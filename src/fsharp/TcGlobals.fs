@@ -668,7 +668,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   (* local helpers to build value infos *)
   let mkNullableTy ty = TType_app(nullable_tcr, [ty]) 
   let mkByrefTy ty = TType_app(byref_tcr, [ty]) 
-  let mkNativePtrType ty = TType_app(nativeptr_tcr, [ty]) 
+  let mkNativePtrTy ty = TType_app(nativeptr_tcr, [ty]) 
   let mkFunTy d r = TType_fun (d,r) 
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack (-->) dl r
@@ -847,7 +847,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
 
   let and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
   let addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     ,None                 ,None          ,[vara],     ([[varaTy]], mkByrefTy varaTy))   
-  let addrof2_info =               makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&&"                    ,None                 ,None          ,[vara],     ([[varaTy]], mkNativePtrType varaTy))
+  let addrof2_info =               makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&&"                    ,None                 ,None          ,[vara],     ([[varaTy]], mkNativePtrTy varaTy))
   let and2_info =                  makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&&"                     ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
   let or_info =                    makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    "or"                                   ,None                 ,Some "Or"     ,[],         mk_rel_sig bool_ty) 
   let or2_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "||"                     ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
