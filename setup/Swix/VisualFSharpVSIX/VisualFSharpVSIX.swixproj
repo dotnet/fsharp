@@ -33,15 +33,10 @@
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)\$(OutputName).vsix" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>VsixSHA2</Authenticode>
-      </FilesToSign>
-    </ItemGroup>
+    <!-- SWIX plugin adds the built vsix to signing automatically -->
   </Target>
   
-  <Target Name="CheckPropertiesArePassed" BeforeTargets="Compile">
+  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
     <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
