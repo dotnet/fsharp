@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -30,21 +30,19 @@
 .mresource public FSharpSignatureData.TestFunction24
 {
   // Offset: 0x00000000 Length: 0x0000075B
-  // WARNING: managed resource file FSharpSignatureData.TestFunction24 created
 }
 .mresource public FSharpOptimizationData.TestFunction24
 {
   // Offset: 0x00000760 Length: 0x00000228
-  // WARNING: managed resource file FSharpOptimizationData.TestFunction24 created
 }
 .module TestFunction24.exe
-// MVID: {5769535C-A643-4587-A745-03835C536957}
+// MVID: {5769ACB2-A643-4587-A745-0383B2AC6957}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00890000
+// Image base: 0x007A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -253,6 +251,8 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 6,11 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction24.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -277,6 +277,7 @@
                [6] class [mscorlib]System.Collections.IComparer V_6,
                [7] int32 V_7,
                [8] int32 V_8)
+      .line 4,4 : 6,11 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  TestFunction24/Point
@@ -292,6 +293,7 @@
 
       IL_0012:  br         IL_008d
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0017:  ldarg.1
       IL_0018:  unbox.any  TestFunction24/Point
       IL_001d:  ldnull
@@ -302,6 +304,7 @@
 
       IL_0024:  br         IL_008b
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0029:  ldarg.2
       IL_002a:  stloc.3
       IL_002b:  ldarg.0
@@ -318,14 +321,19 @@
 
       IL_0043:  br.s       IL_0049
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0045:  ldc.i4.m1
+      .line 16707566,16707566 : 0,0 ''
       IL_0046:  nop
       IL_0047:  br.s       IL_0050
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0049:  ldloc.s    V_4
       IL_004b:  ldloc.s    V_5
       IL_004d:  cgt
+      .line 16707566,16707566 : 0,0 ''
       IL_004f:  nop
+      .line 16707566,16707566 : 0,0 ''
       IL_0050:  stloc.2
       IL_0051:  ldloc.2
       IL_0052:  ldc.i4.0
@@ -335,9 +343,11 @@
 
       IL_0057:  br.s       IL_005b
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0059:  ldloc.2
       IL_005a:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_005b:  ldloc.2
       IL_005c:  ldc.i4.0
       IL_005d:  ble.s      IL_0061
@@ -346,9 +356,11 @@
 
       IL_0061:  br.s       IL_0065
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0063:  ldloc.2
       IL_0064:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0065:  ldarg.2
       IL_0066:  stloc.s    V_6
       IL_0068:  ldarg.0
@@ -365,17 +377,21 @@
 
       IL_0080:  br.s       IL_0084
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0082:  ldc.i4.m1
       IL_0083:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_0084:  ldloc.s    V_7
       IL_0086:  ldloc.s    V_8
       IL_0088:  cgt
       IL_008a:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_008b:  ldc.i4.1
       IL_008c:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_008d:  ldarg.1
       IL_008e:  unbox.any  TestFunction24/Point
       IL_0093:  ldnull
@@ -386,9 +402,11 @@
 
       IL_009a:  br.s       IL_009e
 
+      .line 16707566,16707566 : 0,0 ''
       IL_009c:  ldc.i4.m1
       IL_009d:  ret
 
+      .line 16707566,16707566 : 0,0 ''
       IL_009e:  ldc.i4.0
       IL_009f:  ret
     } // end of method Point::CompareTo
@@ -457,6 +475,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
+      .line 4,4 : 6,11 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -643,18 +662,21 @@
              [4] int32 V_4,
              [5] native int V_5,
              [6] int32 V_6)
+    .line 7,7 : 5,33 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  ldc.i4.2
     IL_0003:  newobj     instance void TestFunction24/Point::.ctor(int32,
                                                                    int32)
     IL_0008:  stloc.0
+    .line 8,8 : 5,28 ''
     IL_0009:  ldloc.0
     IL_000a:  ldflda     int32 TestFunction24/Point::x@
     IL_000f:  stloc.2
     IL_0010:  ldloc.2
     IL_0011:  conv.i
     IL_0012:  stloc.1
+    .line 9,9 : 5,44 ''
     IL_0013:  ldloc.1
     IL_0014:  stloc.3
     IL_0015:  ldc.i4.0
@@ -688,16 +710,19 @@
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> point,
              [1] native int p1,
              [2] int32& pinned V_2)
+    .line 12,12 : 5,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.s   17
     IL_0003:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
     IL_0008:  stloc.0
+    .line 13,13 : 5,35 ''
     IL_0009:  ldloc.0
     IL_000a:  ldflda     !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::contents@
     IL_000f:  stloc.2
     IL_0010:  ldloc.2
     IL_0011:  conv.i
     IL_0012:  stloc.1
+    .line 14,14 : 5,42 ''
     IL_0013:  ldloc.1
     IL_0014:  ldobj      [mscorlib]System.Int32
     IL_0019:  ldloc.1
@@ -718,6 +743,7 @@
              [5] int32 V_5,
              [6] native int V_6,
              [7] int32 V_7)
+    .line 17,17 : 5,49 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.6
     IL_0002:  newarr     [mscorlib]System.Double
@@ -746,6 +772,7 @@
     IL_0059:  ldc.r8     5.9000000000000004
     IL_0062:  stelem     [mscorlib]System.Double
     IL_0067:  stloc.0
+    .line 18,18 : 5,23 ''
     IL_0068:  ldloc.0
     IL_0069:  stloc.2
     IL_006a:  ldloc.2
@@ -755,6 +782,7 @@
 
     IL_006f:  br.s       IL_008f
 
+    .line 16707566,16707566 : 0,0 ''
     IL_0071:  ldloc.2
     IL_0072:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Length<float64>(!!0[])
     IL_0077:  brfalse.s  IL_007b
@@ -763,24 +791,32 @@
 
     IL_007b:  br.s       IL_008a
 
+    .line 16707566,16707566 : 0,0 ''
     IL_007d:  ldloc.2
     IL_007e:  ldc.i4.0
     IL_007f:  ldelema    [mscorlib]System.Double
     IL_0084:  stloc.3
     IL_0085:  ldloc.3
     IL_0086:  conv.i
+    .line 16707566,16707566 : 0,0 ''
     IL_0087:  nop
     IL_0088:  br.s       IL_0092
 
+    .line 16707566,16707566 : 0,0 ''
     IL_008a:  ldc.i4.0
     IL_008b:  conv.i
+    .line 16707566,16707566 : 0,0 ''
     IL_008c:  nop
     IL_008d:  br.s       IL_0092
 
+    .line 16707566,16707566 : 0,0 ''
     IL_008f:  ldc.i4.0
     IL_0090:  conv.i
+    .line 16707566,16707566 : 0,0 ''
     IL_0091:  nop
+    .line 16707566,16707566 : 0,0 ''
     IL_0092:  stloc.1
+    .line 19,19 : 5,44 ''
     IL_0093:  ldloc.1
     IL_0094:  stloc.s    V_4
     IL_0096:  ldc.i4.0
@@ -818,6 +854,7 @@
              [4] int32 V_4,
              [5] native int V_5,
              [6] int32 V_6)
+    .line 22,22 : 5,49 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.6
     IL_0002:  newarr     [mscorlib]System.Double
@@ -846,6 +883,7 @@
     IL_0059:  ldc.r8     5.9000000000000004
     IL_0062:  stelem     [mscorlib]System.Double
     IL_0067:  stloc.0
+    .line 24,24 : 5,27 ''
     IL_0068:  ldloc.0
     IL_0069:  ldc.i4.0
     IL_006a:  ldelema    [mscorlib]System.Double
@@ -853,6 +891,7 @@
     IL_0070:  ldloc.2
     IL_0071:  conv.i
     IL_0072:  stloc.1
+    .line 25,25 : 5,42 ''
     IL_0073:  ldloc.1
     IL_0074:  stloc.3
     IL_0075:  ldc.i4.0
@@ -891,9 +930,11 @@
              [4] int32 V_4,
              [5] native int V_5,
              [6] int32 V_6)
+    .line 28,28 : 5,28 ''
     IL_0000:  nop
     IL_0001:  ldstr      "Hello World"
     IL_0006:  stloc.0
+    .line 30,30 : 5,26 ''
     IL_0007:  ldloc.0
     IL_0008:  stloc.2
     IL_0009:  ldloc.2
@@ -903,16 +944,22 @@
 
     IL_000e:  br.s       IL_001b
 
+    .line 16707566,16707566 : 0,0 ''
     IL_0010:  ldloc.2
     IL_0011:  conv.i
     IL_0012:  call       int32 [mscorlib]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
     IL_0017:  add
+    .line 16707566,16707566 : 0,0 ''
     IL_0018:  nop
     IL_0019:  br.s       IL_001d
 
+    .line 16707566,16707566 : 0,0 ''
     IL_001b:  ldloc.2
+    .line 16707566,16707566 : 0,0 ''
     IL_001c:  nop
+    .line 16707566,16707566 : 0,0 ''
     IL_001d:  stloc.1
+    .line 31,31 : 5,50 ''
     IL_001e:  ldloc.1
     IL_001f:  stloc.3
     IL_0020:  ldc.i4.0
@@ -960,4 +1007,3 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file TestFunction24.il.netfx4.res

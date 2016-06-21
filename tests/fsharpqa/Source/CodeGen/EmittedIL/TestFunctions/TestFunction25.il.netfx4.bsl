@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -30,21 +30,19 @@
 .mresource public FSharpSignatureData.TestFunction25
 {
   // Offset: 0x00000000 Length: 0x0000075B
-  // WARNING: managed resource file FSharpSignatureData.TestFunction25 created
 }
 .mresource public FSharpOptimizationData.TestFunction25
 {
   // Offset: 0x00000760 Length: 0x000003D2
-  // WARNING: managed resource file FSharpOptimizationData.TestFunction25 created
 }
 .module TestFunction25.exe
-// MVID: {5769538F-A643-4662-A745-03838F536957}
+// MVID: {5769ACB5-A643-4662-A745-0383B5AC6957}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01400000
+// Image base: 0x02860000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -222,6 +220,8 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 6,11 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction25.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -241,6 +241,7 @@
                [1] int32 V_1,
                [2] int32 V_2,
                [3] int32 V_3)
+      .line 4,4 : 6,11 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  TestFunction25/Point
@@ -377,6 +378,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
+      .line 4,4 : 6,11 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -521,18 +523,21 @@
     .locals init ([0] class TestFunction25/Point point,
              [1] native int p1,
              [2] int32& pinned V_2)
+    .line 7,7 : 5,33 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  ldc.i4.2
     IL_0003:  newobj     instance void TestFunction25/Point::.ctor(int32,
                                                                    int32)
     IL_0008:  stloc.0
+    .line 8,8 : 5,28 ''
     IL_0009:  ldloc.0
     IL_000a:  ldflda     int32 TestFunction25/Point::x@
     IL_000f:  stloc.2
     IL_0010:  ldloc.2
     IL_0011:  conv.i
     IL_0012:  stloc.1
+    .line 9,9 : 5,44 ''
     IL_0013:  ldloc.1
     IL_0014:  ldc.i4.0
     IL_0015:  conv.i
@@ -558,16 +563,19 @@
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> point,
              [1] native int p1,
              [2] int32& pinned V_2)
+    .line 12,12 : 5,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.s   17
     IL_0003:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
     IL_0008:  stloc.0
+    .line 13,13 : 5,35 ''
     IL_0009:  ldloc.0
     IL_000a:  ldflda     !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::contents@
     IL_000f:  stloc.2
     IL_0010:  ldloc.2
     IL_0011:  conv.i
     IL_0012:  stloc.1
+    .line 14,14 : 5,42 ''
     IL_0013:  ldloc.1
     IL_0014:  ldobj      [mscorlib]System.Int32
     IL_0019:  ldloc.1
@@ -583,6 +591,7 @@
     .locals init ([0] float64[] arr,
              [1] native int p1,
              [2] float64& pinned V_2)
+    .line 17,17 : 5,49 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.6
     IL_0002:  newarr     [mscorlib]System.Double
@@ -611,6 +620,7 @@
     IL_0059:  ldc.r8     5.9000000000000004
     IL_0062:  stelem     [mscorlib]System.Double
     IL_0067:  stloc.0
+    .line 18,18 : 5,23 ''
     IL_0068:  ldloc.0
     IL_0069:  brfalse.s  IL_0082
 
@@ -637,6 +647,7 @@
     IL_0083:  conv.i
     IL_0084:  nop
     IL_0085:  stloc.1
+    .line 19,19 : 5,44 ''
     IL_0086:  ldloc.1
     IL_0087:  ldc.i4.0
     IL_0088:  conv.i
@@ -662,6 +673,7 @@
     .locals init ([0] float64[] arr,
              [1] native int p,
              [2] float64& pinned V_2)
+    .line 22,22 : 5,49 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.6
     IL_0002:  newarr     [mscorlib]System.Double
@@ -690,6 +702,7 @@
     IL_0059:  ldc.r8     5.9000000000000004
     IL_0062:  stelem     [mscorlib]System.Double
     IL_0067:  stloc.0
+    .line 24,24 : 5,27 ''
     IL_0068:  ldloc.0
     IL_0069:  ldc.i4.0
     IL_006a:  ldelema    [mscorlib]System.Double
@@ -697,6 +710,7 @@
     IL_0070:  ldloc.2
     IL_0071:  conv.i
     IL_0072:  stloc.1
+    .line 25,25 : 5,42 ''
     IL_0073:  ldloc.1
     IL_0074:  ldc.i4.0
     IL_0075:  conv.i
@@ -722,6 +736,7 @@
     .maxstack  6
     .locals init ([0] native int pChar,
              [1] string pinned V_1)
+    .line 30,30 : 5,26 ''
     IL_0000:  nop
     IL_0001:  ldstr      "Hello World"
     IL_0006:  stloc.1
@@ -730,6 +745,7 @@
     IL_000d:  call       int32 [mscorlib]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
     IL_0012:  add
     IL_0013:  stloc.0
+    .line 31,31 : 5,50 ''
     IL_0014:  ldloc.0
     IL_0015:  ldc.i4.0
     IL_0016:  conv.i
@@ -769,4 +785,3 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file TestFunction25.il.netfx4.res
