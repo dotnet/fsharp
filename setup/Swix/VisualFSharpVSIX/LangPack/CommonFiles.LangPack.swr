@@ -1,0 +1,22 @@
+use vs
+
+package name=Microsoft.FSharp.Vsix.$(VSSku)
+        version=4.1
+        vs.package.chip=neutral
+        vs.package.language=$(LocaleRegion)
+
+folder "InstallDir:Common7\IDE\PublicAssemblies\$(LocaleRegion)"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.Core.resources.dll" vs.file.ngen=yes
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\$(LocaleRegion)"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.Compiler.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.Core.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.Base.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.Compiler.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.Base.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.FSharp.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.PropertyPages.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.VS.FSI.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\fsi.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FsiAnyCPU.resources.dll" vs.file.ngen=yes
