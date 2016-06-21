@@ -1,7 +1,7 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions  
 // Regression test for FSHARP1.0:3593
 // "Prefer extension members that have been brought into scope by more recent "open" statements"
-//<Expects status="success"</Expects>
+//<Expects status="success"></Expects>
 namespace NS
   module M = 
     type Lib with

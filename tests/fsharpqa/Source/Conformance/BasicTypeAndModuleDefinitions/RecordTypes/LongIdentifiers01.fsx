@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 // This test is a bit of a kitchen-sink, but its main
 // purpose is to validate that we can use fully qualified field names
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
     type ı = int

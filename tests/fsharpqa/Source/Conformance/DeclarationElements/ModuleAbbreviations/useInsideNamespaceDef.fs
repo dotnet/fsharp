@@ -1,6 +1,6 @@
 // #Conformance #DeclarationElements #Modules 
 // Use module abbreviation inside a namespace
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 namespace Faa.Bor

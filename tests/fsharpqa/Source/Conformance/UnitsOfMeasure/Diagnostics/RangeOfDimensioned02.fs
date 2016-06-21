@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #Diagnostics 
 // Regression test for FSHARP1.0:2732
-//<Expects status=notin>Floating point ranges are experimental</Expects>
-//<Expects status=success></Expects>
+//<Expects status="notin">Floating point ranges are experimental</Expects>
+//<Expects status="success"></Expects>
 
 [<Measure>] type Kg
 

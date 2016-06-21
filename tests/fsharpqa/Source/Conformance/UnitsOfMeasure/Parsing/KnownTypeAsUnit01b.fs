@@ -3,10 +3,10 @@
 // ICE when using a known type (int, decimal, etc...) as a unit of measure
 
 //<Expects span="(14,9-14,14)" status="error" id="FS0705">Expected unit-of-measure, not type</Expects>
-//<Expects span="(17,17-17,20)" status="error id="FS0705">Expected unit-of-measure, not type</Expects>
-//<Expects span="(20,24-20,27)" status="error id="FS0705">Expected unit-of-measure, not type</Expects>
-//<Expects span="(23,37-23,42)" status="error id="FS0705">Expected unit-of-measure, not type</Expects>
-//<Expects span="(26,38-26,41)" status="error id="FS0705">Expected unit-of-measure, not type</Expects>
+//<Expects span="(17,17-17,20)" status="error" id="FS0705">Expected unit-of-measure, not type</Expects>
+//<Expects span="(20,24-20,27)" status="error" id="FS0705">Expected unit-of-measure, not type</Expects>
+//<Expects span="(23,37-23,42)" status="error" id="FS0705">Expected unit-of-measure, not type</Expects>
+//<Expects span="(26,38-26,41)" status="error" id="FS0705">Expected unit-of-measure, not type</Expects>
 
 [<Measure>] type Kg
 

@@ -6,7 +6,7 @@
 //
 // rigid type annotation used in the a let-binding (function definition + function invocation)
 //
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 [<Measure>] type Kg

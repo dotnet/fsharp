@@ -1,6 +1,6 @@
 // #Regression #Conformance #DataExpressions #Sequences 
 // Regression test for FSHARP1.0:4527
-//<Expect status=success></Expect>
+//<Expect status="success"></Expect>
 let x = 
     [ if true then
           yield! [1]

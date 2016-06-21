@@ -3,7 +3,7 @@
 
 // FSB 1624, LexFilter should consifer infix tokens according to their length
 
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 
 let x = 3
 let y = x

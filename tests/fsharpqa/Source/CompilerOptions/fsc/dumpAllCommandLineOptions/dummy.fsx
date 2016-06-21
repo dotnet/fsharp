@@ -71,7 +71,7 @@
 //<Expects status="success">section='NoSection                ' ! option=splitting                      kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=versionfile                    kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=times                          kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=showextensionresolution        kind=OptionUnit
+//<Expects status="success">section='NoSection                ' ! option=showextensionresolution        kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=metadataversion                kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=d                              kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=O                              kind=OptionSwitch</Expects>

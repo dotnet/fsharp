@@ -1,7 +1,7 @@
 // #Regression #Conformance #BasicGrammarElements #Constants #NETFX40Only #NoMono #NETFX20Only 
 // This is a positive test on Dev10, at least until
 // FSHARP1.0:4523 gets resolved.
-//<Expect status=success></Expect>
+//<Expect status="success"></Expect>
 
 let ok = 1.0E-50M    // parses ok on Dev10
 

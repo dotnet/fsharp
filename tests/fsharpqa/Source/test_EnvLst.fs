@@ -1,4 +1,4 @@
-module ``FSharpQA-Tests-EnvLst``
+namespace FSharpQA.Tests
 
 open System
 open System.IO
@@ -11,9 +11,11 @@ module ParseLine =
     let permutations () =
         [ TestCaseData("\tSOURCE=a", [ "SOURCE", "a" ])
           TestCaseData("\tSOURCE=\"a file\"", [ "SOURCE", "a file" ])
-          TestCaseData("\tSOURCE=\"a file with \\\"escaped values\\\" \"", [ "SOURCE", "a file with \\\"escaped values\\\" " ])
-          TestCaseData("\tV1=parse V2=multiple V3=\"values works\"", [ "V1","parse"; "V2","multiple"; "V3","values works" ])
-        ]
+          TestCaseData("\tSOURCE=\"a file with \\\"escaped values\\\" \"", [ "SOURCE", "a file with \"escaped values\" " ])
+          TestCaseData("\tSOURCE=\"--subsystemversion:\\\"\\\" \"", [ "SOURCE", "--subsystemversion:\"\" " ])
+          TestCaseData("\tSOURCE=\"--dir:a\\\\b\"", [ "SOURCE", "--dir:a\\b" ])
+          TestCaseData("\tSOURCE=--dir:a\\\\b", [ "SOURCE", "--dir:a\\\\b" ])
+          TestCaseData("\tV1=parse V2=multiple V3=\"values works\"", [ "V1","parse"; "V2","multiple"; "V3","values works" ]) ]
 
     [<Test; TestCaseSource("permutations")>]
     let ``parse should split vars`` line expected =
@@ -24,8 +26,3 @@ module ParseLine =
             let emptyData = { Tags = []; Vars = []; Comment = None } 
             let expectedData = EnvLstLine.Data { emptyData with Vars = expected }
             Assert.IsTrue((l = expectedData), (sprintf "Expected '%A', but was '%A'" expected l))
-
-
-
-
-

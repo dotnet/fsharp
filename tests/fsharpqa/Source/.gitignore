@@ -3,3 +3,23 @@
 *.exe
 *.dll
 *.pdb
+*.il
+
+# test specific
+
+EntryPoint/E_CompilingToAModule01.netmodule
+
+XmlDoc/Basic/xmlDoc00*.xml
+XmlDoc/Basic/XMLDocOnEnum01.xml
+XmlDoc/OCamlDoc/ocamldoc001.xml
+
+Conformance/LexicalAnalysis/IdentifiersAndKeywords/test.ok
+
+Conformance/Signatures/SignatureConformance/InternalAccessibility02.fsi
+
+Stress/2766.fs
+Stress/SeqExprCapacity.fs
+
+CompilerOptions/fsc/subsystemversion/dummy.netmodule
+
+CompilerOptions/fsi/help/help.txt

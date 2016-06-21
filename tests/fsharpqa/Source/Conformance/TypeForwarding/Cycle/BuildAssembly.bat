@@ -11,6 +11,7 @@ goto Exit
 csc /define:BASIC001A /t:library /out:Cycle_Forward001a.dll Cycle_Forwarder.cs
 csc /define:BASIC001B /t:library /out:Cycle_Forward001b.dll Cycle_Forwarder.cs
 csc /define:FORWARD /t:library /r:Cycle_forward001a.dll /r:Cycle_forward001b.dll Cycle_Library.cs
+goto Exit
 
 :002a
 csc /define:BASIC002A /t:library /out:Cycle_Forward002a.dll Cycle_Forwarder.cs

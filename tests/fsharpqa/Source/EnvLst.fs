@@ -43,13 +43,15 @@ let private parseDataParts (from: string) =
                         | pre, "", _ ->
                             pre, ""
                         | pre, "\"", xs when pre.EndsWith("\\") -> //escaped "
-                            innerQuote (pre + "\"") xs
+                            let preEscapeRemoved = pre.Substring(0, pre.Length-1)
+                            innerQuote (preEscapeRemoved + "\"") xs
                         | pre, "\"", xs -> //final "
                             pre, xs
                         | pre, x, xs ->
                             innerQuote (pre + x) xs
                     let value, rest = innerQuote "" (a.Substring(1))
-                    parseDataPartsHelper rest (DataPart.Var(name, value) :: xs)
+                    let valueSlashUnescaped = value.Replace("\\\\", "\\")
+                    parseDataPartsHelper rest (DataPart.Var(name, valueSlashUnescaped) :: xs)
                 | a ->  //unquoted, like SOURCE=avalue
                     let value, rest =
                         match a |> splitAtFirst Char.IsWhiteSpace with

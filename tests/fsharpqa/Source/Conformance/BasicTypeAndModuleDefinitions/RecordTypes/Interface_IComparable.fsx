@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Records 
 // By default, record types implement IComparable
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
  
 #light
 

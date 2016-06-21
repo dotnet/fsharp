@@ -2,7 +2,7 @@
 // AddressOf Operator
 // Verify we can use the & operator to invoke .Net method (byref)
 // In this case we call into a C# method (out)
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 #r @"addressof002dll.dll"

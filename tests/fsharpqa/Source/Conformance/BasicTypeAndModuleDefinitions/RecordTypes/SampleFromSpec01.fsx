@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 // Sample found on the spec.
 // Section 9.2
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 type R1 = 

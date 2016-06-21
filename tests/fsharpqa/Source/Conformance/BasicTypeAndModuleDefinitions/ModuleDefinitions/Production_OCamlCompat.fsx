@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Modules 
 // Productions
 // Compile with: --mlcompatibility -a --warnaserror+
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module N1 = struct

@@ -3,7 +3,7 @@
 // - The same source file (FunctionalLibrary01.fs) is compile twice, with different --codepage options
 // - The library file is designed so that it gets compiled to slightly different assemblies
 // - This file references both assemblies and should compile without problems
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 

@@ -1,6 +1,6 @@
 // #Conformance #LexicalAnalysis 
 // string embedded in a comment: legitimate escape sequence
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

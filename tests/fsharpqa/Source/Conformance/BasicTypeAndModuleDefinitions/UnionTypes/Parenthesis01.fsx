@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // Paretheses are significant in DU definitions
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 type T = | C of int * int

@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis #Constants 
 // Number type specifier LF/lf are case sensitive
 // IEEE32/IEEE64 - lf vs LF
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let x = 0x5lf

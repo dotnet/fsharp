@@ -3,7 +3,7 @@
 // In 1.9.6.2, this code snipped passed to fsi used to throw an ICE
 // This issue was automagically fixed in Beta1
 // The text of the ICE was: FSC(0,0): error FS0192: internal error: find_gtdef: Continuous not found
-//<Expect status=success></Expect>
+//<Expect status="success"></Expect>
 
 module Compounding =
     [<Measure>] type Continuous 

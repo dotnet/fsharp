@@ -1,7 +1,7 @@
 // #Regression #Conformance #DataExpressions #Sequences 
 // Regression test for FSHARP1.0:4365
 // Mistake in generation of code for disposal in "match" sequence expressions
-//<Expect status=success></Expect>
+//<Expect status="success"></Expect>
 let r = ref 0
 let f () = [ if (incr r; true) then yield! failwith "" ]
 let x = (try f () with Failure _ -> [!r])

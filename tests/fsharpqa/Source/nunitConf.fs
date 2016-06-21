@@ -13,17 +13,17 @@ let checkTestResult result =
     match result with
     | Success () -> ()
     | Failure (GenericError msg) -> Assert.Fail (msg)
-    | Failure (ProcessExecError (err, msg)) -> Assert.Fail (sprintf "ERRORLEVEL %i %s" err msg)
+    | Failure (ProcessExecError (msg1, err, msg2)) -> Assert.Fail (sprintf "%s. ERRORLEVEL %i %s" msg1 err msg2)
     | Failure (Skipped msg) -> Assert.Ignore(sprintf "skipped. Reason: %s" msg)
 
 let checkResult result = 
     match result with
-    | CmdResult.ErrorLevel err -> let x = err, (sprintf "ERRORLEVEL %d" err) in Failure (RunError.ProcessExecError x)
+    | CmdResult.ErrorLevel (msg1, err) -> Failure (RunError.ProcessExecError (msg1, err, sprintf "ERRORLEVEL %d" err))
     | CmdResult.Success -> Success ()
 
 let skip msg () = Failure (Skipped msg)
 let genericError msg () = Failure (GenericError msg)
-let errorLevel exitCode msg () = Failure (ProcessExecError (exitCode,msg))
+let errorLevel exitCode msg () = Failure (ProcessExecError ("",exitCode,msg))
 
 let envVars () = 
     System.Environment.GetEnvironmentVariables () 
@@ -51,7 +51,7 @@ let initializeSuite () =
 
     let doNgen = true;
 
-    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
+    let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
 
     let mapWithDefaults defaults m =
         Seq.concat [ (Map.toSeq defaults) ; (Map.toSeq m) ] |> Map.ofSeq
@@ -65,7 +65,7 @@ let initializeSuite () =
         | Some confName -> confName
         | None -> configurationName
 
-    processor {
+    attempt {
 //        do! updateCmd env { Configuration = configurationName; Ngen = doNgen; }
 //            |> Attempt.Run
 //            |> function Success () -> Success () | Failure msg -> genericError msg ()
@@ -81,7 +81,7 @@ let initializeSuite () =
 
 //        let directoryExists = Commands.directoryExists (Path.GetTempPath()) >> Option.isSome 
 //
-//        let checkfscBinPath () = processor {
+//        let checkfscBinPath () = attempt {
 //
 //            let fscBinPath = cfg.EnvironmentVariables |> Map.tryFind "FSCBINPATH"
 //            return!
@@ -91,7 +91,7 @@ let initializeSuite () =
 //                | Some dir -> genericError (sprintf "environment variable 'FSCBinPath' is required to be a valid directory, but is '%s'" dir)
 //            }
 //
-//        let smokeTest () = processor {
+//        let smokeTest () = attempt {
 //            let tempFile ext = 
 //                let p = Path.ChangeExtension( Path.GetTempFileName(), ext)
 //                File.AppendAllText (p, """printfn "ciao"; exit 0""")
@@ -241,6 +241,12 @@ type EnvLstLineTestCaseAttribute =
 
 open EnvLst
 
+let logDiscover format = 
+    let p = Path.Combine(__SOURCE_DIRECTORY__, "nunit_discover.log")
+    Printf.ksprintf (fun s -> File.AppendAllLines(p, [| s |])) format
+    
+ 
+
 type FSharpQASuiteTestAttribute(dir: string) =
     inherit NUnitAttribute()
 
@@ -249,6 +255,17 @@ type FSharpQASuiteTestAttribute(dir: string) =
         member x.BuildFrom(methodInfo, suite) =
             let rootDir = __SOURCE_DIRECTORY__
             let path = Path.Combine(Path.Combine(rootDir, dir), "env.lst")
+
+#if DEBUG
+            //log to file
+            let log = logDiscover
+#endif
+
+            log "discover: %s" path
+
+            if not (File.Exists(path)) then
+                log "Expected env.lst file '%s' not found" path
+                failwithf "Expected env.lst file '%s' not found" path
 
             let lines =
                 path
@@ -266,8 +283,10 @@ type FSharpQASuiteTestAttribute(dir: string) =
 
             match lines |> Array.choose (function l, Choice1Of2(Some(EnvLstLine.Data(d))) -> Some(l,d) | _ -> None) with
             | [| |] ->
+                log "No valid lines inside env.lst file '%s'" path
                 failwithf "No valid lines inside env.lst file '%s'" path
             | validLines ->
+                log "ok: '%s'" path
                 validLines
                 |> Array.map (fun (line,data) ->
                     let tc = EnvLstLineTestCaseData (dir, line)
@@ -317,7 +336,7 @@ module FileGuard =
     let exists (guard: T) = guard.Path |> File.Exists
         
 
-let checkGuardExists guard = processor {
+let checkGuardExists guard = attempt {
     if not <| (guard |> FileGuard.exists)
     then return! genericError (sprintf "exit code 0 but %s file doesn't exists" (guard.Path |> Path.GetFileName))
     }

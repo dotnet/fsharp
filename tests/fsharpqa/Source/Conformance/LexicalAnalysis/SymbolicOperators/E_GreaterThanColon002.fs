@@ -1,7 +1,7 @@
 // #Regression #Conformance #LexicalAnalysis #Operators 
 // Regression test for FSHARP1.0:1392
 // Space should not be required between : and >
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 

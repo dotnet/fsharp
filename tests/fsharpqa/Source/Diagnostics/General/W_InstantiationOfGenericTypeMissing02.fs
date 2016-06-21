@@ -1,6 +1,6 @@
 // #Regression #Diagnostics 
 // Regression test for FSHARP1.0:3286
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 module M
 
 type C3<'a>() = class
