@@ -9,3 +9,7 @@ type StructRecord =
     }
 
 let x = StructRecord ()
+
+let invalidUse() = 
+    use mutable x = (null : System.IDisposable)
+    ()
