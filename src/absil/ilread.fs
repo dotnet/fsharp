@@ -483,10 +483,10 @@ type ILInstrDecoder =
     | I_method_instr of (ILInstrPrefixesRegister -> ILMethodSpec * ILVarArgs -> ILInstr)
     | I_unconditional_i32_instr of (ILInstrPrefixesRegister -> ILCodeLabel  -> ILInstr)
     | I_unconditional_i8_instr of (ILInstrPrefixesRegister -> ILCodeLabel  -> ILInstr)
-    | I_conditional_i32_instr of (ILInstrPrefixesRegister -> ILCodeLabel * ILCodeLabel -> ILInstr)
-    | I_conditional_i8_instr of (ILInstrPrefixesRegister -> ILCodeLabel * ILCodeLabel -> ILInstr)
+    | I_conditional_i32_instr of (ILInstrPrefixesRegister -> ILCodeLabel -> ILInstr)
+    | I_conditional_i8_instr of (ILInstrPrefixesRegister -> ILCodeLabel -> ILInstr)
     | I_string_instr of (ILInstrPrefixesRegister -> string -> ILInstr)
-    | I_switch_instr of (ILInstrPrefixesRegister -> ILCodeLabel list * ILCodeLabel -> ILInstr)
+    | I_switch_instr of (ILInstrPrefixesRegister -> ILCodeLabel list -> ILInstr)
     | I_tok_instr of (ILInstrPrefixesRegister -> ILToken -> ILInstr)
     | I_sig_instr of (ILInstrPrefixesRegister -> ILCallingSignature * ILVarArgs -> ILInstr)
     | I_type_instr of (ILInstrPrefixesRegister -> ILType -> ILInstr)
@@ -549,30 +549,30 @@ let instrs () =
    i_br_s, I_unconditional_i8_instr (noPrefixes I_br); 
    i_leave, I_unconditional_i32_instr (noPrefixes (fun x -> I_leave x));
    i_br, I_unconditional_i32_instr (noPrefixes I_br); 
-   i_brtrue_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_brtrue,x,y)));
-   i_brfalse_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_brfalse,x,y)));
-   i_beq_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_beq,x,y)));
-   i_blt_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_blt,x,y)));
-   i_blt_un_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_blt_un,x,y)));
-   i_ble_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_ble,x,y)));
-   i_ble_un_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_ble_un,x,y)));
-   i_bgt_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bgt,x,y)));
-   i_bgt_un_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bgt_un,x,y)));
-   i_bge_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bge,x,y)));
-   i_bge_un_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bge_un,x,y)));
-   i_bne_un_s, I_conditional_i8_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bne_un,x,y)));   
-   i_brtrue, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_brtrue,x,y)));
-   i_brfalse, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_brfalse,x,y)));
-   i_beq, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_beq,x,y)));
-   i_blt, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_blt,x,y)));
-   i_blt_un, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_blt_un,x,y)));
-   i_ble, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_ble,x,y)));
-   i_ble_un, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_ble_un,x,y)));
-   i_bgt, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bgt,x,y)));
-   i_bgt_un, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bgt_un,x,y)));
-   i_bge, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bge,x,y)));
-   i_bge_un, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bge_un,x,y)));
-   i_bne_un, I_conditional_i32_instr (noPrefixes (fun (x,y) -> I_brcmp (BI_bne_un,x,y))); 
+   i_brtrue_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_brtrue,x)));
+   i_brfalse_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_brfalse,x)));
+   i_beq_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_beq,x)));
+   i_blt_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_blt,x)));
+   i_blt_un_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_blt_un,x)));
+   i_ble_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_ble,x)));
+   i_ble_un_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_ble_un,x)));
+   i_bgt_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_bgt,x)));
+   i_bgt_un_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_bgt_un,x)));
+   i_bge_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_bge,x)));
+   i_bge_un_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_bge_un,x)));
+   i_bne_un_s, I_conditional_i8_instr (noPrefixes (fun x -> I_brcmp (BI_bne_un,x)));   
+   i_brtrue, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_brtrue,x)));
+   i_brfalse, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_brfalse,x)));
+   i_beq, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_beq,x)));
+   i_blt, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_blt,x)));
+   i_blt_un, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_blt_un,x)));
+   i_ble, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_ble,x)));
+   i_ble_un, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_ble_un,x)));
+   i_bgt, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_bgt,x)));
+   i_bgt_un, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_bgt_un,x)));
+   i_bge, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_bge,x)));
+   i_bge_un, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_bge_un,x)));
+   i_bne_un, I_conditional_i32_instr (noPrefixes (fun x -> I_brcmp (BI_bne_un,x))); 
    i_ldstr, I_string_instr (noPrefixes I_ldstr); 
    i_switch, I_switch_instr (noPrefixes I_switch);
    i_ldtoken, I_tok_instr (noPrefixes I_ldtoken);
@@ -2090,9 +2090,8 @@ and sigptrGetLocal ctxt numtypars bytes sigptr =
         else 
             false, sigptr
     let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-    { IsPinned = pinned;
-      Type = typ;
-      DebugInfo = None }, sigptr
+    let loc : ILLocal = { IsPinned = pinned; Type = typ; DebugInfo = None }
+    loc, sigptr
          
 and readBlobHeapAsMethodSig ctxt numtypars blobIdx  =
     ctxt.readBlobHeapAsMethodSig (BlobAsMethodSigIdx (numtypars,blobIdx))
@@ -2362,7 +2361,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
      
 and seekReadParams ctxt (retty,argtys) pidx1 pidx2 =
     let retRes : ILReturn ref =  ref { Marshal=None; Type=retty; CustomAttrs=emptyILCustomAttrs }
-    let paramsRes = 
+    let paramsRes : ILParameter [] = 
         argtys 
         |> ILList.toArray 
         |> Array.map (fun ty ->  
@@ -2803,14 +2802,12 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
              let offsDest =  (seekReadInt32 ctxt.is (start + (!curr)))
              curr := !curr + 4;
              let dest = !curr + offsDest
-             let next = !curr
-             f prefixes (rawToLabel dest, rawToLabel next)
+             f prefixes (rawToLabel dest)
          | I_conditional_i8_instr f ->
              let offsDest = int (seekReadSByte ctxt.is (start + (!curr)))
              curr := !curr + 1;
              let dest = !curr + offsDest
-             let next = !curr
-             f prefixes (rawToLabel dest, rawToLabel next)
+             f prefixes (rawToLabel dest)
          | I_unconditional_i32_instr f ->
              let offsDest =  (seekReadInt32 ctxt.is (start + (!curr)))
              curr := !curr + 4;
@@ -2852,18 +2849,13 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
                    curr := !curr + 4; 
                    i) 
              let dests = List.map (fun offs -> rawToLabel (!curr + offs)) offsets
-             let next = rawToLabel !curr
-             f prefixes (dests,next)
+             f prefixes dests
        ibuf.Add instr
    done;
    // Finished reading instructions - mark the end of the instruction stream in case the PDB information refers to it. 
    markAsInstructionStart !curr ibuf.Count;
    // Build the function that maps from raw labels (offsets into the bytecode stream) to indexes in the AbsIL instruction stream 
-   let lab2pc lab = 
-       try
-          ilOffsetsOfLabels.[lab]
-       with :? KeyNotFoundException-> 
-          failwith ("branch destination "+formatCodeLabel lab+" not found in code")
+   let lab2pc = ilOffsetsOfLabels
 
    // Some offsets used in debug info refer to the end of an instruction, rather than the 
    // start of the subsequent instruction.  But all labels refer to instruction starts, 
@@ -2933,7 +2925,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
                          |> List.filter (fun l -> 
                              let k,_idx = pdbVariableGetAddressAttributes l
                              k = 1 (* ADDR_IL_OFFSET *)) 
-                       let ilinfos =
+                       let ilinfos : ILLocalDebugMapping list =
                          ilvs |> List.map (fun ilv -> 
                              let _k,idx = pdbVariableGetAddressAttributes ilv
                              let n = pdbVariableGetName ilv
@@ -2942,9 +2934,8 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
                            
                        let thisOne = 
                          (fun raw2nextLab ->
-                           { locRange= (raw2nextLab a,raw2nextLab b); 
-                             locInfos = ilinfos })
-                       //  this scope covers IL range: "+string a+"-"+string b)
+                           { Range= (raw2nextLab a,raw2nextLab b); 
+                             DebugMappings = ilinfos } : ILLocalDebugInfo )
                        let others = List.foldBack (scopes >> (@)) (Array.toList (pdbScopeGetChildren scp)) []
                        thisOne :: others
                  let localPdbInfos = [] (* <REVIEW> scopes fail for mscorlib </REVIEW> scopes rootScope  *)
@@ -2965,7 +2956,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            let instrs,_,lab2pc,raw2nextLab = seekReadTopCode ctxt numtypars codeSize codeBase seqpoints
            (* Convert the linear code format to the nested code format *)
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
-           let code = checkILCode (buildILCode nm lab2pc instrs [] localPdbInfos2)
+           let code = buildILCode nm lab2pc instrs [] localPdbInfos2
            MethodBody.IL
              { IsZeroInit=false;
                MaxStack= 8;
@@ -3079,7 +3070,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
                     else 
                         sehMap.[key] <- [clause])
                   clauses;
-                Seq.fold  (fun acc (KeyValue(key,bs)) -> {exnRange=key; exnClauses=bs} :: acc)  [] sehMap
+                ([],sehMap) ||> Seq.fold  (fun acc (KeyValue(key,bs)) -> [ for b in bs -> {Range=key; Clause=b} : ILExceptionSpec ] @ acc)  
              seh := sehClauses;
              moreSections := (sectionFlag &&& e_CorILMethod_Sect_MoreSects) <> 0x0uy;
              nextSectionBase := sectionBase + sectionSize;
@@ -3089,7 +3080,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            if logging then dprintn ("doing localPdbInfos2"); 
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            if logging then dprintn ("done localPdbInfos2, checking code..."); 
-           let code = checkILCode (buildILCode nm lab2pc instrs !seh localPdbInfos2)
+           let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
            if logging then dprintn ("done checking code."); 
            MethodBody.IL
              { IsZeroInit=initlocals;

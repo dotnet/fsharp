@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:9055
+  .ver 4:4:1:0
 }
 .assembly TopLevelModule
 {
@@ -29,22 +29,20 @@
 }
 .mresource public FSharpSignatureData.TopLevelModule
 {
-  // Offset: 0x00000000 Length: 0x0000114B
-  // WARNING: managed resource file FSharpSignatureData.TopLevelModule created
+  // Offset: 0x00000000 Length: 0x0000114D
 }
 .mresource public FSharpOptimizationData.TopLevelModule
 {
-  // Offset: 0x00001150 Length: 0x000003FD
-  // WARNING: managed resource file FSharpOptimizationData.TopLevelModule created
+  // Offset: 0x00001158 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {570620A2-37F5-C118-A745-0383A2200657}
+// MVID: {575BE147-37F5-C118-A745-038347E15B57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00AE0000
+// Image base: 0x00620000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -221,7 +219,7 @@
       // Code size       14 (0xe)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 14,18 'c:\\KevinRansom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelModule.fs'
+      .line 6,6 : 14,18 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelModule.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -579,7 +577,7 @@
                                  valuetype [mscorlib]System.Runtime.Serialization.StreamingContext context) cil managed
     {
       // Code size       9 (0x9)
-      .maxstack  10
+      .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -1377,7 +1375,7 @@
                                    valuetype [mscorlib]System.Runtime.Serialization.StreamingContext context) cil managed
       {
         // Code size       9 (0x9)
-        .maxstack  10
+        .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
         IL_0002:  ldarg.2
@@ -1722,8 +1720,8 @@
   {
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] string greeting,
-             [1] string V_1)
+    .locals init ([0] string V_0,
+             [1] string greeting)
     .line 12,12 : 9,31 ''
     IL_0000:  nop
     IL_0001:  call       string ABC::get_greeting()

@@ -3,28 +3,14 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<Fragment>
-		<PropertyRef Id="VS15_ROOT_FOLDER" />
-		<PropertyRef Id="MSBUILD15_ROOT_FOLDER" />
-	
 		<ComponentGroup Id="Compiler_OtherResources">
 
-			<ComponentRef Id="Compiler_OtherResources_Microsoft.FSharp.Shim.targets" />
-			<ComponentRef Id="Compiler_OtherResources_Microsoft.Portable.FSharp.Shim.targets" />
 			<ComponentRef Id="Compiler_OtherResources_Redist.txt" />
 			<ComponentRef Id="Compiler_OtherResources_ThirdPartyNotices.txt" />
 			<ComponentRef Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" />
 			
 		</ComponentGroup>
-
-        <DirectoryRef Id="MSBuild_Microsoft_VisualStudio_v15.0_FSharp">		
-            <Component Id="Compiler_OtherResources_Microsoft.FSharp.Shim.targets" Guid="$(fsharp.guid(Compiler_OtherResources_Microsoft.FSharp.Shim.targets, $(var.Lang)))">
-                <File Id="Compiler_OtherResources_Microsoft.FSharp.Shim.targets" Name="Microsoft.FSharp.targets" Source="$(var.BinariesDir)\setup\resources\Microsoft.FSharp.Shim.targets" />
-            </Component>			
-            <Component Id="Compiler_OtherResources_Microsoft.Portable.FSharp.Shim.targets" Guid="$(fsharp.guid(Compiler_OtherResources_Microsoft.Portable.FSharp.Shim.targets, $(var.Lang)))">
-                <File Id="Compiler_OtherResources_Microsoft.Portable.FSharp.Shim.targets" Name="Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\setup\resources\Microsoft.Portable.FSharp.Shim.targets" />
-            </Component>			
-        </DirectoryRef>
-		
+        
         <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
             <Component Id="Compiler_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.Lang)))">
                 <File Id="Compiler_OtherResources_Redist.txt" Source="$(var.FSharpCoreRedistDir)\content\Redist.txt" />

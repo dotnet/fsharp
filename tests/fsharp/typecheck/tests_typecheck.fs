@@ -136,7 +136,7 @@ module Sigs =
         // "%PEVERIFY%" pos09.dll
         do! peverify "pos09.dll"
 
-        do! attempt.For (["neg94"; "neg93"; "neg92"; "neg91"; 
+        do! attempt.For (["neg95"; "neg94"; "neg93"; "neg92"; "neg91"; 
                           "neg90"; "neg89"; "neg88";
                           "neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; 
                           "neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg69"; "neg68"; "neg67"; "neg66"; "neg65"; "neg64"; "neg61"; "neg63"; 
