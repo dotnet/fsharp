@@ -20,7 +20,7 @@ open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
 type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
-    inherit AbstractProject(visualStudioWorkspace.ProjectTracker, null, projectName, hierarchy, "F#", serviceProvider, null, visualStudioWorkspace, null)
+    inherit AbstractProject(visualStudioWorkspace.ProjectTracker, null, projectName, hierarchy, FSharpCommonConstants.FSharpLanguageName, serviceProvider, visualStudioWorkspace, null)
 
     let mutable checkOptions : FSharpProjectOptions option = None
 
@@ -49,7 +49,7 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
         flags |> Array.choose(fun flag -> if flag.StartsWith("-r:") then Some(flag.Substring(3)) else None)
 
     member this.AddReference(filePath : string) = 
-        this.AddMetadataReferenceAndTryConvertingToProjectReferenceIfPossible(filePath, new MetadataReferenceProperties(), VSConstants.S_FALSE) |> ignore
+        this.AddMetadataReferenceAndTryConvertingToProjectReferenceIfPossible(filePath, new MetadataReferenceProperties()) |> ignore
 
     member this.RemoveReference(filePath: string) =
         this.RemoveMetadataReference(filePath)
