@@ -1316,10 +1316,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         //  Applied when a token other then a long identifier is seen 
         | _, (CtxtNamespaceHead (namespaceTokenPos, prevToken) :: _) -> 
             match prevToken, token with 
-            | NAMESPACE, GLOBAL when namespaceTokenPos.Column < tokenStartPos.Column -> 
-                replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
-                returnToken tokenLexbufState token
-            | (NAMESPACE | DOT), IDENT _ when namespaceTokenPos.Column < tokenStartPos.Column -> 
+            | (NAMESPACE | DOT | REC | GLOBAL), (REC | IDENT _ | GLOBAL) when namespaceTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
                 returnToken tokenLexbufState token
             | IDENT _, DOT when namespaceTokenPos.Column < tokenStartPos.Column -> 
@@ -1348,7 +1345,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                 returnToken tokenLexbufState token
             | MODULE, (PUBLIC | PRIVATE | INTERNAL) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 returnToken tokenLexbufState token
-            | (MODULE | DOT), IDENT _ when moduleTokenPos.Column < tokenStartPos.Column -> 
+            | (MODULE | DOT | REC), (REC | IDENT _) when moduleTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token))
                 returnToken tokenLexbufState token
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column -> 

@@ -3,9 +3,6 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:NetFx="http://schemas.microsoft.com/wix/NetFxExtension">
 
 	<Fragment>
-		<PropertyRef Id="VS15_ROOT_FOLDER" />
-		<PropertyRef Id="MSBUILD15_ROOT_FOLDER" />
-		
 		<ComponentGroup Id="Compiler_SDK">
 
 			<ComponentRef Id="Compiler_SDK_FSharp.Core.dll" />

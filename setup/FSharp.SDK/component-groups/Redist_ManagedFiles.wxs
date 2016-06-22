@@ -3,9 +3,6 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<Fragment>
-		<PropertyRef Id="VS15_ROOT_FOLDER" />
-		<PropertyRef Id="MSBUILD15_ROOT_FOLDER" />
-	
 		<ComponentGroup Id="Redist_ManagedFiles">
 
 			<!-- F# 4.1 -->

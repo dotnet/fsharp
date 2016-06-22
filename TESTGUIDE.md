@@ -33,17 +33,16 @@ Default is `ci`
 
 The F# tests are split as follows:
 
-* [FSharp Suite](tests\fsharp) - Older suite with broad coverage of mainline compiler and runtime scenarios.
+* [FSharp Suite](tests/fsharp) - Older suite with broad coverage of mainline compiler and runtime scenarios.
 
-* [FSharpQA Suite](tests\fsharpqa\source) - Broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
+* [FSharpQA Suite](tests/fsharpqa/Source) - Broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
 
-* [FSharp.Core.Unittests](src\fsharp\FSharp.Core.Unittests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
+* [FSharp.Core.Unittests](src/fsharp/FSharp.Core.Unittests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
 
-* [FSharp.Compiler.Unittests](src\fsharp\FSharp.Compiler.Unittests) - Validation of compiler internals.
+* [FSharp.Compiler.Unittests](src/fsharp/FSharp.Compiler.Unittests) - Validation of compiler internals.
 
-* [VisualFSharp.UnitTests](vsintegration\src\unittests) - Visual F# Tools IDE Unit Test Suite
+* [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
   This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
-
 
 ## More Details
 
