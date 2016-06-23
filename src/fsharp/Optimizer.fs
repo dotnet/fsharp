@@ -1219,7 +1219,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     info
 
 //-------------------------------------------------------------------------
-// Misc helerps
+// Misc helpers
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
@@ -2345,8 +2345,17 @@ and DevirtualizeApplication cenv env (vref:ValRef) ty tyargs args m =
     let transformedExpr = wrap (MakeApplicationAndBetaReduce cenv.g (exprForValRef m vref,vref.Type,(if isNil tyargs then [] else [tyargs]),args,m))
     OptimizeExpr cenv env transformedExpr
 
-    
-  
+
+and GetNameFromTypeName tcGlobals m typeName =
+    match stripTyEqns tcGlobals typeName with     
+    | TType_app (tcref, _) -> tcref.CompiledRepresentationForNamedType.FullName
+    | TType_forall _ -> errorR(Error(FSComp.SR.expressionHasNoName(), m)); ""
+    | TType_tuple _ -> errorR(Error(FSComp.SR.expressionHasNoName(), m)); ""
+    | TType_fun _ -> errorR(Error(FSComp.SR.expressionHasNoName(), m)); ""
+    | TType_ucase _ -> errorR(Error(FSComp.SR.expressionHasNoName(), m)); ""
+    | TType_var tp -> tp.DisplayName
+    | TType_measure ms -> sprintf "%A" ms
+
 and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
     match f,tyargs,args with 
 
@@ -2542,6 +2551,28 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
                 MightMakeCriticalTailcall = false;
                 Info=UnknownValue})
 
+    // Analyze the name of the given symbol and rewrite AST to constant string expression with the name
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.nameof_vref ->
+        PostTypeCheckSemanticChecks.tryExtractNameOf args
+        |> Option.map (fun name ->
+            Expr.Const(Const.String name, m, cenv.g.string_ty),
+                { TotalSize = 1
+                  FunctionSize = 1
+                  HasEffect = false
+                  MightMakeCriticalTailcall = false
+                  Info = UnknownValue })
+    // Analyze the name of the given type and rewrite AST to constant string expression with the name
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.typenameof_vref ->
+        match tyargs with
+        | typeName:: _ ->
+            let name = GetNameFromTypeName cenv.g m typeName
+            Some(Expr.Const(Const.String name, m, cenv.g.string_ty),
+                    { TotalSize = 1
+                      FunctionSize = 1
+                      HasEffect = false
+                      MightMakeCriticalTailcall = false
+                      Info = UnknownValue })
+        | _ -> None
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites

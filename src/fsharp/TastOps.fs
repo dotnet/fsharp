@@ -2761,6 +2761,11 @@ let isTypeOfValRef g vref =
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
     || (g.compilingFslib && vref.LogicalName = "typeof") 
 
+let isTypeNameOfValRef g vref = 
+    valRefEq g vref g.typenameof_vref 
+    // There is an internal version of typenameof defined in prim-types.fs that needs to be detected
+    || (g.compilingFslib && vref.LogicalName = "typenameof") 
+
 let isSizeOfValRef g vref = 
     valRefEq g vref g.sizeof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
@@ -2779,6 +2784,11 @@ let (|UncheckedDefaultOfExpr|_|) g expr =
 let (|TypeOfExpr|_|) g expr = 
     match expr with 
     | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeOfValRef g vref ->  Some ty
+    | _ -> None
+
+let (|TypeNameOfExpr|_|) g expr = 
+    match expr with 
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isTypeNameOfValRef g vref  -> Some ty
     | _ -> None
 
 let (|SizeOfExpr|_|) g expr = 
@@ -5911,6 +5921,7 @@ let mkCallUnbox                g m ty e1    = mkApps g (typedExprForIntrinsic g 
 let mkCallUnboxFast            g m ty e1    = mkApps g (typedExprForIntrinsic g m g.unbox_fast_info,  [[ty]], [ e1 ],  m)
 let mkCallTypeTest             g m ty e1    = mkApps g (typedExprForIntrinsic g m g.istype_info,      [[ty]], [ e1 ],  m)
 let mkCallTypeOf               g m ty       = mkApps g (typedExprForIntrinsic g m g.typeof_info,      [[ty]], [ ],  m)
+let mkCallTypeNameOf           g m ty       = mkApps g (typedExprForIntrinsic g m g.typenameof_info,  [[ty]], [ ],  m)
 let mkCallTypeDefOf            g m ty       = mkApps g (typedExprForIntrinsic g m g.typedefof_info,   [[ty]], [ ],  m)
 
      
@@ -7568,6 +7579,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | Expr.Op (TOp.UnionCase _,_,[],_)         // Nullary union cases
         | UncheckedDefaultOfExpr g _ 
         | SizeOfExpr g _ 
+        | TypeNameOfExpr g _ 
         | TypeOfExpr g _ -> true
         // All others are not simple constant expressions
         | _ -> false
