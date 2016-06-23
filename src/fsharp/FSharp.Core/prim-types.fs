@@ -345,7 +345,6 @@ namespace Microsoft.FSharp.Core
         member x.MessageNumber = messageNumber
         member x.IsError with get() = isError and set v = isError <- v
         member x.IsHidden with get() = isHidden and set v = isHidden <- v
-        new (message, messageNumber) = CompilerMessageAttribute(message, messageNumber)
 
     [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]
     [<Sealed>]
