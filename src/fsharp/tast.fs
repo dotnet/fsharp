@@ -243,7 +243,7 @@ type ValFlags(flags:int64) =
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b1011001100000000000L) 
+                                                      (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
