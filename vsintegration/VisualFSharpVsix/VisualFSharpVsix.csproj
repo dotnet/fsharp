@@ -5,7 +5,7 @@
     <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
     <VSSourcesRoot>..\src</VSSourcesRoot>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">15.0</MinimumVisualStudioVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <FileUpgradeFlags>
@@ -43,7 +43,7 @@
     <DeployExtension>false</DeployExtension>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <VSRootSuffix>FSharp</VSRootSuffix>
+    <VSRootSuffix>FSharpDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
     <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
     <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">True</DeployExtension>
@@ -53,13 +53,14 @@
     <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</RootBinPath>
     <AssemblyName>VisualFSharpVsix</AssemblyName>
     <OutputPath>$(RootBinPath)</OutputPath>
+    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
-    <StartArguments>/rootsuffix FSharp /log</StartArguments>
-    <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
+    <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
+    <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
     <CreateVsixContainer>true</CreateVsixContainer>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -68,10 +69,7 @@
     <CreateVsixContainer>true</CreateVsixContainer>
     <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
-    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
-    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
-
   <ItemGroup>
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
@@ -86,83 +84,6 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="$(RootBinPath)\ProjectTemplates\SilverlightProject\SilverlightProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\SilverlightProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\NetCoreProject\NetCoreProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\NetCoreProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\NetCore78Project\NetCore78Project.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\NetCore78Project.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\NetCore259Project\NetCore259Project.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\NetCore259Project.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\PortableLibraryProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\TutorialProject\TutorialProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\TutorialProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\ConsoleProject\ConsoleProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\ConsoleProject.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ProjectTemplates\LibraryProject\LibraryProject.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ProjectTemplates\LibraryProject.zip</Link>
-    </Content>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="$(RootBinPath)\ItemTemplates\AppConfig\AppConfig.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\AppConfig.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ItemTemplates\CodeFile\CodeFile.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\CodeFile.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ItemTemplates\ScriptFile\ScriptFile.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\ScriptFile.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ItemTemplates\SignatureFile\SignatureFile.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\SignatureFile.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ItemTemplates\TextFile\TextFile.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\TextFile.zip</Link>
-    </Content>
-    <Content Include="$(RootBinPath)\ItemTemplates\XMLFile\XMLFile.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>ItemTemplates\XMLFile.zip</Link>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
       <Visible>False</Visible>
@@ -180,7 +101,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
@@ -233,9 +153,8 @@
     <ProjectReference Include="$(VSSourcesRoot)\FSharp.Editor\FSharp.Editor.fsproj">
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Name>FSharp.Editor</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(VSSourcesRoot)\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
@@ -279,8 +198,105 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\AppConfig\AppConfig.csproj">
+      <Project>{6ba13aa4-c25f-480f-856b-8e8000299a72}</Project>
+      <Name>AppConfig</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\CodeFile\CodeFile.csproj">
+      <Project>{12ac2813-e895-4aaa-ae6c-94e21da09f64}</Project>
+      <Name>CodeFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\ScriptFile\ScriptFile.csproj">
+      <Project>{a333b85a-dc23-49b6-9797-b89a7951e92d}</Project>
+      <Name>ScriptFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\SignatureFile\SignatureFile.csproj">
+      <Project>{e3fdd4ac-46b6-4b9f-b672-317d1202cc50}</Project>
+      <Name>SignatureFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\TextFile\TextFile.csproj">
+      <Project>{d11fc318-8f5d-4c8c-9287-ab40a016d13c}</Project>
+      <Name>TextFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ItemTemplates\XMLFile\XMLFile.csproj">
+      <Project>{1fb1dd07-06aa-45b4-b5ac-20ff5bee98b6}</Project>
+      <Name>XMLFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\ConsoleProject\ConsoleProject.csproj">
+      <Project>{604f0daa-2d33-48dd-b162-edf0b672803d}</Project>
+      <Name>ConsoleProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\LibraryProject\LibraryProject.csproj">
+      <Project>{01678cda-a11f-4dee-9344-2edf91cf1ae7}</Project>
+      <Name>LibraryProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\NetCore259Project\NetCore259Project.csproj">
+      <Project>{d9d95330-3626-4199-b7af-17b8e4af6d87}</Project>
+      <Name>NetCore259Project</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\NetCore78Project\NetCore78Project.csproj">
+      <Project>{1a8dbf70-4178-4ae3-af5f-39ddd5692210}</Project>
+      <Name>NetCore78Project</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\NetCoreProject\NetCoreProject.csproj">
+      <Project>{5b739cf3-1116-4eb4-b598-6c16bea81ce5}</Project>
+      <Name>NetCoreProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj">
+      <Project>{db374a0c-7560-479f-9b21-d37c81f7624f}</Project>
+      <Name>PortableLibraryProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\SilverlightProject\SilverlightProject.csproj">
+      <Project>{15a57828-f9f5-4fb4-8e1e-ae7622a10f70}</Project>
+      <Name>SilverlightProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectTemplates\TutorialProject\TutorialProject.csproj">
+      <Project>{2facee44-48bd-40b5-a2ee-b54a0c9bb7c4}</Project>
+      <Name>TutorialProject</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
   </ItemGroup>
-
   <Import Project="$(VSSourcesRoot)\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 </Project>

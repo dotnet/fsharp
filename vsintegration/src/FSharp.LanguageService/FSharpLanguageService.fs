@@ -71,7 +71,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | _ -> ()
         | _ -> ()
 
-and [<Guid(FSharpCommonConstants.packageGuidString)>]
+and 
+    [<ProvideLanguageService(FSharpCommonConstants.languageServiceGuidString, FSharpCommonConstants.FSharpContentTypeName, 1)>]
+    [<Guid(FSharpCommonConstants.packageGuidString)>]
     internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService, FSharpProjectSite>()
     
