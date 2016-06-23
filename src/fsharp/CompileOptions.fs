@@ -891,7 +891,7 @@ let compilingFsLib20Flag (tcConfigB : TcConfigBuilder) =
 let compilingFsLib40Flag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("compiling-fslib-40", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true; ), Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
 let mlKeywordsFlag = 
-        CompilerOption("ml-keywords", tagNone, OptionUnit (fun () -> Lexhelp.Keywords.permitFsharpKeywords <- false), Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
+        CompilerOption("ml-keywords", tagNone, OptionUnit (fun () -> ()), Some(DeprecatedCommandLineOptionNoDescription("--ml-keywords", rangeCmdArgs)), None)
 
 let gnuStyleErrorsFlag tcConfigB = 
         CompilerOption("gnu-style-errors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.EmacsErrors), Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
