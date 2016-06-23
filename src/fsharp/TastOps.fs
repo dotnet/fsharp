@@ -6855,9 +6855,9 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
             tyName + tyargsEnc g (gtpsType,gtpsMethod) tinst
     | TType_tuple (tupInfo, typs) -> 
         if evalTupInfoIsStruct tupInfo then 
-            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)
-        else 
             sprintf "System.StructTuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)
+        else 
+            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)
     | TType_fun (f,x)           -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType,gtpsMethod) [f;x]
     | TType_var typar           -> 
