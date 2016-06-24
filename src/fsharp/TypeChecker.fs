@@ -1872,7 +1872,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
     let frefSets = 
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
-            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty m fld allFields
             fld,frefSet, fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
@@ -6644,10 +6644,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             ]
         match flds with 
         | [] -> []
-        | _ -> 
-            if not (isRecdTy cenv.g overallTy) then
-                let typeName = NicePrint.minimalStringOfType env.NameEnv.eDisplayEnv overallTy
-                error(Error(FSComp.SR.nrTypeIsNotARecord(typeName),mWholeExpr))
+        | _ ->
             let tcref,_,fldsList = BuildFieldMap cenv env (isSome optOrigExpr) overallTy flds mWholeExpr
             let _,_,_,gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp      

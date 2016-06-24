@@ -2546,7 +2546,7 @@ let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields
     UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, predictedLabels)
 
 /// Resolve a long identifier representing a record field 
-let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
+let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ mWholeExpr (mp,id:Ident) allFields =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
     let m = id.idRange
@@ -2561,7 +2561,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
                     // record label doesn't belong to record type -> predict other labels of same record                    
                     error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
                 else
-                    error(Error(FSComp.SR.nrTypeDoesNotContainSuchField(typeName, id.idText),m))
+                    error(Error(FSComp.SR.nrTypeIsNotARecord(typeName),mWholeExpr))
         else 
             let frefs = 
                 try Map.find id.idText nenv.eFieldLabels 
@@ -2594,8 +2594,8 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
         if nonNil rest then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange));
         [(resInfo,item)]
 
-let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
-    let res = ResolveFieldPrim ncenv nenv ad typ (mp,id) allFields
+let ResolveField sink ncenv nenv ad typ mWholeExpr (mp,id) allFields =
+    let res = ResolveFieldPrim ncenv nenv ad typ mWholeExpr (mp,id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
     for (resInfo,_rfref) in res do
