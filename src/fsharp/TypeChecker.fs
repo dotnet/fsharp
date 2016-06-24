@@ -6645,6 +6645,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match flds with 
         | [] -> []
         | _ -> 
+            if not (isRecdTy cenv.g overallTy) then
+                let typeName = NicePrint.minimalStringOfType env.NameEnv.eDisplayEnv overallTy
+                error(Error(FSComp.SR.nrTypeIsNotARecord(typeName),mWholeExpr))
             let tcref,_,fldsList = BuildFieldMap cenv env (isSome optOrigExpr) overallTy flds mWholeExpr
             let _,_,_,gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp      
