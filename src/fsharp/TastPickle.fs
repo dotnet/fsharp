@@ -2315,6 +2315,7 @@ and p_op x st =
     | TOp.ValFieldGetAddr (a)        -> p_byte 25 st; p_rfref a st
     | TOp.UInt16s arr               -> p_byte 26 st; p_array p_uint16 arr st
     | TOp.Reraise                   -> p_byte 27 st
+    | TOp.UnionCaseFieldGetAddr (a,b)     -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 #endif
 
@@ -2376,6 +2377,9 @@ and u_op st =
             TOp.ValFieldGetAddr a
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
     | 27 -> TOp.Reraise
+    | 28 -> let a = u_ucref st
+            let b = u_int st
+            TOp.UnionCaseFieldGetAddr (a,b) 
     | _ -> ufailwith st "u_op" 
 
 #if INCLUDE_METADATA_WRITER

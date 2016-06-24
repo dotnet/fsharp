@@ -2036,7 +2036,7 @@ module GeneralizationHelpers =
         | Expr.Op(op,_,args,_) ->
             match op with 
             | TOp.Tuple  -> true
-            | TOp.UnionCase uc -> not (isUnionCaseAllocObservable uc)
+            | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
             | TOp.Recd(ctorInfo,tcref) -> 
                 match ctorInfo with 
                 | RecdExpr ->  not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
@@ -2999,7 +2999,8 @@ let BuildRecdFieldSet g m objExpr (rfinfo:RecdFieldInfo) argExpr =
     let tgty = rfinfo.EnclosingType
     let valu = isStructTy g tgty
     let objExpr = if valu then objExpr else mkCoerceExpr(objExpr,tgty,m,tyOfExpr g objExpr)
-    mkRecdFieldSet g (objExpr,rfinfo.RecdFieldRef,rfinfo.TypeInst,argExpr,m) 
+    let wrap,objExpr = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
+    wrap (mkRecdFieldSetViaExprAddr (objExpr,rfinfo.RecdFieldRef,rfinfo.TypeInst,argExpr,m) )
     
     
 //-------------------------------------------------------------------------
@@ -3773,7 +3774,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
                    let thisTy = tyOfExpr g recdExpr
                    let thisExpr = mkGetArg0 m thisTy
                    let thisTyInst = argsOfAppTy g thisTy
-                   let setExpr = mkRecdFieldSet g (thisExpr, rfref, thisTyInst, mkOne g m, m)
+                   let setExpr = mkRecdFieldSetViaExprAddr (thisExpr, rfref, thisTyInst, mkOne g m, m)
                    Expr.Sequential(recdExpr,setExpr,ThenDoSeq,SuppressSequencePointOnExprOfSequential,m)
            recdExpr
        
@@ -5822,7 +5823,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.LibraryOnlyUnionCaseFieldGet (e1,c,n,m) ->
         let e1',ty1,tpenv = TcExprOfUnknownType cenv env tpenv e1
         let mkf,ty2 = TcUnionCaseOrExnField cenv env ty1 m c n 
-                          ((fun (a,b) n -> mkUnionCaseFieldGetUnproven(e1',a,b,n,m)),
+                          ((fun (a,b) n -> mkUnionCaseFieldGetUnproven cenv.g (e1',a,b,n,m)),
                            (fun a n -> mkExnCaseFieldGet(e1',a,n,m)))
         UnifyTypes cenv env m overallTy ty2
         mkf n,tpenv
@@ -6108,18 +6109,19 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
               (fname,fieldExpr),tpenv)
               
     // Add rebindings for unbound field when an "old value" is available 
-    let oldFldsList = 
+    // Effect order: mutable fields may get modified by other bindings... 
+    let oldFldsList, wrap = 
         match optOrigExpr with
-        | None -> []
-        | Some (_,_,oldve') -> 
-               // When we have an "old" value, append bindings for the unbound fields. 
-               // Effect order - mutable fields may get modified by other bindings... 
-               let fieldNameUnbound nom = List.forall (fun (name,_) -> name <> nom) fldsList
-               fspecs 
-               |> List.choose (fun rfld -> 
+        | None -> [], id
+        | Some (_,_,oldve) -> 
+            let wrap,oldveaddr = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
+            let fieldNameUnbound nom = List.forall (fun (name,_) -> name <> nom) fldsList
+            let flds = 
+                fspecs |> List.choose (fun rfld -> 
                     if fieldNameUnbound rfld.Name && not rfld.IsZeroInit 
-                    then Some(rfld.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef rfld,tinst,m))
+                    then Some(rfld.Name, mkRecdFieldGetViaExprAddr (oldveaddr,tcref.MakeNestedRecdFieldRef rfld,tinst,m))
                     else None)
+            flds, wrap
 
     let fldsList = fldsList @ oldFldsList
 
@@ -6152,7 +6154,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
 
     let args   = List.map snd fldsList
     
-    let expr = mkRecordExpr cenv.g (GetRecdInfo env, tcref, tinst, rfrefs, args, m)
+    let expr = wrap (mkRecordExpr cenv.g (GetRecdInfo env, tcref, tinst, rfrefs, args, m))
 
     let expr = 
       match optOrigExpr with 
@@ -6160,10 +6162,10 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
           // '{ recd fields }'. //
           expr
           
-      | Some (old',oldv',_) -> 
+      | Some (old,oldv,_) -> 
           // '{ recd with fields }'. 
           // Assign the first object to a tmp and then construct 
-          mkCompGenLet m oldv' old' expr
+          mkCompGenLet m oldv old expr
 
     expr, tpenv
 
@@ -6602,13 +6604,13 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let optOrigExpr,tpenv = 
       match optOrigExpr with 
       | None -> None, tpenv 
-      | Some (e, _) -> 
+      | Some (origExpr, _) -> 
           match inherits with 
           | Some (_,_,mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(),mInherits))
           | None -> 
-              let e',tpenv = TcExpr cenv overallTy env tpenv e
-              let v',ve' = mkCompGenLocal mWholeExpr "inputRecord" overallTy
-              Some (e',v',ve'), tpenv
+              let olde,tpenv = TcExpr cenv overallTy env tpenv origExpr
+              let oldv,oldve = mkCompGenLocal mWholeExpr "inputRecord" overallTy
+              Some (olde,oldv,oldve), tpenv
 
     let fldsList = 
         let flds = 
@@ -9437,7 +9439,9 @@ and TcMethodApplication
                     match assignedArg.CalledArg.OptArgInfo with 
                     | CallerSide _ -> 
                         if isOptCallerArg then 
-                            mkUnionCaseFieldGetUnproven(expr,mkSomeCase cenv.g,[destOptionTy cenv.g callerArgTy],0,m) 
+                            // STRUCT OPTIONS: if we allow struct options as optional arguments then we should take
+                            // the address correctly. 
+                            mkUnionCaseFieldGetUnprovenViaExprAddr (expr,mkSomeCase cenv.g,[destOptionTy cenv.g callerArgTy],0,m) 
                         else 
                             expr
                     | CalleeSide -> 
@@ -11098,7 +11102,7 @@ and MakeCheckSafeInitField g tinst thisValOpt rfref reqExpr (expr:Expr) =
         | None -> mkStaticRecdFieldGet (rfref, tinst, m)
         | Some thisVar -> 
             // This is an instance method, it must have a 'this' var
-            mkRecdFieldGet g (exprForVal m thisVar, rfref, tinst, m)
+            mkRecdFieldGetViaExprAddr (exprForVal m thisVar, rfref, tinst, m)
     let failureExpr = match thisValOpt with None -> mkCallFailStaticInit g m | Some _ -> mkCallFailInit g m
     mkCompGenSequential m (mkIfThen g m (mkILAsmClt g m availExpr reqExpr) failureExpr) expr
 
@@ -12242,7 +12246,7 @@ module IncrClassChecking =
                 let binders = 
                     [ match ctorInfo.InstanceCtorSafeInitInfo with 
                       | SafeInitField (rfref, _) ->  
-                        let setExpr = mkRecdFieldSet cenv.g (exprForVal m thisVal, rfref, thisTyInst, mkOne cenv.g m, m)
+                        let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne cenv.g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
@@ -13883,7 +13887,7 @@ module EstablishTypeDefinitionCores =
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
                hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) || 
-               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then 
+               hasStructAttr && not (match k with TyconStruct | TyconRecord | TyconUnion -> true | _ -> false) then 
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
@@ -13910,13 +13914,14 @@ module EstablishTypeDefinitionCores =
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_,unionCases,_) -> 
+
               for (UnionCase (_,_,args,_,_,m)) in unionCases do 
-              match args with
-              | UnionCaseFields flds -> 
+                match args with
+                | UnionCaseFields flds -> 
                   for (Field(_,_,_,ty,_,_,_,m)) in flds do 
                       let ty',_ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
                       yield (ty',m)
-              | UnionCaseFullType (ty,arity) -> 
+                | UnionCaseFullType (ty,arity) -> 
                   let ty',_ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
                   let argtysl,_ = GetTopTauTypeInFSharpForm cenv.g (arity |> TranslateTopValSynInfo m (TcAttributes cenv env) |> TranslatePartialArity []).ArgInfos ty' m
                   if argtysl.Length > 1 then 
@@ -13982,7 +13987,7 @@ module EstablishTypeDefinitionCores =
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
     let private TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo,synTyconRepr,_,preEstablishedHasDefaultCtor,hasSelfReferentialCtor, _)) = 
-        let (ComponentInfo(_, synTypars, _, id, doc, preferPostfix, synVis, _)) = synTyconInfo
+        let (ComponentInfo (_, synTypars, _,id, doc, preferPostfix, synVis,_)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
         match synTyconRepr with 
@@ -14039,12 +14044,15 @@ module EstablishTypeDefinitionCores =
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
 
-        let isStructRecordType = 
+        let isStructRecordOrUnionType = 
             match synTyconRepr with
-            | SynTypeDefnSimpleRepr.Record _ -> HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
-            | _ -> false
+            | SynTypeDefnSimpleRepr.Record _ 
+            | SynTypeDefnSimpleRepr.Union _ -> 
+                HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
+            | _ -> 
+                false
 
-        tycon.SetIsStructRecordType isStructRecordType
+        tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
         tycon.Data.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
@@ -14441,10 +14449,10 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Exception _ -> Some cenv.g.exn_ty
                   | SynTypeDefnSimpleRepr.None _ -> None
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
-                  | SynTypeDefnSimpleRepr.Union _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
+                  | SynTypeDefnSimpleRepr.Union _ 
                   | SynTypeDefnSimpleRepr.Record _ ->
-                      if tycon.IsStructRecordTycon then Some(cenv.g.system_Value_typ)
+                      if tycon.IsStructRecordOrUnionTycon then Some(cenv.g.system_Value_typ)
                       else None
                   | SynTypeDefnSimpleRepr.General (kind,_,slotsigs,fields,isConcrete,_,_,_) ->
                       let kind = InferTyconKind cenv.g (kind,attrs,slotsigs,fields,inSig,isConcrete,m)
@@ -14642,6 +14650,10 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck(false)
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
+
+                    if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                        errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo
 
@@ -14979,11 +14991,18 @@ module EstablishTypeDefinitionCores =
                 else
                     // Only collect once from each type instance.
                     let doneTypes = ty :: doneTypes 
-                    let fspecs = structTycon.AllFieldsAsList |> List.filter (fun fspec -> includeStaticFields || not fspec.IsStatic)
+                    let fspecs = 
+                        if structTycon.IsUnionTycon then 
+                            [ for uc in structTycon.UnionCasesArray do 
+                                 for c in uc.FieldTable.AllFieldsAsList  do
+                                    yield c]
+                        else
+                            structTycon.AllFieldsAsList 
+                    let fspecs = fspecs |> List.filter (fun fspec -> includeStaticFields || not fspec.IsStatic)
                     let doneTypes,acc = List.foldBack (accStructField structTycon tinst) fspecs (doneTypes,acc)
                     doneTypes,acc
             and accStructInstanceFields ty structTycon tinst (doneTypes,acc) = accStructFields false ty structTycon tinst (doneTypes,acc)
-            and accStructAllFields      ty structTycon tinst (doneTypes,acc) = accStructFields true  ty structTycon tinst (doneTypes,acc)
+            and accStructAllFields      ty (structTycon: Tycon) tinst (doneTypes,acc) = accStructFields true  ty structTycon tinst (doneTypes,acc)
 
             let acc = []
             let acc = 

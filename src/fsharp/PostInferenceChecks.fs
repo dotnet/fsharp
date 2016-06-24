@@ -733,22 +733,41 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprDirectArgs cenv env [arg1];         (* See mkRecdFieldSetViaExprAddr -- byref arg1 when #args=2 *)
         CheckExprs            cenv env [arg2]          (* Property setters on mutable structs come through here (TBC). *)
+
     | TOp.Coerce,[_ty1;_ty2],[x],_arity ->
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprInContext cenv env x context
+
     | TOp.Reraise,[_ty1],[],_arity ->
         CheckTypeInstNoByrefs cenv env m tyargs        
+
     | TOp.ValFieldGetAddr rfref,tyargs,[],_ ->
         if context <> DirectArg && cenv.reportErrors  then
           errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)); 
         CheckTypeInstNoByrefs cenv env m tyargs
         (* NOTE: there are no arg exprs to check in this case *)
+
     | TOp.ValFieldGetAddr rfref,tyargs,[rx],_ ->
         if context <> DirectArg && cenv.reportErrors then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(rfref.FieldName), m));
         (* This construct is used for &(rx.rfield) and &(rx->rfield). Relax to permit byref types for rx. [See Bug 1263]. *)
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprInContext cenv env rx DirectArg (* allow rx to be byref here *)
+
+    | TOp.UnionCaseFieldGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env arg1 DirectArg   
+
+    | TOp.UnionCaseTagGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env arg1 DirectArg   
+
+    | TOp.UnionCaseFieldGetAddr (uref, _idx),tyargs,[rx],_ ->
+        if context <> DirectArg && cenv.reportErrors then
+          errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env rx DirectArg // allow rx to be byref here 
+
     | TOp.ILAsm (instrs,tys),_,_,_  ->
         CheckTypeInstPermitByrefs cenv env m tys;
         CheckTypeInstNoByrefs cenv env m tyargs;
@@ -889,9 +908,9 @@ and CheckDecisionTree cenv env x =
     | TDSwitch (e,cases,dflt,m) -> CheckDecisionTreeSwitch cenv env (e,cases,dflt,m)
 
 and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
-    CheckExpr cenv env e;
-    List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) cases;
-    Option.iter (CheckDecisionTree cenv env) dflt
+    CheckExprInContext cenv env e DirectArg // can be byref for struct union switch
+    cases |> List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) 
+    dflt |> Option.iter (CheckDecisionTree cenv env) 
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
