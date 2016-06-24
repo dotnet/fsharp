@@ -876,8 +876,8 @@ but here has type
     member public this.``Warning.ConsistentWithLanguageService``() =  
         let fileContent = """
             open System
-            atomic atomic atomic atomic atomic atomic atomic atomic atomic atomic
-            atomic atomic atomic atomic atomic atomic atomic atomic atomic atomic"""
+            mixin mixin mixin mixin mixin mixin mixin mixin mixin mixin
+            mixin mixin mixin mixin mixin mixin mixin mixin mixin mixin"""
         let (_, project, file) = this.CreateSingleFileProject(fileContent, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let warnList = GetWarnings(project)
@@ -887,8 +887,8 @@ but here has type
     member public this.``Warning.ConsistentWithLanguageService.Comment``() =  
         let fileContent = """
             open System
-            //atomic atomic atomic atomic atomic atomic atomic atomic atomic atomic
-            //atomic atomic atomic atomic atomic atomic atomic atomic atomic atomic"""
+            //mixin mixin mixin mixin mixin mixin mixin mixin mixin mixin
+            //mixin mixin mixin mixin mixin mixin mixin mixin mixin mixin"""
         let (_, project, file) = this.CreateSingleFileProject(fileContent, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let warnList = GetWarnings(project)
