@@ -18,6 +18,7 @@ undefinedNamePatternDiscriminator,"The pattern discriminator '%s' is not defined
 missingElseBranch,"The 'if' expression is missing an 'else' branch. The 'then' branch has type '%s'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type."
 elseBranchHasWrongType,"All branches of an 'if' expression must return the same type. This expression was expected to have type '%s' but here has type '%s'."
 commaInsteadOfSemicolonInRecord,"A ';' is used to separate field values in records. Consider replacing ',' with ';'."
+derefInsteadOfNot,"The '!' operator is used to dereference a ref cell. Consider using 'not expr' here."
 buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type arguments, but here is given %d type argument(s)"
 returnUsedInsteadOfReturnBang,"Consider using 'return!' instead of 'return'."
 yieldUsedInsteadOfYieldBang,"Consider using 'yield!' instead of 'yield'."
