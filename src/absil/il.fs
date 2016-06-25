@@ -2063,6 +2063,8 @@ let mkILFormalGenericArgs (gparams:ILGenericParameterDefs)  =
  
 let mkILFormalBoxedTy tref gparams = mkILBoxedTy tref (mkILFormalGenericArgs gparams)
 
+let mkILFormalNamedTy bx tref gparams = mkILNamedTy bx tref (mkILFormalGenericArgs gparams)
+
 // -------------------------------------------------------------------- 
 // Operations on class etc. defs.
 // -------------------------------------------------------------------- 

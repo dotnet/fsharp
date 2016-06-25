@@ -12,3 +12,7 @@ neg95.fs(32,12,32,18): typecheck error FS3200: In a recursive declaration group,
 neg95.fs(39,12,39,18): typecheck error FS3200: In a recursive declaration group, 'open' declarations must come first in each module
 
 neg95.fs(45,10,45,22): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
+
+neg95.fs(52,10,52,21): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
+
+neg95.fs(55,10,55,22): typecheck error FS3204: A union type which is a struct must have only one case.

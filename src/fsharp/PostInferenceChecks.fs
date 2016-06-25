@@ -735,22 +735,41 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprDirectArgs cenv env [arg1];         (* See mkRecdFieldSetViaExprAddr -- byref arg1 when #args=2 *)
         CheckExprs            cenv env [arg2]          (* Property setters on mutable structs come through here (TBC). *)
+
     | TOp.Coerce,[_ty1;_ty2],[x],_arity ->
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprInContext cenv env x context
+
     | TOp.Reraise,[_ty1],[],_arity ->
         CheckTypeInstNoByrefs cenv env m tyargs        
+
     | TOp.ValFieldGetAddr rfref,tyargs,[],_ ->
         if context <> DirectArg && cenv.reportErrors  then
           errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)); 
         CheckTypeInstNoByrefs cenv env m tyargs
         (* NOTE: there are no arg exprs to check in this case *)
+
     | TOp.ValFieldGetAddr rfref,tyargs,[rx],_ ->
         if context <> DirectArg && cenv.reportErrors then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(rfref.FieldName), m));
         (* This construct is used for &(rx.rfield) and &(rx->rfield). Relax to permit byref types for rx. [See Bug 1263]. *)
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckExprInContext cenv env rx DirectArg (* allow rx to be byref here *)
+
+    | TOp.UnionCaseFieldGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env arg1 DirectArg   
+
+    | TOp.UnionCaseTagGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env arg1 DirectArg   
+
+    | TOp.UnionCaseFieldGetAddr (uref, _idx),tyargs,[rx],_ ->
+        if context <> DirectArg && cenv.reportErrors then
+          errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprInContext cenv env rx DirectArg // allow rx to be byref here 
+
     | TOp.ILAsm (instrs,tys),_,_,_  ->
         CheckTypeInstPermitByrefs cenv env m tys;
         CheckTypeInstNoByrefs cenv env m tyargs;
@@ -893,9 +912,9 @@ and CheckDecisionTree cenv env x =
     | TDSwitch (e,cases,dflt,m) -> CheckDecisionTreeSwitch cenv env (e,cases,dflt,m)
 
 and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
-    CheckExpr cenv env e;
-    List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) cases;
-    Option.iter (CheckDecisionTree cenv env) dflt
+    CheckExprInContext cenv env e DirectArg // can be byref for struct union switch
+    cases |> List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) 
+    dflt |> Option.iter (CheckDecisionTree cenv env) 
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
@@ -1319,15 +1338,42 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 else
                     errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm),m))
 
-            if minfo.NumArgs.Length > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
+            let numCurriedArgSets = minfo.NumArgs.Length
+
+            if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried nm,m))
 
-            if minfo.NumArgs.Length > 1 && 
+            if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || isByrefTy cenv.g ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
+            if numCurriedArgSets = 1 then
+                minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
+                |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                    match (optArgInfo, callerInfoInfo) with
+                    | _, NoCallerInfo -> ()
+                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
+                    | CallerSide(_), CallerLineNumber ->
+                        if not (typeEquiv cenv.g cenv.g.int32_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerLineNumber ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.int32_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m))
+                    | CallerSide(_), CallerFilePath ->
+                        if not (typeEquiv cenv.g cenv.g.string_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerFilePath ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m))
+                    | CallerSide(_), CallerMemberName ->
+                        if not (typeEquiv cenv.g cenv.g.string_ty ty) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                    | CalleeSide, CallerMemberName ->
+                        if not ((isOptionTy cenv.g ty) && (typeEquiv cenv.g cenv.g.string_ty (destOptionTy cenv.g ty))) then
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy cenv.g ty)),m)))
+            
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName
             let m = (match pinfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
