@@ -12651,7 +12651,10 @@ module MutRecBindingChecking =
                         let (TyconBindingDefn(containerInfo,newslotsOK,declKind,classMemberDef,m)) = defn
                         let (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev) = innerState
 
-                        if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(),(trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                        if tcref.IsTypeAbbrev then
+                            // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                            error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(),(trimRangeToLine m)))
+
                         if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(),(trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
 
                         match classMemberDef, containerInfo with
@@ -14539,8 +14542,6 @@ module EstablishTypeDefinitionCores =
                         let typars = tycon.Typars(m)
                         if ftyvs.Length <> typars.Length then 
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(),tycon.Range))
-                        //elif not ((ftyvs,typars) ||> List.forall2 typarEq) then 
-                        //    warning(Deprecated("The declared type parameters of this type abbreviation are not declared in the same order they are used in the type being abbreviated. Consider reordering the type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C<'a,'b> = C of ...'",tycon.Range))
 
                     if firstPass then
                         tycon.Data.entity_tycon_abbrev <- Some ty
@@ -15049,9 +15050,13 @@ module EstablishTypeDefinitionCores =
             let acc = 
                 match tycon.TypeAbbrev with 
                 | None -> acc
-                | Some ty -> 
-                    //if not cenv.isSig && not cenv.haveSig && (tycon.Accessibility <> taccessPublic || tycon.TypeReprAccessibility <> taccessPublic) then 
-                    //   errorR(Error(FSComp.SR.tcTypeAbbreviationMustBePublic(),tycon.Range))
+                | Some ty ->                    
+                    match stripTyparEqns ty with 
+                    | TType_app (tc,_) -> 
+                        let tycon2 = tc.Deref
+                        if isLessAccessible tycon2.Accessibility tycon.Accessibility then
+                            errorR(Error(FSComp.SR.tcTypeAbbreviationMustHaveSameVisibility(tycon.DisplayName,tycon2.DisplayName),tycon.Range))
+                    | _ -> ()
                     accInAbbrevType ty acc
 
             acc
