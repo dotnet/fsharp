@@ -956,7 +956,6 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 1126,nrGlobalUsedOnlyAsFirstName,"'global' may only be used as the first name in a qualified path"
 1127,nrIsNotConstructorOrLiteral,"This is not a constructor or literal, or a constructor is being used incorrectly"
 1128,nrUnexpectedEmptyLongId,"Unexpected empty long identifier"
-1129,nrTypeIsNotARecord,"This expression was expected to have type '%s' but here an incompatible record type was given."
 1129,nrRecordDoesNotContainSuchLabel,"The record type '%s' does not contain a label '%s'."
 1130,nrInvalidFieldLabel,"Invalid field label"
 1132,nrInvalidExpression,"Invalid expression '%s'"
