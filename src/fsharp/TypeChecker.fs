@@ -4124,7 +4124,6 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
 #else
     let tys,tpenv = List.mapFold (TcTypeAndRecover cenv newOk CheckCxs ItemOccurence.UseInType env) tpenv synTypes
 #endif
-    //let tys = List.map mkTyparTy tps
     match memSpfn with 
     | SynMemberSig.Member (valSpfn,memberFlags,m) ->
         // REVIEW: Test pseudo constraints cannot refer to polymorphic methods.
