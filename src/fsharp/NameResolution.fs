@@ -2546,23 +2546,13 @@ let SuggestLabelsOfRelatedRecords (nenv:NameResolutionEnv) (id:Ident) (allFields
     UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, predictedLabels)
 
 /// Resolve a long identifier representing a record field 
-let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ mWholeExpr (mp,id:Ident) allFields =
+let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
     let m = id.idRange
     match mp with 
     | [] -> 
-        if isAppTy g typ then 
-            match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
-            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
-            | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
-                if isRecdTy g typ then
-                    // record label doesn't belong to record type -> predict other labels of same record                    
-                    error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
-                else
-                    error(Error(FSComp.SR.nrTypeIsNotARecord(typeName),mWholeExpr))
-        else 
+        let lookup() =
             let frefs = 
                 try Map.find id.idText nenv.eFieldLabels 
                 with :? KeyNotFoundException ->
@@ -2573,7 +2563,19 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ mWholeExpr (mp,id:Ident) a
             frefs 
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x,false))
-                        
+
+        if isAppTy g typ then 
+            match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
+            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
+            | None ->
+                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
+                if isRecdTy g typ then
+                    // record label doesn't belong to record type -> predict other labels of same record                    
+                    error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
+                else
+                    lookup()
+        else 
+            lookup()            
     | _ -> 
         let lid = (mp@[id])
         let tyconSearch ad = 
@@ -2594,8 +2596,8 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ mWholeExpr (mp,id:Ident) a
         if nonNil rest then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange));
         [(resInfo,item)]
 
-let ResolveField sink ncenv nenv ad typ mWholeExpr (mp,id) allFields =
-    let res = ResolveFieldPrim ncenv nenv ad typ mWholeExpr (mp,id) allFields
+let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
+    let res = ResolveFieldPrim ncenv nenv ad typ (mp,id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
     for (resInfo,_rfref) in res do

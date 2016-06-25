@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
 // Verify property setters must have type unit
-//<Expects id="FS1129" status="error" span="(10,66)">This expression was expected to have type 'unit' but here an incompatible record type was given.</Expects>
+//<Expects id="FS0001" status="error" span="(10,66)">This expression was expected to have type</Expects>
 
 type immut =       
   {
