@@ -376,7 +376,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The final state.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Fold")>]
-        val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T[] -> 'State
+        val inline fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T[] -> 'State
 
         /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
@@ -387,7 +387,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The state object after the folding function is applied to each element of the array.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("FoldBack")>]
-        val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State
+        val inline foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State
 
         /// <summary>Applies a function to pairs of elements drawn from the two collections, 
         /// left-to-right, threading an accumulator argument
@@ -726,7 +726,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
         /// <returns>The final result of the reductions.</returns>
         [<CompiledName("Reduce")>]
-        val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+        val inline reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
         /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
@@ -738,7 +738,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
         /// <returns>The final result of the reductions.</returns>
         [<CompiledName("ReduceBack")>]
-        val reduceBack: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+        val inline reduceBack: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
         /// <summary>Creates an array by replicating the given initial value.</summary>
         /// <param name="count">The number of elements to replicate.</param>
@@ -762,7 +762,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The array of state values.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Scan")>]
-        val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array:'T[] -> 'State[]
+        val inline scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array:'T[] -> 'State[]
 
         /// <summary>Like <c>foldBack</c>, but return both the intermediary and final results.</summary>
         /// <param name="folder">The function to update the state given the input elements.</param>
@@ -771,7 +771,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The array of state values.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("ScanBack")>]
-        val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State[]
+        val inline scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State[]
 
         /// <summary>Returns an array that contains one item only.</summary>
         ///
