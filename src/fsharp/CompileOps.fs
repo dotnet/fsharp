@@ -531,7 +531,7 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator","
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning","%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning","")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected","%s")
-let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","%s")
+let UnitTypeExpected1E() = DeclareResourceString("UnitTypeExpected1","")
 let UnitTypeExpected2E() = DeclareResourceString("UnitTypeExpected2","%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime","")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1","%s")
@@ -621,7 +621,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           (if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore )
       | ConstraintSolverTypesNotInEqualityRelation(denv,(TType_measure _ as t1),(TType_measure _ as t2),m,m2) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
           (if m.StartLine <> m2.StartLine then 
@@ -633,7 +633,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           (if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore)
       | ConstraintSolverTypesNotInSubsumptionRelation(denv,t1,t2,m,m2) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, cxs= NicePrint.minimalStringsOfTwoTypes denv t1 t2
           os.Append(ConstraintSolverTypesNotInSubsumptionRelationE().Format t2 t1 cxs) |> ignore
           (if m.StartLine <> m2.StartLine then 
@@ -654,9 +654,12 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           match contextInfo with
           | ContextInfo.OmittedElseBranch -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranch -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
-          | ContextInfo.TupleInRecordFields -> 
+          | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
-                os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore                
+                os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
+          | _ when t2 = "bool" && t1.EndsWith " ref" ->
+                os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
+                os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
       | ErrorFromAddingTypeEquation(_,_,_,_,((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _) as e), _, _)  ->  
           OutputExceptionR os e
@@ -1182,7 +1185,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           if perhapsProp then 
             os.Append(UnitTypeExpected2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
           else
-            os.Append(UnitTypeExpected1E().Format (NicePrint.stringOfTy denv ty)) |> ignore
+            os.Append(UnitTypeExpected1E().Format) |> ignore
       | RecursiveUseCheckedAtRuntime  _ -> 
           os.Append(RecursiveUseCheckedAtRuntimeE().Format) |> ignore
       | LetRecUnsound (_,[v],_) ->  

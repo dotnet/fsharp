@@ -1876,7 +1876,7 @@ and CanMemberSigsMatchUpToCheck
             if isArray1DTy g calledArg.CalledArgumentType then 
                 let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
                 let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
-                calledMeth.ParamArrayCallerArgs |> OptionD (IterateD (fun callerArg -> subsumeArg (CalledArg((0,0),false,NotOptional,false,None,reflArgInfo,paramArrayElemTy)) callerArg))
+                calledMeth.ParamArrayCallerArgs |> OptionD (IterateD (fun callerArg -> subsumeArg (CalledArg((0,0),false,NotOptional,NoCallerInfo,false,None,reflArgInfo,paramArrayElemTy)) callerArg))
             else
                 CompleteD)
         
@@ -1899,7 +1899,7 @@ and CanMemberSigsMatchUpToCheck
                     let calledArgTy = rfinfo.FieldType
                     rfinfo.Name, calledArgTy
             
-            subsumeArg (CalledArg((-1, 0), false, NotOptional, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
+            subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
         
         // - Always take the return type into account for
         //      -- op_Explicit, op_Implicit
@@ -2579,11 +2579,21 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 | true, true, 1 -> 
                         Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
                 | true, false, 2 -> 
-                        Some (mkRecdFieldSet g (argExprs.[0], rfref, tinst, argExprs.[1], m))
+                        // If we resolve to an instance field on a struct and we haven't yet taken 
+                        // the address of the object then go do that 
+                        if rfref.Tycon.IsStructOrEnumTycon  && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+                            let h = List.head argExprs
+                            let wrap,h' = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                            Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+                        else        
+                            Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
                 | false, true, 0 -> 
                         Some (mkStaticRecdFieldGet (rfref, tinst, m))
                 | false, false, 1 -> 
-                        Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+                        if rfref.Tycon.IsStructOrEnumTycon  && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                            Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+                        else 
+                            Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
                 | _ -> None 
             ResultD res
         | Choice3Of4 expr -> ResultD (Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m)))

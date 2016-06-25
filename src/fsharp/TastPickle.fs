@@ -2295,7 +2295,7 @@ and p_op x st =
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
     | TOp.Tuple tupInfo             -> 
          if evalTupInfoIsStruct tupInfo then 
-              p_byte 28 st
+              p_byte 29 st
          else 
               p_byte 2 st
     | TOp.Recd (a,b)                -> p_byte 3 st; p_tup2 p_recdInfo (p_tcref "recd op") (a,b) st
@@ -2308,7 +2308,7 @@ and p_op x st =
     | TOp.ExnFieldSet (a,b) -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a,b) st
     | TOp.TupleFieldGet (tupInfo,a)       -> 
          if evalTupInfoIsStruct tupInfo then 
-              p_byte 29 st; p_int a st
+              p_byte 30 st; p_int a st
          else 
               p_byte 11 st; p_int a st
     | TOp.ILAsm (a,b)                 -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
@@ -2328,8 +2328,9 @@ and p_op x st =
     | TOp.ValFieldGetAddr (a)        -> p_byte 25 st; p_rfref a st
     | TOp.UInt16s arr               -> p_byte 26 st; p_array p_uint16 arr st
     | TOp.Reraise                   -> p_byte 27 st
-       // Note tag byte 28 is taken for struct tuples, see above
+    | TOp.UnionCaseFieldGetAddr (a,b)     -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
        // Note tag byte 29 is taken for struct tuples, see above
+       // Note tag byte 30 is taken for struct tuples, see above
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 #endif
 
@@ -2391,8 +2392,11 @@ and u_op st =
             TOp.ValFieldGetAddr a
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
     | 27 -> TOp.Reraise
-    | 28 -> TOp.Tuple tupInfoStruct
-    | 29 -> let a = u_int st
+    | 28 -> let a = u_ucref st
+            let b = u_int st
+            TOp.UnionCaseFieldGetAddr (a,b) 
+    | 29 -> TOp.Tuple tupInfoStruct
+    | 30 -> let a = u_int st
             TOp.TupleFieldGet (tupInfoStruct, a) 
     | _ -> ufailwith st "u_op" 
 

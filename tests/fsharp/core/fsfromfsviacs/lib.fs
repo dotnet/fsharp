@@ -1,4 +1,4 @@
-
+module Lib
 (* An F# library which we use in a C# library, where we in turn use both the F# component and the C# library together from F# *)
 
 type recd1 = { recd1field1: int }
@@ -42,5 +42,75 @@ let tup3 = (2,3,4)
 let tup4 = (2,3,4,5)
 
 
+
+
+
+module StructUnionsTests =
+
+    [<Struct>]
+    type U0 = U0
+
+    let f0 x = match x with U0 -> 1
+
+    let v0 = f0 U0
+
+    [<Struct>]
+    type U1 = U1 of int
+
+    let f1 x = match x with U1(x) -> x + x
+
+    let v1 = f1 (U1(3))
+
+    [<Struct>]
+    type U2 = U2 of int * int
+
+    let f2 x = match x with U2(x,y) -> x + y
+
+    let v2 = f2 (U2(3,4))
+
+    [<Struct>]
+    type Ok3 = Ok3 of int * Ok3 list
+
+/// Nesting structs inside struct unions means taking the address of things during pattern matching
+module NestedStructUnionsTests =
+
+    [<Struct>]
+    type U1 = U1 of System.DateTime * string
+
+    [<Struct>]
+    type U2 = U2 of U1 * U1
+
+
+    let testPattern1(u2:U2) = 
+        match u2 with
+        | U2(u1a,u1b) ->
+            match u1a, u1b with 
+            | U1(dt1,s1), U1(dt2,s2)  -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
+
+    let testPattern2(u2:U2) = 
+        match u2 with
+        | U2(U1(dt1,s1),U1(dt2,s2)) -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
+
+    let testPattern3(u2:U2) = 
+        match u2 with
+        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
+
+
+    let testPattern1mut(u2:U2) = 
+        let mutable u2 = u2
+        match u2 with
+        | U2(u1a,u1b) ->
+            match u1a, u1b with 
+            | U1(dt1,s1), U1(dt2,s2)  -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
+
+    let testPattern2mut(u2:U2) = 
+        let mutable u2 = u2
+        match u2 with
+        | U2(U1(dt1,s1),U1(dt2,s2)) -> (dt1 = dt2) && (s1 = "a") && (s2 = "b")
+
+    let testPattern3mut(u2:U2) = 
+        let mutable u2 = u2
+        match u2 with
+        | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
 
 
