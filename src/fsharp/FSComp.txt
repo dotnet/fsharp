@@ -773,7 +773,7 @@ tcTypeAbbreviationHasTypeParametersMissingOnType,"This type abbreviation has one
 949,tcInvalidDelegateSpecification,"Delegate specifications must be of the form 'typ -> typ'"
 950,tcDelegatesCannotBeCurried,"Delegate specifications must not be curried types. Use 'typ * ... * typ -> typ' for multi-argument delegates, and 'typ -> (typ -> typ)' for delegates returning function values."
 951,tcInvalidTypeForLiteralEnumeration,"Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char"
-#952,tcTypeAbbreviationMustBePublic,"Type abbreviations must be public. If you want to use a private type abbreviation you must use an explicit signature."
+952,tcTypeAbbreviationMustHaveSameVisibility,"The accessibility specified for the type abbreviation '%s' is more than that specified for the abbreviated type '%s'."
 953,tcTypeDefinitionIsCyclic,"This type definition involves an immediate cyclic reference through an abbreviation"
 954,tcTypeDefinitionIsCyclicThroughInheritance,"This type definition involves an immediate cyclic reference through a struct field or inheritance relation"
 tcReservedSyntaxForAugmentation,"The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[<Sealed>] attribute to the type definition in the signature"
