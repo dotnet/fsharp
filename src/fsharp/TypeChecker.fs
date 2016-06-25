@@ -1872,7 +1872,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
     let frefSets = 
         let allFields = flds |> List.map (fun ((_,ident),_) -> ident)
         flds |> List.map (fun (fld,fldExpr) -> 
-            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty m fld allFields
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
             fld,frefSet, fldExpr)
     let relevantTypeSets = 
         frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
