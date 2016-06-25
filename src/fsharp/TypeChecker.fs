@@ -277,6 +277,8 @@ type TcEnv =
       // Information to enforce special restrictions on valid expressions 
       // for .NET constructors. 
       eCtorInfo : CtorInfo option
+
+      eCallerMemberName : string option
     } 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
     member tenv.NameEnv = tenv.eNameResEnv
@@ -298,7 +300,8 @@ let emptyTcEnv g  =
       eContextInfo=ContextInfo.NoContext
       eModuleOrNamespaceTypeAccumulator= ref (NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType=None
-      eCtorInfo=None }
+      eCtorInfo=None
+      eCallerMemberName=None}
 
 //-------------------------------------------------------------------------
 // Helpers related to determining if we're in a constructor and/or a class
@@ -1048,7 +1051,7 @@ type DeclKind =
     | IntrinsicExtensionBinding 
     /// Extensions to a type in a different assembly
     | ExtrinsicExtensionBinding 
-    | ClassLetBinding 
+    | ClassLetBinding of (* isStatic *) bool
     | ObjectExpressionOverrideBinding
     | ExpressionBinding 
 
@@ -1057,7 +1060,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> false
+        | ClassLetBinding _ -> false
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
@@ -1068,7 +1071,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
@@ -1088,7 +1091,7 @@ type DeclKind =
             | None -> AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.Property
         | IntrinsicExtensionBinding  -> AttributeTargets.Method ||| AttributeTargets.Property
         | ExtrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property
-        | ClassLetBinding -> AttributeTargets.Field ||| AttributeTargets.Method
+        | ClassLetBinding _ -> AttributeTargets.Field ||| AttributeTargets.Method
         | ExpressionBinding -> enum 0 // indicates attributes not allowed on expression 'let' bindings
 
     // Note: now always true
@@ -1097,7 +1100,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> true
         
@@ -1106,7 +1109,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding  -> true
         | ExtrinsicExtensionBinding -> true
-        | ClassLetBinding -> true
+        | ClassLetBinding _ -> true
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> false 
 
@@ -1115,7 +1118,7 @@ type DeclKind =
         | ModuleOrMemberBinding -> OverridesOK
         | IntrinsicExtensionBinding -> WarnOnOverrides
         | ExtrinsicExtensionBinding -> ErrorOnOverrides
-        | ClassLetBinding -> ErrorOnOverrides 
+        | ClassLetBinding _ -> ErrorOnOverrides 
         | ObjectExpressionOverrideBinding -> OverridesOK
         | ExpressionBinding -> ErrorOnOverrides 
 
@@ -8903,8 +8906,8 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, _reflArgInfo: ReflectedArgInfo) = 
-        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional 
+    let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
+        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfoInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
 
@@ -9261,7 +9264,7 @@ and TcMethodApplication
         if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.EnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CallerTyArgs) 
-                |> List.existsSquared (fun (ParamData(_,_,_,_,_,ty)) ->  
+                |> List.existsSquared (fun (ParamData(_,_,_,_,_,_,ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
             match argsOfAppTy cenv.g finalCalledMethInfo.EnclosingType with 
@@ -9390,7 +9393,16 @@ and TcMethodApplication
                                 | ByrefTy cenv.g inst ->
                                     build inst (PassByRef(inst, currDfltVal))
                                 | _ ->
-                                    emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
+                                    match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                                    | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
+                                        emptyPreBinder,Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                                    | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
+                                        emptyPreBinder,Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, currCalledArgTy)
+                                    | CallerMemberName, Some(callerName) when (typeEquiv cenv.g currCalledArgTy cenv.g.string_ty) ->
+                                        emptyPreBinder,Expr.Const(Const.String(callerName), mMethExpr, currCalledArgTy)
+                                    | _ ->
+                                        emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
+                                    
                           | WrapperForIDispatch ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
@@ -9412,13 +9424,25 @@ and TcMethodApplication
                               let wrapper2,rhs = build currCalledArgTy dfltVal2
                               (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr (mkLocalValRef v)
                       build calledArgTy dfltVal
-                  | CalleeSide -> 
+                  | CalleeSide ->
                       let calledNonOptTy = 
                           if isOptionTy cenv.g calledArgTy then 
                               destOptionTy cenv.g calledArgTy 
                           else
                               calledArgTy // should be unreachable
-                      emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
+
+                      match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                      | CallerLineNumber, _ when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
+                          let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[lineExpr],mMethExpr)
+                      | CallerFilePath, _ when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                          let filePathExpr = Expr.Const(Const.String(System.IO.Path.GetFullPath(mMethExpr.FileName)), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[filePathExpr],mMethExpr)
+                      | CallerMemberName, Some(callerName) when typeEquiv cenv.g calledNonOptTy cenv.g.string_ty ->
+                          let memberNameExpr = Expr.Const(Const.String(callerName), mMethExpr, calledNonOptTy)
+                          emptyPreBinder,mkUnionCaseExpr(mkSomeCase cenv.g,[calledNonOptTy],[memberNameExpr],mMethExpr)
+                      | _ ->
+                          emptyPreBinder,mkUnionCaseExpr(mkNoneCase cenv.g,[calledNonOptTy],[],mMethExpr)
 
               // Combine the variable allocators (if any)
               let wrapper = (wrapper >> wrapper2)
@@ -9428,12 +9452,11 @@ and TcMethodApplication
 
         // Handle optional arguments
         let wrapOptionalArg (assignedArg: AssignedCalledArg<_>) =
-            let (CallerArg(callerArgTy,m,isOptCallerArg,expr)) =  assignedArg.CallerArg
+            let (CallerArg(callerArgTy,m,isOptCallerArg,expr)) = assignedArg.CallerArg
             match assignedArg.CalledArg.OptArgInfo with 
             | NotOptional -> 
                 if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(),m))
                 assignedArg
-
             | _ -> 
                 let expr = 
                     match assignedArg.CalledArg.OptArgInfo with 
@@ -9782,8 +9805,26 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
     match bind with 
 
     | NormalizedBinding(vis,bkind,isInline,isMutable,attrs,doc,_,valSynData,pat,NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr),mBinding,spBind) ->
-        
         let (SynValData(memberFlagsOpt,valSynInfo,_)) = valSynData 
+
+        let callerName = 
+            match declKind, bkind, pat with
+            | ExpressionBinding, _, _ -> envinner.eCallerMemberName
+            | _, _, SynPat.Named(_,name,_,_,_) -> 
+                match memberFlagsOpt with
+                | Some(memberFlags) ->
+                    match memberFlags.MemberKind with
+                    | MemberKind.PropertyGet | MemberKind.PropertySet | MemberKind.PropertyGetSet -> Some(name.idText.Substring(4))
+                    | MemberKind.ClassConstructor -> Some(".ctor")
+                    | MemberKind.Constructor -> Some(".ctor")
+                    | _ -> Some(name.idText)
+                | _ -> Some(name.idText)
+            | ClassLetBinding(false), DoBinding, _ -> Some(".ctor")
+            | ClassLetBinding(true), DoBinding, _ -> Some(".cctor")
+            | ModuleOrMemberBinding, StandaloneExpression, _ -> Some(".cctor")
+            | _, _, _ -> envinner.eCallerMemberName
+
+        let envinner = {envinner with eCallerMemberName = callerName }
 
         let attrTgt = DeclKind.AllowedAttribTargets memberFlagsOpt declKind 
 
@@ -9816,8 +9857,10 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
         if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning(mBinding))
 
         if isVolatile then 
-            if declKind <> ClassLetBinding then 
-                errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(),mBinding))
+            match declKind with
+            | ClassLetBinding(_) -> ()
+            | _ -> errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(),mBinding))
+
             if (not isMutable || isThreadStatic) then 
                 errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(),mBinding))
 
@@ -11703,7 +11746,7 @@ module IncrClassChecking =
             // --- Create this for use inside constructor 
             let thisId  = ident ("this",m)
             let thisValScheme  = ValScheme(thisId,NonGenericTypeScheme(thisTy),None,None,false,ValInline.Never,CtorThisVal,None,true,false,false,false)
-            let thisVal    = MakeAndPublishVal cenv env (ParentNone,false,ClassLetBinding,ValNotInRecScope,thisValScheme,[],XmlDoc.Empty,None,false)
+            let thisVal    = MakeAndPublishVal cenv env (ParentNone,false,ClassLetBinding(false),ValNotInRecScope,thisValScheme,[],XmlDoc.Empty,None,false)
             thisVal
 
         {TyconRef                         = tcref
@@ -12723,14 +12766,14 @@ module MutRecBindingChecking =
                                 if isRec then
                                 
                                     // Type check local recursive binding 
-                                    let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo,NoNewSlots,ClassLetBinding,bind))
+                                    let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo,NoNewSlots,ClassLetBinding(isStatic),bind))
                                     let binds,env,tpenv = TcLetrec ErrorOnOverrides cenv envForBinding tpenv (binds,scopem(*bindsm*),scopem)
                                     let bindRs = [IncrClassBindingGroup(binds,isStatic,true)]
                                     binds,bindRs,env,tpenv 
                                 else
 
                                     // Type check local binding 
-                                    let binds,env,tpenv = TcLetBindings cenv envForBinding ExprContainerInfo ClassLetBinding tpenv (binds,bindsm,scopem)
+                                    let binds,env,tpenv = TcLetBindings cenv envForBinding ExprContainerInfo (ClassLetBinding(isStatic)) tpenv (binds,bindsm,scopem)
                                     let binds,bindRs = 
                                         binds 
                                         |> List.map (function
