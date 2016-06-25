@@ -40,7 +40,7 @@ type IlxUnionHasHelpers =
    | SpecialFSharpOptionHelpers 
    
 type IlxUnionRef = 
-    | IlxUnionRef of ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -48,6 +48,7 @@ type IlxUnionSpec =
     member GenericArgs : ILGenericArgs
     member Alternatives : IlxUnionAlternative list
     member AlternativesArray : IlxUnionAlternative[]
+    member Boxity : ILBoxity
     member TypeRef : ILTypeRef 
     member IsNullPermitted : bool
     member HasHelpers : IlxUnionHasHelpers

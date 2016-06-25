@@ -325,4 +325,48 @@ let [<Test>] ``can properly construct a struct record using FSharpValue.MakeReco
     let d = (fields.[1] :?> int)
     Assert.AreEqual (999, d)
 
+type DefaultLayoutMutableRecord =
+    {   mutable First   : int
+        mutable Second  : float
+        mutable Third   : decimal
+        mutable Fourth  : int
+    }
+
+let inline CX_get_A(x: ^T) = 
+    ( (^T : (member A : int) (x)) )
+
+let inline CX_get_C(x: ^T) = 
+    ( (^T : (member C : int) (x)) )
+
+let inline CX_set_First(x: ^T, v) = 
+    ( (^T : (member First : int with set) (x,v)) )
+
+
+type Members() = 
+    static member CreateMutableStructRecord() = { M1 = 1; M2 = 2 } 
+
+
+let [<Test>] ``inline constraints resolve correctly`` () =
+    let v = CX_get_A ({ A = 1; B = 2 })
+    Assert.AreEqual (1, v)
+
+    let v2 = CX_get_C ({ C = 1; D = 2 })
+    Assert.AreEqual (1, v2)
+    
+    let mutable m : DefaultLayoutMutableRecord =
+        {   First   = 0xbaad1
+            Second  = 0.987654
+            Third   = 100.32M
+            Fourth  = 0xbaad4 }
+
+    let v3 = CX_set_First (m,1)
+    Assert.AreEqual (1, m.First)
+
+let [<Test>] ``member setters resolve correctly`` () =
+
+    let v = Members.CreateMutableStructRecord()
+    Assert.AreEqual (1, v.M1)
+    
+    //let v2 = Members.CreateMutableStructRecord(M1 = 100)
+    //Assert.AreEqual (100, v2.M1)
     

@@ -1253,7 +1253,7 @@ let FindMethodDefIdx cenv mdkey =
               let (TdKey (tenc2,tname2)) = typeNameOfIdx mdkey2.TypeIdx
               dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
               dprintn ("generic arity: "+string mdkey2.GenericArity) 
-              dprintn (sprintf "mdkey2: %A" mdkey2)) 
+              dprintn (sprintf "mdkey2: %+A" mdkey2)) 
       raise MethodDefNotFound
 
 

@@ -187,12 +187,35 @@ val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst           
 val mkStaticRecdFieldSet           :        RecdFieldRef   * TypeInst * Expr        * range -> Expr
 val mkStaticRecdFieldGetAddr       :        RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldSetViaExprAddr      : Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
-val mkUnionCaseTagGet              : Expr * TyconRef       * TypeInst               * range -> Expr
+val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * range -> Expr
+
+/// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
 val mkUnionCaseProof               : Expr * UnionCaseRef   * TypeInst               * range -> Expr
-val mkUnionCaseFieldGetProven      : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
-val mkUnionCaseFieldGetUnproven    : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
-val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
+
+/// Build a 'TOp.UnionCaseFieldGet' expression for something we've already determined to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
+val mkUnionCaseFieldGetProvenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+
+/// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
+val mkUnionCaseFieldGetAddrProvenViaExprAddr  : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+
+/// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
+val mkUnionCaseFieldGetUnprovenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+
+/// Build a 'TOp.UnionCaseFieldSet' expression. For ref-unions, the input expression has 'TType_ucase', which is 
+/// an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
 val mkUnionCaseFieldSet            : Expr * UnionCaseRef   * TypeInst * int  * Expr * range -> Expr
+
+/// Like mkUnionCaseFieldGetUnprovenViaExprAddr, but for struct-unions, the input should be a copy of the expression.
+val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+
+val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
 //-------------------------------------------------------------------------
@@ -218,6 +241,7 @@ val evalTupInfoIsStruct : TupInfo -> bool
 
 exception DefensiveCopyWarning of string * range 
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
+val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr
 val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr
 
 //-------------------------------------------------------------------------
@@ -816,7 +840,6 @@ val mkValAddr  : range -> ValRef -> Expr
 //------------------------------------------------------------------------- 
 
 val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
-val mkRecdFieldSet : TcGlobals -> Expr * RecdFieldRef * TypeInst * Expr * range -> Expr
 
 //-------------------------------------------------------------------------
 //  Get the targets used in a decision graph (for reporting warnings)
@@ -1028,7 +1051,7 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
-val isUnionCaseAllocObservable : UnionCaseRef -> bool
+val isUnionCaseRefAllocObservable : UnionCaseRef -> bool
 val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
 val isExnAllocObservable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
