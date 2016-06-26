@@ -2175,37 +2175,37 @@ Microsoft.FSharp.Core.FSharpResult`2+Error[TOk,TError]: System.String ToString()
 Microsoft.FSharp.Core.FSharpResult`2+Error[TOk,TError]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpResult`2+Error[TOk,TError]: TError Item
 Microsoft.FSharp.Core.FSharpResult`2+Error[TOk,TError]: TError get_Item()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean Equals(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean IsError
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean IsOk
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean get_IsError()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Boolean get_IsOk()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 CompareTo(System.Object)
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 Tag
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: Int32 get_Tag()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: System.String ToString()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: System.Type GetType()
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: TOk Item
-Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]: TOk get_Item()
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: Boolean Equals(System.Object)
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: Int32 Error
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: Int32 Success
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: System.String ToString()
-Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]: System.Type GetType()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean Equals(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean IsError
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean IsOk
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean get_IsError()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Boolean get_IsOk()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 CompareTo(System.Object)
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 GetHashCode()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 Tag
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: Int32 get_Tag()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: System.String ToString()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: System.Type GetType()
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: TOk Item
+Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]: TOk get_Item()
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: Int32 Error
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: Int32 GetHashCode()
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: Int32 Ok
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: System.String ToString()
+Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean Equals(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean IsError
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean IsSuccess
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean IsOk
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean get_IsError()
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean get_IsSuccess()
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Boolean get_IsOk()
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpResult`2[TOk,TError])
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 CompareTo(System.Object)
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -2214,10 +2214,10 @@ Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 GetHashCode(System.Colle
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 Tag
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2+Error[TOk,TError]
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2+Success[TOk,TError]
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2+Tags[T1,T2]
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2[TOk,TError] NewError(T2)
-Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2[TOk,TError] NewSuccess(T1)
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2+Ok[TOk,TError]
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2+Tags[TOk,TError]
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2[TOk,TError] NewError(TError)
+Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: Microsoft.FSharp.Core.FSharpResult`2[TOk,TError] NewOk(TOk)
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: System.String ToString()
 Microsoft.FSharp.Core.FSharpResult`2[TOk,TError]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpTypeFunc: Boolean Equals(System.Object)

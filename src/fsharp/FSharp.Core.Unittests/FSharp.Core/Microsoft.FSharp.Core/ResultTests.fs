@@ -14,7 +14,7 @@ type EmailValidation=
     | NoAt
 
 module Results=
-    let bind f m = match m with Error e -> Error e | Success x -> f x
+    let bind f m = match m with Error e -> Error e | Ok x -> f x
 
 open Results
 
@@ -22,10 +22,10 @@ open Results
 type ResultTests() =
 
     let fail_if_empty email=
-        if String.IsNullOrEmpty(email) then Error Empty else Success email
+        if String.IsNullOrEmpty(email) then Error Empty else Ok email
 
     let fail_if_not_at (email:string)=
-        if (email.Contains("@")) then Success email else Error NoAt
+        if (email.Contains("@")) then Ok email else Error NoAt
 
     let validate_email =
         fail_if_empty
@@ -40,5 +40,5 @@ type ResultTests() =
     member this.CanChainTogetherSuccessiveValidations() =
         test_validate_email "" (Error Empty)
         test_validate_email "something_else" (Error NoAt)
-        test_validate_email "some@email.com" (Success "some@email.com")
+        test_validate_email "some@email.com" (Ok "some@email.com")
 
