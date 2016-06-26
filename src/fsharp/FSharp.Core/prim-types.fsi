@@ -1775,9 +1775,11 @@ namespace Microsoft.FSharp.Core
     /// <summary>Helper type for error handling without exceptions.</summary>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
-    type Result<'T1,'T2> = 
-      | Success of 'T1 
-      | Error of 'T2
+    type Result<'TOk,'TError> = 
+      /// Represents an OK or a Successful result. The code succeeded with a value of 'TOk.
+      | Ok of 'TOk 
+      /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
+      | Error of 'TError
 
 namespace Microsoft.FSharp.Collections
 
