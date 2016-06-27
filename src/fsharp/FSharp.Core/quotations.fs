@@ -24,7 +24,7 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.LayoutOps
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type BindingFlags = ReflectionAdapters.BindingFlags
+type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------
