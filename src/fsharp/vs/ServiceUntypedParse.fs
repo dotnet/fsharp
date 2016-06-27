@@ -603,7 +603,7 @@ module UntypedParseImpl =
                         | _ -> defaultTraverse(expr) }
         AstTraversal.Traverse(pos, parseTree, walker)
     
-    type TS = AstTraversal.TraverseStep
+    type internal TS = AstTraversal.TraverseStep
 
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option) : CompletionContext option = 
