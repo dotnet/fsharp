@@ -12,7 +12,7 @@ __DOTNET_TOOLS_VERSION=$(cat $__scriptpath/DotnetCLIVersion.txt)
 __BUILD_TOOLS_PATH=$__PACKAGES_DIR/Microsoft.DotNet.BuildTools/$__BUILD_TOOLS_PACKAGE_VERSION/lib
 __PROJECT_JSON_PATH=$__TOOLRUNTIME_DIR/$__BUILD_TOOLS_PACKAGE_VERSION
 __PROJECT_JSON_FILE=$__PROJECT_JSON_PATH/project.json
-__PROJECT_JSON_CONTENTS="{ \"dependencies\": { \"Microsoft.DotNet.BuildTools\": \"$__BUILD_TOOLS_PACKAGE_VERSION\" }, \"frameworks\": { \"dnxcore50\": { } } }"
+__PROJECT_JSON_CONTENTS="{ \"dependencies\": { \"Microsoft.DotNet.BuildTools\": \"$__BUILD_TOOLS_PACKAGE_VERSION\" }, \"frameworks\": { \"netcoreapp1.0\": { } } }"
 
 OSName=$(uname -s)
 case $OSName in
@@ -24,14 +24,12 @@ case $OSName in
 
     Linux)
         OS=Linux
-        source /etc/os-release
-        if [ "$ID" == "centos" -o "$ID" == "rhel" ]; then
-            __DOTNET_PKG=dotnet-dev-centos-x64
-        elif [ "$ID" == "ubuntu" -o "$ID" == "debian" ]; then
-            __DOTNET_PKG=dotnet-dev-ubuntu-x64
+        if [ ! -e /etc/os-release ]; then
+            echo "Cannot determine Linux distribution, asuming Ubuntu 14.04."
+            __DOTNET_PKG=dotnet-dev-ubuntu.14.04-x64
         else
-            echo "Unsupported Linux distribution '$ID' detected. Downloading ubuntu-x64 tools."
-            __DOTNET_PKG=dotnet-dev-ubuntu-x64
+            source /etc/os-release
+            __DOTNET_PKG="dotnet-dev-$ID.$VERSION_ID-x64"
         fi
         ;;
 
@@ -47,7 +45,7 @@ if [ ! -e $__PROJECT_JSON_FILE ]; then
     echo "Running: $__scriptpath/init-tools.sh" > $__init_tools_log
     if [ ! -e $__DOTNET_PATH ]; then
         echo "Installing dotnet cli..."
-        __DOTNET_LOCATION="https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/${__DOTNET_TOOLS_VERSION}/${__DOTNET_PKG}.${__DOTNET_TOOLS_VERSION}.tar.gz"
+        __DOTNET_LOCATION="https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/${__DOTNET_TOOLS_VERSION}/${__DOTNET_PKG}.${__DOTNET_TOOLS_VERSION}.tar.gz"
         # curl has HTTPS CA trust-issues less often than wget, so lets try that first.
         echo "Installing '${__DOTNET_LOCATION}' to '$__DOTNET_PATH/dotnet.tar'" >> $__init_tools_log
         which curl > /dev/null 2> /dev/null
@@ -55,16 +53,10 @@ if [ ! -e $__PROJECT_JSON_FILE ]; then
             mkdir -p "$__DOTNET_PATH"
             wget -q -O $__DOTNET_PATH/dotnet.tar ${__DOTNET_LOCATION}
         else
-            curl -sSL --create-dirs -o $__DOTNET_PATH/dotnet.tar ${__DOTNET_LOCATION}
+            curl --retry 10 -sSL --create-dirs -o $__DOTNET_PATH/dotnet.tar ${__DOTNET_LOCATION}
         fi
         cd $__DOTNET_PATH
         tar -xf $__DOTNET_PATH/dotnet.tar
-        if [ -n "$BUILDTOOLS_OVERRIDE_RUNTIME" ]; then
-            find $__DOTNET_PATH -name *.ni.* | xargs rm 2>/dev/null
-            cp -R $BUILDTOOLS_OVERRIDE_RUNTIME/* $__DOTNET_PATH/bin
-            cp -R $BUILDTOOLS_OVERRIDE_RUNTIME/* $__DOTNET_PATH/bin/dnx
-            cp -R $BUILDTOOLS_OVERRIDE_RUNTIME/* $__DOTNET_PATH/runtime/coreclr
-        fi
 
         cd $__scriptpath
     fi
@@ -82,6 +74,10 @@ if [ ! -e $__PROJECT_JSON_FILE ]; then
     echo "Initializing BuildTools..."
     echo "Running: $__BUILD_TOOLS_PATH/init-tools.sh $__scriptpath $__DOTNET_CMD $__TOOLRUNTIME_DIR" >> $__init_tools_log
     $__BUILD_TOOLS_PATH/init-tools.sh $__scriptpath $__DOTNET_CMD $__TOOLRUNTIME_DIR >> $__init_tools_log
+    if [ "$?" != "0" ]; then
+        echo "ERROR: An error occured when trying to initialize the tools. Please check '$__init_tools_log' for more details."
+        exit 1
+    fi
     echo "Done initializing tools."
 else
     echo "Tools are already initialized"
