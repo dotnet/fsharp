@@ -536,7 +536,7 @@ let rec sizeMeasure g ms =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkNativePtrType g ty = TType_app (g.nativeptr_tcr, [ty])
+let mkNativePtrTy g ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
 
 let mkArrayTy g rank ty m =
@@ -1181,6 +1181,8 @@ let mkStaticRecdFieldGetAddr(fref,tinst,m)          = Expr.Op (TOp.ValFieldGetAd
 let mkStaticRecdFieldGet(fref,tinst,m)               = Expr.Op (TOp.ValFieldGet(fref), tinst, [],m)
 let mkStaticRecdFieldSet(fref,tinst,e,m)             = Expr.Op (TOp.ValFieldSet(fref), tinst, [e],m)
 
+let mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m) = Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+
 let mkRecdFieldSetViaExprAddr (e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
 
 let mkUnionCaseTagGetViaExprAddr (e1,cref,tinst,m)      = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
@@ -1467,6 +1469,7 @@ let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> t
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
 let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                        | _ -> false) 
+let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
 let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false) 
 #if EXTENSIONTYPING
@@ -2662,6 +2665,7 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 //------------------------------------------------------------------------- 
 
 let destByrefTy g ty   = if isByrefTy g ty then List.head (argsOfAppTy g ty) else failwith "destByrefTy: not a byref type"
+let destNativePtrTy g ty   = if isNativePtrTy g ty then List.head (argsOfAppTy g ty) else failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty   = 
     match tryDestAppTy g ty with 
@@ -5478,7 +5482,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             match addrExprVal with
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
-        None, Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+        None, mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m)
 
     // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_) 

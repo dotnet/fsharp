@@ -10,7 +10,7 @@ let constraint = 10
 
 let continue = 10
 
-let fixed = 10
+
 let fori = 10
 
 let include  = 10
@@ -38,8 +38,6 @@ let virtual = 10
 //<Expects span="(9,5-9,15) status="warning" id="FS0046">The identifier 'constraint' is reserved for future use by F#</Expects>
 
 //<Expects span="(11,5-11,13) status="warning" id="FS0046">The identifier 'continue' is reserved for future use by F#</Expects>
-
-//<Expects span="(13,5-13,10) status="warning" id="FS0046">The identifier 'fixed' is reserved for future use by F#</Expects>
 //<Expects span="(14,5-14,9) status="warning" id="FS0046">The identifier 'fori' is reserved for future use by F#</Expects>
 
 //<Expects span="(16,5-16,12) status="warning" id="FS0046">The identifier 'include' is reserved for future use by F#</Expects>

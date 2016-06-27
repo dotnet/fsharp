@@ -219,6 +219,8 @@ val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeIn
 val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
+val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType * Expr * Expr * range -> Expr
+
 //-------------------------------------------------------------------------
 // Compiled view of tuples
 //------------------------------------------------------------------------- 
@@ -930,7 +932,7 @@ val ExprStats : Expr -> string
 // Make some common types
 //------------------------------------------------------------------------- 
 
-val mkNativePtrType  : TcGlobals -> TType -> TType
+val mkNativePtrTy  : TcGlobals -> TType -> TType
 val mkArrayType      : TcGlobals -> TType -> TType
 val isOptionTy     : TcGlobals -> TType -> bool
 val destOptionTy   : TcGlobals -> TType -> TType
@@ -1279,7 +1281,9 @@ val mkCompilerGeneratedAttr                          : TcGlobals -> int -> ILAtt
 //------------------------------------------------------------------------- 
 
 val isByrefTy : TcGlobals -> TType -> bool
+val isNativePtrTy : TcGlobals -> TType -> bool
 val destByrefTy : TcGlobals -> TType -> TType
+val destNativePtrTy : TcGlobals -> TType -> TType
 
 val isByrefLikeTyconRef : TcGlobals -> TyconRef -> bool
 val isByrefLikeTy : TcGlobals -> TType -> bool

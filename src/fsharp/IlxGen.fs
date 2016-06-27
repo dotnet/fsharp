@@ -1278,7 +1278,7 @@ type CodeGenBuffer(m:range,
                    alreadyUsedLocals:int,
                    zapFirstSeqPointToStart:bool) = 
 
-    let locals = new ResizeArray<((string * (Mark * Mark)) list * ILType)>(10)
+    let locals = new ResizeArray<((string * (Mark * Mark)) list * ILType * bool)>(10)
     let codebuf = new ResizeArray<ILInstr>(200)
     let exnSpecs = new ResizeArray<ILExceptionSpec>(10)
 
@@ -1417,20 +1417,20 @@ type CodeGenBuffer(m:range,
     member cgbuf.MethodName = methodName
     member cgbuf.PreallocatedArgCount = alreadyUsedArgs
 
-    member cgbuf.AllocLocal(ranges,ty) = 
+    member cgbuf.AllocLocal(ranges,ty,isFixed) = 
         let j = locals.Count
-        locals.Add((ranges,ty));
+        locals.Add((ranges,ty,isFixed));
         j 
 
-    member cgbuf.ReallocLocal(cond,ranges,ty) = 
+    member cgbuf.ReallocLocal(cond,ranges,ty,isFixed) = 
         let j = 
             match ResizeArray.tryFindIndexi cond locals with 
             | Some j -> 
-                let (prevRanges,_) = locals.[j]
-                locals.[j] <- ((ranges@prevRanges),ty);
+                let (prevRanges,_,isFixed) = locals.[j]
+                locals.[j] <- ((ranges@prevRanges),ty,isFixed);
                 j             
             | None -> 
-                cgbuf.AllocLocal(ranges,ty)
+                cgbuf.AllocLocal(ranges,ty,isFixed)
         let j = j + alreadyUsedLocals
         j
 
@@ -1562,7 +1562,7 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
     
     let localDebugSpecs : ILLocalDebugInfo list = 
         locals
-        |> List.mapi (fun i (nms,_) -> List.map (fun nm -> (i,nm)) nms)
+        |> List.mapi (fun i (nms,_,_isFixed) -> List.map (fun nm -> (i,nm)) nms)
         |> List.concat
         |> List.map (fun (i,(nm,(start,finish))) -> 
             { Range=(start.CodeLabel, finish.CodeLabel);
@@ -1570,7 +1570,8 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
 
     let ilLocals =
         locals
-        |> List.map (fun (infos, ty) ->
+        |> List.map (fun (infos, ty, isFixed) ->
+          let loc = 
             // in interactive environment, attach name and range info to locals to improve debug experience
             if cenv.opts.isInteractive && cenv.opts.generateDebugSymbols then
                 match infos with
@@ -1580,7 +1581,8 @@ let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,ee
                 | [] -> mkILLocal ty None 
             // if not interactive, don't bother adding this info
             else
-                mkILLocal ty None)
+                mkILLocal ty None
+          if isFixed then { loc with IsPinned=true } else loc)
 
     (ilLocals, 
      maxStack,
@@ -2178,7 +2180,7 @@ and UnionCodeGen (cgbuf: CodeGenBuffer) =
     { new EraseUnions.ICodeGen<Mark> with 
         member __.CodeLabel(m) = m.CodeLabel
         member __.GenerateDelayMark() = CG.GenerateDelayMark cgbuf "unionCodeGenMark"
-        member __.GenLocal(ilty) = cgbuf.AllocLocal([],ilty) |> uint16
+        member __.GenLocal(ilty) = cgbuf.AllocLocal([],ilty,false) |> uint16
         member __.SetMarkToHere(m) = CG.SetMarkToHere cgbuf m
         member __.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
         member __.EmitInstrs xs = CG.EmitInstrs cgbuf (pop 0) (Push []) xs }
@@ -2519,7 +2521,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                         // Only save arguments that have effects
                         if Optimizer.ExprHasEffect cenv.g laterArg then 
                             let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m cenv.g eenv.tyenv
-                            let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy) scopeMarks
+                            let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy, false) scopeMarks
                             GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
                             EmitSetLocal cgbuf loc
                             Choice1Of2 (ilTy,loc),eenv
@@ -2652,7 +2654,7 @@ and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
     CountCallFuncInstructions();
 
     // Generate the code code an ILX callfunc operation
-    let instrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
+    let instrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun ty -> cgbuf.AllocLocal([], ty,false) |> uint16) eenv.tyenv.Count isTailCall ilxClosureApps
     CG.EmitInstrs cgbuf (pop (1+args.Length)) (Push [ilActualRetTy]) instrs;
 
     // Done compiling indirect call...
@@ -2675,7 +2677,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1,m,resty,spTry) =
     let afterHandler = CG.GenerateDelayMark cgbuf "afterHandler"
     let eenvinner = {eenvinner with withinSEH = true}
     let ilResultTy = GenType cenv.amap m cenv.g eenvinner.tyenv resty
-    let whereToSave,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("tryres",m),ilResultTy) (startTryMark,endTryMark)
+    let whereToSave,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("tryres",m),ilResultTy, false) (startTryMark,endTryMark)
 
     // Generate the body of the try. In the normal case (SequencePointAtTry) we generate a sequence point
     // both on the 'try' keyword and on the start of the expression in the 'try'. For inlined code and
@@ -2835,7 +2837,7 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     
     let finishIdx,eenvinner = 
         if isFSharpStyle then 
-            let v,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop",m), cenv.g.ilg.typ_int32) (start,finish)
+            let v,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("endLoop",m), cenv.g.ilg.typ_int32, false) (start,finish)
             v, eenvinner
         else
             -1,eenvinner
@@ -3268,7 +3270,7 @@ and GenDefaultValue cenv cgbuf eenv (ty,m) =
         | _ -> 
             let ilTy = GenType cenv.amap m cenv.g eenv.tyenv ty
             LocalScope "ilzero" cgbuf (fun scopeMarks ->
-                let locIdx, _ = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("default",m), ilTy) scopeMarks
+                let locIdx, _ = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("default",m), ilTy, false) scopeMarks
                 // "initobj" (Generated by EmitInitLocal) doesn't work on byref types 
                 // But ilzero(&ty) only gets generated in the built-in get-address function so 
                 // we can just rely on zeroinit of all IL locals. 
@@ -5411,14 +5413,14 @@ and GenStoreVal cgbuf eenv m (vspec:Val) =
 // Allocate locals for values
 //-------------------------------------------------------------------------- 
  
-and AllocLocal cenv cgbuf eenv compgen (v,ty) (scopeMarks: Mark * Mark) = 
+and AllocLocal cenv cgbuf eenv compgen (v,ty,isFixed) (scopeMarks: Mark * Mark) = 
      // The debug range for the local
      let ranges = if compgen then [] else [(v,scopeMarks)]
      // Get an index for the local
      let j = 
         if cenv.opts.localOptimizationsAreOn 
-        then cgbuf.ReallocLocal((fun i (_,ty') -> not (IntMap.mem i eenv.liveLocals) && (ty = ty')),ranges,ty)
-        else cgbuf.AllocLocal(ranges,ty)
+        then cgbuf.ReallocLocal((fun i (_,ty',isFixed') -> not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')),ranges,ty,isFixed)
+        else cgbuf.AllocLocal(ranges,ty,isFixed)
      j, { eenv with liveLocals =  IntMap.add j () eenv.liveLocals  }
 
 and AllocLocalVal cenv cgbuf v eenv repr scopeMarks = 
@@ -5434,11 +5436,11 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
                 let cloinfo,_,_ = GetIlxClosureInfo cenv v.Range true None eenvinner (Option.get repr)
                 cloinfo
             
-            let idx,eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, cenv.g.ilg.typ_Object) scopeMarks
+            let idx,eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, cenv.g.ilg.typ_Object, false) scopeMarks
             Local (idx,Some(ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))),eenv
         else
             (* normal local *)
-            let idx,eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, GenTypeOfVal cenv eenv v) scopeMarks
+            let idx,eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, GenTypeOfVal cenv eenv v, v.IsFixed) scopeMarks
             Local (idx,None),eenv
     let eenv = AddStorageForVal cenv.g (v,notlazy repr) eenv
     Some repr, eenv
@@ -5508,7 +5510,7 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
 /// - and     because IL requires empty stack following a forward br (jump).
 and EmitSaveStack cenv cgbuf eenv m scopeMarks =
     let savedStack = (cgbuf.GetCurrentStack())
-    let savedStackLocals,eenvinner = List.mapFold (fun eenv ty -> AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("spill",m), ty) scopeMarks) eenv savedStack
+    let savedStackLocals,eenvinner = List.mapFold (fun eenv ty -> AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("spill",m), ty, false) scopeMarks) eenv savedStack
     List.iter (EmitSetLocal cgbuf) savedStackLocals;
     cgbuf.AssertEmptyStack();
     (savedStack,savedStackLocals),eenvinner (* need to return, it marks locals "live" *)
