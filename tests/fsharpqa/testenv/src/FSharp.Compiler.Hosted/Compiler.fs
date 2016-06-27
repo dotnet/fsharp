@@ -2,7 +2,7 @@ namespace FSharp.Compiler.Hosted
 open System
 open System.Text.RegularExpressions
 
-type CoreCompiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler
+type internal CoreCompiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler
 
 /// build issue location
 type Location =
