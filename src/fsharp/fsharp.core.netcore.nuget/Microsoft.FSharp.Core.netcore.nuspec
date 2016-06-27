@@ -14,7 +14,7 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
-            <group targetFramework=".NETStandard1.5">
+            <group targetFramework=".NETStandard1.6">
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
                 <dependency id="System.Linq.Expressions" version="4.1.0" />
