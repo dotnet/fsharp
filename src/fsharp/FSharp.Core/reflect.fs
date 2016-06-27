@@ -647,7 +647,7 @@ module internal Impl =
 
 #if FX_RESHAPED_REFLECTION
 open ReflectionAdapters
-type BindingFlags = ReflectionAdapters.BindingFlags
+type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
         
 [<Sealed>]
