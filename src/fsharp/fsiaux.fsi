@@ -43,14 +43,13 @@ type InteractiveSession =
     member internal AddedPrinters : Choice<(System.Type * (obj -> string)), 
                                            (System.Type * (obj -> obj))>  list
 
-    
     /// <summary>The command line arguments after ignoring the arguments relevant to the interactive
     /// environment and replacing the first argument with the name of the last script file,
     /// if any. Thus 'fsi.exe test1.fs test2.fs -- hello goodbye' will give arguments
     /// 'test2.fs', 'hello', 'goodbye'.  This value will normally be different to those
     /// returned by System.Environment.GetCommandLineArgs.</summary>
     member CommandLineArgs : string [] with get,set
-    
+
     /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
     member EventLoop: IEventLoop with get,set
     

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+	<Fragment>
+		<ComponentGroup Id="Compiler_OtherResources">
+
+			<ComponentRef Id="Compiler_OtherResources_Redist.txt" />
+			<ComponentRef Id="Compiler_OtherResources_ThirdPartyNotices.txt" />
+			<ComponentRef Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" />
+			
+		</ComponentGroup>
+        
+        <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
+            <Component Id="Compiler_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.Lang)))">
+                <File Id="Compiler_OtherResources_Redist.txt" Source="$(var.FSharpCoreRedistDir)\content\Redist.txt" />
+            </Component>
+        </DirectoryRef>
+		
+        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses">
+			<Component Id="Compiler_OtherResources_ThirdPartyNotices.txt" Guid="$(fsharp.guid(Compiler_OtherResources_ThirdPartyNotices.txt, $(var.Lang)))">
+                <File Id="Compiler_OtherResources_ThirdPartyNotices.txt" Source="$(var.BinariesDir)\setup\resources\ThirdPartyNotices.txt" />
+            </Component>
+        </DirectoryRef>
+		
+        <DirectoryRef Id="MicrosoftSDKs_FS_Licenses_$(fsharp.localeToId($(var.Lang)))">
+            <Component Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" Guid="$(fsharp.guid(Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf, $(var.Lang)))">
+                <File Id="Compiler_OtherResources_FSharp_eula.$(var.Lang).rtf" Source="$(var.BinariesDir)\setup\resources\eula\VF_EULA.$(var.Lang).rtf" />
+            </Component>
+        </DirectoryRef>
+	</Fragment>
+</Wix>

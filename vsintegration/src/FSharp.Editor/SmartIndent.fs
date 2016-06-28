@@ -92,7 +92,7 @@ type SmartIndent (textView : ITextView, textManager : IVsTextManager) =
             _textView <- null
 
 [<Export(typeof<ISmartIndentProvider>)>]
-[<ContentType("F#")>]
+[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
 type SmartIndentProvider [<ImportingConstructor>](serviceProvider : SVsServiceProvider) =
     interface ISmartIndentProvider with
 

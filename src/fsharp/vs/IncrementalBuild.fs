@@ -1262,8 +1262,8 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
 
     // Mark up the source files with an indicator flag indicating if they are the last source file in the project
     let sourceFiles = 
-        let flags = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-        (sourceFiles,flags) ||> List.map2 (fun (m,nm) flag -> (m,nm,flag))
+        let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
+        ((sourceFiles,flags) ||> List.map2 (fun (m,nm) flag -> (m,nm,(flag, isExe))))
 
     // Get the names and time stamps of all the non-framework referenced assemblies, which will act 
     // as inputs to one of the nodes in the build. 
@@ -1318,7 +1318,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
     /// This is a build task function that gets placed into the build rules as the computation for a VectorStamp
     ///
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (_m:range, filename:string, _isLastCompiland:bool) =
+    let StampFileNameTask (_m:range, filename:string, _isLastCompiland) =
         assertNotDisposed()
         FileSystem.GetLastWriteTimeShim(filename)
                             
@@ -1405,7 +1405,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                 errorLogger.Warning(e)
                 frameworkTcImports           
 
-        let tcEnvAtEndOfFile = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcEnvAtEndOfFile = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnvAtEndOfFile)
         let tcAcc = 
             { tcGlobals=tcGlobals
@@ -1564,7 +1564,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
     // START OF BUILD DESCRIPTION
 
     // Inputs
-    let fileNamesNode               = InputVector<range*string*bool> "FileNames"
+    let fileNamesNode               = InputVector<range*string*(bool*bool)> "FileNames"
     let referencedAssembliesNode    = InputVector<Choice<string,IProjectReference>*DateTime> "ReferencedAssemblies"
         
     // Build
@@ -1721,7 +1721,7 @@ type IncrementalBuilder(frameworkTcImportsCache: FrameworkImportsCache, tcConfig
                    System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0
                 || System.String.Compare(FileSystem.GetFullPathShim(f1),FileSystem.GetFullPathShim(f2),StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match TryGetSlotByInput(fileNamesNode,(rangeStartup,filename,false),partialBuild,CompareFileNames) with
+        match TryGetSlotByInput(fileNamesNode,(rangeStartup,filename,(false,false)),partialBuild,CompareFileNames) with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
         

@@ -42,6 +42,34 @@ type ArrayModule() =
 
 
     [<Test>]
+    member this.AllPairs() =
+        // integer array
+        let resultInt =  Array.allPairs [|1..3|] [|2..2..6|]
+        if resultInt <> [|(1,2);(1,4);(1,6)
+                          (2,2);(2,4);(2,6)
+                          (3,2);(3,4);(3,6)|] then Assert.Fail()
+
+        // string array
+        let resultStr = Array.allPairs [|"A"; "B"; "C" ; "D" |] [|"a";"b";"c";"d"|]
+        if resultStr <> [|("A","a");("A","b");("A","c");("A","d")
+                          ("B","a");("B","b");("B","c");("B","d")
+                          ("C","a");("C","b");("C","c");("C","d")
+                          ("D","a");("D","b");("D","c");("D","d")|] then Assert.Fail()
+
+        // empty array
+        if Array.allPairs [||]     [||] <> [||]  then Assert.Fail()
+        if Array.allPairs [|1..3|] [||] <> [||]  then Assert.Fail()
+        if Array.allPairs [||] [|1..3|] <> [||]  then Assert.Fail()
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs nullArr nullArr  |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs [||]    nullArr  |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.allPairs nullArr [||]     |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Append() =
         // integer array
         let intArray = Array.append [| 1; 2 |] [| 3; 4 |]

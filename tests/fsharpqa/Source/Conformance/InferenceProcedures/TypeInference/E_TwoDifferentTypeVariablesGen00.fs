@@ -3,10 +3,10 @@
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
 
-//<Expects id="FS0001" span="(104,48-104,49)" status="error">This expression was expected to have type.    'a    .but here has type.    'b</Expects>
-//<Expects id="FS0001" span="(105,48-105,49)" status="error">This expression was expected to have type.    int    .but here has type.    'b</Expects>
+//<Expects id="FS0001" span="(104,48-104,49)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
+//<Expects id="FS0001" span="(105,48-105,49)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
 //<Expects id="FS0001" span="(106,48-106,49)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(106,48-106,49)" status="error">Type constraint mismatch\. The type .    'b.+is not compatible with type.+C.+A type parameter is missing a constraint 'when 'b :> C'</Expects>
+//<Expects id="FS0193" span="(106,48-106,49)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
 //<Expects id="FS0041" span="(107,41-107,51)" status="error">No overloads match for method 'M'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
 
 
@@ -15,11 +15,11 @@
 
 
 
-//<Expects id="FS0001" span="(109,52-109,53)" status="error">This expression was expected to have type.    'a    .but here has type.    'b</Expects>
-//<Expects id="FS0001" span="(110,50-110,51)" status="error">This expression was expected to have type.    'b    .but here has type.    'a</Expects>
-//<Expects id="FS0001" span="(110,52-110,53)" status="error">This expression was expected to have type.    int    .but here has type.    'b</Expects>
+//<Expects id="FS0001" span="(109,52-109,53)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
+//<Expects id="FS0001" span="(110,50-110,51)" status="error">This expression was expected to have type.    ''b'    .but here has type.    ''a'</Expects>
+//<Expects id="FS0001" span="(110,52-110,53)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
 //<Expects id="FS0001" span="(111,52-111,53)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(111,52-111,53)" status="error">Type constraint mismatch\. The type .    'b    .is not compatible with type.    C    .A type parameter is missing a constraint 'when 'b :> C'</Expects>
+//<Expects id="FS0193" span="(111,52-111,53)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
 //<Expects id="FS0041" span="(112,41-112,55)" status="error">No overloads match for method 'M'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
 
 
@@ -30,10 +30,10 @@
 
 
 
-//<Expects id="FS0001" span="(114,51-114,52)" status="error">This expression was expected to have type.    'a    .but here has type.    'b</Expects>
-//<Expects id="FS0001" span="(115,51-115,52)" status="error">This expression was expected to have type.    int    .but here has type.    'b</Expects>
+//<Expects id="FS0001" span="(114,51-114,52)" status="error">This expression was expected to have type.    ''a'    .but here has type.    ''b'</Expects>
+//<Expects id="FS0001" span="(115,51-115,52)" status="error">This expression was expected to have type.    'int'    .but here has type.    ''b'</Expects>
 //<Expects id="FS0001" span="(116,51-116,52)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(116,51-116,52)" status="error">Type constraint mismatch\. The type .    'b    .is not compatible with type.    C    .A type parameter is missing a constraint 'when 'b :> C'</Expects>
+//<Expects id="FS0193" span="(116,51-116,52)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
 //<Expects id="FS0041" span="(117,41-117,54)" status="error">No overloads match for method 'M'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
 
 
@@ -45,7 +45,7 @@
 
 
 //<Expects id="FS0001" span="(119,52-119,53)" status="error">A type parameter is missing a constraint 'when 'b :> C'</Expects>
-//<Expects id="FS0193" span="(119,52-119,53)" status="error">Type constraint mismatch\. The type .    'b    .is not compatible with type.    C    .A type parameter is missing a constraint 'when 'b :> C'</Expects>
+//<Expects id="FS0193" span="(119,52-119,53)" status="error">Type constraint mismatch. The type.+''b'.+is not compatible with type</Expects>
 
 // These different return types are used to determine which overload got chosen
 type One = | One

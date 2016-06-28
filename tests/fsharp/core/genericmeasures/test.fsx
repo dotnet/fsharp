@@ -3,6 +3,7 @@ module Core_genericMeasures
 #else
 module Core_genericMeasures =
 #endif
+
     [<AllowNullLiteral>]
     type C<'T> = class end
     

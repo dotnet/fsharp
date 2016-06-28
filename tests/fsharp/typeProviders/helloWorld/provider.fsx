@@ -108,13 +108,15 @@ type public GlobalNamespaceProvider() =
 
 
 [<TypeProvider>]
-type public Provider() =
+type public Provider(config: TypeProviderConfig) =
     let thisAssembly = typeof<Provider>.Assembly
     let modul = thisAssembly.GetModules().[0]
     let rootNamespace = "FSharp.HelloWorld"
     let nestedNamespaceName1 = "FSharp.HelloWorld.NestedNamespace1"
     let nestedNamespaceName2 = "FSharp.HelloWorld.Nested.Nested.Nested.Namespace2"
 
+    do if not (config.ReferencedAssemblies |> Seq.exists (fun s -> s.Contains("FSharp.Core")) ) then 
+          failwith "expected FSharp.Core in type provider config references"
 
     // Test provision of erase methods with static parameters
     let helloWorldMethodWithStaticParameters =

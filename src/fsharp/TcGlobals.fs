@@ -6,9 +6,7 @@
 /// into the compiler.  This lets the compiler perform particular optimizations
 /// for these types and values, for example emitting optimized calls for
 /// comparison and hashing functions.  
-module internal Microsoft.FSharp.Compiler.TcGlobals 
-
-#nowarn "44" // This construct is deprecated. please use List.item
+module internal Microsoft.FSharp.Compiler.TcGlobals
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
@@ -995,7 +993,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   { ilg=ilg
 #if NO_COMPILER_BACKEND
 #else
-    ilxPubCloEnv=EraseClosures.new_cenv(ilg)
+    ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg)
 #endif
     knownIntrinsics                = knownIntrinsics
     knownFSharpCoreModules         = knownFSharpCoreModules
@@ -1279,7 +1277,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
                    let ty = mkNonGenericTy tcr 
                    nm, mkSysTyconRef sys nm, (fun _ -> ty)) 
         let entries2 =
-            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.nth tinst 0) (List.nth tinst 1))
+            [ "FSharpFunc`2",    fastFunc_tcr, (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
               "Tuple`2",       tuple2_tcr, decodeTupleTy
               "Tuple`3",       tuple3_tcr, decodeTupleTy
               "Tuple`4",       tuple4_tcr, decodeTupleTy
