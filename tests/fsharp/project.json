@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "Microsoft.NETCore.Platforms": "1.0.1",
-    "Microsoft.NETCore.Runtime": "1.0.2-rc4-24201-00",
     "NETStandard.Library": "1.6.0",
     "System.Collections": "4.0.11",
     "System.Collections.Immutable":"1.2.0",
@@ -24,7 +23,6 @@
     "System.Runtime": "4.1.0",
     "System.Runtime.Extensions": "4.1.0",
     "System.Runtime.InteropServices": "4.1.0",
-    "System.Runtime.InteropServices.PInvoke": "4.0.0-rc2-24027",
     "System.Runtime.Loader": "4.0.0",
     "System.Runtime.Numerics": "4.0.1",
     "System.Security.Cryptography.Algorithms": "4.2.0",
@@ -39,11 +37,10 @@
     "Microsoft.DiaSymReader.PortablePdb": "1.1.0",
     "Microsoft.DiaSymReader": "1.0.8",
 
-    "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2-rc2-24027", 
-    "Microsoft.NETCore.TestHost": "1.0.0-rc2-24027", 
-    "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-24027", 
-    "System.Reflection.Emit.ILGeneration": "4.0.2",
-    "System.Security.Cryptography.Primitives": "4.0.1",
+    "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2", 
+    "Microsoft.NETCore.TestHost": "1.0.0", 
+    "System.Reflection.Emit.ILGeneration": "4.0.1",
+    "System.Security.Cryptography.Primitives": "4.0.0"
   },
   "runtimes": {
     "win7-x86": { },
