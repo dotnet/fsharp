@@ -12,6 +12,10 @@ module internal FSharpCommonConstants =
     [<Literal>]
     let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     [<Literal>]
+    let editorFactoryGuidString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
+    [<Literal>]
+    let codePageEditorFactoryGuidString = "82A16493-EF43-47E0-B42D-D87BAAB5335D"
+    [<Literal>]
     let svsSettingsPersistenceManagerGuidString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
     [<Literal>]
     let FSharpLanguageName = "F#"

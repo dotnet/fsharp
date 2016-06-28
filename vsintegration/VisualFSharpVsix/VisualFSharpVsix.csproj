@@ -71,6 +71,7 @@
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="RegisterFsharpPackage.pkgdef" />
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
