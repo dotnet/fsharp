@@ -15013,12 +15013,12 @@ module EstablishTypeDefinitionCores =
                 | TType_ucase (UCRef(tc,_),tinst) 
                 | TType_app (tc,tinst) -> 
                     let tycon2 = tc.Deref
-                    let acc = accInAbbrevTypes tinst  acc
+                    let acc = accInAbbrevTypes tinst acc
                     // Record immediate recursive references 
                     if ListSet.contains (===) tycon2 tycons  then 
-                        (tycon,tycon2) ::acc 
+                        (tycon,tycon2) :: acc 
                     // Expand the representation of abbreviations 
-                    elif tc.IsTypeAbbrev  then
+                    elif tc.IsTypeAbbrev then
                         accInAbbrevType (reduceTyconRefAbbrev tc tinst) acc
                     // Otherwise H<inst> - explore the instantiation. 
                     else 
@@ -15045,21 +15045,10 @@ module EstablishTypeDefinitionCores =
 
             and accInAbbrevTypes tys acc = 
                 List.foldBack accInAbbrevType tys acc
-                
-            let acc = []
-            let acc = 
-                match tycon.TypeAbbrev with 
-                | None -> acc
-                | Some ty ->                    
-                    match stripTyparEqns ty with 
-                    | TType_app (tc,_) -> 
-                        let tycon2 = tc.Deref
-                        if isLessAccessible tycon2.Accessibility tycon.Accessibility then
-                            errorR(Error(FSComp.SR.tcTypeAbbreviationMustHaveSameVisibility(tycon.DisplayName,tycon2.DisplayName),tycon.Range))
-                    | _ -> ()
-                    accInAbbrevType ty acc
-
-            acc
+            
+            match tycon.TypeAbbrev with 
+            | None -> []
+            | Some ty -> accInAbbrevType ty []
 
         let edges = List.collect edgesFrom tycons
         let graph = Graph<Tycon, Stamp> ((fun tc -> tc.Stamp), tycons, edges)
