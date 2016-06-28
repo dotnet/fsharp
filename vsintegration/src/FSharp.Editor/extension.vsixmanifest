@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Vsix Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
+  <Identifier Id="FSharp.Editor">
+    <Name>Microsoft Visual FSharp Editor Extensions</Name>
+    <Author>Microsoft Corporation</Author>
+    <Version>15.0</Version>
+    <Description>Microsoft Visual FSharp Editor Extensions</Description>
+    <Locale>1033</Locale>
+    <SupportedProducts>
+      <VisualStudio Version="15.0">
+        <Edition>Pro</Edition>
+        <Edition>VWDExpress</Edition>
+        <Edition>WDExpress</Edition>
+      </VisualStudio>
+    </SupportedProducts>
+    <SupportedFrameworkRuntimeEdition MinVersion="4.6" />
+    <SystemComponent>true</SystemComponent>
+  </Identifier>
+  <References />
+  <Content>
+    <MefComponent>FSharp.Editor.dll</MefComponent>
+  </Content>
+</Vsix>

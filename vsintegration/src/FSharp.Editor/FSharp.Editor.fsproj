@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{65E0E82A-EACE-4787-8994-888674C2FE87}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.Editor</AssemblyName>
+    <UseVsVersion>true</UseVsVersion>
+    <TargetType>LIBRARY</TargetType>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <NoWarn>$(NoWarn);75</NoWarn>
+    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="TokenContext.fs" />
+    <Compile Include="SmartIndent.fs" />
+    <Compile Include="BraceCompletion.fs" />
+    <Content Include="extension.vsixmanifest">
+      <CopyToOutputDirectory>false</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Name>FSharp.LanguageService</Name>
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Name>FSharp.LanguageService.Base</Name>
+      <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Name>FSharp.LanguageService.Compiler</Name>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="Microsoft.VisualStudio.Editor" />
+    <Reference Include="Microsoft.VisualStudio.Text.UI" />
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf" />
+    <Reference Include="Microsoft.VisualStudio.Text.Data" />
+    <Reference Include="Microsoft.VisualStudio.Text.Logic" />
+    <Reference Include="Microsoft.VisualStudio.CoreUtility" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
+  </ItemGroup>
+  
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />  
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+</Project>

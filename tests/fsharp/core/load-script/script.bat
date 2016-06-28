@@ -1,6 +1,8 @@
 @echo off
 del 3.exe 2>nul 1>nul
-type 1.fsx 2.fsx 3.fsx
+type 1.fsx
+type 2.fsx
+type 3.fsx
 echo Test 1=================================================
 "%FSC%" 3.fsx --nologo
 3.exe
@@ -42,4 +44,6 @@ echo Test 16=================================================
 "%FSC%" ProjectDriver.fsx --nologo
 ProjectDriver.exe
 del ProjectDriver.exe
+echo Test 17=================================================
+"%FSI%" load-IncludeNoWarn211.fsx
 echo Done ==================================================

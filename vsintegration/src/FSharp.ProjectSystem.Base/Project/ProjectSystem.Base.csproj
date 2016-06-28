@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>CSharp</ProjectLanguage>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
+    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.ProjectSystem.Base</AssemblyName>
+    <UseVsVersion>true</UseVsVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
+    <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
+    <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
+    <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
+    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
+    <TargetFrameworkProfile></TargetFrameworkProfile>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+  </PropertyGroup>
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+    <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+    <StrongNames>true</StrongNames>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Conversion.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="EnvDTE.dll" />
+    <Reference Include="EnvDTE80.dll" />
+    <Reference Include="VSLangProj" />
+    <Reference Include="VSLangProj80" />
+    <Reference Include="microsoft.visualstudio.vcprojectengine" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
+    <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
+    <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />
+    <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />
+    <Compile Include="Misc\ConnectionPointContainer.cs" />
+    <Compile Include="Misc\ExternDll.cs" />
+    <Compile Include="Misc\NativeMethods.cs" />
+    <Compile Include="Misc\UnsafeNativeMethods.cs" />
+    <Compile Include="Misc\AutomationExtenderManager.cs" />
+    <Compile Include="AssemblyReferenceNode.cs" />
+    <Compile Include="GroupingReferenceNode.cs" />
+    <Compile Include="Attributes.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+
+    <!-- Automation Objects -->
+    <Compile Include="Automation\OAFileItem.cs" />
+    <Compile Include="Automation\OAFolderItem.cs" />
+    <Compile Include="Automation\OANullProperty.cs" />
+    <Compile Include="Automation\OAProject.cs" />
+    <Compile Include="Automation\OAProjectItem.cs" />
+    <Compile Include="Automation\OAProjectItems.cs" />
+    <Compile Include="Automation\OAProperties.cs" />
+    <Compile Include="Automation\OAProperty.cs" />
+    <Compile Include="Automation\OANavigableProjectItems.cs" />
+    <Compile Include="Automation\OAReferenceFolderItem.cs" />
+    <Compile Include="Automation\OAReferenceItem.cs" />
+
+    <!-- Objects needed to implement a Language Project -->
+    <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
+    <Compile Include="Automation\VSProject\OABuildManager.cs" />
+    <Compile Include="Automation\VSProject\OAComReference.cs" />
+    <Compile Include="Automation\VSProject\OAProjectReference.cs" />
+    <Compile Include="Automation\VSProject\OAReferenceBase.cs" />
+    <Compile Include="Automation\VSProject\OAReferences.cs" />
+    <Compile Include="Automation\VSProject\OAVSProject.cs" />
+    <Compile Include="Automation\VSProject\OAVSProjectItem.cs" />
+    <Compile Include="BuildDependency.cs" />
+    <Compile Include="BuildPropertyPage.cs" />
+    <Compile Include="ComReferenceNode.cs" />
+    <Compile Include="ConfigProvider.cs" />
+    <Compile Include="ConfigurationProperties.cs" />
+    <Compile Include="DataObject.cs" />
+    <Compile Include="DesignPropertyDescriptor.cs" />
+    <Compile Include="DocumentManager.cs" />
+    <Compile Include="EnumDependencies.cs"/>
+    <Compile Include="FileChangeManager.cs" />
+    <Compile Include="FileDocumentManager.cs" />
+    <Compile Include="FileNode.cs" />
+    <Compile Include="FolderNode.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="HierarchyNode.cs" />
+    <Compile Include="ImageHandler.cs" />
+    <Compile Include="Interfaces.cs" />
+    <Compile Include="IDEBuildLogger.cs" />
+    <Compile Include="ivssqm.cs" />
+    <Compile Include="LinkedFileNode.cs" />
+    <Compile Include="LocalizableProperties.cs" />
+    <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
+    <Compile Include="NodeProperties.cs" />
+    <Compile Include="OleServiceProvider.cs" />
+    <Compile Include="Output.cs" />
+    <Compile Include="OutputGroup.cs" />
+    <Compile Include="ProjectConfig.cs" />
+    <Compile Include="ProjectDesignerDocumentManager.cs" />
+    <Compile Include="ProjectElement.cs" />
+    <Compile Include="ProjectFactory.cs" />
+    <Compile Include="ProjectFileConstants.cs" />
+    <Compile Include="ProjectNode.cs" />
+    <Compile Include="ProjectNode.CopyPaste.cs" />
+    <Compile Include="ProjectNode.Events.cs" />
+    <Compile Include="ProjectOptions.cs" />
+    <Compile Include="ProjectPackage.cs" />
+    <Compile Include="ProjectReferenceNode.cs" />
+    <Compile Include="PropertiesEditorLauncher.cs" />
+    <Compile Include="ReferenceContainerNode.cs" />
+    <Compile Include="ReferenceNode.cs" />
+    <Compile Include="SolutionListener.cs" />
+    <Compile Include="SolutionListenerForProjectEvents.cs" />
+    <Compile Include="SolutionListenerForProjectOpen.cs" />
+    <Compile Include="SolutionListenerForProjectReferenceUpdate.cs" />
+    <Compile Include="StructuresEnums.cs" />
+    <Compile Include="SuspendFileChanges.cs" />
+    <Compile Include="Tracing.cs" />
+    <Compile Include="TrackDocumentsHelper.cs" />
+    <Compile Include="TypeConverters.cs" />
+    <Compile Include="Utilities.cs" />
+    <Compile Include="VsCommands.cs" />
+    <Compile Include="VSMDCodeDomProvider.cs" />
+    <Compile Include="VSProjectConstants.cs" />
+    <Compile Include="VSShellUtilities.cs" />
+    <Compile Include="SelectionListener.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Microsoft.VisualStudio.Package.Project.resx">
+      <LogicalName>Microsoft.VisualStudio.Package.Project.resources</LogicalName>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\imagelis.bmp">
+      <LogicalName>Resources.imagelis.bmp</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
+      <Name>FSharp.LanguageService.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Name>FSharp.LanguageService.Compiler</Name>
+      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+</Project>

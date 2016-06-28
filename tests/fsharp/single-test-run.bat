@@ -53,8 +53,8 @@ if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
 
 set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
 
-if "%REDUCED_RUNTIME%"=="1" (
-    echo REDUCED_RUNTIME set
+if "%SKIP_EXPENSIVE_TESTS%"=="1" (
+    echo SKIP_EXPENSIVE_TESTS set
     
     if not defined PERMUTATIONS (
         powershell.exe %PSH_FLAGS% -command "&{& '%~d0%~p0\PickPermutations.ps1' '%cd%' '%FSC%' '%PERMUTATIONS_LIST%'}" > _perm.txt
@@ -169,6 +169,19 @@ goto :EOF
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_BASIC_64 failed
   set ERRORMSG=%ERRORMSG% FSC_BASIC_64 failed;
+  )
+goto :EOF
+
+:FSC_CORECLR
+@echo do :FSC_CORECLR
+  if exist test.ok (del /f /q test.ok)
+  set platform=win7-x64
+  set packagesDir=%~d0%~p0..\..\packages
+  For %%A in ("%cd%") do ( Set TestCaseName=%%~nxA)
+  %CLIX% %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
+  dir test.ok > NUL 2>&1 ) || (
+  @echo :FSC_CORECLR failed
+  set ERRORMSG=%ERRORMSG% FSC_CORECLR failed;
   )
 goto :EOF
 

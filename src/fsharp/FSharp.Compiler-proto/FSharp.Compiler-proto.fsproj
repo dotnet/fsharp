@@ -56,6 +56,9 @@
       <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection\reshapedreflection.fs</Link>
+    </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
     </Compile>
@@ -95,6 +98,9 @@
     <Compile Include="..\..\utils\HashMultiMap.fs">
       <Link>HashMultiMap.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\EditDistance.fs">
+      <Link>Utilities\EditDistance.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\TaggedCollections.fsi">
       <Link>TaggedCollections.fsi</Link>
     </Compile>
@@ -103,6 +109,12 @@
     </Compile>
     <Compile Include="..\FlatList.fs">
       <Link>FlatList.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\illib.fs">
       <Link>illib.fs</Link>
@@ -130,12 +142,6 @@
     </Compile>
     <Compile Include="..\..\absil\bytes.fs">
       <Link>bytes.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fsi">
-      <Link>ildiag.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fs">
-      <Link>ildiag.fs</Link>
     </Compile>
     <Compile Include="..\ReferenceResolution.fsi">
       <Link>ReferenceResolution.fsi</Link>
@@ -173,6 +179,9 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>ilmorph.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+      <Link>ilsign.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>ilsupp.fsi</Link>
     </Compile>
@@ -205,6 +214,9 @@
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogger.fs</Link>
     </Compile>
+    <Compile Include="..\ErrorResolutionHints.fs">
+      <Link>ErrorResolutionHints.fs</Link>
+    </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>InternalCollections.fsi</Link>
     </Compile>
@@ -219,6 +231,12 @@
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fsi">
       <Link>ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fsi">
+      <Link>ilwritepdb.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fs">
+      <Link>ilwritepdb.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>ilwrite.fs</Link>
@@ -311,6 +329,15 @@
     <Compile Include="..\infos.fs">
       <Link>infos.fs</Link>
     </Compile>
+    <Compile Include="..\AccessibilityLogic.fs">
+      <Link>Logic\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\AttributeChecking.fs">
+      <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\InfoReader.fs">
+      <Link>Logic\InfoReader.fs</Link>
+    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>NicePrint.fs</Link>
     </Compile>
@@ -328,6 +355,15 @@
     </Compile>
     <Compile Include="..\TypeRelations.fs">
       <Link>TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="..\SignatureConformance.fs">
+      <Link>Logic\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodOverrides.fs">
+      <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fs">
+      <Link>MethodCalls.fs</Link>
     </Compile>
     <Compile Include="..\PatternMatchCompilation.fsi">
       <Link>PatternMatchCompilation.fsi</Link>
@@ -431,11 +467,16 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
+    <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
+    <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
+    <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />

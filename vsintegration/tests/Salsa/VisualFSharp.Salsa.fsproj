@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <Name>VisualFSharp.Salsa</Name>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>VisualFSharp.Salsa</AssemblyName>
+    <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
+      <Link>CompilerLocationUtils.fs</Link>
+    </Compile>
+    <Compile Include="..\unittests\TestLib.Utils.fs">
+      <Link>UnitTests.TestLib.Utils.fs</Link>
+    </Compile>
+    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="VsMocks.fs" />
+    <Compile Include="Salsa.fs" />
+    <Compile Include="SalsaUtils.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="EnvDTE.dll" />
+    <Reference Include="EnvDTE80.dll" />
+    <Reference Include="VSLangProj" />
+    <Reference Include="VSLangProj80" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.CommonIDE">
+		<HintPath>$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.CommonIDE.dll</HintPath>
+	</Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.Internal">
+		<HintPath>$(VS150COMNTOOLS)\..\IDE\PrivateAssemblies\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
+	</Reference>
+    <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="nunit.framework">
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
+      <Name>FSharp.Build</Name>
+      <Project>{702a7979-bcf9-4c41-853e-3adfc9897890}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Name>FSharp.LanguageService.Compiler</Name>
+      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Name>FSharp.LanguageService.Base</Name>
+      <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Name>FSharp.LanguageService</Name>
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
+      <Name>ProjectSystem.Base</Name>
+      <Project>{b700e38b-f8c0-4e49-b5ec-db7b7ac0c4e7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj">
+      <Name>FSharp.ProjectSystem.FSharp</Name>
+      <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+</Project>

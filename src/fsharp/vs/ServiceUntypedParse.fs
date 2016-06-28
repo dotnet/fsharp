@@ -171,6 +171,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e,_) 
                   | SynExpr.Do (e,_)
                   | SynExpr.Assert (e,_)
+                  | SynExpr.Fixed (e,_)
                   | SynExpr.DotGet (e,_,_,_) 
                   | SynExpr.LongIdentSet (_,e,_)
                   | SynExpr.New (_,_,e,_) 
@@ -312,20 +313,20 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr false expr
                   | SynModuleDecl.ModuleAbbrev _ -> 
                       ()
-                  | SynModuleDecl.NestedModule(_, decls, _, m) ->                
+                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) ->                
                       if rangeContainsPos m pos then 
                           for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) -> 
                       if rangeContainsPos m pos then 
                           for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(ExceptionDefn(ExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
                       if rangeContainsPos m pos then 
                           for m in membDefns do yield! walkMember m
                   | _ ->
                       () ] 
                       
             // Collect all the items  
-            let walkModule (SynModuleOrNamespace(_,_,decls,_,_,_,m)) =
+            let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
                 if rangeContainsPos m pos then 
                     [ for d in decls do yield! walkDecl d ]
                 else
@@ -609,7 +610,7 @@ module UntypedParseImpl =
     
     type TS = AstTraversal.TraverseStep
 
-    /// try to determine completion context for the given pair (row, columns)
+    /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option) : CompletionContext option = 
         let parsedInputOpt =
             match untypedParseOpt with
@@ -675,7 +676,7 @@ module UntypedParseImpl =
             | false, false, true -> Struct
             | _ -> Invalid
 
-        let getCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
+        let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
             let success k = Some (Inherit (k, completionPath))
 
@@ -863,7 +864,7 @@ module UntypedParseImpl =
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
-                            | Some (completionPath) -> getCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
+                            | Some (completionPath) -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None }
         AstTraversal.Traverse(pos, pt, walker)

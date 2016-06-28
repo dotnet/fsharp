@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <Name>VisualFSharp.Unittests</Name>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>VisualFSharp.Unittests</AssemblyName>
+    <TargetType>LIBRARY</TargetType>
+    <NoWarn>58;75</NoWarn>
+    <PlatformTarget>x86</PlatformTarget>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
+      <Link>Internal.Utilities.Collections.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs">
+      <Link>Internal.Utilities.Collections.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
+      <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
+    </Compile>
+    <Compile Include="TestLib.Utils.fs" />
+    <Compile Include="TestLib.Salsa.fs" />
+    <Compile Include="TestLib.LanguageService.fs" />
+    <Compile Include="TestLib.ProjectSystem.fs" />
+    <Compile Include="Tests.InternalCollections.fs" />
+    <Compile Include="Tests.Build.fs" />
+    <Compile Include="Tests.BaseLine.fs" />
+    <Compile Include="Tests.TaskReporter.fs" />
+    <Compile Include="Tests.Watson.fs" />
+    <Compile Include="Tests.XmlDocComments.fs" />
+    <Compile Include="Tests.LanguageService.General.fs" />
+    <Compile Include="Tests.LanguageService.Colorizer.fs" />
+    <Compile Include="Tests.LanguageService.Completion.fs" />
+    <Compile Include="Tests.LanguageService.F1Keyword.fs" />
+    <Compile Include="Tests.LanguageService.IncrementalBuild.fs" />
+    <Compile Include="Tests.LanguageService.GotoDefinition.fs" />
+    <Compile Include="Tests.LanguageService.NavigationBar.fs" />
+    <Compile Include="Tests.LanguageService.ParameterInfo.fs" />
+    <Compile Include="Tests.LanguageService.QuickInfo.fs" />
+    <Compile Include="Tests.LanguageService.QuickParse.fs" />
+    <Compile Include="Tests.LanguageService.Script.fs" />
+    <Compile Include="Tests.LanguageService.Squiggles.fs" />
+    <Compile Include="Tests.LanguageService.TimeStamp.fs" />
+    <Compile Include="Tests.LanguageService.ErrorList.fs" />
+    <Compile Include="Tests.LanguageService.ErrorRecovery.fs" />
+    <Compile Include="Tests.ProjectSystem.Configs.fs" />
+    <Compile Include="Tests.ProjectSystem.Miscellaneous.fs" />
+    <Compile Include="Tests.ProjectSystem.MultiTargeting.fs" />
+    <Compile Include="Tests.ProjectSystem.ProjectItems.fs" />
+    <Compile Include="Tests.ProjectSystem.Project.fs" />
+    <Compile Include="Tests.ProjectSystem.References.fs" />
+    <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
+    <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
+    <Compile Include="..\..\..\tests\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\Common.fs">
+      <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\EditorTests.fs">
+      <Link>EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\FileSystemTests.fs">
+      <Link>FileSystemTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
+      <Link>ProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
+      <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+    <CustomCopyLocal Include="app.config">
+      <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
+    </CustomCopyLocal>
+    <None Include="app.runsettings" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="EnvDTE.dll" />
+    <Reference Include="EnvDTE80.dll" />
+    <Reference Include="VSLangProj" />
+    <Reference Include="VSLangProj80" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Threading" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.CommonIDE" />
+    <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
+    <Reference Include="nunit.framework">
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
+      <Name>FSharp.Build</Name>
+      <Project>{702a7979-bcf9-4c41-853e-3adfc9897890}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Name>FSharp.LanguageService.Compiler</Name>
+      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
+      <Name>VisualFSharp.Salsa</Name>
+      <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Name>FSharp.LanguageService.Base</Name>
+      <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Name>FSharp.LanguageService</Name>
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
+      <Name>ProjectSystem.Base</Name>
+      <Project>{b700e38b-f8c0-4e49-b5ec-db7b7ac0c4e7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj">
+      <Name>FSharp.ProjectSystem.FSharp</Name>
+      <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+</Project>

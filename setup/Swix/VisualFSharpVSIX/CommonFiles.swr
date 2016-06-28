@@ -1,0 +1,51 @@
+use vs
+
+package name=Microsoft.FSharp.Vsix
+        version=4.1
+        vs.package.chip=neutral
+        vs.package.language=en-us
+
+vs.localizedResources
+  vs.localizedResource language=en-us
+                       title="Visual F# Tools"
+                       description="Deploy Visual F# Tools templates to Visual Studio"
+
+folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
+  file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
+  file "Microsoft.Portable.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.Portable.FSharp.Shim.targets"
+
+folder "InstallDir:Common7\IDE\PublicAssemblies"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Editor.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.Base.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.Compiler.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.Base.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.FSharp.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.PropertyPages.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.VS.FSI.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\fsi.exe" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FsiAnyCPU.exe" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
+  file source="$(BinariesFolder)\net40\bin\fsi.exe.config"
+  file source="$(BinariesFolder)\net40\bin\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)\..\License.txt"
+  file source="$(BinariesFolder)\net40\bin\RegisterFsharpPackage.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Server.Shared.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Editor.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.Base.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.Compiler.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.LanguageService.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.Base.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.FSharp.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.ProjectSystem.PropertyPages.pkgdef"
+  file source="$(BinariesFolder)\net40\bin\FSharp.VS.FSI.pkgdef"

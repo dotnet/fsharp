@@ -3,8 +3,6 @@
 /// Functions to import .NET binary metadata as TAST objects
 module internal Microsoft.FSharp.Compiler.Import
 
-#nowarn "44" // This construct is deprecated. please use List.item
-
 open System.Reflection
 open System.Collections.Generic
 open Internal.Utilities
@@ -164,13 +162,13 @@ let rec ImportILType (env:ImportMap) m tinst typ =
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
-    | ILType.Ptr ty  -> mkNativePtrType env.g (ImportILType env m tinst ty)
+    | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
     | ILType.Modified(_,_,ty) -> 
          // All custom modifiers are ignored
          ImportILType env m tinst ty
     | ILType.TypeVar u16 -> 
-         try List.nth tinst (int u16) 
+         try List.item (int u16) tinst
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
 
@@ -246,7 +244,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-        mkNativePtrType g elemTy
+        mkNativePtrTy g elemTy
     else
 
         // REVIEW: Extension type could try to be its own generic arg (or there could be a type loop)

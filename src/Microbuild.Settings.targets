@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
+  </PropertyGroup>
+  
+  <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.props" />
+  
+  <UsingTask TaskName="LocalizeTemplateProjectsTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <OutDir ParameterType="System.String" Required="true" />
+      <TemplateCategory ParameterType="System.String" Required="true" />
+      <AssemblyName ParameterType="System.String" Required="true" />
+      <TemplateFiles ParameterType="System.String[]" Required="true" />
+      <LocalizedFiles ParameterType="System.String[]" Required="true" />
+      <LocLanguages ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    
+    <Task>
+      <Reference Include="System.IO.Compression.FileSystem"/>
+      
+      <Using Namespace="System"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.IO.Compression"/>
+      
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        Log.LogMessage("Localizing template: " + AssemblyName, MessageImportance.High);
+        Log.LogMessage(String.Empty, MessageImportance.High);
+        var absoluteOutDir = Path.GetFullPath(OutDir);    
+    
+        foreach (var lang in LocLanguages.Split(','))
+        {
+            var isDefaultLocale = lang.ToUpper() == "ENU";
+    
+            Log.LogMessage("---------------------------------------------------", MessageImportance.High);
+            Log.LogMessage("Localizing template for language: " + lang, MessageImportance.High);
+            Log.LogMessage(String.Empty, MessageImportance.High);
+    
+            var tempZipFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Log.LogMessage("Copying template files to: " + tempZipFolder, MessageImportance.High);
+            Directory.CreateDirectory(tempZipFolder);
+    
+            foreach (var sourceFile in TemplateFiles)
+            {
+                var destinationFile = Path.Combine(tempZipFolder, new FileInfo(sourceFile).Name);
+                File.Copy(sourceFile, destinationFile);
+                Log.LogMessage("  > Copied: " + destinationFile, MessageImportance.High);
+            }
+    
+            if (isDefaultLocale)
+            {
+                Log.LogMessage("Skipping localized files (default locale)", MessageImportance.High);
+            }
+            else
+            {
+                Log.LogMessage("Copying localized files", MessageImportance.High);
+    
+                foreach (var localizedFileItem in LocalizedFiles)
+                {
+                    var fileName = new FileInfo(localizedFileItem).Name;
+                    var sourceFile = Path.Combine(absoluteOutDir, "localize", lang, TemplateCategory, AssemblyName, fileName);
+                    var destinationFile = Path.Combine(tempZipFolder, fileName);
+    
+                    if (File.Exists(sourceFile) == false)
+                    {
+                        throw new FileNotFoundException("Localized file not found: " + sourceFile, sourceFile);
+                    }
+    
+                    File.Delete(destinationFile);
+                    File.Copy(sourceFile, destinationFile);
+                    Log.LogMessage("  > Copied: " + destinationFile, MessageImportance.High);
+                }
+            }
+    
+            var templateOutputPath = isDefaultLocale
+                ? Path.Combine(absoluteOutDir, TemplateCategory, AssemblyName)
+                : Path.Combine(absoluteOutDir, "localize", lang, TemplateCategory, AssemblyName);
+    
+            if (Directory.Exists(templateOutputPath) == false)
+            {
+                Directory.CreateDirectory(templateOutputPath);
+            }
+            
+            var templateOutputFile = Path.Combine(templateOutputPath, AssemblyName + ".zip");
+    
+            if (File.Exists(templateOutputFile))
+            {
+                File.Delete(templateOutputFile);
+            }
+    
+            Log.LogMessage("Zipping template to: " + templateOutputFile, MessageImportance.High);
+            ZipFile.CreateFromDirectory(tempZipFolder, templateOutputFile);
+            Directory.Delete(tempZipFolder, true);
+    
+            Log.LogMessage("---------------------------------------------------", MessageImportance.High);
+            Log.LogMessage(string.Empty, MessageImportance.High);
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  
+  <UsingTask TaskName="GenerateAssemblyFileVersionTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Language ParameterType="System.String" Required="true" />
+      <ProductVersion ParameterType="System.String" Required="true" />
+      <BuildNumber ParameterType="System.String" Required="true" />
+      <AssemblyName ParameterType="System.String" Required="true" />
+      <AssemblyFileVersionPath ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    
+    <Task>
+      <Using Namespace="System"/>
+      <Using Namespace="System.Text.RegularExpressions"/>
+      
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        // Remove DRAFT version string inserted by Microbuild (if it exists)
+        BuildNumber = BuildNumber.Replace(".DRAFT", string.Empty);
+        var buildNumberMatch = Regex.Match(BuildNumber, "(\\d{4})(\\d{2})(\\d{2})\\.(\\d+)");
+        
+        if (buildNumberMatch.Success == false)
+        {
+            throw new ArgumentException("Invalid build number: " + BuildNumber);
+        }
+        
+        var productFileVersion = string.Join(".", buildNumberMatch.Groups[1].Value, buildNumberMatch.Groups[2].Value, buildNumberMatch.Groups[3].Value, buildNumberMatch.Groups[4].Value);
+        
+        Log.LogMessage("Using ProductVersion: " + ProductVersion, MessageImportance.High);
+        Log.LogMessage("Using ProductFileVersion: " + productFileVersion, MessageImportance.High);
+        
+        var stringBuilder = new StringBuilder();
+        
+        switch (Language.ToLower())
+        {
+            case "cs":
+                stringBuilder.AppendLine("[assembly: System.Reflection.AssemblyInformationalVersion(\"" + ProductVersion + "\")]");
+                stringBuilder.AppendLine("[assembly: System.Reflection.AssemblyVersion(\"" + ProductVersion + "\")]");
+                stringBuilder.AppendLine("[assembly: System.Reflection.AssemblyFileVersion(\"" + productFileVersion + "\")]");
+                break;
+            case "fs":
+                stringBuilder.AppendLine("namespace AssemblyInfo");
+                stringBuilder.AppendLine("[<assembly: System.Reflection.AssemblyInformationalVersion(\"" + ProductVersion + "\")>]");
+                stringBuilder.AppendLine("[<assembly: System.Reflection.AssemblyVersion(\"" + ProductVersion + "\")>]");
+                stringBuilder.AppendLine("[<assembly: System.Reflection.AssemblyFileVersion(\"" + productFileVersion + "\")>]");
+                stringBuilder.AppendLine("do ()");
+                break;
+            case "vb":
+                stringBuilder.AppendLine("<Assembly: Reflection.AssemblyInformationalVersion(\"" + ProductVersion + "\")>");
+                stringBuilder.AppendLine("<Assembly: Reflection.AssemblyVersion(\"" + ProductVersion + "\")>");
+                stringBuilder.AppendLine("<Assembly: Reflection.AssemblyFileVersion(\"" + productFileVersion + "\")>");
+                break;
+            default:
+                throw new ArgumentException("Language " + Language + " is not supported");
+        }
+        
+        var fileContents = stringBuilder.ToString();
+        AssemblyFileVersionPath = Path.Combine(Path.GetTempPath(), string.Join(".", AssemblyName, "AssemblyFileVersion", Language));
+        
+        if (File.Exists(AssemblyFileVersionPath) && File.ReadAllText(AssemblyFileVersionPath) == fileContents)
+        {
+            Log.LogMessage("Assembly file version already exists. Using: " + AssemblyFileVersionPath, MessageImportance.High);
+        }
+        else
+        {
+            Log.LogMessage("Generating AssemblyFileVersion file: " + AssemblyFileVersionPath, MessageImportance.High);
+            File.WriteAllText(AssemblyFileVersionPath, fileContents);
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  
+  <!-- In case of a microbuild, depend on 'Localize' target to use the localized resources -->
+  <Target Name="LocalizeTemplateProjectsInMicrobuild" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true' and '$(Languages)' != '' and '@(FilesToLocalize)' != ''">
+    <LocalizeTemplateProjectsTask
+      OutDir="$(OutputPath)"
+      TemplateCategory="$(TemplateCategory)"
+      AssemblyName="$(AssemblyName)"
+      TemplateFiles="@(TemplateFiles)"
+      LocalizedFiles="@(FilesToLocalize)"
+      LocLanguages="$(Languages)" />
+  </Target>
+  
+  <!-- In case of a local build, depend on the build target to use the native resources -->
+  <Target Name="LocalizeTemplateProjectsLocally" AfterTargets="Build" Condition="'$(GenerateLocalizedTemplates)' == 'true' and ('$(Languages)' == '' or '@(FilesToLocalize)' == '')">
+    <PropertyGroup>
+        <Languages Condition="'$(Languages)' == ''">ENU</Languages>
+    </PropertyGroup>
+    
+    <LocalizeTemplateProjectsTask
+      OutDir="$(OutputPath)"
+      TemplateCategory="$(TemplateCategory)"
+      AssemblyName="$(AssemblyName)"
+      TemplateFiles="@(TemplateFiles)"
+      LocalizedFiles="@(FilesToLocalize)"
+      LocLanguages="$(Languages)" />
+  </Target>
+  
+  <Target Name="GenerateAssemblyFileVersion" BeforeTargets="CoreCompile">
+    <!-- Put build number 0 and today's date if this was a local build -->
+    <PropertyGroup>
+      <BUILD_BUILDNUMBER Condition="'$(BUILD_BUILDNUMBER)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd.0))</BUILD_BUILDNUMBER>
+    </PropertyGroup>
+  
+    <GenerateAssemblyFileVersionTask
+      Language="$(MicroBuildAssemblyFileLanguage)"
+      ProductVersion="$(MicroBuildAssemblyVersion)"
+      BuildNumber="$(BUILD_BUILDNUMBER)"
+      AssemblyName="$(AssemblyName)"
+      Condition="'$(MicroBuildAssemblyFileLanguage)' != '' and '$(MicroBuildAssemblyVersion)' != ''">
+      <Output TaskParameter="AssemblyFileVersionPath" PropertyName="AssemblyFileVersionPath"/>
+    </GenerateAssemblyFileVersionTask>
+    
+      <!-- For FSharp.Core, assembly version must be inserted after all Core files, as it defines F# basic types (strings) -->
+    <ItemGroup Condition="'$(AssemblyName)' == 'FSharp.Core'">
+      <Compile Include="$(AssemblyFileVersionPath)" />
+    </ItemGroup>
+      <!-- For other assemblies, this must be inserted before all source files, to keep exe's EntryPoints (if any) as the last source file -->
+    <ItemGroup Condition="'$(AssemblyName)' != 'FSharp.Core'">
+      <TempCompile Include="$(AssemblyFileVersionPath)" />
+      <TempCompile Include="@(Compile)" />
+      <Compile Remove="@(Compile)" />
+      <Compile Include="@(TempCompile)" />
+    </ItemGroup>
+  </Target>
+  
+  <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
+</Project>

@@ -3,7 +3,6 @@
 namespace Internal.Utilities
 open System
 open System.IO
-open System.Configuration
 open System.Reflection
 open Microsoft.Win32
 open System.Runtime.InteropServices
@@ -23,12 +22,29 @@ module internal FSharpEnvironment =
     let DotNetBuildString = Microsoft.BuildSettings.Version.OfFile
 #endif
 
+    let versionOf<'t> =
+#if FX_RESHAPED_REFLECTION
+        let aq = (typeof<'t>).AssemblyQualifiedName
+        let version = 
+            if aq <> null then 
+                let x = aq.Split(',', ' ') |> Seq.filter(fun x -> x.StartsWith("Version=", StringComparison.OrdinalIgnoreCase)) |> Seq.tryHead
+                match x with 
+                | Some(x) -> x.Substring(8)
+                | _ -> null
+            else
+                null
+        version
+#else
+        typeof<'t>.Assembly.GetName().Version.ToString()
+#endif
+
     let FSharpCoreLibRunningVersion = 
-        try match (typeof<Microsoft.FSharp.Collections.List<int>>).Assembly.GetName().Version.ToString() with
+        try match versionOf<Unit> with
             | null -> None
             | "" -> None
             | s  -> Some(s)
         with _ -> None
+
 
     // The F# team version number. This version number is used for
     //     - the F# version number reported by the fsc.exe and fsi.exe banners in the CTP release
@@ -48,6 +64,8 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
+#if NO_WIN_REGISTRY
+#else
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
     extern uint32 RegOpenKeyExW(UIntPtr _hKey, string _lpSubKey, uint32 _ulOptions, int _samDesired, UIntPtr & _phkResult);
 
@@ -56,20 +74,19 @@ module internal FSharpEnvironment =
 
     [<DllImport("Advapi32.dll")>]
     extern uint32 RegCloseKey(UIntPtr _hKey)
-
+#endif
     module Option = 
         /// Convert string into Option string where null and String.Empty result in None
         let ofString s = 
             if String.IsNullOrEmpty(s) then None
             else Some(s)
 
-            
-        
-
     // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0". 
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+#if NO_WIN_REGISTRY
+#else
     let KEY_WOW64_DEFAULT = 0x0000
     let KEY_WOW64_32KEY = 0x0200
     let HKEY_LOCAL_MACHINE = UIntPtr(0x80000002u)
@@ -101,17 +118,20 @@ module internal FSharpEnvironment =
                 null)
 #endif
 
-
-
     let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 
         Option.ofString
             (try 
                 // 64 bit flag is not available <= Win2k
                 let options = 
-                    match Environment.OSVersion.Version.Major with
-                    | major when major >= 5 -> KEY_WOW64_32KEY
+                    let hasWow6432Node =
+                        use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
+                        x <> null
+                    try
+                        match hasWow6432Node with
+                        | true  -> KEY_WOW64_32KEY
+                        | false -> KEY_WOW64_DEFAULT
+                    with
                     | _ -> KEY_WOW64_DEFAULT
-
 
                 let mutable hkey = UIntPtr.Zero;
                 let pathResult = Marshal.AllocCoTaskMem(maxDataLength);
@@ -141,7 +161,7 @@ module internal FSharpEnvironment =
                 null)
 
     let is32Bit = IntPtr.Size = 4
-    
+
     let tryRegKey(subKey:string) = 
 
         if is32Bit then
@@ -168,19 +188,26 @@ module internal FSharpEnvironment =
 #else
             Get32BitRegistryStringValueViaPInvoke(subKey) 
 #endif
-               
 
-    let internal tryCurrentDomain() = 
+#endif
+
+    let internal tryCurrentDomain() =
+#if FX_NO_APP_DOMAINS
+        None
+#else
         let pathFromCurrentDomain = System.AppDomain.CurrentDomain.BaseDirectory
         if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then 
             Some pathFromCurrentDomain
         else
             None
-    
-    let internal tryAppConfig (appConfigKey:string) = 
+#endif
 
-        let locationFromAppConfig = ConfigurationSettings.AppSettings.[appConfigKey]
-        System.Diagnostics.Debug.Print(sprintf "Considering appConfigKey %s which has value '%s'" appConfigKey locationFromAppConfig) 
+#if FX_NO_SYSTEM_CONFIGURATION
+    let internal tryAppConfig (_appConfigKey:string) = None
+#else
+    let internal tryAppConfig (_appConfigKey:string) = 
+        let locationFromAppConfig = System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
+        System.Diagnostics.Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
 
         if String.IsNullOrEmpty(locationFromAppConfig) then 
             None
@@ -189,6 +216,7 @@ module internal FSharpEnvironment =
             let locationFromAppConfig = locationFromAppConfig.Replace("{exepath}", exeAssemblyFolder)
             System.Diagnostics.Debug.Print(sprintf "Using path %s" locationFromAppConfig) 
             Some locationFromAppConfig
+#endif
 
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
@@ -198,6 +226,14 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll
     //     - default location of fsc.exe in FSharp.Compiler.CodeDom.dll
     //     - default F# binaries directory in (project system) Project.fs
+#if NO_WIN_REGISTRY
+    let BinFolderOfDefaultFSharpCompiler = 
+#if FX_NO_APP_DOMAINS
+        Some System.AppContext.BaseDirectory
+#else
+    Some System.AppDomain.CurrentDomain.BaseDirectory
+#endif
+#else
     let BinFolderOfDefaultFSharpCompiler = 
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
@@ -219,7 +255,8 @@ module internal FSharpEnvironment =
 #endif
 #if VS_VERSION_DEV14
                 let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#else
+#endif
+#if VS_VERSION_DEV15
                 let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #endif
                 let key1,key2 = 
@@ -274,8 +311,11 @@ module internal FSharpEnvironment =
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
-            let major = typeof<System.Int32>.Assembly.GetName().Version.Major
+            let version = new Version(versionOf<System.Int32>) 
+            let major = version.Major
             major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
 #else
     let IsRunningOnNetFx45OrAbove = false
+#endif
+
 #endif

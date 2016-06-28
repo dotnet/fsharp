@@ -79,8 +79,9 @@ let ngen exec (ngenExe: FilePath) assemblies =
     List.concat [ queue; ["executeQueuedItems 1"] ]
     |> Seq.ofList
     |> Seq.map (fun args -> exec ngenExe args)
-    |> Seq.takeWhile (function ErrorLevel _ -> false | Ok -> true)
-    |> Seq.last
+    |> Seq.skipWhile (function ErrorLevel _ -> false | CmdResult.Success -> true)
+    |> Seq.tryHead
+    |> function None -> CmdResult.Success | Some res -> res
 
 let fsc exec (fscExe: FilePath) flags srcFiles =
     // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml
@@ -144,7 +145,7 @@ let where envVars cmd =
 
 let fsdiff exec fsdiffExe file1 file2 =
     // %FSDIFF% %testname%.err %testname%.bsl
-    exec fsdiffExe (sprintf "%s %s" file1 file2)
+    exec fsdiffExe (sprintf "%s %s normalize" file1 file2)
 
 let ``for /f`` path = 
     // FOR /F processing of a text file consists of reading the file, one line of text at a time and then breaking the line up into individual

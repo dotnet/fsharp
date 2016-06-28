@@ -281,7 +281,6 @@ namespace Microsoft.FSharp.Control
     #nowarn "40"
     #nowarn "21"
     #nowarn "47"
-    #nowarn "44" // This construct is deprecated. 
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
     #nowarn "67" // This type test or downcast will always hold
     #nowarn "864" // IObservable.Subscribe
@@ -729,7 +728,7 @@ namespace Microsoft.FSharp.Control
                     )
                     
         let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> FakeUnitValue) =
-#if FX_NO_THREADPOOL
+#if FX_NO_THREAD
                 if not (ThreadPool.QueueUserWorkItem((waitCallbackForQueueWorkItemWithTrampoline trampolineHolder), f |> box)) then
                     failwith "failed to queue user work item"
                 FakeUnit
@@ -909,8 +908,8 @@ namespace Microsoft.FSharp.Control
             resultA()
 
         /// Implement use/Dispose
-        let usingA (r:'T :> IDisposable) f =  
-            tryFinallyA (fun () -> r.Dispose()) (callA f r)
+        let usingA (r:'T :> IDisposable) (f:'T -> Async<'a>) : Async<'a> =
+            tryFinallyA (fun () -> Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose r) (callA f r)
 
         let ignoreA p = 
             bindA p (fun _ -> doneA)
@@ -1554,7 +1553,7 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        args.aux.ccont (new OperationCanceledException())
+                        args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException()))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -2040,10 +2039,10 @@ namespace Microsoft.FSharp.Control
 #if FX_ATLEAST_PORTABLE
                         let invokeMeth = (typeof<Closure<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
-#else                    
+#else
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, "Invoke") :?> 'Delegate
-#endif                        
-                    
+#endif
+
                     // Start listening to events
                     event.AddHandler(del)
 
@@ -2137,7 +2136,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncRead(buffer: byte[],?offset,?count) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
                 protectedPrimitiveWithResync (fun ({ aux = aux } as args) ->
                     TaskHelpers.continueWith(stream.ReadAsync(buffer, offset, count, aux.token), args)
@@ -2161,7 +2160,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncWrite(buffer:byte[], ?offset:int, ?count:int) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
                 protectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
                     TaskHelpers.continueWithUnit(stream.WriteAsync(buffer, offset, count, aux.token), args)
