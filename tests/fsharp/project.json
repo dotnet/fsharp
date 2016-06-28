@@ -39,7 +39,7 @@
     "Microsoft.DiaSymReader": "1.0.8",
 
     "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2-rc2-24027", 
-    "Microsoft.NETCore.TestHost": "1.0.0-rc2-24027", 
+    "Microsoft.NETCore.TestHost": "1.0.0", 
     "System.Reflection.Emit.ILGeneration": "4.0.1",
     "System.Security.Cryptography.Primitives": "4.0.0"
   },
