@@ -1253,7 +1253,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
         IsHiddenTycon env.sigToImplRemapInfo tycon || 
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo ((mkLocalTyconRef tycon).MakeNestedRecdFieldRef rfield))
-    let access =  AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
+    let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access rfield.Range rfield.FormalType
     CheckTypePermitByrefs cenv env rfield.Range rfield.FormalType
     CheckAttribs cenv env rfield.PropertyAttribs
@@ -1269,8 +1269,11 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     let m = tycon.Range 
     let env = BindTypars cenv.g env (tycon.Typars(m))
     CheckAttribs cenv env tycon.Attribs
+    match tycon.TypeAbbrev with
+    | Some abbrev -> CheckTypeForAccess cenv env (fun () -> tycon.CompiledName) tycon.Accessibility tycon.Range abbrev
+    | _ -> ()
 
-    if cenv.reportErrors then begin
+    if cenv.reportErrors then
       if not tycon.IsTypeAbbrev then
         let typ = generalizedTyconRef (mkLocalTyconRef tycon)
         let allVirtualMethsInParent = 
@@ -1455,9 +1458,6 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedType(nm),m))
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix(nm),m))
-
-    end
-    
     // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
