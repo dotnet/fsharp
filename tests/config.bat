@@ -13,7 +13,7 @@ for /f %%i in ("%FSHARP_HOME%") do set FSHARP_HOME=%%~fi
 
 REM Do we know where fsc.exe is?
 IF DEFINED FSCBinPath goto :FSCBinPathFound
-FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi
+FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi && goto :FSCBinPathFound
 :FSCBinPathFound
 
 SET CLIFLAVOUR=cli\4.5
@@ -140,6 +140,7 @@ IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\csc.exe
 
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\ngen.exe"            SET NGEN=%CORDIR%\ngen.exe
 IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\al.exe"              SET ALINK=%CORDIR%\al.exe
+IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\sn.exe"              SET SN=%CORDIR%\sn.exe
 
 REM ==
 REM == The logic here is: pick the latest msbuild
@@ -150,6 +151,7 @@ IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\peverify.exe"        SET PEVERIFY=%CORS
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\resgen.exe"          SET RESGEN=%CORSDK%\resgen.exe
 IF NOT "%CORSDK%"=="" IF NOT EXIST "%RESGEN%" IF EXIST "%CORSDK%\..\resgen.exe"       SET RESGEN=%CORSDK%\..\resgen.exe
 IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\al.exe"              SET ALINK=%CORSDK%\al.exe
+IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\sn.exe"              SET SN=%CORSDK%\sn.exe
 
 IF NOT DEFINED FSC                                            SET FSC=fsc.exe
 IF NOT DEFINED FSI                                            SET FSI=%fsiroot%.exe
@@ -166,6 +168,8 @@ IF NOT DEFINED PSH_FLAGS SET PSH_FLAGS=-nologo -noprofile -executionpolicy bypas
 if DEFINED _UNATTENDEDLOG exit /b 0
 
 rem first see if we have got msbuild installed
+if exist "%X86_PROGRAMFILES%\MSBuild\15.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\15.0\Bin\
+if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
 if exist "%X86_PROGRAMFILES%\MSBuild\14.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\14.0\Bin\
 if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
 
@@ -175,17 +179,17 @@ IF     "%CORDIR40%"=="" IF NOT "%CORDIR%"=="" IF EXIST "%CORDIR%\..\V3.5\msbuild
 IF NOT "%CORDIR%"=="" FOR /f %%j IN ("%MSBuildToolsPath%") do SET MSBuildToolsPath=%%~fj
 :done_MsBuildToolsPath
 
-reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Express .* for Windows Desktop" > NUL
+reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Express .* for Windows Desktop" > NUL
 if NOT ERRORLEVEL 1 (
     set INSTALL_SKU=DESKTOP_EXPRESS
     goto :done_SKU
 )
-reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Express .* for Web" > NUL
+reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Express .* for Web" > NUL
 if NOT ERRORLEVEL 1 (
     set INSTALL_SKU=WEB_EXPRESS
     goto :done_SKU
 )
-reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\14.0\Setup" | findstr /r /c:"Ultimate" > NUL
+reg query "%REG_SOFTWARE%\Microsoft\VisualStudio\15.0\Setup" | findstr /r /c:"Ultimate" > NUL
 if NOT ERRORLEVEL 1 (
     set INSTALL_SKU=ULTIMATE
     goto :done_SKU
@@ -221,6 +225,7 @@ echo MSBUILDTOOLSPATH    =%MSBuildToolsPath%
 echo NGEN                =%ngen%
 echo PEVERIFY            =%PEVERIFY%
 echo RESGEN              =%RESGEN%
+echo SN                  =%SN%
 echo ---------------------------------------------------------------
 
 exit /b 0
@@ -234,9 +239,9 @@ REM === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
 REM === 
 :SetFSCBinPath45
 
-FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
+FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
 IF EXIST "%FSCBinPath%" goto :EOF
-FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
+FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
 goto :EOF
 
 REM ===
@@ -256,12 +261,12 @@ IF /I "%OSARCH%"=="IA64"  set X86_PROGRAMFILES=%ProgramFiles(x86)%
 IF /I "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
 REM == Default VS install locations
-set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.0
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
-set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
-set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
-set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
-set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.0
+set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.0
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.0
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.0
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
 set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
 
@@ -272,7 +277,6 @@ IF EXIST "%FSCBinPath%\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTAB
 IF EXIST "%FSCBinPath%\..\..\portable7\bin\FSharp.Core.dll" set FSCOREDLLNETCOREPATH=%FSCBinPath%\..\..\portable7\bin
 IF EXIST "%FSCBinPath%\..\..\portable78\bin\FSharp.Core.dll" set FSCOREDLLNETCORE78PATH=%FSCBinPath%\..\..\portable78\bin
 IF EXIST "%FSCBinPath%\..\..\portable259\bin\FSharp.Core.dll" set FSCOREDLLNETCORE259PATH=%FSCBinPath%\..\..\portable259\bin
-IF EXIST "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
 
 set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
 set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll

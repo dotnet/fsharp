@@ -5,11 +5,11 @@
 
 ## Windows build
 
-|            |Debug (Build only)|Release (Build only)|Release (Build and tests)|
+|            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|
 |:----------:|:----------------:|:------------------:|:-----------------------:|
-|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/release_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/release_windows_nt/)| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master) |
-|**vs2015**  ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/vs2015.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/vs2015) |
-|**coreclr** ||| [![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/coreclr.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/coreclr) |
+|**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
+|**vs2015**  ||||
+|**roslyn** ||||
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -36,31 +36,38 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
  
 ###Required Tools for Windows Development and Testing
 
-###Development tools
-
-For F# 3.1.X development
-
-- [Visual Studio 2013](http://www.visualstudio.com/en-us/downloads) + latest updates (or the free [Visual Studio Community Edition](http://www.visualstudio.com/products/visual-studio-community-vs))
-- [Visual Studio 2013 SDK](https://www.microsoft.com/en-us/download/details.aspx?id=40758)
+####Development tools
 
 For F# 4.0 development
 
 - [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+  - Select Visual C++ / Common Tools For Visual C++
+  - Visual F#
+  - Visual Studio Extensibility Tools
 - [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 
-###Additional frameworks
+For F# 4.1 development
+
+- [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
+  - Select Visual C++ / Common Tools For Visual C++
+  - Visual F#
+  - Visual Studio Extensibility Tools
+- [Visual Studio 15 SDK](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
+
+####Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
 - [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
 - [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
 - [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
 - [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 - [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 
-###Contributing
+####Contributing
 
 Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
@@ -71,6 +78,12 @@ This project has adopted the code of conduct defined by the [Contributor Covenan
 
 If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
+###Using CI Builds
+
+To install F#, see http://fsharp.org.
+
+To download the bits for the latest CI builds see [these instructions](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds). This includes and ZIPs containing the F# compiler and VSIX installers for the Visual F# IDE Tools.
+
 ###Code Flow to Other Platforms
 
 Currently, this repository only enables development and testing on the Windows platform. If you are using Linux, OSX, Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
@@ -80,4 +93,6 @@ Although the primary focus of this repo is F# for Windows and the Visual Studio 
 ###Get In Touch
 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
+
+
 

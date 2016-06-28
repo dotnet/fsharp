@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+    <FinalizeManifest>true</FinalizeManifest>
+    <FinalizeSkipLayout>true</FinalizeSkipLayout>
+    <IsPackage>true</IsPackage>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <!-- Only inserting ENU msi and Professional vsix for now -->
+  
+  <ItemGroup>
+    <MergeManifest Include="$(OutputPath)\VisualFSharpVSIX.Professional.json" />
+    <MergeManifest Include="$(OutputPath)\FSharp.SDK.json" />
+  </ItemGroup>
+</Project>

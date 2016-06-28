@@ -124,7 +124,7 @@
     <value>The tuples have differing lengths of {0} and {1}</value>
   </data>
   <data name="ConstraintSolverInfiniteTypes" xml:space="preserve">
-    <value>The resulting type would be infinite when unifying '{0}' and '{1}'</value>
+    <value>The types '{0}' and '{1}' cannot be unified.</value>
   </data>
   <data name="ConstraintSolverMissingConstraint" xml:space="preserve">
     <value>A type parameter is missing a constraint '{0}'</value>
@@ -145,10 +145,10 @@
     <value> {0}</value>
   </data>
   <data name="ErrorFromAddingTypeEquation1" xml:space="preserve">
-    <value>This expression was expected to have type\n    {1}    \nbut here has type\n    {0}    {2}</value>
+    <value>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</value>
   </data>
   <data name="ErrorFromAddingTypeEquation2" xml:space="preserve">
-    <value>Type mismatch. Expecting a\n    {0}    \nbut given a\n    {1}    {2}\n</value>
+    <value>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</value>
   </data>
   <data name="ErrorFromApplyingDefault1" xml:space="preserve">
     <value>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </value>
@@ -157,7 +157,7 @@
     <value> Consider adding further type constraints</value>
   </data>
   <data name="ErrorsFromAddingSubsumptionConstraint" xml:space="preserve">
-    <value>Type constraint mismatch. The type \n    {0}    \nis not compatible with type\n    {1}    {2}\n</value>
+    <value>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</value>
   </data>
   <data name="UpperCaseIdentifierInPattern" xml:space="preserve">
     <value>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</value>
@@ -892,7 +892,7 @@
     <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
   </data>
   <data name="UnitTypeExpected1" xml:space="preserve">
-    <value>This expression should have type 'unit', but has type '{0}'. Use 'ignore' to discard the result of the expression, or 'let' to bind the result to a name.</value>
+    <value>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
   </data>
   <data name="UnitTypeExpected2" xml:space="preserve">
     <value>This expression should have type 'unit', but has type '{0}'. If assigning to a property use the syntax 'obj.Prop &lt;- expr'.</value>
@@ -970,7 +970,7 @@
     <value>This rule will never be matched</value>
   </data>
   <data name="ValNotMutable" xml:space="preserve">
-    <value>This value is not mutable</value>
+    <value>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
   </data>
   <data name="ValNotLocal" xml:space="preserve">
     <value>This value is not local</value>

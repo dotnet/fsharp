@@ -8,7 +8,7 @@ open FSharpTestSuiteTypes
 open PlatformHelpers
 open NUnitConf
 
-let build (cfg: TestConfig) (dir: string) p = processor {
+let build (cfg: TestConfig) (dir: string) p = attempt {
     let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
     let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
     let del = Commands.rm dir

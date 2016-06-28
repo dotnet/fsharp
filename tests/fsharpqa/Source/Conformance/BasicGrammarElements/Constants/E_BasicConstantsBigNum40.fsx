@@ -1,8 +1,8 @@
 // #Regression #Conformance #BasicGrammarElements #Constants #NoMono #ReqNOMT #NETFX40Only 
 
 // Verify the ability to specify basic constants - continued
-// We now need a reference to FSharp.PowerPack.dll in order for this to compile!
-// #r "FSharp.PowerPack.dll"
+
+
 // error FS0191: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
 //<Expects id="FS0784" span="(9,19-9,21)" status="error">This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope</Expects>
 

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>CSharp</ProjectLanguage>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0B9CDEAF-EE8F-45E0-A4E0-34A8ED6DD09E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>EditorHideMethodsAttribute</AssemblyName>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>0169;0067</NoWarn>
+    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArtificalEventInfo.cs" />
+    <Compile Include="ArtificialConstructorInfo.cs" />
+    <Compile Include="ArtificialMethodInfo.cs" />
+    <Compile Include="ArtificialParamInfo.cs" />
+    <Compile Include="ArtificialType.cs" />
+    <Compile Include="ArtificialPropertyInfo.cs" />
+    <Compile Include="TypeProviderInCSharp.cs" />
+    <Compile Include="..\Helpers.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

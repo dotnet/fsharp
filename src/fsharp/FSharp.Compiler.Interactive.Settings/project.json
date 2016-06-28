@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "Microsoft.NETCore.Platforms": "1.0.1",
+    "NETStandard.Library": "1.6.0",
+    "System.Linq.Expressions": "4.1.0",
+    "System.Reflection.TypeExtensions": "4.1.0",
+    "System.Runtime.Loader": "4.0.0",
+    "System.Threading.Thread": "4.0.0"
+  },
+  "runtimes": {
+    "win7-x86": { },
+    "win7-x64": { },
+    "osx.10.11-x64": { },
+    "ubuntu.14.04-x64": { }
+  },
+  "frameworks": {
+    "netstandard1.6": { }
+  }
+}

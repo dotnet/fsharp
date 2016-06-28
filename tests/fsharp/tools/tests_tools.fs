@@ -14,12 +14,12 @@ let testContext = FSharpTestSuite.testContext
 module Bundle = 
 
     [<Test; FSharpSuiteTest("tools/bundle")>]
-    let bundle () = check (processor {
+    let bundle () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY ""
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
 
         // "%FSC%" %fsc_flags% --progress --standalone -o:test-one-fsharp-module.exe -g test-one-fsharp-module.fs
         do! fsc "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
@@ -52,8 +52,8 @@ module Bundle =
 
 module Eval = 
 
-    [<Test; FSharpSuitePermutations("tools/eval")>]
-    let eval p = check (processor {
+    [<Test; FSharpSuiteScriptPermutations("tools/eval")>]
+    let eval p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p

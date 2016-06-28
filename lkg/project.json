@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160406",
+  },
+  "runtimes": {
+    "win7-x86": { },
+    "win7-x64": { },
+    "osx.10.10-x64": { },
+    "ubuntu.14.04-x64": { }
+  },
+  "frameworks": {
+    "dnxcore50": {
+      "imports": "portable-net45+win8"
+    }
+  }
+}

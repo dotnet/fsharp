@@ -1610,93 +1610,38 @@ module MoreQuotationsTests =
         let _ = <@@ v2.Int32ExtensionMethod5 @@> |> printfn "quote = %A"
 
 
-module QuotationConstructionTests = 
-    let arr = [| 1;2;3;4;5 |]
-    let f : int -> int = printfn "hello"; (fun x -> x)
-    let f2 : int * int -> int -> int = printfn "hello"; (fun (x,y) z -> x + y + z)
-    let F (x:int) = x
-    let F2 (x:int,y:int) (z:int) = x + y + z
+module QuotationStructUnionTests = 
 
-    type Foo () =
-        member t.Item with get (index:int) = 1
-                      and set (index:int) (value:int) = ()
+    [<Struct>]
+    type T = | A of int
+        
+    test "check NewUnionCase"   (<@ A(1) @> |> (function NewUnionCase(unionCase,args) -> true | _ -> false))
+    
+    [<ReflectedDefinition>]
+    let foo v = match v with  | A(1) -> 0 | _ -> 1
+      
+    test "check TryGetReflectedDefinition (local f)" 
+        ((<@ foo (A(1)) @> |> (function Call(None,minfo,args) -> Quotations.Expr.TryGetReflectedDefinition(minfo).IsSome | _ -> false))) 
 
-    let ctorof q = match q with Patterns.NewObject(cinfo,_) -> cinfo | _ -> failwith "ctorof"
-    let methodof q = match q with DerivedPatterns.Lambdas(_,Patterns.Call(_,minfo,_)) -> minfo | _ -> failwith "methodof"
-    let fieldof q = match q with Patterns.FieldGet(_,finfo) -> finfo | _ -> failwith "fieldof"
-    let ucaseof q = match q with Patterns.NewUnionCase(ucinfo,_) -> ucinfo | _ -> failwith "ucaseof"
-    let getof q = match q with Patterns.PropertyGet(_,pinfo,_) -> pinfo | _ -> failwith "getof"
-    let setof q = match q with Patterns.PropertySet(_,pinfo,_,_) -> pinfo | _ -> failwith "setof"
-    check "vcknwwe01" (match Expr.AddressOf <@@ arr.[3] @@> with AddressOf(expr) -> expr = <@@ arr.[3] @@> | _ -> false) true
-    check "vcknwwe02" (match Expr.AddressSet (Expr.AddressOf <@@ arr.[3] @@>, <@@ 4 @@>) with AddressSet(AddressOf(expr),v) -> expr = <@@ arr.[3] @@> && v = <@@ 4 @@> | _ -> false) true
-    check "vcknwwe03" (match Expr.Application(<@@ f @@>,<@@ 5 @@>) with Application(f1,x) -> f1 = <@@ f @@> && x = <@@ 5 @@> | _ -> false) true
-    check "vcknwwe04" (match Expr.Applications(<@@ f @@>,[[ <@@ 5 @@> ]]) with Applications(f1,[[x]]) -> f1 = <@@ f @@> && x = <@@ 5 @@> | _ -> false) true
-    check "vcknwwe05" (match Expr.Applications(<@@ f2 @@>,[[ <@@ 5 @@>;<@@ 6 @@> ]; [ <@@ 7 @@> ]]) with Applications(f1,[[x;y];[z]]) -> f1 = <@@ f2 @@> && x = <@@ 5 @@> && y = <@@ 6 @@> && z = <@@ 7 @@>  | _ -> false) true
-    check "vcknwwe06" (match Expr.Call(methodof <@@ F2 @@>,[ <@@ 5 @@>;<@@ 6 @@>; <@@ 7 @@> ]) with Call(None,minfo,[x;y;z]) -> minfo = methodof <@@ F2 @@> && x = <@@ 5 @@> && y = <@@ 6 @@> && z = <@@ 7 @@>  | _ -> false) true
-    check "vcknwwe07" (Expr.Cast(<@@ 5 @@>) : Expr<int>) (<@ 5 @>)
-    check "vcknwwe08" (try let _ = Expr.Cast(<@@ 5 @@>) : Expr<string> in false with :? System.ArgumentException -> true) true
-    check "vcknwwe09" (match Expr.Coerce(<@@ 5 @@>, typeof<obj>) with Coerce(q,ty) -> ty = typeof<obj> && q = <@@ 5 @@> | _ -> false) true
-    check "vcknwwe0q" (match Expr.DefaultValue(typeof<obj>) with DefaultValue(ty) -> ty = typeof<obj> | _ -> false) true
-    check "vcknwwe0w" (match Expr.FieldGet(typeof<int>.GetField("MaxValue")) with FieldGet(None,finfo) -> finfo = typeof<int>.GetField("MaxValue") | _ -> false) true
-    check "vcknwwe0e" (match Expr.FieldSet(typeof<int>.GetField("MaxValue"),<@@ 1 @@>) with FieldSet(None,finfo,v) -> finfo = typeof<int>.GetField("MaxValue") && v = <@@ 1 @@> | _ -> false) true
-    check "vcknwwe0r" (match Expr.ForIntegerRangeLoop(Var.Global("i",typeof<int>),<@@ 1 @@>,<@@ 10 @@>,<@@ () @@>) with ForIntegerRangeLoop(v,start,finish,body) -> v = Var.Global("i",typeof<int>) && start = <@@ 1 @@> && finish = <@@ 10 @@> && body = <@@ () @@>  | _ -> false) true
-    check "vcknwwe0t" (match Expr.GlobalVar("i") : Expr<int> with Var(v) -> v = Var.Global("i",typeof<int>)   | _ -> false) true
-    check "vcknwwe0y" (match Expr.IfThenElse(<@@ true @@>,<@@ 1 @@>,<@@ 2 @@>) with IfThenElse(gd,t,e) -> gd = <@@ true @@> && t = <@@ 1 @@> && e = <@@ 2 @@>   | _ -> false) true
-    check "vcknwwe0u" (match Expr.Lambda(Var.Global("i",typeof<int>), <@@ 2 @@>) with Lambda(v,b) -> v = Var.Global("i",typeof<int>) && b = <@@ 2 @@>   | _ -> false) true
-    check "vcknwwe0i" (match Expr.Let(Var.Global("i",typeof<int>), <@@ 2 @@>, <@@ 3 @@>) with Let(v,e,b) -> v = Var.Global("i",typeof<int>) && e = <@@ 2 @@> && b = <@@ 3 @@>   | _ -> false) true
-    check "vcknwwe0o" (match Expr.LetRecursive([(Var.Global("i",typeof<int>), <@@ 2 @@>)], <@@ 3 @@>) with LetRecursive([(v,e)],b) -> v = Var.Global("i",typeof<int>) && e = <@@ 2 @@> && b = <@@ 3 @@>   | _ -> false) true
-    check "vcknwwe0p" (match Expr.LetRecursive([(Var.Global("i",typeof<int>), <@@ 2 @@>);(Var.Global("j",typeof<int>), <@@ 3 @@>)], <@@ 3 @@>) with LetRecursive([(v1,e1);(v2,e2)],b) -> v1 = Var.Global("i",typeof<int>) && v2 = Var.Global("j",typeof<int>) && e1 = <@@ 2 @@> && e2 = <@@ 3 @@> && b = <@@ 3 @@>   | _ -> false) true
-    check "vcknwwe0a" (Expr.NewArray(typeof<int>,[ <@@ 1 @@>; <@@ 2 @@> ])) <@@ [| 1;2 |] @@>
-    check "vcknwwe0s" (match Expr.NewDelegate(typeof<Action<int>>,[ Var.Global("i",typeof<int>) ], <@@ () @@>) with NewDelegate(ty,[v],e) -> ty = typeof<Action<int>> && v = Var.Global("i",typeof<int>) && e = <@@ () @@> | _ -> false) true
-    check "vcknwwe0d" (match Expr.NewObject(ctorof <@@ new obj() @@> ,[ ]) with NewObject(ty,[]) -> ty = ctorof <@@ new obj() @@> | _ -> false) true
-    check "vcknwwe0f" (match Expr.NewObject(ctorof <@@ new System.String('a',3) @@> ,[ <@@ 'b' @@>; <@@ 4 @@>]) with NewObject(ty,[x;y]) -> ty = ctorof <@@ new string('a',3) @@> && x = <@@ 'b' @@> && y = <@@ 4 @@> | _ -> false) true
-    check "vcknwwe0g" (Expr.NewRecord(typeof<int ref> ,[ <@@ 4 @@> ])) <@@ { contents = 4 } @@>
-    check "vcknwwe0h" (try let _ = Expr.NewTuple([]) in false with :? System.ArgumentException -> true) true
-    check "vcknwwe0j" (try let _ = Expr.NewTuple([ <@@ 1 @@> ]) in true with :? System.ArgumentException -> false) true
-    check "vcknwwe0k" (match Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>]) with NewTuple([x;y]) -> x = <@@ 'b' @@> && y = <@@ 4 @@> | _ -> false) true
-    check "vcknwwe0l" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>])) <@@ ('b',4) @@>
-    check "vcknwwe0z" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>])) <@@ ('b',4,5) @@>
-    check "vcknwwe0x" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>])) <@@ ('b',4,5,6) @@>
-    check "vcknwwe0c" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>; <@@ 7 @@>])) <@@ ('b',4,5,6,7) @@>
-    check "vcknwwe0v" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>; <@@ 7 @@>; <@@ 8 @@>])) <@@ ('b',4,5,6,7,8) @@>
-    check "vcknwwe0b" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>; <@@ 7 @@>; <@@ 8 @@>; <@@ 9 @@>])) <@@ ('b',4,5,6,7,8,9) @@>
-    check "vcknwwe0n" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>; <@@ 7 @@>; <@@ 8 @@>; <@@ 9 @@>; <@@ 10 @@>])) <@@ ('b',4,5,6,7,8,9,10) @@>
-    check "vcknwwe0m" (Expr.NewTuple([ <@@ 'b' @@>; <@@ 4 @@>; <@@ 5 @@>; <@@ 6 @@>; <@@ 7 @@>; <@@ 8 @@>; <@@ 9 @@>; <@@ 10 @@>])) <@@ ('b',4,5,6,7,8,9,10) @@>
-    check "vcknwwe011" (Expr.NewUnionCase(ucaseof <@@ Some(3) @@>,[ <@@ 4 @@> ])) <@@ Some(4) @@>
-    check "vcknwwe022" (Expr.NewUnionCase(ucaseof <@@ None @@>,[  ])) <@@ None @@>
-    check "vcknwwe033" (try let _ = Expr.NewUnionCase(ucaseof <@@ Some(3) @@>,[  ]) in false with :? ArgumentException -> true) true
-    check "vcknwwe044" (try let _ = Expr.NewUnionCase(ucaseof <@@ None @@>,[ <@@ 1 @@> ]) in false with :? ArgumentException -> true) true
-    check "vcknwwe055" (Expr.PropertyGet(getof <@@ System.DateTime.Now @@>,[  ])) <@@ System.DateTime.Now @@>
-    check "vcknwwe066" (try let _ = Expr.PropertyGet(getof <@@ System.DateTime.Now @@>,[ <@@ 1 @@> ]) in false with :? ArgumentException -> true) true
-    check "vcknwwe077" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>)) <@@ "3".Length @@>
-    check "vcknwwe088" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>,[  ])) <@@ "3".Length @@>
-    #if Portable
-    #else
-    check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
-    #endif
-    check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
-#if FSHARP_CORE_31
-#else
-    check "vcknwwe0qq1" (Expr.QuoteRaw(<@ "1" @>)) <@@ <@@ "1" @@> @@>
-    check "vcknwwe0qq2" (Expr.QuoteRaw(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
-    check "vcknwwe0qq3" (Expr.QuoteTyped(<@ "1" @>)) <@@ <@ "1" @> @@>
-    check "vcknwwe0qq4" (Expr.QuoteTyped(<@@ "1" @@>)) <@@ <@ "1" @> @@>
-#endif
-    check "vcknwwe0ww" (Expr.Sequential(<@@ () @@>, <@@ 1 @@>)) <@@ (); 1 @@>
-    check "vcknwwe0ee" (Expr.TryFinally(<@@ 1 @@>, <@@ () @@>)) <@@ try 1 finally () @@>
-    check "vcknwwe0rr" (match Expr.TryWith(<@@ 1 @@>, Var.Global("e1",typeof<exn>), <@@ 1 @@>, Var.Global("e2",typeof<exn>), <@@ 2 @@>) with TryWith(b,v1,ef,v2,eh) -> b = <@@ 1 @@> && eh = <@@ 2 @@> && ef = <@@ 1 @@> && v1 = Var.Global("e1",typeof<exn>) && v2 = Var.Global("e2",typeof<exn>)| _ -> false) true 
-    check "vcknwwe0tt" (match Expr.TupleGet(<@@ (1,2) @@>, 0) with TupleGet(b,n) -> b = <@@ (1,2) @@> && n = 0 | _ -> false) true 
-    check "vcknwwe0yy" (match Expr.TupleGet(<@@ (1,2) @@>, 1) with TupleGet(b,n) -> b = <@@ (1,2) @@> && n = 1 | _ -> false) true 
-    check "vcknwwe0uu" (try let _ = Expr.TupleGet(<@@ (1,2) @@>, 2) in false with :? ArgumentException -> true) true
-    check "vcknwwe0ii" (try let _ = Expr.TupleGet(<@@ (1,2) @@>, -1) in false with :? ArgumentException -> true) true
-    for i = 0 to 7 do 
-        check "vcknwwe0oo" (match Expr.TupleGet(<@@ (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
-    check "vcknwwe0pp" (match Expr.TypeTest(<@@ new obj() @@>, typeof<string>) with TypeTest(e,ty) -> e = <@@ new obj() @@> && ty = typeof<string> | _ -> false) true
-    check "vcknwwe0aa" (match Expr.UnionCaseTest(<@@ [] : int list @@>, ucaseof <@@ [] : int list @@> ) with UnionCaseTest(e,uc) -> e = <@@ [] : int list @@> && uc = ucaseof <@@ [] : int list @@>  | _ -> false) true
-    check "vcknwwe0ss" (Expr.Value(3)) <@@ 3 @@>
-    check "vcknwwe0dd" (match Expr.Var(Var.Global("i",typeof<int>)) with Var(v) -> v = Var.Global("i",typeof<int>) | _ -> false) true
-    check "vcknwwe0ff" (match Expr.VarSet(Var.Global("i",typeof<int>), <@@ 4 @@>) with VarSet(v,q) -> v = Var.Global("i",typeof<int>) && q = <@@ 4 @@>  | _ -> false) true
-    check "vcknwwe0gg" (match Expr.WhileLoop(<@@ true @@>, <@@ () @@>) with WhileLoop(g,b) -> g = <@@ true @@> && b = <@@ () @@>  | _ -> false) true
+    [<ReflectedDefinition>]
+    let test3297327 v = match v with  | A(1) -> 0 | _ -> 1
+      
+    test "check TryGetReflectedDefinition (local f)" 
+        ((<@ foo (A(1)) @> |> (function Call(None,minfo,args) -> Quotations.Expr.TryGetReflectedDefinition(minfo).IsSome | _ -> false))) 
+
+
+    [<Struct>]
+    type T2 = 
+        | A1 of int * int
+
+    test "check NewUnionCase"   (<@ A1(1,2) @> |> (function NewUnionCase(unionCase,[ Int32 1; Int32 2 ]) -> true | _ -> false))
+
+    //[<DefaultAugmentation(false); Struct>]
+    //type T3 = 
+    //    | A1 of int * int
+    //
+    //test "check NewUnionCase"   (<@ A1(1,2) @> |> (function NewUnionCase(unionCase,[ Int32 1; Int32 2 ]) -> true | _ -> false))
+
 
 module EqualityOnExprDoesntFail = 
     let q = <@ 1 @>
@@ -2283,6 +2228,14 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 #endif
           check "celnwer34" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
+      // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
+      [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
+#if NetCore
+      for m in typeof<SR>.GetMethods() do 
+#else
+      for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
+#endif
+          check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
 #if Portable
 #else

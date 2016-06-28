@@ -12,7 +12,17 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
+    <FX_NOLOADER>true</FX_NOLOADER>
   </PropertyGroup>
+  <ItemGroup>
+  <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+    <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+    <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+    <HasLceComments>false</HasLceComments>
+    <InProject>false</InProject>
+  </FilesToLocalize>
+  </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="FSBuild.txt">
       <Link>FSBuild.txt</Link>
@@ -24,6 +34,7 @@
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>Utilities/CompilerLocationUtils.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="Fsc.fsi" />
     <Compile Include="Fsc.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
@@ -41,18 +52,30 @@
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
 </Project>

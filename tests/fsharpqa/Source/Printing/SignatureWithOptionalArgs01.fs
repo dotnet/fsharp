@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing #RequiresPowerPack 
+// #Regression #NoMT #Printing
 // Regression test for FSHARP1.0:1110
 // pretty printing signatures with optional arguments
 
@@ -30,7 +30,7 @@ type AsyncTimer(f, ?delay ) =
                 curr_does_again <- does_again 
                 curr_delay <- t.Delay
               )
-          if !curr_does_again then
+          if curr_does_again then
             match curr_delay with
             | Some d -> 
                 do f()

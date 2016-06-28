@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Core.netcore</id>
+        <description>
+            .NET Core compatible version of the fsharp core library fsharp.core.dll
+            Supported Platforms: - .NET Core (netstandard1.6)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group targetFramework=".NETStandard1.6">
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
+                <dependency id="NETStandard.Library" version="1.6.0" />
+                <dependency id="System.Linq.Expressions" version="4.1.0" />
+                <dependency id="System.Linq.Queryable" version="4.0.1" />
+                <dependency id="System.Reflection.Emit" version="4.0.1" />
+                <dependency id="System.Reflection.TypeExtensions" version="4.1.0" />
+                <dependency id="System.Runtime.Loader" version="4.0.0" />
+                <dependency id="System.Net.Requests" version= "4.0.11" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
+                <dependency id="System.Threading.Thread" version="4.0.0" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="FSharp.Core.dll"     target="lib/netstandard1.6" />
+        <file src="FSharp.Core.sigdata" target="lib/netstandard1.6" />
+        <file src="FSharp.Core.optdata" target="lib/netstandard1.6" />
+        <file src="FSharp.Core.runtimeconfig.json" target="lib/netstandard1.6" />
+        <file src="FSharp.Core.sigdata" target="content/any/netstandard1.6" />
+        <file src="FSharp.Core.optdata" target="content/any/netstandard1.6" />
+        <file src="FSharp.Core.sigdata" target="runtimes/any/native/" />
+        <file src="FSharp.Core.optdata" target="runtimes/any/native/" />
+    </files>
+</package>

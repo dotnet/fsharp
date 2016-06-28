@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly Equals06
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Equals06
 {
-  // Offset: 0x00000000 Length: 0x000008B2
+  // Offset: 0x00000000 Length: 0x0000089E
 }
 .mresource public FSharpOptimizationData.Equals06
 {
-  // Offset: 0x000008B8 Length: 0x000006A0
+  // Offset: 0x000008A8 Length: 0x00000694
 }
 .module Equals06.dll
-// MVID: {4F20E45C-0759-31EC-A745-03835CE4204F}
+// MVID: {56DD23B2-0759-31EC-A745-0383B223DD56}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000003652390000
+// Image base: 0x00AC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -257,7 +257,7 @@
         // Code size       16 (0x10)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 4,4 : 10,20 
+        .line 4,4 : 10,20 'E:\\Documents\\GitHub\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals06.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -280,7 +280,7 @@
                  [3] int32 V_3,
                  [4] !a V_4,
                  [5] !a V_5)
-        .line 4,4 : 10,20 
+        .line 4,4 : 10,20 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
@@ -432,7 +432,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 4,4 : 10,20 
+        .line 4,4 : 10,20 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -638,28 +638,28 @@
                [1] class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32> t1,
                [2] class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32> t2,
                [3] int32 i)
-      .line 6,6 : 8,29 
+      .line 6,6 : 8,29 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
-      .line 7,7 : 8,32 
+      .line 7,7 : 8,32 ''
       IL_0003:  ldc.i4.1
       IL_0004:  ldc.i4.2
       IL_0005:  call       class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
                                                                                                                                                                                          !0)
       IL_000a:  stloc.1
-      .line 8,8 : 8,32 
+      .line 8,8 : 8,32 ''
       IL_000b:  ldc.i4.1
       IL_000c:  ldc.i4.3
       IL_000d:  call       class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
                                                                                                                                                                                          !0)
       IL_0012:  stloc.2
-      .line 9,9 : 8,32 
+      .line 9,9 : 8,32 ''
       IL_0013:  ldc.i4.0
       IL_0014:  stloc.3
       IL_0015:  br.s       IL_0028
 
-      .line 10,10 : 12,26 
+      .line 10,10 : 12,26 ''
       IL_0017:  ldloc.1
       IL_0018:  ldloc.2
       IL_0019:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -670,12 +670,12 @@
       IL_0025:  ldc.i4.1
       IL_0026:  add
       IL_0027:  stloc.3
-      .line 9,9 : 21,29 
+      .line 9,9 : 21,29 ''
       IL_0028:  ldloc.3
       IL_0029:  ldc.i4     0x989681
       IL_002e:  blt.s      IL_0017
 
-      .line 11,11 : 8,9 
+      .line 11,11 : 8,9 ''
       IL_0030:  ldloc.0
       IL_0031:  ret
     } // end of method EqualsMicroPerfAndCodeGenerationTests::f6

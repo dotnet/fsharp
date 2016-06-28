@@ -56,9 +56,9 @@ type internal SimpleEventLoop() =
                  setSignal exitSignal
     interface System.IDisposable with 
          member x.Dispose() =
-                     runSignal.Close();
-                     exitSignal.Close();
-                     doneSignal.Close();
+                     runSignal.Dispose();
+                     exitSignal.Dispose();
+                     doneSignal.Dispose();
                      
 
 
@@ -67,8 +67,7 @@ type InteractiveSession()  =
     let mutable evLoop = (new SimpleEventLoop() :> IEventLoop)
     let mutable showIDictionary = true
     let mutable showDeclarationValues = true
-    let mutable args =                
-        System.Environment.GetCommandLineArgs()         
+    let mutable args = System.Environment.GetCommandLineArgs()         
     let mutable fpfmt = "g10"
     let mutable fp = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider)
     let mutable printWidth = 78

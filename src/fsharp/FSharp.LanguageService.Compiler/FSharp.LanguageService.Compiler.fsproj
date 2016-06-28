@@ -14,12 +14,30 @@
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+  </ItemGroup>
   <ItemGroup>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -27,8 +45,11 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
+    <Compile Include="..\..\utils\reshapedreflection.fs">
+      <Link>Reflection\reshapedreflection.fs</Link>
+    </Compile>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.LanguageService.Compiler.dll.fs">
+      <Link>assemblyinfo.FSharp.LanguageService.Compiler.dll.fs</Link>
     </Compile>
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\sformat.fsi">
@@ -67,6 +88,9 @@
     <Compile Include="..\..\utils\HashMultiMap.fs">
       <Link>Utilities\HashMultiMap.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\EditDistance.fs">
+      <Link>Utilities\EditDistance.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\TaggedCollections.fsi">
       <Link>Utilities\TaggedCollections.fsi</Link>
     </Compile>
@@ -78,6 +102,12 @@
     </Compile>
     <Compile Include="..\QueueList.fs">
       <Link>Utilities\QueueList.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\illib.fs">
       <Link>Utilities\illib.fs</Link>
@@ -106,12 +136,6 @@
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ildiag.fsi">
-      <Link>Utilities\ildiag.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ildiag.fs">
-      <Link>Utilities\ildiag.fs</Link>
-    </Compile>
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
@@ -138,6 +162,9 @@
     </Compile>
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
+    </Compile>
+    <Compile Include="..\ErrorResolutionHints.fs">
+      <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
     <Compile Include="..\ReferenceResolution.fsi">
       <Link>ReferenceResolution\ReferenceResolution.fsi</Link>
@@ -208,6 +235,12 @@
     </Compile>
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fsi">
+      <Link>AbsIL/ilwritepdb.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwritepdb.fs">
+      <Link>AbsIL/ilwritepdb.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fsi">
       <Link>AbsIL/ilwrite.fsi</Link>
@@ -340,6 +373,15 @@
     <Compile Include="..\infos.fs">
       <Link>Logic\infos.fs</Link>
     </Compile>
+    <Compile Include="..\AccessibilityLogic.fs">
+      <Link>Logic\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="..\AttributeChecking.fs">
+      <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\InfoReader.fs">
+      <Link>Logic\InfoReader.fs</Link>
+    </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>Logic\NicePrint.fs</Link>
     </Compile>
@@ -357,6 +399,15 @@
     </Compile>
     <Compile Include="..\TypeRelations.fs">
       <Link>Logic\TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="..\SignatureConformance.fs">
+      <Link>Logic\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodOverrides.fs">
+      <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fs">
+      <Link>Logic\MethodCalls.fs</Link>
     </Compile>
     <Compile Include="..\PatternMatchCompilation.fsi">
       <Link>Logic\PatternMatchCompilation.fsi</Link>
@@ -514,12 +565,27 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath></Reference>
+    <Reference Include="Microsoft.DiaSymReader"><HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath></Reference>
+    <Reference Include="System.Reflection.Metadata"><HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath></Reference>
+    <Reference Include="System.Collections.Immutable"><HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81</HintPath></Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
@@ -527,9 +593,9 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
   <PropertyGroup>
-    <OtherFlags>$(OtherFlags) /warnon:1182 --sig:$(IntermediateOutputPath)\$(AssemblyName).sig</OtherFlags>
-    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>
+    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>
   <Target Name="CopyToBuiltBin">
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
@@ -538,5 +604,16 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.LanguageService.Compiler.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
       <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
     </Copy>
+  </Target>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
   </Target>
 </Project>

@@ -1,0 +1,75 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+
+    <Import Project="..\src\Microbuild.Settings.targets" />
+
+    <PropertyGroup>
+        <SetupRootFolder>.</SetupRootFolder>
+        <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+        <Languages Condition="'$(Languages)' == ''">ENU</Languages>
+        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <SetupLanguages Include="$(Languages.Split(','))" />
+        
+        <PkgDefProjects Include="..\src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+        <PkgDefProjects Include="..\src\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
+        <PkgDefProjects Include="..\vsintegration\src\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj" />
+    </ItemGroup>
+
+    <Import Project="FSharp.Setup.props" />
+
+    <Target Name="Build">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Build" />
+        <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Rebuild" Properties="Lang=%(SetupLanguages.Identity)"/>
+        <MSBuild Projects="@(PkgDefProjects)" Targets="Build;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
+            
+        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Build" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Build" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Build" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Build" />
+        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Build" />
+    </Target>
+    
+    <Target Name="Rebuild">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Rebuild" />
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Rebuild" Properties="Lang=%(SetupLanguages.Identity)"/>
+        <MSBuild Projects="@(PkgDefProjects)" Targets="Rebuild;GeneratePkgDef;CopyPkgDef" Properties="Configuration=$(Configuration)" />
+        
+        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Rebuild" />
+        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Rebuild" />
+    </Target>
+    
+    <Target Name="Clean">
+        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Clean" />
+        <MSBuild Projects="FSharp.SDK\FSharp.SDK.wixproj" Targets="Clean" Properties="Lang=%(SetupLanguages.Identity)"/>     
+        <MSBuild Projects="@(PkgDefProjects)" Targets="Clean" Properties="Configuration=$(Configuration)" />  
+        
+        <MSBuild Projects="Swix\FSharp.SDK\FSharp.SDK.swixproj" Targets="Clean" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Desktop.swixproj" Targets="Clean" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.WebDevelopment.swixproj" Targets="Clean" />
+        <MSBuild Projects="Swix\VisualFSharpVSIX\VisualFSharpVSIX.Professional.swixproj" Targets="Clean" />
+        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Clean" />
+    </Target>
+    
+    <Target Name="CopyLocalizationResources" BeforeTargets="Build">
+        <ItemGroup>
+            <SetupLocalizationResources Include="resources\**\*.*" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(SetupLocalizationResources)"
+              DestinationFiles="@(SetupLocalizationResources->'$(OutputPath)\resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+</Project>
+

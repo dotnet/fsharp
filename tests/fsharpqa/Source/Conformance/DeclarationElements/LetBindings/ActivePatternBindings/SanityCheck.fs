@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #LetBindings #ActivePatterns #RequiresPowerPack 
+// #Conformance #DeclarationElements #LetBindings #ActivePatterns 
 #light
 
 let (|A|B|) x = if x < 0 then A else B
@@ -13,18 +13,18 @@ let _ =
     | A -> exit 1
     | B -> printfn "Great!"
     
-// Example from Expert F#
-open Microsoft.FSharp.Math
-let (|Rect|) (x:complex) = (x.RealPart, x.ImaginaryPart)
 
-let addViaRect a b =
+
+let (|DT|) (x:System.DateTime) = (x.Date, x.TimeOfDay)
+
+let maxit a b =
     match a, b with
-    | Rect (ar, ai), Rect (br, bi) -> Complex.mkRect(ar+br, ai+bi)
+    | DT (ar, ai), DT (br, bi) -> max ar br
     
-let result = addViaRect Complex.One Complex.OneI
-if result.r.CompareTo(1.0) <> result.i.CompareTo(1.0) then exit 1
+let result = maxit System.DateTime.Now System.DateTime.Now
+if result.Date <> System.DateTime.Now.Date then exit 1
 
-// Looks like active patterns are working OK
+
 exit 0
 
 

@@ -14,22 +14,22 @@ module Analyses =
 
     let ``fsc >a 2>&1`` cfg dir = 
         let ``exec >a 2>&1`` outFile p = 
-            Command.exec dir cfg.EnvironmentVariables { Output = OutputAndError(Overwrite(outFile)); Input = None; } p 
+            Command.exec dir cfg.EnvironmentVariables { Output = OutputAndErrorToSameFile(Overwrite(outFile)); Input = None; } p 
             >> checkResult
         Printf.ksprintf (fun flags sources out -> Commands.fsc (``exec >a 2>&1`` out) cfg.FSC flags sources)
 
-    let fsdiff cfg dir a b = processor {
+    let fsdiff cfg dir a b = attempt {
         let out = new ResizeArray<string>()
         let redirectOutputToFile path args =
             log "%s %s" path args
-            let toLog = redirectToLog ()
+            use toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
         do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
         return out.ToArray() |> List.ofArray
         }
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
-    let functionSizes () = check (processor {
+    let functionSizes () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let getfullpath = Commands.getfullpath dir
@@ -55,7 +55,7 @@ module Analyses =
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
-    let totalSizes () = check (processor {
+    let totalSizes () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
@@ -81,7 +81,7 @@ module Analyses =
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
-    let hasEffect () = check (processor {
+    let hasEffect () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
@@ -107,7 +107,7 @@ module Analyses =
         })
 
     [<Test; FSharpSuiteTest("optimize/analyses")>]
-    let noNeedToTailcall () = check (processor {
+    let noNeedToTailcall () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let ``fsc >a 2>&1`` = ``fsc >a 2>&1`` cfg dir  
@@ -137,7 +137,7 @@ module Analyses =
 
 module Inline = 
 
-    let build cfg dir = processor {
+    let build cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
@@ -163,7 +163,7 @@ module Inline =
 
         }
 
-    let run cfg dir = processor {
+    let run cfg dir = attempt {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let ildasm = Printf.ksprintf (Commands.ildasm exec cfg.ILDASM)
@@ -211,7 +211,7 @@ module Inline =
         }
 
     [<Test; FSharpSuiteTest("optimize/inline")>]
-    let ``inline`` () = check (processor {
+    let ``inline`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         do! build cfg dir
@@ -223,7 +223,7 @@ module Inline =
 module Stats = 
 
     [<Test; FSharpSuiteTest("optimize/stats")>]
-    let stats () = check (processor {
+    let stats () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult

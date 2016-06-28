@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
+    <TargetType>LIBRARY</TargetType>
+    <NoWarn>$(NoWarn);52;75;62</NoWarn>
+    <UseVsVersion>true</UseVsVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
+    <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions>
+    <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <RCResourceFile>ProjectResources.rc</RCResourceFile>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <ItemGroup>
+    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+    </FilesToLocalize>
+    <FilesToLocalize Include="$(OutDir)MenusAndCommands.vsct">
+      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\MenusAndCommands.vsct.lcl</TranslationFile>
+      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\MenusAndCommands.vsct.lci</LciCommentFile>
+      <HasLceComments>false</HasLceComments>
+      <InProject>false</InProject>
+      <Link>FSharp.ProjectSystem.FSharp.dll</Link>
+      <Parser>210</Parser>
+    </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
+    <VSCTCompile Include="MenusAndCommands.vsct" />
+    <EmbeddedResource Include="VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+    </EmbeddedResource>
+    <None Include="..\..\FSharp.VS.FSI\fsiCommands.vsct">
+      <Link>fsiCommands.vsct</Link>
+    </None>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ProjectPrelude.fs" />
+    <Compile Include="MSBuildUtilities.fs" />
+    <Compile Include="AppConfigHelper.fs" />
+    <Compile Include="Project.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="Microsoft.VisualStudio.DebuggerVisualizers" />
+    <Reference Include="EnvDTE.dll" />
+    <Reference Include="EnvDTE80.dll" />
+    <Reference Include="VSLangProj" />
+    <Reference Include="VSLangProj80" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+        <HintPath>$(VS150COMNTOOLS)\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion)">
+        <HintPath>$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Name>FSharp.LanguageService.Compiler</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Name>FSharp.LanguageService</Name>
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj">
+      <Name>FSHarp.VS.FSI</Name>
+      <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
+      <Name>ProjectSystem.Base</Name>
+      <Project>{b700e38b-f8c0-4e49-b5ec-db7b7ac0c4e7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj">
+      <Name>FSharp.PropertiesPages</Name>
+      <Project>{fcfb214c-462e-42b3-91ca-fc557efee74f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Name>FSharp.LanguageService.Base</Name>
+      <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <PropertyGroup>
+    <BuildingProject>true</BuildingProject>
+    <BuildDependsOn>VSCTCompile;CopyCtoFile;$(BuildDependsOn)</BuildDependsOn>
+  </PropertyGroup>
+  <Target Name="CopyCtoFile">
+    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
+  </Target>
+  <PropertyGroup>
+    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" />
+  </Target>
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>Microsoft</Authenticode>
+         <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+  <Target Name="CopyLocalizationResources" BeforeTargets="Localize">
+    <ItemGroup>
+      <LocalizationResources Include="MenusAndCommands.vsct" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

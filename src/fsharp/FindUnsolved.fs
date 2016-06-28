@@ -7,12 +7,12 @@
 module internal Microsoft.FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities
+
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler
-
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
@@ -231,16 +231,18 @@ and accModuleOrNamespaceDefs cenv env x = List.iter (accModuleOrNamespaceDef cen
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,_m) -> 
+    | TMDefRec(_,tycons,mbinds,_m) -> 
         accTycons cenv env tycons; 
-        accBinds cenv env binds;
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind,_m)  -> accBind cenv env bind 
     | TMDefDo(e,_m)  -> accExpr cenv env e
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 and accModuleOrNamespaceBinds cenv env xs = List.iter (accModuleOrNamespaceBind cenv env) xs
-and accModuleOrNamespaceBind cenv env (ModuleOrNamespaceBinding(mspec, rhs)) = accTycon cenv env mspec; accModuleOrNamespaceDef cenv env rhs 
+and accModuleOrNamespaceBind cenv env x = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind -> accBind cenv env bind
+    | ModuleOrNamespaceBinding.Module(mspec, rhs) -> accTycon cenv env mspec; accModuleOrNamespaceDef cenv env rhs 
 
 let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
    let cenv = 

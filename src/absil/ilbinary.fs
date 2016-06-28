@@ -62,27 +62,27 @@ module TableNames =
 
     let UserStrings           = TableName 0x70 (* Special encoding of embedded UserString tokens - See 1.9 Partition III *) 
 
-/// Which tables are sorted and by which column 
+/// Which tables are sorted and by which column. 
 //
 // Sorted bit-vector as stored by CLR V1: 00fa 0133 0002 0000 
 // But what does this mean?  The ECMA spec does not say! 
 // Metainfo -schema reports sorting as shown below. 
 // But some sorting, e.g. EventMap does not seem to show 
 let sortedTableInfo = 
-  [ (TableNames.InterfaceImpl,0); 
-    (TableNames.Constant, 1);
-    (TableNames.CustomAttribute, 0);
-    (TableNames.FieldMarshal, 0);
-    (TableNames.Permission, 1);
-    (TableNames.ClassLayout, 2);
-    (TableNames.FieldLayout, 1);
-    (TableNames.MethodSemantics, 2);
-    (TableNames.MethodImpl, 0);
-    (TableNames.ImplMap, 1);
-    (TableNames.FieldRVA, 1);
-    (TableNames.Nested, 0);
-    (TableNames.GenericParam, 2); 
-    (TableNames.GenericParamConstraint, 0); ]
+  [ (TableNames.InterfaceImpl,0) 
+    (TableNames.Constant, 1)
+    (TableNames.CustomAttribute, 0)
+    (TableNames.FieldMarshal, 0)
+    (TableNames.Permission, 1)
+    (TableNames.ClassLayout, 2)
+    (TableNames.FieldLayout, 1)
+    (TableNames.MethodSemantics, 2)
+    (TableNames.MethodImpl, 0)
+    (TableNames.ImplMap, 1)
+    (TableNames.FieldRVA, 1)
+    (TableNames.Nested, 0)
+    (TableNames.GenericParam, 2) 
+    (TableNames.GenericParamConstraint, 0) ]
     
 [<Struct>]
 type TypeDefOrRefTag(tag: int32) = member x.Tag = tag
@@ -540,127 +540,127 @@ let i_ldelem_any = 0xa3
 let i_stelem_any = 0xa4
 let i_unbox_any = 0xa5
 
-let mk_ldc i = (((mkLdcInt32 (i))))
+let mk_ldc i = mkLdcInt32 i
 let noArgInstrs  = 
-   lazy [ i_ldc_i4_0,           mk_ldc 0;
-          i_ldc_i4_1,           mk_ldc 1;
-          i_ldc_i4_2,           mk_ldc 2;
-          i_ldc_i4_3,           mk_ldc 3;
-          i_ldc_i4_4,           mk_ldc 4;
-          i_ldc_i4_5,           mk_ldc 5;
-          i_ldc_i4_6,           mk_ldc 6;
-          i_ldc_i4_7,           mk_ldc 7;
-          i_ldc_i4_8,           mk_ldc 8;
-          i_ldc_i4_m1,           mk_ldc (0-1);
-          0x0a,            (mkStloc (uint16 ( 0)));
-          0x0b,            (mkStloc (uint16 ( 1)));
-          0x0c,            (mkStloc (uint16 ( 2)));
-          0x0d,            (mkStloc (uint16 ( 3)));
-          0x06,            (mkLdloc (uint16 ( 0)));
-          0x07,            (mkLdloc (uint16 ( 1)));
-          0x08,            (mkLdloc (uint16 ( 2)));
-          0x09,            (mkLdloc (uint16 ( 3)));
-          0x02,            (mkLdarg (uint16 ( 0)));
-          0x03,            (mkLdarg (uint16 ( 1)));
-          0x04,            (mkLdarg (uint16 ( 2)));
-          0x05,            (mkLdarg (uint16 ( 3)));
-          0x2a,              (I_ret);
-          0x58,              (AI_add);
-          0xd6,        (AI_add_ovf);
-          0xd7,   (AI_add_ovf_un);
-          0x5f,              (AI_and);  
-          0x5b,              (AI_div); 
-          0x5c,         (AI_div_un);
-          0xfe01,              (AI_ceq);  
-          0xfe02,              (AI_cgt );
-          0xfe03,         (AI_cgt_un);
-          0xfe04,              (AI_clt);
-          0xfe05,         (AI_clt_un);
-          0x67,        ((AI_conv DT_I1));  
-          0x68,   ((AI_conv DT_I2));  
-          0x69,   ((AI_conv DT_I4));  
-          0x6a,   ((AI_conv DT_I8));  
-          0xd3,   ((AI_conv DT_I));  
-          0x6b,   ((AI_conv DT_R4));  
-          0x6c,   ((AI_conv DT_R8));  
-          0xd2,   ((AI_conv DT_U1));  
-          0xd1,   ((AI_conv DT_U2));  
-          0x6d,   ((AI_conv DT_U4));  
-          0x6e,   ((AI_conv DT_U8));  
-          0xe0,   ((AI_conv DT_U));  
-          0x76,   ((AI_conv DT_R));  
-          0xb3,   ((AI_conv_ovf DT_I1));  
-          0xb5,   ((AI_conv_ovf DT_I2));  
-          0xb7,   ((AI_conv_ovf DT_I4));  
-          0xb9,   ((AI_conv_ovf DT_I8));  
-          0xd4,   ((AI_conv_ovf DT_I));  
-          0xb4,   ((AI_conv_ovf DT_U1));  
-          0xb6,   ((AI_conv_ovf DT_U2));  
-          0xb8,   ((AI_conv_ovf DT_U4));  
-          0xba,   ((AI_conv_ovf DT_U8));  
-          0xd5,   ((AI_conv_ovf DT_U));  
-          0x82,   ((AI_conv_ovf_un DT_I1));  
-          0x83,   ((AI_conv_ovf_un DT_I2));  
-          0x84,   ((AI_conv_ovf_un DT_I4));  
-          0x85,   ((AI_conv_ovf_un DT_I8));  
-          0x8a,   ((AI_conv_ovf_un DT_I));  
-          0x86,   ((AI_conv_ovf_un DT_U1));  
-          0x87,   ((AI_conv_ovf_un DT_U2));  
-          0x88,   ((AI_conv_ovf_un DT_U4));  
-          0x89,   ((AI_conv_ovf_un DT_U8));  
-          0x8b,   ((AI_conv_ovf_un DT_U));  
-          0x9c,   (I_stelem DT_I1);  
-          0x9d,   (I_stelem DT_I2);  
-          0x9e,   (I_stelem DT_I4);  
-          0x9f,   (I_stelem DT_I8);  
-          0xa0,   (I_stelem DT_R4);  
-          0xa1,   (I_stelem DT_R8);  
-          0x9b,   (I_stelem DT_I);  
-          0xa2,   (I_stelem DT_REF);  
-          0x90,   (I_ldelem DT_I1);  
-          0x92,   (I_ldelem DT_I2);  
-          0x94,   (I_ldelem DT_I4);  
-          0x96,   (I_ldelem DT_I8);  
-          0x91,   (I_ldelem DT_U1);  
-          0x93,   (I_ldelem DT_U2);  
-          0x95,   (I_ldelem DT_U4);  
-          0x98,   (I_ldelem DT_R4);  
-          0x99,   (I_ldelem DT_R8);  
-          0x97,   (I_ldelem DT_I);  
-          0x9a,   (I_ldelem DT_REF);  
-          0x5a,   (AI_mul  );
-          0xd8,   (AI_mul_ovf);
-          0xd9,   (AI_mul_ovf_un);
-          0x5d,   (AI_rem  );
-          0x5e,   (AI_rem_un ); 
-          0x62,   (AI_shl ); 
-          0x63,   (AI_shr ); 
-          0x64,   (AI_shr_un);
-          0x59,   (AI_sub  );
-          0xda,   (AI_sub_ovf);
-          0xdb,   (AI_sub_ovf_un); 
-          0x61,   (AI_xor);  
-          0x60,   (AI_or);     
-          0x65,   (AI_neg);     
-          0x66,   (AI_not);     
-          i_ldnull,   (AI_ldnull);   
-          i_dup,   (AI_dup);   
-          i_pop,   (AI_pop);
-          i_ckfinite,   (AI_ckfinite);
-          i_nop,   AI_nop;
-          i_break,   I_break;
-          i_arglist,   I_arglist;
-          i_endfilter,   I_endfilter;
-          i_endfinally,   I_endfinally;
-          i_refanytype,   I_refanytype;
-          i_localloc,   I_localloc;
-          i_throw,   I_throw;
-          i_ldlen,   I_ldlen;
-          i_rethrow,       I_rethrow; ];;
+   lazy [ i_ldc_i4_0,           mk_ldc 0
+          i_ldc_i4_1,           mk_ldc 1
+          i_ldc_i4_2,           mk_ldc 2
+          i_ldc_i4_3,           mk_ldc 3
+          i_ldc_i4_4,           mk_ldc 4
+          i_ldc_i4_5,           mk_ldc 5
+          i_ldc_i4_6,           mk_ldc 6
+          i_ldc_i4_7,           mk_ldc 7
+          i_ldc_i4_8,           mk_ldc 8
+          i_ldc_i4_m1,           mk_ldc -1
+          0x0a,            mkStloc 0us
+          0x0b,            mkStloc 1us
+          0x0c,            mkStloc 2us
+          0x0d,            mkStloc 3us
+          0x06,            mkLdloc 0us
+          0x07,            mkLdloc 1us
+          0x08,            mkLdloc 2us
+          0x09,            mkLdloc 3us
+          0x02,            mkLdarg 0us
+          0x03,            mkLdarg 1us
+          0x04,            mkLdarg 2us
+          0x05,            mkLdarg 3us
+          0x2a,              I_ret
+          0x58,              AI_add
+          0xd6,        AI_add_ovf
+          0xd7,   AI_add_ovf_un
+          0x5f,              AI_and
+          0x5b,              AI_div
+          0x5c,         AI_div_un
+          0xfe01,              AI_ceq
+          0xfe02,              AI_cgt
+          0xfe03,         AI_cgt_un
+          0xfe04,              AI_clt
+          0xfe05,         AI_clt_un
+          0x67,        AI_conv DT_I1
+          0x68,   AI_conv DT_I2 
+          0x69,   AI_conv DT_I4
+          0x6a,   AI_conv DT_I8  
+          0xd3,   AI_conv DT_I  
+          0x6b,   AI_conv DT_R4  
+          0x6c,   AI_conv DT_R8  
+          0xd2,   AI_conv DT_U1  
+          0xd1,   AI_conv DT_U2  
+          0x6d,   AI_conv DT_U4  
+          0x6e,   AI_conv DT_U8  
+          0xe0,   AI_conv DT_U  
+          0x76,   AI_conv DT_R  
+          0xb3,   AI_conv_ovf DT_I1  
+          0xb5,   AI_conv_ovf DT_I2  
+          0xb7,   AI_conv_ovf DT_I4  
+          0xb9,   AI_conv_ovf DT_I8  
+          0xd4,   AI_conv_ovf DT_I  
+          0xb4,   AI_conv_ovf DT_U1  
+          0xb6,   AI_conv_ovf DT_U2  
+          0xb8,   AI_conv_ovf DT_U4  
+          0xba,   AI_conv_ovf DT_U8  
+          0xd5,   AI_conv_ovf DT_U  
+          0x82,   AI_conv_ovf_un DT_I1  
+          0x83,   AI_conv_ovf_un DT_I2  
+          0x84,   AI_conv_ovf_un DT_I4  
+          0x85,   AI_conv_ovf_un DT_I8  
+          0x8a,   AI_conv_ovf_un DT_I  
+          0x86,   AI_conv_ovf_un DT_U1  
+          0x87,   AI_conv_ovf_un DT_U2  
+          0x88,   AI_conv_ovf_un DT_U4  
+          0x89,   AI_conv_ovf_un DT_U8  
+          0x8b,   AI_conv_ovf_un DT_U  
+          0x9c,   I_stelem DT_I1  
+          0x9d,   I_stelem DT_I2
+          0x9e,   I_stelem DT_I4  
+          0x9f,   I_stelem DT_I8  
+          0xa0,   I_stelem DT_R4  
+          0xa1,   I_stelem DT_R8  
+          0x9b,   I_stelem DT_I  
+          0xa2,   I_stelem DT_REF  
+          0x90,   I_ldelem DT_I1
+          0x92,   I_ldelem DT_I2  
+          0x94,   I_ldelem DT_I4  
+          0x96,   I_ldelem DT_I8  
+          0x91,   I_ldelem DT_U1  
+          0x93,   I_ldelem DT_U2  
+          0x95,   I_ldelem DT_U4 
+          0x98,   I_ldelem DT_R4  
+          0x99,   I_ldelem DT_R8  
+          0x97,   I_ldelem DT_I  
+          0x9a,   I_ldelem DT_REF  
+          0x5a,   AI_mul
+          0xd8,   AI_mul_ovf
+          0xd9,   AI_mul_ovf_un
+          0x5d,   AI_rem
+          0x5e,   AI_rem_un
+          0x62,   AI_shl 
+          0x63,   AI_shr
+          0x64,   AI_shr_un
+          0x59,   AI_sub
+          0xda,   AI_sub_ovf
+          0xdb,   AI_sub_ovf_un
+          0x61,   AI_xor
+          0x60,   AI_or
+          0x65,   AI_neg
+          0x66,   AI_not
+          i_ldnull,     AI_ldnull
+          i_dup,        AI_dup
+          i_pop,        AI_pop
+          i_ckfinite,   AI_ckfinite
+          i_nop,        AI_nop
+          i_break,      I_break
+          i_arglist,    I_arglist
+          i_endfilter,  I_endfilter
+          i_endfinally, I_endfinally
+          i_refanytype, I_refanytype
+          i_localloc,   I_localloc
+          i_throw,      I_throw
+          i_ldlen,      I_ldlen
+          i_rethrow,    I_rethrow ]
 
 let isNoArgInstr i = 
   match i with 
-  | (AI_ldc (DT_I4, ILConst.I4 n)) when (-1) <= n && n <= 8 -> true
+  | AI_ldc (DT_I4, ILConst.I4 n) when -1 <= n && n <= 8 -> true
   | I_stloc n | I_ldloc n | I_ldarg n when n <= 3us -> true
   | I_ret
   | AI_add
@@ -789,7 +789,7 @@ let ILCmpInstrRevMap =
           BI_brfalse , i_brfalse_s
           BI_brtrue , i_brtrue_s ])
 
-(* From corhdr.h *)
+// From corhdr.h 
 
 let nt_VOID        = 0x1uy
 let nt_BOOLEAN     = 0x2uy
@@ -836,7 +836,7 @@ let nt_CUSTOMMARSHALER = 0x2Cuy
 let nt_ERROR       = 0x2Duy
 let nt_MAX = 0x50uy
 
-(* From c:/clrenv.i386/Crt/Inc/i386/hs.h *)
+// From c:/clrenv.i386/Crt/Inc/i386/hs.h
 
 let vt_EMPTY = 0
 let vt_NULL = 1

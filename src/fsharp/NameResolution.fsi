@@ -3,17 +3,17 @@
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Import
+open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.PrettyNaming
-
-
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
@@ -55,7 +55,7 @@ type Item =
   | ILField of ILFieldInfo
   | Event of EventInfo
   | Property of string * PropInfo list
-  | MethodGroup of string * MethInfo list
+  | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
   | CtorGroup of string * MethInfo list
   | FakeInterfaceCtor of TType
   | DelegateCtor of TType
@@ -261,7 +261,7 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation : range -> unit
@@ -300,6 +300,9 @@ val internal CallEnvSink                : TcResultsSink -> range * NameResolutio
 
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+
+/// Report a specific name resolution at a source range, replacing any previous resolutions
+val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit
@@ -363,7 +366,7 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
 /// Resolve a long identifier to a field
-val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
+val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> Ident list -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list
@@ -407,4 +410,4 @@ type ResolveCompletionTargets =
     | SettablePropertiesAndFields
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
-val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> Infos.AccessorDomain -> bool -> TType -> Item list
+val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list

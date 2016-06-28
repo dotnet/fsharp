@@ -27,7 +27,7 @@ module ProductVersionTest =
         |> List.map (fun (a,f,i,e) -> FSharpSuiteTestCaseData(Commands.createTempDir(), a, f, i, e))
 
     [<TestCaseSource("fallbackTestData")>]
-    let ``should use correct fallback`` assemblyVersion fileVersion infoVersion expected = check (processor {
+    let ``should use correct fallback`` assemblyVersion fileVersion infoVersion expected = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let fscToLibrary = Printf.ksprintf (fun flags -> FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC flags)

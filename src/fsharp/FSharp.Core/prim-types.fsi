@@ -763,10 +763,8 @@ namespace Microsoft.FSharp.Core
     /// <c>System.Int64</c>.</summary>
     type int64<[<Measure>] 'Measure> = int64
 
-
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
-
 
         /// <summary>Compare two values for equality using partial equivalence relation semantics ([nan] &lt;&gt; [nan])</summary>
         /// <param name="e1">The first value.</param>
@@ -2218,7 +2216,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The concatenation of the lists.</returns>
         val (@): list1:'T list -> list2:'T list -> 'T list
 
-        /// <summary>Negate a logical value. <c>not true</c> equals <c>false</c> and <c>not false</c> equals <c>true</c></summary>
+        /// <summary>Negate a logical value. Not True equals False and not False equals True</summary>
         /// <param name="value">The value to negate.</param>
         /// <returns>The result of the negation.</returns>
         [<CompiledName("Not")>]

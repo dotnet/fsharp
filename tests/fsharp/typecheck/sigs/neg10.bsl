@@ -110,10 +110,10 @@ neg10.fs(222,10,222,12): typecheck error FS0044: This construct is deprecated. O
 neg10.fs(239,47,239,48): typecheck error FS0001: A type parameter is missing a constraint 'when 'b :> C'
 
 neg10.fs(239,47,239,48): typecheck error FS0193: Type constraint mismatch. The type 
-    'b    
+    ''b'    
 is not compatible with type
-    C    
-A type parameter is missing a constraint 'when 'b :> C'
+    'C'    
+
 
 neg10.fs(245,50,245,51): typecheck error FS0193: A type parameter is missing a constraint 'when 'b :> C'
 

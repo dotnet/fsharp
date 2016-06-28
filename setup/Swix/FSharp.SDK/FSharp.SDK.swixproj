@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <OutputArchitecture>neutral</OutputArchitecture>
+    <OutputLocalized>false</OutputLocalized>
+    <OutputType>manifest</OutputType>
+    <IsPackage>true</IsPackage>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <PropertyGroup>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Package Include="Files.swr" />
+  </ItemGroup>
+</Project>

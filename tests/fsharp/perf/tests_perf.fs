@@ -13,8 +13,8 @@ let testContext = FSharpTestSuite.testContext
 
 module Graph = 
 
-    [<Test; FSharpSuitePermutations("perf/graph")>]
-    let graph p = check (processor {
+    [<Test; FSharpSuiteScriptPermutations("perf/graph")>]
+    let graph p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p
@@ -25,8 +25,8 @@ module Graph =
 
 module Nbody = 
 
-    [<Test; FSharpSuitePermutations("perf/nbody")>]
-    let nbody p = check (processor {
+    [<Test; FSharpSuiteScriptPermutations("perf/nbody")>]
+    let nbody p = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
         
         do! SingleTestBuild.singleTestBuild cfg dir p

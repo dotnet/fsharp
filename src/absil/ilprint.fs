@@ -21,7 +21,6 @@ let pretty () = true
 // Pretty printing
 // --------------------------------------------------------------------
 
-
 let tyvar_generator = 
   let i = ref 0 
   fun n -> 
@@ -440,12 +439,12 @@ let goutput_alternative_ref env os (alt: IlxUnionAlternative) =
   output_id os alt.Name; 
   alt.FieldDefs |> Array.toList |> output_parens (output_seq "," (fun os fdef -> goutput_typ env os fdef.Type)) os 
 
-let goutput_curef env os (IlxUnionRef(tref,alts,_,_)) =
+let goutput_curef env os (IlxUnionRef(_,tref,alts,_,_)) =
   output_string os " .classunion import ";
   goutput_tref env os tref;
   output_parens (output_seq "," (goutput_alternative_ref env)) os (Array.toList alts)
     
-let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(tref,_,_,_),i)) =
+let goutput_cuspec env os (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),i)) =
   output_string os "class /* classunion */ ";
   goutput_tref env os  tref;
   goutput_gactuals env os i
@@ -529,7 +528,7 @@ let rec goutput_apps env os =  function
       output_string os "--> "; 
       goutput_typ env os ty
 
-/// utilities to help print out short forms of instructions
+/// Print the short form of instructions
 let output_short_u16 os (x:uint16) =
      if int x < 256 then (output_string os ".s "; output_u16 os x)
      else (output_string os " "; output_u16 os x)
@@ -578,7 +577,7 @@ let rec goutput_instr env os inst =
   match inst with
   | si when isNoArgInstr si ->
        output_lid os (wordsOfNoArgInstr si)
-  | I_brcmp (cmp,tg1,_tg2)  -> 
+  | I_brcmp (cmp,tg1)  -> 
       output_string os 
           (match cmp with 
           | BI_beq -> "beq"
@@ -641,7 +640,7 @@ let rec goutput_instr env os inst =
       output_string os "stind.";
       output_basic_type os dt 
   | I_stloc u16 -> output_string os "stloc"; output_short_u16 os u16
-  | I_switch (l,_dflt) -> output_string os "switch "; output_parens (output_seq "," output_code_label) os l
+  | I_switch l -> output_string os "switch "; output_parens (output_seq "," output_code_label) os l
   | I_callvirt  (tl,mspec,varargs) -> 
       output_tailness os tl;
       output_string os "callvirt ";
@@ -755,141 +754,21 @@ let rec goutput_instr env os inst =
   | I_cpobj tok -> output_string os "cpobj "; goutput_typ env os tok
   | I_sizeof  tok -> output_string os "sizeof "; goutput_typ env os tok
   | I_seqpoint  s -> output_source os s
-  |  (EI_ilzero ty) -> output_string os "ilzero "; goutput_typ env os ty
-  | I_other e when isIlxExtInstr e -> 
-      match (destIlxExtInstr e) with 
-      | EI_castdata (check,ty,n)     ->
-          if not check then output_string os "/* unchecked. */ ";
-          output_string os "castdata ";
-          goutput_cuspec env os ty;
-          output_string os ",";
-          output_int os n
-      | (EI_isdata (_,ty,n))  -> 
-          output_string os "isdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
-      |  (EI_brisdata (_,ty,n,tg1,_)) -> 
-          output_string os "brisdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_string os "(";  
-          output_int os n;
-          output_string os ",";  
-          output_code_label os tg1;
-          output_string os ")"
-      | (EI_lddata (_,ty,n,m))  -> 
-          output_string os "lddata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
-      | (EI_lddatatag (_,ty)) -> 
-          output_string os "lddatatag "; 
-          goutput_cuspec env os ty
-      |  (EI_stdata (ty,n,m)) -> 
-          output_string os "stdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n; 
-          output_string os ","; 
-          output_int os m
-      |  (EI_newdata (ty,n))  -> 
-          output_string os "newdata "; 
-          goutput_cuspec env os ty; 
-          output_string os ",";  
-          output_int os n
-      |  (EI_datacase (_,ty,l,_))  -> 
-          output_string os "datacase";
-          output_string os " ";  
-          goutput_cuspec env os ty;
-          output_string os ",";  
-          output_parens (output_seq "," (fun os (x,y) -> output_int os x;  output_string os ",";  output_code_label os y)) os l
-      |  (EI_callfunc (tl,cs)) -> 
-          output_tailness os tl; 
-          output_string os "callfunc "; 
-          goutput_apps env os cs;
-          output_after_tailcall os tl;
+  | EI_ilzero ty -> output_string os "ilzero "; goutput_typ env os ty
   | _ -> 
       output_string os "<printing for this instruction is not implemented>"
 
 
-let goutput_ilmbody env os il =
+let goutput_ilmbody env os (il: ILMethodBody) =
   if il.IsZeroInit then output_string os " .zeroinit\n";
   output_string os " .maxstack ";
   output_i32 os il.MaxStack;
   output_string os "\n";
-  let output_susp os susp = 
-    match susp with
-    | Some s -> 
-        output_string os "\nbr "; output_code_label os s; output_string os "\n" 
-    | _ -> () 
-  let commit_susp os susp lab = 
-    match susp with
-    | Some s when s <> lab -> output_susp os susp
-    | _ -> () 
   if il.Locals.Length  <> 0 then 
     output_string os " .locals(";
     output_seq ",\n " (goutput_local env)  os il.Locals
     output_string os ")\n"
   
-  // Print the code by left-to-right traversal 
-  let rec goutput_block env os (susp,block) = 
-    match block with 
-    | ILBasicBlock bb ->  
-        commit_susp os susp bb.Label;
-        output_code_label os bb.Label; output_string os ": \n"  ;
-        Array.iter (fun i -> goutput_instr env os i; output_string os "\n") bb.Instructions;
-        bb.Fallthrough
-    | GroupBlock (_,l) -> 
-        let new_susp = ref susp 
-        List.iter (fun c -> new_susp := goutput_code env os (!new_susp,c)) l;
-        !new_susp
-    | RestrictBlock (_,c) -> goutput_code env os (susp,c)
-    | TryBlock (c,seh) -> 
-
-      commit_susp os susp (uniqueEntryOfCode c);
-      output_string os " .try {\n";
-      let susp = goutput_code env os (None,c) 
-      if (susp <> None) then output_string os "// warning: fallthrough at end of try\n";
-      output_string os "\n}";
-      match seh with 
-      |  FaultBlock flt -> 
-          output_string os "fault {\n";
-          output_susp os (goutput_code env os (None,flt));
-          output_string os "\n}"
-      | FinallyBlock flt -> 
-          output_string os "finally {\n";
-          output_susp os (goutput_code env os (None,flt));
-          output_string os "\n}";
-      | FilterCatchBlock clauses -> 
-          List.iter 
-             (fun (flt,ctch) -> 
-                match flt with 
-                    | TypeFilter typ ->
-                        output_string os " catch ";
-                        goutput_typ_with_shortened_class_syntax env os typ;
-                        output_string os "{\n";
-                        output_susp os (goutput_code env os (None,ctch));
-                        output_string os "\n}"
-                    | CodeFilter fltcode -> 
-                        output_string os "filter {\n";
-                        output_susp os (goutput_code env os (None,fltcode));
-                        output_string os "\n} catch {\n";
-                        output_susp os (goutput_code env os (None,ctch));
-                        output_string os "\n}";)
-             clauses
-      None
-
-  and goutput_code env os (susp,code) =
-    goutput_block env os (susp,code)
-
-  let goutput_topcode env os code = 
-    let final_susp = goutput_code env os (Some (uniqueEntryOfCode code),code) 
-    (match final_susp with Some s  -> output_string os "\nbr "; output_code_label os s; output_string os "\n" | _ -> ())
-
-  goutput_topcode env os il.Code;
 
 let goutput_mbody is_entrypoint env os md =
   match md.mdCodeKind with 
@@ -1024,30 +903,10 @@ let rec goutput_tdef (enc) env contents os cd =
           goutput_fdefs tref env os cd.Fields;
           goutput_pdefs env os cd.Properties;
   else 
-    let isclo = 
-      match cd.tdKind with 
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Closure _ ->  true
-          | _ -> false
-      | _ -> false 
-    let isclassunion = 
-      match cd.tdKind with 
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Union _ ->  true
-          | _ -> false
-      | _ -> false 
-    if not (isclo || isclassunion) || contents then 
       output_string os "\n";
       match cd.tdKind with 
       | ILTypeDefKind.Class | ILTypeDefKind.Enum | ILTypeDefKind.Delegate | ILTypeDefKind.ValueType -> output_string os ".class "
       | ILTypeDefKind.Interface ->  output_string os ".class  interface "
-      | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-          match destIlxExtTypeDefKind e with 
-          | IlxTypeDefKind.Closure _ ->  output_string os ".closure "
-          | IlxTypeDefKind.Union  _ ->  output_string os ".classunion "
-      | ILTypeDefKind.Other _ -> failwith "unknown extension" 
       output_init_semantics os cd.InitSemantics;
       output_string os " ";
       output_type_access os cd.Access;
@@ -1063,17 +922,8 @@ let rec goutput_tdef (enc) env contents os cd =
       output_sqstring os cd.Name ;
       goutput_gparams env os cd.GenericParams;
       output_string os "\n\t";
-      if isclo then 
-        match cd.tdKind with 
-        | ILTypeDefKind.Other e when isIlxExtTypeDefKind e ->
-            match destIlxExtTypeDefKind e with 
-            | IlxTypeDefKind.Closure _cloinfo ->  
-                () //goutput_freevars env os cloinfo.cloFreeVars
-            | _ -> ()
-        | _ -> ()
-      else 
-          goutput_superclass env os cd.Extends;
-          output_string os "\n\t";
+      goutput_superclass env os cd.Extends;
+      output_string os "\n\t";
       goutput_implements env os cd.Implements;
       output_string os "\n{\n ";
       if contents then 
@@ -1083,19 +933,6 @@ let rec goutput_tdef (enc) env contents os cd =
         pp_layout_decls os ();
         goutput_fdefs tref env os cd.Fields;
         goutput_mdefs env os cd.Methods;
-        match cd.tdKind with 
-        | ILTypeDefKind.Other e when isIlxExtTypeDefKind e -> 
-            match destIlxExtTypeDefKind e with 
-            | IlxTypeDefKind.Closure x ->  
-                output_string os "\n.apply ";
-                (goutput_lambdas env) os x.cloStructure;
-                output_string os "\n { ";
-                (goutput_ilmbody env) os (Lazy.force x.cloCode);
-                output_string os "}\n";
-            | IlxTypeDefKind.Union x ->  
-                Array.iter (fun x -> output_string os " .alternative "; 
-                                     goutput_alternative_ref env os x) x.cudAlternatives;
-        | _ -> ()
       goutput_tdefs contents  (enc@[cd.Name]) env os cd.NestedTypes;
       output_string os "\n}";
 

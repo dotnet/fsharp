@@ -15,7 +15,7 @@ open System.Reflection
 module FS2003 =
 
     [<Test; FSharpSuiteTest()>]
-    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (processor {
+    let ``should be raised if AssemblyInformationalVersion has invalid version`` () = check (attempt {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let fscToLibrary = Printf.ksprintf (FscCommand.fscToLibrary dir (Command.exec dir cfg.EnvironmentVariables) cfg.FSC)
@@ -43,7 +43,7 @@ open System.Reflection
         |> Assert.areEqual (45,2048,0,0)
 
         let w =
-            result.OutText
+            result.StderrText
             |> FscCommand.parseFscOut
             |> List.tryFind (function FscCommand.FscOutputLine.Warning ("FS2003", desc) -> true | _ -> false)
         

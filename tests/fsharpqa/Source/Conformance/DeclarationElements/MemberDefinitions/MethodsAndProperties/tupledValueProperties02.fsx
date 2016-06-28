@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties #RequiresPowerPack 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // Regression test for FSHARP1.0:966
 // Verify that we can have properties that takes tuples for arguments
 // Note: the non-curried syntax ((x:decimal, y:decimal)) is expected
