@@ -609,7 +609,7 @@ type DisplayEnv =
       showConstraintTyparAnnotations:bool;
       abbreviateAdditionalConstraints: bool;
       showTyparDefaultConstraints: bool
-      g: TcGlobals 
+      g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout:(Val -> layout option) }
     member SetOpenPaths: string list list -> DisplayEnv
@@ -757,7 +757,7 @@ val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidi
 val mkRepackageRemapping : SignatureRepackageInfo -> Remap 
 
 val wrapModuleOrNamespaceExprInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
-val wrapModuleOrNamespaceTypeInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType 
+val wrapModuleOrNamespaceTypeInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType * ModuleOrNamespace  
 val wrapModuleOrNamespaceType : Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
 
 val SigTypeOfImplFile : TypedImplFile -> ModuleOrNamespaceType
@@ -1394,3 +1394,5 @@ val rebuildLinearMatchExpr : (SequencePointInfoForBinding * range * DecisionTree
 val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
 val (|InnerExprPat|) : Expr -> Expr
+
+val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>

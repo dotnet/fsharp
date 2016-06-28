@@ -4,8 +4,6 @@ namespace Internal.Utilities.Collections
 open System
 open System.Collections.Generic
 
-#nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
-
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T : not struct> =
    | Strong of 'T
@@ -34,7 +32,7 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
     let mutable keepMax = max keepStrongly keepMax 
     let requiredToKeep = defaultArg requiredToKeep (fun _ -> false) 
     
-    /// Look up a the given key, return None if not found.
+    /// Look up a the given key, return <c>None</c> if not found.
     let TryPeekKeyValueImpl(data,key) = 
         let rec Lookup key = function 
             // Treat a list of key-value pairs as a lookup collection.
@@ -53,11 +51,11 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
     let Add(data,key,value) = 
         data @ [key,value]   
         
-    /// Promote a particular key value 
+    /// Promote a particular key value.
     let Promote (data, key, value) = 
         (data |> List.filter (fun (key',_)-> not (areSame(key,key')))) @ [ (key, value) ] 
 
-    /// Remove a particular key value 
+    /// Remove a particular key value.
     let RemoveImpl (data, key) = 
         let discard,keep = data |> List.partition (fun (key',_)-> areSame(key,key'))
         keep, discard
@@ -69,7 +67,7 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
             result,Promote (data,key',value)
         | None -> None,data          
        
-    /// Remove weak entries from the list that have been collected
+    /// Remove weak entries from the list that have been collected.
     let FilterAndHold() =
         [ for (key,value) in refs do
             match value with
@@ -154,7 +152,7 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
 
 type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
         
-    /// Default behavior of areSameForSubsumption function is areSame
+    /// Default behavior of <c>areSameForSubsumption</c> function is areSame.
     let areSameForSubsumption = defaultArg areSameForSubsumption areSame
         
     /// The list of items in the cache. Youngest is at the end of the list.
@@ -194,7 +192,8 @@ type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly, ar
 /// List helpers
 [<Sealed>]
 type internal List = 
-    /// Return a new list with one element for each unique 'TKey. Multiple 'TValues are flattened. The original order of the first instance of 'TKey is preserved.
+    /// Return a new list with one element for each unique 'TKey. Multiple 'TValues are flattened. 
+    /// The original order of the first instance of 'TKey is preserved.
     static member groupByFirst( l : ('TKey * 'TValue) list) : ('TKey * 'TValue list) list =
         let nextIndex = ref 0
         let result = System.Collections.Generic.List<'TKey * System.Collections.Generic.List<'TValue>>()

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <OutputArchitecture>neutral</OutputArchitecture>
+    <OutputLocalized>false</OutputLocalized>
+    <OutputType>vsix</OutputType>
+    <IsPackage>true</IsPackage>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+    <AssemblyName>VisualFSharpVSIX.Desktop</AssemblyName>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <PropertyGroup>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Package Include="CommonFiles.swr" />
+    <Package Include="DesktopTemplates.swr" />
+  </ItemGroup>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)\$(AssemblyName).vsix" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+         <Authenticode>VsixSHA2</Authenticode>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+</Project>

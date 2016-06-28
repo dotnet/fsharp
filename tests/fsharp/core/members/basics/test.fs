@@ -1,7 +1,6 @@
 // #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 module Global
 
-
 #nowarn "62"
 
 let failures = ref false

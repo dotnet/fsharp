@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+  <PropertyGroup>
+    <FSharpTreeRoot>$(MSBuildProjectDirectory)\..\..</FSharpTreeRoot>
+    <SetupRootFolder>$(FSharpTreeRoot)\setup</SetupRootFolder>
+  </PropertyGroup>
+  
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" />
+  <Import Project="$(SetupRootFolder)\FSharp.Setup.props" />
+  
+  <PropertyGroup>
+    <OutputName>FSharp.SDK</OutputName>
+    <ProjectGuid>da0da41f-0e00-4598-8eee-b29d31b0ca04</ProjectGuid>
+    <OutputType>Package</OutputType>
+    <Media>net</Media>
+    <IsPackage>true</IsPackage>
+    <OutputLocalized>false</OutputLocalized>
+    <ServiceByMajorUpgrade>true</ServiceByMajorUpgrade>
+    <DefineSolutionProperties>false</DefineSolutionProperties>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);Lang=$(Lang)</DefineConstants>
+    <DefineConstants>$(DefineConstants);BinariesDir=$(BinariesDir)</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSharpTreeRoot=$(FSharpTreeRoot)</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSharpCoreRedistDir=$(FSharpCoreRedistDir)</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSharpTypeProvidersRedistDir=$(FSharpTypeProvidersRedistDir)</DefineConstants>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <WixExtension Include="WixNetFxExtension">
+        <Name>WixNetFxExtension</Name>
+    </WixExtension>
+    <WixExtension Include="FSharp.Wix.Extensions">
+      <Name>FSharp.Wix.Extensions</Name>
+      <HintPath>$(BinariesDir)\setup\FSharp.Wix.Extensions.dll</HintPath>
+    </WixExtension>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="Common.Wix.Properties.wxs" />
+    
+    <Compile Include="FSharp.SDK.wxs" />
+    
+    <Compile Include="component-groups\Redist_ManagedFiles.wxs" />
+    <Compile Include="component-groups\Compiler_SDK.wxs" />
+    <Compile Include="component-groups\Compiler_OtherResources.wxs" />
+    <Compile Include="component-groups\Langpack_ManagedFiles.wxs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+      <FilesToSign Include="$(OutDir)$(OutputName).msi">
+         <Authenticode>Microsoft400</Authenticode>
+      </FilesToSign>
+  </ItemGroup>
+  
+  <Import Project="$(WixInstallPath)\wix.targets" />
+  <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
+  
+  <Target Name="CheckLangExists" BeforeTargets="Compile">
+    <Error Condition="'$(Lang)' == ''" Text="A 'Lang' property must be passed to the project to attach the correct localization assemblies" />
+  </Target>
+
+  <Target Name="CopyMsiToInsertionFolder" AfterTargets="SignFiles">
+    <ItemGroup>
+        <MsiPath Include="$(OutDir)$(OutputName).msi" />
+    </ItemGroup>
+  
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(Lang)%(Extension)')" />
+  </Target>
+</Project>

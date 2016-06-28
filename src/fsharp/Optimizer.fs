@@ -11,28 +11,27 @@ module internal Microsoft.FSharp.Compiler.Optimizer
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
+
 open Microsoft.FSharp.Compiler
-
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-
-open Microsoft.FSharp.Compiler.TastPickle
+open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming 
 open Microsoft.FSharp.Compiler.Tast 
+open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.Infos
 
 open System.Collections.Generic
 
@@ -3128,19 +3127,23 @@ and OptimizeModuleExpr cenv env x =
 
             let rec elimModDef x =                  
                 match x with 
-                | TMDefRec(tycons,vbinds,mbinds,m) -> 
-                    let vbinds = vbinds |> FlatList.filter (fun b -> b.Var |> Zset.memberOf deadSet |> not) 
-                    let mbinds = mbinds |> List.map elim_mbind
-                    TMDefRec(tycons,vbinds,mbinds,m)
+                | TMDefRec(isRec,tycons,mbinds,m) -> 
+                    let mbinds = mbinds |> List.choose elimModuleBinding
+                    TMDefRec(isRec,tycons,mbinds,m)
                 | TMDefLet(bind,m)  -> 
-                    if Zset.contains bind.Var deadSet then TMDefRec([],FlatList.empty,[],m) else x
+                    if Zset.contains bind.Var deadSet then TMDefRec(false,[],[],m) else x
                 | TMDefDo _  -> x
                 | TMDefs(defs) -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ ->  x 
-            and elim_mbind (ModuleOrNamespaceBinding(mspec, d)) =
-                // Clean up the ModuleOrNamespaceType by mutation
-                elimModSpec mspec;
-                ModuleOrNamespaceBinding(mspec,elimModDef d) 
+            and elimModuleBinding x = 
+                match x with 
+                | ModuleOrNamespaceBinding.Binding bind -> 
+                     if bind.Var |> Zset.memberOf deadSet then None
+                     else Some x
+                | ModuleOrNamespaceBinding.Module(mspec, d) ->
+                    // Clean up the ModuleOrNamespaceType by mutation
+                    elimModSpec mspec
+                    Some (ModuleOrNamespaceBinding.Module(mspec,elimModDef d))
             
             elimModDef def 
 
@@ -3153,18 +3156,20 @@ and mkValBind (bind:Binding) info =
 
 and OptimizeModuleDef cenv (env,bindInfosColl) x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,m) -> 
-        let env = BindInternalValsToUnknown cenv (valsOfBinds binds) env
-        let bindInfos,env = OptimizeBindings cenv true env binds
-        let binds', binfos = FlatList.unzip bindInfos
+    | TMDefRec(isRec,tycons,mbinds,m) -> 
+        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
         let mbindInfos,(env,bindInfosColl) = OptimizeModuleBindings cenv (env,bindInfosColl) mbinds
         let mbinds,minfos = List.unzip mbindInfos
+        let binds = minfos |> List.choose (function Choice1Of2 (x,_) -> Some x | _ -> None)
+        let binfos = minfos |> List.choose (function Choice1Of2 (_,x) -> Some x | _ -> None)
+        let minfos = minfos |> List.choose (function Choice2Of2 x -> Some x | _ -> None)
+
         
           (* REVIEW: Eliminate let bindings on the way back up *)
-        (TMDefRec(tycons,binds',mbinds,m),
+        (TMDefRec(isRec,tycons,mbinds,m),
          notlazy { ValInfos= ValInfos(FlatList.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos); 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}),
-         (env,(FlatList.toList bindInfos :: bindInfosColl))
+         (env,bindInfosColl)
     | TMAbstract(mexpr) -> 
         let mexpr,info = OptimizeModuleExpr cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
@@ -3187,12 +3192,17 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
 
 and OptimizeModuleBindings cenv (env,bindInfosColl) xs = List.mapFold (OptimizeModuleBinding cenv) (env,bindInfosColl) xs
 
-and OptimizeModuleBinding cenv (env,bindInfosColl) (ModuleOrNamespaceBinding(mspec, def)) = 
-    let id = mspec.Id
-    let (def,info),(_,bindInfosColl) = OptimizeModuleDef cenv (env,bindInfosColl) def 
-    let env = BindValsInModuleOrNamespace cenv info env
-    (ModuleOrNamespaceBinding(mspec,def),(id.idText, info)), 
-    (env,bindInfosColl)
+and OptimizeModuleBinding cenv (env,bindInfosColl) x = 
+    match x with
+    | ModuleOrNamespaceBinding.Binding bind -> 
+        let ((bind',binfo) as bindInfo),env = OptimizeBinding cenv true env bind
+        (ModuleOrNamespaceBinding.Binding  bind', Choice1Of2 (bind',binfo)),(env, [ bindInfo ] :: bindInfosColl)
+    | ModuleOrNamespaceBinding.Module(mspec, def) ->
+        let id = mspec.Id
+        let (def,info),(_,bindInfosColl) = OptimizeModuleDef cenv (env,bindInfosColl) def 
+        let env = BindValsInModuleOrNamespace cenv info env
+        (ModuleOrNamespaceBinding.Module(mspec,def),Choice2Of2 (id.idText, info)), 
+        (env,bindInfosColl)
 
 and OptimizeModuleDefs cenv (env,bindInfosColl) defs = 
     if verboseOptimizations then dprintf "OptimizeModuleDefs\n";

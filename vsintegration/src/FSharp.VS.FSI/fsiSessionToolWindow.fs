@@ -35,7 +35,7 @@ type internal ITestVFSI =
 #nowarn "47"
 module internal Locals = 
     let fsiFontsAndColorsCategory = new Guid("{00CCEE86-3140-4E06-A65A-A92665A40D6F}")
-    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0"
+    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0"
     let settingsRegistrySubKey = @"General"
     let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
 
@@ -59,16 +59,10 @@ module internal Locals =
     /// Given a list of (key,value)
     /// Chunk into (key,values) where the values are keys of (key,value) with the same key.    
     /// Complexity: this code is linear in (length kxs).
-    let rec chunkKeyValues kxs = 
-        let rec loop kxs acc = 
-            match kxs with
-            | [] -> List.rev acc
-            | (key, v)::rest -> accumulate key [v] rest acc
-        and accumulate k chunk rest acc =
-            match rest with
-            | (key, v)::rest when equal key k -> accumulate k (v::chunk) rest acc
-            | rest -> loop rest ((k, (List.rev chunk))::acc)
-        loop kxs []
+    let chunkKeyValues allEntries =
+        allEntries
+        |> List.groupBy(fun (responseType, line) -> responseType)
+        |> List.map(fun (responseType, entries) -> (responseType, entries |> List.map(fun (_, line) -> line)))
 
     
 open Util

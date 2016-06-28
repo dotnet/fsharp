@@ -1753,12 +1753,12 @@ module Patterns =
                 match assem with 
 #if FX_NO_REFLECTION_EMIT
 #else
-                | :? System.Reflection.Emit.AssemblyBuilder -> []
+                | a when a.FullName = "System.Reflection.Emit.AssemblyBuilder" -> []
 #endif
-                | _ -> 
+                | null | _ -> 
                     let resources = 
                         // This raises NotSupportedException for dynamic assemblies
-                        try assem.GetManifestResourceNames()  
+                        try assem.GetManifestResourceNames()
                         with :? NotSupportedException -> [| |]
                     [ for resourceName in resources do
                           if resourceName.StartsWith(ReflectedDefinitionsResourceNameBase,StringComparison.Ordinal) &&

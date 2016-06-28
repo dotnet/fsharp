@@ -2283,6 +2283,14 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 #endif
           check "celnwer34" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
+      // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
+      [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
+#if NetCore
+      for m in typeof<SR>.GetMethods() do 
+#else
+      for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
+#endif
+          check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
 #if Portable
 #else

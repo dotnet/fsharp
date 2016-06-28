@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5020" />
+    <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5021" />
+    <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4013" />
+    <TemplateID>Microsoft.FSharp.Silverlight.Library</TemplateID>
+    <ProjectType>FSharp</ProjectType>
+    <!-- RequiredFrameworkVersion>2.0</RequiredFrameworkVersion -->
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>SilverlightLibrary</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <PromptForSaveOnCreation>true</PromptForSaveOnCreation>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="SilverlightLibrary.fsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true">AssemblyInfo.fs</ProjectItem>
+      <ProjectItem ReplaceParameters="true" OpenInEditor="true">Library1.fs</ProjectItem>
+      <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
+    </Project>
+    <CustomParameters>
+      <!-- This project template is bound to the Silverlight 5.0-->
+      <!-- Settings below allow to suppress Silverlight Wizard UI and implicitly select SL 5.0-->
+      <CustomParameter Name="MinSilverlightVersion" Value="5.0"/>
+      <CustomParameter Name="$silverlightversion$" Value="5.0"/>
+    </CustomParameters>
+  </TemplateContent>
+
+  <WizardExtension>
+    <Assembly>Microsoft.VisualStudio.Silverlight, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <FullClassName>Microsoft.VisualStudio.Silverlight.SilverlightClasslibraryTemplateWizard</FullClassName>  
+  </WizardExtension>
+
+</VSTemplate>

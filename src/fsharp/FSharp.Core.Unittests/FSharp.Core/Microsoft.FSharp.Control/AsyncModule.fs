@@ -13,6 +13,12 @@ open NUnit.Framework
 open FsCheck
 #endif
 
+type [<Struct>] Dummy (x: int) =
+  member this.X = x
+  interface IDisposable with
+    member this.Dispose () = ()
+
+
 #if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
 [<AutoOpen>]
 module ChoiceUtils =
@@ -421,6 +427,18 @@ type AsyncModule() =
 #endif
 
     [<Test>]
+    member this.``dispose should not throw when called on null``() =
+        let result = async { use x = null in return () } |> Async.RunSynchronously
+
+        Assert.AreEqual((), result)
+
+    [<Test>]
+    member this.``dispose should not throw when called on null struct``() =
+        let result = async { use x = new Dummy(1) in return () } |> Async.RunSynchronously
+
+        Assert.AreEqual((), result)
+
+    [<Test>]
     member this.``error on one workflow should cancel all others``() =
         let counter = 
             async {
@@ -574,7 +592,7 @@ type AsyncModule() =
 #if FSHARP_CORE_2_0
 // nothing
 #else
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
 //nothing
 #else
 // we are on the desktop
