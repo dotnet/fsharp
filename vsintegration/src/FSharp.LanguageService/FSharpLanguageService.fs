@@ -71,8 +71,18 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | _ -> ()
         | _ -> ()
 
-and 
-    [<ProvideLanguageService(FSharpCommonConstants.languageServiceGuidString, FSharpCommonConstants.FSharpContentTypeName, 1)>]
+and [<Guid(FSharpCommonConstants.editorFactoryGuidString)>]
+    internal FSharpEditorFactory(package : FSharpPackage) =
+        inherit AbstractEditorFactory(package)
+
+        override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
+        override this.GetFormattedTextChanges(_, _, _, _) = upcast Array.empty
+
+and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuidString)>]
+    internal FSharpCodePageEditorFactory(editorFactory: FSharpEditorFactory) =
+    inherit AbstractCodePageEditorFactory(editorFactory)
+
+and [<ProvideLanguageService(FSharpCommonConstants.languageServiceGuidString, FSharpCommonConstants.FSharpContentTypeName, 1)>]
     [<Guid(FSharpCommonConstants.packageGuidString)>]
     internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService, FSharpProjectSite>()
@@ -87,7 +97,14 @@ and
     
     override this.CreateLanguageService() = new FSharpLanguageService(this)
 
-    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
+    override this.CreateEditorFactories() =
+        let editorFactory = new FSharpEditorFactory(this)
+        let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
+        
+        [|
+            editorFactory :> IVsEditorFactory;
+            codePageEditorFactory :> IVsEditorFactory;
+        |] :> seq<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     
