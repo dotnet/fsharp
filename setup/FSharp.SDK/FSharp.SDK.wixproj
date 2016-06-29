@@ -28,8 +28,7 @@
     
     <DefineConstants>$(DefineConstants);BinariesDir=$(BinariesDir)</DefineConstants>
     <DefineConstants>$(DefineConstants);FSharpTreeRoot=$(FSharpTreeRoot)</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSharpCoreRedistDir=$(FSharpCoreRedistDir)</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSharpTypeProvidersRedistDir=$(FSharpTypeProvidersRedistDir)</DefineConstants>
+    <DefineConstants>$(DefineConstants);NugetPackagesDir=$(NugetPackagesDir)</DefineConstants>
   </PropertyGroup>
     
   <ItemGroup>

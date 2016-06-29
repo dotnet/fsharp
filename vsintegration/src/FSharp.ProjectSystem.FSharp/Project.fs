@@ -40,7 +40,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     
     open EnvDTE
 
-    open Microsoft.Build.BuildEngine
     open Internal.Utilities.Debug
 
     module internal VSHiveUtilities =

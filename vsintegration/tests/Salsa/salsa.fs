@@ -84,10 +84,10 @@ module internal Salsa =
                 if logRegular || logPerf then
                     let l = if logRegular then 
                                 Trace.PrintLine("MSBuild", fun () -> "Detailed logging.")
-                                new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed)
+                                new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed)
                             else 
                                 Trace.PrintLine("MSBuild", fun () -> "Quiet logging.")
-                                new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Quiet)
+                                new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Quiet)
                     Trace.PrintLine("MSBuild", fun () -> "About to attach MSBuild console logger.")
                     // For Dev10 build we pass the logger to the Build call on the project object.
                     theAttachedLogger <- l
@@ -222,7 +222,7 @@ module internal Salsa =
                     
                 let loggers = 
                     if Trace.ShouldLog("MSBuild") then
-                        seq { yield (new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
+                        seq { yield (new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
                     else 
                         [] :> seq<ILogger>
                             

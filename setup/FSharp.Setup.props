@@ -6,8 +6,7 @@
         <ProductVersion>3.10</ProductVersion>
         <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
         <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
-        <FSharpCoreRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Core.Redist.1.0.0</FSharpCoreRedistDir>
-        <FSharpTypeProvidersRedistDir>$(SetupRootFolder)\..\packages\Microsoft.VisualFSharp.Type.Providers.Redist.1.0.0</FSharpTypeProvidersRedistDir>
+        <NugetPackagesDir>$(SetupRootFolder)\..\packages</NugetPackagesDir>
     </PropertyGroup>
 
     <PropertyGroup>
