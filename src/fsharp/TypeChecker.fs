@@ -12669,81 +12669,79 @@ module MutRecBindingChecking =
                         if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(),(trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
 
                         match classMemberDef, containerInfo with
-                        
-                          | SynMemberDefn.ImplicitCtor (vis,attrs,spats,thisIdOpt, m), ContainerInfo(_,Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
-                              match tcref.TypeOrMeasureKind with TyparKind.Measure -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) | _ -> ()
+                        | SynMemberDefn.ImplicitCtor (vis,attrs,spats,thisIdOpt, m), ContainerInfo(_,Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                            if tcref.TypeOrMeasureKind = TyparKind.Measure then
+                                error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
-                              // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
-                              let incrClassCtorLhs = TcImplictCtorLhs_Phase2A(cenv,envForTycon,tpenv,tcref,vis,attrs,spats,thisIdOpt,baseValOpt,safeInitInfo,m,copyOfTyconTypars,objTy,thisTy)
-                              // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
-                              let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
-                              let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
+                            // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
+                            let incrClassCtorLhs = TcImplictCtorLhs_Phase2A(cenv,envForTycon,tpenv,tcref,vis,attrs,spats,thisIdOpt,baseValOpt,safeInitInfo,m,copyOfTyconTypars,objTy,thisTy)
+                            // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
+                            let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
+                            let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
 
-                              [Phase2AIncrClassCtor incrClassCtorLhs],innerState
+                            [Phase2AIncrClassCtor incrClassCtorLhs],innerState
                               
-                          | SynMemberDefn.ImplicitInherit (typ,arg,_baseIdOpt,m),_ ->
-                              match tcref.TypeOrMeasureKind with TyparKind.Measure -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) | _ -> ()
-                              // Phase2A: inherit typ(arg) as base - pass through 
-                              // Phase2A: pick up baseValOpt! 
-                              let baseValOpt = incrClassCtorLhsOpt |> Option.bind (fun x -> x.InstanceCtorBaseValOpt)
-                              let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)
-                              [Phase2AInherit (typ,arg,baseValOpt,m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
-                              
-                              
+                        | SynMemberDefn.ImplicitInherit (typ,arg,_baseIdOpt,m),_ ->
+                            if tcref.TypeOrMeasureKind = TyparKind.Measure then
+                                error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
-                          | SynMemberDefn.LetBindings (letBinds,isStatic,isRec,m),_ ->
-                              match tcref.TypeOrMeasureKind,isStatic with 
-                              | TyparKind.Measure,false -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
-                              | _,_ -> ()
+                            // Phase2A: inherit typ(arg) as base - pass through 
+                            // Phase2A: pick up baseValOpt! 
+                            let baseValOpt = incrClassCtorLhsOpt |> Option.bind (fun x -> x.InstanceCtorBaseValOpt)
+                            let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)
+                            [Phase2AInherit (typ,arg,baseValOpt,m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
 
-                              if tcref.IsStructOrEnumTycon && not isStatic then 
-                                   let allDo = letBinds |> List.forall (function (Binding(_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
-                                   // Code for potential future design change to allow functions-compiled-as-members in structs
-                                   //let allFun = letBinds |> List.forall (function (Binding(_,NormalBinding,_,_,_,_,SynValData(_,info,_),_,_,_,_,_)) -> not (SynInfo.HasNoArgs info) | _ -> false)
-                                   if allDo then 
-                                      errorR(Deprecated(FSComp.SR.tcStructsMayNotContainDoBindings(),(trimRangeToLine m)))
-                                   else
-                                   // Code for potential future design change to allow functions-compiled-as-members in structs
-                                   //elif not allFun then 
-                                      errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(),(trimRangeToLine m)))
+                        | SynMemberDefn.LetBindings (letBinds,isStatic,isRec,m),_ ->
+                            match tcref.TypeOrMeasureKind,isStatic with 
+                            | TyparKind.Measure,false -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
+                            | _ -> ()
 
-                              if isStatic && isNone incrClassCtorLhsOpt then 
-                                  errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(),m))
+                            if tcref.IsStructOrEnumTycon && not isStatic then 
+                                let allDo = letBinds |> List.forall (function (Binding(_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
+                                // Code for potential future design change to allow functions-compiled-as-members in structs
+                                if allDo then 
+                                    errorR(Deprecated(FSComp.SR.tcStructsMayNotContainDoBindings(),(trimRangeToLine m)))
+                                else
+                                // Code for potential future design change to allow functions-compiled-as-members in structs
+                                    errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(),(trimRangeToLine m)))
+
+                            if isStatic && isNone incrClassCtorLhsOpt then 
+                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(),m))
                               
-                              // Phase2A: let-bindings - pass through 
-                              let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)     
-                              [Phase2AIncrClassBindings (tcref,letBinds,isStatic,isRec,m)], innerState
+                            // Phase2A: let-bindings - pass through 
+                            let innerState = (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev)     
+                            [Phase2AIncrClassBindings (tcref,letBinds,isStatic,isRec,m)], innerState
                               
-                          | SynMemberDefn.Member (bind,m),_ ->
-                              // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
-                              let (NormalizedBinding(_,_,_,_,_,_,_,valSynData,_,_,_,_)) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
-                              let (SynValData(memberFlagsOpt,_,_)) = valSynData 
-                              match tcref.TypeOrMeasureKind with
-                              | TyparKind.Type -> ()
-                              | TyparKind.Measure ->
-                                  match memberFlagsOpt with 
-                                  | None -> () 
-                                  | Some memberFlags -> 
-                                      if memberFlags.IsInstance then error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
-                                      match memberFlags.MemberKind with 
-                                      | MemberKind.Constructor -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
-                                      | _ -> ()
-                              let rbind = NormalizedRecBindingDefn(containerInfo,newslotsOK,declKind,bind)
-                              let overridesOK  = DeclKind.CanOverrideOrImplement(declKind)
-                              let (binds,_values),(tpenv,recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForTycon (tpenv,recBindIdx) rbind
-                              let cbinds = [ for rbind in binds -> Phase2AMember rbind ]
+                        | SynMemberDefn.Member (bind,m),_ ->
+                            // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
+                            let (NormalizedBinding(_,_,_,_,_,_,_,valSynData,_,_,_,_)) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
+                            let (SynValData(memberFlagsOpt,_,_)) = valSynData 
+                            match tcref.TypeOrMeasureKind with
+                            | TyparKind.Type -> ()
+                            | TyparKind.Measure ->
+                                match memberFlagsOpt with 
+                                | None -> () 
+                                | Some memberFlags -> 
+                                    if memberFlags.IsInstance then error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
+                                    match memberFlags.MemberKind with 
+                                    | MemberKind.Constructor -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
+                                    | _ -> ()
+                            let rbind = NormalizedRecBindingDefn(containerInfo,newslotsOK,declKind,bind)
+                            let overridesOK  = DeclKind.CanOverrideOrImplement(declKind)
+                            let (binds,_values),(tpenv,recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForTycon (tpenv,recBindIdx) rbind
+                            let cbinds = [ for rbind in binds -> Phase2AMember rbind ]
 
-                              let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
-                              cbinds,innerState
+                            let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
+                            cbinds,innerState
                         
 #if OPEN_IN_TYPE_DECLARATIONS
-                          | SynMemberDefn.Open (mp,m),_ ->
-                              let innerState = (incrClassCtorLhsOpt,env,tpenv,recBindIdx,prelimRecValuesRev,uncheckedBindsRev)
-                              [ Phase2AOpen (mp,m) ], innerState
+                        | SynMemberDefn.Open (mp,m),_ ->
+                            let innerState = (incrClassCtorLhsOpt,env,tpenv,recBindIdx,prelimRecValuesRev,uncheckedBindsRev)
+                            [ Phase2AOpen (mp,m) ], innerState
 #endif
                         
-                          | _ -> 
-                              error(InternalError("Unexpected definition",m)))
+                        | _ -> 
+                            error(InternalError("Unexpected definition",m)))
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
