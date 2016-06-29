@@ -40,13 +40,12 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <DeployExtension>false</DeployExtension>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>FSharp</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
     <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
-    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">True</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">False</DeployExtension>
     <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpVsix</RootNamespace>

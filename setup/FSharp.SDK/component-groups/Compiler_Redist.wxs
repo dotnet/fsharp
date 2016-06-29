@@ -18,6 +18,13 @@
 			<ComponentRef Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" />
 			<ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
 			<ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
+            
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" />
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.dll" />
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.Engine.dll" />
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.Framework.dll" />
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" />
+			<ComponentRef Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" />
 			
 			<ComponentRef Id="Compiler_Redist_OtherResources_Redist.txt" />
 			<ComponentRef Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" />
@@ -54,7 +61,7 @@
 			</Component>
 
 			<Component Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Data.TypeProviders.dll, $(var.LocaleCode)))">
-				<File Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Source="$(var.FSharpTypeProvidersRedistDir)\content\4.3.0.0\FSharp.Data.TypeProviders.dll" KeyPath="yes">
+				<File Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Type.Providers.Redist.1.0.0\content\4.3.0.0\FSharp.Data.TypeProviders.dll" KeyPath="yes">
 					<NetFx:NativeImage Id="Compiler_Redist_FSharp.Data.TypeProviders.Native.dll" Priority="0" Dependencies="no" Platform="all" />
 				</File>
 			</Component>
@@ -107,11 +114,35 @@
 					<RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
 				</RegistryKey>
 			</Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Conversion.Core.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Conversion.Core.dll" />
+            </Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.dll" />
+            </Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.Engine.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Engine.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.Engine.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Engine.dll" />
+            </Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.Framework.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Framework.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.Framework.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Framework.dll" />
+            </Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Tasks.Core.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Tasks.Core.dll" />
+            </Component>
+			
+            <Component Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Utilities.Core.dll, $(var.LocaleCode)))">
+                <File Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Utilities.Core.dll" />
+            </Component>
 		</DirectoryRef>
         
         <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
             <Component Id="Compiler_Redist_OtherResources_Redist.txt" Guid="$(fsharp.guid(Compiler_OtherResources_Redist.txt, $(var.LocaleCode)))">
-                <File Id="Compiler_Redist_OtherResources_Redist.txt" Source="$(var.FSharpCoreRedistDir)\content\Redist.txt" />
+                <File Id="Compiler_Redist_OtherResources_Redist.txt" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Core.Redist.1.0.0\content\Redist.txt" />
             </Component>
         </DirectoryRef>
 		
