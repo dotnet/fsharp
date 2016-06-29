@@ -1638,7 +1638,7 @@ let AlwaysSuppressSequencePoint sp expr =
     match sp with 
     | SPAlways -> 
         // These extra cases have historically always had their sequence point suppressed 
-        match expr with 
+        match stripExpr expr with 
         | Expr.Let (bind,_,_,_) when bindIsInvisible(bind) -> true
         | Expr.LetRec(binds,_,_,_) when (binds |> FlatList.exists bindHasSeqPt) || (binds |> FlatList.forall bindIsInvisible) -> true
         | Expr.Sequential _ 
@@ -1657,12 +1657,12 @@ let rec WillGenerateSequencePoint sp expr =
     match sp with 
     | SPAlways -> 
         let definiteSequencePoint = 
-            match expr with 
-            | Expr.Let (bind,expr,_,_) 
+            match stripExpr expr with 
+            | Expr.Let (bind,body,_,_) 
                  -> bindHasSeqPt(bind)  || 
-                    (bind.Var.IsCompiledAsTopLevel && WillGenerateSequencePoint sp expr)
-            | Expr.LetRec(binds,expr,_,_) 
-                 -> (binds |> FlatList.forall (fun bind -> bind.Var.IsCompiledAsTopLevel)) && WillGenerateSequencePoint sp expr
+                    (bind.Var.IsCompiledAsTopLevel && WillGenerateSequencePoint sp body)
+            | Expr.LetRec(binds,body,_,_) 
+                 -> (binds |> FlatList.forall (fun bind -> bind.Var.IsCompiledAsTopLevel)) && WillGenerateSequencePoint sp body
                  
             | Expr.Sequential (_, _, NormalSeq,spSeq,_) -> 
               (match spSeq with 
@@ -1680,6 +1680,15 @@ let rec WillGenerateSequencePoint sp expr =
      | SPSuppress -> 
         false                  
 
+let rec RangeOfImplicitSequencePoint expr = 
+    match stripExpr expr with 
+    | Expr.Let (bind,body,_,_) ->
+        if bind.Var.IsCompiledAsTopLevel then RangeOfImplicitSequencePoint body else RangeOfImplicitSequencePoint bind.Expr
+    | Expr.LetRec(_,body,_,_)  ->
+        RangeOfImplicitSequencePoint body 
+    | Expr.Sequential (expr1, _, NormalSeq, _, _) -> RangeOfImplicitSequencePoint expr1
+    | _ -> expr.Range
+
 let DoesGenExprStartWithSequencePoint sp expr = 
     WillGenerateSequencePoint sp expr || not (AlwaysSuppressSequencePoint sp expr)
 
@@ -1688,7 +1697,7 @@ let rec GenExpr cenv (cgbuf:CodeGenBuffer) eenv sp expr sequel =
   let expr =  stripExpr expr
 
   if not (WillGenerateSequencePoint sp expr) && not (AlwaysSuppressSequencePoint sp expr) then 
-      CG.EmitSeqPoint cgbuf expr.Range
+      CG.EmitSeqPoint cgbuf (RangeOfImplicitSequencePoint expr)
 
   match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr cenv.g cenv.amap expr else None) with
   | Some info ->
@@ -4431,7 +4440,7 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
 
         // Turn 'isdata' tests that branch into EI_brisdata tests 
         | Some (_,_,Choice1Of2 (avoidHelpers,cuspec,idx)) ->
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsNotData cenv.g.ilg (avoidHelpers,cuspec, idx, failure.CodeLabel)))
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData cenv.g.ilg false (avoidHelpers,cuspec, idx, failure.CodeLabel)))
 
         | Some (pops,pushes,i) ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
