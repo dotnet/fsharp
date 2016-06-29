@@ -1656,7 +1656,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
             success (resInfo, Item.FakeInterfaceCtor typ)
         else 
             let defaultStructCtorInfo = 
-                if (isStructTy g typ && not(isRecdTy g typ) && not(ctorInfos |> List.exists (fun x -> x.IsNullary))) then 
+                if (isStructTy g typ && not (isRecdTy g typ) && not (isUnionTy g typ) && not(ctorInfos |> List.exists (fun x -> x.IsNullary))) then 
                     [DefaultStructCtor(g,typ)] 
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || not (isAppTy g typ) then 

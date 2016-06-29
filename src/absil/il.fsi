@@ -1676,6 +1676,7 @@ val mkILTySpecRaw: ILTypeRef * ILGenericArgs -> ILTypeSpec
 /// Make types.
 val mkILTy: ILBoxity -> ILTypeSpec -> ILType
 val mkILNamedTy: ILBoxity -> ILTypeRef -> ILGenericArgsList -> ILType
+val mkILNamedTyRaw: ILBoxity -> ILTypeRef -> ILGenericArgs -> ILType
 val mkILBoxedTy: ILTypeRef -> ILGenericArgsList -> ILType
 val mkILBoxedTyRaw: ILTypeRef -> ILGenericArgs -> ILType
 val mkILValueTy: ILTypeRef -> ILGenericArgsList -> ILType
@@ -1727,6 +1728,7 @@ val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 /// Make generalized verions of possibly-generic types,
 /// e.g. Given the ILTypeDef for List, return the type "List<T>".
 val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
+val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
 
 val mkILFormalTyparsRaw: ILTypes -> ILGenericParameterDefs
 val mkILFormalTypars: ILType list -> ILGenericParameterDefs
