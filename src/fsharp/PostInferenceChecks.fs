@@ -338,8 +338,8 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
-            // We deliberately only check the fully stripped type for accessibility, because references to private type abbreviations are 
-            // permitted
+            // We deliberately only check the fully stripped type for accessibility, 
+            // because references to private type abbreviations are permitted
             match tryDestAppTy cenv.g ty with 
             | None -> ()
             | Some tcref ->
@@ -347,6 +347,24 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+
+        CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty
+
+let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
+    if cenv.reportErrors then 
+
+        let visitType ty =         
+            // We deliberately only check the fully stripped type for accessibility, 
+            // because references to private type abbreviations are permitted
+            match tryDestAppTy cenv.g ty with 
+            | None -> ()
+            | Some tcref ->
+                let thisCompPath = compPathOfCcu cenv.viewCcu
+                let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
+                if isLessAccessible tyconAcc valAcc then
+                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
+                    let warningText = errorText + System.Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
+                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
 
         CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty 
 
@@ -1270,7 +1288,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     let env = BindTypars cenv.g env (tycon.Typars(m))
     CheckAttribs cenv env tycon.Attribs
     match tycon.TypeAbbrev with
-    | Some abbrev -> CheckTypeForAccess cenv env (fun () -> tycon.CompiledName) tycon.Accessibility tycon.Range abbrev
+    | Some abbrev -> WarnOnWrongTypeForAccess cenv env (fun () -> tycon.CompiledName) tycon.Accessibility tycon.Range abbrev
     | _ -> ()
 
     if cenv.reportErrors then
