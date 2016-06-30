@@ -2,7 +2,6 @@ use vs
 
 package name=Microsoft.FSharp.LangPack.$(VSSku)
         version=4.1
-        vs.package.chip=neutral
         vs.package.language=$(LocaleRegion)
 
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\ConsoleProject"
