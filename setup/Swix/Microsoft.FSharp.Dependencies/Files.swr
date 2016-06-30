@@ -2,7 +2,6 @@ use vs
 
 package name=Microsoft.FSharp.Dependencies
         version=4.1
-        vs.package.chip=neutral
         vs.package.language=en-us
 
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
