@@ -3,8 +3,8 @@
     <metadata>
         <id>Microsoft.FSharp.Compiler.netcore</id>
         <description>
-            netcore compatible version of the fsharp compiler fsc.exe.
-            Supported Platforms: - .NET Core (.netstandard1.5)
+            .NET Core compatible version of the fsharp compiler fsc.exe.
+            Supported Platforms: - .NET Core (.netstandard1.6)
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
@@ -14,37 +14,34 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
-            <group targetFramework=".NETStandard1.5">
+            <group targetFramework=".NETStandard1.6">
                 <dependency id="Microsoft.FSharp.Core.netcore" version="$version$" />
-                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23911" />
-                <dependency id="NETStandard.Library" version="1.5.0-rc2-23911" />
-                <dependency id="System.Collections.Immutable" version="1.2.0-rc2-23911" />
-                <dependency id="System.Diagnostics.Process" version="4.1.0-rc2-23911" />
-                <dependency id="System.Diagnostics.TraceSource" version="4.0.0-rc2-23911" />
-                <dependency id="System.Linq.Expressions" version="4.0.11-rc2-23911" />
-                <dependency id="System.Linq.Queryable" version="4.0.1-rc2-23911" />
-                <dependency id="System.Net.Requests" version="4.0.11-rc2-23911" />
-                <dependency id="System.Reflection.Emit" version="4.0.1-rc2-23911" />
-                <dependency id="System.Reflection.Emit.ILGeneration" version="4.0.1-rc2-23911" />
-                <dependency id="System.Reflection.Metadata" version="1.3.0-rc2-23911" />
-                <dependency id="System.Runtime.InteropServices" version="4.1.0-rc2-23911" />
-                <dependency id="System.Runtime.InteropServices.PInvoke" version="4.0.0-rc2-23911" />
-                <dependency id="System.Runtime.Loader" version="4.0.0-rc2-23911" />
-                <dependency id="System.Security.Cryptography.Algorithms" version="4.1.0-rc2-23911" />
-                <dependency id="System.Security.Cryptography.Primitives" version="4.0.0-rc2-23911" />
-                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1-rc2-23911" />
-                <dependency id="System.Threading.Thread" version="4.0.0-rc2-23911" />
-                <dependency id="System.Threading.ThreadPool" version="4.0.10-rc2-23911" />
-                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.0.0-rc-60301" />
-                <dependency id="Microsoft.DiaSymReader" version="1.0.7" />
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
+                <dependency id="NETStandard.Library" version="1.6.0" />
+                <dependency id="System.Collections.Immutable" version="1.2.0" />
+                <dependency id="System.Diagnostics.Process" version="4.1.0" />
+                <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
+                <dependency id="System.Linq.Expressions" version="4.1.0" />
+                <dependency id="System.Linq.Queryable" version="4.0.1" />
+                <dependency id="System.Net.Requests" version="4.0.11" />
+                <dependency id="System.Reflection.Emit" version="4.0.1" />
+                <dependency id="System.Reflection.Metadata" version="1.4.1-beta-24227-04" />
+                <dependency id="System.Runtime.InteropServices" version="4.1.0" />
+                <dependency id="System.Runtime.Loader" version="4.0.0" />
+                <dependency id="System.Security.Cryptography.Algorithms" version="4.2.0" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
+                <dependency id="System.Threading.Thread" version="4.0.0" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10" />
+                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
+                <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="fsc.exe"                 target="lib/netstandard1.5" />
-        <file src="FSharp.Compiler.dll"     target="lib/netstandard1.5" />
+        <file src="fsc.exe"                 target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.dll"     target="lib/netstandard1.6" />
         <file src="default.win32manifest"   target="runtimes/any/native/" />
-        <file src="fsi.exe"                 target="lib/netstandard1.5" />
-        <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.5" />
+        <file src="fsi.exe"                 target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.6" />
     </files>
 </package>

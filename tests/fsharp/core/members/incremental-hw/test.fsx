@@ -430,11 +430,11 @@ module Forms2 =
       member this.GC = GC'
     
 
-    let form = new Form(Visible=true,AutoScroll=true)
-    let dp = new DrawPanel2(800,400)
-    do  form.Controls.Add(dp)
-    do  dp.GC.DrawLine(Pens.White,10,20,30,40)
-    do  dp.Redraw()
+    //let form = new Form(Visible=true,AutoScroll=true)
+    //let dp = new DrawPanel2(800,400)
+    //do  form.Controls.Add(dp)
+    //do  dp.GC.DrawLine(Pens.White,10,20,30,40)
+    //do  dp.Redraw()
 
 
 module Regression1 = 

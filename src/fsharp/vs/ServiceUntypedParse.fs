@@ -171,6 +171,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e,_) 
                   | SynExpr.Do (e,_)
                   | SynExpr.Assert (e,_)
+                  | SynExpr.Fixed (e,_)
                   | SynExpr.DotGet (e,_,_,_) 
                   | SynExpr.LongIdentSet (_,e,_)
                   | SynExpr.New (_,_,e,_) 
@@ -312,20 +313,20 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr false expr
                   | SynModuleDecl.ModuleAbbrev _ -> 
                       ()
-                  | SynModuleDecl.NestedModule(_, decls, _, m) ->                
+                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) ->                
                       if rangeContainsPos m pos then 
                           for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) -> 
                       if rangeContainsPos m pos then 
                           for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(ExceptionDefn(ExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) ->
                       if rangeContainsPos m pos then 
                           for m in membDefns do yield! walkMember m
                   | _ ->
                       () ] 
                       
             // Collect all the items  
-            let walkModule (SynModuleOrNamespace(_,_,decls,_,_,_,m)) =
+            let walkModule (SynModuleOrNamespace(_,_,_,decls,_,_,_,m)) =
                 if rangeContainsPos m pos then 
                     [ for d in decls do yield! walkDecl d ]
                 else

@@ -110,133 +110,140 @@ type ValFlags(flags:int64) =
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
         let flags = 
                      (match baseOrThis with
-                                        | BaseVal ->                         0b000000000000000000L
-                                        | CtorThisVal ->                     0b000000000000000010L
-                                        | NormalVal ->                       0b000000000000000100L
-                                        | MemberThisVal ->                   0b000000000000000110L) |||
-                     (if isCompGen then                                      0b000000000000001000L 
-                      else                                                   0b000000000000000000L) |||
+                                        | BaseVal ->                         0b0000000000000000000L
+                                        | CtorThisVal ->                     0b0000000000000000010L
+                                        | NormalVal ->                       0b0000000000000000100L
+                                        | MemberThisVal ->                   0b0000000000000000110L) |||
+                     (if isCompGen then                                      0b0000000000000001000L 
+                      else                                                   0b00000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b000000000000000000L
-                                        | ValInline.Always ->                0b000000000000010000L
-                                        | ValInline.Optional ->              0b000000000000100000L
-                                        | ValInline.Never ->                 0b000000000000110000L) |||
+                                        | ValInline.PseudoVal ->             0b0000000000000000000L
+                                        | ValInline.Always ->                0b0000000000000010000L
+                                        | ValInline.Optional ->              0b0000000000000100000L
+                                        | ValInline.Never ->                 0b0000000000000110000L) |||
                      (match isMutable with
-                                        | Immutable ->                       0b000000000000000000L
-                                        | Mutable   ->                       0b000000000001000000L) |||
+                                        | Immutable ->                       0b0000000000000000000L
+                                        | Mutable   ->                       0b0000000000001000000L) |||
 
                      (match isModuleOrMemberBinding with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b000000000010000000L) |||
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0000000000010000000L) |||
                      (match isExtensionMember with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b000000000100000000L) |||
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0000000000100000000L) |||
                      (match isIncrClassSpecialMember with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b000000001000000000L) |||
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0000000001000000000L) |||
                      (match isTyFunc with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b000000010000000000L) |||
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0000000010000000000L) |||
 
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b000000000000000000L
-                                     | ValInRecScope true   ->               0b000000100000000000L
-                                     | ValInRecScope false  ->               0b000001000000000000L) |||
+                                     | ValNotInRecScope     ->               0b0000000000000000000L
+                                     | ValInRecScope true   ->               0b0000000100000000000L
+                                     | ValInRecScope false  ->               0b0000001000000000000L) |||
 
                      (match allowTypeInst with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b000100000000000000L) |||
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0000100000000000000L) |||
 
                      (match isGeneratedEventVal with
-                                        | false     ->                       0b000000000000000000L
-                                        | true      ->                       0b100000000000000000L)                                        
+                                        | false     ->                       0b0000000000000000000L
+                                        | true      ->                       0b0100000000000000000L)                                        
 
         ValFlags(flags)
 
     member x.BaseOrThisInfo = 
-                                  match (flags       &&&                     0b000000000000000110L) with 
-                                                             |               0b000000000000000000L -> BaseVal
-                                                             |               0b000000000000000010L -> CtorThisVal
-                                                             |               0b000000000000000100L -> NormalVal
-                                                             |               0b000000000000000110L -> MemberThisVal
+                                  match (flags       &&&                     0b0000000000000000110L) with 
+                                                             |               0b0000000000000000000L -> BaseVal
+                                                             |               0b0000000000000000010L -> CtorThisVal
+                                                             |               0b0000000000000000100L -> NormalVal
+                                                             |               0b0000000000000000110L -> MemberThisVal
                                                              | _          -> failwith "unreachable"
 
 
 
-    member x.IsCompilerGenerated =      (flags       &&&                     0b000000000000001000L) <> 0x0L
+    member x.IsCompilerGenerated =      (flags       &&&                     0b0000000000000001000L) <> 0x0L
 
     member x.SetIsCompilerGenerated(isCompGen) = 
-            let flags =                 (flags       &&&                  ~~~0b000000000000001000L) |||
+            let flags =                 (flags       &&&                  ~~~0b0000000000000001000L) |||
                                         (match isCompGen with
-                                          | false           ->               0b000000000000000000L
-                                          | true            ->               0b000000000000001000L)
+                                          | false           ->               0b0000000000000000000L
+                                          | true            ->               0b0000000000000001000L)
             ValFlags(flags)
 
     member x.InlineInfo = 
-                                  match (flags       &&&                     0b000000000000110000L) with 
-                                                             |               0b000000000000000000L -> ValInline.PseudoVal
-                                                             |               0b000000000000010000L -> ValInline.Always
-                                                             |               0b000000000000100000L -> ValInline.Optional
-                                                             |               0b000000000000110000L -> ValInline.Never
+                                  match (flags       &&&                     0b0000000000000110000L) with 
+                                                             |               0b0000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b0000000000000010000L -> ValInline.Always
+                                                             |               0b0000000000000100000L -> ValInline.Optional
+                                                             |               0b0000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
     member x.MutabilityInfo = 
-                                  match (flags       &&&                     0b000000000001000000L) with 
-                                                             |               0b000000000000000000L -> Immutable
-                                                             |               0b000000000001000000L -> Mutable
+                                  match (flags       &&&                     0b0000000000001000000L) with 
+                                                             |               0b0000000000000000000L -> Immutable
+                                                             |               0b0000000000001000000L -> Mutable
                                                              | _          -> failwith "unreachable"
 
 
     member x.IsMemberOrModuleBinding = 
-                                  match (flags       &&&                     0b000000000010000000L) with 
-                                                             |               0b000000000000000000L -> false
-                                                             |               0b000000000010000000L -> true
+                                  match (flags       &&&                     0b0000000000010000000L) with 
+                                                             |               0b0000000000000000000L -> false
+                                                             |               0b0000000000010000000L -> true
                                                              | _          -> failwith "unreachable"
 
 
-    member x.SetIsMemberOrModuleBinding = ValFlags(flags |||                 0b000000000010000000L)
+    member x.SetIsMemberOrModuleBinding = ValFlags(flags |||                 0b0000000000010000000L)
 
 
-    member x.IsExtensionMember        = (flags       &&&                     0b000000000100000000L) <> 0L
-    member x.IsIncrClassSpecialMember = (flags       &&&                     0b000000001000000000L) <> 0L
-    member x.IsTypeFunction           = (flags       &&&                     0b000000010000000000L) <> 0L
+    member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
+    member x.IsIncrClassSpecialMember = (flags       &&&                     0b0000000001000000000L) <> 0L
+    member x.IsTypeFunction           = (flags       &&&                     0b0000000010000000000L) <> 0L
 
-    member x.RecursiveValInfo =   match (flags       &&&                     0b000001100000000000L) with 
-                                                             |               0b000000000000000000L -> ValNotInRecScope
-                                                             |               0b000000100000000000L -> ValInRecScope(true)
-                                                             |               0b000001000000000000L -> ValInRecScope(false)
+    member x.RecursiveValInfo =   match (flags       &&&                     0b0000001100000000000L) with 
+                                                             |               0b0000000000000000000L -> ValNotInRecScope
+                                                             |               0b0000000100000000000L -> ValInRecScope(true)
+                                                             |               0b0000001000000000000L -> ValInRecScope(false)
                                                              | _                   -> failwith "unreachable"
 
     member x.SetRecursiveValInfo(recValInfo) = 
             let flags = 
-                     (flags       &&&                                     ~~~0b000001100000000000L) |||
+                     (flags       &&&                                     ~~~0b0000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b000000000000000000L
-                                     | ValInRecScope(true)  ->               0b000000100000000000L
-                                     | ValInRecScope(false) ->               0b000001000000000000L) 
+                                     | ValNotInRecScope     ->               0b0000000000000000000L
+                                     | ValInRecScope(true)  ->               0b0000000100000000000L
+                                     | ValInRecScope(false) ->               0b0000001000000000000L) 
             ValFlags(flags)
 
-    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b000010000000000000L) <> 0L
+    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
 
-    member x.SetMakesNoCriticalTailcalls =                ValFlags(flags ||| 0b000010000000000000L)
+    member x.SetMakesNoCriticalTailcalls =                ValFlags(flags ||| 0b0000010000000000000L)
 
-    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b000100000000000000L) <> 0L
-    member x.HasBeenReferenced                =                   (flags &&& 0b001000000000000000L) <> 0L
+    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
+    member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
 
-    member x.SetHasBeenReferenced                     =   ValFlags(flags ||| 0b001000000000000000L)
+    member x.SetHasBeenReferenced                     =   ValFlags(flags ||| 0b0001000000000000000L)
 
-    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b010000000000000000L) <> 0L
+    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
 
-    member x.SetIsCompiledAsStaticPropertyWithoutField =  ValFlags(flags ||| 0b010000000000000000L)
+    member x.SetIsCompiledAsStaticPropertyWithoutField =  ValFlags(flags ||| 0b0010000000000000000L)
     
-    member x.IsGeneratedEventVal =                                (flags &&& 0b100000000000000000L) <> 0L
+
+    member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
+
+    member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
+
+    member x.SetIsFixed                                =  ValFlags(flags ||| 0b1000000000000000000L)
+
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b011001100000000000L) 
+                                                      (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
@@ -350,11 +357,12 @@ type TyparFlags(flags:int32) =
 [<Struct>]
 type EntityFlags(flags:int64) =
 
-    new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor) = 
+    new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordOrUnionType) = 
         EntityFlags((if isModuleOrNamespace then                        0b00000000001L else 0L) |||
                     (if usesPrefixDisplay   then                        0b00000000010L else 0L) |||
                     (if preEstablishedHasDefaultCtor then               0b00000000100L else 0L) |||
-                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L)) 
+                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L) |||
+                    (if isStructRecordOrUnionType then                         0b00000100000L else 0L)) 
 
     member x.IsModuleOrNamespace                 = (flags       &&&     0b00000000001L) <> 0x0L
     member x.IsPrefixDisplay                     = (flags       &&&     0b00000000010L) <> 0x0L
@@ -368,7 +376,10 @@ type EntityFlags(flags:int64) =
     // case sub-classes must protect themselves against early access to their contents.
     member x.HasSelfReferentialConstructor       = (flags       &&&     0b00000001000L) <> 0x0L
 
-    /// This bit is reserved for us in the pickle format, see pickle.fs, it's bing listed here to stop it ever being used for anything else
+    /// This bit represents a F# record that is a value type, or a struct record.
+    member x.IsStructRecordOrUnionType                  = (flags       &&&     0b00000100000L) <> 0x0L
+
+    /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
 
     /// Get the flags as included in the F# binary metadata
@@ -384,7 +395,11 @@ assert (sizeof<TyparFlags> = 4)
 
 let unassignedTyparName = "?"
 
-exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * string list
+type Predictions = Set<string>
+
+let NoPredictions = Set.empty
+
+exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * Predictions
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
 let KeyTyconByDemangledNameAndArity nm (typars: _ list) x = 
@@ -673,7 +688,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TRecdRepr x | TFsObjModelRepr {fsobjmodel_rfields=x} -> x
+        | TRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
         |  _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -709,12 +724,12 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TFiniteUnionRepr _ -> true |  _ -> false
+    member x.IsUnionTycon = match x.TypeReprInfo with | TUnionRepr _ -> true |  _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TFiniteUnionRepr x -> Some x 
+        | TUnionRepr x -> Some x 
         |  _ -> None
 
     /// Get the union cases for a type, if any
@@ -751,15 +766,15 @@ type Entity =
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpObjectModelTypeInfo = 
          match x.TypeReprInfo with 
-         | TFsObjModelRepr x -> x 
+         | TFSharpObjectRepr x -> x 
          |  _ -> assert false; failwith "not an F# object model type definition"
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
-    member x.IsILTycon = match x.TypeReprInfo with | TILObjModelRepr _ -> true |  _ -> false
+    member x.IsILTycon = match x.TypeReprInfo with | TILObjectRepr _ -> true |  _ -> false
 
     /// Get the Abstract IL scope, nesting and metadata for this 
     /// type definition, assuming it is backed by Abstract IL metadata.
-    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjModelRepr (a,b,c) -> (a,b,c) |  _ -> assert false; failwith "not a .NET type definition"
+    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr (a,b,c) -> (a,b,c) |  _ -> assert false; failwith "not a .NET type definition"
 
     /// Get the Abstract IL metadata for this type definition, assuming it is backed by Abstract IL metadata.
     member x.ILTyconRawMetadata = let _,_,td = x.ILTyconInfo in td
@@ -767,8 +782,11 @@ type Entity =
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true |  _ -> false
 
+    /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
+    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.Data.entity_flags.IsStructRecordOrUnionType | _ -> false
+
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
-    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFsObjModelRepr _ -> true |  _ -> false
+    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true |  _ -> false
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
     /// an assembly-code representation for the type, e.g. the primitive array type constructor.
@@ -810,10 +828,14 @@ type Entity =
 
     /// Indicates if this is an F#-defined struct or enum type definition , i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
-        x.IsFSharpObjectModelTycon &&
-        match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-        | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
-        | TTyconStruct | TTyconEnum -> true
+        match x.TypeReprInfo with
+        | TRecdRepr _ -> x.IsStructRecordOrUnionTycon
+        | TUnionRepr _ -> x.IsStructRecordOrUnionTycon
+        | TFSharpObjectRepr info ->
+            match info.fsobjmodel_kind with
+            | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
+            | TTyconStruct | TTyconEnum -> true
+        | _ -> false
 
     /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
     member x.IsILStructOrEnumTycon =
@@ -924,7 +946,7 @@ type Entity =
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
                         match x.TypeReprInfo with 
-                        | TILObjModelRepr (ilScopeRef,ilEnclosingTypeDefs,ilTypeDef) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
+                        | TILObjectRepr (ilScopeRef,ilEnclosingTypeDefs,ilTypeDef) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
@@ -949,6 +971,8 @@ type Entity =
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.Data.entity_attribs <- attribs
 
+    /// Sets the structness of a record or union type definition
+    member x.SetIsStructRecordOrUnion b  = let x = x.Data in let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
 
 and 
@@ -1111,18 +1135,18 @@ and
     TyconRepresentation = 
 
     /// Indicates the type is a class, struct, enum, delegate or interface 
-    | TFsObjModelRepr    of TyconObjModelData
+    | TFSharpObjectRepr    of TyconObjModelData
 
     /// Indicates the type is a record 
     | TRecdRepr          of TyconRecdFields
 
     /// Indicates the type is a discriminated union 
-    | TFiniteUnionRepr   of TyconUnionData 
+    | TUnionRepr   of TyconUnionData 
 
-    /// TILObjModelRepr(scope, nesting, definition)
+    /// TILObjectRepr(scope, nesting, definition)
     ///
     /// Indicates the type is a type from a .NET assembly without F# metadata.
-    | TILObjModelRepr    of ILScopeRef * ILTypeDef list * ILTypeDef 
+    | TILObjectRepr    of ILScopeRef * ILTypeDef list * ILTypeDef 
 
     /// Indicates the type is implemented as IL assembly code using the given closed Abstract IL type 
     | TAsmRepr           of ILType
@@ -1717,7 +1741,7 @@ and Construct =
             entity_kind=kind
             entity_range=m
             entity_other_range=None
-            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_abbrev = None
@@ -1746,7 +1770,7 @@ and Construct =
             entity_stamp=stamp
             entity_kind=TyparKind.Type
             entity_modul_contents = mtype
-            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_abbrev = None
             entity_tycon_repr = TNoRepr
@@ -2174,6 +2198,9 @@ and
     /// Indicates if the backing field for a static value is suppressed.
     member x.IsCompiledAsStaticPropertyWithoutField = x.Data.val_flags.IsCompiledAsStaticPropertyWithoutField
 
+    /// Indicates if the value is pinned/fixed
+    member x.IsFixed = x.Data.val_flags.IsFixed
+
     /// Indicates if this value allows the use of an explicit type instantiation (i.e. does it itself have explicit type arguments,
     /// or does it have a signature?)
     member x.PermitsExplicitTypeInstantiation = x.Data.val_flags.PermitsExplicitTypeInstantiation
@@ -2366,6 +2393,7 @@ and
     member x.SetMakesNoCriticalTailcalls()               = x.Data.val_flags <- x.Data.val_flags.SetMakesNoCriticalTailcalls
     member x.SetHasBeenReferenced()                      = x.Data.val_flags <- x.Data.val_flags.SetHasBeenReferenced
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.Data.val_flags <- x.Data.val_flags.SetIsCompiledAsStaticPropertyWithoutField
+    member x.SetIsFixed()                                = x.Data.val_flags <- x.Data.val_flags.SetIsFixed
     member x.SetValReprInfo info                          = x.Data.val_repr_info <- info
     member x.SetType ty                                  = x.Data.val_type <- ty
     member x.SetOtherRange m                              = x.Data.val_other_range <- Some m
@@ -3560,15 +3588,16 @@ and
     /// TDSwitch(input, cases, default, range)
     ///
     /// Indicates a decision point in a decision tree. 
-    ///    input -- the expression being tested
-    ///    cases -- the list of tests and their subsequent decision trees
-    ///    default -- the default decision tree, if any
+    ///    input -- The expression being tested. If switching over a struct union this 
+    ///             must be the address of the expression being tested.
+    ///    cases -- The list of tests and their subsequent decision trees
+    ///    default -- The default decision tree, if any
     ///    range -- (precise documentation  needed)
     | TDSwitch  of Expr * DecisionTreeCase list * DecisionTree option * range
 
     /// TDSuccess(results, targets)
     ///
-    /// Indicates the decision tree has terminated with success, calling the given target with the given parameters.
+    /// Indicates the decision tree has terminated with success, transferring control to the given target with the given parameters.
     ///    results -- the expressions to be bound to the variables at the target
     ///    target -- the target number for the continuation
     | TDSuccess of FlatExprs * int  
@@ -3812,6 +3841,8 @@ and
     | UnionCaseProof of UnionCaseRef
     /// An operation representing a field-get from a union value, where that value has been proven to be of the corresponding union case.
     | UnionCaseFieldGet of UnionCaseRef * int 
+    /// An operation representing a field-get from a union value, where that value has been proven to be of the corresponding union case.
+    | UnionCaseFieldGetAddr of UnionCaseRef * int 
     /// An operation representing a field-get from a union value. The value is not assumed to have been proven to be of the corresponding union case.
     | UnionCaseFieldSet of  UnionCaseRef * int
     /// An operation representing a field-get from an F# exception value.
@@ -3964,12 +3995,15 @@ and ModuleOrNamespaceExpr =
     | TMDefLet   of Binding * range
     /// Indicates the module fragment is an evaluation of expression for side-effects
     | TMDefDo   of Expr * range
-    /// Indicates the module fragment is a 'rec' definition of types, values and modules
-    | TMDefRec   of Tycon list * Bindings * ModuleOrNamespaceBinding list * range
+    /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
+    | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
 /// A named module-or-namespace-fragment definition 
-and ModuleOrNamespaceBinding = 
-    | ModuleOrNamespaceBinding of 
+and [<RequireQualifiedAccess>] 
+    ModuleOrNamespaceBinding = 
+    //| Do of Expr 
+    | Binding of Binding 
+    | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
          ModuleOrNamespace * 
@@ -4398,19 +4432,18 @@ let fslibValRefEq fslibCcu vref1 vref2 =
 /// This takes into account the possibility that they may have type forwarders
 let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) = 
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when not compilingFslib -> x.ResolvedTarget === y.ResolvedTarget 
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | false, false when 
+    
+    if x.IsResolved && y.IsResolved && not compilingFslib then
+        x.ResolvedTarget === y.ResolvedTarget 
+    elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
          nonLocalRefEq x.nlr y.nlr || 
          // The tcrefs may have forwarders. If they may possibly be equal then resolve them to get their canonical references
          // and compare those using pointer equality.
-         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) -> 
+         (not (nonLocalRefDefinitelyNotEq x.nlr y.nlr) && x.Deref === y.Deref)) then
         true
-    | _ -> 
-        compilingFslib && fslibEntityRefEq  fslibCcu x y  
+    else
+        compilingFslib && fslibEntityRefEq fslibCcu x y  
 
 /// Primitive routine to compare two UnionCaseRef's for equality
 let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tcr2,c2) as uc2) = 
@@ -4425,12 +4458,10 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tc
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
     x === y ||
-    match x.IsResolved,y.IsResolved with 
-    | true, true when x.ResolvedTarget === y.ResolvedTarget -> true
-    | _ -> 
-    match x.IsLocalRef,y.IsLocalRef with 
-    | true,true when valEq x.PrivateTarget y.PrivateTarget -> true
-    | _ -> 
+    if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
+       (x.IsLocalRef && y.IsLocalRef && valEq x.PrivateTarget y.PrivateTarget) then
+        true
+    else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
             // e.g. CompactFramework doesn't have support for quotations.
             let v1 = x.TryDeref 
@@ -4505,7 +4536,7 @@ let MakeUnionCases ucs : TyconUnionData =
     { CasesTable=MakeUnionCasesTable ucs 
       CompiledRepresentation=newCache() }
 
-let MakeUnionRepr ucs = TFiniteUnionRepr (MakeUnionCases ucs)
+let MakeUnionRepr ucs = TUnionRepr (MakeUnionCases ucs)
 
 let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,attribs,eqDep,compDep) = 
     Typar.New
@@ -4557,7 +4588,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_typars=LazyWithContext.NotLazy []
         entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
-        entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false)
+        entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()   } 
 
 let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -4585,7 +4616,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_kind=kind
         entity_range=m
         entity_other_range=None
-        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor)
+        entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_abbrev = None
@@ -4608,7 +4639,7 @@ let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
     let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
 
-    tycon.Data.entity_tycon_repr <- TILObjModelRepr (scoref,enc,tdef)
+    tycon.Data.entity_tycon_repr <- TILObjectRepr (scoref,enc,tdef)
     tycon.TypeContents.tcaug_closed <- true
     tycon
 

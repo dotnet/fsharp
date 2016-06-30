@@ -67,5 +67,4 @@ module Keywords =
     val KeywordOrIdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val IdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val QuoteIdentifierIfNeeded : string -> string
-    val mutable permitFsharpKeywords : bool 
     val keywordNames : string list

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:9055
+  .ver 3:47:41:0
 }
 .assembly ToplevelNamespaceP
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ToplevelNamespaceP
 {
-  // Offset: 0x00000000 Length: 0x00001858
+  // Offset: 0x00000000 Length: 0x0000185A
 }
 .mresource public FSharpOptimizationData.ToplevelNamespaceP
 {
   // Offset: 0x00001860 Length: 0x0000055D
 }
 .module ToplevelNamespaceP.dll
-// MVID: {57061C46-88D9-D7FD-A745-0383461C0657}
+// MVID: {576266E4-88D9-D7FD-A745-0383E4666257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00960000
+// Image base: 0x01450000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -214,7 +214,7 @@
     // Code size       14 (0xe)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 7,7 : 10,14 'c:\\KevinRansom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelNamespace.fs'
+    .line 7,7 : 10,14 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelNamespace.fs'
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldarg.1
@@ -666,7 +666,7 @@
 
     IL_0019:  ldloc.0
     IL_001a:  stloc.1
-    IL_001b:  ldloc.1
+    IL_001b:  ldloc.0
     IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.MyExn>(object)
     IL_0021:  brtrue.s   IL_0025
 
@@ -1450,7 +1450,7 @@
 
       IL_0019:  ldloc.0
       IL_001a:  stloc.1
-      IL_001b:  ldloc.1
+      IL_001b:  ldloc.0
       IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/MyExn>(object)
       IL_0021:  brtrue.s   IL_0025
 
@@ -2234,7 +2234,7 @@
 
         IL_0019:  ldloc.0
         IL_001a:  stloc.1
-        IL_001b:  ldloc.1
+        IL_001b:  ldloc.0
         IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/ABC/MyExn>(object)
         IL_0021:  brtrue.s   IL_0025
 
@@ -2471,8 +2471,8 @@
   {
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] string greeting,
-             [1] string V_1)
+    .locals init ([0] string V_0,
+             [1] string greeting)
     .line 19,19 : 9,31 ''
     IL_0000:  nop
     IL_0001:  call       string XYZ.ABC::get_greeting()
