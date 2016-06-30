@@ -1,5 +1,5 @@
 // #Conformance #Interop #PInvoke #Structs 
-#light
+
 
 #nowarn "9"
 open System
@@ -37,12 +37,11 @@ let pinned (obj: obj) f =
 //         (typeof<'a>) == (typeof<int64>)  or
 // etc.           
 
-type PinBox<'a> = { v : obj }
-  with 
+type PinBox<'a> = 
+    { v : obj }
     static member Create(x) = { v  = box(x) }
     member x.Value = (unbox x.v : 'a)
     member x.Pin(f) = pinned(x.v) f
-  end
 
 let card_init () =
   let width = PinBox<_>.Create(300) in
@@ -135,7 +134,7 @@ let example1() =
 
 
 
-module GetSystemTimeTest = begin
+module GetSystemTimeTest = 
     open System
     open System.Runtime.InteropServices
 
@@ -166,9 +165,8 @@ module GetSystemTimeTest = begin
                             (int32 sysTime.wMinute )
                             (int32 sysTime.wSecond)
 
-end
 
-module MemoryStatusTest = begin
+module MemoryStatusTest = 
     open System
     open System.Runtime.InteropServices
 
@@ -204,10 +202,9 @@ module MemoryStatusTest = begin
         printf "%A\n" mex
 
     main()
-end
 
 
-module MemoryStatusTest2 = begin
+module MemoryStatusTest2 = 
     open System
     open System.Runtime.InteropServices
 
@@ -243,5 +240,4 @@ module MemoryStatusTest2 = begin
         printf "%A\n" mex
 
     main()
-end
 

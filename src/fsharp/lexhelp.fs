@@ -220,6 +220,7 @@ module Keywords =
       FSHARP, "extern"     ,EXTERN;
       ALWAYS, "false"      ,FALSE;
       ALWAYS, "finally"    ,FINALLY;
+      FSHARP, "fixed"      ,FIXED;
       ALWAYS, "for"        ,FOR;
       ALWAYS, "fun"        ,FUN;
       ALWAYS, "function"   ,FUNCTION;
@@ -283,18 +284,15 @@ module Keywords =
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
-        [ "atomic"; "break"; 
-          "checked"; "component"; "constraint"; "constructor"; "continue"; 
-          "eager"; 
-          "fixed"; "fori"; "functor"; 
+        [ "break"; 
+          "checked"; "component"; "constraint"; "continue"; 
+          "fori";  
           "include";  
-          "measure"; "method"; "mixin"; 
-          "object"; 
+          "mixin"; 
           "parallel"; "params";  "process"; "protected"; "pure"; 
-          "recursive"; 
           "sealed"; 
           "trait";  "tailcall";
-          "virtual"; "volatile"; ]
+          "virtual"; ]
 
     let private unreserveWords = 
         keywordList |> List.choose (function (mode,keyword,_) -> if mode = FSHARP then Some keyword else None) 

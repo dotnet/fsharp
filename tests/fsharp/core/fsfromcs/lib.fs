@@ -1,4 +1,4 @@
-
+module Lib
 (* An F# library which we try to access from C# *)
 
 type Recd1 = { recd1field1: int }

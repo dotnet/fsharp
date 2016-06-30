@@ -36,13 +36,13 @@
   // Offset: 0x00001158 Length: 0x000003FE
 }
 .module ToplevelModuleP.dll
-// MVID: {575BE155-5A3A-8E4D-A745-038355E15B57}
+// MVID: {576266E1-5A3A-8E4D-A745-0383E1666257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x009B0000
+// Image base: 0x00A70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -671,7 +671,7 @@
 
       IL_0019:  ldloc.0
       IL_001a:  stloc.1
-      IL_001b:  ldloc.1
+      IL_001b:  ldloc.0
       IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/MyExn>(object)
       IL_0021:  brtrue.s   IL_0025
 
@@ -1455,7 +1455,7 @@
 
         IL_0019:  ldloc.0
         IL_001a:  stloc.1
-        IL_001b:  ldloc.1
+        IL_001b:  ldloc.0
         IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/ABC/MyExn>(object)
         IL_0021:  brtrue.s   IL_0025
 
