@@ -3,7 +3,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>true</OutputLocalized>
+    <OutputLocalized>false</OutputLocalized>
     <OutputType>vsix</OutputType>
     <IsPackage>true</IsPackage>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>

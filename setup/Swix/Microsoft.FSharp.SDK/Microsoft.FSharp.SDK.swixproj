@@ -3,7 +3,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>true</OutputLocalized>
+    <OutputLocalized>false</OutputLocalized>
     <OutputType>manifest</OutputType>
     <OutputName>Microsoft.FSharp.SDK.$(LocaleCode)</OutputName>
     <IsPackage>true</IsPackage>
