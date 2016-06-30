@@ -9,73 +9,90 @@
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
     
-    <ItemGroup>
-        <SetupProjects Include="FSharp.SDK.wixproj">
-            <ProjectPath>FSharp.SDK\FSharp.SDK.wixproj</ProjectPath>
-            <VSSku>None</VSSku>
-        </SetupProjects>
-        <SetupProjects Include="FSharp.SDK.wixproj">
-            <ProjectPath>FSharp.SDK\FSharp.SDK.wixproj</ProjectPath>
-            <VSSku>None</VSSku>
-        </SetupProjects>
-        <SetupProjects Include="FSharp.SDK.swixproj">
-            <ProjectPath>Swix\FSharp.SDK\FSharp.SDK.swixproj</ProjectPath>
-            <VSSku>None</VSSku>
-        </SetupProjects>
-        <SetupProjects Include="VisualFSharpVSIX.Professional.swixproj">
-            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
-            <VSSku>Professional</VSSku>
-        </SetupProjects>
-        
-        <!-- This is disabled for now
-        <SetupProjects Include="VisualFSharpVSIX.Desktop.swixproj">
-            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
-            <VSSku>Desktop</VSSku>
-        </SetupProjects>
-        <SetupProjects Include="VisualFSharpVSIX.WebDevelopment.swixproj">
-            <ProjectPath>Swix\VisualFSharpVSIX\VisualFSharpVSIX.swixproj</ProjectPath>
-            <VSSku>WebDevelopment</VSSku>
-        </SetupProjects>
-        -->
-    </ItemGroup>
-    
     <Import Project="FSharp.Setup.props" />
     
-    <Target Name="CrossJoinSetupProjects">
-        <CreateItem Include="@(SetupLanguages)" AdditionalMetadata="ProjectPath=%(SetupProjects.ProjectPath);VSSku=%(SetupProjects.VSSku)">
-            <Output ItemName="LocalizedSetupProjects" TaskParameter="Include"/>
+    <Target Name="CollectSetupProjects">        
+        <ItemGroup>
+            <SetupProjects Include="FSharp.Wix.Extensions.csproj">
+                <ProjectPath>FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj</ProjectPath>
+            </SetupProjects>            
+        </ItemGroup>
+        
+        <CreateItem Include="@(SetupLanguages)"
+                    AdditionalMetadata="ProjectPath=FSharp.SDK\FSharp.SDK.wixproj">
+            <Output ItemName="SetupProjects"
+                    TaskParameter="Include"/>
         </CreateItem>
+        
+        <CreateItem Include="@(SetupLanguages)"
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.SDK\Microsoft.FSharp.SDK.swixproj">
+            <Output ItemName="SetupProjects"
+                    TaskParameter="Include"/>
+        </CreateItem>     
+        
+        <CreateItem Include="@(SetupLanguages)"
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Full"
+                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
+            <Output ItemName="SetupProjects"
+                    TaskParameter="Include"/>
+        </CreateItem>
+        
+        <!--
+        <CreateItem Include="@(SetupLanguages)"
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Desktop"
+                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
+            <Output ItemName="SetupProjects"
+                    TaskParameter="Include"/>
+        </CreateItem>
+        
+        <CreateItem Include="@(SetupLanguages)"
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Web"
+                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
+            <Output ItemName="SetupProjects"
+                    TaskParameter="Include"/>
+        </CreateItem>
+        -->
+        <ItemGroup>
+            <SetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
+            </SetupProjects>            
+            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
+                <VSSku>Full</VSSku>
+            </SetupProjects>
+            <!--
+            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
+                <VSSku>Desktop</VSSku>
+            </SetupProjects>
+            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
+                <VSSku>Web</VSSku>
+            </SetupProjects>
+            -->
+            <SetupProjects Include="Microsoft.FSharp.vsmanproj">
+                <ProjectPath>Swix\Microsoft.FSharp.vsmanproj</ProjectPath>
+            </SetupProjects>
+        </ItemGroup>
     </Target>
 
-    <Target Name="Build" DependsOnTargets="CrossJoinSetupProjects">
-        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Build" />
-            
+    <Target Name="Build" DependsOnTargets="CollectSetupProjects">
         <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
-        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
+        <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
-
-        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Build" />
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku)"/>
     </Target>
     
-    <Target Name="Rebuild" DependsOnTargets="CrossJoinSetupProjects">
-        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Rebuild" />
-            
-        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
+    <Target Name="Rebuild" DependsOnTargets="CollectSetupProjects">
+        <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
-
-        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Rebuild" />
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku)"/>
     </Target>
     
-    <Target Name="Clean" DependsOnTargets="CrossJoinSetupProjects">
-        <MSBuild Projects="FSharp.Wix.Extensions\FSharp.Wix.Extensions.csproj" Targets="Clean" />
-            
-        <MSBuild Projects="%(LocalizedSetupProjects.ProjectPath)"
+    <Target Name="Clean" DependsOnTargets="CollectSetupProjects">
+        <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Clean"
-                 Properties="LocaleCode=%(LocalizedSetupProjects.LocaleCode);LocaleId=%(LocalizedSetupProjects.LocaleId);LocaleRegion=%(LocalizedSetupProjects.LocaleRegion);IsLangPack=%(LocalizedSetupProjects.IsLangPack);VSSku=%(LocalizedSetupProjects.VSSku)"/>
-
-        <MSBuild Projects="Swix\Microsoft.FSharp.vsmanproj" Targets="Clean" />
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku)"/>
     </Target>
     
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">

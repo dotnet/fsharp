@@ -15,8 +15,13 @@
   
     <Target Name="IncludeManifests" BeforeTargets="MergeManifests">
         <ItemGroup>
-            <MergeManifest Include="$(OutputPath)\VisualFSharpVSIX.Professional.%(SetupLanguages.LocaleCode).json" />
-            <MergeManifest Include="$(OutputPath)\FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.LangPack.Full.%(SetupLanguages.LocaleCode).json"
+                           Condition="'%(SetupLanguages.IsLangPack)' == 'true'" />
         </ItemGroup>
     </Target>
 </Project>
