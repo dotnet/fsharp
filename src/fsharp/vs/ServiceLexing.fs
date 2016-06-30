@@ -250,7 +250,7 @@ module internal TokenClassifications =
         | FINALLY   | LAZY   | MATCH  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
         | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
         | IF | THEN  | ELSE | DO | DONE | LET(_) | IN (*| NAMESPACE*) | CONST
-        | HIGH_PRECEDENCE_PAREN_APP
+        | HIGH_PRECEDENCE_PAREN_APP | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
         | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE
           -> (FSharpTokenColorKind.Keyword,FSharpTokenCharKind.Keyword,FSharpTokenTriggerClass.None)
