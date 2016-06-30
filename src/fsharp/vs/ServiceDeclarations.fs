@@ -78,6 +78,7 @@ type FSharpToolTipText =
     | FSharpToolTipText of FSharpToolTipElement list  
 
 
+[<AutoOpen>]
 module internal ItemDescriptionsImpl = 
 
     let isFunction g typ =
@@ -1127,9 +1128,9 @@ module internal ItemDescriptionsImpl =
     let GlyphOfItem(denv,d) = 
 
          /// Find the glyph for the given representation.    
-         let ReprToGlyph(repr) = 
+         let reprToGlyph repr = 
             match repr with
-            | TFsObjModelRepr om -> 
+            | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
                 | TTyconClass -> iIconGroupClass
                 | TTyconInterface -> iIconGroupInterface
@@ -1137,28 +1138,27 @@ module internal ItemDescriptionsImpl =
                 | TTyconDelegate _ -> iIconGroupDelegate
                 | TTyconEnum _ -> iIconGroupEnum
             | TRecdRepr _ -> iIconGroupType
-            | TFiniteUnionRepr _ -> iIconGroupUnion
-            | TILObjModelRepr(_,_,{tdKind=kind}) -> 
-                match kind with 
+            | TUnionRepr _ -> iIconGroupUnion
+            | TILObjectRepr(_,_,td) -> 
+                match td.tdKind with 
                 | ILTypeDefKind.Class -> iIconGroupClass
                 | ILTypeDefKind.ValueType -> iIconGroupStruct
                 | ILTypeDefKind.Interface -> iIconGroupInterface
                 | ILTypeDefKind.Enum -> iIconGroupEnum
                 | ILTypeDefKind.Delegate -> iIconGroupDelegate
-                | ILTypeDefKind.Other _ -> iIconGroupTypedef
             | TAsmRepr _ -> iIconGroupTypedef
-            | TMeasureableRepr _-> iIconGroupTypedef   // $$$$ TODO: glyph for units-of-measure
+            | TMeasureableRepr _-> iIconGroupTypedef 
 #if EXTENSIONTYPING
             | TProvidedTypeExtensionPoint _-> iIconGroupTypedef 
             | TProvidedNamespaceExtensionPoint  _-> iIconGroupTypedef  
 #endif
-            | TNoRepr -> iIconGroupClass  // $$$$ TODO: glyph for abstract (no-representation) types
+            | TNoRepr -> iIconGroupClass  
          
          /// Find the glyph for the given type representation.
-         let rec TypToGlyph(typ) = 
+         let typeToGlyph typ = 
             if isAppTy denv.g typ then 
                 let tcref = tcrefOfAppTy denv.g typ
-                tcref.TypeReprInfo |> ReprToGlyph 
+                tcref.TypeReprInfo |> reprToGlyph 
             elif isTupleTy denv.g typ then iIconGroupStruct
             elif isFunction denv.g typ then iIconGroupDelegate
             elif isTyparTy denv.g typ then iIconGroupStruct
@@ -1166,19 +1166,19 @@ module internal ItemDescriptionsImpl =
 
             
          /// Find the glyph for the given value representation.
-         let ValueToGlyph(typ) = 
+         let ValueToGlyph typ = 
             if isFunction denv.g typ then iIconGroupMethod
             else iIconGroupConstant
               
          /// Find the major glyph of the given named item.       
-         let NamedItemToMajorGlyph item = 
+         let namedItemToMajorGlyph item = 
             // This may explore assemblies that are not in the reference set,
             // e.g. for type abbreviations to types not in the reference set. 
             // In this case just use iIconGroupClass.
            protectAssemblyExploration  iIconGroupClass (fun () ->
               match item with 
               | Item.Value(vref) | Item.CustomBuilder (_,vref) -> ValueToGlyph(vref.Type)
-              | Item.Types(_,typ::_) -> TypToGlyph(stripTyEqns denv.g typ)    
+              | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
               | Item.UnionCase _
               | Item.ActivePatternCase _ -> iIconGroupEnumMember   
               | Item.ExnCase _ -> iIconGroupException   
@@ -1200,7 +1200,7 @@ module internal ItemDescriptionsImpl =
               | _ -> iIconGroupError)
 
          /// Find the minor glyph of the given named item.       
-         let NamedItemToMinorGlyph item = 
+         let namedItemToMinorGlyph item = 
             // This may explore assemblies that are not in the reference set,
             // e.g. for type abbreviations to types not in the reference set. 
             // In this case just use iIconItemNormal.
@@ -1209,16 +1209,9 @@ module internal ItemDescriptionsImpl =
               | Item.Value(vref) when isFunction denv.g vref.Type -> iIconItemSpecial
               | _ -> iIconItemNormal)
 
-         (6 * NamedItemToMajorGlyph(d)) + NamedItemToMinorGlyph(d)
+         (6 * namedItemToMajorGlyph d) + namedItemToMinorGlyph d
 
      
-    let string_is_prefix_of m n  = String.length n >= String.length m && String.sub n 0 (String.length m) = m
-
-
-
-open ItemDescriptionsImpl
-
-          
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem(name, glyph:int, info) =

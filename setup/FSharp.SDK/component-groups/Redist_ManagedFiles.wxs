@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+	<Fragment>
+		<ComponentGroup Id="Redist_ManagedFiles">
+
+			<!-- F# 4.1 -->
+
+			<ComponentRef Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core" />
+
+			<!-- F# 4.0 -->
+
+			<ComponentRef Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core" />
+
+			<!-- F# 3.1 -->
+
+			<ComponentRef Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core" />
+
+			<!-- F# 3.0 -->
+
+			<ComponentRef Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core" />
+			<ComponentRef Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core" />			
+
+		</ComponentGroup>
+
+		<!-- F# 4.1 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.1.0">
+			<Component Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_4.4.1.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core.xml" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_4.4.1.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0">
+			<Component Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.47.41.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.47.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.41.0">
+			<Component Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.7.41.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.7.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.41.0">
+			<Component Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.78.41.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.78.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.41.0">
+			<Component Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.259.41.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.259.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 4.0 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.0.0">
+			<Component Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_4.4.0.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_4.4.0.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.4.0">
+			<Component Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.47.4.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.47.4.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.4.0">
+			<Component Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.7.4.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.7.4.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.4.0">
+			<Component Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.78.4.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.78.4.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.4.0">
+			<Component Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.259.4.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.259.4.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 3.1 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.3.1.0">
+			<Component Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_4.3.1.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_4.3.1.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_2.3.5.1">
+			<Component Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_2.3.5.1_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_2.3.5.1_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.3.1.0">
+			<Component Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.3.1.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.3.1.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.3.1">
+			<Component Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.78.3.1_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.78.3.1_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.3.1">
+			<Component Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_3.259.3.1_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_3.259.3.1_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 3.0 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.3.0.0">
+			<Component Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_4.3.0.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_4.3.0.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_2.3.5.0">
+			<Component Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Redist_ManagedFiles_2.3.5.0_FSharp.Core, $(var.Lang)))">
+				<File Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\FSharp.Core.dll" KeyPath="yes" />
+				<File Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\FSharp.Core.xml" />
+				<File Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core.sigdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\FSharp.Core.sigdata" />
+				<File Id="Redist_ManagedFiles_2.3.5.0_FSharp.Core.optdata" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\FSharp.Core.optdata" />
+			</Component>
+		</DirectoryRef>
+	</Fragment>
+</Wix>

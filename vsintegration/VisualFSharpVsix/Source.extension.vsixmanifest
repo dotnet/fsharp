@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="VisualFSharp" Version="15.4.1.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <DisplayName>Visual F# Tools</DisplayName>
+    <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
+    <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
+  </Installation>
+  <Installer>
+    <Actions>
+      <Action Type="Ngen" Path="FsiAnyCPU.exe" />
+      <Action Type="Ngen" Path="Fsi.exe" />
+      <Action Type="Ngen" Path="FSharp.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
+      <Action Type="Ngen" Path="FSharp.Core.dll" />
+      <Action Type="Ngen" Path="FSharp.Editor.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.Base.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.Base.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
+      <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
+    </Actions>
+  </Installer>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
+	
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.FSharp.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.Base.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.VS.FSI.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.Base.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.Compiler.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Editor.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.ProjectSystem.PropertyPages.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Compiler.Server.Shared.pkgdef" />
+	
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\SilverlightProject.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCoreProject.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCore78Project.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCore259Project.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\PortableLibraryProject.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\TutorialProject.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\ConsoleProject.zip" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\LibraryProject.zip" />
+	
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\AppConfig.zip" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\CodeFile.zip" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\ScriptFile.zip" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\SignatureFile.zip" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\TextFile.zip" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\XMLFile.zip" />
+  </Assets>
+</PackageManifest>
