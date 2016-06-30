@@ -3,9 +3,9 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>false</OutputLocalized>
+    <OutputLocalized>true</OutputLocalized>
     <OutputType>manifest</OutputType>
-    <OutputName>FSharp.SDK.$(LocaleCode)</OutputName>
+    <OutputName>Microsoft.FSharp.SDK.$(LocaleCode)</OutputName>
     <IsPackage>true</IsPackage>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>

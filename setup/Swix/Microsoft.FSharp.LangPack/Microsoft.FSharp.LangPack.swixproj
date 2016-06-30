@@ -3,13 +3,13 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
-    <OutputLocalized>false</OutputLocalized>
+    <OutputLocalized>true</OutputLocalized>
     <OutputType>vsix</OutputType>
     <IsPackage>true</IsPackage>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>VisualFSharpVSIX.$(VSSku).$(LocaleCode)</OutputName>
+    <OutputName>Microsoft.FSharp.LangPack.$(VSSku).$(LocaleCode)</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -25,11 +25,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Package Condition="'$(IsLangPack)' != 'true'" Include="Files\CommonFiles.swr" />
-    <Package Condition="'$(IsLangPack)' == 'true'" Include="LangPack\CommonFiles.LangPack.swr" />
-    
-    <Package Condition="'$(IsLangPack)' != 'true'" Include="Files\$(VSSku)Templates.swr" />
-    <Package Condition="'$(IsLangPack)' == 'true'" Include="LangPack\$(VSSku)Templates.LangPack.swr" />
+    <Package Include="Files.swr" />
+    <Package Include="$(VSSku)Templates.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
