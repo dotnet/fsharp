@@ -77,7 +77,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 #If VS_VERSION_DEV14 Then
             Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
             Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#Else
+#End If
+#If VS_VERSION_DEV15 Then
             Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v2.0"
             Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v4.0"
 #End If

@@ -44,4 +44,6 @@ echo Test 16=================================================
 "%FSC%" ProjectDriver.fsx --nologo
 ProjectDriver.exe
 del ProjectDriver.exe
+echo Test 17=================================================
+"%FSI%" load-IncludeNoWarn211.fsx
 echo Done ==================================================

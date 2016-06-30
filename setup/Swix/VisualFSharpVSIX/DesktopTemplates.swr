@@ -1,0 +1,54 @@
+use vs
+
+package name=Microsoft.FSharp.Vsix
+        version=4.1
+        vs.package.chip=neutral
+        vs.package.language=en-us
+
+vs.localizedResources
+  vs.localizedResource language=en-us
+                       title="Visual F# Tools"
+                       description="Deploy Visual F# Tools templates to Visual Studio"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\AppConfig"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\AppConfig\App.config"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\AppConfig\AppConfig.vstemplate"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\CodeFile"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\CodeFile\CodeFile.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\CodeFile\File.fs"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\ScriptFile"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\ScriptFile\File.fsx"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\ScriptFile\ScriptFile.vstemplate"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\SignatureFile"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\SignatureFile\File.fsi"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\SignatureFile\SignatureFile.vstemplate"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\TextFile"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\TextFile\TextFile.txt"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\TextFile\TextFile.vstemplate"
+
+folder "InstallDir:Common7\IDE\ItemTemplates\FSharp\XMLFile"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\XMLFile\XMLFile.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ItemTemplates\XMLFile\XMLFile.xml"
+
+folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\ConsoleProject"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\App.config"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\Program.fs"
+
+folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\LibraryProject"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library1.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Script.fsx"
+
+folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\TutorialProject"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.vstemplate"

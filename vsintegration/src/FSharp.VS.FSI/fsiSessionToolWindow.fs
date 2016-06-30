@@ -35,7 +35,7 @@ type internal ITestVFSI =
 #nowarn "47"
 module internal Locals = 
     let fsiFontsAndColorsCategory = new Guid("{00CCEE86-3140-4E06-A65A-A92665A40D6F}")
-    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0"
+    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0"
     let settingsRegistrySubKey = @"General"
     let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
 

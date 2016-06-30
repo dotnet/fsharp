@@ -28,8 +28,8 @@ type IlxUnionField(fd: ILFieldDef) =
     
 
 type IlxUnionAlternative = 
-    { altName: string;
-      altFields: IlxUnionField[];
+    { altName: string
+      altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
@@ -45,16 +45,17 @@ type IlxUnionHasHelpers =
    | SpecialFSharpOptionHelpers 
    
 type IlxUnionRef = 
-    | IlxUnionRef of ILTypeRef * IlxUnionAlternative[] * bool * (* hasHelpers: *) IlxUnionHasHelpers 
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool * (* hasHelpers: *) IlxUnionHasHelpers 
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(tref,_,_,_),inst)) = x in mkILBoxedTyRaw tref inst
-    member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(tref,_,_,_),_)) = x in tref
+    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx,tref,_,_,_),inst)) = x in mkILNamedTy bx tref inst
+    member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx,_,_,_,_),_)) = x in bx 
+    member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),_)) = x in tref
     member x.GenericArgs = let (IlxUnionSpec(_,inst)) = x in inst
-    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_,alts,_,_),_)) = x in alts
-    member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_,_,np,_),_)) = x in np
-    member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_,_,_,b),_)) = x in b
+    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_,_,alts,_,_),_)) = x in alts
+    member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_,_,_,np,_),_)) = x in np
+    member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,b),_)) = x in b
     member x.Alternatives = Array.toList x.AlternativesArray
     member x.Alternative idx = x.AlternativesArray.[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
@@ -85,14 +86,14 @@ let rec instLambdasAux n inst = function
 let instLambdas i t = instLambdasAux 0 i t
 
 type IlxClosureFreeVar = 
-    { fvName: string ; 
-      fvCompilerGenerated:bool; 
+    { fvName: string  
+      fvCompilerGenerated:bool 
       fvType: ILType }
 
 let mkILFreeVar (name,compgen,ty) = 
-    { fvName=name;
-      fvCompilerGenerated=compgen;
-      fvType=ty; }
+    { fvName=name
+      fvCompilerGenerated=compgen
+      fvType=ty }
 
 
 type IlxClosureRef = 
@@ -115,79 +116,27 @@ type IlxClosureSpec =
         mkILCtorMethSpecForTy (cloTy,fields |> Array.map (fun fv -> fv.fvType) |> Array.toList)
 
 
-type IlxInstr = 
-  // Discriminated unions
-  | EI_lddata of (* avoidHelpers: *) bool * IlxUnionSpec * int * int
-  | EI_isdata of (* avoidHelpers: *) bool * IlxUnionSpec * int
-  | EI_brisdata of (* avoidHelpers: *) bool * IlxUnionSpec * int * ILCodeLabel * ILCodeLabel
-  | EI_castdata of bool * IlxUnionSpec * int
-  | EI_stdata of IlxUnionSpec * int * int
-  | EI_datacase of (* avoidHelpers: *) bool * IlxUnionSpec * (int * ILCodeLabel) list * ILCodeLabel (* last label is fallthrough *)
-  | EI_lddatatag of (* avoidHelpers: *) bool * IlxUnionSpec
-  | EI_newdata of IlxUnionSpec * int
-  
-  // Closures
-  | EI_callfunc of ILTailcall * IlxClosureApps
-
-let destinations i =
-  match i with 
-  |  (EI_brisdata (_,_,_,l1,l2)) ->  [l1; l2]
-  |  (EI_callfunc (Tailcall,_)) ->   []
-  |  (EI_datacase (_,_,ls,l)) -> l:: (List.foldBack (fun (_,l) acc -> ListSet.insert l acc) ls [])
-  | _ -> []
-
-let fallthrough i = 
-  match i with 
-  |  (EI_brisdata (_,_,_,_,l)) 
-  |  (EI_datacase (_,_,_,l)) -> Some l
-  | _ -> None
-
-let isTailcall i = 
-  match i with 
-  |  (EI_callfunc (Tailcall,_)) -> true
-  | _ -> false
-
-let remapIlxLabels lab2cl i = 
-  match i with 
-    | EI_brisdata (z,a,b,l1,l2) -> EI_brisdata (z,a,b,lab2cl l1,lab2cl l2)
-    | EI_datacase (z,x,ls,l) -> EI_datacase (z,x,List.map (fun (y,l) -> (y,lab2cl l)) ls, lab2cl l)
-    | _ -> i
-
-let (mkIlxExtInstr,isIlxExtInstr,destIlxExtInstr) = 
-  RegisterInstructionSetExtension  
-    { instrExtDests=destinations;
-      instrExtFallthrough=fallthrough;
-      instrExtIsTailcall=isTailcall;
-      instrExtRelabel=remapIlxLabels; }
-
-let mkIlxInstr i = I_other (mkIlxExtInstr i)
-
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas;
-      cloFreeVars: IlxClosureFreeVar[];  
-      cloCode: Lazy<ILMethodBody>;
+    { cloStructure: IlxClosureLambdas
+      cloFreeVars: IlxClosureFreeVar[]  
+      cloCode: Lazy<ILMethodBody>
       cloSource: ILSourceMarker option}
 
-and IlxUnionInfo = 
-    { cudReprAccess: ILMemberAccess; (* is the representation public? *)
-      cudHelpersAccess: ILMemberAccess; (* are the representation public? *)
-      cudHasHelpers: IlxUnionHasHelpers; (* generate the helpers? *)
-      cudDebugProxies: bool; (* generate the helpers? *)
-      cudDebugDisplayAttributes: ILAttribute list;
-      cudAlternatives: IlxUnionAlternative array;
-      cudNullPermitted: bool;
-      (* debug info for generated code for classunions *) 
-      cudWhere: ILSourceMarker option; }
-
-type IlxTypeDefKind = 
- | Closure of IlxClosureInfo
- | Union of IlxUnionInfo
-
-let (mkIlxExtTypeDefKind,isIlxExtTypeDefKind,destIlxExtTypeDefKind) = 
-  (RegisterTypeDefKindExtension TypeDefKindExtension : (IlxTypeDefKind -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> IlxTypeDefKind) )
-
-let mkIlxTypeDefKind i = ILTypeDefKind.Other (mkIlxExtTypeDefKind i)
+type IlxUnionInfo = 
+    { /// is the representation public? 
+      cudReprAccess: ILMemberAccess 
+      /// are the representation public? 
+      cudHelpersAccess: ILMemberAccess 
+      /// generate the helpers? 
+      cudHasHelpers: IlxUnionHasHelpers 
+      /// generate the helpers? 
+      cudDebugProxies: bool 
+      cudDebugDisplayAttributes: ILAttribute list
+      cudAlternatives: IlxUnionAlternative[]
+      cudNullPermitted: bool
+      /// debug info for generated code for classunions 
+      cudWhere: ILSourceMarker option }
 
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types

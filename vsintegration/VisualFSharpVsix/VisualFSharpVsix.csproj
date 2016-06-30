@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+    <VSSourcesRoot>..\src</VSSourcesRoot>
+    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">14.0</MinimumVisualStudioVersion>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>15.0</OldToolsVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>true</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DeployExtension>false</DeployExtension>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <VSRootSuffix>FSharp</VSRootSuffix>
+    <UseCodebase>true</UseCodebase>
+    <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">True</DeployExtension>
+    <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
+    <IsPackage>true</IsPackage>
+    <RootNamespace>VisualFSharpVsix</RootNamespace>
+    <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</RootBinPath>
+    <AssemblyName>VisualFSharpVsix</AssemblyName>
+    <OutputPath>$(RootBinPath)</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix FSharp /log</StartArguments>
+    <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
+    <CreateVsixContainer>true</CreateVsixContainer>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <CreateVsixContainer>true</CreateVsixContainer>
+    <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
+    <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
+    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Source.extension.vsixmanifest">
+      <SubType>Designer</SubType>
+    </None>
+    <Content Include="RegisterFsharpPackage.pkgdef">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>RegisterFsharpPackage.pkgdef</Link>
+    </Content>
+    <Content Include="$(FSharpSourcesRoot)\..\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="$(RootBinPath)\ProjectTemplates\SilverlightProject\SilverlightProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\SilverlightProject.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\NetCoreProject\NetCoreProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\NetCoreProject.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\NetCore78Project\NetCore78Project.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\NetCore78Project.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\NetCore259Project\NetCore259Project.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\NetCore259Project.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\PortableLibraryProject.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\TutorialProject\TutorialProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\TutorialProject.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\ConsoleProject\ConsoleProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\ConsoleProject.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ProjectTemplates\LibraryProject\LibraryProject.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ProjectTemplates\LibraryProject.zip</Link>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="$(RootBinPath)\ItemTemplates\AppConfig\AppConfig.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\AppConfig.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ItemTemplates\CodeFile\CodeFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\CodeFile.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ItemTemplates\ScriptFile\ScriptFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\ScriptFile.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ItemTemplates\SignatureFile\SignatureFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\SignatureFile.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ItemTemplates\TextFile\TextFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\TextFile.zip</Link>
+    </Content>
+    <Content Include="$(RootBinPath)\ItemTemplates\XMLFile\XMLFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>ItemTemplates\XMLFile.zip</Link>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
+      <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
+      <Name>FSharp.Compiler.Interactive.Settings</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
+      <Project>{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}</Project>
+      <Name>FSharp.Compiler.Server.Shared</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
+      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
+      <Name>FSharp.Compiler</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
+      <Project>{A437A6EC-5323-47C2-8F86-E2CAC54FF152}</Project>
+      <Name>FSharp.LanguageService.Compiler</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
+      <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
+      <Name>FsiAnyCPU</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj">
+      <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
+      <Name>Fsi</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.Editor\FSharp.Editor.fsproj">
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
+      <Name>FSharp.Editor</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
+      <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
+      <Name>FSharp.LanguageService.Base</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Project>{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}</Project>
+      <Name>FSharp.LanguageService</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
+      <Project>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</Project>
+      <Name>ProjectSystem.Base</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj">
+      <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
+      <Name>ProjectSystem</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj">
+      <Project>{FCFB214C-462E-42B3-91CA-FC557EFEE74F}</Project>
+      <Name>FSharp.PropertiesPages</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(VSSourcesRoot)\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
+      <Project>{991DCF75-C2EB-42B6-9A0D-AA1D2409D519}</Project>
+      <Name>FSharp.VS.FSI</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Import Project="$(VSSourcesRoot)\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+</Project>

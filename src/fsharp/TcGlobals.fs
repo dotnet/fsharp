@@ -218,6 +218,7 @@ type public TcGlobals =
       system_Array_typ             : TType 
       system_Object_typ            : TType 
       system_IDisposable_typ       : TType 
+      system_RuntimeHelpers_typ       : TType 
       system_Value_typ             : TType 
       system_Delegate_typ          : TType
       system_MulticastDelegate_typ : TType
@@ -298,6 +299,10 @@ type public TcGlobals =
       attrib_PreserveSigAttribute        : BuiltinAttribInfo option
       attrib_MethodImplAttribute         : BuiltinAttribInfo
       attrib_ExtensionAttribute          : BuiltinAttribInfo
+      attrib_CallerLineNumberAttribute   : BuiltinAttribInfo
+      attrib_CallerFilePathAttribute     : BuiltinAttribInfo
+      attrib_CallerMemberNameAttribute   : BuiltinAttribInfo
+
       tcref_System_Collections_Generic_IList               : TyconRef
       tcref_System_Collections_Generic_IReadOnlyList       : TyconRef
       tcref_System_Collections_Generic_ICollection         : TyconRef
@@ -616,6 +621,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let sysLinq = ["System";"Linq"]
   let sysCollections = ["System";"Collections"]
   let sysGenerics = ["System";"Collections";"Generic"]
+  let sysCompilerServices = ["System";"Runtime";"CompilerServices"]
 
   let lazy_tcr = mkSysTyconRef sys "Lazy`1"
   let fslib_IEvent2_tcr        = mk_MFControl_tcref fslibCcu "IEvent`2"
@@ -666,7 +672,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   (* local helpers to build value infos *)
   let mkNullableTy ty = TType_app(nullable_tcr, [ty]) 
   let mkByrefTy ty = TType_app(byref_tcr, [ty]) 
-  let mkNativePtrType ty = TType_app(nativeptr_tcr, [ty]) 
+  let mkNativePtrTy ty = TType_app(nativeptr_tcr, [ty]) 
   let mkFunTy d r = TType_fun (d,r) 
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack (-->) dl r
@@ -845,7 +851,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
 
   let and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
   let addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     ,None                 ,None          ,[vara],     ([[varaTy]], mkByrefTy varaTy))   
-  let addrof2_info =               makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&&"                    ,None                 ,None          ,[vara],     ([[varaTy]], mkNativePtrType varaTy))
+  let addrof2_info =               makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&&"                    ,None                 ,None          ,[vara],     ([[varaTy]], mkNativePtrTy varaTy))
   let and2_info =                  makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&&"                     ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
   let or_info =                    makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    "or"                                   ,None                 ,Some "Or"     ,[],         mk_rel_sig bool_ty) 
   let or2_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "||"                     ,None                 ,None          ,[],         mk_rel_sig bool_ty) 
@@ -993,7 +999,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   { ilg=ilg
 #if NO_COMPILER_BACKEND
 #else
-    ilxPubCloEnv=EraseClosures.new_cenv(ilg)
+    ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg)
 #endif
     knownIntrinsics                = knownIntrinsics
     knownFSharpCoreModules         = knownFSharpCoreModules
@@ -1099,6 +1105,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     system_Array_typ     = mkSysNonGenericTy sys "Array"
     system_Object_typ    = mkSysNonGenericTy sys "Object"
     system_IDisposable_typ    = mkSysNonGenericTy sys "IDisposable"
+    system_RuntimeHelpers_typ    = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
     system_Value_typ     = mkSysNonGenericTy sys "ValueType"
     system_Delegate_typ     = mkSysNonGenericTy sys "Delegate"
     system_MulticastDelegate_typ     = mkSysNonGenericTy sys "MulticastDelegate"
@@ -1200,7 +1207,10 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     attrib_PreserveSigAttribute    = mkSystemRuntimeInteropServicesAttribute "System.Runtime.InteropServices.PreserveSigAttribute"
     attrib_MethodImplAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
     attrib_ExtensionAttribute     = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
-    
+    attrib_CallerLineNumberAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
+    attrib_CallerFilePathAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
+    attrib_CallerMemberNameAttribute = mkSystemRuntimeAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
+
     attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
     attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
     attrib_NonSerializedAttribute                 = if ilg.traits.NonSerializedAttributeScopeRef.IsSome then Some(mkSystemRuntimeAttrib "System.NonSerializedAttribute") else None

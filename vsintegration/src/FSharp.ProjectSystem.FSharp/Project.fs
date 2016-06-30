@@ -2,7 +2,7 @@
 
 #nowarn "40"
 
-namespace Microsoft.VisualStudio.FSharp.ProjectSystem 
+namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem 
 
     open Helpers 
     open System
@@ -27,6 +27,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open Microsoft.Win32
 
+    open Microsoft.VisualStudio
     open Microsoft.VisualStudio.Shell
     open Microsoft.VisualStudio.Shell.Interop
     open Microsoft.VisualStudio.Shell.Flavor
@@ -37,15 +38,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     
-    open Microsoft.VisualStudio
-
     open EnvDTE
 
     open Microsoft.Build.BuildEngine
     open Internal.Utilities.Debug
 
-
- 
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.
@@ -144,18 +141,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
     [<InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
     [<ComImport>] 
+    [<Interface>] 
     [<ComVisible(true)>]
     [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.None)>]
     type public IVsMicrosoftInstalledProduct =
-        interface
-            inherit IVsInstalledProduct
-            abstract IdBmpSplashM : byref<uint32> -> unit
-            abstract OfficialNameM : on : byref<string> -> unit
-            abstract ProductIDM : pid : byref<string> -> unit
-            abstract ProductDetailsM : pd : byref<string> -> unit
-            abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
-            abstract ProductRegistryName : prn : byref<string> -> unit
-        end
+        inherit IVsInstalledProduct
+        abstract IdBmpSplashM : byref<uint32> -> unit
+        abstract OfficialNameM : on : byref<string> -> unit
+        abstract ProductIDM : pid : byref<string> -> unit
+        abstract ProductDetailsM : pd : byref<string> -> unit
+        abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
+        abstract ProductRegistryName : prn : byref<string> -> unit
 
     exception internal ExitedOk
     exception internal ExitedWithError
@@ -167,42 +163,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     //    FSharpProjectFactory
     //    ....
 
-    type (* start of very large set of mutually recursive OO types *)
-
-(*
-See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools" Value="#6000" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\ToolsOptionsPages\F# Tools\F# Interactive" Value="#6001" Type="string">
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-    <Registry Name="Page" Value="{4489e9de-6ac1-3cd6-bff8-a904fd0e82d4}" Type="string" />
-  </Registry>
-
-  <Registry Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSRegVer)\AutomationProperties\F# Tools\F# Interactive">
-    <Registry Name="Name" Value="F# Tools.F# Interactive" Type="string" />
-    <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
-  </Registry>
-*)
-        [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
-                            (* NOTE: search for FSHARP-TOOLS-INTERACTIVE-LINK *)                            
-                            (* NOTE: the cat/sub-cat names appear in an error message in sessions.ml, fix up any changes there *)
-                            "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
-                            6000s,      6001s,              // resource id for localisation of the above
-                            true)>]                         // true = supports automation
-        [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-        [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
-                            // The following should place the ToolWindow with the OutputWindow by default.
-                            Orientation=ToolWindowOrientation.Bottom,
-                            Style=VsDockStyle.Tabbed,
-                            PositionX = 0,
-                            PositionY = 0,
-                            Width = 360,
-                            Height = 120,
-                            Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
-        [<Guid(GuidList.guidFSharpProjectPkgString)>]
-        internal FSharpProjectPackage() as this = 
+    [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
+                        "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
+                        6000s,      6001s,              // resource id for localisation of the above
+                        true)>]                         // true = supports automation
+    [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
+    [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
+                        // The following should place the ToolWindow with the OutputWindow by default.
+                        Orientation=ToolWindowOrientation.Bottom,
+                        Style=VsDockStyle.Tabbed,
+                        PositionX = 0,
+                        PositionY = 0,
+                        Width = 360,
+                        Height = 120,
+                        Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
+    [<Guid(GuidList.guidFSharpProjectPkgString)>]
+    type internal FSharpProjectPackage() as this = 
             inherit ProjectPackage() 
 
             let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
@@ -366,9 +342,9 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     GetToolWindowAsITestVFSI().GetMostRecentLines(n)
 
 
-    and /// Factory for creating our editor, creates FSharp Projects
-        [<Guid(GuidList.guidFSharpProjectFactoryString)>]
-        internal FSharpProjectFactory(package:FSharpProjectPackage ) =  
+    /// Factory for creating our editor, creates FSharp Projects
+    [<Guid(GuidList.guidFSharpProjectFactoryString)>]
+    type internal FSharpProjectFactory(package:FSharpProjectPackage ) =  
             inherit ProjectFactory(package)
 
             override this.CreateProject() =
@@ -379,15 +355,14 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 (project :> ProjectNode)
 
 
-    and /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
-        /// FSharp projects.
-        [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
-        internal WAFSharpProjectFactory() = class end
+    /// This class is a 'fake' project factory that is used by WAP to register WAP specific information about
+    /// FSharp projects.
+    [<Guid("4EAD5BC6-47F1-4FCB-823D-0CD64302D5B9")>]
+    type internal WAFSharpProjectFactory() = class end
 
-    and 
 
-        [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
-        internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
+    [<Guid("C15CF2F6-9005-44AD-9991-683808A8E5EA")>]
+    type internal FSharpProjectNode(package:FSharpProjectPackage) as this = 
             inherit ProjectNode() 
 
 #if FX_ATLEAST_45  
@@ -611,18 +586,15 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 this.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
                 this.OleServiceProvider.AddService(typeof<System.CodeDom.Compiler.CodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
 
-                begin match TryGetService<IFSharpLibraryManager>(x.Site) with 
+                match TryGetService<IFSharpLibraryManager>(x.Site) with 
                 | Some(libraryManager) ->
                      libraryManager.RegisterHierarchy(this.InteropSafeIVsHierarchy)
                 | _ -> ()
-                end
 
                 // Listen for changes to files in the project
                 let documentTracker = this.Site.GetService(typeof<SVsTrackProjectDocuments>) :?> IVsTrackProjectDocuments2
                 documentTracker.AdviseTrackProjectDocumentsEvents(this, &trackDocumentsHandle) |> ignore
 
-
-                
             /// Returns the outputfilename based on the output type
             member x.OutputFileName = 
                 let assemblyName = this.ProjectMgr.GetProjectProperty(GeneralPropertyPageTag.AssemblyName.ToString(), true)
@@ -1679,17 +1651,15 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     VSConstants.E_NOTIMPL
             end
 
-    and 
-
-        // Why is this a separate class, rather than an interface implemented on
-        // FSharpProjectNode?  Because, at the time of initial registration of this
-        // interface, we are still initializing FSharpProjectNode itself, and trying
-        // to cast "this" (FSharpProjectNode) to an IVsFoo and passing it to VS wraps
-        // the object in a COM CCW wrapper, which is then unexpected when the startup
-        // code later comes along and tries to CCW wrap it again.  Using a separate 
-        // class means we have a separate object to CCW wrap, avoiding the problematic
-        // "double CCW-wrapping" of the same object.
-        internal SolutionEventsListener(projNode) =
+    // Why is this a separate class, rather than an interface implemented on
+    // FSharpProjectNode?  Because, at the time of initial registration of this
+    // interface, we are still initializing FSharpProjectNode itself, and trying
+    // to cast "this" (FSharpProjectNode) to an IVsFoo and passing it to VS wraps
+    // the object in a COM CCW wrapper, which is then unexpected when the startup
+    // code later comes along and tries to CCW wrap it again.  Using a separate 
+    // class means we have a separate object to CCW wrap, avoiding the problematic
+    // "double CCW-wrapping" of the same object.
+    type internal SolutionEventsListener(projNode) =
             let mutable queuedWork : option<list<FSharpProjectNode>> = None
             // The CCW wrapper seems to prevent an object-identity test, so we determine whether
             // two IVsHierarchy objects are equal by comparing their captions.  (It's ok if this
@@ -1805,13 +1775,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                      0
                 
 
-    and   
-
-      [<ComVisible(true)>] 
-      [<CLSCompliant(false)>]
-      [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.AutoDual)>]
-      [<Guid("0337B405-3FEF-455C-A725-AA188C38F217")>]
-      public FSharpProjectNodeProperties internal (node:FSharpProjectNode) = 
+    [<ComVisible(true)>] 
+    [<CLSCompliant(false)>]
+    [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.AutoDual)>]
+    [<Guid("0337B405-3FEF-455C-A725-AA188C38F217")>]
+    type public FSharpProjectNodeProperties internal (node:FSharpProjectNode) = 
         inherit ProjectNodeProperties(node)         
 
         [<Browsable(false)>]
@@ -1959,7 +1927,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidRunPostBuildEvent), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RunPostBuildEvent, runPostBuildEventInteger)
         
-    and internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
+    type internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
             inherit FolderNode(root, relativePath, projectElement)
 
             override x.QueryStatusOnNode(guidCmdGroup:Guid, cmd:uint32, pCmdText:IntPtr, result:byref<QueryStatusResult>) =
@@ -1990,7 +1958,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 else
                         base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
             
-    and internal FSharpBuildAction =
+    type internal FSharpBuildAction =
        | None = 0
        | Compile = 1
        | Content = 2
@@ -1998,8 +1966,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
        | ApplicationDefinition = 4
        | Page = 5
        | Resource  = 6
-
-    and public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
+       
+    type public FSharpBuildActionPropertyDescriptor internal (prop : PropertyDescriptor) =
         inherit PropertyDescriptor(prop)
 
         override this.DisplayName = SR.BuildAction
@@ -2026,12 +1994,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
         override this.ShouldSerializeValue(o : obj) = prop.ShouldSerializeValue(o)
 
-    and 
 
-      [<ComVisible(true)>] 
-      [<CLSCompliant(false)>]
-      [<Guid("9D8E1EFB-1F18-4E2F-8C67-77328A274718")>]
-      public FSharpFileNodeProperties internal (node:HierarchyNode) = 
+    [<ComVisible(true)>] 
+    [<CLSCompliant(false)>]
+    [<Guid("9D8E1EFB-1F18-4E2F-8C67-77328A274718")>]
+    type public FSharpFileNodeProperties internal (node:HierarchyNode) = 
         inherit FileNodeProperties(node)
 
         [<Browsable(false)>]
@@ -2055,8 +2022,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             else base.CreateDesignPropertyDescriptor(propertyDescriptor)
 
 
-    and // Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
-        internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
+    /// Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
+    type internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
             inherit LinkedFileNode(root,e, hierarchyId)
 
             static let protectVisualState (root : FSharpProjectNode) (node : HierarchyNode) f = 
@@ -2082,6 +2049,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                            | :? IOleServiceProvider as x -> x
                            | _ -> null
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
+
                 Some(new SelectionElementValueChangedListener(sp))
 
             do selectionChangedListener.Value.Init()
@@ -2547,8 +2515,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 else 
                     null
 
-    and /// Knows about special requirements for project to project references
-        internal FSharpProjectReferenceNode = 
+    /// Knows about special requirements for project to project references
+    type internal FSharpProjectReferenceNode = 
                 inherit ProjectReferenceNode 
                 new(root:ProjectNode, element:ProjectElement) =
                     { inherit ProjectReferenceNode(root, element) }
@@ -2577,8 +2545,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     projectType :?> string
             
 
-    and /// Reference container node for FSharp references.
-        internal FSharpReferenceContainerNode(project:FSharpProjectNode) = 
+    /// Reference container node for FSharp references.
+    type internal FSharpReferenceContainerNode(project:FSharpProjectNode) = 
             inherit ReferenceContainerNode(project :> ProjectNode)
             
             override x.AddChild(c) =
@@ -2592,7 +2560,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             override x.CreateProjectReferenceNode(selectorData:VSCOMPONENTSELECTORDATA) =
                 (new FSharpProjectReferenceNode(x.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef) :> ProjectReferenceNode)
 
-    and internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
+    type internal SelectionElementValueChangedListener(serviceProvider:Microsoft.VisualStudio.Shell.ServiceProvider) =
             inherit SelectionListener(serviceProvider)
 
             override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
