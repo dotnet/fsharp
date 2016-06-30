@@ -317,6 +317,7 @@ module internal AstTraversal =
                     |> pick expr
                 | SynExpr.Do(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.Assert(synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.Fixed(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.App(_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                     if isInfix then
                         [dive synExpr2 synExpr2.Range traverseSynExpr

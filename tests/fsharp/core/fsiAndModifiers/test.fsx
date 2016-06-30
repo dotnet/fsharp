@@ -86,6 +86,57 @@ module TestPack4 =
     printfn "got %A" got
     if got <> expected then fail (sprintf "TestPack4: got %A, expected %A" got expected)
 
+module PinTests = 
+    open FSharp.NativeInterop
+    // Assume that the following class exists.
+
+    type Point = { mutable x : int; mutable y : int }
+
+    let pinObject() = 
+        let point = { x = 1; y = 2 }
+        use p1 = fixed &point.x   // note, fixed is a keyword and would be highlighted
+        NativePtr.get p1 0 + NativePtr.get p1 1
+    
+    let pinRef() = 
+        let point = ref 17
+        use p1 = fixed &point.contents   // note, fixed is a keyword and would be highlighted
+        NativePtr.read p1 + NativePtr.read p1 
+    
+    let pinArray1() = 
+        let arr = [| 0.0; 1.5; 2.3; 3.4; 4.0; 5.9 |]
+        use p1 = fixed arr
+        NativePtr.get p1 0 + NativePtr.get p1 1
+
+    let pinArray2() = 
+        let arr = [| 0.0; 1.5; 2.3; 3.4; 4.0; 5.9 |]
+        // You can initialize a pointer by using the address of a variable. 
+        use p = fixed &arr.[0]
+        NativePtr.get p 0 + NativePtr.get p 1
+
+    let pinNullArray() = 
+        let arr : int[] = null
+        use p1 = fixed arr
+        4
+
+    let pinEmptyArray() = 
+        let arr : int[] = [| |]
+        use p1 = fixed arr
+        76
+
+    let pinString() = 
+        let str = "Hello World"
+        // The following assignment initializes p by using a string.
+        use pChar = fixed str
+        NativePtr.get pChar 0,  NativePtr.get pChar 1
+
+    if pinObject() <> 3 then fail "FAILED: pinObject"
+    if pinRef() <> 34 then fail "FAILED: pinObject"
+    if pinArray1() <> 1.5 then fail "FAILED: pinArray1"
+    if pinArray2() <> 1.5 then fail "FAILED: pinArray2"
+    if pinNullArray() <> 4 then fail "FAILED: pinNullArray"
+    if pinEmptyArray() <> 76 then fail "FAILED: pinEmptyArray"
+    if pinString()  <> ('H', 'e') then fail "FAILED: pinString"
+
 
 if errors.IsEmpty then 
     System.IO.File.WriteAllText("test.ok", "")

@@ -3,10 +3,10 @@
     <metadata>
         <id>Microsoft.FSharp.Compiler.Host.netcore</id>
         <description>
-            netcore compatible version of the fsharp compiler fsc.exe.
+            .NET Core compatible version of the fsharp compiler fsc.exe.
 
             Supported Platforms:
-            - .NET Core (netstandard1.5)
+            - .NET Core (netstandard1.6)
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
@@ -16,12 +16,10 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
-            <group targetFramework=".NETStandard1.5">
-                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-rc2-23911" />
-                <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.2-rc2-23911" />
-                <dependency id="Microsoft.NETCore" version="5.0.1-rc2-23911" />
-                <dependency id="Microsoft.NETCore.ConsoleHost" version="1.0.0-rc2-23911" />
-                <dependency id="Microsoft.NETCore.Windows.ApiSets" version="1.0.1-rc2-23911" />
+            <group targetFramework=".NETStandard1.6">
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
+                <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.2" />
+                <dependency id="Microsoft.NETCore" version="5.0.1" />
                 <dependency id="Microsoft.FSharp.Compiler.NetCore" version="$version$" />
             </group>
         </dependencies>
