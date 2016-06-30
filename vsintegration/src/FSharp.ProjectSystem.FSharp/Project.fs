@@ -389,7 +389,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable sourcesAndFlags : option<(array<string> * array<string>)> = None
 #if DEBUG
             let mutable shouldLog = false // can poke this in the debugger to turn on logging
-            let logger = new Microsoft.Build.BuildEngine.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
+            let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
                                 (fun s -> 
                                     let self = this
                                     ignore self // ensure debugger has local in scope, so can poke self.shouldLog

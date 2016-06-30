@@ -45,7 +45,7 @@
     <UseCodebase>true</UseCodebase>
     <DeployExtension Condition="'$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != ''">False</DeployExtension>
     <DeployExtension Condition="'$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == ''">False</DeployExtension>
-    <ProjectGuid>{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090}</ProjectGuid>
+    <ProjectGuid>{59ADCE46-9740-4079-834D-9A03A3494EBC}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpFull</RootNamespace>
     <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</RootBinPath>
@@ -296,15 +296,13 @@
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
   </ItemGroup>
-  
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).vsix" />
       <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>VsixSHA2</Authenticode>
+        <Authenticode>VsixSHA2</Authenticode>
       </FilesToSign>
     </ItemGroup>
   </Target>
