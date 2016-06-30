@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+	<Fragment>
+		<?define LangLCID = $(fsharp.localeToId($(var.Lang))) ?>
+		<?define LangCulture = $(fsharp.localeToCulture($(var.Lang))) ?>
+		
+		<ComponentGroup Id="Langpack_ManagedFiles">			
+			<?if $(var.Lang) != ENU?>
+
+			<!-- F# 4.1 -->
+
+			<ComponentRef Id="Langpack_ManagedFiles_4.4.1.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.47.41.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.7.41.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.78.41.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.259.41.0_FSharp.Core_LangPack" />
+
+			<!-- F# 4.0 -->
+
+			<ComponentRef Id="Langpack_ManagedFiles_4.4.0.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.47.4.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.7.4.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.78.4.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.259.4.0_FSharp.Core_LangPack" />
+
+			<!-- F# 3.1 -->
+
+			<ComponentRef Id="Langpack_ManagedFiles_4.3.1.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_2.3.5.1_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.3.1.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.78.3.1_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_3.259.3.1_FSharp.Core_LangPack" />
+
+			<!-- F# 3.0 -->
+
+			<ComponentRef Id="Langpack_ManagedFiles_4.3.0.0_FSharp.Core_LangPack" />
+			<ComponentRef Id="Langpack_ManagedFiles_2.3.5.0_FSharp.Core_LangPack" />		
+
+			<!-- Registery Keys -->
+			
+			<ComponentRef Id="Langpack_ManagedFiles_RegistryKeys_InstallSuccess_$(var.Lang)" />
+			
+			<?endif ?>
+		</ComponentGroup>
+	
+		<?if $(var.Lang) != ENU?>
+		
+		<!-- F# 4.1 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.1.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_4.4.1.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_4.4.1.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_4.4.1.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.47.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.47.41.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.47.41._FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable47\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.41.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.7.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.7.41.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.7.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable7\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.41.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.78.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.78.41.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.78.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable78\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.41.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.259.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.259.41.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.259.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable259\bin\localize\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 4.0 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.0.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_4.4.0.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_4.4.0.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_4.4.0.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_4.4.0.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.4.0.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.4.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.47.4.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.47.4.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.47.4.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.47.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\3.47.4.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.4.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.7.4.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.7.4.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.7.4.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.7.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.7.4.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.4.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.78.4.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.78.4.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.78.4.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.78.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.4.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.4.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.259.4.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.259.4.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.259.4.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.259.4.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.4.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 3.1 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.3.1.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_4.3.1.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_4.3.1.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_4.3.1.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_4.3.1.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.1.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_2.3.5.1_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_2.3.5.1_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_2.3.5.1_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_2.3.5.1_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_2.3.5.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.1\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.3.1.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.3.1.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.3.1.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.3.1.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.3.1.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.3.1.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.3.1_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.78.3.1_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.78.3.1_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.78.3.1_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.78.3.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.78.3.1\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.3.1_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_3.259.3.1_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_3.259.3.1_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_3.259.3.1_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_3.259.3.1_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETCore\3.259.3.1\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+
+		<!-- F# 3.0 -->
+
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.3.0.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_4.3.0.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_4.3.0.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_4.3.0.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_4.3.0.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETFramework\v4.0\4.3.0.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_2.3.5.0_$(var.LangLCID)">
+			<Component Id="Langpack_ManagedFiles_2.3.5.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_2.3.5.0_FSharp.Core_LangPack, $(var.Lang)))">
+				<File Id="Langpack_ManagedFiles_2.3.5.0_FSharp.Core.resources.dll" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\$(var.Lang)\FSharp.Core.resources.dll" KeyPath="yes" />
+				<File Id="Langpack_ManagedFiles_2.3.5.0_FSharp.Core.xml" Source="$(var.FSharpCoreRedistDir)\content\.NETPortable\2.3.5.0\Intellisense\$(var.LangLCID)\FSharp.Core.xml" />
+			</Component>
+		</DirectoryRef>
+		
+		<!-- Registry Keys -->
+			
+		<DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
+			<Component Id="Langpack_ManagedFiles_RegistryKeys_InstallSuccess_$(var.Lang)" Transitive="yes" Guid="$(fsharp.guid(Langpack_ManagedFiles_RegistryKeys_InstallSuccess_$(var.Lang), $(var.Lang)))">
+				<RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0_$(var.LangLCID)\Install" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
+					<RegistryValue Name="InstallSuccess" Value="4.4.1.0" Type="string" />
+				</RegistryKey>
+			</Component>
+		</DirectoryRef>
+		
+		<?endif ?>
+	</Fragment>
+</Wix>

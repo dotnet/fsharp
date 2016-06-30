@@ -433,6 +433,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldGetAddr(_rfref),_tyargs,_ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
 
+        | TOp.UnionCaseFieldGetAddr _,_tyargs,_ -> 
+            wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
+
         | TOp.ValFieldGet(_rfref),_tyargs,[] -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainStaticFieldRef(),m)) 
 

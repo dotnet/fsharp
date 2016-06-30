@@ -536,7 +536,7 @@ let rec sizeMeasure g ms =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkNativePtrType g ty = TType_app (g.nativeptr_tcr, [ty])
+let mkNativePtrTy g ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
 
 let mkArrayTy g rank ty m =
@@ -1181,24 +1181,34 @@ let mkStaticRecdFieldGetAddr(fref,tinst,m)          = Expr.Op (TOp.ValFieldGetAd
 let mkStaticRecdFieldGet(fref,tinst,m)               = Expr.Op (TOp.ValFieldGet(fref), tinst, [],m)
 let mkStaticRecdFieldSet(fref,tinst,e,m)             = Expr.Op (TOp.ValFieldSet(fref), tinst, [e],m)
 
-let mkRecdFieldSetViaExprAddr(e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
+let mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m) = Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
 
-let mkUnionCaseTagGet(e1,cref,tinst,m)                = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
-let mkUnionCaseProof(e1,cref,tinst,m)                  = Expr.Op (TOp.UnionCaseProof(cref), tinst, [e1],m)
+let mkRecdFieldSetViaExprAddr (e1,fref,tinst,e2,m)  = Expr.Op (TOp.ValFieldSet(fref), tinst, [e1;e2],m)
 
-/// Build a 'get' expression for something we've already determined to be a particular union case, and where the
-/// input expression has 'TType_ucase', which is an F# compiler internal "type"
-let mkUnionCaseFieldGetProven(e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGet(cref,j), tinst, [e1],m)
+let mkUnionCaseTagGetViaExprAddr (e1,cref,tinst,m)      = Expr.Op (TOp.UnionCaseTagGet(cref), tinst, [e1],m)
+
+/// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
+let mkUnionCaseProof (e1,cref:UnionCaseRef,tinst,m)     = if cref.Tycon.IsStructOrEnumTycon then e1 else Expr.Op (TOp.UnionCaseProof(cref), tinst, [e1],m)
+
+/// Build a 'TOp.UnionCaseFieldGet' expression for something we've already determined to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case.  For struct-unions,
+/// the input should be the address of the expression.
+let mkUnionCaseFieldGetProvenViaExprAddr (e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGet(cref,j), tinst, [e1],m)
+
+/// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
+/// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
+/// the input should be the address of the expression.
+let mkUnionCaseFieldGetAddrProvenViaExprAddr (e1,cref,tinst,j,m)   = Expr.Op (TOp.UnionCaseFieldGetAddr(cref,j), tinst, [e1],m)
 
 /// Build a 'get' expression for something we've already determined to be a particular union case, but where 
 /// the static type of the input is not yet proven to be that particular union case. This requires a type
 /// cast to 'prove' the condition.
-let mkUnionCaseFieldGetUnproven(e1,cref,tinst,j,m)  = mkUnionCaseFieldGetProven(mkUnionCaseProof(e1,cref,tinst,m),cref,tinst,j,m)
+let mkUnionCaseFieldGetUnprovenViaExprAddr (e1,cref,tinst,j,m)  = mkUnionCaseFieldGetProvenViaExprAddr(mkUnionCaseProof(e1,cref,tinst,m),cref,tinst,j,m)
 
-let mkUnionCaseFieldSet(e1,cref,tinst,j,e2,m)         = Expr.Op (TOp.UnionCaseFieldSet(cref,j), tinst, [e1;e2],m)
+let mkUnionCaseFieldSet (e1,cref,tinst,j,e2,m)         = Expr.Op (TOp.UnionCaseFieldSet(cref,j), tinst, [e1;e2],m)
 
-let mkExnCaseFieldGet(e1,ecref,j,m)             = Expr.Op (TOp.ExnFieldGet(ecref,j), [],[e1],m)
-let mkExnCaseFieldSet(e1,ecref,j,e2,m)          = Expr.Op (TOp.ExnFieldSet(ecref,j), [],[e1;e2],m)
+let mkExnCaseFieldGet (e1,ecref,j,m)             = Expr.Op (TOp.ExnFieldGet(ecref,j), [],[e1],m)
+let mkExnCaseFieldSet (e1,ecref,j,e2,m)          = Expr.Op (TOp.ExnFieldSet(ecref,j), [],[e1;e2],m)
 
 let mkDummyLambda g (e:Expr,ety) = 
     let m = e.Range
@@ -1309,6 +1319,9 @@ let actualTyOfRecdFieldForTycon tycon tinst (fspec:RecdField) =
 
 let actualTyOfRecdFieldRef (fref:RecdFieldRef) tinst = 
     actualTyOfRecdFieldForTycon fref.Tycon tinst fref.RecdField
+
+let actualTyOfUnionFieldRef (fref:UnionCaseRef) n tinst = 
+    actualTyOfRecdFieldForTycon fref.Tycon tinst (fref.FieldByIndex(n))
 
     
 //---------------------------------------------------------------------------
@@ -1456,6 +1469,7 @@ let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> t
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
 let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                        | _ -> false) 
+let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
 let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false) 
 #if EXTENSIONTYPING
@@ -1550,18 +1564,22 @@ let isClassTy g ty =
     | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
-let isRefTy g ty = 
-    isUnionTy g ty || 
-    (isTupleTy g ty && not (isTupleStructTy g ty)) || 
-    isRecdTy g ty || 
-    isILReferenceTy g ty ||
-    isFunTy g ty || 
-    isReprHiddenTy g ty || 
-    isFSharpObjModelRefTy g ty || 
-    isUnitTy g ty
+let isStructOrEnumTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon
 
-let isStructTy g ty = 
-    (isAppTy g ty && (tyconOfAppTy g ty).IsStructOrEnumTycon) || isTupleStructTy g ty
+let isStructTy g ty = isStructOrEnumTyconTy g ty
+
+let isRefTy g ty = 
+    not (isStructOrEnumTyconTy g ty) &&
+    (
+        isUnionTy g ty || 
+        isTupleTy g ty || 
+        isRecdTy g ty || 
+        isILReferenceTy g ty ||
+        isFunTy g ty || 
+        isReprHiddenTy g ty || 
+        isFSharpObjModelRefTy g ty || 
+        isUnitTy g ty
+    )
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
@@ -2210,7 +2228,7 @@ module PrettyTypes = begin
                     choose (tp::tps) (typeIndex, measureIndex) acc
 
                 let tryName (nm, typeIndex, measureIndex) f = 
-                    if List.mem nm alreadyInUse then 
+                    if List.contains nm alreadyInUse then 
                         f()
                     else
                         useThisName (nm, typeIndex, measureIndex)
@@ -2647,6 +2665,7 @@ let TyconRefHasAttribute g m attribSpec tcref  =
 //------------------------------------------------------------------------- 
 
 let destByrefTy g ty   = if isByrefTy g ty then List.head (argsOfAppTy g ty) else failwith "destByrefTy: not a byref type"
+let destNativePtrTy g ty   = if isNativePtrTy g ty then List.head (argsOfAppTy g ty) else failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty   = 
     match tryDestAppTy g ty with 
@@ -3122,7 +3141,7 @@ module DebugPrint = begin
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFsObjModelRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
             // if TTyconInterface, the iimpls should be printed as inheritted interfaces 
@@ -3154,7 +3173,7 @@ module DebugPrint = begin
             match repr with 
             | TRecdRepr _ ->
                 tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL ";") |> aboveListL  
-            | TFsObjModelRepr r -> 
+            | TFSharpObjectRepr r -> 
                 match r.fsobjmodel_kind with 
                 | TTyconDelegate _ ->
                     wordL "delegate ..."
@@ -3182,10 +3201,10 @@ module DebugPrint = begin
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL start @@-- aboveListL alldecls) @@ wordL "end"
-            | TFiniteUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _                      -> wordL "(# ... #)"
             | TMeasureableRepr ty             -> typeL ty
-            | TILObjModelRepr (_,_,td) -> wordL td.Name
+            | TILObjectRepr (_,_,td) -> wordL td.Name
             | _ -> failwith "unreachable"
         let reprL = 
             match tycon.TypeReprInfo with 
@@ -3377,12 +3396,15 @@ module DebugPrint = begin
     and mdefsL defs = wordL "Module Defs" @@-- aboveListL(List.map mdefL defs)
     and mdefL x = 
         match x with 
-        | TMDefRec(tycons ,binds,mbinds,_) ->  aboveListL ((tycons |> List.map tyconL) @ [letRecL binds emptyL] @ List.map mbindL mbinds)
+        | TMDefRec(_,tycons ,mbinds,_) ->  aboveListL ((tycons |> List.map tyconL) @ List.map mbindL mbinds)
         | TMDefLet(bind,_) -> letL bind emptyL
         | TMDefDo(e,_) -> exprL e
         | TMDefs defs -> mdefsL defs; 
         | TMAbstract mexpr -> mexprL mexpr
-    and mbindL (ModuleOrNamespaceBinding(mspec, rhs)) =
+    and mbindL x = 
+       match x with 
+       | ModuleOrNamespaceBinding.Binding bind -> letL bind emptyL
+       | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
         (wordL (if mspec.IsNamespace then "namespace" else "module") ^^ (wordL mspec.DemangledModuleOrNamespaceName |> stampL mspec.Stamp)) @@-- mdefL rhs 
 
     and entityTypeL (mtyp:ModuleOrNamespaceType) =
@@ -3444,13 +3466,13 @@ end
 let wrapModuleOrNamespaceType id cpath mtyp = 
     NewModuleOrNamespace (Some cpath)  taccessPublic  id  XmlDoc.Empty  [] (notlazy mtyp)
 
-let wrapModuleOrNamespaceTypeInNamespace id cpath (mtyp:ModuleOrNamespaceType) = 
-    let mspec = NewModuleOrNamespace (Some cpath) taccessPublic id  XmlDoc.Empty [] (notlazy mtyp)
-    NewModuleOrNamespaceType Namespace [ mspec ] []
+let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
+    let mspec = wrapModuleOrNamespaceType id cpath mtyp
+    NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
 
 let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr = 
-    let mspec = NewModuleOrNamespace (Some cpath) taccessPublic id XmlDoc.Empty [] (notlazy (NewEmptyModuleOrNamespaceType Namespace))
-    TMDefRec ([],FlatList.empty,[ModuleOrNamespaceBinding(mspec, mexpr)],id.idRange)
+    let mspec = wrapModuleOrNamespaceType id cpath (NewEmptyModuleOrNamespaceType Namespace)
+    TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
 let SigTypeOfImplFile (TImplFile(_,_,mexpr,_,_)) = mexpr.Type 
@@ -3608,7 +3630,7 @@ let abstractSlotValsOfTycons (tycons:Tycon list) =
 
 let rec accEntityRemapFromModuleOrNamespace msigty x acc = 
     match x with 
-    | TMDefRec(tycons,_,mbinds,_) -> 
+    | TMDefRec(_,tycons,mbinds,_) -> 
          let acc = (mbinds, acc) ||> List.foldBack (accEntityRemapFromModuleOrNamespaceBind msigty)
          let acc = (tycons, acc) ||> List.foldBack (accEntityRemap msigty) 
          let acc = (tycons, acc) ||> List.foldBack (fun e acc -> accEntityRemapFromModuleOrNamespaceType e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
@@ -3621,15 +3643,17 @@ let rec accEntityRemapFromModuleOrNamespace msigty x acc =
 and accEntityRemapFromModuleOrNamespaceDefs msigty mdefs acc = 
     List.foldBack (accEntityRemapFromModuleOrNamespace msigty) mdefs acc
 
-and accEntityRemapFromModuleOrNamespaceBind msigty (ModuleOrNamespaceBinding(mspec, def)) acc =
+and accEntityRemapFromModuleOrNamespaceBind msigty x acc = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding _ -> acc
+    | ModuleOrNamespaceBinding.Module(mspec, def) ->
     accSubEntityRemap msigty mspec (accEntityRemapFromModuleOrNamespace (getCorrespondingSigTy mspec.LogicalName msigty) def acc)
 
 
 let rec accValRemapFromModuleOrNamespace g aenv msigty x acc = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,_) -> 
+    | TMDefRec(_,tycons,mbinds,_) -> 
          let acc = (mbinds, acc) ||> List.foldBack (accValRemapFromModuleOrNamespaceBind g aenv msigty)
-         let acc = (binds, acc) ||> FlatList.foldBack (valOfBind >> accValRemap g aenv msigty)
          //  Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be added to the remapping. 
          let vslotvs = abstractSlotValsOfTycons tycons
          let acc = (vslotvs, acc) ||> List.foldBack (accValRemap g aenv msigty)  
@@ -3638,7 +3662,10 @@ let rec accValRemapFromModuleOrNamespace g aenv msigty x acc =
     | TMDefDo _  -> acc
     | TMDefs defs -> accValRemapFromModuleOrNamespaceDefs g aenv msigty defs acc
     | TMAbstract mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
-and accValRemapFromModuleOrNamespaceBind g aenv msigty (ModuleOrNamespaceBinding(mspec, def)) acc =
+and accValRemapFromModuleOrNamespaceBind g aenv msigty x acc = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind -> accValRemap g aenv msigty bind.Var acc
+    | ModuleOrNamespaceBinding.Module(mspec, def) ->
     accSubEntityRemap msigty mspec (accValRemapFromModuleOrNamespace g aenv (getCorrespondingSigTy mspec.LogicalName msigty) def acc)
 
 and accValRemapFromModuleOrNamespaceDefs g aenv msigty mdefs acc = List.foldBack (accValRemapFromModuleOrNamespace g aenv msigty) mdefs acc
@@ -3976,7 +4003,7 @@ and accLocalTyconRepr opts b fvs =
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc:Tycon) fvs = 
-    if match tc.TypeReprInfo with  TFsObjModelRepr _ | TRecdRepr _ | TFiniteUnionRepr _ -> true | _ -> false
+    if match tc.TypeReprInfo with  TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false
     then accLocalTyconRepr opts tc fvs
     else fvs
 
@@ -4126,6 +4153,7 @@ and accFreeInOp opts op acc =
     // Things containing just a union case reference
     | TOp.UnionCaseProof cr 
     | TOp.UnionCase cr 
+    | TOp.UnionCaseFieldGetAddr (cr,_) 
     | TOp.UnionCaseFieldGet (cr,_) 
     | TOp.UnionCaseFieldSet (cr,_) -> accFreeUnionCaseRef opts cr acc
 
@@ -4185,12 +4213,15 @@ and freeInExpr opts e = accFreeInExpr opts e emptyFreeVars
 // Note: these are only an approximation - they are currently used only by the optimizer  
 let rec accFreeInModuleOrNamespace opts x acc = 
     match x with 
-    | TMDefRec(_,binds,mbinds,_) -> FlatList.foldBack (accBindRhs opts) binds  (List.foldBack (accFreeInModuleOrNamespaceBind opts) mbinds acc)
+    | TMDefRec(_,_,mbinds,_) -> List.foldBack (accFreeInModuleOrNamespaceBind opts) mbinds acc
     | TMDefLet(bind,_)  -> accBindRhs opts bind  acc
     | TMDefDo(e,_)  -> accFreeInExpr opts e acc
     | TMDefs defs -> accFreeInModuleOrNamespaces opts defs acc
     | TMAbstract(ModuleOrNamespaceExprWithSig(_,mdef,_)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
-and accFreeInModuleOrNamespaceBind opts (ModuleOrNamespaceBinding(_, def)) acc = accFreeInModuleOrNamespace opts def acc
+and accFreeInModuleOrNamespaceBind opts x acc = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind ->  accBindRhs opts bind acc
+    | ModuleOrNamespaceBinding.Module (_, def) -> accFreeInModuleOrNamespace opts def acc
 and accFreeInModuleOrNamespaces opts x acc = 
     List.foldBack (accFreeInModuleOrNamespace opts) x acc
 
@@ -4534,7 +4565,7 @@ and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
                     List.map (remapMethod g compgen tmenvinner) overrides,
                     List.map (remapInterfaceImpl g compgen tmenvinner) iimpls,m) 
 
-    // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdField below.
+    // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdFieldRef below.
     // This is "ok", in the sense that it is always valid to fix these up to be uses
     // of a temporary local, e.g.
     //       &(E.RF) --> let mutable v = E.RF in &v
@@ -4547,6 +4578,15 @@ and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
         let arg = remapExpr g compgen tmenv arg 
         let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr(arg,rfref,tinst,m)) (mkValAddr m (mkLocalValRef tmp))
+
+    | Expr.Op (TOp.UnionCaseFieldGetAddr (uref,cidx),tinst,[arg],m) when 
+          not (uref.FieldByIndex(cidx).IsMutable) && 
+          not (entityRefInThisAssembly g.compilingFslib uref.TyconRef) -> 
+
+        let tinst = remapTypes tmenv tinst 
+        let arg = remapExpr g compgen tmenv arg 
+        let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
+        mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr(arg,uref,tinst,cidx,m)) (mkValAddr m (mkLocalValRef tmp))
 
     | Expr.Op (op,tinst,args,m) -> 
         let op' = remapOp tmenv op 
@@ -4708,10 +4748,10 @@ and remapFsObjData g tmenv x =
 
 and remapTyconRepr g tmenv repr = 
     match repr with 
-    | TFsObjModelRepr    x -> TFsObjModelRepr (remapFsObjData g tmenv x)
+    | TFSharpObjectRepr    x -> TFSharpObjectRepr (remapFsObjData g tmenv x)
     | TRecdRepr          x -> TRecdRepr (remapRecdFields g tmenv x)
-    | TFiniteUnionRepr   x -> TFiniteUnionRepr (remapUnionCases g tmenv x)
-    | TILObjModelRepr    _ -> failwith "cannot remap IL type definitions"
+    | TUnionRepr   x -> TUnionRepr (remapUnionCases g tmenv x)
+    | TILObjectRepr    _ -> failwith "cannot remap IL type definitions"
 #if EXTENSIONTYPING
     | TProvidedNamespaceExtensionPoint _ -> repr
     | TProvidedTypeExtensionPoint info -> 
@@ -4841,29 +4881,33 @@ and allTyconsOfTycon (tycon:Tycon) =
           for nestedTycon in tycon.ModuleOrNamespaceType.AllEntities do
               yield! allTyconsOfTycon nestedTycon }
 
-and allTyconsOfModDef mdef =
+and allEntitiesOfModDef mdef =
     seq { match mdef with 
-          | TMDefRec(tycons,_,mbinds,_) -> 
+          | TMDefRec(_,tycons,mbinds,_) -> 
               for tycon in tycons do 
                   yield! allTyconsOfTycon tycon
-              for (ModuleOrNamespaceBinding(mspec, def)) in mbinds do 
-                  yield mspec; 
-                  yield! allTyconsOfModDef def
+              for mbind in mbinds do 
+                match mbind with 
+                | ModuleOrNamespaceBinding.Binding _ -> ()
+                | ModuleOrNamespaceBinding.Module(mspec, def) -> 
+                  yield mspec
+                  yield! allEntitiesOfModDef def
           | TMDefLet _           -> ()
           | TMDefDo _            -> ()
           | TMDefs defs      -> 
               for def in defs do 
-                  yield! allTyconsOfModDef def
+                  yield! allEntitiesOfModDef def
           | TMAbstract(ModuleOrNamespaceExprWithSig(mty,_,_)) -> 
               yield! allEntitiesOfModuleOrNamespaceTy mty }
 
 and allValsOfModDef mdef = 
     seq { match mdef with 
-          | TMDefRec(tycons,binds,mbinds,_) -> 
+          | TMDefRec(_,tycons,mbinds,_) -> 
               yield! abstractSlotValsOfTycons tycons 
-              yield! (binds |> valsOfBinds |> FlatList.toList) 
-              for (ModuleOrNamespaceBinding(_, def)) in mbinds do 
-                  yield! allValsOfModDef def
+              for mbind in mbinds do 
+                match mbind with 
+                | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var
+                | ModuleOrNamespaceBinding.Module(_, def) -> yield! allValsOfModDef def
           | TMDefLet(bind,_)            -> 
               yield bind.Var
           | TMDefDo _            -> ()
@@ -4884,7 +4928,7 @@ and remapModExpr g compgen tmenv (ModuleOrNamespaceExprWithSig(mty,mdef,m)) =
     ModuleOrNamespaceExprWithSig(mty,mdef,m)
 
 and copyAndRemapModDef g compgen tmenv mdef =
-    let tycons = allTyconsOfModDef mdef |> List.ofSeq
+    let tycons = allEntitiesOfModDef mdef |> List.ofSeq
     let vs = allValsOfModDef mdef |> List.ofSeq
     let _,_,tmenvinner = copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs
     remapAndRenameModDef g compgen tmenvinner mdef
@@ -4894,12 +4938,11 @@ and remapAndRenameModDefs g compgen tmenv x =
 
 and remapAndRenameModDef g compgen tmenv mdef =
     match mdef with 
-    | TMDefRec(tycons,binds,mbinds,m) -> 
+    | TMDefRec(isRec,tycons,mbinds,m) -> 
         // Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be copied and renamed. 
         let tycons = tycons |> List.map (renameTycon tmenv)
-        let binds = remapAndRenameBinds g compgen tmenv binds (binds |> FlatList.map (valOfBind >> renameVal tmenv))
         let mbinds = mbinds |> List.map (remapAndRenameModBind g compgen tmenv)
-        TMDefRec(tycons,binds,mbinds,m)
+        TMDefRec(isRec,tycons,mbinds,m)
     | TMDefLet(bind,m)            ->
         let v = bind.Var
         let bind = remapAndRenameBind g compgen tmenv bind (renameVal tmenv v)
@@ -4914,10 +4957,16 @@ and remapAndRenameModDef g compgen tmenv mdef =
         let mexpr = remapModExpr g compgen tmenv mexpr
         TMAbstract mexpr
 
-and remapAndRenameModBind g compgen tmenv (ModuleOrNamespaceBinding(mspec, def)) =
-    let mspec = renameTycon tmenv mspec
-    let def = remapAndRenameModDef g compgen tmenv def
-    ModuleOrNamespaceBinding(mspec, def)
+and remapAndRenameModBind g compgen tmenv x = 
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind -> 
+        let v2 = bind |> valOfBind |> renameVal tmenv
+        let bind2 = remapAndRenameBind g compgen tmenv bind v2
+        ModuleOrNamespaceBinding.Binding  bind2
+    | ModuleOrNamespaceBinding.Module(mspec, def) ->
+        let mspec = renameTycon tmenv mspec
+        let def = remapAndRenameModDef g compgen tmenv def
+        ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile g compgen tmenv mv = 
     mapAccImplFile (remapAndBindModExpr g compgen) tmenv mv
@@ -4996,14 +5045,14 @@ and remarkBind m (TBind(v,repr,_)) =
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let ucaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> ucaseAllocObservable
+let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
+let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
-    if tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
+    if tycon.IsUnionTycon then 
+        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+    elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
         tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
-    elif tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists ucaseAllocObservable
     else
         false
 
@@ -5098,6 +5147,7 @@ let rec tyOfExpr g e =
         | TOp.ValFieldGet(fref) -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet),_)) ->g.unit_ty
         | TOp.UnionCaseTagGet _ -> g.int_ty
+        | TOp.UnionCaseFieldGetAddr(cref,j) -> mkByrefTy g (actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j))
         | TOp.UnionCaseFieldGet(cref,j) -> actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j)
         | TOp.ExnFieldGet(ecref,j) -> recdFieldTyOfExnDefRefByIdx ecref j
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
@@ -5322,13 +5372,13 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 
 
 //-------------------------------------------------------------------------
-// mkExprAddrOfExpr
+// mkExprAddrOfExprAux
 //------------------------------------------------------------------------- 
 
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStuctTyImmutable g ty =
+let isRecdOrStructTyImmutable g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
@@ -5347,7 +5397,7 @@ let isRecdOrStuctTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStuctTyImmutable implies PossiblyMutates or NeverMutates
+// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
 //
 // We only do this for true local or closure fields because we can't take adddresses of immutable static 
 // fields across assemblies.
@@ -5358,7 +5408,7 @@ let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStuctTyImmutable g v.Type 
+     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal g (v:ValRef) = 
@@ -5366,48 +5416,61 @@ let MustTakeAddressOfVal g (v:ValRef) =
     // We can only take the address of mutable values in the same assembly
     valRefInThisAssembly g.compilingFslib v
 
-let MustTakeAddressOfRecdField (rfref: RecdFieldRef) = 
+let MustTakeAddressOfRecdField (rf: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
-    not rfref.RecdField.IsStatic && 
-    rfref.RecdField.IsMutable
+    not rf.IsStatic && 
+    rf.IsMutable
 
-let CanTakeAddressOfRecdField g (rfref: RecdFieldRef) mut tinst =
+let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecdField rfref.RecdField
+
+let CanTakeAddressOfRecdFieldRef g (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStuctTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+
+let CanTakeAddressOfUnionFieldRef g (uref: UnionCaseRef) mut tinst cidx =
+    mut <> DefinitelyMutates && 
+    // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
+    entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
+    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
-let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
-    if not mustTakeAddress then (fun x -> x),e else
+let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
+    if not mustTakeAddress then None,e else
     match e with 
     // LVALUE: "x" where "x" is byref 
     | Expr.Op (TOp.LValueOp (LByrefGet, v), _,[], m) -> 
-        (fun x -> x), exprForValRef m v
+        None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
     | Expr.Val(v, _,m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut ->
-        (fun x -> x), mkValAddr m v
-    // LVALUE: "x" where "e.x" is mutable record field. "e" may be an lvalue 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst,[e],m) when MustTakeAddressOfRecdField rfref || CanTakeAddressOfRecdField g rfref mut tinst ->
+        None, mkValAddr m v
+    // LVALUE: "x" where "e.x" is record field. 
+    | Expr.Op (TOp.ValFieldGet rfref, tinst,[e],m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
         let exprty = tyOfExpr g e
-        let wrap,expra = mkExprAddrOfExpr g (isStructTy g exprty) false mut e None m
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap, mkRecdFieldGetAddrViaExprAddr(expra,rfref,tinst,m)
+    // LVALUE: "x" where "e.x" is union field
+    | Expr.Op (TOp.UnionCaseFieldGet (uref,cidx), tinst,[e],m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g uref mut tinst cidx ->
+        let exprty = tyOfExpr g e
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
+        wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(expra,uref,tinst,cidx,m)
 
     // LVALUE: "x" where "e.x" is a .NET static field. 
     | Expr.Op (TOp.ILAsm ([IL.I_ldsfld(_vol,fspec)],[ty2]), tinst,[],m) -> 
-        (fun x -> x),Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)],[mkByrefTy g ty2]), tinst,[],m)
+        None,Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)],[mkByrefTy g ty2]), tinst,[],m)
 
     // LVALUE: "x" where "e.x" is a .NET instance field. "e" may be an lvalue 
     | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align,_vol,fspec)],[ty2]), tinst,[e],m) 
        -> 
         let exprty = tyOfExpr g e
-        let wrap,expra = mkExprAddrOfExpr g (isStructTy g exprty) false mut e None m
+        let wrap,expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap,Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)],[mkByrefTy g ty2]), tinst,[expra],m)
 
     // LVALUE: "x" where "x" is mutable static field. 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst,[],m) when MustTakeAddressOfRecdField rfref || CanTakeAddressOfRecdField g rfref mut tinst ->
-        (fun x -> x), mkStaticRecdFieldGetAddr(rfref,tinst,m)
+    | Expr.Op (TOp.ValFieldGet rfref, tinst,[],m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
+        None, mkStaticRecdFieldGetAddr(rfref,tinst,m)
 
     // LVALUE:  "e.[n]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],[aexpr;nexpr],_) 
@@ -5419,7 +5482,7 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             match addrExprVal with
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+        None, mkArrayElemAddress g (readonly,isNativePtr,shape,elemTy,aexpr,nexpr,m)
 
     // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]" where e is an array of structs 
     | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_) 
@@ -5432,7 +5495,7 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
             | Some(vf) -> valRefEq g vf g.addrof2_vref
             | _ -> false
             
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],(aexpr::args),m)
+        None, Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],(aexpr::args),m)
 
     // Give a nice error message for DefinitelyMutates on immutable values, or mutable values in other assemblies
     | Expr.Val(v, _,m) when mut = DefinitelyMutates
@@ -5452,16 +5515,28 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
                 errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(),m));
             | PossiblyMutates -> 
                 warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(),m));
-        let tmp,_ = mkMutableCompGenLocal m "copyOfStruct" ty
-        (fun rest -> mkCompGenLet m tmp e rest), (mkValAddr m (mkLocalValRef tmp))        
+        let tmp,_ = 
+            match mut with 
+            | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 
+            | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+        Some (tmp,e), (mkValAddr m (mkLocalValRef tmp))        
+
+let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
+    let optBind, addre = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
+    match optBind with 
+    | None -> (fun x -> x), addre
+    | Some (tmp,rval) -> (fun x -> mkCompGenLet m tmp rval x), addre
 
 let mkRecdFieldGet g (e,fref:RecdFieldRef,tinst,m) = 
+    assert (not (isByrefTy g (tyOfExpr g e)))
     let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkRecdFieldGetViaExprAddr(e',fref,tinst,m))
 
-let mkRecdFieldSet g (e,fref:RecdFieldRef,tinst,e2,m) = 
-    let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false DefinitelyMutates e None m
-    wrap (mkRecdFieldSetViaExprAddr(e',fref,tinst,e2,m))
+let mkUnionCaseFieldGetUnproven g (e,cref:UnionCaseRef,tinst,j,m) = 
+    assert (not (isByrefTy g (tyOfExpr g e)))
+    let wrap,e' = mkExprAddrOfExpr g cref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
+    wrap (mkUnionCaseFieldGetUnprovenViaExprAddr (e',cref,tinst,j,m))
+
 
 let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty],args,m)
 
@@ -5501,12 +5576,13 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
-            (mkUnionCaseFieldGetUnproven(access,c,tinst,n,m), 
+            (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
                let tcref = c.TyconRef
-               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
-               mkUnionCaseFieldSet(access,c,tinst,n,e,m))))
+               if not (c.FieldByIndex(n)).IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
+                 errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
+               mkUnionCaseFieldSet (access,c,tinst,n,e,m))))
 
   | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
       (tcref.TrueInstanceFieldsAsRefList, args) ||> List.iter2 (fun fref arg -> 
@@ -5517,7 +5593,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                // NICE: it would be better to do this check in the type checker 
                if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName),m));
-               mkRecdFieldSet g (access,fref,tinst,e,m))) arg )
+               mkRecdFieldSetViaExprAddr (access,fref,tinst,e,m))) arg )
   | Expr.Val _
   | Expr.Lambda _
   | Expr.Obj _
@@ -5669,9 +5745,8 @@ let mkFolders (folders : _ ExprFolder) =
 
     and mdefF z x = 
         match x with
-        | TMDefRec(_,binds,mbinds,_) -> 
+        | TMDefRec(_,_,mbinds,_) -> 
             (* REVIEW: also iterate the abstract slot vspecs hidden in the _vslots field in the tycons *)
-            let z = valBindsF false z binds
             let z = List.fold mbindF z mbinds
             z
         | TMDefLet(bind,_) -> valBindF false z bind
@@ -5679,7 +5754,10 @@ let mkFolders (folders : _ ExprFolder) =
         | TMDefs defs -> List.fold mdefF z defs 
         | TMAbstract x -> mexprF z x
 
-    and mbindF z (ModuleOrNamespaceBinding(_, def)) = mdefF z def
+    and mbindF z x = 
+        match x with 
+        | ModuleOrNamespaceBinding.Binding b -> valBindF false z b
+        | ModuleOrNamespaceBinding.Module(_, def) -> mdefF z def
 
     and implF z x = foldTImplFile mexprF z x
 
@@ -5846,8 +5924,8 @@ let mkRecordExpr g (lnk,tcref,tinst,rfrefs:RecdFieldRef list,args,m) =
 //------------------------------------------------------------------------- 
  
 let mkRefCell     g m ty e = mkRecordExpr g (RecdExpr,g.refcell_tcr_canon,[ty],[mkRefCellContentsRef g],[e],m)
-let mkRefCellGet g m ty e = mkRecdFieldGet g (e,mkRefCellContentsRef g,[ty],m)
-let mkRefCellSet g m ty e1 e2 = mkRecdFieldSet g (e1,mkRefCellContentsRef g,[ty],e2,m)
+let mkRefCellGet g m ty e = mkRecdFieldGetViaExprAddr (e,mkRefCellContentsRef g,[ty],m)
+let mkRefCellSet g m ty e1 e2 = mkRecdFieldSetViaExprAddr (e1,mkRefCellContentsRef g,[ty],e2,m)
 
 let mkNil g m ty = mkUnionCaseExpr (g.nil_ucref,[ty],[],m)
 let mkCons g ty h t = mkUnionCaseExpr (g.cons_ucref,[ty],[h;t],unionRanges h.Range t.Range)
@@ -7369,13 +7447,16 @@ and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef e
     
 and rewriteModuleOrNamespaceDef env x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,m) -> TMDefRec(tycons,rewriteBinds env binds,rewriteModuleOrNamespaceBindings env mbinds,m)
+    | TMDefRec(isRec,tycons,mbinds,m) -> TMDefRec(isRec,tycons,rewriteModuleOrNamespaceBindings env mbinds,m)
     | TMDefLet(bind,m)         -> TMDefLet(rewriteBind env bind,m)
     | TMDefDo(e,m)             -> TMDefDo(RewriteExpr env e,m)
     | TMDefs defs             -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
     | TMAbstract mexpr        -> TMAbstract(rewriteModuleOrNamespaceExpr env mexpr)
 
-and rewriteModuleOrNamespaceBinding env (ModuleOrNamespaceBinding(nm, rhs)) = ModuleOrNamespaceBinding(nm,rewriteModuleOrNamespaceDef env rhs)
+and rewriteModuleOrNamespaceBinding env x = 
+   match x with 
+   | ModuleOrNamespaceBinding.Binding bind -> ModuleOrNamespaceBinding.Binding (rewriteBind env bind)
+   | ModuleOrNamespaceBinding.Module(nm, rhs) -> ModuleOrNamespaceBinding.Module(nm,rewriteModuleOrNamespaceDef env rhs)
 
 and rewriteModuleOrNamespaceBindings env mbinds = List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
@@ -7839,8 +7920,8 @@ let DetectAndOptimizeForExpression g option expr =
             let elemTy                      = destListTy g enumerableTy
 
             let guardExpr                   = mkNonNullTest g m nextExpr
-            let headOrDefaultExpr           = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
-            let tailOrNullExpr              = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
+            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
+            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
             let bodyExpr                    =
                 mkCompGenLet m elemVar headOrDefaultExpr
                     (mkCompGenSequential mBody

@@ -11,75 +11,42 @@ open FSharpTestSuiteAsserts
 
 let testContext = FSharpTestSuite.testContext
 
+let singleTestBuildAndRun p = check (attempt {
+    let { Directory = dir; Config = cfg } = testContext ()
+        
+    do! SingleTestBuild.singleTestBuild cfg dir p
+        
+    do! SingleTestRun.singleTestRun cfg dir p
+    })
+
+
 module Access =
     [<Test; FSharpSuiteScriptPermutations("core/access")>]
-    let access p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let access p = singleTestBuildAndRun p
 
 module Apporder = 
     [<Test; FSharpSuiteScriptPermutations("core/apporder")>]
-    let apporder p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let apporder p = singleTestBuildAndRun p
 
 module Array = 
     [<Test; FSharpSuiteScriptPermutations("core/array")>]
-    let array p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let array p = singleTestBuildAndRun p
 
 module Attributes = 
     [<Test; FSharpSuiteScriptPermutations("core/attributes")>]
-    let attributes p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        }) 
+    let attributes p = singleTestBuildAndRun p
 
 module Comprehensions = 
     [<Test; FSharpSuiteScriptPermutations("core/comprehensions")>]
-    let comprehensions p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let comprehensions p = singleTestBuildAndRun p
 
 module ComprehensionsHw = 
     [<Test; FSharpSuiteScriptPermutations("core/comprehensions-hw")>]
-    let comprehensions p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let comprehensions p = singleTestBuildAndRun p
 
 module Control = 
     [<Test; FSharpSuiteFscCodePermutation("core/control")>]
-    let control p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let control p = singleTestBuildAndRun p
 
     [<Test; FSharpSuiteFscCodePermutation("core/control")>]
     let ``control --tailcalls`` p = check  (attempt {
@@ -102,13 +69,7 @@ module ControlChamenos =
 
 module ControlMailbox =
     [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
-    let controlMailbox p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg  dir p
-        })
+    let controlMailbox p = singleTestBuildAndRun p
 
     [<Test; FSharpSuiteFscCodePermutation("core/controlMailbox")>]
     let ``controlMailbox --tailcalls`` p = check  (attempt {
@@ -121,23 +82,11 @@ module ControlMailbox =
 
 module ControlWpf = 
     [<Test; FSharpSuiteFscCodePermutation("core/controlwpf")>]
-    let controlWpf p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let controlWpf p = singleTestBuildAndRun p
 
 module Csext = 
     [<Test; FSharpSuiteScriptPermutations("core/csext")>]
-    let csext p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let csext p = singleTestBuildAndRun p
 
 module Events = 
 
@@ -317,8 +266,8 @@ module FsFromCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a --doc:lib.xml -o:lib.dll -g lib.ml
-        do! fsc "%s -a --doc:lib.xml -o:lib.dll -g" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a --doc:lib.xml -o:lib.dll -g lib.fs
+        do! fsc "%s -a --doc:lib.xml -o:lib.dll -g" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"
@@ -326,8 +275,8 @@ module FsFromCs =
         // %CSC% /nologo /r:"%FSCOREDLLPATH%" /r:System.Core.dll /r:lib.dll /out:test.exe test.cs 
         do! csc """/nologo /r:"%s" /r:System.Core.dll /r:lib.dll /out:test.exe""" cfg.FSCOREDLLPATH ["test.cs"]
 
-        // "%FSC%" %fsc_flags% -a --doc:lib--optimize.xml -o:lib--optimize.dll -g lib.ml
-        do! fsc """%s -a --doc:lib--optimize.xml -o:lib--optimize.dll -g""" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a --doc:lib--optimize.xml -o:lib--optimize.dll -g lib.fs
+        do! fsc """%s -a --doc:lib--optimize.xml -o:lib--optimize.dll -g""" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib--optimize.dll
         do! peverify "lib--optimize.dll"
@@ -367,8 +316,8 @@ module FsFromFsViaCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.ml
-        do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.ml"]
+        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.fs
+        do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.fs"]
 
         // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"
@@ -506,13 +455,7 @@ module fsiAndModifiers =
 module GenericMeasures = 
 
     [<Test; FSharpSuiteCodeAndSignaturePermutations("core/genericmeasures")>]
-    let genericmeasures p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let genericmeasures p = singleTestBuildAndRun p
 
 module Hiding = 
 
@@ -549,25 +492,13 @@ module Hiding =
 module Innerpoly = 
 
     [<Test; FSharpSuiteCodeAndSignaturePermutations("core/innerpoly")>]
-    let innerpoly p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let innerpoly p = singleTestBuildAndRun p
         
         
 module ``test int32`` = 
 
     [<Test; FSharpSuiteScriptPermutations("core/int32")>]
-    let int32 p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let int32 p = singleTestBuildAndRun p
 
 
 module QueriesCustomQueryOps = 
@@ -825,13 +756,7 @@ module Quotes =
 module Namespaces = 
 
     [<Test; FSharpSuiteCodeAndSignaturePermutations("core/namespaces")>]
-    let attributes p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        }) 
+    let attributes p = singleTestBuildAndRun p
 
 module Parsing = 
 
@@ -928,15 +853,7 @@ module Unicode =
         }) 
 
     [<Test; FSharpSuiteScriptPermutations("core/unicode")>]
-    let unicode2 p = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        // call %~d0%~p0..\..\single-test-build.bat
-        do! SingleTestBuild.singleTestBuild cfg dir p        
-
-        // call %~d0%~p0..\..\single-test-run.bat
-        do! SingleTestRun.singleTestRun cfg dir p
-        }) 
+    let unicode2 p = singleTestBuildAndRun p
 
 module InternalsVisible =
 
@@ -1035,46 +952,28 @@ module Interop =
 module ``test lazy`` = 
 
     [<Test; FSharpSuiteScriptPermutations("core/lazy")>]
-    let ``lazy`` p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let ``lazy`` p = singleTestBuildAndRun p
 
 module letrec = 
 
     [<Test; FSharpSuiteScriptPermutations("core/letrec")>]
-    let letrec p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let letrec p = singleTestBuildAndRun p
+
+    [<Test; FSharpSuiteScriptPermutations("core/letrec-mutrec")>]
+    let ``letrec (mutrec variations part one)`` p = singleTestBuildAndRun p
+
+    [<Test; FSharpSuiteScriptPermutations("core/letrec-mutrec2")>]
+    let ``letrec (mutrec variations part two)`` p = singleTestBuildAndRun p
 
 module LibTest = 
 
     [<Test; FSharpSuiteAllPermutations("core/libtest")>]
-    let libtest p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let libtest p = singleTestBuildAndRun p
 
 module Lift = 
 
     [<Test; FSharpSuiteScriptPermutations("core/lift")>]
-    let lift p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let lift p = singleTestBuildAndRun p
 
 
 module ``Load-Script`` = 
@@ -1161,11 +1060,11 @@ module ``Load-Script`` =
         // echo Test 12=================================================
         echo "Test 12================================================="
         // "%FSC%" FlagCheck.fsx  --nologo
-        do! fsc "--nologo" ["FlagCheck.fsx"]
+        do! fsc "-o FlagCheckScript.exe --nologo" ["FlagCheck.fsx"]
         // FlagCheck.exe
-        do! exec ("."/"FlagCheck.exe") ""
+        do! exec ("."/"FlagCheckScript.exe") ""
         // del FlagCheck.exe
-        del "FlagCheck.exe"
+        del "FlagCheckScript.exe"
         // echo Test 13=================================================
         echo "Test 13================================================="
         // "%FSI%" load-FlagCheckFs.fsx
@@ -1186,6 +1085,10 @@ module ``Load-Script`` =
         do! exec ("."/"ProjectDriver.exe") ""
         // del ProjectDriver.exe
         del "ProjectDriver.exe"
+        // echo Test 17=================================================
+        echo "Test 17================================================="
+        // "%FSI%" load-IncludeNoWarn211.fsx
+        do! fsi "" ["load-IncludeNoWarn211.fsx"]
         // echo Done ==================================================
         echo "Done =================================================="
         }
@@ -1242,29 +1145,16 @@ module ``Load-Script`` =
 
         })
 
-
 module LongNames = 
 
     [<Test; FSharpSuiteScriptPermutations("core/longnames")>]
-    let longnames p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let longnames p = singleTestBuildAndRun p
 
 
 module ``test map`` = 
 
     [<Test; FSharpSuiteScriptPermutations("core/map")>]
-    let map p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let map p = singleTestBuildAndRun p
 
 module Math =
     //TODO math/lalgebra does not have build.bat/run.bat and #r "FSharp.Math.Providers.dll"
@@ -1272,116 +1162,71 @@ module Math =
     module Numbers = 
 
         [<Test; FSharpSuiteScriptPermutations("core/math/numbers")>]
-        let numbers p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let numbers p = singleTestBuildAndRun p
 
 
     module numbersVS2008 = 
 
         [<Test; FSharpSuiteScriptPermutations("core/math/numbersVS2008")>]
-        let numbersVS2008 p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let numbersVS2008 p = singleTestBuildAndRun p
 
 
 
 module Measures = 
 
     [<Test; FSharpSuiteCodeAndSignaturePermutations("core/measures")>]
-    let measures p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let measures p = singleTestBuildAndRun p
 
 module Members =
 
     module Basics = 
 
         [<Test; FSharpSuiteCodeAndSignaturePermutations("core/members/basics")>]
-        let Basics p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-
-            do! SingleTestBuild.singleTestBuild cfg dir p
-
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let Basics p = singleTestBuildAndRun p
 
         [<Test; FSharpSuiteScriptPermutations("core/members/basics-hw")>]
-        let BasicsHw p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let BasicsHw p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/basics-hw-mutrec")>]
+        let BasicsHwMutrec p = singleTestBuildAndRun p
 
     module Ctree = 
 
         [<Test; FSharpSuiteScriptPermutations("core/members/ctree")>]
-        let ctree p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let ctree p = singleTestBuildAndRun p
 
     module Factors = 
 
         [<Test; FSharpSuiteScriptPermutations("core/members/factors")>]
-        let factors p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let factors p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/factors-mutrec")>]
+        let factorsMutrec p = singleTestBuildAndRun p
 
     module Incremental = 
 
         [<Test; FSharpSuiteScriptPermutations("core/members/incremental")>]
-        let incremental p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let incremental p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/incremental-hw")>]
+        let incrementalHw p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/incremental-hw-mutrec")>]
+        let incrementalHwMutrec p = singleTestBuildAndRun p
 
     module Ops =
 
         [<Test; FSharpSuiteScriptPermutations("core/members/ops")>]
-        let ops p = check (attempt {
-            let { Directory = dir; Config = cfg } = testContext ()
-        
-            do! SingleTestBuild.singleTestBuild cfg dir p
-        
-            do! SingleTestRun.singleTestRun cfg dir p
-            })
+        let ops p = singleTestBuildAndRun p
+
+        [<Test; FSharpSuiteScriptPermutations("core/members/ops-mutrec")>]
+        let opsMutrec p = singleTestBuildAndRun p
 
 
 module Nested = 
 
     [<Test; FSharpSuiteScriptPermutations("core/nested")>]
-    let nested p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let nested p = singleTestBuildAndRun p
 
 
 module NetCore =
@@ -1538,15 +1383,7 @@ module NetCore =
 module Patterns = 
 
     [<Test; FSharpSuiteScriptPermutations("core/patterns")>]
-    let patterns p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
-
-
+    let patterns p = singleTestBuildAndRun p
 
 module Pinvoke = 
 
@@ -1620,13 +1457,7 @@ module ``test printf`` =
     let permutations () = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
 
     [<Test; TestCaseSource("permutations")>]
-    let printf p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let printf p = singleTestBuildAndRun p
 
 
 module QueriesLeafExpressionConvert = 
@@ -2092,13 +1923,7 @@ module QuotesInMultipleModules =
 module Reflect = 
 
     [<Test; FSharpSuiteScriptPermutations("core/reflect")>]
-    let reflect p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let reflect p = singleTestBuildAndRun p
 
 
 module ``test resources`` = 
@@ -2172,53 +1997,26 @@ module ``test resources`` =
 module ``test seq`` = 
 
     [<Test; FSharpSuiteScriptPermutations("core/seq")>]
-    let seq p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
-
+    let seq p = singleTestBuildAndRun p
 
 
 module Subtype = 
 
     [<Test; FSharpSuiteScriptPermutations("core/subtype")>]
-    let subtype p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
-
+    let subtype p = singleTestBuildAndRun p
 
 
 module Syntax = 
 
     [<Test; FSharpSuiteScriptPermutations("core/syntax")>]
-    let syntax p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
+    let syntax p = singleTestBuildAndRun p
 
 
 
 module Tlr = 
 
     [<Test; FSharpSuiteScriptPermutations("core/tlr")>]
-    let tlr p = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-        
-        do! SingleTestBuild.singleTestBuild cfg dir p
-        
-        do! SingleTestRun.singleTestRun cfg dir p
-        })
-
+    let tlr p = singleTestBuildAndRun p
 
 
 module Topinit = 

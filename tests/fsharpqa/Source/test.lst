@@ -223,6 +223,7 @@ Conformance08			Conformance\PatternMatching\Wildcard
 Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\System.ThreadStatic
+Conformance08			Conformance\SpecialAttributesAndTypes\Imported\CallerInfo
 Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
@@ -258,6 +259,7 @@ Misc01			Libraries\Core\Operators
 Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
+Misc01			ErrorMessages\NameResolution
 
 Misc02			Libraries\Portable
 Misc02			Misc

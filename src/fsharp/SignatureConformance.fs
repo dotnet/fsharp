@@ -442,14 +442,14 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
             match implTypeRepr,sigTypeRepr with 
             | (TRecdRepr _ 
-              | TFiniteUnionRepr _ 
-              | TILObjModelRepr _ 
+              | TUnionRepr _ 
+              | TILObjectRepr _ 
 #if EXTENSIONTYPING
               | TProvidedTypeExtensionPoint _ 
               | TProvidedNamespaceExtensionPoint _
 #endif
               ), TNoRepr  -> true
-            | (TFsObjModelRepr r), TNoRepr  -> 
+            | (TFSharpObjectRepr r), TNoRepr  -> 
                 match r.fsobjmodel_kind with 
                 | TTyconStruct | TTyconEnum -> 
                    (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplDefinesStruct); false)
@@ -459,7 +459,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleDotNetTypeRepresentationIsHidden); false)
             | (TMeasureableRepr _), TNoRepr -> 
                 (errorR (err FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden); false)
-            | (TFiniteUnionRepr r1), (TFiniteUnionRepr r2) -> 
+            | (TUnionRepr r1), (TUnionRepr r2) -> 
                 let ucases1 = r1.UnionCasesAsList
                 let ucases2 = r2.UnionCasesAsList
                 if ucases1.Length <> ucases2.Length then
@@ -468,7 +468,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 else List.forall2 (checkUnionCase aenv) ucases1 ucases2
             | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
                 checkRecordFields g amap denv err aenv implFields sigFields
-            | (TFsObjModelRepr r1), (TFsObjModelRepr r2) -> 
+            | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
                 if not (match r1.fsobjmodel_kind,r2.fsobjmodel_kind with 
                          | TTyconClass,TTyconClass -> true
                          | TTyconInterface,TTyconInterface -> true

@@ -33,26 +33,26 @@ module internal Bytes =
         Array.append (System.Text.Encoding.Unicode.GetBytes s) (ofInt32Array [| 0x0;0x0 |]) 
 
 type internal ByteStream = 
-    { bytes: byte[]; 
-      mutable pos: int; 
+    { bytes: byte[] 
+      mutable pos: int 
       max: int }
     member b.ReadByte() = 
-        if b.pos >= b.max then failwith "end of stream";
+        if b.pos >= b.max then failwith "end of stream"
         let res = b.bytes.[b.pos]
-        b.pos <- b.pos + 1;
+        b.pos <- b.pos + 1
         res 
     member b.ReadUtf8String n = 
         let res = System.Text.Encoding.UTF8.GetString(b.bytes,b.pos,n)  
         b.pos <- b.pos + n; res 
       
     static member FromBytes (b:byte[],n,len) = 
-        if n < 0 || (n+len) > b.Length then failwith "FromBytes";
+        if n < 0 || (n+len) > b.Length then failwith "FromBytes"
         { bytes = b; pos = n; max = n+len }
 
     member b.ReadBytes n  = 
-        if b.pos + n > b.max then failwith "ReadBytes: end of stream";
+        if b.pos + n > b.max then failwith "ReadBytes: end of stream"
         let res = Bytes.sub b.bytes b.pos n
-        b.pos <- b.pos + n;
+        b.pos <- b.pos + n
         res 
 
     member b.Position = b.pos 
@@ -63,21 +63,21 @@ type internal ByteStream =
 
 
 type internal ByteBuffer = 
-    { mutable bbArray: byte[]; 
+    { mutable bbArray: byte[] 
       mutable bbCurrent: int }
 
     member buf.Ensure newSize = 
         let oldBufSize = buf.bbArray.Length 
         if newSize > oldBufSize then 
             let old = buf.bbArray 
-            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2));
-            Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent;
+            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2))
+            Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
 
     member buf.Close () = Bytes.sub buf.bbArray 0 buf.bbCurrent
 
     member buf.EmitIntAsByte (i:int) = 
         let newSize = buf.bbCurrent + 1 
-        buf.Ensure newSize;
+        buf.Ensure newSize
         buf.bbArray.[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize 
 
@@ -86,7 +86,7 @@ type internal ByteBuffer =
     member buf.EmitIntsAsBytes (arr:int[]) = 
         let n = arr.Length
         let newSize = buf.bbCurrent + n 
-        buf.Ensure newSize;
+        buf.Ensure newSize
         let bbarr = buf.bbArray
         let bbbase = buf.bbCurrent
         for i = 0 to n - 1 do 
@@ -94,29 +94,29 @@ type internal ByteBuffer =
         buf.bbCurrent <- newSize 
 
     member bb.FixupInt32 pos n = 
-        bb.bbArray.[pos] <- (Bytes.b0 n |> byte);
-        bb.bbArray.[pos + 1] <- (Bytes.b1 n |> byte);
-        bb.bbArray.[pos + 2] <- (Bytes.b2 n |> byte);
-        bb.bbArray.[pos + 3] <- (Bytes.b3 n |> byte);
+        bb.bbArray.[pos] <- (Bytes.b0 n |> byte)
+        bb.bbArray.[pos + 1] <- (Bytes.b1 n |> byte)
+        bb.bbArray.[pos + 2] <- (Bytes.b2 n |> byte)
+        bb.bbArray.[pos + 3] <- (Bytes.b3 n |> byte)
 
     member buf.EmitInt32 n = 
         let newSize = buf.bbCurrent + 4 
-        buf.Ensure newSize;
-        buf.FixupInt32 buf.bbCurrent n;
+        buf.Ensure newSize
+        buf.FixupInt32 buf.bbCurrent n
         buf.bbCurrent <- newSize 
 
     member buf.EmitBytes (i:byte[]) = 
         let n = i.Length 
         let newSize = buf.bbCurrent + n 
-        buf.Ensure newSize;
-        Bytes.blit i 0 buf.bbArray buf.bbCurrent n;
+        buf.Ensure newSize
+        Bytes.blit i 0 buf.bbArray buf.bbCurrent n
         buf.bbCurrent <- newSize 
 
     member buf.EmitInt32AsUInt16 n = 
         let newSize = buf.bbCurrent + 2 
-        buf.Ensure newSize;
-        buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte);
-        buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte);
+        buf.Ensure newSize
+        buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize 
     
     member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
@@ -124,13 +124,13 @@ type internal ByteBuffer =
     member buf.EmitUInt16 (x:uint16) = buf.EmitInt32AsUInt16 (int32 x)
 
     member buf.EmitInt64 x = 
-        buf.EmitInt32 (Bytes.dWw0 x);
+        buf.EmitInt32 (Bytes.dWw0 x)
         buf.EmitInt32 (Bytes.dWw1 x)
 
     member buf.Position = buf.bbCurrent
 
     static member Create sz = 
-        { bbArray=Bytes.zeroCreate sz; 
-          bbCurrent = 0; }
+        { bbArray=Bytes.zeroCreate sz 
+          bbCurrent = 0 }
 
 

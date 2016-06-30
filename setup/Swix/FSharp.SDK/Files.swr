@@ -1,0 +1,15 @@
+use vs
+
+package name=Microsoft.FSharp.Msi
+        version=4.1
+        vs.package.type=msi
+        vs.package.chip=neutral
+        vs.package.language=neutral
+  
+vs.localizedResources
+  vs.localizedResource language=en-us
+                       title="Visual F# Tools"
+                       description="Deploy Visual F# Tools templates to Visual Studio"
+
+vs.payloads
+  vs.payload source=$(BinariesFolder)\msi\FSharp.SDK.ENU.msi
