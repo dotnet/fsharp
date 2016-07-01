@@ -244,12 +244,14 @@ let BoundValueInfoBySize vinfo =
 
 let [<Literal>] jitOptDefault = true
 let [<Literal>] localOptDefault = true
+let [<Literal>] unverifiableOkOptDefault = false
 let [<Literal>] crossModuleOptDefault = true
 
 type OptimizationSettings = 
     { abstractBigTargets : bool;
       jitOptUser : bool option;
       localOptUser : bool option;
+      unverifiableOkOptUser : bool option;
       crossModuleOptUser : bool option; 
       /// size after which we start chopping methods in two, though only at match targets 
       bigTargetSize : int   
@@ -268,12 +270,10 @@ type OptimizationSettings =
         { abstractBigTargets = false;
           jitOptUser = None;
           localOptUser = None
-          /// size after which we start chopping methods in two, though only at match targets 
+          unverifiableOkOptUser = None;
           bigTargetSize = 100  
-          /// size after which we start enforcing splitting sub-expressions to new methods, to avoid hitting .NET IL limitations 
           veryBigExprSize = 3000 
           crossModuleOptUser = None;
-          /// The size after which we don't inline
           lambdaInlineThreshold = 6;
           reportingPhase = false;
           reportNoNeedToTailcall = false;
@@ -284,6 +284,7 @@ type OptimizationSettings =
 
     member x.jitOpt() = (match x.jitOptUser with Some f -> f | None -> jitOptDefault)
     member x.localOpt () = (match x.localOptUser with Some f -> f | None -> localOptDefault)
+    member x.unverifiableOkOpt () = (match x.unverifiableOkOptUser with Some f -> f | None -> unverifiableOkOptDefault)
     member x.crossModuleOpt () = x.localOpt () && (match x.crossModuleOptUser with Some f -> f | None -> crossModuleOptDefault)
 
     member x.KeepOptimizationValues() = x.crossModuleOpt ()

@@ -43,7 +43,7 @@ type ICodeGen<'Mark> =
     abstract EmitInstrs : ILInstr list -> unit
 
 /// Emit the instruction sequence for a "castdata" operation
-val emitCastData : ILGlobals -> ICodeGen<'Mark> -> canfail: bool * avoidHelpers:bool * IlxUnionSpec * int -> unit
+val emitCastData : ILGlobals -> ICodeGen<'Mark> -> unverifiableOk: bool * IlxUnionSpec * int -> unit
 
 /// Emit the instruction sequence for a "lddatatag" operation
 val emitLdDataTag : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec -> unit

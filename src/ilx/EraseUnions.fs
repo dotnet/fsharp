@@ -481,37 +481,17 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
 let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
     emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)  
 
-let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,avoidHelpers,cuspec,cidx) = 
+let emitCastData (_ilg: ILGlobals) (cg: ICodeGen<'Mark>) (unverifiableOk,cuspec,cidx) = 
     let alt = altOfUnionSpec cuspec cidx
     if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
-        if canfail then 
-            let outlab = cg.GenerateDelayMark ()
-            let internal1 = cg.GenerateDelayMark ()
-            cg.EmitInstrs [AI_dup; I_brcmp (BI_brfalse, cg.CodeLabel outlab) ]
-            cg.SetMarkToHere internal1
-            cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
-            cg.SetMarkToHere outlab
-        else
-            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
-            ()
+        ()
     elif cuspecRepr.Flatten cuspec then
-        if canfail then
-            let outlab = cg.GenerateDelayMark ()
-            let internal1 = cg.GenerateDelayMark ()
-            cg.EmitInstrs [ AI_dup ]
-            emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)
-            cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp (BI_beq, cg.CodeLabel outlab) ]
-            cg.SetMarkToHere internal1
-            cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
-            cg.SetMarkToHere outlab
-        else
-            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
-            ()
+        ()
     elif cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt) then 
         ()
     else 
-        let altTy = tyForAlt cuspec alt
-        cg.EmitInstr (I_castclass altTy)
+        if not unverifiableOk then 
+            cg.EmitInstr (I_castclass (tyForAlt cuspec alt))
               
 let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
     let baseTy = baseTyOfUnionSpec cuspec

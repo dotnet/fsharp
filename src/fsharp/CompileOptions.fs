@@ -922,6 +922,8 @@ let deprecatedFlagsFsc tcConfigB =
     CompilerOption("no-local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-local-optimize", rangeCmdArgs)), None);
     CompilerOption("cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None);
     CompilerOption("no-cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None);
+    CompilerOption("unverifiable", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with unverifiableOkOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--unverifiable", rangeCmdArgs)), None);
+    CompilerOption("no-unverifiable", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with unverifiableOkOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-unverifiable", rangeCmdArgs)), None);
     CompilerOption("no-string-interning", tagNone, OptionUnit (fun () -> tcConfigB.internConstantStrings <- false), Some(DeprecatedCommandLineOptionNoDescription("--no-string-interning", rangeCmdArgs)), None);
     CompilerOption("statistics", tagNone, OptionUnit (fun () -> tcConfigB.stats <- true), Some(DeprecatedCommandLineOptionNoDescription("--statistics", rangeCmdArgs)), None);
     CompilerOption("generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- true), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None); 
@@ -1305,6 +1307,7 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           generateDebugSymbols= tcConfig.debuginfo;
           fragName = fragName;
           localOptimizationsAreOn= tcConfig.optSettings.localOpt ();
+          unverifiableOk= tcConfig.optSettings.unverifiableOkOpt ();
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001;
           mainMethodInfo= (if (tcConfig.target = Dll || tcConfig.target = Module) then None else Some topAttrs.mainMethodAttrs);
           ilxBackend = ilxBackend;

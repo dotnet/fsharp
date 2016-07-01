@@ -29,6 +29,7 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <OtherFlags>$(OtherFlags) /warnon:1182 /unverfiable</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">

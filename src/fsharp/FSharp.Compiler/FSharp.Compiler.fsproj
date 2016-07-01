@@ -19,7 +19,7 @@
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) /warnon:1182 /unverfiable</OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
   <!-- References -->
