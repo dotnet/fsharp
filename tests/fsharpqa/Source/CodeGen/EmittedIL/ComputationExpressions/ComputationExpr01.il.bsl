@@ -125,7 +125,7 @@
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res1,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder builder@)
-    .line 10,10 : 1,25 ''
+    .line 10,10 : 1,25
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
     IL_0006:  ldloc.1

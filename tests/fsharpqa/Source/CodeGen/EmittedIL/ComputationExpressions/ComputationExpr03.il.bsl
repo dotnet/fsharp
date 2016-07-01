@@ -84,16 +84,16 @@
       .line 8,8 : 9,50 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr03.fs'
       IL_0000:  nop
       IL_0001:  nop
-      .line 8,8 : 18,33 ''
+      .line 8,8 : 18,33
       IL_0002:  ldstr      "hello"
       IL_0007:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_000c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0011:  pop
-      .line 8,8 : 35,49 ''
+      .line 8,8 : 35,49
       IL_0012:  ldstr      "hello"
       IL_0017:  callvirt   instance int32 [mscorlib]System.String::get_Length()
       IL_001c:  stloc.0
-      .line 9,9 : 9,21 ''
+      .line 9,9 : 9,21
       IL_001d:  ldarg.0
       IL_001e:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res2@8-1'::builder@
       IL_0023:  ldloc.0
@@ -131,19 +131,19 @@
       // Code size       44 (0x2c)
       .maxstack  6
       .locals init ([0] int32 x)
-      .line 17,17 : 17,58 ''
+      .line 17,17 : 17,58
       IL_0000:  nop
       IL_0001:  nop
-      .line 17,17 : 26,41 ''
+      .line 17,17 : 26,41
       IL_0002:  ldstr      "hello"
       IL_0007:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_000c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0011:  pop
-      .line 17,17 : 43,57 ''
+      .line 17,17 : 43,57
       IL_0012:  ldstr      "hello"
       IL_0017:  callvirt   instance int32 [mscorlib]System.String::get_Length()
       IL_001c:  stloc.0
-      .line 18,18 : 17,25 ''
+      .line 18,18 : 17,25
       IL_001d:  ldarg.0
       IL_001e:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@17-2'::builder@
       IL_0023:  ldc.i4.1
@@ -179,11 +179,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] int32 x)
-      .line 15,19 : 9,14 ''
+      .line 15,19 : 9,14
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 20,20 : 9,17 ''
+      .line 20,20 : 9,17
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@20-3'::builder@
       IL_0009:  ldc.i4.1
@@ -220,11 +220,11 @@
       .maxstack  7
       .locals init ([0] int32 x,
                [1] class [ComputationExprLibrary]Library.EventuallyBuilder builder@)
-      .line 14,14 : 9,23 ''
+      .line 14,14 : 9,23
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 15,19 : 9,14 ''
+      .line 15,19 : 9,14
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@15-1'::builder@
       IL_0009:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
@@ -268,7 +268,7 @@
     {
       // Code size       31 (0x1f)
       .maxstack  8
-      .line 14,14 : 9,23 ''
+      .line 14,14 : 9,23
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/res3@14::builder@
@@ -336,7 +336,7 @@
              [1] class [ComputationExprLibrary]Library.Eventually`1<int32> res3,
              [2] class [ComputationExprLibrary]Library.EventuallyBuilder builder@,
              [3] class [ComputationExprLibrary]Library.EventuallyBuilder V_3)
-    .line 10,10 : 1,25 ''
+    .line 10,10 : 1,25
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.2
     IL_0006:  ldloc.2
@@ -359,7 +359,7 @@
     IL_0037:  dup
     IL_0038:  stsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr03>'.$ComputationExpr03::res3@12
     IL_003d:  stloc.1
-    .line 22,22 : 1,26 ''
+    .line 22,22 : 1,26
     IL_003e:  call       class [ComputationExprLibrary]Library.Eventually`1<int32> ComputationExpr03::get_res3()
     IL_0043:  call       !!0 [ComputationExprLibrary]Library.EventuallyModule::force<int32>(class [ComputationExprLibrary]Library.Eventually`1<!!0>)
     IL_0048:  pop

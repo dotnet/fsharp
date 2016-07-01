@@ -132,11 +132,11 @@
 
         IL_000e:  br.s       IL_0012
 
-        .line 5,5 : 64,65 ''
+        .line 5,5 : 64,65
         IL_0010:  ldarg.3
         IL_0011:  ret
 
-        .line 5,5 : 71,72 ''
+        .line 5,5 : 71,72
         IL_0012:  ldarg.s    w
         IL_0014:  ret
       } // end of method f5@5T::Invoke
@@ -152,11 +152,11 @@
                [2] char V_2,
                [3] int32 V_3,
                [4] int32 V_4)
-      .line 6,6 : 9,25 ''
+      .line 6,6 : 9,25
       IL_0000:  nop
       IL_0001:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
       IL_0006:  stloc.0
-      .line 6,6 : 9,25 ''
+      .line 6,6 : 9,25
       IL_0007:  ldloc.0
       IL_0008:  ldc.i4.s   10
       IL_000a:  ldc.i4.s   10
@@ -197,7 +197,7 @@
   {
     // Code size       8 (0x8)
     .maxstack  8
-    .line 7,7 : 4,7 ''
+    .line 7,7 : 4,7
     IL_0000:  nop
     IL_0001:  call       char IfThenElse01/M::m()
     IL_0006:  pop

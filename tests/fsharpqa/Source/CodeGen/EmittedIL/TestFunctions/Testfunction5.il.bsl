@@ -62,12 +62,12 @@
     IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0010:  pop
-    .line 6,6 : 5,20 ''
+    .line 6,6 : 5,20
     IL_0011:  ldstr      "World"
     IL_0016:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_001b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0020:  pop
-    .line 7,7 : 5,8 ''
+    .line 7,7 : 5,8
     IL_0021:  ldc.i4.3
     IL_0022:  ldc.i4.4
     IL_0023:  add
@@ -80,21 +80,21 @@
     .maxstack  4
     .locals init ([0] int32 x,
              [1] int32 y)
-    .line 11,11 : 8,31 ''
+    .line 11,11 : 8,31
     IL_0000:  nop
     IL_0001:  call       int32 TestFunction5::TestFunction1()
     IL_0006:  stloc.1
-    .line 12,12 : 8,23 ''
+    .line 12,12 : 8,23
     IL_0007:  ldstr      "Hello"
     IL_000c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0016:  pop
-    .line 13,13 : 8,13 ''
+    .line 13,13 : 8,13
     IL_0017:  ldloc.1
     IL_0018:  ldloc.1
     IL_0019:  add
     IL_001a:  stloc.0
-    .line 14,14 : 5,10 ''
+    .line 14,14 : 5,10
     IL_001b:  ldloc.0
     IL_001c:  ldloc.0
     IL_001d:  add

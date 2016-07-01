@@ -319,7 +319,7 @@
                [7] class [mscorlib]System.Collections.IComparer V_7,
                [8] int32 V_8,
                [9] int32 V_9)
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  TestFunction21/U
@@ -333,7 +333,7 @@
 
       IL_0010:  br         IL_0092
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0015:  ldarg.1
       IL_0016:  unbox.any  TestFunction21/U
       IL_001b:  ldnull
@@ -344,10 +344,10 @@
 
       IL_0022:  br         IL_0090
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0027:  ldarg.0
       IL_0028:  pop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0029:  ldarg.0
       IL_002a:  stloc.1
       IL_002b:  ldloc.0
@@ -368,19 +368,19 @@
 
       IL_0048:  br.s       IL_004e
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_004a:  ldc.i4.m1
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_004b:  nop
       IL_004c:  br.s       IL_0055
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_004e:  ldloc.s    V_5
       IL_0050:  ldloc.s    V_6
       IL_0052:  cgt
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0054:  nop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0055:  stloc.3
       IL_0056:  ldloc.3
       IL_0057:  ldc.i4.0
@@ -390,11 +390,11 @@
 
       IL_005c:  br.s       IL_0060
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_005e:  ldloc.3
       IL_005f:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0060:  ldloc.3
       IL_0061:  ldc.i4.0
       IL_0062:  ble.s      IL_0066
@@ -403,11 +403,11 @@
 
       IL_0066:  br.s       IL_006a
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0068:  ldloc.3
       IL_0069:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_006a:  ldarg.2
       IL_006b:  stloc.s    V_7
       IL_006d:  ldloc.1
@@ -424,21 +424,21 @@
 
       IL_0085:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0087:  ldc.i4.m1
       IL_0088:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0089:  ldloc.s    V_8
       IL_008b:  ldloc.s    V_9
       IL_008d:  cgt
       IL_008f:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0090:  ldc.i4.1
       IL_0091:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0092:  ldarg.1
       IL_0093:  unbox.any  TestFunction21/U
       IL_0098:  ldnull
@@ -449,11 +449,11 @@
 
       IL_009f:  br.s       IL_00a3
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_00a1:  ldc.i4.m1
       IL_00a2:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_00a3:  ldc.i4.0
       IL_00a4:  ret
     } // end of method U::CompareTo
@@ -529,7 +529,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,7 ''
+      .line 4,4 : 6,7
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -759,7 +759,7 @@
     {
       // Code size       16 (0x10)
       .maxstack  8
-      .line 7,7 : 5,29 ''
+      .line 7,7 : 5,29
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> TestFunction21/'TestFunction21@7-1'::clo2
@@ -799,7 +799,7 @@
       // Code size       21 (0x15)
       .maxstack  6
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
-      .line 7,7 : 5,29 ''
+      .line 7,7 : 5,29
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> TestFunction21/TestFunction21@7::clo1
       IL_0006:  ldarg.1
@@ -821,7 +821,7 @@
              [1] int32 b,
              [2] int32 a,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> V_3)
-    .line 7,7 : 5,33 ''
+    .line 7,7 : 5,33
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0

@@ -85,13 +85,13 @@
     IL_0014:  ldloc.0
     IL_0015:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_001a:  stloc.1
-    .line 5,5 : 1,24 ''
+    .line 5,5 : 1,24
     IL_001b:  ldloc.1
     IL_001c:  ldnull
     IL_001d:  cgt.un
     IL_001f:  brfalse.s  IL_0050
 
-    .line 5,5 : 11,21 ''
+    .line 5,5 : 11,21
     IL_0021:  ldloc.0
     IL_0022:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0027:  stloc.2
@@ -110,7 +110,7 @@
     IL_0046:  ldloc.0
     IL_0047:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_004c:  stloc.1
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_004d:  nop
     IL_004e:  br.s       IL_001b
 

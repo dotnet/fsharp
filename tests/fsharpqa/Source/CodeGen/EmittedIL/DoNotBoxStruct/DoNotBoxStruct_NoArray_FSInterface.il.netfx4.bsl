@@ -84,7 +84,7 @@
   {
     // Code size       25 (0x19)
     .maxstack  8
-    .line 5,5 : 44,62 ''
+    .line 5,5 : 44,62
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  box        !!T

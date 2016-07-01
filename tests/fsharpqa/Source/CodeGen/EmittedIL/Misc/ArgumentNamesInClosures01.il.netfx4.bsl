@@ -80,7 +80,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 40,40 : 10,11 ''
+      .line 40,40 : 10,11
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -95,7 +95,7 @@
     {
       // Code size       7 (0x7)
       .maxstack  8
-      .line 41,41 : 22,23 ''
+      .line 41,41 : 22,23
       IL_0000:  nop
       IL_0001:  newobj     instance void M/get_F@41::.ctor()
       IL_0006:  ret
@@ -128,7 +128,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 41,41 : 22,23 ''
+      .line 41,41 : 22,23
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -142,7 +142,7 @@
   {
     // Code size       11 (0xb)
     .maxstack  8
-    .line 38,38 : 47,80 ''
+    .line 38,38 : 47,80
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldnull

@@ -125,11 +125,11 @@
 
       IL_0012:  br.s       IL_0016
 
-      .line 17,17 : 14,15 ''
+      .line 17,17 : 14,15
       IL_0014:  ldc.i4.1
       IL_0015:  ret
 
-      .line 18,18 : 13,14 ''
+      .line 18,18 : 13,14
       IL_0016:  ldc.i4.2
       IL_0017:  ret
     } // end of method GenericInner@15T::Invoke
@@ -156,7 +156,7 @@
     {
       // Code size       17 (0x11)
       .maxstack  8
-      .line 25,25 : 6,21 ''
+      .line 25,25 : 6,21
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
@@ -166,11 +166,11 @@
 
       IL_000b:  br.s       IL_000f
 
-      .line 26,26 : 14,15 ''
+      .line 26,26 : 14,15
       IL_000d:  ldc.i4.1
       IL_000e:  ret
 
-      .line 27,27 : 13,14 ''
+      .line 27,27 : 13,14
       IL_000f:  ldc.i4.2
       IL_0010:  ret
     } // end of method NonGenericInner@25::Invoke
@@ -201,7 +201,7 @@
     {
       // Code size       22 (0x16)
       .maxstack  8
-      .line 34,34 : 6,21 ''
+      .line 34,34 : 6,21
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
@@ -211,11 +211,11 @@
 
       IL_000b:  br.s       IL_000f
 
-      .line 35,35 : 14,15 ''
+      .line 35,35 : 14,15
       IL_000d:  ldc.i4.1
       IL_000e:  ret
 
-      .line 36,36 : 13,14 ''
+      .line 36,36 : 13,14
       IL_000f:  ldarg.0
       IL_0010:  ldfld      int32 SteppingMatch09/NonGenericInnerWithCapture@34::x
       IL_0015:  ret
@@ -228,7 +228,7 @@
   {
     // Code size       41 (0x29)
     .maxstack  8
-    .line 5,5 : 9,21 ''
+    .line 5,5 : 9,21
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.1
@@ -242,16 +242,16 @@
 
     IL_0015:  br.s       IL_001f
 
-    .line 7,7 : 13,21 ''
+    .line 7,7 : 13,21
     IL_0017:  ldc.i4.s   10
     IL_0019:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
     IL_001e:  ret
 
-    .line 9,9 : 13,17 ''
+    .line 9,9 : 13,17
     IL_001f:  ldnull
     IL_0020:  ret
 
-    .line 11,11 : 20,34 ''
+    .line 11,11 : 20,34
     IL_0021:  ldc.i4.s   22
     IL_0023:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
     IL_0028:  ret
@@ -263,11 +263,11 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc GenericInner,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> V_1)
-    .line 20,20 : 3,20 ''
+    .line 20,20 : 3,20
     IL_0000:  nop
     IL_0001:  newobj     instance void SteppingMatch09/GenericInner@15::.ctor()
     IL_0006:  stloc.0
-    .line 20,20 : 3,20 ''
+    .line 20,20 : 3,20
     IL_0007:  ldloc.0
     IL_0008:  ldarg.0
     IL_0009:  stloc.1
@@ -284,11 +284,11 @@
     // Code size       17 (0x11)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32> NonGenericInner)
-    .line 29,29 : 3,23 ''
+    .line 29,29 : 3,23
     IL_0000:  nop
     IL_0001:  newobj     instance void SteppingMatch09/NonGenericInner@25::.ctor()
     IL_0006:  stloc.0
-    .line 29,29 : 3,23 ''
+    .line 29,29 : 3,23
     IL_0007:  ldloc.0
     IL_0008:  ldarg.0
     IL_0009:  tail.
@@ -303,12 +303,12 @@
     // Code size       18 (0x12)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32> NonGenericInnerWithCapture)
-    .line 38,38 : 3,34 ''
+    .line 38,38 : 3,34
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  newobj     instance void SteppingMatch09/NonGenericInnerWithCapture@34::.ctor(int32)
     IL_0007:  stloc.0
-    .line 38,38 : 3,34 ''
+    .line 38,38 : 3,34
     IL_0008:  ldloc.0
     IL_0009:  ldarg.1
     IL_000a:  tail.

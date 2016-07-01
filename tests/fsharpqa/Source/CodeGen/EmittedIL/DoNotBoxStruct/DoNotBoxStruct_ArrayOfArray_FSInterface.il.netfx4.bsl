@@ -84,7 +84,7 @@
   {
     // Code size       37 (0x25)
     .maxstack  8
-    .line 5,5 : 48,74 ''
+    .line 5,5 : 48,74
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.0
