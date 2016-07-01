@@ -15,10 +15,15 @@
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
+    <SwixPackageLanguage Condition="'$(IsLangPack)' == 'true'">$(LocaleRegion)</SwixPackageLanguage>
+    <SwixPackageLanguage Condition="'$(IsLangPack)' == 'false'">neutral</SwixPackageLanguage>
+    
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>    
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);SwixPackageLanguage=$(SwixPackageLanguage)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,5 +34,6 @@
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
     <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
+    <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
   </Target>
 </Project>

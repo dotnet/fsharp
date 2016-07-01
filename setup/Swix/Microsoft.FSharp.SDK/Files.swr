@@ -3,7 +3,7 @@ use vs
 package name=Microsoft.FSharp.SDK
         version=4.1
         vs.package.type=msi
-        vs.package.language=$(LocaleRegion)
+        vs.package.language=$(SwixPackageLanguage)
 
 vs.payloads
   vs.payload source="$(BinariesFolder)\msi\Microsoft.FSharp.SDK.$(LocaleCode).msi"

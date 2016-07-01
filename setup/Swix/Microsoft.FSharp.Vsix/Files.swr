@@ -3,12 +3,12 @@ use vs
 package name=Microsoft.FSharp.VSIX.$(VSSku)
         version=4.1
         vs.package.type=vsix
-        vs.package.language=en-us
+        vs.package.language=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.LangPack.$(VSSku)
                 version=4.1
-                type=Required
+                type=Optional
   
   vs.dependency id=Microsoft.FSharp.Dependencies
                 version=4.1
