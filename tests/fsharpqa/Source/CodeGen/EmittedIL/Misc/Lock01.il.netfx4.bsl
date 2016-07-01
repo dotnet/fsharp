@@ -115,13 +115,13 @@
              [2] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
              [3] bool V_3,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_4)
-    .line 19,19 : 1,28 ''
+    .line 19,19 : 1,28
     IL_0000:  nop
     IL_0001:  newobj     instance void [mscorlib]System.Object::.ctor()
     IL_0006:  dup
     IL_0007:  stsfld     object '<StartupCode$Lock01>'.$Lock01::o@19
     IL_000c:  stloc.0
-    .line 20,20 : 1,23 ''
+    .line 20,20 : 1,23
     IL_000d:  call       object Lock01::get_o()
     IL_0012:  stloc.1
     IL_0013:  newobj     instance void Lock01/clo@20::.ctor()
@@ -150,17 +150,17 @@
 
       IL_0033:  br.s       IL_003e
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0035:  ldloc.1
       IL_0036:  call       void [mscorlib]System.Threading.Monitor::Exit(object)
       IL_003b:  ldnull
       IL_003c:  pop
       IL_003d:  endfinally
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_003e:  ldnull
       IL_003f:  pop
       IL_0040:  endfinally
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
     }  // end handler
     IL_0041:  ldloc.s    V_4
     IL_0043:  pop

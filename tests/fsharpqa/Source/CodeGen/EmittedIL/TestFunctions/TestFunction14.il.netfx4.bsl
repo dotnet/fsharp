@@ -103,7 +103,7 @@
     {
       // Code size       5 (0x5)
       .maxstack  8
-      .line 5,5 : 40,45 ''
+      .line 5,5 : 40,45
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.1
@@ -118,7 +118,7 @@
   {
     // Code size       29 (0x1d)
     .maxstack  8
-    .line 5,5 : 5,47 ''
+    .line 5,5 : 5,47
     IL_0000:  nop
     IL_0001:  newobj     instance void TestFunction14/TestFunction14@5::.ctor()
     IL_0006:  newobj     instance void TestFunction14/'TestFunction14@5-1'::.ctor()

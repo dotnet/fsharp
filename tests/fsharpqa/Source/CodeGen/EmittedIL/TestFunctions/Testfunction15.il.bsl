@@ -88,13 +88,13 @@
     // Code size       41 (0x29)
     .maxstack  7
     .locals init ([0] int32 x)
-    .line 5,5 : 5,18 ''
+    .line 5,5 : 5,18
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.1
     IL_0003:  add
     IL_0004:  stloc.0
-    .line 6,6 : 5,41 ''
+    .line 6,6 : 5,41
     IL_0005:  newobj     instance void TestFunction15/TestFunction15@6::.ctor()
     IL_000a:  ldc.i4.1
     IL_000b:  ldc.i4.2

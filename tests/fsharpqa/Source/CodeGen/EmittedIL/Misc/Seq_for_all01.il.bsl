@@ -81,15 +81,15 @@
 
       IL_0006:  br.s       IL_000b
 
-      .line 5,5 : 48,50 ''
-      .line 100001,100001 : 0,0 ''
+      .line 5,5 : 48,50
+      .line 100001,100001 : 0,0
       IL_0008:  nop
       IL_0009:  br.s       IL_000c
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_000b:  nop
-      .line 6,6 : 31,35 ''
+      .line 6,6 : 31,35
       IL_000c:  ldc.i4.1
       IL_000d:  ret
     } // end of method q@4::Invoke
@@ -127,7 +127,7 @@
     // Code size       35 (0x23)
     .maxstack  5
     .locals init ([0] bool q)
-    .line 4,7 : 1,28 ''
+    .line 4,7 : 1,28
     IL_0000:  nop
     IL_0001:  newobj     instance void Seq_for_all01/q@4::.ctor()
     IL_0006:  ldc.i4.1

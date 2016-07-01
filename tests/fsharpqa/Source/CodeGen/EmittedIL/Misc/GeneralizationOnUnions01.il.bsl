@@ -198,7 +198,7 @@
       // Code size       56 (0x38)
       .maxstack  3
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 4,4 : 6,12 ''
+      .line 4,4 : 6,12
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  GeneralizationOnUnions01/Weirdo
@@ -212,7 +212,7 @@
 
       IL_0010:  br.s       IL_0025
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0012:  ldarg.1
       IL_0013:  unbox.any  GeneralizationOnUnions01/Weirdo
       IL_0018:  ldnull
@@ -223,15 +223,15 @@
 
       IL_001f:  br.s       IL_0023
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0021:  ldc.i4.0
       IL_0022:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0023:  ldc.i4.1
       IL_0024:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0025:  ldarg.1
       IL_0026:  unbox.any  GeneralizationOnUnions01/Weirdo
       IL_002b:  ldnull
@@ -242,11 +242,11 @@
 
       IL_0032:  br.s       IL_0036
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0034:  ldc.i4.m1
       IL_0035:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0036:  ldc.i4.0
       IL_0037:  ret
     } // end of method Weirdo::CompareTo
@@ -290,7 +290,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,12 ''
+      .line 4,4 : 6,12
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -441,7 +441,7 @@
       // Code size       10 (0xa)
       .maxstack  5
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 8,8 : 14,15 ''
+      .line 8,8 : 14,15
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  nop
@@ -457,7 +457,7 @@
     // Code size       5 (0x5)
     .maxstack  3
     .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-    .line 5,5 : 11,12 ''
+    .line 5,5 : 11,12
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  nop
@@ -471,15 +471,15 @@
     .maxstack  3
     .locals init ([0] int32 C,
              [1] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,int32> f)
-    .line 7,7 : 4,13 ''
+    .line 7,7 : 4,13
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  stloc.0
-    .line 9,9 : 4,6 ''
+    .line 9,9 : 4,6
     IL_0003:  ldloc.0
     IL_0004:  newobj     instance void GeneralizationOnUnions01/f@8::.ctor(int32)
     IL_0009:  stloc.1
-    .line 9,9 : 4,6 ''
+    .line 9,9 : 4,6
     IL_000a:  ret
   } // end of method GeneralizationOnUnions01::g
 
@@ -497,7 +497,7 @@
     .entrypoint
     // Code size       9 (0x9)
     .maxstack  8
-    .line 11,11 : 1,7 ''
+    .line 11,11 : 1,7
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)

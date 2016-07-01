@@ -64,19 +64,19 @@
                           IL_000d)
     IL_000b:  br.s       IL_0011
 
-    .line 6,6 : 16,17 ''
+    .line 6,6 : 16,17
     IL_000d:  ldc.i4.2
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_000e:  nop
     IL_000f:  br.s       IL_0013
 
-    .line 7,7 : 18,19 ''
+    .line 7,7 : 18,19
     IL_0011:  ldc.i4.0
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_0012:  nop
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_0013:  stloc.0
-    .line 10,10 : 5,38 ''
+    .line 10,10 : 5,38
     IL_0014:  ret
   } // end of method SteppingMatch08::test
 

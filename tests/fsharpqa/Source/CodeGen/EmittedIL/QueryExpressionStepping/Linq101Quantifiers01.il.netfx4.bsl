@@ -133,25 +133,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_002d:  nop
-      .line 12,12 : 9,26 ''
+      .line 12,12 : 9,26
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Quantifiers01::get_words()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
@@ -160,7 +160,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
-      .line 12,12 : 9,26 ''
+      .line 12,12 : 9,26
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -171,7 +171,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_0063:  stfld      string Linq101Quantifiers01/iAfterE@12::_arg1
-      .line 12,12 : 9,26 ''
+      .line 12,12 : 9,26
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      string Linq101Quantifiers01/iAfterE@12::_arg1
@@ -179,7 +179,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
-      .line 13,13 : 9,34 ''
+      .line 13,13 : 9,34
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      string Linq101Quantifiers01/iAfterE@12::w
@@ -190,18 +190,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldnull
       IL_008b:  stfld      string Linq101Quantifiers01/iAfterE@12::w
-      .line 12,12 : 9,26 ''
+      .line 12,12 : 9,26
       IL_0090:  ldarg.0
       IL_0091:  ldnull
       IL_0092:  stfld      string Linq101Quantifiers01/iAfterE@12::_arg1
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Quantifiers01/iAfterE@12::pc
-      .line 12,12 : 9,26 ''
+      .line 12,12 : 9,26
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
@@ -227,7 +227,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -238,13 +238,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_001b:  nop
       .try
       {
@@ -265,30 +265,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -297,7 +297,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Quantifiers01/iAfterE@12::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -314,18 +314,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 12,12 : 9,26 ''
+        .line 12,12 : 9,26
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -338,11 +338,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0095:  ret
     } // end of method iAfterE@12::Close
 
@@ -448,7 +448,7 @@
     {
       // Code size       13 (0xd)
       .maxstack  8
-      .line 13,13 : 17,33 ''
+      .line 13,13 : 17,33
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldstr      "ei"
@@ -483,11 +483,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 21,21 : 9,29 ''
+      .line 21,21 : 9,29
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 22,22 : 9,32 ''
+      .line 22,22 : 9,32
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups@21::builder@
       IL_0009:  ldloc.0
@@ -518,7 +518,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 22,22 : 20,21 ''
+      .line 22,22 : 20,21
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -546,7 +546,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 22,22 : 22,32 ''
+      .line 22,22 : 22,32
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -581,7 +581,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g)
-      .line 22,22 : 38,39 ''
+      .line 22,22 : 38,39
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -614,7 +614,7 @@
     {
       // Code size       11 (0xb)
       .maxstack  8
-      .line 23,23 : 31,49 ''
+      .line 23,23 : 31,49
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
@@ -645,7 +645,7 @@
     {
       // Code size       24 (0x18)
       .maxstack  8
-      .line 23,23 : 16,50 ''
+      .line 23,23 : 16,50
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  newobj     instance void Linq101Quantifiers01/'productGroups@23-5'::.ctor()
@@ -679,7 +679,7 @@
     {
       // Code size       14 (0xe)
       .maxstack  8
-      .line 24,24 : 17,25 ''
+      .line 24,24 : 17,25
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>::get_Key()
@@ -746,7 +746,7 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
       IL_0006:  ldc.i4.1
@@ -763,25 +763,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_002d:  nop
-      .line 32,32 : 9,28 ''
+      .line 32,32 : 9,28
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Quantifiers01::get_numbers()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
@@ -790,7 +790,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
-      .line 32,32 : 9,28 ''
+      .line 32,32 : 9,28
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -801,7 +801,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0063:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::_arg1
-      .line 32,32 : 9,28 ''
+      .line 32,32 : 9,28
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::_arg1
@@ -809,7 +809,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
-      .line 33,33 : 9,24 ''
+      .line 33,33 : 9,24
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      int32 Linq101Quantifiers01/onlyOdd@32::n
@@ -820,18 +820,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldc.i4.0
       IL_008b:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::n
-      .line 32,32 : 9,28 ''
+      .line 32,32 : 9,28
       IL_0090:  ldarg.0
       IL_0091:  ldc.i4.0
       IL_0092:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::_arg1
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Quantifiers01/onlyOdd@32::pc
-      .line 32,32 : 9,28 ''
+      .line 32,32 : 9,28
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
@@ -857,7 +857,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -868,13 +868,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_001b:  nop
       .try
       {
@@ -895,30 +895,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
+        .line 100001,100001 : 0,0
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -927,7 +927,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Quantifiers01/onlyOdd@32::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -944,18 +944,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 32,32 : 9,28 ''
+        .line 32,32 : 9,28
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -968,11 +968,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0095:  ret
     } // end of method onlyOdd@32::Close
 
@@ -1078,7 +1078,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .line 33,33 : 14,23 ''
+      .line 33,33 : 14,23
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.2
@@ -1115,11 +1115,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 39,39 : 9,29 ''
+      .line 39,39 : 9,29
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 40,40 : 9,32 ''
+      .line 40,40 : 9,32
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Quantifiers01/productGroups2@39::builder@
       IL_0009:  ldloc.0
@@ -1150,7 +1150,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 40,40 : 20,21 ''
+      .line 40,40 : 20,21
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -1178,7 +1178,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 40,40 : 22,32 ''
+      .line 40,40 : 22,32
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -1213,7 +1213,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g)
-      .line 40,40 : 38,39 ''
+      .line 40,40 : 38,39
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -1246,7 +1246,7 @@
     {
       // Code size       11 (0xb)
       .maxstack  8
-      .line 41,41 : 31,49 ''
+      .line 41,41 : 31,49
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
@@ -1277,7 +1277,7 @@
     {
       // Code size       24 (0x18)
       .maxstack  8
-      .line 41,41 : 16,50 ''
+      .line 41,41 : 16,50
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-5'::.ctor()
@@ -1311,7 +1311,7 @@
     {
       // Code size       14 (0xe)
       .maxstack  8
-      .line 42,42 : 17,25 ''
+      .line 42,42 : 17,25
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>::get_Key()
@@ -1465,7 +1465,7 @@
              [8] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_8,
              [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9,
              [10] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10)
-    .line 8,8 : 1,54 ''
+    .line 8,8 : 1,54
     IL_0000:  nop
     IL_0001:  ldstr      "believe"
     IL_0006:  ldstr      "relief"
@@ -1503,12 +1503,12 @@
     IL_0057:  dup
     IL_0058:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::iAfterE@10
     IL_005d:  stloc.1
-    .line 17,17 : 1,32 ''
+    .line 17,17 : 1,32
     IL_005e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_0063:  dup
     IL_0064:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::'products@17-8'
     IL_0069:  stloc.2
-    .line 19,25 : 1,21 ''
+    .line 19,25 : 1,21
     IL_006a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_006f:  stloc.s    V_8
     IL_0071:  ldloc.s    V_8
@@ -1544,7 +1544,7 @@
     IL_00d1:  dup
     IL_00d2:  stsfld     class [mscorlib]System.Tuple`2<string,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::productGroups@19
     IL_00d7:  stloc.3
-    .line 28,28 : 1,35 ''
+    .line 28,28 : 1,35
     IL_00d8:  ldc.i4.1
     IL_00d9:  ldc.i4.s   11
     IL_00db:  ldc.i4.3
@@ -1590,7 +1590,7 @@
     IL_0136:  dup
     IL_0137:  stsfld     bool '<StartupCode$Linq101Quantifiers01>'.$Linq101Quantifiers01::onlyOdd@30
     IL_013c:  stloc.s    onlyOdd
-    .line 37,43 : 1,21 ''
+    .line 37,43 : 1,21
     IL_013e:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0143:  stloc.s    V_10
     IL_0145:  ldloc.s    V_10

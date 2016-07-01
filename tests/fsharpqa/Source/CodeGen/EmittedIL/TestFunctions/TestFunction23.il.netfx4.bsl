@@ -72,11 +72,11 @@
       IL_0009:  ldarg.0
       IL_000a:  call       string [mscorlib]System.Console::ReadLine()
       IL_000f:  stfld      string TestFunction23/C::x
-      .line 8,8 : 5,38 ''
+      .line 8,8 : 5,38
       IL_0014:  ldarg.0
       IL_0015:  call       string [mscorlib]System.Console::ReadLine()
       IL_001a:  stfld      string TestFunction23/C::x@8
-      .line 5,5 : 6,7 ''
+      .line 5,5 : 6,7
       IL_001f:  ret
     } // end of method C::.ctor
 
@@ -85,7 +85,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 9,9 : 23,30 ''
+      .line 9,9 : 23,30
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      string TestFunction23/C::x@8
@@ -102,7 +102,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       8 (0x8)
       .maxstack  8
-      .line 7,7 : 15,16 ''
+      .line 7,7 : 15,16
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      string TestFunction23/C::x
@@ -131,13 +131,13 @@
     {
       // Code size       35 (0x23)
       .maxstack  8
-      .line 13,13 : 9,24 ''
+      .line 13,13 : 9,24
       IL_0000:  nop
       IL_0001:  ldstr      "Hello"
       IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0010:  pop
-      .line 14,14 : 9,24 ''
+      .line 14,14 : 9,24
       IL_0011:  ldstr      "Hello"
       IL_0016:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_001b:  tail.
@@ -153,11 +153,11 @@
     // Code size       27 (0x1b)
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g)
-    .line 15,15 : 5,13 ''
+    .line 15,15 : 5,13
     IL_0000:  nop
     IL_0001:  newobj     instance void TestFunction23/g@13::.ctor()
     IL_0006:  stloc.0
-    .line 15,15 : 5,13 ''
+    .line 15,15 : 5,13
     IL_0007:  ldloc.0
     IL_0008:  ldnull
     IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)

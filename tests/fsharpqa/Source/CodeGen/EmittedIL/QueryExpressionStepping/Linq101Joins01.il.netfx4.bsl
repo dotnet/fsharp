@@ -109,7 +109,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 14,14 : 36,46 ''
+      .line 14,14 : 36,46
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -140,7 +140,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 14,14 : 9,47 ''
+      .line 14,14 : 9,47
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -178,7 +178,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product> V_0,
                [1] class [Utils]Utils/Product p,
                [2] string c)
-      .line 14,14 : 9,47 ''
+      .line 14,14 : 9,47
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -223,7 +223,7 @@
       .maxstack  6
       .locals init ([0] string c,
                [1] class [Utils]Utils/Product p)
-      .line 15,15 : 17,33 ''
+      .line 15,15 : 17,33
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>::get_Item1()
       IL_0006:  stloc.0
@@ -261,7 +261,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 22,22 : 37,38 ''
+      .line 22,22 : 37,38
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -289,7 +289,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 22,22 : 41,51 ''
+      .line 22,22 : 41,51
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -320,7 +320,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 22,22 : 9,60 ''
+      .line 22,22 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -358,7 +358,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 22,22 : 9,60 ''
+      .line 22,22 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -403,7 +403,7 @@
       .maxstack  6
       .locals init ([0] string c,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps)
-      .line 23,23 : 17,22 ''
+      .line 23,23 : 17,22
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_0006:  stloc.0
@@ -440,7 +440,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 30,30 : 37,38 ''
+      .line 30,30 : 37,38
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -468,7 +468,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 30,30 : 41,51 ''
+      .line 30,30 : 41,51
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -499,7 +499,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 30,30 : 9,60 ''
+      .line 30,30 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -545,11 +545,11 @@
       // Code size       35 (0x23)
       .maxstack  8
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 31,31 : 9,23 ''
+      .line 31,31 : 9,23
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 32,32 : 9,34 ''
+      .line 32,32 : 9,34
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'q3@31-4'::builder@
       IL_0009:  ldarg.0
@@ -594,7 +594,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 30,30 : 9,60 ''
+      .line 30,30 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -648,7 +648,7 @@
       .locals init ([0] string c,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] class [Utils]Utils/Product p)
-      .line 32,32 : 17,33 ''
+      .line 32,32 : 17,33
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>::get_Item1()
       IL_0006:  stloc.0
@@ -689,7 +689,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 39,39 : 37,38 ''
+      .line 39,39 : 37,38
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -717,7 +717,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 39,39 : 41,51 ''
+      .line 39,39 : 41,51
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -748,7 +748,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 39,39 : 9,60 ''
+      .line 39,39 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -795,11 +795,11 @@
       .maxstack  9
       .locals init ([0] class [Utils]Utils/Product p,
                [1] string t)
-      .line 40,40 : 9,40 ''
+      .line 40,40 : 9,40
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 41,41 : 17,39 ''
+      .line 41,41 : 17,39
       IL_0003:  ldloc.0
       IL_0004:  box        [Utils]Utils/Product
       IL_0009:  ldnull
@@ -811,20 +811,20 @@
 
       IL_0013:  br.s       IL_001d
 
-      .line 41,41 : 40,55 ''
+      .line 41,41 : 40,55
       IL_0015:  ldstr      "(No products)"
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_001a:  nop
       IL_001b:  br.s       IL_0024
 
-      .line 41,41 : 61,74 ''
+      .line 41,41 : 61,74
       IL_001d:  ldloc.0
       IL_001e:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0023:  nop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0024:  stloc.1
-      .line 42,42 : 9,22 ''
+      .line 42,42 : 9,22
       IL_0025:  ldarg.0
       IL_0026:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'q4@40-4'::builder@
       IL_002b:  ldarg.0
@@ -871,7 +871,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 39,39 : 9,60 ''
+      .line 39,39 : 9,60
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -927,7 +927,7 @@
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] class [Utils]Utils/Product p,
                [3] string t)
-      .line 42,42 : 17,21 ''
+      .line 42,42 : 17,21
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::get_Item1()
       IL_0006:  stloc.0
@@ -1076,7 +1076,7 @@
              [7] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_7,
              [8] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_8,
              [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9)
-    .line 8,8 : 1,88 ''
+    .line 8,8 : 1,88
     IL_0000:  nop
     IL_0001:  ldstr      "Beverages"
     IL_0006:  ldstr      "Condiments"
@@ -1097,12 +1097,12 @@
     IL_0038:  dup
     IL_0039:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::categories@8
     IL_003e:  stloc.0
-    .line 9,9 : 1,32 ''
+    .line 9,9 : 1,32
     IL_003f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_0044:  dup
     IL_0045:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::'products@9-4'
     IL_004a:  stloc.1
-    .line 11,16 : 1,21 ''
+    .line 11,16 : 1,21
     IL_004b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0050:  stloc.s    builder@
     IL_0052:  ldloc.s    builder@
@@ -1136,7 +1136,7 @@
     IL_00ae:  dup
     IL_00af:  stsfld     class [mscorlib]System.Tuple`2<string,string>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q@11
     IL_00b4:  stloc.2
-    .line 19,24 : 1,21 ''
+    .line 19,24 : 1,21
     IL_00b5:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00ba:  stloc.s    V_7
     IL_00bc:  ldloc.s    V_7
@@ -1170,7 +1170,7 @@
     IL_0118:  dup
     IL_0119:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q2@19
     IL_011e:  stloc.3
-    .line 27,33 : 1,21 ''
+    .line 27,33 : 1,21
     IL_011f:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0124:  stloc.s    V_8
     IL_0126:  ldloc.s    V_8
@@ -1204,7 +1204,7 @@
     IL_0182:  dup
     IL_0183:  stsfld     class [mscorlib]System.Tuple`2<string,string>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q3@27
     IL_0188:  stloc.s    q3
-    .line 36,43 : 1,21 ''
+    .line 36,43 : 1,21
     IL_018a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_018f:  stloc.s    V_9
     IL_0191:  ldloc.s    V_9

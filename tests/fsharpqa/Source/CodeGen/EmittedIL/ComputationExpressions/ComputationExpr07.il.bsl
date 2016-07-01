@@ -90,7 +90,7 @@
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 10,10 : 13,24 ''
+      .line 10,10 : 13,24
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ComputationExpr07/'res7@9-1'::x
       IL_0009:  ldarg.0
@@ -139,7 +139,7 @@
     {
       // Code size       26 (0x1a)
       .maxstack  8
-      .line 11,11 : 9,18 ''
+      .line 11,11 : 9,18
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr07/'res7@11-2'::builder@
@@ -178,12 +178,12 @@
       // Code size       91 (0x5b)
       .maxstack  9
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x)
-      .line 8,8 : 9,22 ''
+      .line 8,8 : 9,22
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
       IL_0007:  stloc.0
-      .line 9,9 : 9,29 ''
+      .line 9,9 : 9,29
       IL_0008:  ldarg.0
       IL_0009:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr07/res7@8::builder@
       IL_000e:  ldarg.0
@@ -253,7 +253,7 @@
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res7,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder builder@)
-    .line 13,13 : 1,25 ''
+    .line 13,13 : 1,25
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
     IL_0006:  ldloc.1

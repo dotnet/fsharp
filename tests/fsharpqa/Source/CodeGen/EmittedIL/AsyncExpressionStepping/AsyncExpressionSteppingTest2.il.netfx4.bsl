@@ -121,13 +121,13 @@
       {
         // Code size       43 (0x2b)
         .maxstack  8
-        .line 7,7 : 20,26 ''
+        .line 7,7 : 20,26
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/'f2@7-2'::x
         IL_0007:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_000c:  nop
-        .line 8,8 : 20,35 ''
+        .line 8,8 : 20,35
         IL_000d:  ldstr      "hello"
         IL_0012:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
         IL_0017:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -170,7 +170,7 @@
       {
         // Code size       54 (0x36)
         .maxstack  9
-        .line 6,6 : 17,29 ''
+        .line 6,6 : 17,29
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/f2@6::builder@
@@ -201,12 +201,12 @@
       .maxstack  5
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x,
                [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@)
-      .line 5,5 : 9,22 ''
+      .line 5,5 : 9,22
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
       IL_0007:  stloc.0
-      .line 6,6 : 9,14 ''
+      .line 6,6 : 9,14
       IL_0008:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_000d:  stloc.1
       IL_000e:  ldloc.1
@@ -237,7 +237,7 @@
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
              [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
-    .line 11,11 : 13,43 ''
+    .line 11,11 : 13,43
     IL_0000:  nop
     IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2::f2()
     IL_0006:  stloc.0

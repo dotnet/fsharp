@@ -71,14 +71,14 @@
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 8,8 : 4,49 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\EntryPoint01.fs'
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_0000:  ldc.i4.0
     IL_0001:  stsfld     int32 '<StartupCode$EntryPoint01>'.$EntryPoint01::init@
     IL_0006:  ldsfld     int32 '<StartupCode$EntryPoint01>'.$EntryPoint01::init@
     IL_000b:  pop
     IL_000c:  nop
     IL_000d:  nop
-    .line 8,8 : 9,39 ''
+    .line 8,8 : 9,39
     IL_000e:  call       int32 EntryPoint01::get_static_initializer()
     IL_0013:  ldc.i4.s   10
     IL_0015:  bne.un.s   IL_0019
@@ -87,17 +87,17 @@
 
     IL_0019:  br.s       IL_001f
 
-    .line 8,8 : 40,41 ''
+    .line 8,8 : 40,41
     IL_001b:  ldc.i4.0
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_001c:  nop
     IL_001d:  br.s       IL_0021
 
-    .line 8,8 : 47,48 ''
+    .line 8,8 : 47,48
     IL_001f:  ldc.i4.1
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_0020:  nop
-    .line 100001,100001 : 0,0 ''
+    .line 100001,100001 : 0,0
     IL_0021:  tail.
     IL_0023:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<int32>(int32)
     IL_0028:  ret
@@ -122,7 +122,7 @@
     // Code size       8 (0x8)
     .maxstack  3
     .locals init ([0] int32 static_initializer)
-    .line 4,4 : 1,28 ''
+    .line 4,4 : 1,28
     IL_0000:  nop
     IL_0001:  call       int32 EntryPoint01::get_static_initializer()
     IL_0006:  stloc.0
