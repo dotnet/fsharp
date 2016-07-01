@@ -120,8 +120,7 @@ type IlxClosureSpec =
 type IlxClosureInfo = 
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]  
-      cloCode: Lazy<ILMethodBody>
-      cloSource: ILSourceMarker option}
+      cloCode: Lazy<ILMethodBody> }
 
 type IlxUnionInfo = 
     { /// is the representation public? 

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly TestFunction23
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.TestFunction23
 {
-  // Offset: 0x00000000 Length: 0x0000036A
+  // Offset: 0x00000000 Length: 0x00000346
 }
 .mresource public FSharpOptimizationData.TestFunction23
 {
-  // Offset: 0x00000370 Length: 0x000000E3
+  // Offset: 0x00000350 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {4F20E3B8-A643-451C-A745-0383B8E3204F}
+// MVID: {5775B1AC-A643-451C-A745-0383ACB17557}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000008C477A0000
+// Image base: 0x00CD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
       // Code size       32 (0x20)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 5,38 
+      .line 6,6 : 5,38 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction23.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -72,11 +72,11 @@
       IL_0009:  ldarg.0
       IL_000a:  call       string [mscorlib]System.Console::ReadLine()
       IL_000f:  stfld      string TestFunction23/C::x
-      .line 8,8 : 5,38 
+      .line 8,8 : 5,38 ''
       IL_0014:  ldarg.0
       IL_0015:  call       string [mscorlib]System.Console::ReadLine()
       IL_001a:  stfld      string TestFunction23/C::x@8
-      .line 5,5 : 6,7 
+      .line 5,5 : 6,7 ''
       IL_001f:  ret
     } // end of method C::.ctor
 
@@ -85,7 +85,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 9,9 : 23,30 
+      .line 9,9 : 23,30 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      string TestFunction23/C::x@8
@@ -102,7 +102,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       8 (0x8)
       .maxstack  8
-      .line 7,7 : 15,16 
+      .line 7,7 : 15,16 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      string TestFunction23/C::x
@@ -117,6 +117,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -129,13 +131,13 @@
     {
       // Code size       35 (0x23)
       .maxstack  8
-      .line 13,13 : 9,24 
+      .line 13,13 : 9,24 ''
       IL_0000:  nop
       IL_0001:  ldstr      "Hello"
       IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0010:  pop
-      .line 14,14 : 9,24 
+      .line 14,14 : 9,24 ''
       IL_0011:  ldstr      "Hello"
       IL_0016:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_001b:  tail.
@@ -151,11 +153,11 @@
     // Code size       27 (0x1b)
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g)
-    .line 12,12 : 9,12 
+    .line 15,15 : 5,13 ''
     IL_0000:  nop
     IL_0001:  newobj     instance void TestFunction23/g@13::.ctor()
     IL_0006:  stloc.0
-    .line 15,15 : 5,13 
+    .line 15,15 : 5,13 ''
     IL_0007:  ldloc.0
     IL_0008:  ldnull
     IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)

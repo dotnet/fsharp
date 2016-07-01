@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly extern Utils
 {
@@ -26,27 +26,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Linq101Ordering01
 {
-  // Offset: 0x00000000 Length: 0x000003D7
+  // Offset: 0x00000000 Length: 0x000003B2
 }
 .mresource public FSharpOptimizationData.Linq101Ordering01
 {
-  // Offset: 0x000003E0 Length: 0x00000134
+  // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {4F31D862-649A-6956-A745-038362D8314F}
+// MVID: {5775B16C-649A-6956-A745-03836CB17557}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000470000
+// Image base: 0x006E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -111,7 +111,7 @@
       // Code size       196 (0xc4)
       .maxstack  6
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Ordering01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/sortedWords@11::pc
       IL_0006:  ldc.i4.1
@@ -128,25 +128,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002d:  nop
-      .line 11,11 : 9,26 
+      .line 11,11 : 9,26 ''
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
@@ -155,7 +155,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Ordering01/sortedWords@11::pc
-      .line 11,11 : 9,26 
+      .line 11,11 : 9,26 ''
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords@11::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -166,7 +166,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords@11::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_0063:  stfld      string Linq101Ordering01/sortedWords@11::_arg1
-      .line 11,11 : 9,26 
+      .line 11,11 : 9,26 ''
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      string Linq101Ordering01/sortedWords@11::_arg1
@@ -174,7 +174,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Ordering01/sortedWords@11::pc
-      .line 12,12 : 9,17 
+      .line 12,12 : 9,17 ''
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      string Linq101Ordering01/sortedWords@11::w
@@ -185,18 +185,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldnull
       IL_008b:  stfld      string Linq101Ordering01/sortedWords@11::w
-      .line 11,11 : 9,26 
+      .line 11,11 : 9,26 ''
       IL_0090:  ldarg.0
       IL_0091:  ldnull
       IL_0092:  stfld      string Linq101Ordering01/sortedWords@11::_arg1
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Ordering01/sortedWords@11::pc
-      .line 11,11 : 9,26 
+      .line 11,11 : 9,26 ''
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords@11::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
@@ -222,7 +222,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -233,13 +233,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       .try
       {
@@ -260,30 +260,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004d:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -292,7 +292,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords@11::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -309,18 +309,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 11,11 : 9,26 
+        .line 11,11 : 9,26 ''
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -333,11 +333,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0095:  ret
     } // end of method sortedWords@11::Close
 
@@ -429,6 +429,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -441,7 +443,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 12,12 : 16,17 
+      .line 12,12 : 16,17 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -504,7 +506,7 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/sortedWords2@18::pc
       IL_0006:  ldc.i4.1
@@ -521,25 +523,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002d:  nop
-      .line 18,18 : 9,26 
+      .line 18,18 : 9,26 ''
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
@@ -548,7 +550,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Ordering01/sortedWords2@18::pc
-      .line 18,18 : 9,26 
+      .line 18,18 : 9,26 ''
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords2@18::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -559,7 +561,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords2@18::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_0063:  stfld      string Linq101Ordering01/sortedWords2@18::_arg1
-      .line 18,18 : 9,26 
+      .line 18,18 : 9,26 ''
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      string Linq101Ordering01/sortedWords2@18::_arg1
@@ -567,7 +569,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Ordering01/sortedWords2@18::pc
-      .line 19,19 : 9,26 
+      .line 19,19 : 9,26 ''
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      string Linq101Ordering01/sortedWords2@18::w
@@ -578,18 +580,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldnull
       IL_008b:  stfld      string Linq101Ordering01/sortedWords2@18::w
-      .line 18,18 : 9,26 
+      .line 18,18 : 9,26 ''
       IL_0090:  ldarg.0
       IL_0091:  ldnull
       IL_0092:  stfld      string Linq101Ordering01/sortedWords2@18::_arg1
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Ordering01/sortedWords2@18::pc
-      .line 18,18 : 9,26 
+      .line 18,18 : 9,26 ''
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords2@18::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
@@ -615,7 +617,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -626,13 +628,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       .try
       {
@@ -653,30 +655,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004d:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -685,7 +687,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedWords2@18::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -702,18 +704,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 18,18 : 9,26 
+        .line 18,18 : 9,26 ''
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -726,11 +728,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0095:  ret
     } // end of method sortedWords2@18::Close
 
@@ -822,6 +824,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -834,7 +838,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .line 19,19 : 17,25 
+      .line 19,19 : 17,25 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance int32 [mscorlib]System.String::get_Length()
@@ -850,6 +854,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -866,11 +872,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 26,26 : 9,29 
+      .line 26,26 : 9,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 27,27 : 9,29 
+      .line 27,27 : 9,29 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Ordering01/sortedProducts@26::builder@
       IL_0009:  ldloc.0
@@ -887,6 +893,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -899,7 +907,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 27,27 : 16,29 
+      .line 27,27 : 16,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -915,6 +923,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -927,7 +937,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 28,28 : 16,17 
+      .line 28,28 : 16,17 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -990,7 +1000,7 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/sortedProducts2@44::pc
       IL_0006:  ldc.i4.1
@@ -1007,25 +1017,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002d:  nop
-      .line 44,44 : 9,29 
+      .line 44,44 : 9,29 ''
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
@@ -1034,7 +1044,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Ordering01/sortedProducts2@44::pc
-      .line 44,44 : 9,29 
+      .line 44,44 : 9,29 ''
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/sortedProducts2@44::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -1045,7 +1055,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/sortedProducts2@44::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
       IL_0063:  stfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::_arg1
-      .line 44,44 : 9,29 
+      .line 44,44 : 9,29 ''
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::_arg1
@@ -1053,7 +1063,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Ordering01/sortedProducts2@44::pc
-      .line 45,45 : 9,40 
+      .line 45,45 : 9,40 ''
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::p
@@ -1064,18 +1074,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldnull
       IL_008b:  stfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::p
-      .line 44,44 : 9,29 
+      .line 44,44 : 9,29 ''
       IL_0090:  ldarg.0
       IL_0091:  ldnull
       IL_0092:  stfld      class [Utils]Utils/Product Linq101Ordering01/sortedProducts2@44::_arg1
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Ordering01/sortedProducts2@44::pc
-      .line 44,44 : 9,29 
+      .line 44,44 : 9,29 ''
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/sortedProducts2@44::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
@@ -1101,7 +1111,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -1112,13 +1122,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       .try
       {
@@ -1139,30 +1149,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004d:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -1171,7 +1181,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/sortedProducts2@44::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -1188,18 +1198,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 44,44 : 9,29 
+        .line 44,44 : 9,29 ''
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -1212,11 +1222,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0095:  ret
     } // end of method sortedProducts2@44::Close
 
@@ -1308,6 +1318,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1320,7 +1332,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 45,45 : 26,40 
+      .line 45,45 : 26,40 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -1385,7 +1397,7 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/sortedDigits@52::pc
       IL_0006:  ldc.i4.1
@@ -1402,25 +1414,25 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002d:  nop
-      .line 52,52 : 9,27 
+      .line 52,52 : 9,27 ''
       IL_002e:  ldarg.0
       IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_digits()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
@@ -1429,7 +1441,7 @@
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
       IL_0045:  stfld      int32 Linq101Ordering01/sortedDigits@52::pc
-      .line 52,52 : 9,27 
+      .line 52,52 : 9,27 ''
       IL_004a:  ldarg.0
       IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedDigits@52::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -1440,7 +1452,7 @@
       IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedDigits@52::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
       IL_0063:  stfld      string Linq101Ordering01/sortedDigits@52::_arg1
-      .line 52,52 : 9,27 
+      .line 52,52 : 9,27 ''
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
       IL_006a:  ldfld      string Linq101Ordering01/sortedDigits@52::_arg1
@@ -1448,7 +1460,7 @@
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
       IL_0076:  stfld      int32 Linq101Ordering01/sortedDigits@52::pc
-      .line 53,53 : 9,24 
+      .line 53,53 : 9,24 ''
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
       IL_007d:  ldfld      string Linq101Ordering01/sortedDigits@52::d
@@ -1459,18 +1471,18 @@
       IL_0089:  ldarg.0
       IL_008a:  ldnull
       IL_008b:  stfld      string Linq101Ordering01/sortedDigits@52::d
-      .line 52,52 : 9,27 
+      .line 52,52 : 9,27 ''
       IL_0090:  ldarg.0
       IL_0091:  ldnull
       IL_0092:  stfld      string Linq101Ordering01/sortedDigits@52::_arg1
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
       IL_009c:  stfld      int32 Linq101Ordering01/sortedDigits@52::pc
-      .line 52,52 : 9,27 
+      .line 52,52 : 9,27 ''
       IL_00a1:  ldarg.0
       IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedDigits@52::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
@@ -1496,7 +1508,7 @@
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
                [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -1507,13 +1519,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0015:  nop
       IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       .try
       {
@@ -1534,30 +1546,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004d:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -1566,7 +1578,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/sortedDigits@52::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -1583,18 +1595,18 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 52,52 : 9,27 
+        .line 52,52 : 9,27 ''
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
         IL_007e:  stloc.1
         IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
       }  // end handler
       IL_0081:  ldloc.1
       IL_0082:  pop
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0083:  nop
       IL_0084:  br         IL_0002
 
@@ -1607,11 +1619,11 @@
 
       IL_0091:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0093:  ldloc.0
       IL_0094:  throw
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0095:  ret
     } // end of method sortedDigits@52::Close
 
@@ -1703,6 +1715,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1715,7 +1729,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .line 53,53 : 16,24 
+      .line 53,53 : 16,24 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance int32 [mscorlib]System.String::get_Length()
@@ -1730,6 +1744,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1742,7 +1758,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 54,54 : 16,17 
+      .line 54,54 : 16,17 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -1757,6 +1773,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1773,11 +1791,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 60,60 : 9,29 
+      .line 60,60 : 9,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 61,61 : 9,26 
+      .line 61,61 : 9,26 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Ordering01/sortedProducts3@60::builder@
       IL_0009:  ldloc.0
@@ -1794,6 +1812,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1806,7 +1826,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 61,61 : 16,26 
+      .line 61,61 : 16,26 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -1822,6 +1842,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1834,7 +1856,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 62,62 : 26,37 
+      .line 62,62 : 26,37 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -1850,6 +1872,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1862,7 +1886,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 63,63 : 16,17 
+      .line 63,63 : 16,17 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -1875,7 +1899,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::words@8
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'words@8-2'
     IL_0005:  ret
   } // end of method Linq101Ordering01::get_words
 
@@ -1902,7 +1926,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::products@23
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'products@23-6'
     IL_0005:  ret
   } // end of method Linq101Ordering01::get_products
 
@@ -1929,7 +1953,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::digits@49
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'digits@49-2'
     IL_0005:  ret
   } // end of method Linq101Ordering01::get_digits
 
@@ -2007,19 +2031,19 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> words@8
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'words@8-2'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedWords@9
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedWords2@16
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> products@23
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@23-6'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [Utils]Utils/Product[] sortedProducts@24
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [Utils]Utils/Product[] sortedProducts2@42
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> digits@49
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'digits@49-2'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedDigits@50
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -2049,7 +2073,7 @@
              [12] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_12,
              [13] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_13,
              [14] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_14)
-    .line 8,8 : 1,45 
+    .line 8,8 : 1,45 ''
     IL_0000:  nop
     IL_0001:  ldstr      "cherry"
     IL_0006:  ldstr      "apple"
@@ -2062,9 +2086,9 @@
     IL_001f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0024:  dup
-    IL_0025:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::words@8
+    IL_0025:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'words@8-2'
     IL_002a:  stloc.0
-    .line 9,13 : 1,20 
+    .line 9,13 : 1,20 ''
     IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0030:  stloc.s    builder@
     IL_0032:  ldloc.s    builder@
@@ -2087,7 +2111,7 @@
     IL_0057:  dup
     IL_0058:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedWords@9
     IL_005d:  stloc.1
-    .line 16,20 : 1,20 
+    .line 16,20 : 1,20 ''
     IL_005e:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0063:  stloc.s    V_10
     IL_0065:  ldloc.s    V_10
@@ -2110,12 +2134,12 @@
     IL_008a:  dup
     IL_008b:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedWords2@16
     IL_0090:  stloc.2
-    .line 23,23 : 1,32 
+    .line 23,23 : 1,32 ''
     IL_0091:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_0096:  dup
-    IL_0097:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::products@23
+    IL_0097:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'products@23-6'
     IL_009c:  stloc.3
-    .line 24,29 : 1,21 
+    .line 24,29 : 1,21 ''
     IL_009d:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00a2:  stloc.s    V_11
     IL_00a4:  ldloc.s    V_11
@@ -2140,7 +2164,7 @@
     IL_00e5:  dup
     IL_00e6:  stsfld     class [Utils]Utils/Product[] '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedProducts@24
     IL_00eb:  stloc.s    sortedProducts
-    .line 42,46 : 1,21 
+    .line 42,46 : 1,21 ''
     IL_00ed:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00f2:  stloc.s    V_12
     IL_00f4:  ldloc.s    V_12
@@ -2163,7 +2187,7 @@
     IL_0119:  dup
     IL_011a:  stsfld     class [Utils]Utils/Product[] '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedProducts2@42
     IL_011f:  stloc.s    sortedProducts2
-    .line 49,49 : 1,96 
+    .line 49,49 : 1,96 ''
     IL_0121:  ldstr      "zero"
     IL_0126:  ldstr      "one"
     IL_012b:  ldstr      "two"
@@ -2196,9 +2220,9 @@
     IL_0185:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_018a:  dup
-    IL_018b:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::digits@49
+    IL_018b:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::'digits@49-2'
     IL_0190:  stloc.s    digits
-    .line 50,55 : 1,20 
+    .line 50,55 : 1,20 ''
     IL_0192:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0197:  stloc.s    V_13
     IL_0199:  ldloc.s    V_13
@@ -2225,7 +2249,7 @@
     IL_01ca:  dup
     IL_01cb:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedDigits@50
     IL_01d0:  stloc.s    sortedDigits
-    .line 58,64 : 1,21 
+    .line 58,64 : 1,21 ''
     IL_01d2:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01d7:  stloc.s    V_14
     IL_01d9:  ldloc.s    V_14
