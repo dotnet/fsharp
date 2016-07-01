@@ -2,7 +2,7 @@ use vs
 
 package name=Microsoft.FSharp.Dependencies
         version=4.1
-        vs.package.language=en-us
+        vs.package.language=neutral
 
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
   file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
