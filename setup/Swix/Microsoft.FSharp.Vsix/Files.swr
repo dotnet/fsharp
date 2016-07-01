@@ -8,7 +8,7 @@ package name=Microsoft.FSharp.VSIX.$(VSSku)
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.LangPack.$(VSSku)
                 version=4.1
-                type=Optional
+                type=Required
   
   vs.dependency id=Microsoft.FSharp.Dependencies
                 version=4.1

@@ -15,20 +15,20 @@
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
-    <SwixPackageLanguage Condition="'$(IsLangPack)' == 'true'">$(LocaleRegion)</SwixPackageLanguage>
-    <SwixPackageLanguage Condition="'$(IsLangPack)' == 'false'">neutral</SwixPackageLanguage>
-    
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>    
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);SwixPackageLanguage=$(SwixPackageLanguage)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
     <Package Include="Files.swr" />
   </ItemGroup>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <!-- MSI is already signed before wrapping it here -->
+  </Target>
   
   <Target Name="CheckLocaleIsPassed" BeforeTargets="Compile">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
