@@ -43,17 +43,24 @@ type Commits = JsonProvider< const (repoApi + "/commits")>
 
 type Pulls = JsonProvider< const (repoApi + "/pulls")>
 
+//type Comments = JsonProvider< "https://api.github.com/repos/Microsoft/visualfsharp/issues/848/comments">
+//let comments = Comments.GetSamples()
+
 let commits = Commits.GetSamples()
 let pulls = Pulls.GetSamples()
 
-//let buildSpecs = [ for pr in pulls -> (pr.Head.Repo.CloneUrl, pr.Head.Sha, pr.Base.Sha, pr.Head.Ref, pr.Number) ]
+let repoHeadSha = commits.[0].Sha
 
+// Do performance testing on all open PRs that have [CompilerPerf] in the title
 let buildSpecs = 
-  [ 
-    ("https://github.com/dsyme/visualfsharp.git","53d633d6dba0d8f5fcd80f47f588d21cd7a2cff9", "0247247d480340c27ce7f7de9b2fbc3b7c598b03", "no-casts", 1308);
-    ("https://github.com/forki/visualfsharp.git", "d0ab5fec77482e1280578f47e3257cf660d7f1b2", "0247247d480340c27ce7f7de9b2fbc3b7c598b03", "foreach_optimization", 1303);
-    (repo, "0247247d480340c27ce7f7de9b2fbc3b7c598b03", "0247247d480340c27ce7f7de9b2fbc3b7c598b03", "master", 0);
-  ]
+    [ for pr in pulls do
+         //let comments =  Comments.Load(pr.CommentsUrl) 
+         if pr.Title.Contains("[CompilerPerf]") then
+             yield (pr.Head.Repo.CloneUrl, pr.Head.Sha, repoHeadSha, pr.Head.Ref, pr.Number) 
+      //    ("https://github.com/dsyme/visualfsharp.git","53d633d6dba0d8f5fcd80f47f588d21cd7a2cff9", repoHeadSha, "no-casts", 1308);
+      //yield ("https://github.com/forki/visualfsharp.git", "d0ab5fec77482e1280578f47e3257cf660d7f1b2", repoHeadSha, "foreach_optimization", 1303);
+      yield (repo, repoHeadSha, repoHeadSha, "master", 0);
+    ]
 
 
 let time f = 
@@ -68,6 +75,7 @@ let exec cmd args dir =
     let result = Shell.Exec(cmd,args,dir) 
     if result <> 0 then failwith (sprintf "FAILED: %s> %s %s" dir cmd args)
 
+/// Build a specific version of the repo, run compiler perf tests and record the result
 let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
     let branch = "build-" + string prNumber + "-" + ref + "-" + sha.[0..7]
     let dirBase = __SOURCE_DIRECTORY__ 
@@ -123,11 +131,6 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
     ()
 
 
-//build(repo, "0247247d480340c27ce7f7de9b2fbc3b7c598b03", "master", 102)
-//build(repo, "830a1d4379454d8876fd57b13c16e033c1a7eb1c", "master", 101)
-//build(repo, "f47a6bb73e51ce43596c793a1e0a887664ffcfd7", "master", 100)
-
-       
 for info in buildSpecs do 
     try 
         build info
