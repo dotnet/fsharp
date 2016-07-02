@@ -5017,7 +5017,7 @@ module private ScriptPreprocessClosure =
         
         let result : LoadClosure = 
             { SourceFiles = List.groupByFirst !sourceFiles |> List.rev
-              References = List.groupByFirst references
+              References = List.groupByFirst references |> List.rev
               UnresolvedReferences = unresolvedReferences
               Inputs = !sourceInputs
               NoWarns = List.groupByFirst !globalNoWarns
