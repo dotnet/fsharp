@@ -1612,25 +1612,27 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 //            -- for orphaned files (files in VS without a project context)
 //            -- for files given on a command line without --noframework set
 let DefaultBasicReferencesForOutOfProjectSources = 
-    [ yield "System"
+    [ // These are .NET-Framework -style references
+      yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      
-      // Don't reference System.Core for .NET 2.0 compilations.
-      //
-      // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
-      // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
-      // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
-      // in which case the compiler will also be running as a .NET 2.0 process.
-      //
-      // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
-      if (try System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")) |> ignore; true with _ -> false) then 
-          yield "System.Core" 
+      yield "System.Core" 
 
-      yield "System.Runtime"
+      // These are the Portable-profile and .NET Core dependencies of FSharp.Core.dll.  These are needed
+      // when an F# sript references an F# profile 7, 78, 259 or .NET Core component which in turn refers 
+      // to FSharp.Core for profile 7, 78, 259 or .NET Core.
+      yield "System.Runtime" // lots of types
+      yield "System.Linq" // System.Linq.Expressions.Expression<T> 
+      yield "System.Reflection" // System.Reflection.ParameterInfo
+      yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
+      yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
+      yield "System.IO"  //  System.IO.TextWriter
+      yield "System.Collections" // System.Collections.Generic.List<T>
+      yield "System.Threading"  // OperationCanceledException
+
       yield "System.Web"
       yield "System.Web.Services"
       yield "System.Windows.Forms" ]
