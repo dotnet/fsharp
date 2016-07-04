@@ -50,6 +50,11 @@ There are various qualifiers:
     build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite
     build.cmd test-vs         -- build, run Visual F# IDE Tools unit tests
 
+**Notes**
+To build and test Visual F# IDE Tools, you must install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
+Please ensure that the Visual Studio SDK version is matched with your current Visual Studio to ensure successful builds. For example: Visual Studio 2015 Update 1 requires Visual Studio 2015 SDK Update 1. 
+Beginning with Visual Studio 2015, Visual Studio 2015 SDK is not available for separate download. Any installation of Visual Studio 2015 and its updates provides Visual Studio SDK as part of the installation of Visual Studio 2015 as feature installation. 
+
 Combinations are also allowed:
 
     build.cmd debug,compiler,notests   -- build the debug compiler and run smoke tests
