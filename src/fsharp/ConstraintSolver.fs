@@ -160,31 +160,32 @@ type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
 type ConstraintSolverState = 
     { 
-      g: TcGlobals;
-      amap: Import.ImportMap; 
-      InfoReader : InfoReader;
+      g: TcGlobals
+      amap: Import.ImportMap 
+      InfoReader : InfoReader
       TcVal : TcValF
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
       /// each time a solution to an index variable is found. 
-      mutable ExtraCxs:  HashMultiMap<Stamp, (TraitConstraintInfo * range)>;
+      mutable ExtraCxs:  HashMultiMap<Stamp, (TraitConstraintInfo * range)>
     }
 
     static member New(g,amap,infoReader, tcVal) = 
-          { g=g; amap=amap; 
+          { g=g 
+            amap=amap 
             ExtraCxs= HashMultiMap(10, HashIdentity.Structural)
             InfoReader=infoReader
-            TcVal = tcVal } ;
+            TcVal = tcVal } 
 
 
 type ConstraintSolverEnv = 
     { 
-      SolverState: ConstraintSolverState;
+      SolverState: ConstraintSolverState
       eContextInfo: ContextInfo
       MatchingOnly : bool
-      m: range;
-      EquivEnv: TypeEquivEnv;
+      m: range
+      EquivEnv: TypeEquivEnv
       DisplayEnv : DisplayEnv
     }
     member csenv.InfoReader = csenv.SolverState.InfoReader
@@ -192,12 +193,12 @@ type ConstraintSolverEnv =
     member csenv.amap = csenv.SolverState.amap
     
 let MakeConstraintSolverEnv contextInfo css m denv = 
-    { SolverState=css;
-      m=m;
+    { SolverState=css
+      m=m
       eContextInfo = contextInfo
       // Indicates that when unifiying ty1 = ty2, only type variables in ty1 may be solved 
-      MatchingOnly=false;
-      EquivEnv=TypeEquivEnv.Empty; 
+      MatchingOnly=false
+      EquivEnv=TypeEquivEnv.Empty 
       DisplayEnv = denv }
 
 
@@ -303,9 +304,10 @@ let BakedInTraitConstraintNames =
 // Run the constraint solver with undo (used during method overload resolution)
 
 type Trace = 
-    | Trace of (unit -> unit) list ref
-    static member New () =  Trace (ref [])
-    member t.Undo () = let (Trace trace) = t in List.iter (fun a -> a ()) !trace
+    { mutable actions: (unit -> unit) list  }
+    static member New () =  { actions = [] }
+    member t.Undo () = List.iter (fun a -> a ()) t.actions
+    member t.Push f = t.actions <- f :: t.actions
 
 type OptionalTrace = 
     | NoTrace
@@ -417,7 +419,7 @@ let rec TransactStaticReq (csenv:ConstraintSolverEnv) trace (tpr:Typar) req =
         let orig = tpr.StaticReq
         match trace with 
         | NoTrace -> () 
-        | WithTrace (Trace actions) -> actions := (fun () -> tpr.SetStaticReq orig) :: !actions
+        | WithTrace trace -> trace.Push (fun () -> tpr.SetStaticReq orig) 
         tpr.SetStaticReq req;
         CompleteD
 
@@ -446,7 +448,7 @@ let rec TransactDynamicReq trace (tpr:Typar) req =
     let orig = tpr.DynamicReq
     match trace with 
     | NoTrace -> () 
-    | WithTrace (Trace actions) -> actions := (fun () -> tpr.SetDynamicReq orig) :: !actions
+    | WithTrace trace -> trace.Push (fun () -> tpr.SetDynamicReq orig) 
     tpr.SetDynamicReq req;
     CompleteD
 
@@ -673,7 +675,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 trace ty1 ty =
       let tpdata = r.Data
       match trace with 
       | NoTrace -> () 
-      | WithTrace (Trace actions) -> actions := (fun () -> tpdata.typar_solution <- None) :: !actions
+      | WithTrace trace -> trace.Push (fun () -> tpdata.typar_solution <- None) 
       tpdata.typar_solution <- Some ty;
       
   (*   dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
@@ -1343,7 +1345,7 @@ and TransactMemberConstraintSolution traitInfo trace sln  =
     traitInfo.Solution <- Some sln
     match trace with 
     | NoTrace -> () 
-    | WithTrace (Trace actions) -> actions := (fun () -> traitInfo.Solution <- prev) :: !actions
+    | WithTrace trace -> trace.Push (fun () -> traitInfo.Solution <- prev) 
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
@@ -1410,7 +1412,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
 
     match trace with 
     | NoTrace -> () 
-    | WithTrace (Trace actions) -> actions := (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx))) :: !actions
+    | WithTrace trace -> trace.Push (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx))) 
 
     cxs |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
@@ -1437,7 +1439,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
         if not (cxs |> List.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
             match trace with 
             | NoTrace -> () 
-            | WithTrace (Trace actions) -> actions := (fun () -> csenv.SolverState.ExtraCxs.Remove tpn) :: !actions
+            | WithTrace trace -> trace.Push (fun () -> csenv.SolverState.ExtraCxs.Remove tpn) 
             csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))
     );
 
@@ -1613,7 +1615,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         let orig = d.typar_constraints
         begin match trace with 
         | NoTrace -> () 
-        | WithTrace (Trace actions) -> actions := (fun () -> d.typar_constraints <- orig) :: !actions
+        | WithTrace trace -> trace.Push (fun () -> d.typar_constraints <- orig) 
         end;
         d.typar_constraints <- newConstraints;
 
@@ -2409,7 +2411,7 @@ let EliminateConstraintsForGeneralizedTypars csenv trace (generalizedTypars: Typ
             cxst.Remove tpn;
             match trace with 
             | NoTrace -> () 
-            | WithTrace (Trace actions) -> actions := (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))) :: !actions)
+            | WithTrace trace -> trace.Push (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
     )
 
 

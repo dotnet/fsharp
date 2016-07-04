@@ -18,4 +18,3 @@ let dprintf (fmt: Format<_,_,_,_>) =
 let dprintfn (fmt: Format<_,_,_,_>) = 
     Printf.kfprintf dflushn (match !diagnosticsLog with None -> System.IO.TextWriter.Null | Some d -> d) fmt
 
-let setDiagnosticsChannel s = diagnosticsLog := s
