@@ -1922,11 +1922,6 @@ and CanMemberSigsMatchUpToCheck
 //------------------------------------------------------------------------- 
 
 
-and private DefinitelyEquiv (csenv:ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy,m,_,_) as callerArg) = 
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
-    if not (typeEquiv csenv.g calledArgTy callerArgTy) then ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m)) else
-    CompleteD
-  
 // Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
 // to allow us to report the outer types involved in the constraint 
 and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m trace ty1 ty2 =
