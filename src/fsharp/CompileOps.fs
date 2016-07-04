@@ -5076,12 +5076,11 @@ let GetInitialTcEnv (thisAssemblyName:string, initm:range, tcConfig:TcConfig, tc
 
     let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
 
-    let tcEnv = 
-        if tcConfig.checkOverflow then
-            TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
-        else
-            tcEnv
-    tcEnv
+    if tcConfig.checkOverflow then
+        try TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
+        with e -> errorRecovery e initm; tcEnv
+    else
+        tcEnv
 
 //----------------------------------------------------------------------------
 // Fault injection
