@@ -41,7 +41,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open EnvDTE
 
     open Microsoft.Build.BuildEngine
-    open Internal.Utilities.Debug
 
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
