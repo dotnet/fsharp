@@ -422,15 +422,20 @@ let ``Project file parsing -- report files``() =
 
 [<Test>]
 let ``Test ProjectFileNames order for GetProjectOptionsFromScript`` () = // See #594
-    let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/Main.fsx"
-    let scriptSource = File.ReadAllText scriptPath
-    let projOpts =
-        checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
-        |> Async.RunSynchronously
-    projOpts.ProjectFileNames
-    |> Array.map Path.GetFileNameWithoutExtension
-    |> (=) [|"BaseLib"; "Lib1"; "Lib2"; "Main"|]
-    |> shouldEqual true
+    let test scriptName expected =
+        let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
+        let scriptSource = File.ReadAllText scriptPath
+        let projOpts =
+            checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
+            |> Async.RunSynchronously
+        projOpts.ProjectFileNames
+        |> Array.map Path.GetFileNameWithoutExtension
+        |> (=) expected
+        |> shouldEqual true
+    test "Main1" [|"BaseLib1"; "Lib1"; "Lib2"; "Main1"|]
+    test "Main2" [|"BaseLib1"; "Lib1"; "Lib2"; "Lib3"; "Main2"|]
+    test "Main3" [|"Lib3"; "Lib4"; "Main3"|]
+    test "Main4" [|"BaseLib2"; "Lib5"; "BaseLib1"; "Lib1"; "Lib2"; "Main4"|]
 
 
 
