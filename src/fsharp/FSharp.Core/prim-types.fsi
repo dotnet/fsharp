@@ -1276,13 +1276,7 @@ namespace System
         interface IComparable
         new : 'T1 -> Tuple<'T1>
         member Item1 : 'T1 with get
-#if TUPLE_STRUXT
-    [<Struct>]
-    type Tuple<'T1,'T2> = 
-        new : 'T1 * 'T2 -> Tuple<'T1,'T2> 
-        val Item1 : 'T1 
-        val Item2 : 'T2 //                
-#else
+
     type Tuple<'T1,'T2> =  
         interface IStructuralEquatable
         interface IStructuralComparable
@@ -1290,7 +1284,6 @@ namespace System
         new : 'T1 * 'T2 -> Tuple<'T1,'T2>
         member Item1 : 'T1 with get
         member Item2 : 'T2 with get
-#endif
 
     type Tuple<'T1,'T2,'T3> = 
         interface IStructuralEquatable
@@ -3416,3 +3409,97 @@ namespace Microsoft.FSharp.Control
     /// activated when the event is triggered). </summary>
     type IEvent<'T> = IEvent<Handler<'T>, 'T>
 
+namespace System
+    open Microsoft.FSharp.Core
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1> =
+        new : 'T1 -> StructTuple<'T1>
+        member Item1 : 'T1
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2> = 
+        new : 'T1 * 'T2 -> StructTuple<'T1,'T2> 
+        member Item1 : 'T1
+        member Item2 : 'T2
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3> = 
+        new : 'T1 * 'T2 * 'T3 -> StructTuple<'T1,'T2,'T3>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4> = 
+        new : 'T1 * 'T2 * 'T3 * 'T4 -> StructTuple<'T1,'T2,'T3,'T4>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+        member Item4 : 'T4
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5> = 
+        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> StructTuple<'T1,'T2,'T3,'T4,'T5>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+        member Item4 : 'T4
+        member Item5 : 'T5
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6> = 
+        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6-> StructTuple<'T1,'T2,'T3,'T4,'T5,'T6>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+        member Item4 : 'T4
+        member Item5 : 'T5
+        member Item6 : 'T6
+
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
+        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+        member Item4 : 'T4
+        member Item5 : 'T5
+        member Item6 : 'T6
+        member Item7 : 'T7
+        
+    /// <summary>Compiled versions of F# struct tuple types. These are not used directly, though
+    /// these compiled forms are seen by other CLI languages.</summary>
+    [<Struct>]
+    [<StructuralComparison; StructuralEquality>]
+    type StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> = 
+        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 * 'TRest -> StructTuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>
+        member Item1 : 'T1
+        member Item2 : 'T2
+        member Item3 : 'T3
+        member Item4 : 'T4
+        member Item5 : 'T5
+        member Item6 : 'T6
+        member Item7 : 'T7
+        member Rest  : 'TRest

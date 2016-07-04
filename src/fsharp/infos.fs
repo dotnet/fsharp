@@ -85,7 +85,7 @@ let GetSuperTypeOfType g amap m typ =
             Some g.system_Array_typ
         elif isRefTy g typ && not (isObjTy g typ) then 
             Some g.obj_ty
-        elif isTupleStructTy g typ then 
+        elif isStructTupleTy g typ then 
             Some g.obj_ty
         elif isRecdTy g typ || isUnionTy g typ then
             Some g.obj_ty

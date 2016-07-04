@@ -997,7 +997,7 @@ module Pass4_RewriteAssembly =
             let m = fOrig.Range
             let tps,vss,_b,rty = stripTopLambda (b,fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m) 
-            let vsExprs   = vss |> List.map (mkTupledVars penv.g m) 
+            let vsExprs   = vss |> List.map (mkRefTupledVars penv.g m) 
             let fHat      = Zmap.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
