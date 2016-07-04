@@ -4924,38 +4924,32 @@ module private ScriptPreprocessClosure =
             match closureDirective with 
             | ClosedSourceFile _ as csf -> [csf]
             | SourceFile(filename,m,source) ->
-                let filename = FileSystem.GetFullPathShim(filename)
-                if observedSources.HaveSeen(filename) then [] 
-                else     
-                    observedSources.SetSeen(filename)
-                    
-                    let errors = ref []
-                    let warnings = ref [] 
-                    let errorLogger = 
-                         { new ErrorLogger("FindClosure") with 
-                               member x.ErrorSinkImpl(e) = errors := e :: !errors
-                               member x.WarnSinkImpl(e) = warnings := e :: !warnings
-                               member x.ErrorCount = (!errors).Length }                        
+                let errors = ref []
+                let warnings = ref [] 
+                let errorLogger = 
+                        { new ErrorLogger("FindClosure") with 
+                            member x.ErrorSinkImpl(e) = errors := e :: !errors
+                            member x.WarnSinkImpl(e) = warnings := e :: !warnings
+                            member x.ErrorCount = (!errors).Length }                        
 
-                    use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                    let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                    match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
-                    | Some(input) ->                    
-                        let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (input,pathOfMetaCommandSource)
-                        tcConfig := tcConfigResult
+                use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
+                match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
+                | Some(input) ->                    
+                    let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (input,pathOfMetaCommandSource)
+                    tcConfig := tcConfigResult
                         
-                        let AddFileIfNotSeen(m,filename) = 
-                            if observedSources.HaveSeen(filename) then []
-                            else
-                                if IsScript(filename) then SourceFileOfFilename(filename,m,tcConfigResult.inputCodePage)
-                                else 
-                                    observedSources.SetSeen(filename)
-                                    [ClosedSourceFile(filename,m,None,[],[],[])] // Don't traverse into .fs leafs.
+                    let AddFileIfNotSeen(m,filename) = 
+                        if observedSources.HaveSeen(filename) then []
+                        else
+                            observedSources.SetSeen(filename)
+                            if IsScript(filename) then SourceFileOfFilename(filename,m,tcConfigResult.inputCodePage)
+                            else [ClosedSourceFile(filename,m,None,[],[],[])] // Don't traverse into .fs leafs.
                         
-                        let loadedSources = (!tcConfig).GetAvailableLoadedSources() |> List.rev |> List.map AddFileIfNotSeen |> List.concat
-                        (loadedSources |> List.map FindClosure |> List.concat)
-                            @  [ClosedSourceFile(filename,m,Some(input),!errors,!warnings,!noWarns)]
-                    | None -> [ClosedSourceFile(filename,m,None,!errors,!warnings,[])]
+                    let loadedSources = (!tcConfig).GetAvailableLoadedSources() |> List.map AddFileIfNotSeen |> List.concat
+                    (loadedSources |> List.map FindClosure |> List.concat)
+                        @  [ClosedSourceFile(filename,m,Some(input),!errors,!warnings,!noWarns)]
+                | None -> [ClosedSourceFile(filename,m,None,!errors,!warnings,[])]
 
         closureDirectives |> List.map FindClosure |> List.concat, !tcConfig
         
@@ -4973,7 +4967,7 @@ module private ScriptPreprocessClosure =
         let sourceFiles = ref []
         let sourceInputs = ref []
         let globalNoWarns = ref []
-        for directive in closureDirectives do
+        for directive in List.rev closureDirectives do
             match directive with 
             | ClosedSourceFile(filename,m,input,_,_,noWarns) -> 
                 let filename = FileSystem.GetFullPathShim(filename)
@@ -5016,8 +5010,8 @@ module private ScriptPreprocessClosure =
         let rootWarnings = rootWarnings |> List.filter isRootRange
         
         let result : LoadClosure = 
-            { SourceFiles = List.groupByFirst !sourceFiles |> List.rev
-              References = List.groupByFirst references |> List.rev
+            { SourceFiles = List.groupByFirst !sourceFiles
+              References = List.groupByFirst references
               UnresolvedReferences = unresolvedReferences
               Inputs = !sourceInputs
               NoWarns = List.groupByFirst !globalNoWarns
