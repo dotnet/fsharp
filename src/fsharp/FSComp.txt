@@ -1302,6 +1302,7 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3194,optsResponseFileNotFound,"Response file '%s' not found in '%s'"
 3195,optsResponseFileNameInvalid,"Response file name '%s' is empty, contains invalid characters, has a drive specification without an absolute path, or is too long"
 3196,fsharpCoreNotFoundToBeCopied,"Cannot find FSharp.Core.dll in compiler's directory"
+tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a reference tuple"
 3197,etMissingStaticArgumentsToMethod,"This provided method requires static parameters"
 3198,considerUpcast,"The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using 'upcast' instead of 'downcast'."
 3198,considerUpcastOperator,"The conversion from %s to %s is a compile-time safe upcast, not a downcast. Consider using the :> (upcast) operator instead of the :?> (downcast) operator."
