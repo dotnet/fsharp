@@ -7,6 +7,9 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Internal.Utilities
 
 let diagnosticsLog = ref (Some stdout)
+
+let setDiagnosticsChannel s = diagnosticsLog := s 
+
 let dflushn () = match !diagnosticsLog with None -> () | Some d -> d.WriteLine(); d.Flush()
 let dflush () = match !diagnosticsLog with None -> () | Some d -> d.Flush()
 let dprintn (s:string) = 
