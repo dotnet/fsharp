@@ -475,7 +475,6 @@ and CheckVal (cenv:cenv) (env:env) v m context =
     CheckTypePermitByrefs cenv env m v.Type
     
 and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =    
-    // dprintf "CheckExpr: %s\n" (showL(exprL expr))
     let expr = stripExpr expr
 
     match expr with
