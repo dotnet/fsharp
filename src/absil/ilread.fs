@@ -2692,6 +2692,7 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
           !b = (i_unaligned &&& 0xff) ||
           !b = (i_volatile &&& 0xff) ||
           !b = (i_tail &&& 0xff)) do
+         begin
              if !b = (i_unaligned &&& 0xff) then
                let unal = seekReadByteAsInt32 ctxt.is (start + (!curr))
                incr curr
@@ -2708,6 +2709,7 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
                  let typ = seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty (uncodedTokenToTypeDefOrRefOrSpec uncoded)
                  prefixes.constrained <- Some typ
              else prefixes.tl <- Tailcall
+         end
          get ()
      end
 
