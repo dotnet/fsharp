@@ -512,6 +512,12 @@ let TestFunction9e(x) =
     | [a;b] when a+b = 4 -> "four"
     | _ -> "big"
 
+let TestFunction22() =
+    let x1 = if DateTime.Now.Day = 0 then DateTime.Now.Day else DateTime.MinValue.Day
+    let x2 = if DateTime.Now.Day = 1 then DateTime.Now.Day else DateTime.MinValue.Day
+    let x3 = if DateTime.Now.Day > 1 then DateTime.Now.Day else DateTime.MinValue.Day
+    (x1,x2,x3)
+
 
 SteppingMatch01 (Choice1Of2 3)
 SteppingMatch01 (Choice2Of2 3)
@@ -561,6 +567,8 @@ TestFunction16 3
 TestFunction17 3
 TestFunction18 3
 TestFunction19 3
+TestFunction21(U2(3,4))
+TestFunction22()
 
 AsyncExpressionSteppingTest1() |> Async.RunSynchronously
 AsyncExpressionSteppingTest2() |> Async.RunSynchronously
