@@ -5664,7 +5664,7 @@ module Regression_139182 =
 
 module LittleTestFor823 = 
     let x, y = 1, 2
-    let v = Some (x = y, x = x)
+    let v = Some ((x = y), (x = x))
 
 (*---------------------------------------------------------------------------
 !* wrap up
