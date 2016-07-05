@@ -488,6 +488,29 @@ module rec Ok8 =
         let create() = 1
 
 
+module Ok9 = 
+
+    type A() = 
+        member x.P = 1
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+
+
+module rec Ok10 = 
+
+    type A() = 
+        member x.P = 1
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
