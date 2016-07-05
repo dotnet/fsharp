@@ -331,6 +331,8 @@ type IncrementalOptimizationEnv =
       // contains any of these variables then don't split it, for fear of mucking up tailcalls.
       // See FSharp 1.0 bug 2892
       dontSplitVars: ValMap<unit>;  
+      // Disable method splittingin loops
+      inLoop: bool;
       /// The Val for the function binding being generated, if any. 
       functionVal: (Val * Tast.ValReprInfo) option;
       typarInfos: (Typar * TypeValueInfo) list; 
@@ -343,6 +345,7 @@ type IncrementalOptimizationEnv =
           typarInfos = [];
           functionVal = None; 
           dontSplitVars = ValMap.Empty;
+          inLoop = false
           localExternalVals = LayeredMap.Empty; 
           globalModuleInfos = LayeredMap.Empty }
 
@@ -1856,8 +1859,8 @@ and OptimizeExprOp cenv env (op,tyargs,args,m) =
           MightMakeCriticalTailcall = false;
           Info = UnknownValue }
     (* Handle these as special cases since mutables are allowed inside their bodies *)
-    | TOp.While (spWhile,marker),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)]  -> OptimizeWhileLoop cenv env (spWhile,marker,e1,e2,m) 
-    | TOp.For(spStart,dir),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_);Expr.Lambda(_,_,_,[v],e3,_,_)]  -> OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) 
+    | TOp.While (spWhile,marker),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)]  -> OptimizeWhileLoop cenv { env with inLoop=true } (spWhile,marker,e1,e2,m) 
+    | TOp.For(spStart,dir),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_);Expr.Lambda(_,_,_,[v],e3,_,_)]  -> OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart,v,e1,dir,e2,e3,m) 
     | TOp.TryFinally(spTry,spFinally),[resty],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)] -> OptimizeTryFinally cenv env (spTry,spFinally,e1,e2,m,resty)
     | TOp.TryCatch(spTry,spWith),[resty],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[vf],ef,_,_); Expr.Lambda(_,_,_,[vh],eh,_,_)] -> OptimizeTryCatch cenv env (e1,vf,ef,vh,eh,m,resty,spTry,spWith)
     | TOp.TraitCall(traitInfo),[],args -> OptimizeTraitCall cenv env (traitInfo, args, m) 
@@ -2818,6 +2821,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e,einfo) =
     // REVIEW: This should only apply to methods that actually make self-tailcalls (tested further below).
     // Old comment "don't mess with taking guaranteed tailcalls if used with --no-tailcalls!" 
     cenv.emitTailcalls &&
+    not env.inLoop &&
     einfo.FunctionSize >= threshold &&
 
      // We can only split an expression out as a method if certain conditions are met. 
