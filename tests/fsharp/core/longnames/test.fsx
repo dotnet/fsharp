@@ -533,6 +533,19 @@ module Ok9 =
 
     test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
+
+module Ok9b = 
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+
+    test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 module rec Ok10 = 
 
     type A() = 
