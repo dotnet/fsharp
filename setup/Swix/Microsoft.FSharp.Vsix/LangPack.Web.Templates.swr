@@ -4,15 +4,6 @@ package name=Microsoft.FSharp.VSIX.$(VSSku)
         version=4.1
         vs.package.language=$(LocaleRegion)
 
-vs.dependencies
-  vs.dependency id=Microsoft.FSharp.Dependencies
-                version=4.1
-                type=Required
-  
-  vs.dependency id=Microsoft.FSharp.SDK
-                version=4.1
-                type=Required
-
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\LibraryProject"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\AssemblyInfo.fs"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.fsproj"
