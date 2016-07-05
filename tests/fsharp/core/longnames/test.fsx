@@ -511,6 +511,27 @@ module rec Ok10 =
     module A = 
         let create() = 1
 
+module Ok11 = 
+
+    type A = int
+
+    module A = 
+        let create() = 1
+
+module Ok12 = 
+
+    type A = A
+
+    module A = 
+        let create() = 1
+
+module Ok13 = 
+
+    type A = A of string
+
+    module A = 
+        let create() = 1
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
