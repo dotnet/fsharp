@@ -16,12 +16,9 @@
     <Target Name="IncludeManifests" BeforeTargets="MergeManifests">
         <ItemGroup>
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
-            
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.json" />
+            <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix.swixproj -->
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.%(SetupLanguages.LocaleCode).json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
-            
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.LangPack.Full.%(SetupLanguages.LocaleCode).json"
-                           Condition="'%(SetupLanguages.IsLangPack)' == 'true'" />
         </ItemGroup>
     </Target>
 </Project>

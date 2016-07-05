@@ -1,15 +1,17 @@
 use vs
 
-package name=Microsoft.FSharp.LangPack.$(VSSku)
+package name=Microsoft.FSharp.VSIX.$(VSSku)
         version=4.1
         vs.package.language=$(LocaleRegion)
 
-folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\ConsoleProject"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\App.config"
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\ConsoleProject\AssemblyInfo.fs"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.fsproj"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.vstemplate"
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\ConsoleProject\Program.fs"
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.Dependencies
+                version=4.1
+                type=Required
+  
+  vs.dependency id=Microsoft.FSharp.SDK
+                version=4.1
+                type=Required
 
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\LibraryProject"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\AssemblyInfo.fs"
@@ -17,6 +19,13 @@ folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\LibraryProjec
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.vstemplate"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library1.fs"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\Script.fsx"
+
+folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\SilverlightProject"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\SilverlightProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\Library1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\SilverlightProject\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\SilverlightLibrary.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\SilverlightLibrary.vstemplate"
 
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\TutorialProject"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsproj"

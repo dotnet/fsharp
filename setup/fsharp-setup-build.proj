@@ -30,46 +30,18 @@
                     TaskParameter="Include"/>
         </CreateItem>     
         
+        <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix.swixproj -->
+        
         <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Full"
-                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj;VSSku=Full">
             <Output ItemName="SetupProjects"
                     TaskParameter="Include"/>
         </CreateItem>
         
-        <!--
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Desktop"
-                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
-            <Output ItemName="SetupProjects"
-                    TaskParameter="Include"/>
-        </CreateItem>
-        
-        <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.LangPack\Microsoft.FSharp.LangPack.swixproj;VSSku=Web"
-                    Condition="'%(SetupLanguages.IsLangPack)' == 'true'">
-            <Output ItemName="SetupProjects"
-                    TaskParameter="Include"/>
-        </CreateItem>
-        -->
         <ItemGroup>
             <SetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
                 <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
             </SetupProjects>            
-            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
-                <VSSku>Full</VSSku>
-            </SetupProjects>
-            <!--
-            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
-                <VSSku>Desktop</VSSku>
-            </SetupProjects>
-            <SetupProjects Include="Microsoft.FSharp.Vsix.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Vsix\Microsoft.FSharp.Vsix.swixproj</ProjectPath>
-                <VSSku>Web</VSSku>
-            </SetupProjects>
-            -->
             <SetupProjects Include="Microsoft.FSharp.vsmanproj">
                 <ProjectPath>Swix\Microsoft.FSharp.vsmanproj</ProjectPath>
             </SetupProjects>
