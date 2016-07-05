@@ -413,6 +413,81 @@ module TestsForUsingTypeNamesAsValuesWhenTheTypeHasAConstructor = begin
 
 end
 
+module Ok1 = 
+
+    module A =
+        let create() = 1
+
+
+    type A() = 
+        member x.P = 1
+
+module Ok2 = 
+
+    type A() = 
+        member x.P = 1
+
+
+    module A =
+        let create() = 1
+
+module Ok3 = 
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+
+    type A() = 
+        member x.P = 1
+
+module Ok4 = 
+
+    type A() = 
+        member x.P = 1
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+
+
+
+module rec Ok5 = 
+
+    module A =
+        let create() = 1
+
+
+    type A() = 
+        member x.P = 1
+
+module rec Ok6 = 
+
+    type A() = 
+        member x.P = 1
+
+
+    module A =
+        let create() = 1
+
+module rec Ok7 = 
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+
+    type A() = 
+        member x.P = 1
+
+module rec Ok8 = 
+
+    type A() = 
+        member x.P = 1
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
