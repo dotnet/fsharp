@@ -417,10 +417,14 @@ module Ok1 =
 
     module A =
         let create() = 1
+        type Dummy = A | B
 
 
     type A() = 
         member x.P = 1
+
+    test "lkneecec09iew1" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module Ok2 = 
 
@@ -430,15 +434,23 @@ module Ok2 =
 
     module A =
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew2" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module Ok3 = 
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module A = 
         let create() = 1
+        type Dummy = A | B
 
     type A() = 
         member x.P = 1
+
+    test "lkneecec09iew3" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module Ok4 = 
 
@@ -448,6 +460,9 @@ module Ok4 =
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew4" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 
 
@@ -455,10 +470,14 @@ module rec Ok5 =
 
     module A =
         let create() = 1
+        type Dummy = A | B
 
 
     type A() = 
         member x.P = 1
+
+    test "lkneecec09iew5" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module rec Ok6 = 
 
@@ -468,15 +487,23 @@ module rec Ok6 =
 
     module A =
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew6" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module rec Ok7 = 
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module A = 
         let create() = 1
+        type Dummy = A | B
 
     type A() = 
         member x.P = 1
+
+    test "lkneecec09iew7" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
 
 module rec Ok8 = 
 
@@ -486,6 +513,9 @@ module rec Ok8 =
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew8" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 
 module Ok9 = 
@@ -498,7 +528,10 @@ module Ok9 =
 
     module A = 
         let create() = 1
+        type Dummy = A | B
 
+
+    test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 module rec Ok10 = 
 
@@ -510,6 +543,9 @@ module rec Ok10 =
 
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew10" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 module Ok11 = 
 
@@ -517,6 +553,9 @@ module Ok11 =
 
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew11" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 module Ok12 = 
 
@@ -524,6 +563,9 @@ module Ok12 =
 
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew12" (typeof<A.Dummy>.FullName.Contains("AModule") )
 
 module Ok13 = 
 
@@ -531,6 +573,40 @@ module Ok13 =
 
     module A = 
         let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew13" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok14 = 
+
+    module X = 
+        type A = A of string
+
+    type X.A with 
+        member x.P = 1
+
+    module A =  // the type definition is an augmentation so doesn't get the suffix
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew14" (not (typeof<A.Dummy>.FullName.Contains("AModule") )) 
+
+module rec Ok15 = 
+
+    open X
+    
+    module X = 
+        type A = A of string
+
+    type A with 
+        member x.P = 1
+
+    module A =  // the type definition is an augmentation so doesn't get the suffix
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew15" (not (typeof<A.Dummy>.FullName.Contains("AModule") )) 
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
