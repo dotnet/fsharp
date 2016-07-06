@@ -4018,7 +4018,7 @@ and TypedImplFile = TImplFile of QualifiedNameOfFile * ScopedPragma list * Modul
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
-and TypedAssembly = TAssembly of TypedImplFile list
+and TypedAssemblyAfterOptimization = TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
 
 //---------------------------------------------------------------------------
 // Freevars.  Computed and cached by later phases (never computed type checking).  Cached in terms. Not pickled.
