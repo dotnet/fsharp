@@ -1315,11 +1315,7 @@ module Pass4_RewriteAssembly =
 
     let TransImplFile penv z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) =        
         let moduleExpr,z = TransModuleExpr penv z moduleExpr
-        TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript),z
-
-    let TransAssembly penv z (TAssembly(mvs)) = 
-        let mvs,_z = List.mapFold (TransImplFile penv) z mvs 
-        TAssembly(mvs)
+        (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)),z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr

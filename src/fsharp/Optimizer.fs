@@ -3192,11 +3192,12 @@ let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementa
           g=tcGlobals 
           amap=importMap
           optimizing=true
-          localInternalVals=new System.Collections.Generic.Dictionary<Stamp,ValInfo>(10000)
+          localInternalVals=Dictionary<Stamp,ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=new Dictionary<Stamp,bool>() }
-    OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
-
+    let (optEnvNew,_,_,_ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+    let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
+    results, optimizeDuringCodeGen
 
 //-------------------------------------------------------------------------
 // Pickle to stable format for cross-module optimization data

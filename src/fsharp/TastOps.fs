@@ -3378,9 +3378,9 @@ module DebugPrint = begin
         then leftL "{" ^^ (rangeL expr.Range ^^ rightL ":") ++ lay ^^ rightL "}"
         else lay
 
-    and assemblyL (TAssembly(implFiles)) = 
+    and implFilesL implFiles = 
         aboveListL (List.map implFileL implFiles)
-    
+
     and appL flayout tys args =
         let z = flayout
         let z = z ^^ instL typeL tys
@@ -4971,10 +4971,6 @@ and remapAndRenameModBind g compgen tmenv x =
 and remapImplFile g compgen tmenv mv = 
     mapAccImplFile (remapAndBindModExpr g compgen) tmenv mv
 
-and remapAssembly g compgen tmenv (TAssembly(mvs)) = 
-    let mvs,z = List.mapFold (remapImplFile g compgen) tmenv mvs
-    TAssembly(mvs),z
-
 let copyModuleOrNamespaceType     g compgen mtyp = copyAndRemapAndBindModTy g compgen Remap.Empty mtyp |> fst
 let copyExpr     g compgen e    = remapExpr g compgen Remap.Empty e    
 let copyImplFile g compgen e    = remapImplFile g compgen Remap.Empty e |> fst
@@ -5761,12 +5757,10 @@ let mkFolders (folders : _ ExprFolder) =
 
     and implF z x = foldTImplFile mexprF z x
 
-    and implsF z (TAssembly(x)) = List.fold implF z x
-   
-    exprF, implF,implsF
+    exprF, implF
 
-let FoldExpr     folders = let exprF,_,_ = mkFolders folders in exprF
-let FoldImplFile folders = let _,implF,_ = mkFolders folders in implF
+let FoldExpr     folders = let exprF,_ = mkFolders folders in exprF
+let FoldImplFile folders = let _,implF = mkFolders folders in implF
 
 #if DEBUG
 //-------------------------------------------------------------------------
