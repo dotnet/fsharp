@@ -3472,8 +3472,8 @@ namespace Microsoft.FSharp.Core
 
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
-    type Result<'TOk,'TError> = 
-        | Ok of 'TOk 
+    type Result<'T,'TError> = 
+        | Ok of 'T 
         | Error of 'TError
 
 
