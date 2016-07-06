@@ -14163,7 +14163,6 @@ module EstablishTypeDefinitionCores =
 
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
         CheckForDuplicateConcreteType env id.idText id.idRange
-        //CheckForDuplicateModule env id.idText id.idRange
         let vis,cpath = ComputeAccessAndCompPath env None id.idRange synVis parent
 
         // Establish the visibility of the representation, e.g.
