@@ -7,8 +7,6 @@ module internal MSBuildResolver =
 
     exception ResolutionFailure
 
-    val SupportedNetFrameworkVersions : Set<string>
-
     val HighestInstalledNetFrameworkVersionMajorMinor : unit -> int * string
     
     /// Describes the location where the reference was found.
