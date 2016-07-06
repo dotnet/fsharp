@@ -213,15 +213,10 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                               '$(TargetFramework)' == 'portable47' OR 
-                                               '$(TargetFramework)' == 'XNA\5.0' OR 
-                                               '$(TargetFramework)' == 'sl3-wp' "/>
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/>
-    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                                '$(TargetFramework)' == 'portable47' OR 
-                                                '$(TargetFramework)' == 'XNA\5.0' OR 
-                                                '$(TargetFramework)' == 'sl3-wp' "/>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'portable47' and '$(TargetFramework)' != 'coreclr'">
+    <Reference Include="System.ValueTuple"><HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath></Reference>
+    <Reference Include="System.Runtime" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />

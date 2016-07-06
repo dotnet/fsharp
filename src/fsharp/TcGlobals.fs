@@ -781,14 +781,14 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let ref_tuple6_tcr      = mkSysTyconRef sys "Tuple`6" 
   let ref_tuple7_tcr      = mkSysTyconRef sys "Tuple`7" 
   let ref_tuple8_tcr      = mkSysTyconRef sys "Tuple`8" 
-  let struct_tuple1_tcr      = mkSysTyconRef sys "StructTuple`1" 
-  let struct_tuple2_tcr      = mkSysTyconRef sys "StructTuple`2" 
-  let struct_tuple3_tcr      = mkSysTyconRef sys "StructTuple`3" 
-  let struct_tuple4_tcr      = mkSysTyconRef sys "StructTuple`4" 
-  let struct_tuple5_tcr      = mkSysTyconRef sys "StructTuple`5" 
-  let struct_tuple6_tcr      = mkSysTyconRef sys "StructTuple`6" 
-  let struct_tuple7_tcr      = mkSysTyconRef sys "StructTuple`7" 
-  let struct_tuple8_tcr      = mkSysTyconRef sys "StructTuple`8" 
+  let struct_tuple1_tcr      = mkSysTyconRef sys "ValueTuple`1" 
+  let struct_tuple2_tcr      = mkSysTyconRef sys "ValueTuple`2" 
+  let struct_tuple3_tcr      = mkSysTyconRef sys "ValueTuple`3" 
+  let struct_tuple4_tcr      = mkSysTyconRef sys "ValueTuple`4" 
+  let struct_tuple5_tcr      = mkSysTyconRef sys "ValueTuple`5" 
+  let struct_tuple6_tcr      = mkSysTyconRef sys "ValueTuple`6" 
+  let struct_tuple7_tcr      = mkSysTyconRef sys "ValueTuple`7" 
+  let struct_tuple8_tcr      = mkSysTyconRef sys "ValueTuple`8" 
   
   let choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2" 
   let choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3" 
@@ -1321,13 +1321,13 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
               "Tuple`6",       ref_tuple6_tcr, decodeTupleTy tupInfoRef
               "Tuple`7",       ref_tuple7_tcr, decodeTupleTy tupInfoRef
               "Tuple`8",       ref_tuple8_tcr, decodeTupleTy tupInfoRef
-              "StructTuple`2",       struct_tuple2_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`3",       struct_tuple3_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`4",       struct_tuple4_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`5",       struct_tuple5_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`6",       struct_tuple6_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`7",       struct_tuple7_tcr, decodeTupleTy tupInfoStruct
-              "StructTuple`8",       struct_tuple8_tcr, decodeTupleTy tupInfoStruct] 
+              "ValueTuple`2",       struct_tuple2_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`3",       struct_tuple3_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`4",       struct_tuple4_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`5",       struct_tuple5_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`6",       struct_tuple6_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`7",       struct_tuple7_tcr, decodeTupleTy tupInfoStruct
+              "ValueTuple`8",       struct_tuple8_tcr, decodeTupleTy tupInfoStruct] 
 
         let entries = (entries1 @ entries2)
         

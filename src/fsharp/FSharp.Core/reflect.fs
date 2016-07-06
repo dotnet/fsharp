@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // Reflection on F# values. Analyze an object to see if it the representation
 // of an F# value.
@@ -374,7 +374,7 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
-    
+
     let tuple1 = typedefof<Tuple<obj>>
     let tuple2 = typedefof<obj * obj>
     let tuple3 = typedefof<obj * obj * obj>
@@ -383,15 +383,6 @@ module internal Impl =
     let tuple6 = typedefof<obj * obj * obj * obj * obj * obj>
     let tuple7 = typedefof<obj * obj * obj * obj * obj * obj * obj>
     let tuple8 = typedefof<obj * obj * obj * obj * obj * obj * obj * obj>
-
-    let stuple1 = typedefof<StructTuple<obj>>
-    let stuple2 = typedefof<StructTuple<obj,obj>>
-    let stuple3 = typedefof<StructTuple<obj,obj,obj>>
-    let stuple4 = typedefof<StructTuple<obj,obj,obj,obj>>
-    let stuple5 = typedefof<StructTuple<obj,obj,obj,obj,obj>>
-    let stuple6 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj>>
-    let stuple7 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj,obj>>
-    let stuple8 = typedefof<StructTuple<obj,obj,obj,obj,obj,obj,obj,obj>>
 
     let isTuple1Type typ = equivHeadTypes typ tuple1
     let isTuple2Type typ = equivHeadTypes typ tuple2
@@ -402,58 +393,136 @@ module internal Impl =
     let isTuple7Type typ = equivHeadTypes typ tuple7
     let isTuple8Type typ = equivHeadTypes typ tuple8
 
-    let isStructTuple1Type typ = equivHeadTypes typ stuple1
-    let isStructTuple2Type typ = equivHeadTypes typ stuple2
-    let isStructTuple3Type typ = equivHeadTypes typ stuple3
-    let isStructTuple4Type typ = equivHeadTypes typ stuple4
-    let isStructTuple5Type typ = equivHeadTypes typ stuple5
-    let isStructTuple6Type typ = equivHeadTypes typ stuple6
-    let isStructTuple7Type typ = equivHeadTypes typ stuple7
-    let isStructTuple8Type typ = equivHeadTypes typ stuple8
+    let mutable systemValueTupleException = null
+
+#if !FX_NO_STRUCTTUPLE
+    let reflectedValueTuple n =
+        try
+            let a = Assembly.Load(new AssemblyName("System.ValueTuple"))
+            match n with
+            | 1 -> Some (a.GetType("System.ValueTuple`1"))
+            | 2 -> Some (a.GetType("System.ValueTuple`2"))
+            | 3 -> Some (a.GetType("System.ValueTuple`3"))
+            | 4 -> Some (a.GetType("System.ValueTuple`4"))
+            | 5 -> Some (a.GetType("System.ValueTuple`5"))
+            | 6 -> Some (a.GetType("System.ValueTuple`6"))
+            | 7 -> Some (a.GetType("System.ValueTuple`7"))
+            | 8 -> Some (a.GetType("System.ValueTuple`8"))
+            | 0 -> Some (a.GetType("System.ValueTuple"))
+            | _ -> None
+        with | :? System.IO.FileNotFoundException as e -> 
+            systemValueTupleException <- e
+            None
+
+    let reflectedValueTupleType n parms =
+        match reflectedValueTuple n with
+        | Some t -> Some (t.MakeGenericType(parms))
+        | None -> None
+
+    let deOption (o: option<Type>) =
+        match o with 
+        | Some v -> v
+        | None -> Unchecked.defaultof<Type>
+
+    let stuple1 = reflectedValueTupleType 1 [| typedefof<obj> |]
+    let stuple2 = reflectedValueTupleType 2 [| typedefof<obj>; typedefof<obj> |]
+    let stuple3 = reflectedValueTupleType 3 [| typedefof<obj>; typedefof<obj>; typedefof<obj> |]
+    let stuple4 = reflectedValueTupleType 4 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
+    let stuple5 = reflectedValueTupleType 5 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
+    let stuple6 = reflectedValueTupleType 6 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
+    let stuple7 = reflectedValueTupleType 7 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
+    let stuple8 = reflectedValueTupleType 8 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; deOption(reflectedValueTuple 0) |]
+
+    let structTupleEquivHeadTypes typ stuple =
+        match stuple with
+        | Some s -> equivHeadTypes typ s
+        | None -> false
+
+    let isStructTuple1Type typ = structTupleEquivHeadTypes typ stuple1
+    let isStructTuple2Type typ = structTupleEquivHeadTypes typ stuple2
+    let isStructTuple3Type typ = structTupleEquivHeadTypes typ stuple3
+    let isStructTuple4Type typ = structTupleEquivHeadTypes typ stuple4
+    let isStructTuple5Type typ = structTupleEquivHeadTypes typ stuple5
+    let isStructTuple6Type typ = structTupleEquivHeadTypes typ stuple6
+    let isStructTuple7Type typ = structTupleEquivHeadTypes typ stuple7
+    let isStructTuple8Type typ = structTupleEquivHeadTypes typ stuple8
+#endif
 
     let isTupleType typ = 
-           isTuple1Type typ
-        || isTuple2Type typ
-        || isTuple3Type typ 
-        || isTuple4Type typ 
-        || isTuple5Type typ 
-        || isTuple6Type typ 
-        || isTuple7Type typ 
-        || isTuple8Type typ
-        || isStructTuple1Type typ
-        || isStructTuple2Type typ
-        || isStructTuple3Type typ 
-        || isStructTuple4Type typ 
-        || isStructTuple5Type typ 
-        || isStructTuple6Type typ 
-        || isStructTuple7Type typ 
-        || isStructTuple8Type typ
+        let isRefTupleType = 
+               isTuple1Type typ
+            || isTuple2Type typ
+            || isTuple3Type typ
+            || isTuple4Type typ
+            || isTuple5Type typ
+            || isTuple6Type typ
+            || isTuple7Type typ
+            || isTuple8Type typ
+
+        let isStructTupleType =
+#if FX_NO_STRUCTTUPLE
+            false
+#else
+            // If we can't load the System.ValueTuple Assembly then it can't be a struct tuple
+            try
+                   isStructTuple1Type typ
+                || isStructTuple2Type typ
+                || isStructTuple3Type typ
+                || isStructTuple4Type typ
+                || isStructTuple5Type typ
+                || isStructTuple6Type typ
+                || isStructTuple7Type typ
+                || isStructTuple8Type typ
+            with | :? System.IO.FileNotFoundException -> false
+#endif
+        isRefTupleType || isStructTupleType
 
     let maxTuple = 8
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple-1
-    
-    let rec mkTupleType isStruct (tys: Type[]) = 
-        match tys.Length with 
-        | 1 -> (if isStruct then stuple1 else tuple1).MakeGenericType(tys)
-        | 2 -> (if isStruct then stuple2 else tuple2).MakeGenericType(tys)
-        | 3 -> (if isStruct then stuple3 else tuple3).MakeGenericType(tys)
-        | 4 -> (if isStruct then stuple4 else tuple4).MakeGenericType(tys)
-        | 5 -> (if isStruct then stuple5 else tuple5).MakeGenericType(tys)
-        | 6 -> (if isStruct then stuple6 else tuple6).MakeGenericType(tys)
-        | 7 -> (if isStruct then stuple7 else tuple7).MakeGenericType(tys)
-        | n when n >= maxTuple -> 
-            let tysA = tys.[0..tupleEncField-1]
-            let tysB = tys.[maxTuple-1..]
-            let tyB = mkTupleType isStruct tysB
-            (if isStruct then stuple8 else tuple8).MakeGenericType(Array.append tysA [| tyB |])
-        | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
+    let rec mkTupleType isStruct (tys: Type[]) =
+#if !FX_NO_STRUCTTUPLE
+        let deOption (o: option<Type>) =
+            match o with 
+            | Some v -> v
+            | None -> raise systemValueTupleException
+        if isStruct then
+            match tys.Length with 
+            | 1 -> deOption(stuple1).MakeGenericType(tys)
+            | 2 -> deOption(stuple2).MakeGenericType(tys)
+            | 3 -> deOption(stuple3).MakeGenericType(tys)
+            | 4 -> deOption(stuple4).MakeGenericType(tys)
+            | 5 -> deOption(stuple5).MakeGenericType(tys)
+            | 6 -> deOption(stuple6).MakeGenericType(tys)
+            | 7 -> deOption(stuple7).MakeGenericType(tys)
+            | n when n >= maxTuple -> 
+                let tysA = tys.[0..tupleEncField-1]
+                let tysB = tys.[maxTuple-1..]
+                let tyB = mkTupleType isStruct tysB
+                deOption(stuple8).MakeGenericType(Array.append tysA [| tyB |])
+            | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+        else
+#endif
+            match tys.Length with 
+            | 1 -> tuple1.MakeGenericType(tys)
+            | 2 -> tuple2.MakeGenericType(tys)
+            | 3 -> tuple3.MakeGenericType(tys)
+            | 4 -> tuple4.MakeGenericType(tys)
+            | 5 -> tuple5.MakeGenericType(tys)
+            | 6 -> tuple6.MakeGenericType(tys)
+            | 7 -> tuple7.MakeGenericType(tys)
+            | n when n >= maxTuple ->
+                let tysA = tys.[0..tupleEncField-1]
+                let tysB = tys.[maxTuple-1..]
+                let tyB = mkTupleType isStruct tysB
+                tuple8.MakeGenericType(Array.append tysA [| tyB |])
+            | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
     let rec getTupleTypeInfo    (typ:Type) = 
       if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
       let tyargs = typ.GetGenericArguments()
-      if tyargs.Length = maxTuple then 
+      if tyargs.Length = maxTuple then
           let tysA = tyargs.[0..tupleEncField-1]
           let tyB = tyargs.[tupleEncField]
           Array.append tysA (getTupleTypeInfo tyB)
