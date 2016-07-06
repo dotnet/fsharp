@@ -14137,8 +14137,8 @@ module EstablishTypeDefinitionCores =
 
         let vis,_ = ComputeAccessAndCompPath envInitial None id.idRange vis parent
              
-        let id = ident (modName, id.idRange)
         CheckForDuplicateModule env id.idText id.idRange
+        let id = ident (modName, id.idRange)
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName cenv.g id
 
