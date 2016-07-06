@@ -1229,11 +1229,7 @@ module MainModuleBuilder =
                   yield Lazy<_>.CreateFromValue av
               if not(tcConfig.win32res = "") then
                   yield Lazy<_>.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
-#if ENABLE_MONO_SUPPORT
-              if tcConfig.includewin32manifest && not(win32Manifest = "") && not(runningOnMono) then
-#else
-              if tcConfig.includewin32manifest && not(win32Manifest = "") then
-#endif
+              if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
                   yield  Lazy<_>.CreateFromValue [|   yield! ResFileFormat.ResFileHeader() 
                                                       yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = Dll)) |]]
 
