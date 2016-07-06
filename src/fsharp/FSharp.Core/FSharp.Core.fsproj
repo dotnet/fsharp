@@ -214,10 +214,6 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'portable47' and '$(TargetFramework)' != 'coreclr'">
-    <Reference Include="System.ValueTuple"><HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath></Reference>
-    <Reference Include="System.Runtime" />
-  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
