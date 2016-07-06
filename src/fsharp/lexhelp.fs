@@ -218,6 +218,7 @@ module Keywords =
       FSHARP, "extern"     ,EXTERN;
       ALWAYS, "false"      ,FALSE;
       ALWAYS, "finally"    ,FINALLY;
+      FSHARP, "fixed"      ,FIXED;
       ALWAYS, "for"        ,FOR;
       ALWAYS, "fun"        ,FUN;
       ALWAYS, "function"   ,FUNCTION;
@@ -283,7 +284,7 @@ module Keywords =
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
         [ "break"; 
           "checked"; "component"; "constraint"; "continue"; 
-          "fixed"; "fori";  
+          "fori";  
           "include";  
           "mixin"; 
           "parallel"; "params";  "process"; "protected"; "pure"; 

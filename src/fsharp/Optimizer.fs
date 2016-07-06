@@ -431,7 +431,7 @@ let BindExternalLocalVal cenv (v:Val) vval env =
     CheckInlineValueIsComplete v vval;
 #endif
 
-    if verboseOptimizationInfo then dprintn ("*** Binding "^v.LogicalName); 
+    if verboseOptimizationInfo then dprintn ("*** Binding "+v.LogicalName); 
     let vval = if v.IsMutable then {vval with ValExprInfo=UnknownValue } else vval
     let env = 
 #if CHECKED
@@ -534,7 +534,7 @@ let TryGetInfoForEntity sv n =
     | Some info -> Some (info.Force())
     | None -> 
         if verboseOptimizationInfo then 
-            dprintn ("\n\n*** Optimization info for submodule "^n^" not found in parent module which contains submodules: "^String.concat "," (NameMap.domainL sv.ModuleOrNamespaceInfos)); 
+            dprintn ("\n\n*** Optimization info for submodule "+n+" not found in parent module which contains submodules: "+String.concat "," (NameMap.domainL sv.ModuleOrNamespaceInfos)); 
         None
 
 let rec TryGetInfoForPath sv (p:_[]) i = 
@@ -558,7 +558,7 @@ let GetInfoForNonLocalVal cenv env (vref:ValRef) =
             match structInfo.ValInfos.TryFind(vref) with 
             | Some ninfo -> snd ninfo
             | None -> 
-                  //dprintn ("\n\n*** Optimization info for value "^n^" from module "^(full_name_of_nlpath smv)^" not found, module contains values: "^String.concat "," (NameMap.domainL structInfo.ValInfos));  
+                  //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat "," (NameMap.domainL structInfo.ValInfos));  
                   //System.Diagnostics.Debug.Assert(false,sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
                       match structInfo.ValInfos.TryFindForFslib(vref) with 
@@ -1254,6 +1254,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b:Binding,binfo) =
     not (cenv.settings.EliminateUnusedBindings()) ||
     isSome v.MemberInfo ||
     binfo.HasEffect || 
+    v.IsFixed ||
     Zset.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
@@ -1345,6 +1346,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1,e1,spBind)) e2 _m  =
     if not (cenv.optimizing && cenv.settings.EliminateImmediatelyConsumedLocals()) && 
        not vspec1.IsCompilerGenerated then 
        None 
+    elif vspec1.IsFixed then None 
     else
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e" 
         // REVIEW: enhance this by general elimination of bindings to 
@@ -1454,7 +1456,7 @@ let ExpandStructuralBindingRaw cenv expr =
           else
               let argTys = destRefTupleTy cenv.g v.Type
               let argBind i (arg:Expr) argTy =
-                  let name = v.LogicalName ^ "_" ^ string i
+                  let name = v.LogicalName + "_" + string i
                   let v,ve = mkCompGenLocal arg.Range name argTy
                   ve,mkCompGenBind v arg
            
@@ -2837,7 +2839,8 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e,einfo) =
              //  None of them should be local polymorphic constrained values 
              not (IsGenericValWithGenericContraints cenv.g v) &&
              // None of them should be mutable 
-             not v.IsMutable))))
+             not v.IsMutable)))) &&
+    not (isByrefLikeTy cenv.g (tyOfExpr cenv.g e)) 
 
 and ConsiderSplitToMethod flag threshold cenv env (e,einfo) = 
     if ComputeSplitToMethodCondition flag threshold cenv env (e,einfo) then
@@ -2846,7 +2849,7 @@ and ConsiderSplitToMethod flag threshold cenv env (e,einfo) =
         let ty = tyOfExpr cenv.g e
         let nm = 
             match env.latestBoundId with 
-            | Some id -> id.idText^suffixForVariablesThatMayNotBeEliminated 
+            | Some id -> id.idText+suffixForVariablesThatMayNotBeEliminated 
             | None -> suffixForVariablesThatMayNotBeEliminated 
         let fv,fe = mkCompGenLocal m nm (cenv.g.unit_ty --> ty)
         mkInvisibleLet m fv (mkLambda m uv (e,ty)) 
@@ -3066,7 +3069,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
             then {einfo with Info=UnknownValue} 
             else einfo 
         if v.MustInline  && IsPartialExprVal einfo.Info then 
-            errorR(InternalError("the mustinline value '"^v.LogicalName^"' was not inferred to have a known value",v.Range));
+            errorR(InternalError("the mustinline value '"+v.LogicalName+"' was not inferred to have a known value",v.Range));
 #if DEBUG
         if verboseOptimizations then dprintf "val %s gets opt info %s\n" (showL(valL v)) (showL(exprValueInfoL cenv.g einfo.Info));
 #endif

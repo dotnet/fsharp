@@ -692,6 +692,10 @@ and
 
     /// Inserted for error recovery when there is "expr." and missing tokens or error recovery after the dot
     | DiscardAfterMissingQualificationAfterDot  of SynExpr * range  
+
+    /// 'use x = fixed expr'
+    | Fixed of SynExpr * range  
+
     /// Get the syntactic range of source code covered by this construct.
     member e.Range = 
         match e with 
@@ -752,6 +756,7 @@ and
         | SynExpr.YieldOrReturnFrom (_,_,m)
         | SynExpr.LetOrUseBang  (_,_,_,_,_,_,m)
         | SynExpr.DoBang  (_,m) -> m
+        | SynExpr.Fixed (_,m) -> m
         | SynExpr.Ident id -> id.idRange
     /// range ignoring any (parse error) extra trailing dots
     member e.RangeSansAnyExtraDot = 
@@ -813,6 +818,7 @@ and
         | SynExpr.DotGet (expr,_,lidwd,m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
         | SynExpr.LongIdent (_,lidwd,_,_) -> lidwd.RangeSansAnyExtraDot 
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr,_) -> expr.Range
+        | SynExpr.Fixed (_,m) -> m
         | SynExpr.Ident id -> id.idRange
     /// Attempt to get the range of the first token or initial portion only - this is extremely ad-hoc, just a cheap way to improve a certain 'query custom operation' error range
     member e.RangeOfFirstPortion = 
@@ -881,6 +887,7 @@ and
             let e = (pat.Range : range).Start 
             mkRange m.FileName start e
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.Fixed (_,m) -> m
 
 
 and 
@@ -2247,8 +2254,9 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TraitCall(_,_,e,_)
           | SynExpr.YieldOrReturn (_,e,_)
           | SynExpr.YieldOrReturnFrom (_,e,_)
-          | SynExpr.DoBang  (e,_) 
-          | SynExpr.Paren(e,_,_,_) -> 
+          | SynExpr.DoBang (e,_) 
+          | SynExpr.Fixed (e,_) 
+          | SynExpr.Paren (e,_,_,_) -> 
               walkExpr e
 
           | SynExpr.NamedIndexedPropertySet (_,e1,e2,_)
