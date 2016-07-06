@@ -395,10 +395,13 @@ module internal Impl =
 
     let mutable systemValueTupleException = null
 
-#if !FX_NO_STRUCTTUPLE
     let reflectedValueTuple n =
         try
+#if FX_ASSEMBLYLOADBYSTRING
+            let a = Assembly.Load("System.ValueTuple")
+#else
             let a = Assembly.Load(new AssemblyName("System.ValueTuple"))
+#endif
             match n with
             | 1 -> Some (a.GetType("System.ValueTuple`1"))
             | 2 -> Some (a.GetType("System.ValueTuple`2"))
@@ -446,7 +449,6 @@ module internal Impl =
     let isStructTuple6Type typ = structTupleEquivHeadTypes typ stuple6
     let isStructTuple7Type typ = structTupleEquivHeadTypes typ stuple7
     let isStructTuple8Type typ = structTupleEquivHeadTypes typ stuple8
-#endif
 
     let isTupleType typ = 
         let isRefTupleType = 
@@ -460,9 +462,6 @@ module internal Impl =
             || isTuple8Type typ
 
         let isStructTupleType =
-#if FX_NO_STRUCTTUPLE
-            false
-#else
             // If we can't load the System.ValueTuple Assembly then it can't be a struct tuple
             try
                    isStructTuple1Type typ
@@ -474,7 +473,6 @@ module internal Impl =
                 || isStructTuple7Type typ
                 || isStructTuple8Type typ
             with | :? System.IO.FileNotFoundException -> false
-#endif
         isRefTupleType || isStructTupleType
 
     let maxTuple = 8
@@ -482,7 +480,6 @@ module internal Impl =
     let tupleEncField = maxTuple-1
 
     let rec mkTupleType isStruct (tys: Type[]) =
-#if !FX_NO_STRUCTTUPLE
         let deOption (o: option<Type>) =
             match o with 
             | Some v -> v
@@ -503,7 +500,6 @@ module internal Impl =
                 deOption(stuple8).MakeGenericType(Array.append tysA [| tyB |])
             | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
         else
-#endif
             match tys.Length with 
             | 1 -> tuple1.MakeGenericType(tys)
             | 2 -> tuple2.MakeGenericType(tys)
