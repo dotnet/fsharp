@@ -849,6 +849,9 @@ and GetTypeAsTypeDefOrRef cenv env (ty:ILType) =
 
 and GetTypeAsBytes cenv env ty = emitBytesViaBuffer (fun bb -> EmitType cenv env bb ty)
 
+and GetTypeOfLocalAsBytes cenv env (l: ILLocal) = 
+    emitBytesViaBuffer (fun bb ->  EmitLocalInfo cenv env bb l)
+
 and GetTypeAsBlobIdx cenv env (ty:ILType) = 
     GetBytesAsBlobIdx cenv (GetTypeAsBytes cenv env ty)
 
@@ -911,6 +914,11 @@ and EmitType cenv env bb ty =
         emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Enclosing,tref.Name)
         EmitType cenv env bb ty
      | _ -> failwith "EmitType"
+
+and EmitLocalInfo cenv env (bb:ByteBuffer) (l:ILLocal) =
+    if l.IsPinned then 
+        bb.EmitByte et_PINNED
+    EmitType cenv env bb l.Type
 
 and EmitCallsig cenv env bb (callconv,args:ILTypes,ret,varargs:ILVarArgs,genarity) = 
     bb.EmitByte (callconvToByte genarity callconv)
@@ -1494,7 +1502,7 @@ let GetCallsigAsStandAloneSigIdx cenv env info =
 let EmitLocalSig cenv env (bb: ByteBuffer) (locals: ILLocals) = 
     bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG
     bb.EmitZ32 locals.Length
-    locals |> ILList.iter (fun l -> EmitType cenv env bb l.Type) 
+    locals |> ILList.iter (EmitLocalInfo cenv env bb)
 
 let GetLocalSigAsBlobHeapIdx cenv env locals = 
     GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> EmitLocalSig cenv env bb locals))
@@ -2237,7 +2245,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
             ignore (FindOrAddSharedRow cenv TableNames.StandAloneSig (SharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
             // Now write the type
-            GetTypeAsBytes cenv env l.Type) 
+            GetTypeOfLocalAsBytes cenv env l) 
       else 
         [| |]
 

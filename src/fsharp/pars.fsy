@@ -252,6 +252,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token OBLOCKEND OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE       /* LexFilter #light inserts when closing CtxtSeqBlock(_,_,AddBlockEnd) */
 
 %token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
+%token FIXED
 %token <token> ODUMMY
 
 /* These are artificial */
@@ -3293,6 +3294,9 @@ declExpr:
   | FOR forLoopBinder opt_OBLOCKSEP arrowThenExprR %prec expr_let 
      { let spBind = SequencePointAtForLoop(rhs2 parseState 1 2)
        let (a,b,_) = $2 in SynExpr.ForEach(spBind,SeqExprOnly true,true,a,b,$4,unionRanges (rhs parseState 1) $4.Range) }
+
+  | FIXED declExpr
+     { SynExpr.Fixed($2, (unionRanges (rhs parseState 1) $2.Range)) } 
 
   | RARROW typedSeqExprBlockR 
      { errorR(Error(FSComp.SR.parsArrowUseIsLimited(),lhs parseState));

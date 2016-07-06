@@ -171,6 +171,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e,_) 
                   | SynExpr.Do (e,_)
                   | SynExpr.Assert (e,_)
+                  | SynExpr.Fixed (e,_)
                   | SynExpr.DotGet (e,_,_,_) 
                   | SynExpr.LongIdentSet (_,e,_)
                   | SynExpr.New (_,_,e,_) 
