@@ -339,7 +339,7 @@ pushd .\lkg & %_dotnetexe% publish project.json &popd
 @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
+pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
 fc fsc.exe corehost.exe >nul
 @if ERRORLEVEL 1 (
   copy fsc.exe fsc.dll
@@ -348,7 +348,7 @@ fc fsc.exe corehost.exe >nul
 popd
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
+pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
 fc fsi.exe corehost.exe >nul
 @if ERRORLEVEL 1 (
   copy fsi.exe fsi.dll

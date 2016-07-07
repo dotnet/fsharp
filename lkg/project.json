@@ -10,7 +10,7 @@
     "ubuntu.14.04-x64": { }
   },
   "frameworks": {
-    "dnxcore50": {
+    "netstandard1.6": {
       "imports": "portable-net45+win8"
     }
   }
