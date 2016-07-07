@@ -340,10 +340,10 @@ pushd .\lkg & %_dotnetexe% publish project.json &popd
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
 pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-fc fsc.exe corehost.exe >nul
+fc fsc.exe dotnet.exe >nul
 @if ERRORLEVEL 1 (
   copy fsc.exe fsc.dll
-  copy corehost.exe fsc.exe
+  copy dotnet.exe fsc.exe
 )
 popd
 
