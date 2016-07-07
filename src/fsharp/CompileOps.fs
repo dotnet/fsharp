@@ -1476,10 +1476,10 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
 
     match err.Exception with 
     | ReportedError _ -> 
-        dprintf "Unexpected ReportedError"  (* this should actually never happen *)
+        assert ("" = "Unexpected ReportedError") //  this should never happen 
         Seq.empty
     | StopProcessing -> 
-        dprintf "Unexpected StopProcessing"  (* this should actually never happen *)
+        assert ("" = "Unexpected StopProcessing") // this should never happen 
         Seq.empty
     | _ -> 
         let errors = ResizeArray()
@@ -1579,9 +1579,9 @@ let OutputErrorOrWarningContext prefix fileLineFn os err =
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
 type internal TypeInThisAssembly = class end
-let GetFSharpCoreReferenceUsedByCompiler(useMonoResolution) = 
+let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) = 
   // On Mono, there is no good reference resolution
-  if useMonoResolution then 
+  if useSimpleResolution then 
     GetFSharpCoreLibraryName()+".dll"
   else
     let fsCoreName = GetFSharpCoreLibraryName()
@@ -1698,8 +1698,8 @@ let SystemAssemblies primaryAssemblyName =
 //
 // REVIEW: it isn't clear if there is any negative effect
 // of leaving an assembly off this list.
-let BasicReferencesForScriptLoadClosure(useMonoResolution, useFsiAuxLib) = 
-    ["mscorlib"; GetFSharpCoreReferenceUsedByCompiler(useMonoResolution) ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
+let BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib) = 
+    ["mscorlib"; GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
     DefaultBasicReferencesForOutOfProjectSources @ 
     [ if useFsiAuxLib then yield GetFsiLibraryName () ]
 
@@ -2011,7 +2011,7 @@ type TcConfigBuilder =
       mutable resolutionAssemblyFoldersConditions : string;    
       mutable platform : ILPlatform option;
       mutable prefer32Bit : bool;
-      mutable useMonoResolution : bool
+      mutable useSimpleResolution : bool
       mutable target : CompilerTarget
       mutable debuginfo : bool
       mutable testFlagEmitFeeFeeAs100001 : bool;
@@ -2177,9 +2177,9 @@ type TcConfigBuilder =
           platform = None;
           prefer32Bit = false;
 #if ENABLE_MONO_SUPPORT
-          useMonoResolution = runningOnMono
+          useSimpleResolution = runningOnMono
 #else
-          useMonoResolution = false
+          useSimpleResolution = false
 #endif
           target = ConsoleExe
           debuginfo = false
@@ -2531,7 +2531,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         match fileNameOpt with
         | None -> 
             // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
-            AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler(data.useMonoResolution), None), None
+            AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler(data.useSimpleResolution), None), None
         | _ -> res
     let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
@@ -2667,7 +2667,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.resolutionAssemblyFoldersConditions  = data.  resolutionAssemblyFoldersConditions  
     member x.platform  = data.platform
     member x.prefer32Bit = data.prefer32Bit
-    member x.useMonoResolution  = data.useMonoResolution
+    member x.useSimpleResolution  = data.useSimpleResolution
     member x.target  = data.target
     member x.debuginfo  = data.debuginfo
     member x.testFlagEmitFeeFeeAs100001 = data.testFlagEmitFeeFeeAs100001
@@ -2942,7 +2942,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // NOTE!! if mode=ReportErrors then this method must not raise exceptions. It must just report the errors and recover
     static member TryResolveLibsUsingMSBuildRules (tcConfig:TcConfig,originalReferences:AssemblyReference list, errorAndWarningRange:range, mode:ResolveAssemblyReferenceMode) : AssemblyResolution list * UnresolvedAssemblyReference list =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
-        if tcConfig.useMonoResolution then
+        if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
         if originalReferences=[] then [],[]
         else            
@@ -2962,6 +2962,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let logmessage showMessages  = 
                 if showMessages && tcConfig.showReferenceResolutions then (fun (message:string)->dprintf "%s\n" message)
                 else ignore
+
             let logwarning showMessages = 
                 (fun code message->
                     if showMessages && mode = ReportErrors then 
@@ -2975,6 +2976,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         | _ -> 
                             (if code = "MSB3245" then errorR else warning)
                                 (MSBuildReferenceResolutionWarning(code,message,errorAndWarningRange)))
+
             let logerror showMessages = 
                 (fun code message ->
                     if showMessages && mode = ReportErrors then 
@@ -2988,10 +2990,12 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     | Some(X86) -> "x86"
                     | Some(AMD64) -> "amd64"
                     | Some(IA64) -> "ia64"
+
             let outputDirectory = 
                 match tcConfig.outputFile with 
                 | Some(outputFile) -> tcConfig.MakePathAbsolute outputFile
                 | None -> tcConfig.implicitIncludeDir
+
             let targetFrameworkDirectories =
                 match tcConfig.clrRoot with
                 | Some(clrRoot) -> [tcConfig.MakePathAbsolute clrRoot]
@@ -3033,6 +3037,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                              |> Array.map(fun i->(p13 groupedReferences.[i]),(p23 groupedReferences.[i]),i) 
                              |> Array.filter (fun (_,i0,_)->resolvedAsFile|>Array.exists(fun (i1,_) -> i0=i1)|>not)
                              |> Array.map(fun (ref,_,i)->ref,string i)
+
             let resolutions = Resolve(toMsBuild,(*showMessages*)true)  
 
             // Map back to original assembly resolutions.
@@ -3445,7 +3450,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
         
     static member Resolve (tcConfig:TcConfig,assemblyList:AssemblyReference list, knownUnresolved:UnresolvedAssemblyReference list) : TcAssemblyResolutions =
         let resolved,unresolved = 
-            if tcConfig.useMonoResolution then 
+            if tcConfig.useSimpleResolution then 
                 let resolutions = 
                     assemblyList 
                     |> List.map (fun assemblyReference -> 
@@ -4444,7 +4449,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             | Some assemblyResolution -> 
                 ResultD [assemblyResolution]
             | None ->      
-                if tcConfigP.Get().useMonoResolution then
+                if tcConfigP.Get().useSimpleResolution then
                     let action = 
                         match mode with 
                         | ResolveAssemblyReferenceMode.ReportErrors -> CcuLoadFailureAction.RaiseError
@@ -4852,7 +4857,7 @@ module private ScriptPreprocessClosure =
         ParseOneInputLexbuf (tcConfig,lexResourceManager,defines,lexbuf,filename,isLastCompiland,errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptSourceTcConfig (filename:string, codeContext, useMonoResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs) =  
+    let CreateScriptSourceTcConfig (filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs) =  
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = (codeContext = CodeContext.Evaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
@@ -4860,7 +4865,7 @@ module private ScriptPreprocessClosure =
         let tcConfigB = TcConfigBuilder.CreateNew(Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
-        | None -> BasicReferencesForScriptLoadClosure(useMonoResolution, useFsiAuxLib) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
+        | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
         | Some rs -> for m,r in rs do tcConfigB.AddReferencedAssemblyByPath(m,r)
 
         tcConfigB.resolutionEnvironment <-
@@ -5021,18 +5026,18 @@ module private ScriptPreprocessClosure =
         result
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
-    let GetFullClosureOfScriptSource(filename,source,codeContext,useMonoResolution,useFsiAuxLib,lexResourceManager:Lexhelp.LexResourceManager,applyCommmandLineArgs) = 
+    let GetFullClosureOfScriptSource(filename,source,codeContext,useSimpleResolution,useFsiAuxLib,lexResourceManager:Lexhelp.LexResourceManager,applyCommmandLineArgs) = 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
         let references0 = 
-            let tcConfig = CreateScriptSourceTcConfig(filename,codeContext,useMonoResolution,useFsiAuxLib,None,applyCommmandLineArgs)
+            let tcConfig = CreateScriptSourceTcConfig(filename,codeContext,useSimpleResolution,useFsiAuxLib,None,applyCommmandLineArgs)
             let resolutions0,_unresolvedReferences = GetAssemblyResolutionInformation(tcConfig)
             let references0 =  resolutions0 |> List.map (fun r->r.originalReference.Range,r.resolvedPath) |> Seq.distinct |> List.ofSeq
             references0
 
-        let tcConfig = CreateScriptSourceTcConfig(filename,codeContext,useMonoResolution,useFsiAuxLib,Some references0,applyCommmandLineArgs)
+        let tcConfig = CreateScriptSourceTcConfig(filename,codeContext,useSimpleResolution,useFsiAuxLib,Some references0,applyCommmandLineArgs)
 
         let protoClosure = [SourceFile(filename,range0,source)]
         let finalClosure,tcConfig = FindClosureDirectives(protoClosure,tcConfig,codeContext,lexResourceManager)
@@ -5048,9 +5053,9 @@ module private ScriptPreprocessClosure =
 
 type LoadClosure with
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText(filename:string, source:string, codeContext, useMonoResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs) : LoadClosure = 
+    static member ComputeClosureOfSourceText(filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
-        ScriptPreprocessClosure.GetFullClosureOfScriptSource(filename,source,codeContext,useMonoResolution,useFsiAuxLib, lexResourceManager, applyCommmandLineArgs)
+        ScriptPreprocessClosure.GetFullClosureOfScriptSource(filename,source,codeContext,useSimpleResolution,useFsiAuxLib, lexResourceManager, applyCommmandLineArgs)
 
     /// Used from fsi.fs and fsc.fs, for #load and command line.
     /// The resulting references are then added to a TcConfig.
