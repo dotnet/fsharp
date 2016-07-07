@@ -2416,8 +2416,9 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
 
         let modulSearchFailed() = 
             ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid 
-                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo ad genOk)
+                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
             |?> List.concat 
+
         match tyconSearch +++ modulSearch with 
         | Result results -> 
             // NOTE: we delay checking the CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities condition until right at the end after we've
