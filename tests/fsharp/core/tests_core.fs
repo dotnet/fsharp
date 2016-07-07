@@ -316,19 +316,21 @@ module FsFromFsViaCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.fs
         do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.fs"]
 
-        // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"
 
-        // %CSC% /nologo /target:library /r:"%FSCOREDLLPATH%" /r:lib.dll /out:lib2.dll lib2.cs 
         do! csc """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll""" cfg.FSCOREDLLPATH ["lib2.cs"]
 
-        // "%FSC%" %fsc_flags% -r:lib.dll -r:lib2.dll -o:test.exe -g test.fsx
-        do! fsc "%s -r:lib.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+        do! csc """/nologo /target:library /r:"%s" /out:lib3.dll""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        // "%PEVERIFY%" test.exe 
+        do! fsc "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+
+        do! peverify "test.exe"
+
+        // Same with library refrences the other way around
+        do! fsc "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+
         do! peverify "test.exe"
 
         }
