@@ -349,10 +349,10 @@ popd
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
 pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-fc fsi.exe corehost.exe >nul
+fc fsi.exe dotnet.exe >nul
 @if ERRORLEVEL 1 (
   copy fsi.exe fsi.dll
-  copy corehost.exe fsi.exe
+  copy dotnet.exe fsi.exe
 )
 popd
 
