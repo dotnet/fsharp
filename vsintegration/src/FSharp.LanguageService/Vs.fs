@@ -14,7 +14,6 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.FSharp.Compiler.Range
-open Internal.Utilities.Debug
 open System.Runtime.InteropServices
 
 /// Helper methods for interoperating with COM                
