@@ -5697,7 +5697,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
                     (mkCoerceExpr(expr,genEnumTy,expr.Range,exprty))),tpenv
 
     | SynExpr.LetOrUse _ ->
-        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv true (*consume use bindings*) expr (fun x -> x) 
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false expr (fun x -> x) 
 
     | SynExpr.TryWith (e1,_mTryToWith,clauses,mWithToLast,mTryToLast,spTry,spWith) ->
         let e1',tpenv = TcExpr cenv overallTy env tpenv e1
@@ -5736,7 +5736,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.Sequential (sp,dir,e1,e2,m) ->
         if dir then 
-            TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv true (*consume use bindings*) expr (fun x -> x) 
+            TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false expr (fun x -> x) 
         else 
             // Constructors using "new (...) = <ctor-expr> then <expr>" 
             let e1',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e1
@@ -7926,7 +7926,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                     (fun ty envinner tpenv e -> tcSequenceExprBody envinner ty tpenv e) 
                     cenv env overallTy 
                     tpenv 
-                    false(* don't consume 'use' bindings*)
+                    true
                     comp 
                     (fun x -> x)  |> Some
 
@@ -9742,15 +9742,15 @@ and CheckRecursiveBindingIds binds =
 
 /// Process a sequence of seqeuntials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
 /// This avoids stack overflow on really large "let" and "letrec" lists
-and TcLinearExprs bodyChecker cenv env overallTy tpenv processUseBindings expr cont = 
+and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont = 
     match expr with 
-    | SynExpr.Sequential (sp,true,e1,e2,m) ->
+    | SynExpr.Sequential (sp,true,e1,e2,m) when not isCompExpr ->
         let e1',_ = TcStmtThatCantBeCtorBody cenv env tpenv e1
         // tailcall
-        TcLinearExprs bodyChecker cenv env overallTy tpenv processUseBindings e2 (fun (e2',tpenv) -> 
+        TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2',tpenv) -> 
             cont (Expr.Sequential(e1',e2',NormalSeq,sp,m),tpenv))
 
-    | SynExpr.LetOrUse (isRec,isUse,binds,body,m) when (not isUse || processUseBindings) ->
+    | SynExpr.LetOrUse (isRec,isUse,binds,body,m) when not (isUse && isCompExpr) ->
                 
         if isRec then 
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
@@ -9764,8 +9764,8 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv processUseBindings expr c
         else 
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf,envinner,tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds,m,body.Range)
-            let cont2 (x,tpenv) = cont (fst (mkf (x,overallTy)), tpenv)
-            TcLinearExprs bodyChecker cenv envinner overallTy tpenv processUseBindings body cont2
+            TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x,tpenv) -> 
+                cont (fst (mkf (x,overallTy)), tpenv))
     | _ -> 
         cont (bodyChecker overallTy env tpenv expr)
 
