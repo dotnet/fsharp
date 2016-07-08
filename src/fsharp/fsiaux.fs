@@ -31,34 +31,34 @@ type internal SimpleEventLoop() =
     let restart = ref false
     interface IEventLoop with 
          member x.Run() =  
-             running := true;
+             running := true
              let rec run() = 
                  match waitSignal2 runSignal exitSignal with 
                  | 0 -> 
-                     !queue |> List.iter (fun f -> result := try Some(f()) with _ -> None); 
-                     setSignal doneSignal;
+                     !queue |> List.iter (fun f -> result := try Some(f()) with _ -> None) 
+                     setSignal doneSignal
                      run()
                  | 1 -> 
-                     running := false;
+                     running := false
                      !restart
                  | _ -> run()
-             run();
+             run()
          member x.Invoke(f : unit -> 'T) : 'T  = 
-             queue := [f >> box];
-             setSignal runSignal;
+             queue := [f >> box]
+             setSignal runSignal
              waitSignal doneSignal
              !result |> Option.get |> unbox
          member x.ScheduleRestart() = 
              // nb. very minor race condition here on running here, but totally 
              // unproblematic as ScheduleRestart and Exit are almost never called.
              if !running then 
-                 restart := true; 
+                 restart := true 
                  setSignal exitSignal
     interface System.IDisposable with 
          member x.Dispose() =
-                     runSignal.Dispose();
-                     exitSignal.Dispose();
-                     doneSignal.Dispose();
+                     runSignal.Dispose()
+                     exitSignal.Dispose()
+                     doneSignal.Dispose()
                      
 
 
