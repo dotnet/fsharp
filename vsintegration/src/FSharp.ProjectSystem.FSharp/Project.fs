@@ -41,7 +41,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open EnvDTE
 
     open Microsoft.Build.BuildEngine
-    open Internal.Utilities.Debug
 
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
@@ -389,13 +388,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // for example. If necessary, this can be changed - but please just try to avoid doing a gratuitous rename.
             let mutable sourcesAndFlags : option<(array<string> * array<string>)> = None
 #if DEBUG
-            let mutable shouldLog = false // can poke this in the debugger to turn on logging
             let logger = new Microsoft.Build.BuildEngine.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
-                                (fun s -> 
-                                    let self = this
-                                    ignore self // ensure debugger has local in scope, so can poke self.shouldLog
-                                    if shouldLog then 
-                                        Trace.Print("MSBuild", fun _ -> "MSBuild: " + s)),
+                                (fun s -> Trace.WriteLine("MSBuild: " + s)),
                                 (fun _ -> ()),
                                 (fun _ -> ())    )
 #endif
@@ -440,12 +434,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
 
 #if DEBUG
-                if Trace.ShouldLog("MSBuild") then
-
-                    this.SetDebugLogger(logger)
-                    Trace.PrintLine("ProjectSystem", fun _ -> "attached MSBuild logger")
-                else
-                    Trace.PrintLine("ProjectSystem", fun _ -> "not choosing to attach MSBuild logger")
+                this.SetDebugLogger(logger)
 #endif
             member private this.GetCurrentFrameworkName() = 
                 let tfm = this.GetTargetFrameworkMoniker()
@@ -1319,9 +1308,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.InvokeMsBuild(target, extraProperties) =
                 let result = base.InvokeMsBuild(target, extraProperties)
-#if DEBUG
-                Trace.PrintLine("ProjectSystem", fun _ -> sprintf "Called InvokeMsBuild(%s), result: %A" target result)
-#endif
                 result
 
             // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
@@ -1338,10 +1324,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let normalizedSources = sources |> Array.map (fun fn -> System.IO.Path.GetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
                 let r = (normalizedSources, flags)
                 sourcesAndFlags <- Some(r)
-#if DEBUG
-                Trace.PrintLine("ProjectSystem", fun _ -> sprintf "FSharpProjectNode(%s) sourcesAndFlags: %A" x.ProjectFile sourcesAndFlags)
-                Trace.PrintLine("ProjectSystem", fun _ -> sprintf "Compile() was called on FSharpProjectNode(%s); will we actually build? %A" x.ProjectFile actuallyBuild)
-#endif
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
@@ -1374,9 +1356,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 #else
                 if not(inMidstOfReloading) && not(FSharpBuildStatus.IsInProgress) then
 #endif
-#if DEBUG
-                    use t = Trace.Call("ProjectSystem", "FSharpProjectNode::ComputeSourcesAndFlags()", fun _ -> x.ProjectFile)
-#endif
                     // REVIEW CompilerFlags will be stale since last 'save' of MSBuild .fsproj file - can we do better?
                     try
                         actuallyBuild <- false 
@@ -1400,20 +1379,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        let success = x.InvokeMsBuild("Compile", isBeingCalledByComputeSourcesAndFlags = true, extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
-#if DEBUG
-                        Trace.PrintLine("ProjectSystem", fun _ -> sprintf "InvokeMsBuild('Compile') success: %A" success.IsSuccessful)
-                        if not compileWasActuallyCalled then
-                            Trace.PrintLine("ProjectSystem", fun _ -> "BUG? In ComputeSourcesAndFlags(), but Compile() was not called")
-#if DEBUG_BUT_CANT_TURN_ON_BECAUSE_FAILS_ON_NEW_PROJECT
-                            Debug.Assert(false, "Please report: This assert means that we invoked MSBuild but Compile was not called.  Unless you have a weird project file that would fail to build from the command-line with 'msbuild foo.fsproj', this should never happen.")
-#endif                    
-                        else
-                            Trace.PrintLine("ProjectSystem", fun _ -> "In ComputeSourcesAndFlags(), Compile() was called, hurrah")
-                        
-#else
-                        ignore(success)
-#endif                    
+                        let _ = x.InvokeMsBuild("Compile", isBeingCalledByComputeSourcesAndFlags = true, extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true 
@@ -1467,9 +1433,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 x.DoFixupAppConfigOnTargetFXChange(runtime, sku, targetFSharpCoreVersion, autoGenerateBindingRedirects)
 
             override x.SetHostObject(targetName, taskName, hostObject) =
-#if DEBUG
-                Trace.PrintLine("ProjectSystem", fun _ -> sprintf "about to set HostObject to %s" x.ProjectFile)
-#endif
                 base.SetHostObject(targetName, taskName, hostObject)
                 
             override x.SetBuildProject newProj =
@@ -1559,9 +1522,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             // which will finally populate sourcesAndFlags with good values.
                             // This means that ones the user fixes the problem, proper intellisense etc. should start immediately lighting up.
                             sourcesAndFlags <- Some([||],[||])
-#if DEBUG
-                            Trace.PrintLine("ProjectSystem", fun _ -> "First call to ComputeSourcesAndFlags failed")
-#endif
                             projectSite.Open(x.CreateRunningProjectSite())
                         ()
                     | _ -> ()

@@ -434,12 +434,6 @@
     <Compile Include="..\IlxGen.fs">
       <Link>IlxGen.fs</Link>
     </Compile>
-    <Compile Include="..\TraceCall.fsi">
-      <Link>TraceCall.fsi</Link>
-    </Compile>
-    <Compile Include="..\TraceCall.fs">
-      <Link>TraceCall.fs</Link>
-    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>CompileOps.fsi</Link>
     </Compile>
