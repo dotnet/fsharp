@@ -83,14 +83,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("CopyTo")>]
-        let blit (source : 'T[]) sourceIndex (target: 'T[]) targetIndex count = 
+        let inline blit (source : 'T[]) sourceIndex (target: 'T[]) targetIndex count = 
             checkNonNull "source" source
             checkNonNull "target" target
-            if sourceIndex < 0 then invalidArg "sourceIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            if targetIndex < 0 then invalidArg "targetIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if sourceIndex + count > source.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
-            if targetIndex + count > target.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+            if sourceIndex < 0 then invalidArg "sourceIndex" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+            if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+            if targetIndex < 0 then invalidArg "targetIndex" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+            if sourceIndex + count > source.Length then invalidArg "count" LanguagePrimitives.ErrorStrings.OutOfRangeString
+            if targetIndex + count > target.Length then invalidArg "count" LanguagePrimitives.ErrorStrings.OutOfRangeString
             Array.Copy(source, sourceIndex, target, targetIndex, count)
             // for i = 0 to count - 1 do 
             //    target.[targetIndex+i] <- source.[sourceIndex + i]

@@ -1030,6 +1030,9 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val InputMustBeNonNegativeString : string
                 
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val OutOfRangeString : string
+                
 
         //-------------------------------------------------------------------------
 
