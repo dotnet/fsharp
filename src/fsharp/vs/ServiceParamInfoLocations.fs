@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Internal.Utilities.Debug
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
@@ -104,7 +103,6 @@ module internal NoteworthyParamInfoLocationsImpl =
                 if AstTraversal.rangeContainsPosEdgesExclusive parenRange pos then
                     let commasAndCloseParen = ((synExprList,commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
                     let r = Found (parenRange.Start, commasAndCloseParen, rpRangeOpt.IsSome)
-                    Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found paren tuple ranges %+A from %+A" r expr)
                     r, None
                 else
                     NotFound, None
@@ -124,7 +122,6 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynExpr.ArbitraryAfterError(_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if AstTraversal.rangeContainsPosEdgesExclusive range pos then
                 let r = Found (range.Start, [range.End, null], false)
-                Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found ArbitraryAfterError range %+A from %+A" r expr)
                 r, None
             else
                 NotFound, None
@@ -132,7 +129,6 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynExpr.Const(SynConst.Unit, unitRange) ->
             if AstTraversal.rangeContainsPosEdgesExclusive unitRange pos then
                 let r = Found (unitRange.Start, [unitRange.End, null], true)
-                Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found unit range %+A from %+A" r expr)
                 r, None
             else
                 NotFound, None
@@ -203,7 +199,6 @@ module internal NoteworthyParamInfoLocationsImpl =
                             if isInfix then
                                 // This seems to be an infix operator, since the start of the argument is a position earlier than the end of the long-id being applied to it.
                                 // For now, we don't support infix operators.
-                                Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found apparent infix operator, ignoring dug-out ident from %+A" expr)
                                 None
                             else
                                 Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
@@ -212,7 +207,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     | _ -> traverseSynExpr synExpr2
 
             // ID<tyarg1,....,tyargN>  and error recovery of these
-            | SynExpr.TypeApp(synExpr, openm, tyArgs, commas, closemOpt, _, wholem) as seta ->
+            | SynExpr.TypeApp(synExpr, openm, tyArgs, commas, closemOpt, _, wholem) ->
                 match traverseSynExpr synExpr with
                 | Some _ as r -> r
                 | None -> 
@@ -220,7 +215,6 @@ module internal NoteworthyParamInfoLocationsImpl =
                     if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
                         let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
                         let r = FSharpNoteworthyParamInfoLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
-                        Trace.PrintLine("LanguageServiceParamInfo", fun () -> sprintf "Found SynExpr.TypeApp with ranges %+A from %+A" r seta)
                         Some r
                     else
                         None

@@ -18,7 +18,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Lib
-open Internal.Utilities.Debug
 
 type Position = int * int
 type Range = Position * Position
@@ -649,9 +648,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             | EOF lexcont -> 
                 // End of text! No more tokens.
                 None,lexcont,0 
-            | LEX_FAILURE s -> 
-                // REVIEW: report this error
-                Trace.PrintLine("Lexing", fun _ -> sprintf "LEX_FAILURE:%s\n" s)
+            | LEX_FAILURE _ -> 
                 None, LexerStateEncoding.revertToDefaultLexCont, 0
             | _ ->
                 // Get the information about the token

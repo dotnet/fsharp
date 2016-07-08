@@ -130,7 +130,7 @@ let convertToShortPath path =
 
     match Process.exec cmdArgs (Path.GetTempPath()) Map.empty "cmd.exe" args with
     | ErrorLevel _ -> path
-    | Ok -> match !result with None -> path | Some p -> p
+    | CmdResult.Success -> match !result with None -> path | Some p -> p
 
 let where envVars cmd =
     log "where %s" cmd
