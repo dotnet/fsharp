@@ -1613,11 +1613,10 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         // Record a entry in the undo trace if one is provided 
         let d = tp.Data
         let orig = d.typar_constraints
-        begin match trace with 
+        match trace with 
         | NoTrace -> () 
         | WithTrace trace -> trace.Push (fun () -> d.typar_constraints <- orig) 
-        end;
-        d.typar_constraints <- newConstraints;
+        d.typar_constraints <- newConstraints
 
         CompleteD)))
 
@@ -2403,7 +2402,7 @@ let EliminateConstraintsForGeneralizedTypars csenv trace (generalizedTypars: Typ
         let cxs = cxst.FindAll tpn
         if isNil cxs then () else
         cxs |> List.iter (fun cx -> 
-            cxst.Remove tpn;
+            cxst.Remove tpn
             match trace with 
             | NoTrace -> () 
             | WithTrace trace -> trace.Push (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))

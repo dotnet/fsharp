@@ -850,24 +850,24 @@ let TyconIsCandidateForAugmentationWithHash g tycon = TyconIsCandidateForAugment
 //------------------------------------------------------------------------- 
 
 let slotImplMethod (final,c,slotsig) : ValMemberInfo = 
-  { ImplementedSlotSigs=[slotsig];
+  { ImplementedSlotSigs=[slotsig]
     MemberFlags=
-        { IsInstance=true; 
-          IsDispatchSlot=false;
-          IsFinal=final;
-          IsOverrideOrExplicitImpl=true;
-          MemberKind=MemberKind.Member};
-    IsImplemented=false;
+        { IsInstance=true 
+          IsDispatchSlot=false
+          IsFinal=final
+          IsOverrideOrExplicitImpl=true
+          MemberKind=MemberKind.Member}
+    IsImplemented=false
     ApparentParent=c} 
 
 let nonVirtualMethod c : ValMemberInfo = 
-  { ImplementedSlotSigs=[];
-    MemberFlags={ IsInstance=true; 
-                  IsDispatchSlot=false;
-                  IsFinal=false;
-                  IsOverrideOrExplicitImpl=false;
-                  MemberKind=MemberKind.Member};
-    IsImplemented=false;
+  { ImplementedSlotSigs=[]
+    MemberFlags={ IsInstance=true 
+                  IsDispatchSlot=false
+                  IsFinal=false
+                  IsOverrideOrExplicitImpl=false
+                  MemberKind=MemberKind.Member}
+    IsImplemented=false
     ApparentParent=c} 
 
 let unitArg = ValReprInfo.unitArgData
@@ -945,7 +945,7 @@ let MakeBindingsForCompareAugmentation g (tycon:Tycon) =
               let thisv,thatv,comparee = comparef g tcref tycon 
               mkLambdas m tps [thisv;thatv] (comparee,g.int_ty)  
             [ // This one must come first because it may be inlined into the second
-              mkCompGenBind vspec2 rhs2;
+              mkCompGenBind vspec2 rhs2
               mkCompGenBind vspec1 rhs1; ] 
     if tycon.IsUnionTycon then mkCompare mkUnionCompare 
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkCompare mkRecdCompare 
@@ -1016,8 +1016,8 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
                 
                 mkLambdas m tps [thisv; unitv] (hashe,g.int_ty)  
                   
-            [(mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr) ; 
-             (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr) ; 
+            [(mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr)  
+             (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr)  
              (mkCompGenBind withcEqualsVal.Deref withcEqualsExpr)] 
     if tycon.IsUnionTycon then mkStructuralEquatable mkUnionHashWithComparer mkUnionEqualityWithComparer
     elif (tycon.IsRecordTycon || tycon.IsStructOrEnumTycon) then mkStructuralEquatable mkRecdHashWithComparer mkRecdEqualityWithComparer
@@ -1054,8 +1054,8 @@ let MakeBindingsForEqualsAugmentation g (tycon:Tycon) =
             mkLambdas m tps [thisv;thatobjv] (equalse,g.bool_ty)  
 
 
-          [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr;
-            mkCompGenBind objEqualsVal.Deref objEqualsExpr;   ] 
+          [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr
+            mkCompGenBind objEqualsVal.Deref objEqualsExpr   ] 
     if tycon.IsExceptionDecl then mkEquals mkExnEquality 
     elif tycon.IsUnionTycon then mkEquals mkUnionEquality 
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 
