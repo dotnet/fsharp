@@ -141,7 +141,8 @@ if /i '%ARG%' == 'ci' (
     set CONF_FSHARPQA_SUITE=Smoke
 )
 
-REM These divide 'ci' into three chunks which can be done in parallel
+
+REM These divide 'ci' into two chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
@@ -338,20 +339,20 @@ pushd .\lkg & %_dotnetexe% publish project.json &popd
 @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
-fc fsc.exe corehost.exe >nul
+pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
+fc fsc.exe dotnet.exe >nul
 @if ERRORLEVEL 1 (
   copy fsc.exe fsc.dll
-  copy corehost.exe fsc.exe
+  copy dotnet.exe fsc.exe
 )
 popd
 
 rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
-fc fsi.exe corehost.exe >nul
+pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
+fc fsi.exe dotnet.exe >nul
 @if ERRORLEVEL 1 (
   copy fsi.exe fsi.dll
-  copy corehost.exe fsi.exe
+  copy dotnet.exe fsi.exe
 )
 popd
 

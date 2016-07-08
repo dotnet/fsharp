@@ -19,8 +19,6 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Lib
 
-open Internal.Utilities.Debug
-
 /// Methods for dealing with F# sources files.
 module internal SourceFile =
     /// Source file extensions
@@ -98,7 +96,6 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
        ErrorScope.Protect 
             Range.range0 
             (fun () -> 
-                use t = Trace.Call("CompilerServices", "GetNavigationItems", fun _ -> "")
                 match input with
                 | Some(ParsedInput.ImplFile(ParsedImplFileInput(_modname,_isScript,_qualName,_pragmas,_hashDirectives,modules,_isLastCompiland))) ->
                     NavigationImpl.getNavigationFromImplFile modules 
@@ -364,12 +361,10 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
     
     // Get items for the navigation drop down bar       
     member scope.GetNavigationItems() =
-        use t = Trace.Call("SyncOp","GetNavigationItems", fun _->"")
         // This does not need to be run on the background thread
         scope.GetNavigationItemsImpl()
 
     member scope.ValidateBreakpointLocation(pos) =
-        use t = Trace.Call("SyncOp","ValidateBreakpointLocation", fun _->"")
         // This does not need to be run on the background thread
         scope.ValidateBreakpointLocationImpl(pos)
 
