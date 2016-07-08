@@ -308,18 +308,18 @@ let equalOn f x y = (f x) = (f y)
 
 let bufs f = 
     let buf = System.Text.StringBuilder 100 
-    f buf; 
+    f buf 
     buf.ToString()
 
 let buff (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
-    f buf x; 
+    f buf x 
     os.Write(buf.ToString())
 
 // Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
 let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
-    f buf x;
+    f buf x
     let text = buf.ToString()
     let text = text.Replace("\n",System.Environment.NewLine)
     os.Write text
@@ -373,14 +373,14 @@ let nullableSlotFull x = x
 // Caches, mainly for free variables
 //---------------------------------------------------------------------------
 
-type cache<'T> = { mutable cacheVal: 'T NonNullSlot; }
+type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
 let inline cached cache resf = 
     match box cache.cacheVal with 
     | null -> 
         let res = resf() 
-        cache.cacheVal <- nullableSlotFull res; 
+        cache.cacheVal <- nullableSlotFull res 
         res
     | _ -> 
         cache.cacheVal
@@ -390,7 +390,7 @@ let inline cacheOptRef cache f =
     | Some v -> v
     | None -> 
        let res = f()
-       cache := Some res;
+       cache := Some res
        res 
 
 
@@ -417,11 +417,11 @@ let delayInsertedToWorkaroundKnownNgenBug s f =
     (* Some random code to prevent inlining of this function *)
     let res = ref 10
     for i = 0 to 2 do 
-       res := !res + String.length s;
-    done;
-    if verbose then printf "------------------------executing NGEN bug delay '%s', calling 'f' --------------\n" s;
+       res := !res + String.length s
+    done
+    if verbose then printf "------------------------executing NGEN bug delay '%s', calling 'f' --------------\n" s
     let res = f()
-    if verbose then printf "------------------------exiting NGEN bug delay '%s' --------------\n" s;
+    if verbose then printf "------------------------exiting NGEN bug delay '%s' --------------\n" s
     res
     
 
@@ -473,7 +473,7 @@ module internal AsyncUtil =
                     if result.IsSome then  
                         []
                     else
-                        result <- Some res;
+                        result <- Some res
                         // Invoke continuations in FIFO order
                         // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
                         // so the order is not overly relevant but still.                        
