@@ -486,9 +486,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             Debug.Assert(isValidPath, string.Format("Expected assemblyFullPath to be a full path, but it was {0}", assemblyFullPath));
 
-            // AddComPlusReferenceByFullPath
-            Action<string> Trace = (s) => FSharpTrace.PrintLine("ProjectSystemReferenceResolution", () => "ResolveAssemblyReferenceByFullPath: " + s);
-            Trace("starting: \""+assemblyFullPath+"\"");
             this.msbuildProjectionInfo.WantHintPath = false;
             this.msbuildProjectionInfo.WantFusionName = false;
             this.msbuildProjectionInfo.WantSpecificVersion = null;
@@ -503,18 +500,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             if (!this.resolvedInfo.WasSuccessfullyResolved)
             {
-                Trace("simple name resolution did not succeed");
                 this.msbuildProjectionInfo.WantHintPath = true;
                 AddToProjectFileAndTryResolve(assemblyFullPath);
             }
             else
             {
                 this.myAssemblyPath = assemblyFullPath;
-                Trace("simple name resolution succeeded");
                 // we successfully resolved it via simple name
                 if (!this.resolvedInfo.IsPlatformAssembly)
                 {
-                    Trace("not a platform assembly");
+                    // not a platform assembly
                     if (resolvedInfo.AssemblyName != null)
                     {
                         // Project file contains different reference than picked/shown in UI
@@ -529,21 +524,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     if (tab == AddReferenceDialogTab.DotNetTab)
                     {
-                        Trace("from .Net tab");
+                        // from .Net tab
                         this.msbuildProjectionInfo.WantFusionName = true;
                         this.msbuildProjectionInfo.WantSpecificVersion = true;
                     }
                     else
                     {
                         Debug.Assert(tab == AddReferenceDialogTab.BrowseTab);
-                        Trace("not from .Net tab");
+                        // not from .Net tab
                         this.msbuildProjectionInfo.WantHintPath = true;
                     }
                 }
                 else
                 {
                     // platform assemblies can just resolve to simple name
-                    Trace("it was a platform assembly");
+                    // it was a platform assembly
                 }
             }
             // TODO - not accounting for case described below
@@ -567,7 +562,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 this.ProjectMgr.AddReferenceCouldNotBeAddedErrorMessage(assemblyFullPath);
             }
-            Trace("finished: \"" + assemblyFullPath + "\"");
+            // "finished: assemblyFullPath 
         }
 
         /// <summary>
@@ -576,25 +571,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="assemblyInclude">Either a full path to a file on disk, or a simple name or fusion name</param>
         private void AddToProjectFileAndTryResolve(string assemblyInclude)
         {
-            Action<string> Trace = (s) => FSharpTrace.PrintLine("ProjectSystemReferenceResolution", () => "ResolveAssemblyReferenceCore: " + s);
-            Trace("starting: \"" + assemblyInclude + "\"");
+            // starting: assemblyInclude 
             ProjectInstance instance = null;
             instance = this.ProjectMgr.BuildProject.CreateProjectInstance();   // use a fresh instance...
             instance.AddItem(ProjectFileConstants.Reference, assemblyInclude); // ...and mutate it as through there were another <Reference Include="blah"> there
-            Trace("instance[Configuration]=" + instance.GetPropertyValue("Configuration"));
-            Trace("instance[Platform]=" + instance.GetPropertyValue("Platform"));
             var result = BuildInstance(this.ProjectMgr, ref instance, MsBuildTarget.ResolveAssemblyReferences);
             this.ResolveFromBuiltProject(assemblyInclude, result);
-            Trace("finished without finding original item: \"" + assemblyInclude + "\"");
         }
 
         private void ResolveFromBuiltProject(string assemblyInclude, BuildResult buildResult)
         {
-            Action<string> Trace = (s) => FSharpTrace.PrintLine("ProjectSystemReferenceResolution", () => "ResolveAssemblyReferenceCore: " + s);
-            Trace("starting: \"" + assemblyInclude + "\"");
             if (!buildResult.IsSuccessful)
             {
-                Trace("ResolveAssemblyReferences build failed.");
+                // ResolveAssemblyReferences build failed.
                 return;
             }
             System.Collections.Generic.IEnumerable<ProjectItemInstance> group = buildResult.ProjectInstance.GetItems(ProjectFileConstants.ReferencePath);
@@ -622,12 +611,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         {
                             this.myAssemblyPath = Path.Combine(this.ProjectMgr.ProjectFolder, this.myAssemblyPath);
                         }
-                        Trace("finished and found original item: \"" + assemblyInclude + "\"");
+                        // finished and found original item
                         return;
                     }
                 }
             }
-            Trace("finished without finding original item: \"" + assemblyInclude + "\"");
+            // finished without finding original item
         }
 
         /// <summary>
