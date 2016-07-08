@@ -1770,6 +1770,15 @@ namespace Microsoft.FSharp.Core
     and 'T option = Option<'T>
 
 
+    /// <summary>Helper type for error handling without exceptions.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpResult`2")>]
+    type Result<'T,'TError> = 
+      /// Represents an OK or a Successful result. The code succeeded with a value of 'T.
+      | Ok of 'T 
+      /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
+      | Error of 'TError
+
 namespace Microsoft.FSharp.Collections
 
     open System
