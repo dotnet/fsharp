@@ -5344,9 +5344,8 @@ and TcExprNoRecover cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
         if GetCtorShapeCounter env > 0 then AdjustCtorShapeCounter (fun x -> x - 1) env 
         else env
 
-    let tm,tpenv = TcExprThen cenv ty env tpenv expr []
+    TcExprThen cenv ty env tpenv expr []
 
-    tm,tpenv
 
 // This recursive entry is only used from one callsite (DiscardAfterMissingQualificationAfterDot)
 // and has been added relatively late in F# 4.0 to preserve the structure of previous code.  It pushes a 'delayed' parameter
@@ -5697,8 +5696,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
                 ((if cenv.g.compilingFslib then id else mkCallSeq cenv.g m genCollElemTy)
                     (mkCoerceExpr(expr,genEnumTy,expr.Range,exprty))),tpenv
 
-    | SynExpr.LetOrUse (isRec,isUse,binds,body,m) ->
-        TcLinearLetExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy (fun x -> x) tpenv (true(*consume use bindings*),isRec,isUse,binds,body,m) 
+    | SynExpr.LetOrUse _ ->
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv true (*consume use bindings*) expr (fun x -> x) 
 
     | SynExpr.TryWith (e1,_mTryToWith,clauses,mWithToLast,mTryToLast,spTry,spWith) ->
         let e1',tpenv = TcExpr cenv overallTy env tpenv e1
@@ -5737,17 +5736,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.Sequential (sp,dir,e1,e2,m) ->
         if dir then 
-            // Use continuations to cope with long linear sequences 
-            let rec TcLinearSeqs expr cont = 
-                match expr with 
-                | SynExpr.Sequential (sp,true,e1,e2,m) ->
-                  let e1',_ = TcStmtThatCantBeCtorBody cenv env tpenv e1
-                  TcLinearSeqs e2 (fun (e2',tpenv) -> 
-                      cont (Expr.Sequential(e1',e2',NormalSeq,sp,m),tpenv))
-
-                | _ -> 
-                  cont (TcExprThatCanBeCtorBody cenv overallTy env tpenv expr)
-            TcLinearSeqs expr (fun res -> res)
+            TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv true (*consume use bindings*) expr (fun x -> x) 
         else 
             // Constructors using "new (...) = <ctor-expr> then <expr>" 
             let e1',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e1
@@ -7932,13 +7921,14 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 Some(mkCond spIfToThen SequencePointAtTarget mIfToEndOfElseBranch genOuterTy guardExpr' thenExpr elseExpr, tpenv)
 
             // 'let x = expr in expr'
-            | SynExpr.LetOrUse (isRec,false (* not a 'use' binding *),binds,body,m) ->
-                TcLinearLetExprs 
+            | SynExpr.LetOrUse (_,false (* not a 'use' binding *),_,_,_) ->
+                TcLinearExprs 
                     (fun ty envinner tpenv e -> tcSequenceExprBody envinner ty tpenv e) 
                     cenv env overallTy 
-                    (fun x -> x) 
                     tpenv 
-                    (false(* don't consume 'use' bindings*),isRec,false,binds,body,m)  |> Some
+                    false(* don't consume 'use' bindings*)
+                    comp 
+                    (fun x -> x)  |> Some
 
             // 'use x = expr in expr'
             | SynExpr.LetOrUse (_isRec,true,[Binding (_vis,NormalBinding,_,_,_,_,_,pat,_,rhsExpr,_,_spBind)],innerComp,wholeExprMark) ->
@@ -9750,32 +9740,34 @@ and CheckRecursiveBindingIds binds =
                 error(Duplicate("value",nm,m))
             else hashOfBinds.[nm] <- b
 
-/// Process a sequence of iterated lets "let ... in let ... in ..." in a tail recursive way 
-/// This avoids stack overflow on really larger "let" and "letrec" lists
-and TcLinearLetExprs bodyChecker cenv env overallTy builder tpenv (processUseBindings,isRec,isUse,binds,body,m) =
-    assert (not isUse || processUseBindings)
+/// Process a sequence of seqeuntials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
+/// This avoids stack overflow on really large "let" and "letrec" lists
+and TcLinearExprs bodyChecker cenv env overallTy tpenv processUseBindings expr cont = 
+    match expr with 
+    | SynExpr.Sequential (sp,true,e1,e2,m) ->
+        let e1',_ = TcStmtThatCantBeCtorBody cenv env tpenv e1
+        // tailcall
+        TcLinearExprs bodyChecker cenv env overallTy tpenv processUseBindings e2 (fun (e2',tpenv) -> 
+            cont (Expr.Sequential(e1',e2',NormalSeq,sp,m),tpenv))
+
+    | SynExpr.LetOrUse (isRec,isUse,binds,body,m) when (not isUse || processUseBindings) ->
                 
-    if isRec then 
-        // TcLinearLetExprs processes at most one recursive binding
-        CheckRecursiveBindingIds binds
-        let binds = List.map (fun x -> RecDefnBindingInfo(ExprContainerInfo,NoNewSlots,ExpressionBinding,x)) binds
-        if isUse then errorR(Error(FSComp.SR.tcBindingCannotBeUseAndRec(),m))
-        let binds,envinner,tpenv = TcLetrec ErrorOnOverrides cenv env tpenv (binds,m,m)
-        let bodyExpr,tpenv = bodyChecker overallTy envinner tpenv body 
-        let bodyExpr = bindLetRec (FlatList.ofList binds) m bodyExpr
-        fst (builder (bodyExpr,overallTy)),tpenv
-    else 
-        // TcLinearLetExprs processes multiple 'let' bindings in a tail recursive way
-        // We process one binding, then look for additional linear bindings and accumulate the builder continuation.
-        // Don't processes 'use' bindings (e.g. in sequence expressions) unless directed to.
-        let mkf,envinner,tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds,m,body.Range)
-        let builder' x = builder (mkf x)
-        match body with 
-        | SynExpr.LetOrUse (isRec',isUse',binds',bodyExpr,m') when (not isUse' || processUseBindings) ->
-            TcLinearLetExprs bodyChecker cenv envinner overallTy builder' tpenv (processUseBindings,isRec',isUse',binds',bodyExpr,m')
-        | _ -> 
+        if isRec then 
+            // TcLinearExprs processes at most one recursive binding, this is not tailcalling
+            CheckRecursiveBindingIds binds
+            let binds = List.map (fun x -> RecDefnBindingInfo(ExprContainerInfo,NoNewSlots,ExpressionBinding,x)) binds
+            if isUse then errorR(Error(FSComp.SR.tcBindingCannotBeUseAndRec(),m))
+            let binds,envinner,tpenv = TcLetrec ErrorOnOverrides cenv env tpenv (binds,m,m)
             let bodyExpr,tpenv = bodyChecker overallTy envinner tpenv body 
-            fst (builder' (bodyExpr,overallTy)),tpenv
+            let bodyExpr = bindLetRec (FlatList.ofList binds) m bodyExpr
+            cont (bodyExpr,tpenv)
+        else 
+            // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
+            let mkf,envinner,tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds,m,body.Range)
+            let cont2 (x,tpenv) = cont (fst (mkf (x,overallTy)), tpenv)
+            TcLinearExprs bodyChecker cenv envinner overallTy tpenv processUseBindings body cont2
+    | _ -> 
+        cont (bodyChecker overallTy env tpenv expr)
 
 /// Typecheck and compile pattern-matching constructs
 and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputTy resultTy env tpenv clauses =
@@ -10421,7 +10413,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
             else 
                 (bodyExpr,bodyExprTy)
                 
-        ((mkRhsBind << mkPatBind << mkCleanup << mkf_sofar),
+        ((mkf_sofar >> mkCleanup  >> mkPatBind  >> mkRhsBind),
          AddLocalValMap cenv.tcSink scopem prelimRecValues env,
          tpenv))
 
