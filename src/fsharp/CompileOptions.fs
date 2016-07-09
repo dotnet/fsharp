@@ -1057,31 +1057,17 @@ let testingAndQAFlags _tcConfigB =
 
 /// The core/common options used by fsc.exe. [not currently extended by fsc.fs].
 let GetCoreFscCompilerOptions (tcConfigB: TcConfigBuilder) = 
-<<<<<<< HEAD
-  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles(),  outputFileFlagsFsc        tcConfigB); 
-    PublicOptions(FSComp.SR.optsHelpBannerInputFiles(),   inputFileFlagsFsc         tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerResources(),    resourcesFlagsFsc         tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerCodeGen(),      codeGenerationFlags false tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns(), errorsAndWarningsFlags    tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerLanguage(),     languageFlags             tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerMisc(),         miscFlagsFsc              tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerAdvanced(), advancedFlagsFsc tcConfigB);
-    PrivateOptions(List.concat              [ internalFlags           tcConfigB;
-                                              abbreviatedFlagsFsc     tcConfigB;
-                                              deprecatedFlagsFsc      tcConfigB;
-=======
-  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles(), outputFileFlagsFsc      tcConfigB) 
-    PublicOptions(FSComp.SR.optsHelpBannerInputFiles(), inputFileFlagsFsc       tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerResources(), resourcesFlagsFsc       tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerCodeGen(), codeGenerationFlags     tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns(), errorsAndWarningsFlags  tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerLanguage(), languageFlags           tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerMisc(), miscFlagsFsc            tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerAdvanced(), advancedFlagsFsc        tcConfigB)
+  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles(),  outputFileFlagsFsc        tcConfigB) 
+    PublicOptions(FSComp.SR.optsHelpBannerInputFiles(),   inputFileFlagsFsc         tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerResources(),    resourcesFlagsFsc         tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerCodeGen(),      codeGenerationFlags false tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns(), errorsAndWarningsFlags    tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerLanguage(),     languageFlags             tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerMisc(),         miscFlagsFsc              tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerAdvanced(), advancedFlagsFsc tcConfigB)
     PrivateOptions(List.concat              [ internalFlags           tcConfigB
                                               abbreviatedFlagsFsc     tcConfigB
                                               deprecatedFlagsFsc      tcConfigB
->>>>>>> 47dd515cbd581145629cf53f1f97317093a05e8e
                                               testingAndQAFlags       tcConfigB])
   ]
 
@@ -1093,21 +1079,12 @@ let GetCoreServiceCompilerOptions (tcConfigB:TcConfigBuilder) =
 
 /// The core/common options used by fsi.exe. [note, some additional options are added in fsi.fs].
 let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
-<<<<<<< HEAD
-  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles()        , outputFileFlagsFsi       tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerInputFiles()         , inputFileFlagsFsi        tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerResources()          , resourcesFlagsFsi        tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerCodeGen()            , codeGenerationFlags true tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns()       , errorsAndWarningsFlags   tcConfigB);
-    PublicOptions(FSComp.SR.optsHelpBannerLanguage()           , languageFlags            tcConfigB);
-=======
-  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles()        , outputFileFlagsFsi      tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerInputFiles()         , inputFileFlagsFsi       tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerResources()          , resourcesFlagsFsi       tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerCodeGen()            , codeGenerationFlags     tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns()       , errorsAndWarningsFlags  tcConfigB)
-    PublicOptions(FSComp.SR.optsHelpBannerLanguage()           , languageFlags           tcConfigB)
->>>>>>> 47dd515cbd581145629cf53f1f97317093a05e8e
+  [ PublicOptions(FSComp.SR.optsHelpBannerOutputFiles()        , outputFileFlagsFsi       tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerInputFiles()         , inputFileFlagsFsi        tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerResources()          , resourcesFlagsFsi        tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerCodeGen()            , codeGenerationFlags true tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerErrsAndWarns()       , errorsAndWarningsFlags   tcConfigB)
+    PublicOptions(FSComp.SR.optsHelpBannerLanguage()           , languageFlags            tcConfigB)
     // Note: no HTML block for fsi.exe
     PublicOptions(FSComp.SR.optsHelpBannerMisc()       , miscFlagsFsi            tcConfigB)
     PublicOptions(FSComp.SR.optsHelpBannerAdvanced()   , advancedFlagsFsi        tcConfigB)
