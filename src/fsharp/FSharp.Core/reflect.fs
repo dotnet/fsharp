@@ -396,7 +396,7 @@ module internal Impl =
     let mutable systemValueTupleException = null
 
     let reflectedValueTuple n =
-        try
+        try        
 #if FX_ASSEMBLYLOADBYSTRING
             let a = Assembly.Load("System.ValueTuple")
 #else
