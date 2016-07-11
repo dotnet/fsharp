@@ -230,7 +230,7 @@ val isCompiledTupleTyconRef : TcGlobals -> TyconRef -> bool
 val mkCompiledTupleTyconRef : TcGlobals -> bool -> 'a list -> TyconRef
 val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
 val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
-val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> Expr -> TType -> Expr
+val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 val evalTupInfoIsStruct : TupInfo -> bool
 

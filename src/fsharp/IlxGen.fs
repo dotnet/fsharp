@@ -2010,7 +2010,7 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
         elif ar < maxTuple then
             let tcr' = mkCompiledTupleTyconRef g tupInfo tys
             let typ = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
-            mkGetTupleItemN g m n typ e tys.[n]
+            mkGetTupleItemN g m n typ tupInfo e tys.[n]
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
@@ -2018,7 +2018,7 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
             let tcr' = mkCompiledTupleTyconRef g tupInfo tys'
             let typ' = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys'
             let n' = (min n goodTupleFields)
-            let elast = mkGetTupleItemN g m n' typ' e tys'.[n']
+            let elast = mkGetTupleItemN g m n' typ' tupInfo e tys'.[n']
             if n < goodTupleFields then
                 elast
             else
