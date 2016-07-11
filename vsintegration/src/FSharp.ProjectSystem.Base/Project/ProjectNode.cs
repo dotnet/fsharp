@@ -40,17 +40,6 @@ using Microsoft.VisualStudio.FSharp.LanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
-    internal class FSharpTrace
-    {
-        static public void PrintLine(string traceClass, Func<string> msg)
-        {
-            if (global::Internal.Utilities.Debug.Trace.ShouldLog(traceClass))
-            {
-                var fsFunc = Microsoft.FSharp.Core.FuncConvert.ToFSharpFunc(new Converter<Microsoft.FSharp.Core.Unit, string>((u) => msg()));
-                global::Internal.Utilities.Debug.Trace.PrintLine(traceClass, fsFunc);
-            }
-        }
-    }
 
     internal delegate void MSBuildCoda(MSBuildResult result, ProjectInstance instance);
 
