@@ -3412,15 +3412,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // F#-specific properties
                 projectInstance.SetProperty(GlobalProperty.VisualStudioStyleErrors.ToString(), "true");
                 
-                // Get SQM GlobalSessionGuid from Visual Studio to pass FSC.exe,
-                // so multiple SQM sessions can be correlated later when analying SQM data.
-                IVsSqmMulti sqm = this.GetService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsLog)) as IVsSqmMulti;
-                if (sqm != null)
-                {
-                    var sessionGuid = sqm.GetGlobalSessionGuid();
-                    projectInstance.SetProperty(GlobalProperty.SqmSessionGuid.ToString(), sessionGuid.ToString());
-                }
-
                 if (extraProperties != null)
                 {
                     foreach (var prop in extraProperties)
