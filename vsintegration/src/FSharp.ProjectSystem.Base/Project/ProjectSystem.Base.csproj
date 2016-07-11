@@ -150,7 +150,6 @@
     <Compile Include="ImageHandler.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="IDEBuildLogger.cs" />
-    <Compile Include="ivssqm.cs" />
     <Compile Include="LinkedFileNode.cs" />
     <Compile Include="LocalizableProperties.cs" />
     <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
