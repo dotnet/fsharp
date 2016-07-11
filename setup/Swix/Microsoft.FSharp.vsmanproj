@@ -10,15 +10,15 @@
         <IsPackage>true</IsPackage>
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
     </PropertyGroup>
-
+    
     <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   
     <Target Name="IncludeManifests" BeforeTargets="MergeManifests">
         <ItemGroup>
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
-            <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix.swixproj -->
+            <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix and Microsoft.FSharp.Dependencies -->
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.%(SetupLanguages.LocaleCode).json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.Full.json" />
         </ItemGroup>
     </Target>
 </Project>
