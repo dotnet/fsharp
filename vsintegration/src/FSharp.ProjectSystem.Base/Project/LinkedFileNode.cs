@@ -17,7 +17,6 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
-using MSBuild = Microsoft.Build.BuildEngine;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
