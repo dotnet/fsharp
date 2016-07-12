@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open NUnit.Framework
 open FsCheck
+open Utils
 
 let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
     
