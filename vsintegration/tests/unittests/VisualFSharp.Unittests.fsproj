@@ -35,7 +35,6 @@
     <Compile Include="TestLib.ProjectSystem.fs" />
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
-    <Compile Include="Tests.BaseLine.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
