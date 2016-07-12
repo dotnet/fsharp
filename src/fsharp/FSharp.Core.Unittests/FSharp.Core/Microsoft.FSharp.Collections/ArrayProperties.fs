@@ -15,6 +15,16 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
     isStable sorted
     
 [<Test>]
-let ``Seq.distinctBy is stable`` () =
+let ``Array.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>
+    
+let blitWorksLikeCopy<'a when 'a : comparison> (source : 'a [], sourceIndex, target : 'a [], targetIndex, count) =
+    let a = runAndCheckIfAnyError (fun () -> Array.blit source sourceIndex target targetIndex count)
+    let b = runAndCheckIfAnyError (fun () -> Array.Copy(source, sourceIndex, target, targetIndex, count))
+    a = b
+    
+[<Test>]
+let ``Array.blit works like Array.Copy`` () =
+    Check.QuickThrowOnFailure blitWorksLikeCopy<int>
+    Check.QuickThrowOnFailure blitWorksLikeCopy<string>
