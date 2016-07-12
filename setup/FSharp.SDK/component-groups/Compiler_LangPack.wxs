@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:NetFx="http://schemas.microsoft.com/wix/NetFxExtension">
+
+	<Fragment>
+		<ComponentGroup Id="Compiler_LangPack">
+
+			<ComponentRef Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" />
+			<ComponentRef Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" />
+			<ComponentRef Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" />
+			<ComponentRef Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" />
+			<ComponentRef Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" />
+			<ComponentRef Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" />
+			
+		</ComponentGroup>
+
+		<DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0_$(var.LocaleId)">
+
+            <Component Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+            </Component>
+            
+            <Component Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Build.resources.dll" KeyPath="yes" />
+            </Component>
+            
+            <Component Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Compiler.resources.dll" KeyPath="yes" />
+            </Component>
+            
+            <Component Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsc.exe_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\fsc.resources.dll" KeyPath="yes" />
+            </Component>
+            
+            <Component Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsi.exe_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\fsi.resources.dll" KeyPath="yes"/>
+            </Component>
+            
+            <Component Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode), $(var.LocaleCode)))">
+                <File Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\fsiAnyCPU.resources.dll" KeyPath="yes" />
+            </Component>
+            
+		</DirectoryRef>
+	</Fragment>
+</Wix>
