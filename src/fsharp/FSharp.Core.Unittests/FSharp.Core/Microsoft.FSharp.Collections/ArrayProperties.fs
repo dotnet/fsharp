@@ -21,8 +21,10 @@ let ``Array.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<string>
     
 let blitWorksLikeCopy<'a when 'a : comparison> (source : 'a [], sourceIndex, target : 'a [], targetIndex, count) =
-    let a = runAndCheckIfAnyError (fun () -> Array.blit source sourceIndex target targetIndex count)
-    let b = runAndCheckIfAnyError (fun () -> Array.Copy(source, sourceIndex, target, targetIndex, count))
+    let target1 = Array.copy target
+    let target2 = Array.copy target
+    let a = runAndCheckIfAnyError (fun () -> Array.blit source sourceIndex target1 targetIndex count)
+    let b = runAndCheckIfAnyError (fun () -> Array.Copy(source, sourceIndex, target2, targetIndex, count))
     a = b
     
 [<Test>]
