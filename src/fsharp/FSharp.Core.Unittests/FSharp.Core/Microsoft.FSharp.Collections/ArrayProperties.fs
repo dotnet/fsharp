@@ -25,7 +25,7 @@ let blitWorksLikeCopy<'a when 'a : comparison> (source : 'a [], sourceIndex, tar
     let target2 = Array.copy target
     let a = runAndCheckIfAnyError (fun () -> Array.blit source sourceIndex target1 targetIndex count)
     let b = runAndCheckIfAnyError (fun () -> Array.Copy(source, sourceIndex, target2, targetIndex, count))
-    a = b
+    a = b && target1 = target2
     
 [<Test>]
 let ``Array.blit works like Array.Copy`` () =
