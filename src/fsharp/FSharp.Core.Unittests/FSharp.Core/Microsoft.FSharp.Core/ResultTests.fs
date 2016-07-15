@@ -39,6 +39,8 @@ type ResultTests() =
 
     let shouldBeErrorWithValue expected maybeError = match maybeError with | Error e-> Assert.AreEqual(expected, e) | Ok v-> failwith "Expected Error, got Ok!"
 
+    let addOneOk (v:int) = Ok (v+1)
+
     [<Test>]
     member this.CanChainTogetherSuccessiveValidations() =
         test_validate_email "" (Error Empty)
@@ -69,7 +71,6 @@ type ResultTests() =
         |> mapError toUpper
         |> shouldBeOkWithValue "some@email.com"
 
-    let addOneOk (v:int) = Ok (v+1)
     [<Test>]
     member this.BindShouldModifyOkValue() =
         Ok 42
