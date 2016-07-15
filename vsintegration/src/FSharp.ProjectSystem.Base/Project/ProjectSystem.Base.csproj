@@ -90,7 +90,6 @@
     <Reference Include="VSLangProj80" />
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
@@ -99,12 +98,17 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
+    </Reference>
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />

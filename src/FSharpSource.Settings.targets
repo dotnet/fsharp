@@ -87,6 +87,7 @@
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
     <RoslynVersion>2.0.0-beta1</RoslynVersion>
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
+    <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
   </PropertyGroup>
 
 </Project>
