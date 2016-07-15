@@ -13,10 +13,8 @@ type EmailValidation=
     | Empty
     | NoAt
 
-module Results=
-    let bind f m = match m with Error e -> Error e | Ok x -> f x
 
-open Results
+open Result
 
 [<TestFixture>]
 type ResultTests() =
@@ -41,4 +39,48 @@ type ResultTests() =
         test_validate_email "" (Error Empty)
         test_validate_email "something_else" (Error NoAt)
         test_validate_email "some@email.com" (Ok "some@email.com")
+
+    let toUpper (v:string) = v.ToUpper()
+
+    let shouldBeOkWithValue expected maybeOk = match maybeOk with | Error e-> failwith "Expected Ok, got Error!" | Ok v->Assert.AreEqual(expected, v)
+
+    let shouldBeErrorWithValue expected maybeError = match maybeError with | Error e-> Assert.AreEqual(expected, e) | Ok v-> failwith "Expected Error, got Ok!"
+
+    [<Test>]
+    member this.MapWillTransformOkValues() =
+        Ok "some@email.com" 
+        |> map toUpper
+        |> shouldBeOkWithValue "SOME@EMAIL.COM"
+
+    [<Test>]
+    member this.MapWillNotTransformErrorValues() =
+        Error "my error" 
+        |> map toUpper
+        |> shouldBeErrorWithValue "my error"
+
+    [<Test>]
+    member this.MapErrorWillTransformErrorValues() =
+        Error "my error" 
+        |> mapError toUpper
+        |> shouldBeErrorWithValue "MY ERROR"
+
+    [<Test>]
+    member this.MapErrorWillNotTransformOkValues() =
+        Ok "some@email.com" 
+        |> mapError toUpper
+        |> shouldBeOkWithValue "some@email.com"
+
+    let addOneOk (v:int) = Ok (v+1)
+    [<Test>]
+    member this.BindShouldModifyOkValue() =
+        Ok 42
+        |> bind addOneOk
+        |> shouldBeOkWithValue 43
+
+    [<Test>]
+    member this.BindErrorShouldNotModifyError() =
+        Error "Error"
+        |> bind addOneOk
+        |> shouldBeErrorWithValue "Error"
+
 
