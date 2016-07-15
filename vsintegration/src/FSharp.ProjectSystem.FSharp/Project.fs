@@ -40,8 +40,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     
     open EnvDTE
 
-    open Microsoft.Build.BuildEngine
-
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.
@@ -389,7 +387,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // for example. If necessary, this can be changed - but please just try to avoid doing a gratuitous rename.
             let mutable sourcesAndFlags : option<(array<string> * array<string>)> = None
 #if DEBUG
-            let logger = new Microsoft.Build.BuildEngine.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
+            let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
                                 (fun s -> Trace.WriteLine("MSBuild: " + s)),
                                 (fun _ -> ()),
                                 (fun _ -> ())    )
@@ -567,9 +565,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | Some(libraryManager) -> 
                         libraryManager.UnregisterHierarchy(this.InteropSafeIVsHierarchy)
                     | _ -> ()
+
+                closeNotifier.Notify()
                 vsProject <- null
                 accessor <- null
-                closeNotifier.Notify()
                 base.Close()
 
             override x.Load(filename:string, location:string, name:string, flags:uint32, iidProject:byref<Guid>, canceled:byref<int> ) =
@@ -2257,14 +2256,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                       
                 match (cmd |> int32 |> enum) with 
                 //| VsCommands.Delete   // REVIEW needs work to implement: see e.g. RemoveFromProjectFile() RemoveItem() CanRemoveItems() CanDeleteItem() DeleteFromStorage()
-                | VsCommands.ViewCode when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
+                | VSConstants.VSStd97CmdID.ViewCode when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
                         
                         result <- result ||| QueryStatusResult.SUPPORTED
                         if noBuildInProgress then 
                             result <- result ||| QueryStatusResult.ENABLED
                         VSConstants.S_OK
                         
-                | VsCommands.ViewForm when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
+                | VSConstants.VSStd97CmdID.ViewForm when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
                         if (x.IsFormSubType) then 
                             result <- result ||| QueryStatusResult.SUPPORTED
                         if noBuildInProgress then 

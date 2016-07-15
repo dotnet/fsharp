@@ -835,11 +835,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError();
             
         let fragName = textOfLid prefixPath 
-#if ENABLE_MONO_SUPPORT
         let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
-#else
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, false, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
-#endif
         errorLogger.AbortOnError();
 
         // Each input is like a small separately compiled extension to a single source file. 
@@ -2229,7 +2225,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do tcConfigB.useFsiAuxLib <- true
 
 #if TODO_REWORK_ASSEMBLY_LOAD
-    do tcConfigB.useMonoResolution<-true
+    do tcConfigB.useSimpleResolution<-true
 #else
 #endif
 
@@ -2250,7 +2246,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do InstallErrorLoggingOnThisThread errorLogger // FSI error logging on main thread.
 
     let updateBannerText() =
-      tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpEnvironment.DotNetBuildString)
+      tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpEnvironment.FSharpBannerVersion)
   
     do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 

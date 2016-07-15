@@ -24,20 +24,6 @@ open Microsoft.VisualStudio.Shell.Interop
 type internal SVsSettingsPersistenceManager = class end
 
 [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
-
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
-
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fs", 97)>]
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsi", 97)>]
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsx", 97)>]
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".fsscript", 97)>]
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".ml", 97)>]
-[<ProvideEditorExtension("4EB7CCB7-4336-4FFD-B12B-396E9FD079A9", ".mli", 97)>]
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService, FSharpProjectSite>(package)
 
@@ -71,19 +57,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | _ -> ()
         | _ -> ()
 
-and [<Guid(FSharpCommonConstants.editorFactoryGuidString)>]
-    internal FSharpEditorFactory(package : FSharpPackage) =
-        inherit AbstractEditorFactory(package)
-
-        override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
-        override this.GetFormattedTextChanges(_, _, _, _) = upcast Array.empty
-
-and [<Guid(FSharpCommonConstants.codePageEditorFactoryGuidString)>]
-    internal FSharpCodePageEditorFactory(editorFactory: FSharpEditorFactory) =
-    inherit AbstractCodePageEditorFactory(editorFactory)
-
-and [<ProvideLanguageService(FSharpCommonConstants.languageServiceGuidString, FSharpCommonConstants.FSharpContentTypeName, 1)>]
-    [<Guid(FSharpCommonConstants.packageGuidString)>]
+and [<Guid(FSharpCommonConstants.packageGuidString)>]
     internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService, FSharpProjectSite>()
     
@@ -97,14 +71,7 @@ and [<ProvideLanguageService(FSharpCommonConstants.languageServiceGuidString, FS
     
     override this.CreateLanguageService() = new FSharpLanguageService(this)
 
-    override this.CreateEditorFactories() =
-        let editorFactory = new FSharpEditorFactory(this)
-        let codePageEditorFactory = new FSharpCodePageEditorFactory(editorFactory)
-        
-        [|
-            editorFactory :> IVsEditorFactory;
-            codePageEditorFactory :> IVsEditorFactory;
-        |] :> seq<IVsEditorFactory>
+    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     

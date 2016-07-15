@@ -2,11 +2,12 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Utilities
 open System.ComponentModel.Composition
-open System.Composition
+
+open Microsoft.CodeAnalysis.Editor
+open Microsoft.VisualStudio.Utilities
+
+open Microsoft.VisualStudio.FSharp.LanguageService
 
 module FSharpStaticTypeDefinitions = 
     [<Export>]
@@ -14,11 +15,10 @@ module FSharpStaticTypeDefinitions =
     [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
     let FSharpContentTypeDefinition = ContentTypeDefinition()
 
-[<Shared>]
 [<ExportContentTypeLanguageService(FSharpCommonConstants.FSharpContentTypeName, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpContentTypeLanguageService [<ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
+type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
     member this.contentTypeRegistryService = contentTypeRegistry
  
     interface IContentTypeLanguageService with
         member this.GetDefaultContentType() = 
-            this.contentTypeRegistryService.GetContentType(FSharpCommonConstants.FSharpContentTypeName);
+            this.contentTypeRegistryService.GetContentType(FSharpCommonConstants.FSharpContentTypeName)

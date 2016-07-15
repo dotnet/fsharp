@@ -28,4 +28,4 @@ type internal FSharpProjectSiteService [<ImportingConstructor>] (vsWorkspace : V
 
     interface IHostProjectService with
         member this.GetHostProject(id:ProjectId) =
-            downcast vsWorkspace.GetHostProject(id)
+            downcast vsWorkspace.GetHostProject(id) 

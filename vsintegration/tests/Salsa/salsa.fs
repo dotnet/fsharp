@@ -76,7 +76,7 @@ module internal Salsa =
             let engine = Utilities.InitializeMsBuildEngine(null)
             if not hasAttachedLogger then 
                 hasAttachedLogger<-true
-                let l = new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed)
+                let l = new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed)
                 // For Dev10 build we pass the logger to the Build call on the project object.
                 theAttachedLogger <- l
             engine
@@ -197,7 +197,7 @@ module internal Salsa =
                 use xx = host.CaptureSourcesAndFlagsWithoutBuildingForABit()
                 project.IsBuildEnabled <- true
                     
-                let loggers = seq { yield (new Microsoft.Build.BuildEngine.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
+                let loggers = seq { yield (new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Detailed) :> ILogger) }
                             
                 let r = project.Build("Compile", loggers)
                 if not(r) then
