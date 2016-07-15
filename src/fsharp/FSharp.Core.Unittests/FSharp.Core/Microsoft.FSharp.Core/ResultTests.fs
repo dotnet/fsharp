@@ -33,18 +33,17 @@ type ResultTests() =
         let actual = validate_email email
         Assert.AreEqual(expected, actual)
 
+    let toUpper (v:string) = v.ToUpper()
+
+    let shouldBeOkWithValue expected maybeOk = match maybeOk with | Error e-> failwith "Expected Ok, got Error!" | Ok v->Assert.AreEqual(expected, v)
+
+    let shouldBeErrorWithValue expected maybeError = match maybeError with | Error e-> Assert.AreEqual(expected, e) | Ok v-> failwith "Expected Error, got Ok!"
 
     [<Test>]
     member this.CanChainTogetherSuccessiveValidations() =
         test_validate_email "" (Error Empty)
         test_validate_email "something_else" (Error NoAt)
         test_validate_email "some@email.com" (Ok "some@email.com")
-
-    let toUpper (v:string) = v.ToUpper()
-
-    let shouldBeOkWithValue expected maybeOk = match maybeOk with | Error e-> failwith "Expected Ok, got Error!" | Ok v->Assert.AreEqual(expected, v)
-
-    let shouldBeErrorWithValue expected maybeError = match maybeError with | Error e-> Assert.AreEqual(expected, e) | Ok v-> failwith "Expected Error, got Ok!"
 
     [<Test>]
     member this.MapWillTransformOkValues() =
