@@ -16,10 +16,10 @@ open Salsa
 
 open Microsoft.Win32
 
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework
         

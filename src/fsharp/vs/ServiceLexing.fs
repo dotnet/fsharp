@@ -551,9 +551,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
 
     do match filename with 
-       | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
-       | Some(value) -> resetLexbufPos value lexbuf
-    
+        | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
+        | Some(value) -> resetLexbufPos value lexbuf
+     
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
         use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)

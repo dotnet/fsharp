@@ -2461,7 +2461,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             // Do we use a "FSharp.Core, 4.3.0.0" reference by default?
             let otherFlags = defaultArg otherFlags [| |]
-            let useMonoResolution = 
+            let useSimpleResolution = 
 #if ENABLE_MONO_SUPPORT
                 runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 #else
@@ -2472,7 +2472,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
                 let collect _name = ()
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (collect, fsiCompilerOptions, Array.toList otherFlags)
-            let fas = LoadClosure.ComputeClosureOfSourceText(filename, source, CodeContext.Editing, useMonoResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
+            let fas = LoadClosure.ComputeClosureOfSourceText(filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 

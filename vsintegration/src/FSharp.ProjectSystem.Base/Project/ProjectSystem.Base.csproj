@@ -30,8 +30,6 @@
     <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE;</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
@@ -59,12 +57,21 @@
     <DelaySign>true</DelaySign>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.Build.Conversion.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix), Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Conversion.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.0\lib\net45\Microsoft.Build.Conversion.Core.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
@@ -83,7 +90,7 @@
     <Reference Include="VSLangProj80" />
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.14.0" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
@@ -92,9 +99,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.14.2.25123\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
-    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
@@ -113,6 +118,7 @@
     <Compile Include="GroupingReferenceNode.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="AssemblyInfo.cs" />
+
     <!-- Automation Objects -->
     <Compile Include="Automation\OAFileItem.cs" />
     <Compile Include="Automation\OAFolderItem.cs" />
@@ -125,6 +131,7 @@
     <Compile Include="Automation\OANavigableProjectItems.cs" />
     <Compile Include="Automation\OAReferenceFolderItem.cs" />
     <Compile Include="Automation\OAReferenceItem.cs" />
+
     <!-- Objects needed to implement a Language Project -->
     <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
     <Compile Include="Automation\VSProject\OABuildManager.cs" />
@@ -142,7 +149,7 @@
     <Compile Include="DataObject.cs" />
     <Compile Include="DesignPropertyDescriptor.cs" />
     <Compile Include="DocumentManager.cs" />
-    <Compile Include="EnumDependencies.cs" />
+    <Compile Include="EnumDependencies.cs"/>
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
@@ -152,7 +159,6 @@
     <Compile Include="ImageHandler.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="IDEBuildLogger.cs" />
-    <Compile Include="ivssqm.cs" />
     <Compile Include="LinkedFileNode.cs" />
     <Compile Include="LocalizableProperties.cs" />
     <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
@@ -214,10 +220,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\FSharp.LanguageService\FSharp.LanguageService.fsproj">
-      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
-      <Name>FSharp.LanguageService</Name>
     </ProjectReference>
   </ItemGroup>
   

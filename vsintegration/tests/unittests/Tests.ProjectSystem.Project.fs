@@ -11,6 +11,7 @@ open System.Xml.Linq
 open NUnit.Framework
 
 // VS namespaces 
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
