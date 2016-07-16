@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 
-using MSBuild = Microsoft.Build.BuildEngine;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
