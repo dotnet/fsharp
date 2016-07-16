@@ -53,10 +53,7 @@ namespace Microsoft.FSharp.Collections
                     if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
                     loop t
             loop list
-            let mutable result = []
-            for group in dict do
-                result <- (getKey group.Key, group.Value) :: result
-            result |> rev
+            Microsoft.FSharp.Primitives.Basics.List.countBy dict getKey
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
         let countByValueType (projection:'T->'Key) (list:'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
