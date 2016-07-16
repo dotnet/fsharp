@@ -70,11 +70,14 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
     match ad with 
     | AccessibleFromEverywhere -> 
             access = ILMemberAccess.Public
+
     | AccessibleFromSomeFSharpCode -> 
            (access = ILMemberAccess.Public || 
             access = ILMemberAccess.Family  || 
             access = ILMemberAccess.FamilyOrAssembly) 
+
     | AccessibleFrom (cpaths,tcrefViewedFromOption) ->
+
             let accessibleByFamily =
               ((access = ILMemberAccess.Family  || 
                 access = ILMemberAccess.FamilyOrAssembly) &&
@@ -82,9 +85,13 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 | None -> false
                 | Some tcrefViewedFrom ->
                     ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem)     
+
             let accessibleByInternalsVisibleTo = 
-                (access = ILMemberAccess.Assembly && canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath)
+                (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
+                canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath
+
             (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo
+
     | AccessibleFromSomewhere -> 
             true
     
