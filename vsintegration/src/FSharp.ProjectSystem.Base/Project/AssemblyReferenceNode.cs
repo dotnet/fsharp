@@ -13,7 +13,6 @@ using System.Threading;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
-using MSBuild = Microsoft.Build.BuildEngine;
 using Microsoft.Build.Utilities;
 using System.Diagnostics.CodeAnalysis;
 using ShellConstants = Microsoft.VisualStudio.Shell.Interop.Constants;
