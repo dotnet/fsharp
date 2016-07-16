@@ -8,8 +8,9 @@
     <IsPackage>true</IsPackage>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <PackagesFolder>$(FSharpSourcesRoot)\..\packages</PackagesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <AssemblyName>VisualFSharpVSIX.Professional</AssemblyName>
+    <OutputName>Microsoft.FSharp.Dependencies.$(VSSku)</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -17,19 +18,19 @@
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
-    <Package Include="CommonFiles.swr" />
-    <Package Include="ProfessionalTemplates.swr" />
+    <Package Include="Files.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)\$(AssemblyName).vsix" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>VsixSHA2</Authenticode>
-      </FilesToSign>
-    </ItemGroup>
+    <!-- SWIX plugin adds the built vsix to signing automatically -->
+  </Target>
+  
+  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
+    <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
   </Target>
 </Project>

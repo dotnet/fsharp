@@ -12,15 +12,7 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-#if OPEN_BUILD
-    let DotNetBuildString = "(private)"
-#else
-    /// The .NET runtime version that F# was built against (e.g. "v4.0.21104")
-    let DotNetRuntime = sprintf "v%s.%s.%s" Microsoft.BuildSettings.Version.Major Microsoft.BuildSettings.Version.Minor Microsoft.BuildSettings.Version.ProductBuild
-
-    /// The .NET build string that F# was built against (e.g. "4.0.21104.0")
-    let DotNetBuildString = Microsoft.BuildSettings.Version.OfFile
-#endif
+    let FSharpBannerVersion = "4.1"
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
