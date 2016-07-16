@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
-    <FinalizeManifest>true</FinalizeManifest>
-    <FinalizeSkipLayout>true</FinalizeSkipLayout>
-    <IsPackage>true</IsPackage>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
-  </PropertyGroup>
 
-  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-
-  <!-- Only inserting ENU msi and Professional vsix for now -->
+    <Import Project="..\FSharp.Setup.props" />
   
-  <ItemGroup>
-    <MergeManifest Include="$(OutputPath)\VisualFSharpVSIX.Professional.json" />
-    <MergeManifest Include="$(OutputPath)\FSharp.SDK.json" />
-  </ItemGroup>
+    <PropertyGroup>
+        <FSharpSourcesRoot>..\..\src</FSharpSourcesRoot>
+        <FinalizeManifest>true</FinalizeManifest>
+        <FinalizeSkipLayout>true</FinalizeSkipLayout>
+        <IsPackage>true</IsPackage>
+        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\insertion</OutputPath>
+    </PropertyGroup>
+    
+    <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  
+    <Target Name="IncludeManifests" BeforeTargets="MergeManifests">
+        <ItemGroup>
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
+            <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix and Microsoft.FSharp.Dependencies -->
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.%(SetupLanguages.LocaleCode).json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.Full.json" />
+        </ItemGroup>
+    </Target>
 </Project>
