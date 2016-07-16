@@ -7,6 +7,17 @@
     <TemplateCategory>ProjectTemplates</TemplateCategory>
     <IsPackage>true</IsPackage>
     <GenerateLocalizedTemplates>true</GenerateLocalizedTemplates>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <IncludeAssemblyInVSIXContainer>false</IncludeAssemblyInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <DeployVSTemplates>false</DeployVSTemplates>
+    <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -24,6 +35,11 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
+  
+  <ItemGroup>
+    <VSTemplate Include="Template\Tutorial.vstemplate" />
+  </ItemGroup>
+  
   <ItemGroup>
     <TemplateFiles Include="Template\Tutorial.fsproj" />
     <TemplateFiles Include="Template\Tutorial.fsx" />

@@ -21,7 +21,6 @@ using Microsoft.VisualStudio.FSharp.ProjectSystem.Automation;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
 using System.Net;
-using MSBuild = Microsoft.Build.BuildEngine;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
@@ -3412,15 +3411,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // F#-specific properties
                 projectInstance.SetProperty(GlobalProperty.VisualStudioStyleErrors.ToString(), "true");
                 
-                // Get SQM GlobalSessionGuid from Visual Studio to pass FSC.exe,
-                // so multiple SQM sessions can be correlated later when analying SQM data.
-                IVsSqmMulti sqm = this.GetService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsLog)) as IVsSqmMulti;
-                if (sqm != null)
-                {
-                    var sessionGuid = sqm.GetGlobalSessionGuid();
-                    projectInstance.SetProperty(GlobalProperty.SqmSessionGuid.ToString(), sessionGuid.ToString());
-                }
-
                 if (extraProperties != null)
                 {
                     foreach (var prop in extraProperties)
