@@ -22,7 +22,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open System.Globalization
     open System.Text
 
-    open Microsoft.Build.BuildEngine
     open Microsoft.Win32
 
     open Microsoft.VisualStudio
