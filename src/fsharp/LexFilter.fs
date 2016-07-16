@@ -926,6 +926,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                     | MINUS 
                     | GLOBAL 
                     | CONST
+                    | KEYWORD_STRING _
                     | NULL
                     | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ 
                     | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _
