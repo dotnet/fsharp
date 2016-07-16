@@ -39,7 +39,6 @@ module internal MSBuildResolver =
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
-    open Microsoft.Build.BuildEngine
     open System.IO
 
     type ResolvedFile = 

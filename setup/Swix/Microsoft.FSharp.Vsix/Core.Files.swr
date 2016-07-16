@@ -1,0 +1,9 @@
+use vs
+
+package name=Microsoft.FSharp.VSIX.$(VSSku)
+        version=4.1
+        vs.package.type=vsix
+        vs.package.language=$(LocaleRegion)
+
+vs.payloads
+  vs.payload source="$(BinariesFolder)\net40\bin\VisualFSharp$(VSSku).vsix"
