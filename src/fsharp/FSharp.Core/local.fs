@@ -72,6 +72,19 @@ module internal List =
             let cons = freshConsNoTail x
             distinctByToFreshConsTail cons hashSet keyf rest
             cons
+    
+    let countBy (dict:Dictionary<_, int>) (keyf:'T -> 'Key) = 
+        use mutable ie = dict.GetEnumerator()
+        if not (ie.MoveNext()) then []
+        else
+            let res = freshConsNoTail (keyf ie.Current.Key, ie.Current.Value)
+            let mutable cons = res
+            while ie.MoveNext() do
+                let cons2 = freshConsNoTail (keyf ie.Current.Key, ie.Current.Value)
+                setFreshConsTail cons cons2
+                cons <- cons2
+            setFreshConsTail cons []
+            res
 
     let rec mapToFreshConsTail cons f x = 
         match x with
