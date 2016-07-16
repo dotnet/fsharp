@@ -8,7 +8,7 @@
     <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
   </Metadata>
   <Installation>
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
+    <InstallationTarget Id="Microsoft.VisualStudio.VSWinDesktopExpress" Version="[15.0]" />
   </Installation>
   <Installer>
     <Actions>
@@ -33,7 +33,7 @@
   </Dependencies>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
-	
+
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.FSharp.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.VS.FSI.pkgdef" />
@@ -43,21 +43,17 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Editor.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Compiler.Server.Shared.pkgdef" />
-	
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\SilverlightProject.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCoreProject.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCore78Project.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\NetCore259Project.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\PortableLibraryProject.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\TutorialProject.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\ConsoleProject.zip" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\LibraryProject.zip" />
-	
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\AppConfig.zip" />
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\CodeFile.zip" />
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\ScriptFile.zip" />
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\SignatureFile.zip" />
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\TextFile.zip" />
-    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\XMLFile.zip" />
+
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|TutorialProject;TemplateProjectOutputGroup|" d:ProjectName="TutorialProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|ConsoleProject;TemplateProjectOutputGroup|" d:ProjectName="ConsoleProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
+    
+    
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|AppConfig;TemplateProjectOutputGroup|" d:ProjectName="AppConfig" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|CodeFile;TemplateProjectOutputGroup|" d:ProjectName="CodeFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|ScriptFile;TemplateProjectOutputGroup|" d:ProjectName="ScriptFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|SignatureFile;TemplateProjectOutputGroup|" d:ProjectName="SignatureFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|TextFile;TemplateProjectOutputGroup|" d:ProjectName="TextFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|XMLFile;TemplateProjectOutputGroup|" d:ProjectName="XMLFile" d:VsixSubPath="ItemTemplates" />
   </Assets>
 </PackageManifest>
