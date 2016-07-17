@@ -73,9 +73,11 @@ namespace Microsoft.FSharp.Collections
         val collect : mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
 
         /// <summary>Compares two arrays using the given comparison function, element by element.
-        /// Returns the first non-zero result from the comparison function.  If the end of an array
-        /// is reached it returns a -1 if the first array is shorter and a 1 if the second array
-        /// is shorter.</summary>
+        /// Returns the first non-zero result from the comparison function. If the first array has 
+        /// a larger element, the return value is always positive. If the second array has a larger 
+        /// element, the return value is always negative. When the elements are equal in the two 
+        /// arrays, 1 is returned if the first array is longer, 0 is returned if they are equal in 
+        /// length, and -1 is returned when the second array is longer.</summary>
         ///
         /// <param name="comparer">A function that takes an element from each array and returns an int.
         /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
