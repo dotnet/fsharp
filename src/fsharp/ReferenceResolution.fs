@@ -146,7 +146,6 @@ module internal MSBuildResolver =
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
     /// This is only used to specify the "last resort" path for assembly resolution.
     let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
-#if FX_ATLEAST_45
         let v =
             match v with
             | Net11 ->  Some TargetDotNetFrameworkVersion.Version11
@@ -166,14 +165,8 @@ module internal MSBuildResolver =
             | null -> []
             | x -> [x]
         | _ -> []
-#else
-        // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
-        ignore v
-        []
-#endif        
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if FX_ATLEAST_45
         // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
         let v =
             match version with
@@ -190,15 +183,9 @@ module internal MSBuildResolver =
             | null -> []
             | x -> [x]
         | None -> []        
-#else
-        // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
-        ignore version
-        []
-#endif
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersionMajorMinor() =
-#if FX_ATLEAST_45
         if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then 4, Net461
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then 4, Net46
         // 4.5.2 enumeration is not available in Dev15 MSBuild version
@@ -206,10 +193,6 @@ module internal MSBuildResolver =
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then 4, Net451 
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then 4, Net45 
         else 4, Net40 // version is 4.0 assumed since this code is running. 
-#else
-        // FX_ATLEAST_45 is not defined is required for step when we build compiler with proto compiler and this branch should not be hit
-        4, Net40
-#endif
 
     /// Derive the target framework directories.        
     let DeriveTargetFrameworkDirectories (targetFrameworkVersion:string, logMessage) =
