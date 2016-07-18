@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ForEachOnList01
 {
-  // Offset: 0x00000000 Length: 0x000002EB
+  // Offset: 0x00000000 Length: 0x000002ED
 }
 .mresource public FSharpOptimizationData.ForEachOnList01
 {
-  // Offset: 0x000002F0 Length: 0x000000DB
+  // Offset: 0x000002F8 Length: 0x000000DB
 }
 .module ForEachOnList01.dll
-// MVID: {54D54537-56DF-F74F-A745-03833745D554}
+// MVID: {5772F60E-56DF-F74F-A745-03830EF67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x014C0000
+// Image base: 0x00F10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,7 +70,7 @@
       // Code size       5 (0x5)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 39,39 : 21,26 ''
+      .line 39,39 : 21,26 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.1
@@ -120,9 +120,10 @@
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 9,9 : 15,18 ''
+    .line 9,9 : 6,21 ''
     IL_0003:  ldarg.0
     IL_0004:  stloc.1
+    .line 9,9 : 6,21 ''
     IL_0005:  ldloc.1
     IL_0006:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_000b:  stloc.2
@@ -132,7 +133,7 @@
     IL_000e:  cgt.un
     IL_0010:  brfalse.s  IL_0029
 
-    .line 9,9 : 15,18 ''
+    .line 9,9 : 6,21 ''
     IL_0012:  ldloc.1
     IL_0013:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0018:  stloc.3
@@ -163,7 +164,7 @@
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 14,14 : 15,22 ''
+    .line 14,14 : 6,25 ''
     IL_0003:  ldc.i4.1
     IL_0004:  ldc.i4.2
     IL_0005:  ldc.i4.3
@@ -175,6 +176,7 @@
     IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_001a:  stloc.1
+    .line 14,14 : 6,25 ''
     IL_001b:  ldloc.1
     IL_001c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_0021:  stloc.2
@@ -184,7 +186,7 @@
     IL_0024:  cgt.un
     IL_0026:  brfalse.s  IL_003f
 
-    .line 14,14 : 15,22 ''
+    .line 14,14 : 6,25 ''
     IL_0028:  ldloc.1
     IL_0029:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_002e:  stloc.3
@@ -228,9 +230,10 @@
     .line 19,19 : 6,23 ''
     IL_0019:  ldc.i4.0
     IL_001a:  stloc.1
-    .line 20,20 : 15,17 ''
+    .line 20,20 : 6,20 ''
     IL_001b:  ldloc.0
     IL_001c:  stloc.2
+    .line 20,20 : 6,20 ''
     IL_001d:  ldloc.2
     IL_001e:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_0023:  stloc.3
@@ -240,7 +243,7 @@
     IL_0026:  cgt.un
     IL_0028:  brfalse.s  IL_0043
 
-    .line 20,20 : 15,17 ''
+    .line 20,20 : 6,20 ''
     IL_002a:  ldloc.2
     IL_002b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0030:  stloc.s    x
@@ -284,9 +287,10 @@
     IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_001a:  stloc.1
-    .line 26,26 : 15,17 ''
+    .line 26,26 : 6,20 ''
     IL_001b:  ldloc.1
     IL_001c:  stloc.2
+    .line 26,26 : 6,20 ''
     IL_001d:  ldloc.2
     IL_001e:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_0023:  stloc.3
@@ -296,7 +300,7 @@
     IL_0026:  cgt.un
     IL_0028:  brfalse.s  IL_0043
 
-    .line 26,26 : 15,17 ''
+    .line 26,26 : 6,20 ''
     IL_002a:  ldloc.2
     IL_002b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0030:  stloc.s    x
@@ -337,9 +341,10 @@
     IL_0013:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0018:  stloc.0
-    .line 31,31 : 15,17 ''
+    .line 31,31 : 6,20 ''
     IL_0019:  ldloc.0
     IL_001a:  stloc.1
+    .line 31,31 : 6,20 ''
     IL_001b:  ldloc.1
     IL_001c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_0021:  stloc.2
@@ -349,7 +354,7 @@
     IL_0024:  cgt.un
     IL_0026:  brfalse.s  IL_005a
 
-    .line 31,31 : 15,17 ''
+    .line 31,31 : 6,20 ''
     IL_0028:  ldloc.1
     IL_0029:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_002e:  stloc.3
@@ -382,7 +387,7 @@
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
              [2] int32 i,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3)
-    .line 37,39 : 17,27 ''
+    .line 36,40 : 5,21 ''
     IL_0000:  nop
     IL_0001:  newobj     instance void ForEachOnList01/test6@38::.ctor()
     IL_0006:  ldc.i4.1
@@ -401,6 +406,7 @@
     IL_0023:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
     IL_0028:  stloc.0
+    .line 36,40 : 5,21 ''
     IL_0029:  ldloc.0
     IL_002a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_002f:  stloc.1
@@ -410,7 +416,7 @@
     IL_0032:  cgt.un
     IL_0034:  brfalse.s  IL_0066
 
-    .line 37,39 : 17,27 ''
+    .line 36,40 : 5,21 ''
     IL_0036:  ldloc.0
     IL_0037:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_003c:  stloc.2
@@ -444,7 +450,7 @@
              [2] int32 i,
              [3] int32 tmp,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
-    .line 46,48 : 17,27 ''
+    .line 45,49 : 5,21 ''
     IL_0000:  nop
     IL_0001:  newobj     instance void ForEachOnList01/test7@47::.ctor()
     IL_0006:  ldc.i4.1
@@ -463,6 +469,7 @@
     IL_0023:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
     IL_0028:  stloc.0
+    .line 45,49 : 5,21 ''
     IL_0029:  ldloc.0
     IL_002a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_002f:  stloc.1
@@ -472,7 +479,7 @@
     IL_0032:  cgt.un
     IL_0034:  brfalse.s  IL_006c
 
-    .line 46,48 : 17,27 ''
+    .line 45,49 : 5,21 ''
     IL_0036:  ldloc.0
     IL_0037:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_003c:  stloc.2
