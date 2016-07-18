@@ -390,20 +390,25 @@ let rec GenTypeArgAux amap m g tyenv tyarg =
 and GenTypeArgsAux amap m g tyenv  tyargs = 
     List.map (GenTypeArgAux amap m g tyenv) (DropErasedTyargs tyargs)
 
-and GenTyAppAux amap m g tyenv repr tinst =  
+and GenTyAppAux amap m g tyenv repr tinst =
+    printfn "BBBBB" 
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
+        printfn "CCCCC" 
         let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
         let ty = IL.instILType (ILList.ofList ilTypeInst) ty
         ty
     | CompiledTypeRepr.ILAsmNamed (tref, boxity, ilTypeOpt) -> 
+        printfn "DDDDD" 
         match ilTypeOpt with 
         | None -> 
+            printfn "EEEEE" 
             let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
             mkILTy boxity (mkILTySpec (tref,ilTypeInst))
         | Some ilType -> 
+            printfn "FFFFF" 
             ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
-          
+
 
 and GenNamedTyAppAux (amap:Import.ImportMap) m g tyenv ptrsOK tcref tinst = 
     let tinst = DropErasedTyargs tinst 
@@ -428,7 +433,7 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 #endif
     match stripTyEqnsAndMeasureEqns g ty with 
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m g tyenv ptrsOK tcref tinst
-    | TType_tuple (tupInfo, args) -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple (tupInfo, args) -> printfn "AAAA"; GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m g tyenv dty) (GenTypeArgAux amap m g tyenv returnTy)
 
     | TType_ucase (ucref, args) -> 
@@ -2009,8 +2014,8 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
         if ar <= 0 then failwith "getCompiledTupleItem"
         elif ar < maxTuple then
             let tcr' = mkCompiledTupleTyconRef g tupInfo tys
-            let typ = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
-            mkGetTupleItemN g m n typ tupInfo e tys.[n]
+            let typ' = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
+            mkGetTupleItemN g m n typ' tupInfo e tys.[n]
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
@@ -2024,7 +2029,6 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
             else
                 getCompiledTupleItem g (elast,tysB,n-goodTupleFields,m)
     GenExpr cenv cgbuf eenv SPSuppress (getCompiledTupleItem cenv.g (e,tys,n,m)) sequel
-
 
 and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
     GenExprs cenv cgbuf eenv args

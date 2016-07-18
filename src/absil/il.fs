@@ -1987,7 +1987,7 @@ let mkILFieldRef(tref,nm,ty) = { EnclosingTypeRef=tref; Name=nm; Type=ty}
 let mkILFieldSpec (tref,ty) = { FieldRef= tref; EnclosingType=ty }
 
 let mkILFieldSpecInTy (typ:ILType,nm,fty) = 
-  mkILFieldSpec (mkILFieldRef (typ.TypeRef,nm,fty), typ)
+    mkILFieldSpec (mkILFieldRef (typ.TypeRef,nm,fty), typ)
     
 let emptyILCustomAttrs = ILAttributes (fun () -> [| |])
 
