@@ -36,13 +36,13 @@
   // Offset: 0x00000358 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-// MVID: {5776249D-105C-852B-A745-03839D247657}
+// MVID: {578C9941-105C-852B-A745-038341998C57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01490000
+// Image base: 0x004A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -104,7 +104,7 @@
     {
       // Code size       7 (0x7)
       .maxstack  8
-      .line 64,64 : 21,39
+      .line 64,64 : 21,39 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  conv.i4
@@ -124,11 +124,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 8,8 : 6,23
+    .line 8,8 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 9,9 : 6,21
+    .line 9,9 : 6,21 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldarg.0
@@ -154,7 +154,7 @@
     IL_0020:  ldc.i4.1
     IL_0021:  add
     IL_0022:  stloc.2
-    .line 9,9 : 6,21
+    .line 9,9 : 6,21 ''
     IL_0023:  ldloc.2
     IL_0024:  ldloc.1
     IL_0025:  ldc.i4.1
@@ -172,11 +172,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 13,13 : 6,23
+    .line 13,13 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 14,14 : 6,23
+    .line 14,14 : 6,23 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldstr      "123"
@@ -202,7 +202,7 @@
     IL_0028:  ldc.i4.1
     IL_0029:  add
     IL_002a:  stloc.2
-    .line 14,14 : 6,23
+    .line 14,14 : 6,23 ''
     IL_002b:  ldloc.2
     IL_002c:  ldloc.1
     IL_002d:  ldc.i4.1
@@ -220,11 +220,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 19,19 : 6,23
+    .line 19,19 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 20,20 : 6,20
+    .line 20,20 : 6,20 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldstr      "123"
@@ -250,7 +250,7 @@
     IL_0028:  ldc.i4.1
     IL_0029:  add
     IL_002a:  stloc.2
-    .line 20,20 : 6,20
+    .line 20,20 : 6,20 ''
     IL_002b:  ldloc.2
     IL_002c:  ldloc.1
     IL_002d:  ldc.i4.1
@@ -268,11 +268,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 24,24 : 6,23
+    .line 24,24 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 26,26 : 6,20
+    .line 26,26 : 6,20 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldstr      "123"
@@ -298,7 +298,7 @@
     IL_0028:  ldc.i4.1
     IL_0029:  add
     IL_002a:  stloc.2
-    .line 26,26 : 6,20
+    .line 26,26 : 6,20 ''
     IL_002b:  ldloc.2
     IL_002c:  ldloc.1
     IL_002d:  ldc.i4.1
@@ -316,7 +316,7 @@
              [1] int32 V_1,
              [2] char x,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3)
-    .line 31,31 : 6,20
+    .line 31,31 : 6,20 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.1
@@ -348,7 +348,7 @@
     IL_003e:  ldc.i4.1
     IL_003f:  add
     IL_0040:  stloc.1
-    .line 31,31 : 6,20
+    .line 31,31 : 6,20 ''
     IL_0041:  ldloc.1
     IL_0042:  ldloc.0
     IL_0043:  ldc.i4.1
@@ -366,11 +366,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 40,40 : 6,23
+    .line 40,40 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 41,41 : 6,21
+    .line 41,41 : 6,21 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldarg.0
@@ -396,7 +396,7 @@
     IL_0020:  ldc.i4.1
     IL_0021:  add
     IL_0022:  stloc.2
-    .line 41,41 : 6,21
+    .line 41,41 : 6,21 ''
     IL_0023:  ldloc.2
     IL_0024:  ldloc.1
     IL_0025:  ldc.i4.1
@@ -414,11 +414,11 @@
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char x)
-    .line 46,46 : 6,23
+    .line 46,46 : 6,23 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 47,47 : 6,20
+    .line 47,47 : 6,20 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.2
     IL_0005:  ldstr      "123"
@@ -444,7 +444,7 @@
     IL_0028:  ldc.i4.1
     IL_0029:  add
     IL_002a:  stloc.2
-    .line 47,47 : 6,20
+    .line 47,47 : 6,20 ''
     IL_002b:  ldloc.2
     IL_002c:  ldloc.1
     IL_002d:  ldc.i4.1
@@ -463,14 +463,14 @@
              [2] int32 V_2,
              [3] char i,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
-    .line 53,55 : 17,40
+    .line 53,55 : 17,40 ''
     IL_0000:  nop
     IL_0001:  newobj     instance void ForEachOnString01/test8@54::.ctor()
     IL_0006:  ldstr      "1234"
     IL_000b:  call       string [FSharp.Core]Microsoft.FSharp.Core.StringModule::Map(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>,
                                                                                      string)
     IL_0010:  stloc.0
-    .line 52,56 : 5,21
+    .line 52,56 : 5,21 ''
     IL_0011:  ldc.i4.0
     IL_0012:  stloc.2
     IL_0013:  ldloc.0
@@ -482,7 +482,7 @@
     IL_001d:  ldloc.2
     IL_001e:  blt.s      IL_0051
 
-    .line 57,57 : 9,23
+    .line 52,56 : 5,21 ''
     IL_0020:  ldloc.0
     IL_0021:  ldloc.2
     IL_0022:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -501,7 +501,7 @@
     IL_0048:  ldc.i4.1
     IL_0049:  add
     IL_004a:  stloc.2
-    .line 52,56 : 5,21
+    .line 52,56 : 5,21 ''
     IL_004b:  ldloc.2
     IL_004c:  ldloc.1
     IL_004d:  ldc.i4.1
@@ -521,14 +521,14 @@
              [3] char i,
              [4] string tmp,
              [5] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_5)
-    .line 62,64 : 17,40
+    .line 62,64 : 17,40 ''
     IL_0000:  nop
     IL_0001:  newobj     instance void ForEachOnString01/test9@63::.ctor()
     IL_0006:  ldstr      "1234"
     IL_000b:  call       string [FSharp.Core]Microsoft.FSharp.Core.StringModule::Map(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>,
                                                                                      string)
     IL_0010:  stloc.0
-    .line 61,65 : 5,21
+    .line 61,65 : 5,21 ''
     IL_0011:  ldc.i4.0
     IL_0012:  stloc.2
     IL_0013:  ldloc.0
@@ -540,19 +540,19 @@
     IL_001d:  ldloc.2
     IL_001e:  blt.s      IL_0064
 
-    .line 66,66 : 13,16
+    .line 61,65 : 5,21 ''
     IL_0020:  ldloc.0
     IL_0021:  ldloc.2
     IL_0022:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
     IL_0027:  stloc.3
-    .line 66,66 : 9,53
+    .line 66,66 : 9,53 ''
     IL_0028:  ldstr      "{0} foo"
     IL_002d:  ldloc.3
     IL_002e:  box        [mscorlib]System.Char
     IL_0033:  call       string [mscorlib]System.String::Format(string,
                                                                 object)
     IL_0038:  stloc.s    tmp
-    .line 67,67 : 9,21
+    .line 67,67 : 9,21 ''
     IL_003a:  ldstr      "%O"
     IL_003f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string>::.ctor(string)
     IL_0044:  stloc.s    V_5
@@ -567,7 +567,7 @@
     IL_005b:  ldc.i4.1
     IL_005c:  add
     IL_005d:  stloc.2
-    .line 61,65 : 5,21
+    .line 61,65 : 5,21 ''
     IL_005e:  ldloc.2
     IL_005f:  ldloc.1
     IL_0060:  ldc.i4.1
