@@ -395,13 +395,18 @@ module internal Impl =
 
     let mutable systemValueTupleException = null
 
-    let reflectedValueTuple n =
-        try        
+    let loadSystemValueTuple = 
+        lazy (
 #if FX_ASSEMBLYLOADBYSTRING
-            let a = Assembly.Load("System.ValueTuple")
+            Assembly.Load("System.ValueTuple")
 #else
-            let a = Assembly.Load(new AssemblyName("System.ValueTuple"))
+            Assembly.Load(new AssemblyName("System.ValueTuple"))
 #endif
+        )
+
+    let reflectedValueTuple n =
+        try
+            let a = loadSystemValueTuple.Value
             match n with
             | 1 -> Some (a.GetType("System.ValueTuple`1"))
             | 2 -> Some (a.GetType("System.ValueTuple`2"))
@@ -427,28 +432,28 @@ module internal Impl =
         | Some v -> v
         | None -> Unchecked.defaultof<Type>
 
-    let stuple1 = reflectedValueTupleType 1 [| typedefof<obj> |]
-    let stuple2 = reflectedValueTupleType 2 [| typedefof<obj>; typedefof<obj> |]
-    let stuple3 = reflectedValueTupleType 3 [| typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple4 = reflectedValueTupleType 4 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple5 = reflectedValueTupleType 5 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple6 = reflectedValueTupleType 6 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple7 = reflectedValueTupleType 7 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple8 = reflectedValueTupleType 8 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; deOption(reflectedValueTuple 0) |]
+    let stuple1 = lazy (reflectedValueTupleType 1 [| typedefof<obj> |])
+    let stuple2 = lazy (reflectedValueTupleType 2 [| typedefof<obj>; typedefof<obj> |])
+    let stuple3 = lazy (reflectedValueTupleType 3 [| typedefof<obj>; typedefof<obj>; typedefof<obj> |])
+    let stuple4 = lazy (reflectedValueTupleType 4 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |])
+    let stuple5 = lazy (reflectedValueTupleType 5 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |])
+    let stuple6 = lazy (reflectedValueTupleType 6 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |])
+    let stuple7 = lazy (reflectedValueTupleType 7 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |])
+    let stuple8 = lazy (reflectedValueTupleType 8 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; deOption(reflectedValueTuple 0) |])
 
     let structTupleEquivHeadTypes typ stuple =
         match stuple with
         | Some s -> equivHeadTypes typ s
         | None -> false
 
-    let isStructTuple1Type typ = structTupleEquivHeadTypes typ stuple1
-    let isStructTuple2Type typ = structTupleEquivHeadTypes typ stuple2
-    let isStructTuple3Type typ = structTupleEquivHeadTypes typ stuple3
-    let isStructTuple4Type typ = structTupleEquivHeadTypes typ stuple4
-    let isStructTuple5Type typ = structTupleEquivHeadTypes typ stuple5
-    let isStructTuple6Type typ = structTupleEquivHeadTypes typ stuple6
-    let isStructTuple7Type typ = structTupleEquivHeadTypes typ stuple7
-    let isStructTuple8Type typ = structTupleEquivHeadTypes typ stuple8
+    let isStructTuple1Type typ = structTupleEquivHeadTypes typ stuple1.Value
+    let isStructTuple2Type typ = structTupleEquivHeadTypes typ stuple2.Value
+    let isStructTuple3Type typ = structTupleEquivHeadTypes typ stuple3.Value
+    let isStructTuple4Type typ = structTupleEquivHeadTypes typ stuple4.Value
+    let isStructTuple5Type typ = structTupleEquivHeadTypes typ stuple5.Value
+    let isStructTuple6Type typ = structTupleEquivHeadTypes typ stuple6.Value
+    let isStructTuple7Type typ = structTupleEquivHeadTypes typ stuple7.Value
+    let isStructTuple8Type typ = structTupleEquivHeadTypes typ stuple8.Value
 
     let isTupleType typ = 
         let isRefTupleType = 
@@ -462,17 +467,15 @@ module internal Impl =
             || isTuple8Type typ
 
         let isStructTupleType =
-            // If we can't load the System.ValueTuple Assembly then it can't be a struct tuple
-            try
-                   isStructTuple1Type typ
-                || isStructTuple2Type typ
-                || isStructTuple3Type typ
-                || isStructTuple4Type typ
-                || isStructTuple5Type typ
-                || isStructTuple6Type typ
-                || isStructTuple7Type typ
-                || isStructTuple8Type typ
-            with | :? System.IO.FileNotFoundException -> false
+               isStructTuple1Type typ
+            || isStructTuple2Type typ
+            || isStructTuple3Type typ
+            || isStructTuple4Type typ
+            || isStructTuple5Type typ
+            || isStructTuple6Type typ
+            || isStructTuple7Type typ
+            || isStructTuple8Type typ
+
         isRefTupleType || isStructTupleType
 
     let maxTuple = 8
@@ -486,18 +489,18 @@ module internal Impl =
             | None -> raise systemValueTupleException
         if isStruct then
             match tys.Length with 
-            | 1 -> deOption(stuple1).MakeGenericType(tys)
-            | 2 -> deOption(stuple2).MakeGenericType(tys)
-            | 3 -> deOption(stuple3).MakeGenericType(tys)
-            | 4 -> deOption(stuple4).MakeGenericType(tys)
-            | 5 -> deOption(stuple5).MakeGenericType(tys)
-            | 6 -> deOption(stuple6).MakeGenericType(tys)
-            | 7 -> deOption(stuple7).MakeGenericType(tys)
+            | 1 -> deOption(stuple1.Value).MakeGenericType(tys)
+            | 2 -> deOption(stuple2.Value).MakeGenericType(tys)
+            | 3 -> deOption(stuple3.Value).MakeGenericType(tys)
+            | 4 -> deOption(stuple4.Value).MakeGenericType(tys)
+            | 5 -> deOption(stuple5.Value).MakeGenericType(tys)
+            | 6 -> deOption(stuple6.Value).MakeGenericType(tys)
+            | 7 -> deOption(stuple7.Value).MakeGenericType(tys)
             | n when n >= maxTuple -> 
                 let tysA = tys.[0..tupleEncField-1]
                 let tysB = tys.[maxTuple-1..]
                 let tyB = mkTupleType isStruct tysB
-                deOption(stuple8).MakeGenericType(Array.append tysA [| tyB |])
+                deOption(stuple8.Value).MakeGenericType(Array.append tysA [| tyB |])
             | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
         else
             match tys.Length with 
@@ -538,7 +541,7 @@ module internal Impl =
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
 #if FX_ATLEAST_PORTABLE  
-#else      
+#else
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
                let expectNames = Array.init props.Length (fun i -> let j = i+1 // index j = 1,2,..,props.Length <= maxTuple
