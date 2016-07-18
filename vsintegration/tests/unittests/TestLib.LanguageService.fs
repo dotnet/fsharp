@@ -12,7 +12,6 @@ open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open Microsoft.FSharp.Compiler
-open Internal.Utilities.Debug
 open System.Text.RegularExpressions 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 #nowarn "52" // The value has been copied to ensure the original is not mutated
@@ -376,7 +375,6 @@ type LanguageServiceBaseTests() =
 
         // Under .NET 4.0 we don't allow 3.5.0.0 assemblies
         let AssertNotBackVersionAssembly(args:AssemblyLoadEventArgs) =
-            Trace.PrintLine("AssembliesLoadedByUnittests",fun _ -> sprintf "ASSEMBLY LOAD: %A" (args.LoadedAssembly))
 
             // We're worried about loading these when running against .NET 4.0:
             // Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
@@ -429,11 +427,7 @@ type LanguageServiceBaseTests() =
         ShiftKeyUp(currentVS)
         ops.CleanInvisibleProject(currentVS)
 
-//        do setDiagnosticsChannel(Some(Console.Out));
         do AbstractIL.Diagnostics.setDiagnosticsChannel(None);
-        // To disable a logging class, put an underscore _after_ its name.
-        //Trace.Log <- "ChangeEvents_;SyncOp_;Reactor_;ProjectSite_;IncrementalBuild_;Build_;Salsa_;SalsaUndo_;MSBuild_;MSBuildPerf_;IncrementalBuildWorkUnits_;LanguageService_;StripSystemImportsFromTcConfig_;ProjectSystem_"
-//        Trace.Log <- "*"
         ResetStopWatch()
         testStopwatch.Reset()
         testStopwatch.Start()

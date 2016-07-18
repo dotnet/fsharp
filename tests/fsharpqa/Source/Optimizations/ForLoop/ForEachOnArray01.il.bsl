@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly ForEachOnArray01
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ForEachOnArray01
 {
-  // Offset: 0x00000000 Length: 0x000001F4
+  // Offset: 0x00000000 Length: 0x000001E0
 }
 .mresource public FSharpOptimizationData.ForEachOnArray01
 {
-  // Offset: 0x000001F8 Length: 0x0000007C
+  // Offset: 0x000001E8 Length: 0x0000007C
 }
 .module ForEachOnArray01.dll
-// MVID: {4BEB29B3-7E2E-D3AE-A745-0383B329EB4B}
+// MVID: {5772F60B-7E2E-D3AE-A745-03830BF67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00670000
+// Image base: 0x006C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,16 +59,16 @@
              [1] int32 V_1,
              [2] int32 x)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 6,23 
+    .line 6,6 : 6,23 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnArray01.fs'
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.0
-    .line 7,7 : 6,21 
+    .line 7,7 : 6,21 ''
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.1
     IL_0005:  br.s       IL_0017
 
-    .line 7,8 : 6,20 
+    .line 7,7 : 6,21 ''
     IL_0007:  ldarg.0
     IL_0008:  ldloc.1
     IL_0009:  ldelem     [mscorlib]System.Int32
@@ -81,7 +81,7 @@
     IL_0014:  ldc.i4.1
     IL_0015:  add
     IL_0016:  stloc.1
-    .line 7,8 : 6,20 
+    .line 7,7 : 6,21 ''
     IL_0017:  ldloc.1
     IL_0018:  ldarg.0
     IL_0019:  ldlen

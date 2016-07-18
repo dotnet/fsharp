@@ -3469,6 +3469,12 @@ namespace Microsoft.FSharp.Core
     and 'T option = Option<'T> 
 
 
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpResult`2")>]
+    type Result<'T,'TError> = 
+        | Ok of 'T 
+        | Error of 'TError
+
 
 //============================================================================
 //============================================================================

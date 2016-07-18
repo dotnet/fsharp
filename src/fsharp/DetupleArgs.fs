@@ -227,13 +227,13 @@ module GlobalUsageAnalysis =
     let logNonRecBinding z (bind:Binding) =
         let v = bind.Var
         let vs = FlatList.one v
-        {z with RecursiveBindings = Zmap.add v (false,vs) z.RecursiveBindings;
+        {z with RecursiveBindings = Zmap.add v (false,vs) z.RecursiveBindings
                 Defns = Zmap.add v bind.Expr z.Defns } 
 
     /// Log the definition of a recursive binding
     let logRecBindings z binds =
         let vs = valsOfBinds binds
-        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> FlatList.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds);
+        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> FlatList.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
                 Defns    = (z.Defns,binds) ||> FlatList.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
@@ -394,7 +394,7 @@ let rebuildTS g m ts vs =
           (x,ty),vs
    
     let (x,_ty),vs = rebuild vs ts
-    if vs.Length <> 0 then internalError "rebuildTS: had more fringe vars than fringe. REPORT BUG" else ();
+    if vs.Length <> 0 then internalError "rebuildTS: had more fringe vars than fringe. REPORT BUG" 
     x
 
 /// CallPattern is tuple-structure for each argument position.
@@ -796,7 +796,7 @@ let passBind penv (TBind(fOrig,repr,letSeqPtOpt) as bind) =
          // fCBody - parts - formals 
          let transformedFormals = trans.transformedFormals 
          let p     = transformedFormals.Length
-         if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" else (); (* ASSERTION *)
+         if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" 
          let xqNs  = List.drop p vss  
          let x1ps  = List.take p vss  
          let y1Ps  = List.concat (List.map2 transFormal transformedFormals x1ps)

@@ -122,11 +122,11 @@ let pushBreak saving (Breaks(next,outer,stack)) =
                   Array.append stack (Array.create chunkN 0) (* expand if full *)
                 else
                   stack
-    stack.[next] <- saving;
+    stack.[next] <- saving
     Breaks(next+1,outer,stack)
 
 let popBreak (Breaks(next,outer,stack)) =
-    if next=0 then raise (Failure "popBreak: underflow");
+    if next=0 then raise (Failure "popBreak: underflow")
     let topBroke = stack.[next-1] < 0 
     let outer = if outer=next then outer-1 else outer   (* if all broken, unwind *)
     let next  = next - 1 
@@ -138,7 +138,7 @@ let forceBreak (Breaks(next,outer,stack)) =
       None
     else
       let saving = stack.[outer] 
-      stack.[outer] <- -stack.[outer];    
+      stack.[outer] <- -stack.[outer]    
       let outer = outer+1 
       Some (Breaks(next,outer,stack),saving)
 
@@ -154,7 +154,7 @@ let squashTo maxWidth layout =
    // offset - width of last line of block
    // NOTE: offset <= pos -- depending on tabbing of last block
    let rec fit breaks (pos,layout) =
-       (*printf "\n\nCalling pos=%d layout=[%s]\n" pos (showL layout);*)
+       (*printf "\n\nCalling pos=%d layout=[%s]\n" pos (showL layout)*)
        let breaks,layout,pos,offset =
            match layout with
            | Attr (tag,attrs,l) ->
@@ -202,7 +202,7 @@ let squashTo maxWidth layout =
                      (* actually no saving so no break *)
                      let breaks,r,pos,offsetr = fit breaks (pos,r) 
                      breaks,Node (jl,l,jm,r,jr,Breakable indent)  ,pos,offsetl + mid + offsetr
-       (*printf "\nDone:     pos=%d offset=%d" pos offset;*)
+       (*printf "\nDone:     pos=%d offset=%d" pos offset*)
        breaks,layout,pos,offset
    let breaks = breaks0 () 
    let pos = 0 
