@@ -13,7 +13,6 @@ type EmailValidation=
     | Empty
     | NoAt
 
-
 open Result
 
 [<TestFixture>]
