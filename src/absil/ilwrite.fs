@@ -1466,8 +1466,6 @@ and GetFieldSpecSigAsBlobIdx cenv env x =
 
 and GetFieldSpecAsFieldDefOrRef cenv env (fspec:ILFieldSpec) =
     let typ = fspec.EnclosingType
-    printfn "Here: %A" typ.BasicQualifiedName
-    printfn "    : %A" typ.GenericArgs
     if isTypeLocal typ then
         if not typ.IsNominal then failwith "GetFieldSpecAsFieldDefOrRef: unexpected local tref-typ"
         let tref = typ.TypeRef

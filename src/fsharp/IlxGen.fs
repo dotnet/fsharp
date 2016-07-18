@@ -391,22 +391,17 @@ and GenTypeArgsAux amap m g tyenv  tyargs =
     List.map (GenTypeArgAux amap m g tyenv) (DropErasedTyargs tyargs)
 
 and GenTyAppAux amap m g tyenv repr tinst =
-    printfn "BBBBB" 
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
-        printfn "CCCCC" 
         let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
         let ty = IL.instILType (ILList.ofList ilTypeInst) ty
         ty
     | CompiledTypeRepr.ILAsmNamed (tref, boxity, ilTypeOpt) -> 
-        printfn "DDDDD" 
         match ilTypeOpt with 
         | None -> 
-            printfn "EEEEE" 
             let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
             mkILTy boxity (mkILTySpec (tref,ilTypeInst))
         | Some ilType -> 
-            printfn "FFFFF" 
             ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
 
 
@@ -433,7 +428,7 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 #endif
     match stripTyEqnsAndMeasureEqns g ty with 
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m g tyenv ptrsOK tcref tinst
-    | TType_tuple (tupInfo, args) -> printfn "AAAA"; GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple (tupInfo, args) -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m g tyenv dty) (GenTypeArgAux amap m g tyenv returnTy)
 
     | TType_ucase (ucref, args) -> 

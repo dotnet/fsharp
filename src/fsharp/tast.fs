@@ -917,15 +917,11 @@ type Entity =
             let st = info.ProvidedType
             let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, x.Range)
             let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
-            printfn "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
             CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
         | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
         | _ ->
 #endif
             let ilTypeRefForCompilationPath (CompPath(sref,p)) item = 
-                printfn "sref : %A" sref
-                printfn "p : %A"    p
-                printfn "item : %A" item
                 let rec top racc  p = 
                     match p with 
                     | [] -> ILTypeRef.Create(sref,[],textOfPath  (List.rev (item::racc)))
@@ -956,14 +952,8 @@ type Entity =
                     let ilTypeOpt = 
                         match x.TyparsNoRange with 
                         | [] -> Some (mkILTy boxity (mkILTySpec (ilTypeRef,[]))) 
-                        | _  -> None //Some (mkILTy boxity (mkILTySpec (ilTypeRef,x))) 
-                    printfn "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" 
-                    printfn "%A" ilTypeRef
-                    printfn "%A" boxity
-                    printfn "%A" ilTypeOpt
-                    let x = CompiledTypeRepr.ILAsmNamed (ilTypeRef, boxity, ilTypeOpt)
-                    printfn "%A" x
-                    x)
+                        | _  -> None
+                    CompiledTypeRepr.ILAsmNamed (ilTypeRef, boxity, ilTypeOpt))
 
     /// Gets the data indicating the compiled representation of a named type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentationForNamedType =
