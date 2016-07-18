@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly ForLoop02
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ForLoop02
 {
-  // Offset: 0x00000000 Length: 0x00000163
+  // Offset: 0x00000000 Length: 0x0000013F
 }
 .mresource public FSharpOptimizationData.ForLoop02
 {
-  // Offset: 0x00000168 Length: 0x00000050
+  // Offset: 0x00000148 Length: 0x00000050
 }
 .module ForLoop02.exe
-// MVID: {4DAC0DD9-1736-791C-A745-0383D90DAC4D}
+// MVID: {5772EF77-1736-791C-A745-038377EF7257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000002010000
+// Image base: 0x00E40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -69,7 +69,7 @@
              [1] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
              [2] int32 V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 1,19 
+    .line 5,5 : 1,19 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\ForLoop02.fs'
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  stloc.0
@@ -79,7 +79,7 @@
     IL_000a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0014:  stloc.1
-    .line 6,6 : 5,20 
+    .line 6,6 : 5,20 ''
     IL_0015:  ldloc.0
     IL_0016:  stloc.2
     IL_0017:  ldloc.1
@@ -90,7 +90,7 @@
     IL_0020:  ldc.i4.1
     IL_0021:  add
     IL_0022:  stloc.0
-    .line 5,5 : 15,16 
+    .line 5,5 : 1,19 ''
     IL_0023:  ldloc.0
     IL_0024:  ldc.i4.1
     IL_0025:  ldc.i4.3
