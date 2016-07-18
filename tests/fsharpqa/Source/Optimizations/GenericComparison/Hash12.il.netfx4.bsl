@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Hash12
 {
-  // Offset: 0x00000000 Length: 0x00000AA0
+  // Offset: 0x00000000 Length: 0x00000A98
 }
 .mresource public FSharpOptimizationData.Hash12
 {
-  // Offset: 0x00000AA8 Length: 0x00000589
+  // Offset: 0x00000AA0 Length: 0x00000585
 }
 .module Hash12.dll
-// MVID: {56DD478C-9661-796E-A745-03838C47DD56}
+// MVID: {5772F67E-9661-796E-A745-03837EF67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00BC0000
+// Image base: 0x00C10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -266,7 +266,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 4,4 : 10,13 'E:\\Documents\\GitHub\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash12.fsx'
+        .line 4,4 : 10,13 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash12.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -1297,7 +1297,7 @@
       IL_0032:  ldc.i4.1
       IL_0033:  add
       IL_0034:  stloc.1
-      .line 9,9 : 21,29 ''
+      .line 9,9 : 8,32 ''
       IL_0035:  ldloc.1
       IL_0036:  ldc.i4     0x989681
       IL_003b:  blt.s      IL_0025
