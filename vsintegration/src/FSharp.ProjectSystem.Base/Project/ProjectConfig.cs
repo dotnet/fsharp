@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.IO;
 using System.Collections.Generic;
-using MSBuild = Microsoft.Build.BuildEngine;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.VisualStudio.FSharp.LanguageService;

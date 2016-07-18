@@ -2014,8 +2014,9 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
         if ar <= 0 then failwith "getCompiledTupleItem"
         elif ar < maxTuple then
             let tcr' = mkCompiledTupleTyconRef g tupInfo tys
-            let typ' = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
-            mkGetTupleItemN g m n typ' tupInfo e tys.[n]
+            let typ = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
+            mkGetTupleItemN g m n typ tupInfo e tys.[n]
+            
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
@@ -2883,8 +2884,12 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     // FSharpForLoopUp: if v <> e2 + 1 then goto .inner
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // CSharpStyle: if v < e2 then goto .inner
-    CG.EmitSeqPoint cgbuf  e2.Range
+    match spFor with 
+    | SequencePointAtForLoop(spStart) -> CG.EmitSeqPoint cgbuf  spStart
+    | NoSequencePointAtForLoop -> () //CG.EmitSeqPoint cgbuf  e2.Range
+    
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
+
     let cmp = match dir with FSharpForLoopUp | FSharpForLoopDown -> BI_bne_un | CSharpForLoopUp -> BI_blt
     let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel) ]))
 
@@ -2963,6 +2968,9 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
               errorR(InternalError(sprintf "%s: bad instruction: %A" s i,m))
 
           let modFieldSpec fspec = 
+              if isNil ilTyArgs then 
+                fspec 
+              else
                 {fspec with EnclosingType= 
                                    let ty = fspec.EnclosingType
                                    let tspec = ty.TypeSpec
