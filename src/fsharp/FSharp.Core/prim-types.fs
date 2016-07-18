@@ -669,6 +669,8 @@ namespace Microsoft.FSharp.Core
             let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
             // needs to be public to be visible from inline function 'average' and others
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
+            // needs to be public to be visible from inline function 'blit' and others
+            let OutOfRangeString = SR.GetString(SR.outOfRange)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
         module IntrinsicOperators =        

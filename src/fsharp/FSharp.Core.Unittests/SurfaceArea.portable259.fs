@@ -2240,12 +2240,14 @@ Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputArrayE
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputMustBeNonNegativeString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputSequenceEmptyString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String NoNegateMinValueString
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String OutOfRangeString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String ToString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_AddressOpNotFirstClassString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputArrayEmptyString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputMustBeNonNegativeString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputSequenceEmptyString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_NoNegateMinValueString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_OutOfRangeString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.Type GetType()
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple2[T1,T2](System.Collections.IEqualityComparer, System.Tuple`2[T1,T2], System.Tuple`2[T1,T2])
