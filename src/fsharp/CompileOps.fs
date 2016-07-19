@@ -1618,7 +1618,8 @@ let DefaultBasicReferencesForOutOfProjectSources =
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      
+      yield "System.ValueTuple"
+
       // Don't reference System.Core for .NET 2.0 compilations.
       //
       // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
@@ -1660,6 +1661,7 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Runtime"
       yield "System.Observable"
       yield "System.Numerics"
+      yield "System.ValueTuple"
 
       // Additions for coreclr and portable profiles
       yield "System.Collections"

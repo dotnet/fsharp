@@ -390,7 +390,7 @@ let rec GenTypeArgAux amap m g tyenv tyarg =
 and GenTypeArgsAux amap m g tyenv  tyargs = 
     List.map (GenTypeArgAux amap m g tyenv) (DropErasedTyargs tyargs)
 
-and GenTyAppAux amap m g tyenv repr tinst =  
+and GenTyAppAux amap m g tyenv repr tinst =
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
         let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
@@ -403,7 +403,7 @@ and GenTyAppAux amap m g tyenv repr tinst =
             mkILTy boxity (mkILTySpec (tref,ilTypeInst))
         | Some ilType -> 
             ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
-          
+
 
 and GenNamedTyAppAux (amap:Import.ImportMap) m g tyenv ptrsOK tcref tinst = 
     let tinst = DropErasedTyargs tinst 
@@ -2025,7 +2025,6 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
             else
                 getCompiledTupleItem g (elast,tysB,n-goodTupleFields,m)
     GenExpr cenv cgbuf eenv SPSuppress (getCompiledTupleItem cenv.g (e,tys,n,m)) sequel
-
 
 and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
     GenExprs cenv cgbuf eenv args

@@ -396,7 +396,7 @@ module internal Impl =
     let mutable systemValueTupleException = null
 
     let reflectedValueTuple n =
-        try
+        try        
 #if FX_ASSEMBLYLOADBYSTRING
             let a = Assembly.Load("System.ValueTuple")
 #else
@@ -522,7 +522,7 @@ module internal Impl =
           let tysA = tyargs.[0..tupleEncField-1]
           let tyB = tyargs.[tupleEncField]
           Array.append tysA (getTupleTypeInfo tyB)
-      else 
+      else
           tyargs
 
     let orderTupleProperties (props:PropertyInfo[]) =
@@ -548,20 +548,54 @@ module internal Impl =
                haveNames = expectNames)
 #endif               
         props
-            
-    let getTupleConstructorMethod(typ:Type,bindingFlags) =
-          let props = typ.GetProperties() |> orderTupleProperties
+
+    let orderTupleFields (fields:FieldInfo[]) =
+        // The tuple fields are of the form:
+        //   Item1
+        //   ..
+        //   Item1, Item2, ..., Item<maxTuple-1>
+        //   Item1, Item2, ..., Item<maxTuple-1>, Rest
+        // The PropertyInfo may not come back in order, so ensure ordering here.
 #if FX_ATLEAST_PORTABLE
-          let ctor = typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
-          ignore bindingFlags
-#else          
-          let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
-#endif          
-          match ctor with
-          | null -> raise <| ArgumentException(SR.GetString1(SR.invalidTupleTypeConstructorNotDefined, typ.FullName))
-          | _ -> ()
-          ctor
-        
+#else
+        assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
+#endif
+        let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
+#if FX_ATLEAST_PORTABLE  
+#else      
+        assert(fields.Length <= maxTuple)
+        assert(let haveNames   = fields |> Array.map (fun fi -> fi.Name)
+               let expectNames = Array.init fields.Length (fun i -> let j = i+1 // index j = 1,2,..,fields.Length <= maxTuple
+                                                                    if   j<maxTuple then "Item" + string j
+                                                                    elif j=maxTuple then "Rest"
+                                                                    else (assert false; "")) // dead code under prior assert, props.Length <= maxTuple
+               haveNames = expectNames)
+#endif
+        fields
+
+    let getTupleConstructorMethod(typ:Type,bindingFlags) =
+        let ctor =
+            if typ.IsValueType then
+                let fields = typ.GetFields() |> orderTupleFields
+#if FX_ATLEAST_PORTABLE
+                ignore bindingFlags
+                typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
+#else
+                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,fields |> Array.map (fun fi -> fi.FieldType),null)
+#endif
+            else
+                let props = typ.GetProperties() |> orderTupleProperties
+#if FX_ATLEAST_PORTABLE
+                ignore bindingFlags
+                typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
+#else
+                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
+#endif
+        match ctor with
+        | null -> raise <| ArgumentException(SR.GetString1(SR.invalidTupleTypeConstructorNotDefined, typ.FullName))
+        | _ -> ()
+        ctor
+
     let getTupleCtor(typ:Type,bindingFlags) =
           let ctor = getTupleConstructorMethod(typ,bindingFlags)
           (fun (args:obj[]) ->
@@ -569,13 +603,18 @@ module internal Impl =
               ctor.Invoke(args))
 #else
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags,null,args,null))
-#endif              
+#endif
 
     let rec getTupleReader (typ:Type) = 
         let etys = typ.GetGenericArguments() 
         // Get the reader for the outer tuple record
-        let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-        let reader = (fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,null)))
+        let reader =
+            if typ.IsValueType then
+                let fields = (typ.GetFields(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleFields)
+                ((fun (obj:obj) -> fields |> Array.map (fun field -> field.GetValue(obj))))
+            else
+                let props = (typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
+                ((fun (obj:obj) -> props |> Array.map (fun prop -> prop.GetValue(obj,null))))
         if etys.Length < maxTuple 
         then reader
         else
@@ -585,7 +624,7 @@ module internal Impl =
                 let directVals = reader obj
                 let encVals = reader2 directVals.[tupleEncField]
                 Array.append directVals.[0..tupleEncField-1] encVals)
-                
+
     let rec getTupleConstructor (typ:Type) = 
         let etys = typ.GetGenericArguments() 
         let maker1 =  getTupleCtor (typ,BindingFlags.Public)
@@ -606,20 +645,25 @@ module internal Impl =
         else
             maker1,Some(etys.[tupleEncField])
 
-    let getTupleReaderInfo (typ:Type,index:int) =         
+    let getTupleReaderInfo (typ:Type,index:int) =
         if index < 0 then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
-        let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-        let get index = 
-            if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
-            props.[index]
-        
+
+        let get index =
+            if typ.IsValueType then
+                let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
+                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                props.[index]
+            else
+                let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
+                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                props.[index]
+
         if index < tupleEncField then
-            get index, None  
+            get index, None
         else
             let etys = typ.GetGenericArguments()
             get tupleEncField, Some(etys.[tupleEncField],index-(maxTuple-1))
-            
-      
+
     //-----------------------------------------------------------------
     // FUNCTION DECOMPILATION
     
