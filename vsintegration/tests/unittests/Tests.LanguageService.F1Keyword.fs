@@ -11,7 +11,7 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
@@ -372,6 +372,6 @@ type UsingMSBuild() =
 
 
 // Context project system
-[<TestFixture>] 
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
