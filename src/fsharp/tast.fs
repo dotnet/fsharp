@@ -952,7 +952,7 @@ type Entity =
                     let ilTypeOpt = 
                         match x.TyparsNoRange with 
                         | [] -> Some (mkILTy boxity (mkILTySpec (ilTypeRef,[]))) 
-                        | _ -> None 
+                        | _  -> None
                     CompiledTypeRepr.ILAsmNamed (ilTypeRef, boxity, ilTypeOpt))
 
     /// Gets the data indicating the compiled representation of a named type or module in terms of Abstract IL data structures.

@@ -624,7 +624,7 @@ let reduceTyconMeasureableOrProvided g (tycon:Tycon) tyargs =
     | TProvidedTypeExtensionPoint info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
-    
+
 let reduceTyconRefMeasureableOrProvided (g:TcGlobals) (tcref:TyconRef) tyargs = 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
@@ -7834,10 +7834,6 @@ let mkGetTupleItemN g m n (typ:ILType) isStruct te retty =
         mkAsmExpr([mkNormalLdfld  (mkILFieldSpecForTupleItem typ n)   ],[],[te],[retty],m)
     else
         mkAsmExpr([IL.mkNormalCall(mkILMethodSpecForTupleItem g typ n)],[],[te],[retty],m)
-  
-//  let mkGetTupleItemN g m n typ te retty =
-//    mkAsmExpr([IL.mkNormalCall(mkILMethodSpecForTupleItem g typ n)],[],[te],[retty],m)
-
 /// Match an Int32 constant expression
 let (|Int32Expr|_|) expr = 
     match expr with 
