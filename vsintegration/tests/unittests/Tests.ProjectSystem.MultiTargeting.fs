@@ -16,7 +16,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<TestFixture>]
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
 type MultiTargeting() = 
     inherit TheTests()
     
