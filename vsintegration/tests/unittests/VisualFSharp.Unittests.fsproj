@@ -35,6 +35,7 @@
     <Compile Include="TestLib.ProjectSystem.fs" />
     <Compile Include="Tests.Roslyn.ColorizationService.fs" />
     <Compile Include="Tests.Roslyn.BraceMatchingService.fs" />
+    <Compile Include="Tests.Roslyn.IndentationService.fs" />
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
