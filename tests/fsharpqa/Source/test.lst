@@ -223,6 +223,7 @@ Conformance08			Conformance\PatternMatching\Wildcard
 Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\System.ThreadStatic
+Conformance08			Conformance\SpecialAttributesAndTypes\Imported\CallerInfo
 Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
@@ -241,7 +242,7 @@ Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
 Misc01			ClrFx\PseudoCustomAttributes\AssemblyVersion
 Misc01			Diagnostics\async
-Misc01			Diagnostics\General
+Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
 Misc01			Diagnostics\ParsingAtEOF
 Misc01			EntryPoint
@@ -276,4 +277,3 @@ Misc02			Stress
 Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
-Diagnostics		Diagnostics\General

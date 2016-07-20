@@ -36,13 +36,13 @@
   // Offset: 0x00001860 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {575BE14E-218B-729A-A745-03834EE15B57}
+// MVID: {576266DE-218B-729A-A745-0383DE666257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F30000
+// Image base: 0x00D30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -680,7 +680,7 @@
 
     IL_0019:  ldloc.0
     IL_001a:  stloc.1
-    IL_001b:  ldloc.1
+    IL_001b:  ldloc.0
     IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.MyExn>(object)
     IL_0021:  brtrue.s   IL_0025
 
@@ -1478,7 +1478,7 @@
 
       IL_0019:  ldloc.0
       IL_001a:  stloc.1
-      IL_001b:  ldloc.1
+      IL_001b:  ldloc.0
       IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/MyExn>(object)
       IL_0021:  brtrue.s   IL_0025
 
@@ -2276,7 +2276,7 @@
 
         IL_0019:  ldloc.0
         IL_001a:  stloc.1
-        IL_001b:  ldloc.1
+        IL_001b:  ldloc.0
         IL_001c:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/ABC/MyExn>(object)
         IL_0021:  brtrue.s   IL_0025
 

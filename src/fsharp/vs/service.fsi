@@ -522,7 +522,7 @@ type internal FSharpChecker =
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
     member InvalidateConfiguration: options: FSharpProjectOptions -> unit    
-    
+
     /// Begin background parsing the given project.
     member StartBackgroundCompile: options: FSharpProjectOptions -> unit
 

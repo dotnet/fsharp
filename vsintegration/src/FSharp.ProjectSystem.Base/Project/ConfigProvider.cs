@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Collections;
 using System.IO;
-using MSBuild = Microsoft.Build.BuildEngine;
 using System.Collections.Generic;
 using System.Linq;
 using EnvDTE;

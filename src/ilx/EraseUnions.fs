@@ -39,8 +39,7 @@ type DiscriminationTechnique =
    // class (no subclasses), but an integer tag is stored to discriminate between the objects.
    | IntegerTag
 
-// FLATTEN_SINGLE_NON_NULLARY_AND_ALWAYS_USE_TAGS looks like a useful representation 
-// optimization - it trades an extra integer tag in the root type
+// A potentially useful additional representation trades an extra integer tag in the root type
 // for faster discrimination, and in the important single-non-nullary constructor case
 //
 //     type Tree = Tip | Node of int * Tree * Tree
@@ -60,14 +59,15 @@ type UnionReprDecisions<'Union,'Alt,'Type>
            nullPermitted:'Union->bool,
            isNullary:'Alt->bool,
            isList:'Union->bool,
+           isStruct:'Union->bool,
            nameOfAlt : 'Alt -> string,
            makeRootType: 'Union -> 'Type,
            makeNestedType: 'Union * string -> 'Type) =
 
     static let TaggingThresholdFixedConstant = 4
 
-    member repr.OptimizeAllAlternativesToConstantFieldsInRootClass cu = 
-        Array.forall isNullary (getAlternatives cu)
+    member repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu = 
+        cu |> getAlternatives |> Array.forall isNullary
 
     member repr.DiscriminationTechnique cu = 
         if isList cu then 
@@ -77,18 +77,15 @@ type UnionReprDecisions<'Union,'Alt,'Type>
             if alts.Length = 1 then 
                 SingleCase
             elif 
-#if FLATTEN_SINGLE_NON_NULLARY_AND_ALWAYS_USE_TAGS
-                nullPermitted cu then
-#else
+                not (isStruct cu) &&
                 alts.Length < TaggingThresholdFixedConstant &&
-                not (repr.OptimizeAllAlternativesToConstantFieldsInRootClass cu)  then 
-#endif
+                not (repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu)  then 
                 RuntimeTypes
             else
                 IntegerTag
 
     // WARNING: this must match IsUnionTypeWithNullAsTrueValue in the F# compiler 
-    member repr.OptimizeAlternativeToNull (cu,alt) = 
+    member repr.RepresentAlternativeAsNull (cu,alt) = 
         let alts = getAlternatives cu
         nullPermitted cu &&
         (repr.DiscriminationTechnique cu  = RuntimeTypes) && (* don't use null for tags, lists or single-case  *)
@@ -96,54 +93,52 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         Array.exists (isNullary >> not) alts  &&
         isNullary alt  (* is this the one? *)
 
-    member repr.OptimizingOneAlternativeToNull cu = 
+    member repr.RepresentOneAlternativeAsNull cu = 
         let alts = getAlternatives cu
         nullPermitted cu &&
-        alts |> Array.existsOne (fun alt -> repr.OptimizeAlternativeToNull (cu,alt))
+        alts |> Array.existsOne (fun alt -> repr.RepresentAlternativeAsNull (cu,alt))
 
-    member repr.OptimizeSingleNonNullaryAlternativeToRootClassAndAnyOtherAlternativesToNull (cu,alt) = 
+    member repr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cu,alt) = 
         // Check all nullary constructors are being represented without using sub-classes 
         let alts = getAlternatives cu
+        not (isStruct cu) &&
         not (isNullary alt) &&
-        (alts |> Array.forall (fun alt2 -> not (isNullary alt2) || repr.OptimizeAlternativeToNull (cu,alt2))) &&
+        (alts |> Array.forall (fun alt2 -> not (isNullary alt2) || repr.RepresentAlternativeAsNull (cu,alt2))) &&
         // Check this is the one and only non-nullary constructor 
         Array.existsOne (isNullary >> not) alts
 
-#if FLATTEN_SINGLE_NON_NULLARY_AND_ALWAYS_USE_TAGS
-    member repr.OptimizeSingleNonNullaryAlternativeToRootClassAndOtherAlternativesToTagged (cu,alt) = 
-        let alts = getAlternatives cu
-        not (isNullary alt) && 
-        alts.Length > 1 && 
-        Array.existsOne (isNullary >> not) alts && 
-        not (nullPermitted cu)
-#endif
-
-    member repr.OptimizeSingleNonNullaryAlternativeToRootClass (cu,alt) = 
+    member repr.RepresentAlternativeAsFreshInstancesOfRootClass (cu,alt) = 
+        // Flattening
+        isStruct cu ||
         // Check all nullary constructors are being represented without using sub-classes 
         (isList cu  && nameOfAlt alt = ALT_NAME_CONS) ||
-        repr.OptimizeSingleNonNullaryAlternativeToRootClassAndAnyOtherAlternativesToNull (cu, alt) 
-#if FLATTEN_SINGLE_NON_NULLARY_AND_ALWAYS_USE_TAGS
-        repr.OptimizeSingleNonNullaryAlternativeToRootClassAndOtherAlternativesToTagged (cu,alt)
-#endif        
+        repr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cu, alt) 
 
-    member repr.OptimizeAlternativeToConstantFieldInTaggedRootClass (cu,alt) = 
+    member repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) = 
+        not (isStruct cu) &&
         isNullary alt &&
-        not (repr.OptimizeAlternativeToNull (cu,alt))  &&
+        not (repr.RepresentAlternativeAsNull (cu,alt))  &&
         (repr.DiscriminationTechnique cu <> RuntimeTypes)
+
+    member repr.Flatten cu = 
+        isStruct cu
 
     member repr.OptimizeAlternativeToRootClass (cu,alt) = 
         // The list type always collapses to the root class 
         isList cu ||
-        repr.OptimizeAllAlternativesToConstantFieldsInRootClass cu ||
-        repr.OptimizeAlternativeToConstantFieldInTaggedRootClass (cu,alt) ||
-        repr.OptimizeSingleNonNullaryAlternativeToRootClass(cu,alt)
+        // Structs are always flattened
+        repr.Flatten cu ||
+        repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu ||
+        repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) ||
+        repr.RepresentAlternativeAsFreshInstancesOfRootClass(cu,alt)
       
     member repr.MaintainPossiblyUniqueConstantFieldForAlternative(cu,alt) = 
-        not (repr.OptimizeAlternativeToNull (cu,alt)) &&
+        not (isStruct cu) && 
+        not (repr.RepresentAlternativeAsNull (cu,alt)) &&
         isNullary alt
 
     member repr.TypeForAlternative (cuspec,alt) =
-        if repr.OptimizeAlternativeToRootClass (cuspec,alt) || repr.OptimizeAlternativeToNull (cuspec,alt) then 
+        if repr.OptimizeAlternativeToRootClass (cuspec,alt) || repr.RepresentAlternativeAsNull (cuspec,alt) then 
             makeRootType cuspec
         else 
             let altName = nameOfAlt alt 
@@ -153,7 +148,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
 
 
 let baseTyOfUnionSpec (cuspec : IlxUnionSpec) = 
-    mkILBoxedTyRaw cuspec.TypeRef cuspec.GenericArgs
+    mkILNamedTyRaw cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
 
 let mkMakerName (cuspec: IlxUnionSpec) nm = 
     match cuspec.HasHelpers with
@@ -170,9 +165,10 @@ let cuspecRepr =
          (fun (cuspec:IlxUnionSpec) -> cuspec.IsNullPermitted), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun cuspec -> cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
+         (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
-         (fun cuspec -> mkILBoxedTyRaw cuspec.TypeRef cuspec.GenericArgs),
-         (fun (cuspec,nm) -> mkILBoxedTyRaw (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
+         (fun cuspec -> cuspec.EnclosingType),
+         (fun (cuspec,nm) -> mkILNamedTyRaw cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
 
 type NoTypesGeneratedViaThisReprDecider = NoTypesGeneratedViaThisReprDecider
 let cudefRepr = 
@@ -181,6 +177,7 @@ let cudefRepr =
          (fun (_td,cud) -> cud.cudNullPermitted), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
+         (fun (td,_cud) -> match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
          (fun (_td,_cud) -> NoTypesGeneratedViaThisReprDecider),
          (fun ((_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
@@ -198,7 +195,7 @@ let refToFieldInTy ty (nm, fldTy) = mkILFieldSpecInTy (ty, nm, fldTy)
 let formalTypeArgs (baseTy:ILType) = ILList.mapi (fun i _ -> mkILTyvarTy (uint16 i)) baseTy.GenericArgs
 let constFieldName nm = "_unique_" + nm 
 let constFormalFieldTy (baseTy:ILType) = 
-    ILType.Boxed (mkILTySpecRaw (baseTy.TypeRef, formalTypeArgs baseTy))
+    mkILNamedTyRaw baseTy.Boxity baseTy.TypeRef (formalTypeArgs baseTy)
 
 let mkConstFieldSpecFromId (baseTy:ILType) constFieldId = 
     refToFieldInTy baseTy constFieldId
@@ -265,13 +262,22 @@ let mkLdData (avoidHelpers, cuspec, cidx, fidx) =
     else
         [ mkNormalCall (mkILNonGenericInstanceMethSpecInTy(altTy,"get_" + adjustFieldName cuspec.HasHelpers fieldDef.Name,[],fieldDef.Type))  ]
 
+let mkLdDataAddr (avoidHelpers, cuspec, cidx, fidx) = 
+    let alt = altOfUnionSpec cuspec cidx
+    let altTy = tyForAlt cuspec alt
+    let fieldDef = alt.FieldDef fidx
+    if avoidHelpers then 
+        [ mkNormalLdflda (mkILFieldSpecInTy(altTy,fieldDef.LowerName, fieldDef.Type))  ]
+    else
+        failwith (sprintf "can't load address using helpers, for fieldDef %s" fieldDef.LowerName)
+
 let mkGetTailOrNull avoidHelpers cuspec = 
     mkLdData (avoidHelpers, cuspec, 1, 1) (* tail is in alternative 1, field number 1 *)
         
 
 let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) = 
     let baseTy = baseTyOfUnionSpec cuspec
-    if cuspecRepr.OptimizingOneAlternativeToNull cuspec then
+    if cuspecRepr.RepresentOneAlternativeAsNull cuspec then
         mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [baseTy], mkTagFieldFormalType ilg cuspec))  
     else
         mkNormalCall (mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec))  
@@ -289,32 +295,29 @@ let mkCeqThen after =
 
 
 let mkTagDiscriminate ilg cuspec _baseTy cidx = 
-    mkGetTag ilg cuspec 
-    @ [ mkLdcInt32 cidx 
-        AI_ceq ]
+    mkGetTag ilg cuspec @ [ mkLdcInt32 cidx; AI_ceq ]
 
 let mkTagDiscriminateThen ilg cuspec cidx after = 
-    mkGetTag ilg cuspec 
-    @ [ mkLdcInt32 cidx ] 
-    @ mkCeqThen after
+    mkGetTag ilg cuspec @ [ mkLdcInt32 cidx ] @ mkCeqThen after
 
 let convNewDataInstrInternal ilg cuspec cidx = 
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
 
-    if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+    if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
         [ AI_ldnull  ]
     elif cuspecRepr.MaintainPossiblyUniqueConstantFieldForAlternative (cuspec,alt) then 
         let baseTy = baseTyOfUnionSpec cuspec
         [ I_ldsfld (Nonvolatile,mkConstFieldSpec altName baseTy) ]
-    elif cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
+    elif cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass (cuspec,alt) then 
         let baseTy = baseTyOfUnionSpec cuspec
         let instrs, tagfields = 
             match cuspecRepr.DiscriminationTechnique cuspec with
             | IntegerTag -> [ mkLdcInt32 cidx ], [mkTagFieldType ilg cuspec]
             | _ -> [], []
-        instrs @ [ mkNormalNewobj(mkILCtorMethSpecForTy (baseTy,(Array.toList alt.FieldTypes @ tagfields))) ]
+        let ctorFieldTys = alt.FieldTypes |> Array.toList
+        instrs @ [ mkNormalNewobj(mkILCtorMethSpecForTy (baseTy,(ctorFieldTys @ tagfields))) ]
     else 
         [ mkNormalNewobj(mkILCtorMethSpecForTy (altTy,Array.toList alt.FieldTypes)) ]
 
@@ -334,7 +337,7 @@ let mkNewData ilg (cuspec, cidx) =
     | AllHelpers 
     | SpecialFSharpListHelpers 
     | SpecialFSharpOptionHelpers -> 
-        if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+        if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
             [ AI_ldnull  ]
         elif alt.IsNullary then 
             [ mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "get_" + altName, [], constFormalFieldTy baseTy)) ]
@@ -353,9 +356,9 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
-    if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+    if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
         [ AI_ldnull; AI_ceq ] 
-    elif cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClassAndAnyOtherAlternativesToNull (cuspec,alt) then 
+    elif cuspecRepr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cuspec,alt) then 
         // in this case we can use a null test
         [ AI_ldnull; AI_cgt_un ] 
     else 
@@ -377,7 +380,6 @@ type ICodeGen<'Mark> =
     abstract EmitInstr : ILInstr -> unit
     abstract EmitInstrs : ILInstr list -> unit
 
-// TODO: this will be removed
 let genWith g : ILCode = 
     let instrs = ResizeArray() 
     let lab2pc = Dictionary() 
@@ -399,9 +401,9 @@ let mkBrIsNotData ilg (avoidHelpers, cuspec,cidx,tg) =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
-    if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+    if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
         [ I_brcmp (BI_brtrue,tg) ] 
-    elif cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClassAndAnyOtherAlternativesToNull (cuspec,alt) then 
+    elif cuspecRepr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cuspec,alt) then 
         // in this case we can use a null test
         [ I_brcmp (BI_brfalse,tg) ] 
     else
@@ -454,10 +456,10 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
                 let alt = altOfUnionSpec cuspec cidx
                 let internalLab = cg.GenerateDelayMark()
                 let failLab = cg.GenerateDelayMark ()
-                let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec, alt)
+                let cmpNull = cuspecRepr.RepresentAlternativeAsNull (cuspec, alt)
                 let test = I_brcmp ((if cmpNull then BI_brtrue else BI_brfalse),cg.CodeLabel failLab)
                 let testBlock = 
-                    if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
+                    if cmpNull || cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass (cuspec,alt) then 
                         [ test ]
                     else
                         let altName = alt.Name
@@ -479,9 +481,9 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
 let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
     emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)  
 
-let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,cuspec,cidx) = 
+let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,avoidHelpers,cuspec,cidx) = 
     let alt = altOfUnionSpec cuspec cidx
-    if cuspecRepr.OptimizeAlternativeToNull (cuspec,alt) then 
+    if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
         if canfail then 
             let outlab = cg.GenerateDelayMark ()
             let internal1 = cg.GenerateDelayMark ()
@@ -489,7 +491,22 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,cuspec,cidx) =
             cg.SetMarkToHere internal1
             cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
             cg.SetMarkToHere outlab
-        // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
+        else
+            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
+            ()
+    elif cuspecRepr.Flatten cuspec then
+        if canfail then
+            let outlab = cg.GenerateDelayMark ()
+            let internal1 = cg.GenerateDelayMark ()
+            cg.EmitInstrs [ AI_dup ]
+            emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)
+            cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp (BI_beq, cg.CodeLabel outlab) ]
+            cg.SetMarkToHere internal1
+            cg.EmitInstrs  [mkPrimaryAssemblyExnNewobj ilg "System.InvalidCastException"; I_throw ]
+            cg.SetMarkToHere outlab
+        else
+            // If it can't fail, it's still verifiable just to leave the value on the stack unchecked 
+            ()
     elif cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt) then 
         ()
     else 
@@ -510,11 +527,11 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
             let altTy = tyForAlt cuspec alt
             let altName = alt.Name
             let failLab = cg.GenerateDelayMark ()
-            let cmpNull = cuspecRepr.OptimizeAlternativeToNull (cuspec,alt)
+            let cmpNull = cuspecRepr.RepresentAlternativeAsNull (cuspec,alt)
 
             cg.EmitInstr (mkLdloc locn)
             let testInstr = I_brcmp ((if cmpNull then BI_brfalse else BI_brtrue),tg) 
-            if cmpNull || cuspecRepr.OptimizeSingleNonNullaryAlternativeToRootClass (cuspec,alt) then 
+            if cmpNull || cuspecRepr.RepresentAlternativeAsFreshInstancesOfRootClass (cuspec,alt) then 
                  cg.EmitInstr testInstr 
             else 
                  cg.EmitInstrs (mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy testInstr)
@@ -644,7 +661,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
 
             let baseTesterMeths, baseTesterProps = 
                 if cud.cudAlternatives.Length <= 1 then [], []
-                elif repr.OptimizingOneAlternativeToNull info then [], []
+                elif repr.RepresentOneAlternativeAsNull info then [], []
                 else
                     [ mkILNonGenericInstanceMethod
                          ("get_" + mkTesterName altName,
@@ -719,8 +736,8 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
             [], []
 
     let typeDefs, altDebugTypeDefs, altNullaryFields = 
-        if repr.OptimizeAlternativeToNull (info,alt) then [], [], [] 
-        elif repr.OptimizeSingleNonNullaryAlternativeToRootClass (info,alt) then [], [], [] 
+        if repr.RepresentAlternativeAsNull (info,alt) then [], [], [] 
+        elif repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) then [], [], [] 
         else
           let altNullaryFields = 
               if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info,alt) then 
@@ -770,7 +787,8 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                                 mkMethodBody(true,emptyILLocals,2,
                                         nonBranchingInstrsToCode 
                                           [ mkLdarg0
-                                            mkNormalLdfld (mkILFieldSpecInTy (debugProxyTy,debugProxyFieldName,altTy)) 
+                                            (match td.tdKind with ILTypeDefKind.ValueType -> mkNormalLdflda | _ -> mkNormalLdfld)  
+                                                (mkILFieldSpecInTy (debugProxyTy,debugProxyFieldName,altTy)) 
                                             mkNormalLdfld (mkILFieldSpecInTy(altTy,fldName,fldTy))],None))
                             |> addMethodGeneratedAttrs ilg)
                         |> Array.toList
@@ -863,8 +881,9 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
         
   
 let mkClassUnionDef ilg tref td cud = 
-    let baseTy = mkILFormalBoxedTy tref td.GenericParams
-    let cuspec = IlxUnionSpec(IlxUnionRef(baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
+    let boxity = match td.tdKind with ILTypeDefKind.ValueType -> ILBoxity.AsValue | _ -> ILBoxity.AsObject
+    let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
+    let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
     let info = (td,cud)
     let repr = cudefRepr 
     let isTotallyImmutable = (cud.cudHasHelpers <> SpecialFSharpListHelpers)
@@ -886,33 +905,42 @@ let mkClassUnionDef ilg tref td cud =
         | SingleCase | RuntimeTypes | TailOrNull -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
 
-    let selfFields, selfMeths, selfProps, _ = 
-        match  cud.cudAlternatives |> Array.toList |> List.findi 0 (fun alt -> repr.OptimizeSingleNonNullaryAlternativeToRootClass (info,alt))  with 
-        | Some (alt,altNum) ->
-            let fields = (alt.FieldDefs |> Array.toList |> List.map mkUnionCaseFieldId) 
+    let isStruct = match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false
+
+    let selfFields, selfMeths, selfProps = 
+
+        [ for alt in cud.cudAlternatives do 
+           if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) then
+        // TODO
+            let fields = alt.FieldDefs |> Array.toList |> List.map mkUnionCaseFieldId 
+            let baseInit = 
+                if isStruct then None else
+                match td.Extends with 
+                | None -> Some ilg.tspec_Object 
+                | Some typ -> Some typ.TypeSpec
+
             let ctor = 
                 mkILSimpleStorageCtor 
                    (cud.cudWhere,
-                    (match td.Extends with None -> Some ilg.tspec_Object | Some typ -> Some typ.TypeSpec),
+                    baseInit,
                     baseTy,
                     (fields @ tagFieldsInObject),
                     (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                 |> addMethodGeneratedAttrs ilg
 
             let props, meths = mkMethodsAndPropertiesForFields ilg cud.cudReprAccess cud.cudWhere cud.cudHasHelpers baseTy alt.FieldDefs                 
-            fields,([ctor] @ meths),props,altNum
-
-        |  None ->
-            [],[],[],0
+            yield (fields,([ctor] @ meths),props) ]
+         |> List.unzip3
+         |> (fun (a,b,c) -> List.concat a, List.concat b, List.concat c)
 
     let selfAndTagFields = 
         [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
               let fdef = mkHiddenGeneratedInstanceFieldDef ilg (fldName,fldTy, None, ILMemberAccess.Assembly)
-              yield { fdef with IsInitOnly=isTotallyImmutable } ]
+              yield { fdef with IsInitOnly= (not isStruct && isTotallyImmutable) } ]
 
     let ctorMeths =
         if (isNil selfFields && isNil tagFieldsInObject && nonNil selfMeths)
-            ||  cud.cudAlternatives |> Array.forall (fun alt -> repr.OptimizeSingleNonNullaryAlternativeToRootClass (info,alt))  then 
+            ||  cud.cudAlternatives |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt))  then 
 
             [] (* no need for a second ctor in these cases *)
 
@@ -962,7 +990,7 @@ let mkClassUnionDef ilg tref td cud =
           let body = mkMethodBody(true,emptyILLocals,2,genWith (fun cg -> emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec); cg.EmitInstr I_ret), cud.cudWhere)
           // // If we are using NULL as a representation for an element of this type then we cannot 
           // // use an instance method 
-          if (repr.OptimizingOneAlternativeToNull info) then
+          if (repr.RepresentOneAlternativeAsNull info) then
               [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
                 |> addMethodGeneratedAttrs ilg ], 
               [] 
@@ -1024,28 +1052,16 @@ let mkClassUnionDef ilg tref td cud =
                   tdKind = ILTypeDefKind.Enum }
 
     let baseTypeDef = 
-        { Name = td.Name
+       { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          GenericParams= td.GenericParams
-          Access = td.Access
           IsAbstract = isAbstract
           IsSealed = altTypeDefs.IsEmpty
-          IsSerializable=td.IsSerializable
           IsComInterop=false
-          Layout=td.Layout 
-          IsSpecialName=td.IsSpecialName
-          Encoding=td.Encoding 
-          Implements = td.Implements
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
-          SecurityDecls=td.SecurityDecls
-          HasSecurity=td.HasSecurity 
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)
-          MethodImpls=td.MethodImpls
           InitSemantics=ILTypeInit.BeforeField
-          Events=td.Events
           Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps)
-          CustomAttrs=td.CustomAttrs
           tdKind = ILTypeDefKind.Class }
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 

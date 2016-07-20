@@ -39,7 +39,7 @@ type Check =
         File.Delete("watson-test.fs")
 
 
-[<TestFixture>] 
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
 module WatsonTests = 
 
     [<Test>]
