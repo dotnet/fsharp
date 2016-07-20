@@ -9,7 +9,7 @@ open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 
-[<TestFixture>]
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
 type XmlDocComments() = 
     inherit UnitTests.TestLib.LanguageService.LanguageServiceBaseTests(VsOpts = InstalledMSBuildTestFlavour())
     // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 

@@ -12,7 +12,7 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests() 
 
@@ -1237,8 +1237,6 @@ type UsingMSBuild() as this =
         Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
         Assert.AreEqual(1, fas.ProjectFileNames.Length)
 
-#if OPEN_BUILD
-#else
 
     /// FEATURE: #reference against a strong name should work.
     [<Test>]
@@ -1246,7 +1244,7 @@ type UsingMSBuild() as this =
         let code =
                                             ["#light"
 #if FX_ATLEAST_40                                            
-                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" Microsoft.BuildSettings.Version.OfAssembly
+                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" (System.Environment.Version.ToString())
 #else
                                              "#reference \"System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089\""
 #endif                                             
@@ -1255,7 +1253,7 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file,"open System.") 
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Linq")   
-#endif
+
 
     /// Try out some bogus file names in #r, #I and #load.
     [<Test>]
@@ -1719,7 +1717,7 @@ type UsingMSBuild() as this =
 
 
 // Context project system
-[<TestFixture>] 
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

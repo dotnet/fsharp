@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <OutputArchitecture>neutral</OutputArchitecture>
+    <OutputLocalized>false</OutputLocalized>
+    <OutputType>manifest</OutputType>
+    <OutputName>Microsoft.FSharp.SDK.$(LocaleCode)</OutputName>
+    <IsPackage>true</IsPackage>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <PropertyGroup>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Package Include="Files.swr" />
+  </ItemGroup>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <!-- MSI is already signed before wrapping it here -->
+  </Target>
+  
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Compile">
+    <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
+    <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
+    <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
+    <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
+  </Target>
+</Project>

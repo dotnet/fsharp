@@ -7,7 +7,6 @@ open System
 open System.IO
 open System.Diagnostics
 open Microsoft.FSharp.Build
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils
@@ -20,7 +19,7 @@ open Salsa.VsMocks
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
 
-[<TestFixture>]
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
 type TaskReporter() = 
     static let err(line) : 'a = 
         printfn "err() called on line %s with %s" line System.Environment.StackTrace 

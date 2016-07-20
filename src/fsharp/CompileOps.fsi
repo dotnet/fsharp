@@ -273,7 +273,7 @@ type TcConfigBuilder =
       mutable resolutionAssemblyFoldersConditions : string          
       mutable platform : ILPlatform option
       mutable prefer32Bit : bool
-      mutable useMonoResolution : bool
+      mutable useSimpleResolution : bool
       mutable target : CompilerTarget
       mutable debuginfo : bool
       mutable testFlagEmitFeeFeeAs100001 : bool
@@ -425,7 +425,7 @@ type TcConfig =
     member resolutionAssemblyFoldersConditions : string          
     member platform : ILPlatform option
     member prefer32Bit : bool
-    member useMonoResolution : bool
+    member useSimpleResolution : bool
     member target : CompilerTarget
     member debuginfo : bool
     member testFlagEmitFeeFeeAs100001 : bool
@@ -775,7 +775,7 @@ type LoadClosure =
       RootWarnings : PhasedError list }
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : filename: string * source: string * implicitDefines:CodeContext * useMonoResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
+    static member ComputeClosureOfSourceText : filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * useDefaultScriptingReferences : bool * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

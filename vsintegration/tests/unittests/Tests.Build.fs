@@ -7,7 +7,6 @@ open System
 open System.IO
 open System.Diagnostics
 open Microsoft.FSharp.Build
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -54,7 +53,7 @@ type FauxHostObject() =
     interface ITaskHost
         // no members
 
-[<TestFixture>]
+[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
 type Build() = 
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqual expected actual =

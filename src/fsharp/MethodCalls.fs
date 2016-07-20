@@ -62,15 +62,17 @@ type CalledArg =
     { Position: (int * int)
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
+      CallerInfoInfo : CallerInfoInfo
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
       NameOpt: Ident option
       CalledArgumentType : TType }
 
-let CalledArg(pos,isParamArray,optArgInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
+let CalledArg(pos,isParamArray,optArgInfo,callerInfoInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
     { Position=pos
       IsParamArray=isParamArray
       OptArgInfo =optArgInfo
+      CallerInfoInfo = callerInfoInfo
       IsOutArg=isOutArg
       ReflArgInfo=reflArgInfo
       NameOpt=nameOpt
@@ -198,10 +200,11 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo:MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg,isOutArg,optArgInfo,nmOpt,reflArgInfo,typeOfCalledArg))  -> 
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoFlags,nmOpt,reflArgInfo,typeOfCalledArg))  -> 
       { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
+        CallerInfoInfo = callerInfoFlags
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
