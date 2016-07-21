@@ -334,6 +334,7 @@ csGenericConstructRequiresPublicDefaultConstructor,"A generic construct requires
 492,csMethodIsNotAStaticMethod,"%s is not a static method"
 493,csMethodIsNotAnInstanceMethod,"%s is not an instance method"
 csMemberHasNoArgumentOrReturnProperty,"The member or object constructor '%s' has no argument or settable return property '%s'. %s."
+csCtorHasNoArgumentOrReturnProperty,"The object constructor '%s' has no argument or settable return property '%s'. %s. %s"
 495,csRequiredSignatureIs,"The required signature is %s"
 496,csMemberSignatureMismatch,"The member or object constructor '%s' requires %d argument(s). The required signature is '%s'."
 497,csMemberSignatureMismatch2,"The member or object constructor '%s' requires %d additional argument(s). The required signature is '%s'."
