@@ -280,7 +280,7 @@
                  [3] int32 V_3,
                  [4] !a V_4,
                  [5] !a V_5)
-        .line 4,4 : 10,20 ''
+        .line 4,4 : 10,20
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
@@ -432,7 +432,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 4,4 : 10,20 ''
+        .line 4,4 : 10,20
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -638,28 +638,28 @@
                [1] class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32> t1,
                [2] class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32> t2,
                [3] int32 i)
-      .line 6,6 : 8,25 ''
+      .line 6,6 : 8,25
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  stloc.0
-      .line 7,7 : 8,32 ''
+      .line 7,7 : 8,32
       IL_0003:  ldc.i4.1
       IL_0004:  ldc.i4.2
       IL_0005:  call       class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
                                                                                                                                                                                              !0)
       IL_000a:  stloc.1
-      .line 8,8 : 8,32 ''
+      .line 8,8 : 8,32
       IL_000b:  ldc.i4.1
       IL_000c:  ldc.i4.3
       IL_000d:  call       class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
                                                                                                                                                                                              !0)
       IL_0012:  stloc.2
-      .line 9,9 : 8,32 ''
+      .line 9,9 : 8,32
       IL_0013:  ldc.i4.0
       IL_0014:  stloc.3
       IL_0015:  br.s       IL_0023
 
-      .line 10,10 : 12,30 ''
+      .line 10,10 : 12,30
       IL_0017:  ldloc.1
       IL_0018:  ldloc.2
       IL_0019:  callvirt   instance int32 class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::CompareTo(class Compare07/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
@@ -673,7 +673,7 @@
       IL_0024:  ldc.i4     0x989681
       IL_0029:  blt.s      IL_0017
 
-      .line 11,11 : 8,9 ''
+      .line 11,11 : 8,9
       IL_002b:  ldloc.0
       IL_002c:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f6

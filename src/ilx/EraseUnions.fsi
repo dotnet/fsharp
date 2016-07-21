@@ -25,7 +25,7 @@ val mkLdDataAddr : bool * IlxUnionSpec * int * int -> ILInstr list
 val mkStData : IlxUnionSpec * int * int -> ILInstr list
 
 /// Make the instruction sequence for a "brisnotdata" operation
-val mkBrIsNotData : ILGlobals -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
+val mkBrIsData : ILGlobals -> sense: bool -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
 
 /// Make the type definition for a union type
 val mkClassUnionDef : ILGlobals -> ILTypeRef -> ILTypeDef -> IlxUnionInfo -> ILTypeDef

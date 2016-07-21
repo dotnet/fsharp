@@ -67,12 +67,12 @@
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  stloc.0
-      .line 9,9 : 8,32 ''
+      .line 9,9 : 8,32
       IL_0003:  ldc.i4.0
       IL_0004:  stloc.1
       IL_0005:  br.s       IL_001a
 
-      .line 10,10 : 12,30 ''
+      .line 10,10 : 12,30
       IL_0007:  ldc.i4.1
       IL_0008:  ldc.i4.1
       IL_0009:  cgt
