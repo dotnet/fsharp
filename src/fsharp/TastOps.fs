@@ -5667,6 +5667,7 @@ let mkFolders (folders : _ ExprFolder) =
             | Expr.Lambda(_lambdaId ,_ctorThisValOpt,_baseValOpt,_argvs,body,_m,_rty) -> exprF  z body
             | Expr.TyLambda(_lambdaId,_argtyvs,body,_m,_rty) -> exprF  z body
             | Expr.TyChoose(_,body,_) -> exprF  z body
+
             | Expr.App (f,_fty,_tys,argtys,_) -> 
                 let z = exprF z f
                 let z = exprsF z argtys
@@ -5680,17 +5681,24 @@ let mkFolders (folders : _ ExprFolder) =
                 let z = exprF z body
                 z
             | Expr.Link rX -> exprF z (!rX)
+
             | Expr.Match (_spBind,_exprm,dtree,targets,_m,_ty)                 -> 
                 let z = dtreeF z dtree
                 let z = Array.fold targetF z targets
                 z
-            | Expr.Quote(_e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> exprsF z argExprs
-            | Expr.Quote(_e,{contents=None},_,_m,_) -> z
+            | Expr.Quote(e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> 
+                let z = exprF z e
+                exprsF z argExprs
+
+            | Expr.Quote(e,{contents=None},_,_m,_) -> 
+                exprF z e
+
             | Expr.Obj (_n,_typ,_basev,basecall,overrides,iimpls,_m)    -> 
                 let z = exprF z basecall
                 let z = List.fold tmethodF z overrides
                 let z = List.fold (foldOn snd (List.fold tmethodF)) z iimpls
                 z
+
             | Expr.StaticOptimization (_tcs,csx,x,_) -> exprsF z [csx;x]
 
     and valBindF dtree z bind =
