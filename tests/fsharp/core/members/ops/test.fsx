@@ -381,6 +381,24 @@ module TraitCallsAndConstructors =
     let _ : Inherited = -aInherited
 
 
+module CodeGenTraitCallWitnessesNotBeingInlined = 
+    // From: http://stackoverflow.com/questions/28243963/how-to-write-a-variadic-function-in-f-emulating-a-similar-haskell-solution/28244413#28244413
+    type T = T with
+        static member        ($) (T, _:int    ) = (+)
+        static member        ($) (T, _:decimal) = (+)       // required, if only the prev line is here, type inference will constrain too much
+
+    [<AutoOpen>]
+    module TestT =
+        let inline sum (i:'a) (x:'a) :'r = (T $ Unchecked.defaultof<'r>) i x
+
+    type T with
+        static member inline ($) (T, _:'t-> 'rest) = fun (a:'t) x -> sum  (x + a)
+
+    module TestT2 =
+        let x:int = sum 2 3 
+        let y:int = sum 2 3 4       // this line was throwing TypeInitializationException in Debug build
+
+
 let _ = 
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 

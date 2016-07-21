@@ -175,16 +175,21 @@ type IlxGenOptions =
       generateDebugSymbols: bool
       testFlagEmitFeeFeeAs100001: bool
       ilxBackend: IlxGenBackend
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool 
-      // Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
-      // storage, even though 'it' is not logically mutable
+
+      /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
+      /// storage, even though 'it' is not logically mutable
       isInteractiveItExpr: bool
-      // Indicates System.SerializableAttribute is available in the target framework
+
+      /// Indicates System.SerializableAttribute is available in the target framework
       netFxHasSerializableAttribute : bool
+
       /// Whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool}
+      alwaysCallVirt: bool  }
+
 
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
@@ -198,7 +203,9 @@ type cenv =
       amap: Import.ImportMap
       intraAssemblyInfo : IlxGenIntraAssemblyInfo
       /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp,bool> }
+      casApplied : Dictionary<Stamp,bool> 
+      /// Used to apply forced inlining optimizations to witnesses generated late during codegen
+      mutable optimizeDuringCodeGen : (Expr -> Expr) }
 
 
 
@@ -1003,10 +1010,10 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 // into the stored results for the whole CCU.  
 // isIncrementalFragment = true -->  "typed input" 
 // isIncrementalFragment = false -->  "#load" 
-let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:Import.ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, TAssembly impls) = 
+let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:Import.ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) = 
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, impls) ||> List.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
+    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
         let cloc = { cloc with clocTopImplQualifiedName = qname.Text }
         if isIncrementalFragment then 
             match mexpr with
@@ -3282,6 +3289,7 @@ and GenTraitCall cenv cgbuf eenv (traitInfo, argExprs, m) expr sequel =
                              [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))],m)) 
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr -> 
+        let expr = cenv.optimizeDuringCodeGen expr
         GenExpr cenv cgbuf eenv SPSuppress expr sequel 
 
 //--------------------------------------------------------------------------
@@ -5808,8 +5816,10 @@ and GenModuleBinding cenv (cgbuf:CodeGenBuffer) (qname:QualifiedNameOfFile) lazy
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript))  =
+and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript), optimizeDuringCodeGen)  =
     let eenv = {eenv with cloc = { eenv.cloc with clocTopImplQualifiedName = qname.Text } }
+
+    cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
 
     // This is used to point the inner classes back to the startup module for initialization purposes 
     let isFinalFile = isSome mainInfoOpt
@@ -6787,7 +6797,7 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlxGen)
 
@@ -6983,20 +6993,21 @@ type IlxAssemblyGenerator(amap: Import.ImportMap, tcGlobals: TcGlobals, tcVal : 
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member __.AddIncrementalLocalAssemblyFragment  (isIncrementalFragment, fragName, typedAssembly) = 
-        ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedAssembly)
+    member __.AddIncrementalLocalAssemblyFragment  (isIncrementalFragment, fragName, typedImplFiles) = 
+        ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedImplFiles)
 
     /// Generate ILX code for an assembly fragment
     member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) = 
         let cenv : cenv = 
             { g=tcGlobals
               TcVal = tcVal
-              viewCcu                                = ccu
-              ilUnitTy                               = None
-              amap                                   = amap
-              casApplied                             = casApplied
-              intraAssemblyInfo                      = intraAssemblyInfo
-              opts                                   = codeGenOpts }
+              viewCcu = ccu
+              ilUnitTy = None
+              amap = amap
+              casApplied = casApplied
+              intraAssemblyInfo = intraAssemblyInfo
+              opts = codeGenOpts 
+              optimizeDuringCodeGen = (fun x -> x) }
         GenerateCode (cenv, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
