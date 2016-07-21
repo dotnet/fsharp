@@ -76,17 +76,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         val collect: mapping:('T -> 'U list) -> list:'T list -> 'U list
 
-        /// <summary>Compares two lists using the given comparison function, element by element.
-        /// Returns the first non-zero result from the comparison function.  If the end of a list
-        /// is reached it returns a -1 if the first list is shorter and a 1 if the second list
-        /// is shorter.</summary>
+        /// <summary>Compares two lists using the given comparison function, element by element.</summary>
         ///
         /// <param name="comparer">A function that takes an element from each list and returns an int.
         /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
         /// <param name="list1">The first input list.</param>
         /// <param name="list2">The second input list.</param>
         ///
-        /// <returns>The first non-zero value from the comparison function.</returns>
+        /// <returns>Returns the first non-zero result from the comparison function. If the first list has a 
+        /// larger element, the return value is always positive. If the second list has a larger 
+        /// element, the return value is always negative. When the elements are equal in the two 
+        /// lists, 1 is returned if the first list is longer, 0 is returned if they are equal in 
+        /// length, and -1 is returned when the second list is longer.</returns>
         [<CompiledName("CompareWith")>]
         val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 

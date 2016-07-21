@@ -5662,6 +5662,10 @@ module Regression_139182 =
       static member Prop4 = str.ToLower()                // ok
       member x.Prop5      = s2.TheMethod()               // ok
 
+module LittleTestFor823 = 
+    let x, y = 1, 2
+    let v = Some ((x = y), (x = x))
+
 (*---------------------------------------------------------------------------
 !* wrap up
  *--------------------------------------------------------------------------- *)
