@@ -2176,11 +2176,7 @@ type TcConfigBuilder =
           resolutionAssemblyFoldersConditions = ""              
           platform = None
           prefer32Bit = false
-#if ENABLE_MONO_SUPPORT
           useSimpleResolution = runningOnMono
-#else
-          useSimpleResolution = false
-#endif
           target = ConsoleExe
           debuginfo = false
           testFlagEmitFeeFeeAs100001 = false
@@ -5323,7 +5319,7 @@ let TypeCheckSingleInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, 
         return TypeCheckMultipleInputsFinish([results],tcState)
     }
 
-let TypeCheckClosedInputSetFinish (mimpls, tcState) =
+let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     // Publish the latest contents to the CCU 
     tcState.tcsCcu.Deref.Contents <- tcState.tcsCcuType
 
@@ -5333,12 +5329,11 @@ let TypeCheckClosedInputSetFinish (mimpls, tcState) =
       if not (Zset.contains qualNameOfFile rootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
-    let tassembly = TAssembly(mimpls)
-    tcState, tassembly    
+    tcState, declaredImpls
     
 let TypeCheckClosedInputSet (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
     let (tcEnvAtEndOfLastFile, topAttrs, mimpls),tcState = TypeCheckMultipleInputs (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
-    let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls, tcState)
-    tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile
+    let tcState, declaredImpls = TypeCheckClosedInputSetFinish (mimpls, tcState)
+    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 

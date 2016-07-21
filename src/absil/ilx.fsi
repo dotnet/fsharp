@@ -97,8 +97,7 @@ type IlxClosureApps =
 type IlxClosureInfo = 
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]  
-      cloCode: Lazy<ILMethodBody>
-      cloSource: ILSourceMarker option}
+      cloCode: Lazy<ILMethodBody> }
 
 type IlxUnionInfo = 
     { /// Is the representation public? 

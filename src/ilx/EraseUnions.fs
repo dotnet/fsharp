@@ -397,24 +397,26 @@ let genWith g : ILCode =
       Locals = [] }
 
 
-let mkBrIsNotData ilg (avoidHelpers, cuspec,cidx,tg) = 
+let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) = 
+    let neg = (if sense then BI_brfalse else BI_brtrue)
+    let pos = (if sense then BI_brtrue else BI_brfalse)
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let altName = alt.Name
     if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
-        [ I_brcmp (BI_brtrue,tg) ] 
+        [ I_brcmp (neg,tg) ] 
     elif cuspecRepr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cuspec,alt) then 
         // in this case we can use a null test
-        [ I_brcmp (BI_brfalse,tg) ] 
+        [ I_brcmp (pos,tg) ] 
     else
         match cuspecRepr.DiscriminationTechnique cuspec  with 
         | SingleCase -> [ ]
-        | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (BI_brfalse,tg))
-        | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (BI_brfalse,tg))
+        | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (pos,tg))
+        | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
         | TailOrNull -> 
             match cidx with 
-            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (BI_brtrue,tg)]
-            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (BI_brfalse,tg)]
+            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
+            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (pos,tg)]
             | _ -> failwith "unexpected"
 
 
