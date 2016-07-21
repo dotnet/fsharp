@@ -4712,34 +4712,33 @@ let NewClonedTycon orig =  NewModifiedTycon (fun d -> d) orig
 /// duplicate modules etc.
 let CombineCcuContentFragments m l = 
 
-    let CombineMaps f m1 m2 = 
-        Map.foldBack (fun k v acc -> Map.add k (if Map.containsKey k m2 then f [v;Map.find k m2] else f [v]) acc) m1 
-          (Map.foldBack (fun k v acc -> if Map.containsKey k m1 then acc else Map.add k (f [v]) acc) m2 Map.empty)
-
     /// Combine module types when multiple namespace fragments contribute to the
     /// same namespace, making new module specs as we go.
     let rec CombineModuleOrNamespaceTypes path m (mty1:ModuleOrNamespaceType)  (mty2:ModuleOrNamespaceType)  = 
         match mty1.ModuleOrNamespaceKind,mty2.ModuleOrNamespaceKind  with 
         | Namespace,Namespace -> 
             let kind = mty1.ModuleOrNamespaceKind
+            let tab1 = mty1.AllEntitiesByLogicalMangledName
+            let tab2 = mty2.AllEntitiesByLogicalMangledName
             let entities = 
-                (mty1.AllEntitiesByLogicalMangledName,mty2.AllEntitiesByLogicalMangledName) 
-                ||>  CombineMaps (CombineEntityList path) 
+                [ for e1 in mty1.AllEntities do 
+                      match tab2.TryFind e1.LogicalName with
+                      | Some e2 -> yield CombineEntites path e1 e2
+                      | None -> yield e1 
+                  for e2 in mty2.AllEntities do 
+                      match tab1.TryFind e2.LogicalName with
+                      | Some _ -> ()
+                      | None -> yield e2 ]
 
             let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-            ModuleOrNamespaceType(kind, vals, QueueList.ofList (NameMap.range entities))
+            ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
 
         | Namespace, _ | _,Namespace -> 
             error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path),m))
 
         | _-> 
             error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path),m))
-
-    and CombineEntityList path l = 
-        match l with
-        | h :: t -> List.fold (CombineEntites path) h t
-        | _ -> failwith "CombineEntityList"
 
     and CombineEntites path (entity1:Entity) (entity2:Entity) = 
 
