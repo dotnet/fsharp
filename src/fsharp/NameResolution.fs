@@ -409,28 +409,37 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                 // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
                 // methods for tuple occur in C# code)
                 let thisTyconRef = 
-                    match metadataOfTycon tcrefOfStaticClass.Deref, minfo with 
-                    | ILTypeMetadata (scoref,_), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
-                        match ilMethod.ParameterTypes with 
-                        | firstTy :: _ -> 
-                            match firstTy with 
-                            | ILType.Boxed  tspec | ILType.Value tspec -> 
-                                let tcref = (tspec |> rescopeILTypeSpec scoref).TypeRef |> Import.ImportILTypeRef amap m
-                                if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                else Some tcref
+                 try 
+                    let rs = 
+                        match metadataOfTycon tcrefOfStaticClass.Deref, minfo with 
+                        | ILTypeMetadata (scoref,_), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
+                            match ilMethod.ParameterTypes with 
+                            | firstTy :: _ -> 
+                                match firstTy with 
+                                | ILType.Boxed  tspec | ILType.Value tspec -> 
+                                    let tcref = (tspec |> rescopeILTypeSpec scoref).TypeRef |> Import.ImportILTypeRef amap m
+                                    if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
+                                    else Some tcref
+                                | _ -> None
                             | _ -> None
-                        | _ -> None
-                    | _ -> 
-                        // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                        // So we need to go and crack the type of the 'this' argument.
-                        let thisTy = minfo.GetParamTypes(amap,m,generalizeTypars minfo.FormalMethodTypars).Head.Head
-                        match thisTy with
-                        | AppTy amap.g (tcrefOfTypeExtended, _) -> Some tcrefOfTypeExtended
-                        | _ -> None
+                        | _ -> 
+                            // The results are indexed by the TyconRef of the first 'this' argument, if any.
+                            // So we need to go and crack the type of the 'this' argument.
+                            let thisTy = minfo.GetParamTypes(amap,m,generalizeTypars minfo.FormalMethodTypars).Head.Head
+                            match thisTy with
+                            | AppTy amap.g (tcrefOfTypeExtended, _) -> Some tcrefOfTypeExtended
+                            | _ -> None
+                     
+                    Some rs
+
+                  with e -> // Import of the ILType may fail, if so report the error and skip on
+                    errorRecovery e m
+                    None
 
                 match thisTyconRef with
-                | Some tcref -> yield Choice1Of2(tcref, ilExtMem)
-                | _ -> yield Choice2Of2 ilExtMem  ]
+                | None -> ()
+                | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
+                | Some None -> yield Choice2Of2 ilExtMem  ]
     else
         []       
 

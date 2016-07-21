@@ -1612,28 +1612,38 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 //            -- for orphaned files (files in VS without a project context)
 //            -- for files given on a command line without --noframework set
 let DefaultBasicReferencesForOutOfProjectSources = 
-    [ yield "System"
+    [ // These are .NET-Framework -style references
+#if !TODO_REWORK_ASSEMBLY_LOAD
+      yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      
-      // Don't reference System.Core for .NET 2.0 compilations.
-      //
-      // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
-      // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
-      // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
-      // in which case the compiler will also be running as a .NET 2.0 process.
-      //
-      // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
-      if (try System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")) |> ignore; true with _ -> false) then 
-          yield "System.Core" 
+      yield "System.Core" 
+#endif
 
-      yield "System.Runtime"
+      // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
+      // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
+      // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
+      yield "System.Runtime" // lots of types
+      yield "System.Linq" // System.Linq.Expressions.Expression<T> 
+      yield "System.Reflection" // System.Reflection.ParameterInfo
+      yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
+      yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
+      yield "System.IO"  //  System.IO.TextWriter
+      //yield "System.Console"  //  System.Console.Out etc.
+      yield "System.Net.Requests"  //  System.Net.WebResponse etc.
+      yield "System.Collections" // System.Collections.Generic.List<T>
+      yield "System.Runtime.Numerics" // BigInteger
+      yield "System.Threading"  // OperationCanceledException
+
+#if !TODO_REWORK_ASSEMBLY_LOAD
       yield "System.Web"
       yield "System.Web.Services"
-      yield "System.Windows.Forms" ]
+      yield "System.Windows.Forms"
+#endif
+     ]
 
 // Extra implicit references for .NET 4.0
 let DefaultBasicReferencesForOutOfProjectSources40 = 
@@ -5077,12 +5087,11 @@ let GetInitialTcEnv (thisAssemblyName:string, initm:range, tcConfig:TcConfig, tc
 
     let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
 
-    let tcEnv = 
-        if tcConfig.checkOverflow then
-            TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
-        else
-            tcEnv
-    tcEnv
+    if tcConfig.checkOverflow then
+        try TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
+        with e -> errorRecovery e initm; tcEnv
+    else
+        tcEnv
 
 //----------------------------------------------------------------------------
 // Fault injection
