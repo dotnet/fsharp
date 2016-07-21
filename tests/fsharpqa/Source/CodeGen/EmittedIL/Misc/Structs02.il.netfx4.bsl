@@ -103,11 +103,11 @@
 
       IL_001e:  br.s       IL_0022
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0020:  ldc.i4.m1
       IL_0021:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0022:  ldloc.2
       IL_0023:  ldloc.3
       IL_0024:  cgt
@@ -120,7 +120,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
-      .line 6,6 : 6,11 ''
+      .line 6,6 : 6,11
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -141,7 +141,7 @@
                [2] class [mscorlib]System.Collections.IComparer V_2,
                [3] int32 V_3,
                [4] int32 V_4)
-      .line 6,6 : 6,11 ''
+      .line 6,6 : 6,11
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  Experiment.Test/Repro
@@ -164,11 +164,11 @@
 
       IL_0023:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0025:  ldc.i4.m1
       IL_0026:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0027:  ldloc.3
       IL_0028:  ldloc.s    V_4
       IL_002a:  cgt
@@ -183,7 +183,7 @@
       .maxstack  7
       .locals init ([0] int32 V_0,
                [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
-      .line 6,6 : 6,11 ''
+      .line 6,6 : 6,11
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
@@ -212,7 +212,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 6,6 : 6,11 ''
+      .line 6,6 : 6,11
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -264,14 +264,14 @@
                [1] valuetype Experiment.Test/Repro& V_1,
                [2] int32 V_2,
                [3] int32 i)
-      .line 9,14 : 5,6 ''
+      .line 9,14 : 5,6
       IL_0000:  nop
       IL_0001:  ldarg.0
-      .line 10,10 : 9,26 ''
+      .line 10,10 : 9,26
       IL_0002:  ldc.i4.0
       IL_0003:  stloc.0
       IL_0004:  stloc.1
-      .line 11,11 : 9,31 ''
+      .line 11,11 : 9,31
       IL_0005:  ldc.i4.0
       IL_0006:  stloc.3
       IL_0007:  ldarg.1
@@ -282,7 +282,7 @@
       IL_000c:  ldloc.3
       IL_000d:  blt.s      IL_001e
 
-      .line 12,12 : 11,20 ''
+      .line 12,12 : 11,20
       IL_000f:  ldc.i4.s   26
       IL_0011:  ldloc.0
       IL_0012:  mul
@@ -299,7 +299,7 @@
       IL_001c:  bne.un.s   IL_000f
 
       IL_001e:  ldloc.1
-      .line 13,13 : 9,10 ''
+      .line 13,13 : 9,10
       IL_001f:  ldloc.0
       IL_0020:  stfld      int32 Experiment.Test/Repro::hash@
       IL_0025:  ret
@@ -312,7 +312,7 @@
       // Code size       19 (0x13)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro& V_0)
-      .line 6,6 : 6,11 ''
+      .line 6,6 : 6,11
       IL_0000:  nop
       IL_0001:  ldarga.s   obj
       IL_0003:  stloc.0
@@ -363,12 +363,12 @@
     // Code size       17 (0x11)
     .maxstack  3
     .locals init ([0] valuetype Experiment.Test/Repro t)
-    .line 17,17 : 5,22 ''
+    .line 17,17 : 5,22
     IL_0000:  nop
     IL_0001:  ldc.i4.s   42
     IL_0003:  newobj     instance void Experiment.Test/Repro::.ctor(int32)
     IL_0008:  stloc.0
-    .line 18,18 : 5,11 ''
+    .line 18,18 : 5,11
     IL_0009:  ldloca.s   t
     IL_000b:  ldfld      int32 Experiment.Test/Repro::hash@
     IL_0010:  ret

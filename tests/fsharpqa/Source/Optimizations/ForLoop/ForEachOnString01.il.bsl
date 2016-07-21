@@ -36,13 +36,13 @@
   // Offset: 0x00000358 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-// MVID: {5772F610-105C-852B-A745-038310F67257}
+// MVID: {578C9941-105C-852B-A745-038341998C57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01490000
+// Image base: 0x004A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,6 +57,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -88,6 +90,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
