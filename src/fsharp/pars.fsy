@@ -2172,7 +2172,8 @@ typeConstraint:
       { WhereTyparSupportsNull($1,lhs parseState) }
 
   | typar COLON LPAREN classMemberSpfn rparen 
-      { WhereTyparSupportsMember([ $1 ],$4,lhs parseState) }
+      { let tp = $1
+        WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ],$4,lhs parseState) }
 
   | LPAREN typarAlts rparen COLON LPAREN classMemberSpfn rparen 
       { WhereTyparSupportsMember(List.rev($2),$6,lhs parseState) }
@@ -2193,8 +2194,8 @@ typeConstraint:
         | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
 
 typarAlts:
-	| typarAlts OR typar { $3::$1 }
-	| typar { [$1] }	
+	| typarAlts OR appType { $3::$1 }
+	| appType { [$1] }	
 
 /* The core of a union type definition */
 unionTypeRepr:

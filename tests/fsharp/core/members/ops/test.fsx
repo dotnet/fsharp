@@ -345,7 +345,13 @@ module MiscOperatorOverloadTests =
         res
 
 
+// See https://github.com/Microsoft/visualfsharp/issues/1306
+module OperatorConstraintsWithExplicitRigidTypeParameters = 
+    type M() = class end
 
+    let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M ->  ^R)> =        
+        let m = M()
+        Unchecked.defaultof< ^R> $ m: ^R
 
 module EnumerationOperatorTests = 
     let x1 : System.DateTimeKind =  enum 3
