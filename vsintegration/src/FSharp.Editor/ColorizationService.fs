@@ -25,8 +25,8 @@ open Microsoft.VisualStudio.Text.Tagging
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-// TODO: add types colorization if available from intellisense
-// TODO: add defines flags if available from project sites and files
+// FSROSLYNTODO: add types colorization if available from intellisense
+// FSROSLYNTODO: add defines flags if available from project sites and files
 
 type private SourceLineData(lexStateAtEndOfLine: FSharpTokenizerLexState, hashCode: int, classifiedSpans: IReadOnlyList<ClassifiedSpan>) =
     member val LexStateAtEndOfLine = lexStateAtEndOfLine
@@ -97,15 +97,17 @@ type internal FSharpColorizationService() =
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             document.GetTextAsync(cancellationToken).ContinueWith(
                 fun (sourceTextTask: Task<SourceText>) ->
-                    result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, [], cancellationToken))
-                , TaskContinuationOptions.OnlyOnRanToCompletion)
+                    if sourceTextTask.Status = TaskStatus.RanToCompletion then
+                        result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, [], cancellationToken))
+                , cancellationToken)
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             document.GetTextAsync(cancellationToken).ContinueWith(
                 fun (sourceTextTask: Task<SourceText>) ->
-                    //TODO: Replace with types data when available from intellisense (behaving as AddSyntacticClassificationsAsync() for now)
-                    result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, [], cancellationToken))
-                , TaskContinuationOptions.OnlyOnRanToCompletion)
+                    if sourceTextTask.Status = TaskStatus.RanToCompletion then
+                        //FSROSLYNTODO: Replace with types data when available from intellisense (behaving as AddSyntacticClassificationsAsync() for now)
+                        result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, [], cancellationToken))
+                , cancellationToken)
 
         member this.AdjustStaleClassification(text: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan =
             let tokens = FSharpColorizationService.GetColorizationData(text, classifiedSpan.TextSpan, None, [], CancellationToken.None)
