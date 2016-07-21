@@ -907,6 +907,43 @@ module InternalsVisible =
         }) 
 
 
+// Repro for https://github.com/Microsoft/visualfsharp/issues/1298
+module FileOrder =
+
+    [<Test; FSharpSuiteTest("core/fileorder")>]
+    let fileorder () = check  (attempt {
+        let { Directory = dir; Config = cfg } = testContext ()
+
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
+        let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
+        let fsc_flags = cfg.fsc_flags
+
+        log "== Compiling F# Library and Code, when empty file libfile2.fs IS NOT included"
+        do! fsc "%s -a --optimize -o:lib.dll " fsc_flags ["libfile1.fs"]
+
+        do! peverify "lib.dll"
+
+        do! fsc "%s -r:lib.dll -o:test.exe" fsc_flags ["test.fsx"]
+
+        do! peverify "test.exe"
+
+        do! exec ("."/"test.exe") ""
+
+        log "== Compiling F# Library and Code, when empty file libfile2.fs IS included"
+        do! fsc "%s -a --optimize -o:lib2.dll " fsc_flags ["libfile1.fs"; "libfile2.fs"]
+
+        do! peverify "lib2.dll"
+
+        do! fsc "%s -r:lib2.dll -o:test2.exe" fsc_flags ["test.fsx"]
+
+        do! peverify "test2.exe"
+
+        do! exec ("."/"test2.exe") ""
+        }) 
+
+
 module Interop = 
 
     let build cfg dir = attempt {

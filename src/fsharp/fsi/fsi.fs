@@ -820,7 +820,6 @@ type internal FsiDynamicCompiler
 #if DEBUG
         // Logging/debugging
         if tcConfig.printAst then
-            let (TAssembly(declaredImpls)) = declaredImpls
             for input in declaredImpls do 
                 fprintfn fsiConsoleOutput.Out "AST:" 
                 fprintfn fsiConsoleOutput.Out "%+A" input
@@ -910,7 +909,6 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath) 
 
-            let (TAssembly(declaredImpls)) = declaredImpls
             for (TImplFile(_qname,_,mexpr,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
                 if not (Layout.isEmptyL responseL) then      
@@ -1094,7 +1092,7 @@ type internal FsiDynamicCompiler
 
         let tcState = GetInitialTcState (rangeStdin, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv)
 
-        let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig,tcImports,tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu )
+        let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
         {optEnv    = optEnv0
          emEnv     = emEnv
          tcGlobals = tcGlobals
