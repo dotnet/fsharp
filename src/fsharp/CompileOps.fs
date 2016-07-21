@@ -1632,7 +1632,7 @@ let DefaultBasicReferencesForOutOfProjectSources =
       yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
       yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
       yield "System.IO"  //  System.IO.TextWriter
-      yield "System.Console"  //  System.Console.Out etc.
+      //yield "System.Console"  //  System.Console.Out etc.
       yield "System.Net.Requests"  //  System.Net.WebResponse etc.
       yield "System.Collections" // System.Collections.Generic.List<T>
       yield "System.Runtime.Numerics" // BigInteger
