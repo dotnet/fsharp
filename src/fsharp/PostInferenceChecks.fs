@@ -338,8 +338,8 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
-            // We deliberately only check the fully stripped type for accessibility, because references to private type abbreviations are 
-            // permitted
+            // We deliberately only check the fully stripped type for accessibility, 
+            // because references to private type abbreviations are permitted
             match tryDestAppTy cenv.g ty with 
             | None -> ()
             | Some tcref ->
@@ -347,6 +347,24 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+
+        CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty
+
+let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
+    if cenv.reportErrors then 
+
+        let visitType ty =         
+            // We deliberately only check the fully stripped type for accessibility, 
+            // because references to private type abbreviations are permitted
+            match tryDestAppTy cenv.g ty with 
+            | None -> ()
+            | Some tcref ->
+                let thisCompPath = compPathOfCcu cenv.viewCcu
+                let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
+                if isLessAccessible tyconAcc valAcc then
+                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
+                    let warningText = errorText + System.Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
+                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
 
         CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty 
 
@@ -1325,7 +1343,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
         IsHiddenTycon env.sigToImplRemapInfo tycon || 
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo ((mkLocalTyconRef tycon).MakeNestedRecdFieldRef rfield))
-    let access =  AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
+    let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access rfield.Range rfield.FormalType
     CheckTypeNoByrefs cenv env rfield.Range rfield.FormalType
     CheckAttribs cenv env rfield.PropertyAttribs
@@ -1341,8 +1359,11 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     let m = tycon.Range 
     let env = BindTypars cenv.g env (tycon.Typars(m))
     CheckAttribs cenv env tycon.Attribs
+    match tycon.TypeAbbrev with
+    | Some abbrev -> WarnOnWrongTypeForAccess cenv env (fun () -> tycon.CompiledName) tycon.Accessibility tycon.Range abbrev
+    | _ -> ()
 
-    if cenv.reportErrors then begin
+    if cenv.reportErrors then
       if not tycon.IsTypeAbbrev then
         let typ = generalizedTyconRef (mkLocalTyconRef tycon)
         let allVirtualMethsInParent = 
@@ -1527,9 +1548,6 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedType(nm),m))
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix(nm),m))
-
-    end
-    
     // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
