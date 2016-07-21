@@ -12667,7 +12667,10 @@ module MutRecBindingChecking =
                         let (TyconBindingDefn(containerInfo,newslotsOK,declKind,classMemberDef,m)) = defn
                         let (incrClassCtorLhsOpt,envForTycon,tpenv,recBindIdx,uncheckedBindsRev) = innerState
 
-                        if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(),(trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                        if tcref.IsTypeAbbrev then
+                            // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
+                            error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(),(trimRangeToLine m)))
+
                         if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(),(trimRangeToLine m))) // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
 
                         match classMemberDef, containerInfo with
@@ -14555,8 +14558,6 @@ module EstablishTypeDefinitionCores =
                         let typars = tycon.Typars(m)
                         if ftyvs.Length <> typars.Length then 
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(),tycon.Range))
-                        //elif not ((ftyvs,typars) ||> List.forall2 typarEq) then 
-                        //    warning(Deprecated("The declared type parameters of this type abbreviation are not declared in the same order they are used in the type being abbreviated. Consider reordering the type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C<'a,'b> = C of ...'",tycon.Range))
 
                     if firstPass then
                         tycon.Data.entity_tycon_abbrev <- Some ty
@@ -15028,12 +15029,12 @@ module EstablishTypeDefinitionCores =
                 | TType_ucase (UCRef(tc,_),tinst) 
                 | TType_app (tc,tinst) -> 
                     let tycon2 = tc.Deref
-                    let acc = accInAbbrevTypes tinst  acc
+                    let acc = accInAbbrevTypes tinst acc
                     // Record immediate recursive references 
                     if ListSet.contains (===) tycon2 tycons  then 
-                        (tycon,tycon2) ::acc 
+                        (tycon,tycon2) :: acc 
                     // Expand the representation of abbreviations 
-                    elif tc.IsTypeAbbrev  then
+                    elif tc.IsTypeAbbrev then
                         accInAbbrevType (reduceTyconRefAbbrev tc tinst) acc
                     // Otherwise H<inst> - explore the instantiation. 
                     else 
@@ -15060,17 +15061,10 @@ module EstablishTypeDefinitionCores =
 
             and accInAbbrevTypes tys acc = 
                 List.foldBack accInAbbrevType tys acc
-                
-            let acc = []
-            let acc = 
-                match tycon.TypeAbbrev with 
-                | None -> acc
-                | Some ty -> 
-                    //if not cenv.isSig && not cenv.haveSig && (tycon.Accessibility <> taccessPublic || tycon.TypeReprAccessibility <> taccessPublic) then 
-                    //   errorR(Error(FSComp.SR.tcTypeAbbreviationMustBePublic(),tycon.Range))
-                    accInAbbrevType ty acc
-
-            acc
+            
+            match tycon.TypeAbbrev with 
+            | None -> []
+            | Some ty -> accInAbbrevType ty []
 
         let edges = List.collect edgesFrom tycons
         let graph = Graph<Tycon, Stamp> ((fun tc -> tc.Stamp), tycons, edges)
