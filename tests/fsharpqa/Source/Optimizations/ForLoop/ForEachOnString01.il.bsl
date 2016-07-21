@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -21,28 +21,28 @@
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
-  // 
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  // --- The following custom attribute is added automatically, do not uncomment -------
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ForEachOnString01
 {
-  // Offset: 0x00000000 Length: 0x0000036E
+  // Offset: 0x00000000 Length: 0x00000354
 }
 .mresource public FSharpOptimizationData.ForEachOnString01
 {
-  // Offset: 0x00000378 Length: 0x000000FF
+  // Offset: 0x00000358 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-// MVID: {547FB1E9-105C-852B-A745-0383E9B17F54}
+// MVID: {578C9941-105C-852B-A745-038341998C57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x029A0000
+// Image base: 0x004A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,7 +57,9 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      // 
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>::.ctor()
@@ -67,10 +69,10 @@
     .method public strict virtual instance char 
             Invoke(char x) cil managed
     {
-      // 
+      // Code size       7 (0x7)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 55,55 : 21,39 'C:\\Users\\latkin\\Source\\Repos\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnString01.fs'
+      .line 55,55 : 21,39 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnString01.fs'
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  conv.i4
@@ -88,7 +90,9 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      // 
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>::.ctor()
@@ -98,7 +102,7 @@
     .method public strict virtual instance char 
             Invoke(char x) cil managed
     {
-      // 
+      // Code size       7 (0x7)
       .maxstack  8
       .line 64,64 : 21,39 ''
       IL_0000:  nop
@@ -114,7 +118,7 @@
 
   .method public static void  test1(string str) cil managed
   {
-    // 
+    // Code size       42 (0x2a)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -136,7 +140,7 @@
     IL_000f:  ldloc.2
     IL_0010:  blt.s      IL_0029
 
-    .line 10,10 : 10,26 ''
+    .line 9,9 : 6,21 ''
     IL_0012:  ldarg.0
     IL_0013:  ldloc.2
     IL_0014:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -162,7 +166,7 @@
 
   .method public static void  test2() cil managed
   {
-    // 
+    // Code size       50 (0x32)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -184,7 +188,7 @@
     IL_0013:  ldloc.2
     IL_0014:  blt.s      IL_0031
 
-    .line 15,15 : 10,26 ''
+    .line 14,14 : 6,23 ''
     IL_0016:  ldstr      "123"
     IL_001b:  ldloc.2
     IL_001c:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -210,7 +214,7 @@
 
   .method public static void  test3() cil managed
   {
-    // 
+    // Code size       50 (0x32)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -232,7 +236,7 @@
     IL_0013:  ldloc.2
     IL_0014:  blt.s      IL_0031
 
-    .line 21,21 : 10,26 ''
+    .line 20,20 : 6,20 ''
     IL_0016:  ldstr      "123"
     IL_001b:  ldloc.2
     IL_001c:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -258,7 +262,7 @@
 
   .method public static void  test4() cil managed
   {
-    // 
+    // Code size       50 (0x32)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -280,7 +284,7 @@
     IL_0013:  ldloc.2
     IL_0014:  blt.s      IL_0031
 
-    .line 27,27 : 10,26 ''
+    .line 26,26 : 6,20 ''
     IL_0016:  ldstr      "123"
     IL_001b:  ldloc.2
     IL_001c:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -306,7 +310,7 @@
 
   .method public static void  test5() cil managed
   {
-    // 
+    // Code size       72 (0x48)
     .maxstack  5
     .locals init ([0] int32 V_0,
              [1] int32 V_1,
@@ -325,7 +329,7 @@
     IL_0011:  ldloc.1
     IL_0012:  blt.s      IL_0047
 
-    .line 32,32 : 10,24 ''
+    .line 31,31 : 6,20 ''
     IL_0014:  ldstr      "123"
     IL_0019:  ldloc.1
     IL_001a:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -356,7 +360,7 @@
 
   .method public static void  test6(string str) cil managed
   {
-    // 
+    // Code size       42 (0x2a)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -378,7 +382,7 @@
     IL_000f:  ldloc.2
     IL_0010:  blt.s      IL_0029
 
-    .line 42,42 : 10,26 ''
+    .line 41,41 : 6,21 ''
     IL_0012:  ldarg.0
     IL_0013:  ldloc.2
     IL_0014:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -404,7 +408,7 @@
 
   .method public static void  test7() cil managed
   {
-    // 
+    // Code size       50 (0x32)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 V_1,
@@ -426,7 +430,7 @@
     IL_0013:  ldloc.2
     IL_0014:  blt.s      IL_0031
 
-    .line 48,48 : 10,26 ''
+    .line 47,47 : 6,20 ''
     IL_0016:  ldstr      "123"
     IL_001b:  ldloc.2
     IL_001c:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -452,7 +456,7 @@
 
   .method public static void  test8() cil managed
   {
-    // 
+    // Code size       82 (0x52)
     .maxstack  5
     .locals init ([0] string V_0,
              [1] int32 V_1,
@@ -478,7 +482,7 @@
     IL_001d:  ldloc.2
     IL_001e:  blt.s      IL_0051
 
-    .line 57,57 : 9,23 ''
+    .line 52,56 : 5,21 ''
     IL_0020:  ldloc.0
     IL_0021:  ldloc.2
     IL_0022:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -509,7 +513,7 @@
 
   .method public static void  test9() cil managed
   {
-    // 
+    // Code size       101 (0x65)
     .maxstack  5
     .locals init ([0] string V_0,
              [1] int32 V_1,
@@ -536,7 +540,7 @@
     IL_001d:  ldloc.2
     IL_001e:  blt.s      IL_0064
 
-    .line 66,66 : 13,16 ''
+    .line 61,65 : 5,21 ''
     IL_0020:  ldloc.0
     IL_0021:  ldloc.2
     IL_0022:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
@@ -583,4 +587,4 @@
 
 // =============================================================
 
-// 
+// *********** DISASSEMBLY COMPLETE ***********************

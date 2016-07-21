@@ -9,3 +9,35 @@ let public funcA n =
             None
         | _ ->
                    Some(   22   )  // debug range should cover all of "Some(   22   )"
+
+// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+let OuterWithGenericInner list =
+  let GenericInner (list: 'T list) = 
+     match list with 
+     | [] -> 1 
+     | _ -> 2
+
+  GenericInner list
+
+// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+let OuterWithNonGenericInner list =
+  let NonGenericInner (list: int list) = 
+     match list with 
+     | [] -> 1 
+     | _ -> 2
+
+  NonGenericInner list
+
+// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+let OuterWithNonGenericInnerWithCapture x list =
+  let NonGenericInnerWithCapture (list: int list) = 
+     match list with 
+     | [] -> 1 
+     | _ -> x
+
+  NonGenericInnerWithCapture list
+
+//let _ = OuterWithGenericInner [1;2;3;4;5;6]
+//let _ = OuterWithNonGenericInner [1;2;3;4;5;6]
+//let _ = OuterWithNonGenericInnerWithCapture 5 [1;2;3;4;5;6]
+

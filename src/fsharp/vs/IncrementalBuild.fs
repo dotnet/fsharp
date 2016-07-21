@@ -12,6 +12,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps
@@ -1063,8 +1064,6 @@ module IncrementalBuilderEventTesting =
 
 module Tc = Microsoft.FSharp.Compiler.TypeChecker
 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Internal.Utilities.Debug
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]

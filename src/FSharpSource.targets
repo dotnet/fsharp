@@ -119,7 +119,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
     <!-- Disable uwa toolchain nuget package resolve logic. -->
     <NuGetTargets  Condition="'$(NuGetTargets)' == ''">false</NuGetTargets>
   </PropertyGroup>  
@@ -742,7 +741,7 @@
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
          <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\dnxcore50\win7-x64\publish</FscToolPath>
+         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
          <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
          <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
