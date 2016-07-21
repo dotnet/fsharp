@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly GeneralizationOnUnions01
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.GeneralizationOnUnions01
 {
-  // Offset: 0x00000000 Length: 0x000006B5
+  // Offset: 0x00000000 Length: 0x00000699
 }
 .mresource public FSharpOptimizationData.GeneralizationOnUnions01
 {
-  // Offset: 0x000006C0 Length: 0x000001F4
+  // Offset: 0x000006A0 Length: 0x000001F4
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {4F31D7D8-4CA2-8CD1-A745-0383D8D7314F}
+// MVID: {5775B1B8-4CA2-8CD1-A745-0383B8B17557}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000280000
+// Image base: 0x01090000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -181,7 +181,7 @@
       // Code size       14 (0xe)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 6,12 
+      .line 4,4 : 6,12 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\GeneralizationOnUnions01.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -198,7 +198,7 @@
       // Code size       56 (0x38)
       .maxstack  3
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 4,4 : 6,12 
+      .line 4,4 : 6,12
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  GeneralizationOnUnions01/Weirdo
@@ -212,7 +212,7 @@
 
       IL_0010:  br.s       IL_0025
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0012:  ldarg.1
       IL_0013:  unbox.any  GeneralizationOnUnions01/Weirdo
       IL_0018:  ldnull
@@ -223,15 +223,15 @@
 
       IL_001f:  br.s       IL_0023
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0021:  ldc.i4.0
       IL_0022:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0023:  ldc.i4.1
       IL_0024:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0025:  ldarg.1
       IL_0026:  unbox.any  GeneralizationOnUnions01/Weirdo
       IL_002b:  ldnull
@@ -242,11 +242,11 @@
 
       IL_0032:  br.s       IL_0036
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0034:  ldc.i4.m1
       IL_0035:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0
       IL_0036:  ldc.i4.0
       IL_0037:  ret
     } // end of method Weirdo::CompareTo
@@ -290,7 +290,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,12 
+      .line 4,4 : 6,12
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -423,6 +423,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(int32 C) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -439,7 +441,7 @@
       // Code size       10 (0xa)
       .maxstack  5
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 8,8 : 14,15 
+      .line 8,8 : 14,15
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  nop
@@ -455,7 +457,7 @@
     // Code size       5 (0x5)
     .maxstack  3
     .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-    .line 5,5 : 11,12 
+    .line 5,5 : 11,12
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  nop
@@ -469,14 +471,15 @@
     .maxstack  3
     .locals init ([0] int32 C,
              [1] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,int32> f)
-    .line 7,7 : 4,13 
+    .line 7,7 : 4,13
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  stloc.0
+    .line 9,9 : 4,6
     IL_0003:  ldloc.0
     IL_0004:  newobj     instance void GeneralizationOnUnions01/f@8::.ctor(int32)
     IL_0009:  stloc.1
-    .line 9,9 : 4,6 
+    .line 9,9 : 4,6
     IL_000a:  ret
   } // end of method GeneralizationOnUnions01::g
 
@@ -494,7 +497,7 @@
     .entrypoint
     // Code size       9 (0x9)
     .maxstack  8
-    .line 11,11 : 1,7 
+    .line 11,11 : 1,7
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
