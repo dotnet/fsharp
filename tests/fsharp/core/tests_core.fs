@@ -36,6 +36,30 @@ module Attributes =
     [<Test; FSharpSuiteScriptPermutations("core/attributes")>]
     let attributes p = singleTestBuildAndRun p
 
+module Byrefs = 
+    [<Test; FSharpSuiteScriptPermutations("core/byrefs")>]
+    let byrefs p = check  (attempt {
+
+        let { Directory = dir; Config = cfg } = testContext ()
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None} p >> checkResult
+        let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+
+        use testOkFile = fileguard "test.ok"
+
+        do! fsc "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fsx"]
+
+        do! exec ("."/"test.exe") ""
+
+        do! testOkFile |> NUnitConf.checkGuardExists
+
+        do! fsi "" ["test.fsx"]
+
+        do! testOkFile |> NUnitConf.checkGuardExists
+
+        })
+
 module Comprehensions = 
     [<Test; FSharpSuiteScriptPermutations("core/comprehensions")>]
     let comprehensions p = singleTestBuildAndRun p
