@@ -25,7 +25,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-// TODO: add defines flags if available from project sites and files
+// FSROSLYNTODO: add defines flags if available from project sites and files
 
 [<ExportBraceMatcher(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService() =
@@ -95,13 +95,16 @@ type internal FSharpBraceMatchingService() =
         member this.FindBracesAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<Nullable<BraceMatchingResult>> =
             document.GetTextAsync(cancellationToken).ContinueWith(
                 fun (sourceTextTask: Task<SourceText>) ->
-                    try match getBraceMatchingResult(sourceTextTask.Result, Some(document.Name), [], position, cancellationToken) with
-                        | None -> Nullable()
-                        | Some(braceMatchingResult) -> Nullable(braceMatchingResult)
-                    with ex -> 
-                        Assert.Exception(ex)
-                        reraise()
-                , TaskContinuationOptions.OnlyOnRanToCompletion)
+                    if sourceTextTask.Status = TaskStatus.RanToCompletion then
+                        try match getBraceMatchingResult(sourceTextTask.Result, Some(document.Name), [], position, cancellationToken) with
+                            | None -> Nullable()
+                            | Some(braceMatchingResult) -> Nullable(braceMatchingResult)
+                        with ex -> 
+                            Assert.Exception(ex)
+                            reraise()
+                    else
+                        raise(sourceTextTask.Exception.GetBaseException())
+                , cancellationToken)
 
     // Helper function to proxy Roslyn types to tests
     static member FindMatchingBrace(sourceText: SourceText, fileName: Option<string>, defines: string list, position: int, cancellationToken: CancellationToken) : Option<int> =
