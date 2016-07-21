@@ -2515,7 +2515,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             else   
                 // If the file doesn't exist, let reference resolution logic report the error later...
                 defaultCoreLibraryReference, if r.Range =rangeStartup then Some(filename) else None
-        match data.referencedDLLs |> List.filter(fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
+        match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [r] -> nameOfDll r
         | [] -> 
             defaultCoreLibraryReference, None
@@ -2805,9 +2805,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 else Some(m,path)
             with e -> errorRecovery e m; None
         tcConfig.loadedSources 
-        |> List.map resolveLoadedSource 
-        |> List.filter Option.isSome 
-        |> List.map Option.get                
+        |> List.choose resolveLoadedSource 
         |> List.distinct     
 
     /// A closed set of assemblies where, for any subset S:
@@ -3005,10 +3003,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let resolvedAsFile = 
                 groupedReferences 
                 |>Array.map(fun (_filename,maxIndexOfReference,references)->
-                                let assemblyResolution = references 
-                                                         |> List.map tcConfig.TryResolveLibWithDirectories
-                                                         |> List.filter Option.isSome
-                                                         |> List.map Option.get
+                                let assemblyResolution = references |> List.choose tcConfig.TryResolveLibWithDirectories
                                 (maxIndexOfReference, assemblyResolution))  
                 |> Array.filter(fun (_,refs)->refs|>List.isEmpty|>not)
                 
@@ -4825,10 +4820,12 @@ type CodeContext =
 module private ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
-    type ClosureDirective = 
-        | SourceFile of string * range * string // filename, range, source text
-        | ClosedSourceFile of string * range * ParsedInput option * PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
+    /// Represents an input to the closure finding process
+    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
         
+    /// Represents an output of the closure finding process
+    type ClosureFile = ClosureFile  of string * range * ParsedInput option * PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
+
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_,bool>()
         member ob.SetSeen(check) = 
@@ -4883,7 +4880,7 @@ module private ScriptPreprocessClosure =
         tcConfigB.implicitlyResolveAssemblies <- false
         TcConfig.Create(tcConfigB,validate=true)
         
-    let SourceFileOfFilename(filename,m,inputCodePage:int option) : ClosureDirective list = 
+    let ClosureSourceOfFilename(filename,m,inputCodePage,parseRequired) = 
         try
             let filename = FileSystem.GetFullPathShim(filename)
             use stream = FileSystem.FileStreamReadShim filename
@@ -4892,7 +4889,7 @@ module private ScriptPreprocessClosure =
                 | None -> new  StreamReader(stream,true)
                 | Some n -> new  StreamReader(stream,Encoding.GetEncodingShim(n)) 
             let source = reader.ReadToEnd()
-            [SourceFile(filename,m,source)]
+            [ClosureSource(filename,m,source,parseRequired)]
         with e -> 
             errorRecovery e m 
             []
@@ -4916,84 +4913,92 @@ module private ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB,validate=false),nowarns
     
-    let FindClosureDirectives(closureDirectives,tcConfig:TcConfig,codeContext,lexResourceManager:Lexhelp.LexResourceManager) =
+    let FindClosureFiles(closureSources,tcConfig:TcConfig,codeContext,lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
-        let rec FindClosure (closureDirective:ClosureDirective) : ClosureDirective list = 
-            match closureDirective with 
-            | ClosedSourceFile _ as csf -> [csf]
-            | SourceFile(filename,m,source) ->
-                let errors = ref []
-                let warnings = ref [] 
-                let errorLogger = 
-                        { new ErrorLogger("FindClosure") with 
-                            member x.ErrorSinkImpl(e) = errors := e :: !errors
-                            member x.WarnSinkImpl(e) = warnings := e :: !warnings
-                            member x.ErrorCount = (!errors).Length }                        
+        let rec loop (ClosureSource(filename,m,source,parseRequired)) = 
+          [     if not (observedSources.HaveSeen(filename)) then
+                    observedSources.SetSeen(filename)
+                    //printfn "visiting %s" filename
+                    if IsScript(filename) || parseRequired then 
+                        let errors = ref []
+                        let warnings = ref [] 
+                        let errorLogger = 
+                                { new ErrorLogger("FindClosure") with 
+                                    member x.ErrorSinkImpl(e) = errors := e :: !errors
+                                    member x.WarnSinkImpl(e) = warnings := e :: !warnings
+                                    member x.ErrorCount = (!errors).Length }                        
 
-                use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
-                | Some(input) ->                    
-                    let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (input,pathOfMetaCommandSource)
-                    tcConfig := tcConfigResult
-                        
-                    let AddFileIfNotSeen(m,filename) = 
-                        if observedSources.HaveSeen(filename) then []
-                        else
-                            observedSources.SetSeen(filename)
-                            if IsScript(filename) then SourceFileOfFilename(filename,m,tcConfigResult.inputCodePage)
-                            else [ClosedSourceFile(filename,m,None,[],[],[])] // Don't traverse into .fs leafs.
-                        
-                    let loadedSources = (!tcConfig).GetAvailableLoadedSources() |> List.map AddFileIfNotSeen |> List.concat
-                    (loadedSources |> List.map FindClosure |> List.concat)
-                        @  [ClosedSourceFile(filename,m,Some(input),!errors,!warnings,!noWarns)]
-                | None -> [ClosedSourceFile(filename,m,None,!errors,!warnings,[])]
+                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
+                        match ParseScriptText(filename,source,!tcConfig,codeContext,lexResourceManager,errorLogger) with 
+                        | Some parsedScriptAst ->                    
+                            let preSources = (!tcConfig).GetAvailableLoadedSources()
 
-        closureDirectives |> List.map FindClosure |> List.concat, !tcConfig
+                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn !tcConfig (parsedScriptAst,pathOfMetaCommandSource)
+                            tcConfig := tcConfigResult // We accumulate the tcConfig in order to collect assembly references
+                        
+                            let postSources = (!tcConfig).GetAvailableLoadedSources()
+                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+
+                            //for (_,subFile) in sources do
+                            //   printfn "visiting %s - has subsource of %s " filename subFile
+
+                            for (m,subFile) in sources do
+                                if IsScript(subFile) then 
+                                    for subSource in ClosureSourceOfFilename(subFile,m,tcConfigResult.inputCodePage,false) do
+                                        yield! loop subSource
+                                else
+                                    yield ClosureFile(subFile, m, None, [], [], []) 
+
+                            //printfn "yielding source %s" filename
+                            yield ClosureFile(filename, m, Some parsedScriptAst, !errors, !warnings, !noWarns)
+
+                        | None -> 
+                            //printfn "yielding source %s (failed parse)" filename
+                            yield ClosureFile(filename, m, None, !errors, !warnings, [])
+                    else 
+                        // Don't traverse into .fs leafs.
+                        //printfn "yielding non-script source %s" filename
+                        yield ClosureFile(filename, m, None, [], [], []) ]
+
+        closureSources |> List.map loop |> List.concat, !tcConfig
         
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(rootFilename,closureDirectives,(tcConfig:TcConfig),codeContext) = 
+    let GetLoadClosure(rootFilename,closureFiles,tcConfig:TcConfig,codeContext) = 
     
-        // Mark the last file as isLastCompiland. closureDirectives is currently reversed.
-        let closureDirectives =
-            match closureDirectives with
-            | ClosedSourceFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns)::rest -> 
-                ClosedSourceFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)::rest
-            | x -> x
+        // Mark the last file as isLastCompiland. 
+        let closureFiles =
+            match List.frontAndBack closureFiles with
+            | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
+                rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
+            | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = ref []
-        let sourceInputs = ref []
-        let globalNoWarns = ref []
-        for directive in List.rev closureDirectives do
-            match directive with 
-            | ClosedSourceFile(filename,m,input,_,_,noWarns) -> 
-                let filename = FileSystem.GetFullPathShim(filename)
-                sourceFiles := (filename,m) :: !sourceFiles  
-                globalNoWarns := (!globalNoWarns @ noWarns) 
-                sourceInputs := (filename,input) :: !sourceInputs                 
-            | _ -> failwith "Unexpected"
-        
+        let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
+        let sourceInputs = [  for (ClosureFile(filename,_,input,_,_,_)) in closureFiles -> (filename,input) ]
+        let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,noWarns)) -> noWarns)
+
         // Resolve all references.
-        let resolutionErrors = ref []
-        let resolutionWarnings = ref [] 
-        let errorLogger = 
-            { new ErrorLogger("GetLoadClosure") with 
-               member x.ErrorSinkImpl(e) = resolutionErrors := e :: !resolutionErrors
-               member x.WarnSinkImpl(e) = resolutionWarnings := e :: !resolutionWarnings
-               member x.ErrorCount = (!resolutionErrors).Length }      
+        let references, unresolvedReferences, resolutionWarnings, resolutionErrors = 
+            let resolutionErrors = ref []
+            let resolutionWarnings = ref [] 
+            let errorLogger = 
+                { new ErrorLogger("GetLoadClosure") with 
+                   member x.ErrorSinkImpl(e) = resolutionErrors := e :: !resolutionErrors
+                   member x.WarnSinkImpl(e) = resolutionWarnings := e :: !resolutionWarnings
+                   member x.ErrorCount = (!resolutionErrors).Length }      
         
-        let references,unresolvedReferences = 
             use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger) 
-            GetAssemblyResolutionInformation(tcConfig)
-        let references =  references |> List.map (fun ar -> ar.resolvedPath,ar)
-        
-        // Root errors and warnings
+            let references,unresolvedReferences = GetAssemblyResolutionInformation(tcConfig)
+            let references =  references |> List.map (fun ar -> ar.resolvedPath,ar)
+            references, unresolvedReferences, resolutionWarnings, resolutionErrors
+
+        // Root errors and warnings - look at the last item in the closureFiles list
         let rootErrors, rootWarnings = 
-            match closureDirectives with
-            | ClosedSourceFile(_,_,_,errors,warnings,_) :: _ -> errors @ !resolutionErrors, warnings @ !resolutionWarnings
+            match List.rev closureFiles with
+            | ClosureFile(_,_,_,errors,warnings,_) :: _ -> errors @ !resolutionErrors, warnings @ !resolutionWarnings
             | _ -> [],[] // When no file existed.
         
         let isRootRange exn =
@@ -5010,11 +5015,11 @@ module private ScriptPreprocessClosure =
         let rootWarnings = rootWarnings |> List.filter isRootRange
         
         let result : LoadClosure = 
-            { SourceFiles = List.groupByFirst !sourceFiles
+            { SourceFiles = List.groupByFirst sourceFiles
               References = List.groupByFirst references
               UnresolvedReferences = unresolvedReferences
-              Inputs = !sourceInputs
-              NoWarns = List.groupByFirst !globalNoWarns
+              Inputs = sourceInputs
+              NoWarns = List.groupByFirst globalNoWarns
               RootErrors = rootErrors
               RootWarnings = rootWarnings}       
 
@@ -5034,17 +5039,17 @@ module private ScriptPreprocessClosure =
 
         let tcConfig = CreateScriptSourceTcConfig(filename,codeContext,useSimpleResolution,useFsiAuxLib,Some references0,applyCommmandLineArgs)
 
-        let protoClosure = [SourceFile(filename,range0,source)]
-        let finalClosure,tcConfig = FindClosureDirectives(protoClosure,tcConfig,codeContext,lexResourceManager)
-        GetLoadClosure(filename,finalClosure,tcConfig,codeContext)
+        let closureSources = [ClosureSource(filename,range0,source,true)]
+        let closureFiles,tcConfig = FindClosureFiles(closureSources,tcConfig,codeContext,lexResourceManager)
+        GetLoadClosure(filename,closureFiles,tcConfig,codeContext)
         
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles(tcConfig:TcConfig,files:(string*range) list,codeContext,_useDefaultScriptingReferences:bool,lexResourceManager:Lexhelp.LexResourceManager) = 
-        let mainFile = fst (List.head files)
-        let protoClosure = files |> List.map (fun (filename,m)->SourceFileOfFilename(filename,m,tcConfig.inputCodePage)) |> List.concat |> List.rev // Reverse to put them in the order they will be extracted later
-        let finalClosure,tcConfig = FindClosureDirectives(protoClosure,tcConfig,codeContext,lexResourceManager)
-        GetLoadClosure(mainFile,finalClosure,tcConfig,codeContext)        
+        let mainFile = fst (List.last files)
+        let closureSources = files |> List.map (fun (filename,m) -> ClosureSourceOfFilename(filename,m,tcConfig.inputCodePage,true)) |> List.concat 
+        let closureFiles,tcConfig = FindClosureFiles(closureSources,tcConfig,codeContext,lexResourceManager)
+        GetLoadClosure(mainFile,closureFiles,tcConfig,codeContext)        
 
 type LoadClosure with
     // Used from service.fs, when editing a script file
