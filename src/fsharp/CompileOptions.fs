@@ -858,7 +858,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption("resolutions", tagNone, OptionUnit (fun () -> tcConfigB.showReferenceResolutions <- true), Some(InternalCommandLineOption("", rangeCmdArgs)), None) // "Display assembly reference resolution information") 
     CompilerOption("resolutionframeworkregistrybase", tagString, OptionString (fun s -> tcConfigB.resolutionFrameworkRegistryBase<-s), Some(InternalCommandLineOption("", rangeCmdArgs)), None) // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\[SOFTWARE\Microsoft\.NETFramework]\v2.0.50727\AssemblyFoldersEx")
     CompilerOption("resolutionassemblyfoldersuffix", tagString, OptionString (fun s -> tcConfigB.resolutionAssemblyFoldersSuffix<-s), Some(InternalCommandLineOption("resolutionassemblyfoldersuffix", rangeCmdArgs)), None) // "The base registry key to use for assembly resolution. This part in brackets here: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\[AssemblyFoldersEx]")
-    CompilerOption("resolutionassemblyfoldersconditions", tagString, OptionString (fun s -> tcConfigB.resolutionAssemblyFoldersConditions <- ","^s), Some(InternalCommandLineOption("resolutionassemblyfoldersconditions", rangeCmdArgs)), None) // "Additional reference resolution conditions. For example \"OSVersion=5.1.2600.0,PlatformID=id")
+    CompilerOption("resolutionassemblyfoldersconditions", tagString, OptionString (fun s -> tcConfigB.resolutionAssemblyFoldersConditions <- ","+s), Some(InternalCommandLineOption("resolutionassemblyfoldersconditions", rangeCmdArgs)), None) // "Additional reference resolution conditions. For example \"OSVersion=5.1.2600.0,PlatformID=id")
     CompilerOption("msbuildresolution", tagNone, OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false), Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None) // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
     CompilerOption("alwayscallvirt",tagNone,OptionSwitch(callVirtSwitch tcConfigB),Some(InternalCommandLineOption("alwayscallvirt",rangeCmdArgs)), None)
     CompilerOption("nodebugdata",tagNone, OptionUnit (fun () -> tcConfigB.noDebugData<-true),Some(InternalCommandLineOption("--nodebugdata",rangeCmdArgs)), None)
@@ -992,7 +992,7 @@ let GetAbbrevFlagSet tcConfigB isFsc =
     for c in ((if isFsc then abbreviatedFlagsFsc else abbreviatedFlagsFsi) tcConfigB) do
         match c with
         | CompilerOption(arg,_,OptionString _,_,_)
-        | CompilerOption(arg,_,OptionStringList _,_,_) -> argList <- argList @ ["-"^arg;"/"^arg]
+        | CompilerOption(arg,_,OptionStringList _,_,_) -> argList <- argList @ ["-"+arg;"/"+arg]
         | _ -> ()
     Set.ofList argList
     
@@ -1009,7 +1009,7 @@ let PostProcessCompilerArgs (abbrevArgs : string Set) (args : string []) =
             arga.[idx] <- args.[i] 
             i <- i+1
         else
-            arga.[idx] <- args.[i] ^ ":" ^ args.[i+1]
+            arga.[idx] <- args.[i] + ":" + args.[i+1]
             i <- i + 2
         idx <- idx + 1
     Array.toList arga.[0 .. (idx - 1)]
@@ -1105,14 +1105,14 @@ let showTermFileCount = ref 0
 let PrintWholeAssemblyImplementation (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
-            let filename = outfile ^ ".terms"
+            let filename = outfile + ".terms"
             let n = !showTermFileCount
             showTermFileCount := n+1
-            use f = System.IO.File.CreateText (filename ^ "-" ^ string n ^ "-" ^ header)
-            Layout.outL f (Layout.squashTo 192 (DebugPrint.assemblyL expr))
+            use f = System.IO.File.CreateText (filename + "-" + string n + "-" + header)
+            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.assemblyL expr))
+            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
@@ -1206,38 +1206,37 @@ let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
-let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, tassembly:TypedAssembly) =
+let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =
     // NOTE: optEnv - threads through 
     //
     // Always optimize once - the results of this step give the x-module optimization 
     // info.  Subsequent optimization steps choose representations etc. which we don't 
     // want to save in the x-module info (i.e. x-module info is currently "high level"). 
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" tassembly
+    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
 #if DEBUG
-    if tcConfig.showOptimizationData then dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.assemblyL tassembly)))
+    if tcConfig.showOptimizationData then dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL implFiles)))
     if tcConfig.showOptimizationData then dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
-    let (TAssembly(implFiles)) = tassembly
     ReportTime tcConfig ("Optimizations")
+
+    // Only do abstract_big_targets on the first pass!  Only do it when TLR is on!  
+    let optSettings = tcConfig.optSettings 
+    let optSettings = { optSettings with abstractBigTargets = tcConfig.doTLR }
+    let optSettings = { optSettings with reportingPhase = true }
+            
     let results,(optEnvFirstLoop,_,_,_) = 
         ((optEnv0,optEnv0,optEnv0,SignatureHidingInfo.Empty),implFiles) ||> List.mapFold (fun (optEnvFirstLoop,optEnvExtraLoop,optEnvFinalSimplify,hidden) implFile -> 
 
-            // Only do abstract_big_targets on the first pass!  Only do it when TLR is on!  
-            let optSettings = tcConfig.optSettings 
-            let optSettings = { optSettings with abstractBigTargets = tcConfig.doTLR }
-            let optSettings = { optSettings with reportingPhase = true }
-            
             //ReportTime tcConfig ("Initial simplify")
-            let optEnvFirstLoop,implFile,implFileOptData,hidden = 
-                Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFirstLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
+            let (optEnvFirstLoop,implFile,implFileOptData,hidden), optimizeDuringCodeGen = 
+                Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal,importMap,optEnvFirstLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
 
             let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile 
                             
             // Only do this on the first pass!
-            let optSettings = { optSettings with abstractBigTargets = false }
-            let optSettings = { optSettings with reportingPhase = false }
+            let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }
 #if DEBUG
             if tcConfig.showOptimizationData then dprintf "Optimization implFileOptData:\n%s\n" (Layout.showL (Layout.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
 #endif
@@ -1245,7 +1244,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let implFile,optEnvExtraLoop = 
                 if tcConfig.extraOptimizationIterations > 0 then 
                     //ReportTime tcConfig ("Extra simplification loop")
-                    let optEnvExtraLoop,implFile, _, _ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvExtraLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
+                    let (optEnvExtraLoop,implFile, _, _), _ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvExtraLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
                     //PrintWholeAssemblyImplementation tcConfig outfile (sprintf "extra-loop-%d" n) implFile
                     implFile,optEnvExtraLoop
                 else
@@ -1270,20 +1269,21 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let implFile,optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then 
                     //ReportTime tcConfig ("Final simplify pass")
-                    let optEnvFinalSimplify,implFile, _, _ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFinalSimplify,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
+                    let (optEnvFinalSimplify,implFile, _, _),_ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFinalSimplify,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
                     //PrintWholeAssemblyImplementation tcConfig outfile "post-rec-opt" implFile
                     implFile,optEnvFinalSimplify 
                 else 
                     implFile,optEnvFinalSimplify 
-            (implFile,implFileOptData),(optEnvFirstLoop,optEnvExtraLoop,optEnvFinalSimplify,hidden))
+
+            ((implFile,optimizeDuringCodeGen),implFileOptData),(optEnvFirstLoop,optEnvExtraLoop,optEnvFinalSimplify,hidden))
 
     let implFiles,implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
-    let tassembly = TAssembly(implFiles)
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" tassembly
+    let tassembly = TypedAssemblyAfterOptimization(implFiles)
+    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" (List.map fst implFiles)
     ReportTime tcConfig ("Ending Optimizations")
 
-    tassembly, assemblyOptData,optEnvFirstLoop
+    tassembly, assemblyOptData, optEnvFirstLoop
 
 
 //----------------------------------------------------------------------------

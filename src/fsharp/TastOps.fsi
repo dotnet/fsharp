@@ -905,7 +905,7 @@ module DebugPrint =
     val tyconL : Tycon -> layout
     val decisionTreeL : DecisionTree -> layout
     val implFileL : TypedImplFile -> layout
-    val assemblyL : TypedAssembly -> layout
+    val implFilesL : TypedImplFile list -> layout
     val recdFieldRefL : RecdFieldRef -> layout
 
 //-------------------------------------------------------------------------
