@@ -84,25 +84,25 @@
     IL_001b:  ldloc.0
     IL_001c:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice1Of3<!!a,!!b,!!c>
     IL_0021:  stloc.2
-    .line 7,7 : 13,35 ''
+    .line 7,7 : 13,35
     IL_0022:  ldstr      "A"
     IL_0027:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_002c:  ret
 
-    .line 5,5 : 9,21 ''
+    .line 5,5 : 9,21
     IL_002d:  ldloc.0
     IL_002e:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice2Of3<!!a,!!b,!!c>
     IL_0033:  stloc.3
-    .line 9,9 : 13,35 ''
+    .line 9,9 : 13,35
     IL_0034:  ldstr      "B"
     IL_0039:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_003e:  ret
 
-    .line 5,5 : 9,21 ''
+    .line 5,5 : 9,21
     IL_003f:  ldloc.0
     IL_0040:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice3Of3<!!a,!!b,!!c>
     IL_0045:  stloc.s    V_4
-    .line 11,11 : 13,35 ''
+    .line 11,11 : 13,35
     IL_0047:  ldstr      "C"
     IL_004c:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_0051:  ret

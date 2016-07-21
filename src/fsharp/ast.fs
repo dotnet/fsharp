@@ -391,7 +391,7 @@ and
     /// F# syntax is 'typar :> type
     | WhereTyparSubtypeOfType of SynTypar *  SynType * range
     /// F# syntax is ^T : (static member MemberName : ^T * int -> ^T) 
-    | WhereTyparSupportsMember of SynTypar list * SynMemberSig * range
+    | WhereTyparSupportsMember of SynType list * SynMemberSig * range
     /// F# syntax is 'typar : enum<'UnderlyingType>
     | WhereTyparIsEnum of SynTypar * SynType list * range
     /// F# syntax is 'typar : delegate<'Args,unit>
