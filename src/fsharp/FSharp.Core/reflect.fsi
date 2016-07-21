@@ -522,7 +522,7 @@ open Microsoft.FSharp.Core
 
 module internal ReflectionUtils = 
 #if FX_RESHAPED_REFLECTION
-    type BindingFlags = ReflectionAdapters.BindingFlags
+    type internal BindingFlags = ReflectionAdapters.BindingFlags
 #else
     type BindingFlags = System.Reflection.BindingFlags
 #endif

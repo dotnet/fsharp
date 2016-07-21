@@ -3443,7 +3443,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
             PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref -> 
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then 
-                ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad modref rest allowObsolete // obsolette??
+                ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad modref rest allowObsolete
               else 
                 [])
         let qualifiedFields = 
