@@ -8263,16 +8263,16 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                             else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
                             currentIndex <- SEEN_NAMED_ARGUMENT
                         | None ->
-                            // ambiguity may apprear only when if argument is boolean\generic.
+                            // ambiguity may appear only when if argument is boolean\generic.
                             // if 
                             // - we didn't find argument with specified name AND 
                             // - we have not seen any named arguments so far AND 
                             // - type of current argument is bool\generic 
                             // then we'll favor old behavior and treat current argument as positional.
                             let isSpecialCaseForBackwardCompatibility = 
-                                if currentIndex = SEEN_NAMED_ARGUMENT then false
-                                else
-                                match stripTyEqns cenv.g (List.item currentIndex argtys) with
+                                (currentIndex <> SEEN_NAMED_ARGUMENT) &&
+                                (currentIndex < nargtys) &&
+                                match stripTyEqns cenv.g argtys.[currentIndex] with
                                 | TType_app(tcref, _) -> tyconRefEq cenv.g cenv.g.bool_tcr tcref || tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref
                                 | TType_var(_) -> true
                                 | _ -> false
