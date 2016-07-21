@@ -1613,6 +1613,7 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 //            -- for files given on a command line without --noframework set
 let DefaultBasicReferencesForOutOfProjectSources = 
     [ // These are .NET-Framework -style references
+#if !TODO_REWORK_ASSEMBLY_LOAD
       yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
@@ -1620,22 +1621,29 @@ let DefaultBasicReferencesForOutOfProjectSources =
       yield "System.Data"
       yield "System.Drawing"
       yield "System.Core" 
+#endif
 
-      // These are the Portable-profile and .NET Core dependencies of FSharp.Core.dll.  These are needed
-      // when an F# sript references an F# profile 7, 78, 259 or .NET Core component which in turn refers 
-      // to FSharp.Core for profile 7, 78, 259 or .NET Core.
+      // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
+      // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
+      // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
       yield "System.Runtime" // lots of types
       yield "System.Linq" // System.Linq.Expressions.Expression<T> 
       yield "System.Reflection" // System.Reflection.ParameterInfo
       yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
       yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
       yield "System.IO"  //  System.IO.TextWriter
+      yield "System.Console"  //  System.Console.Out etc.
+      yield "System.Net.Requests"  //  System.Net.WebResponse etc.
       yield "System.Collections" // System.Collections.Generic.List<T>
+      yield "System.Runtime.Numerics" // BigInteger
       yield "System.Threading"  // OperationCanceledException
 
+#if !TODO_REWORK_ASSEMBLY_LOAD
       yield "System.Web"
       yield "System.Web.Services"
-      yield "System.Windows.Forms" ]
+      yield "System.Windows.Forms"
+#endif
+     ]
 
 // Extra implicit references for .NET 4.0
 let DefaultBasicReferencesForOutOfProjectSources40 = 
