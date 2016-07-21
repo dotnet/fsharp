@@ -39,13 +39,11 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TypeChecker
-
-open Internal.Utilities.Collections
-open Internal.Utilities.Debug
-open Internal.Utilities
-open Internal.Utilities.StructuredFormat
-
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionsImpl 
+
+open Internal.Utilities
+open Internal.Utilities.Collections
+
 
 [<AutoOpen>]
 module EnvMisc =
@@ -571,7 +569,6 @@ type TypeCheckInfo
             |> FilterItemsForCtors filterCtors
 
         if nonNil items then
-            Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: Results in %d items!\n" items.Length)
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
                 NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
             else
@@ -579,7 +576,6 @@ type TypeCheckInfo
         else NameResResult.Empty
 
     let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
-        Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: endOfNamesPos = %s\n" (stringOfPos endOfNamesPos))
 
         let quals = 
             match resolveOverloads with 
@@ -596,7 +592,6 @@ type TypeCheckInfo
     let GetPreciseItemsFromNameResolution(line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
         let endOfNamesPos = mkPos line colAtEndOfNames
 
-        Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: endOfNamesPos = %s\n" (stringOfPos endOfNamesPos))
         // Logic below expects the list to be in reverse order of resolution
         let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
 
@@ -902,14 +897,13 @@ type TypeCheckInfo
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems exactMatchResidueOpt items) -> 
-                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (p13 items).Length (items |> p13 |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
+                // lookup based on name resolution results successful
                 Some items
             | _ ->
         
             match origLongIdentOpt with
             | None -> None
             | Some _ -> 
-                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: plid = %+A, residue = %+A, colAtEndOfNamesAndResidue = %+A\n" plid exactMatchResidueOpt colAtEndOfNamesAndResidue)       
 
                 // Try to use the type of the expression on the left to help generate a completion list
                 let qualItems, thereIsADotInvolved = 
@@ -939,7 +933,7 @@ type TypeCheckInfo
                         // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
                         // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                         when (match plid with [] -> true | _ -> false)  -> 
-                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on expression typings successful\n")       
+                    // lookup based on expression typings successful
                     Some items
                 | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                     // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
@@ -961,13 +955,13 @@ type TypeCheckInfo
             
                 // First, use unfiltered name resolution items, if they're not empty
                 | NameResResult.Members(items, denv, m), _, _ when nonNil items -> 
-                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (items).Length (items |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
+                    // lookup based on name resolution results successful
                     Some(items, denv, m)                
             
                 // If we have nonempty items from environment that were resolved from a type, then use them... 
                 // (that's better than the next case - here we'd return 'int' as a type)
                 | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when nonNil items ->
-                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name and environment successful\n")       
+                    // lookup based on name and environment successful
                     Some(items, denv, m)
 
                 // Try again with the qualItems
@@ -1799,7 +1793,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 
 [<Sealed>]
 // 'details' is an option because the creation of the tcGlobals etc. for the project may have failed.
-type FSharpCheckProjectResults(_keepAssemblyContents, errors: FSharpErrorInfo[], details:(TcGlobals*TcImports*CcuThunk*ModuleOrNamespaceType*TcSymbolUses list*TopAttribs option*CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedAssembly option) option, reactorOps: IReactorOperations) =
+type FSharpCheckProjectResults(_keepAssemblyContents, errors: FSharpErrorInfo[], details:(TcGlobals*TcImports*CcuThunk*ModuleOrNamespaceType*TcSymbolUses list*TopAttribs option*CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option) option, reactorOps: IReactorOperations) =
 
     let getDetails() = 
         match details with 
@@ -1820,7 +1814,7 @@ type FSharpCheckProjectResults(_keepAssemblyContents, errors: FSharpErrorInfo[],
     //     let mimpls = 
     //         match tcAssemblyExpr with 
     //         | None -> []
-    //         | Some (TAssembly mimpls) -> mimpls
+    //         | Some mimpls -> mimpls
     //     FSharpAssemblyContents(tcGlobals, thisCcu, tcImports, mimpls)
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
@@ -2469,7 +2463,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             // Do we use a "FSharp.Core, 4.3.0.0" reference by default?
             let otherFlags = defaultArg otherFlags [| |]
-            let useMonoResolution = 
+            let useSimpleResolution = 
 #if ENABLE_MONO_SUPPORT
                 runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 #else
@@ -2480,7 +2474,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
                 let collect _name = ()
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (collect, fsiCompilerOptions, Array.toList otherFlags)
-            let fas = LoadClosure.ComputeClosureOfSourceText(filename, source, CodeContext.Editing, useMonoResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
+            let fas = LoadClosure.ComputeClosureOfSourceText(filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 

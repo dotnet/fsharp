@@ -391,7 +391,7 @@ and
     /// F# syntax is 'typar :> type
     | WhereTyparSubtypeOfType of SynTypar *  SynType * range
     /// F# syntax is ^T : (static member MemberName : ^T * int -> ^T) 
-    | WhereTyparSupportsMember of SynTypar list * SynMemberSig * range
+    | WhereTyparSupportsMember of SynType list * SynMemberSig * range
     /// F# syntax is 'typar : enum<'UnderlyingType>
     | WhereTyparIsEnum of SynTypar * SynType list * range
     /// F# syntax is 'typar : delegate<'Args,unit>
@@ -1000,7 +1000,7 @@ and SynAttributes = SynAttribute list
 and  
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynAttribute = 
-    { TypeName: LongIdentWithDots;
+    { TypeName: LongIdentWithDots
       ArgExpr: SynExpr 
       /// Target specifier, e.g. "assembly","module",etc.
       Target: Ident option 
@@ -1046,10 +1046,10 @@ and
 and 
     [<NoComparison>]
     MemberFlags =
-    { IsInstance: bool;
-      IsDispatchSlot: bool;
-      IsOverrideOrExplicitImpl: bool;
-      IsFinal: bool;
+    { IsInstance: bool
+      IsDispatchSlot: bool
+      IsOverrideOrExplicitImpl: bool
+      IsFinal: bool
       MemberKind: MemberKind }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs

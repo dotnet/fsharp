@@ -98,7 +98,8 @@ val BakedInTraitConstraintNames : string list
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
-type Trace = Trace of (unit -> unit) list ref
+[<Sealed; NoEquality; NoComparison>]
+type Trace 
 
 type OptionalTrace =
   | NoTrace
