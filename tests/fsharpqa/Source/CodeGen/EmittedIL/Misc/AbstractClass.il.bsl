@@ -76,7 +76,7 @@
     {
       // 
       .maxstack  8
-      .line 5,5 : 22,26 ''
+      .line 5,5 : 22,26
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldc.i4.1
@@ -89,7 +89,7 @@
     {
       // 
       .maxstack  8
-      .line 6,6 : 32,36 ''
+      .line 6,6 : 32,36
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldc.i4.1
@@ -113,7 +113,7 @@
     .entrypoint
     // 
     .maxstack  8
-    .line 8,8 : 1,7 ''
+    .line 8,8 : 1,7
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)

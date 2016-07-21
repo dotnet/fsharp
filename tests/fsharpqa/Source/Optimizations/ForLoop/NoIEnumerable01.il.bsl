@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly NoIEnumerable01
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.NoIEnumerable01
 {
-  // Offset: 0x00000000 Length: 0x000001E5
+  // Offset: 0x00000000 Length: 0x000001D1
 }
 .mresource public FSharpOptimizationData.NoIEnumerable01
 {
-  // Offset: 0x000001F0 Length: 0x0000006C
+  // Offset: 0x000001D8 Length: 0x0000006C
 }
 .module NoIEnumerable01.dll
-// MVID: {4BEB29BA-31A1-8DCB-A745-0383BA29EB4B}
+// MVID: {5772F616-31A1-8DCB-A745-038316F67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x008D0000
+// Image base: 0x00D30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
              [1] int32 i,
              [2] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 7,7 : 4,22 
+    .line 7,7 : 4,22 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\NoIEnumerable01.fsx'
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  stloc.1
@@ -69,7 +69,7 @@
     IL_0006:  ldloc.1
     IL_0007:  blt.s      IL_002a
 
-    .line 8,8 : 7,20 
+    .line 8,8 : 7,20 ''
     IL_0009:  ldstr      "aaa"
     IL_000e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_0013:  stloc.2
@@ -82,7 +82,7 @@
     IL_0021:  ldc.i4.1
     IL_0022:  add
     IL_0023:  stloc.1
-    .line 7,7 : 18,19 
+    .line 7,7 : 4,22 ''
     IL_0024:  ldloc.1
     IL_0025:  ldloc.0
     IL_0026:  ldc.i4.1

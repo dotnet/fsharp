@@ -175,16 +175,21 @@ type IlxGenOptions =
       generateDebugSymbols: bool
       testFlagEmitFeeFeeAs100001: bool
       ilxBackend: IlxGenBackend
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool 
-      // Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
-      // storage, even though 'it' is not logically mutable
+
+      /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
+      /// storage, even though 'it' is not logically mutable
       isInteractiveItExpr: bool
-      // Indicates System.SerializableAttribute is available in the target framework
+
+      /// Indicates System.SerializableAttribute is available in the target framework
       netFxHasSerializableAttribute : bool
+
       /// Whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool}
+      alwaysCallVirt: bool  }
+
 
 /// Compilation environment for compiling a fragment of an assembly
 [<NoEquality; NoComparison>]
@@ -198,10 +203,10 @@ type cenv =
       amap: Import.ImportMap
       intraAssemblyInfo : IlxGenIntraAssemblyInfo
       /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp,bool> }
+      casApplied : Dictionary<Stamp,bool> 
+      /// Used to apply forced inlining optimizations to witnesses generated late during codegen
+      mutable optimizeDuringCodeGen : (Expr -> Expr) }
 
-
-type EmitSequencePointState = SPAlways | SPSuppress
 
 
 let mkTypeOfExpr cenv m ilty =  
@@ -611,8 +616,6 @@ type IlxClosureInfo =
 type ValStorage = 
     /// Indicates the value is always null
     | Null 
-    /// Indicates the value is not stored, and no value is created 
-    | Unrealized 
     /// Indicates the value is stored in a static field. 
     | StaticField of ILFieldSpec * ValRef * (*hasLiteralAttr:*)bool * ILType * string * ILType * ILMethodRef  * ILMethodRef  * OptionalShadowLocal
     /// Indicates the value is "stored" as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
@@ -705,7 +708,6 @@ let OutputStorage (pps: TextWriter) s =
     | Arg _ -> pps.Write "(arg)" 
     | Env _ -> pps.Write "(env)" 
     | Null -> pps.Write "(null)"
-    | Unrealized -> pps.Write "(no real value required)"
 
 //--------------------------------------------------------------------------
 // Augment eenv with values
@@ -842,6 +844,16 @@ let ComputeFieldSpecForVal(optIntraAssemblyInfo:IlxGenIntraAssemblyInfo option, 
         else 
             generate()
 
+
+let IsValCompiledAsMethod g (v:Val) =
+    match v.ValReprInfo with 
+    | None -> false
+    | Some topValInfo -> 
+        not (isUnitTy g v.Type && not v.IsMemberOrModuleBinding && not v.IsMutable) &&
+        not v.IsCompiledAsStaticPropertyWithoutField  &&
+        match GetTopValTypeInFSharpForm g topValInfo v.Type v.Range with 
+        | [],[],_,_ when not v.IsMember -> false 
+        | _ -> true
 
 // This called via 2 routes.
 // (a) ComputeAndAddStorageForLocalTopVal
@@ -998,10 +1010,10 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 // into the stored results for the whole CCU.  
 // isIncrementalFragment = true -->  "typed input" 
 // isIncrementalFragment = false -->  "#load" 
-let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:Import.ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, TAssembly impls) = 
+let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:Import.ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) = 
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, impls) ||> List.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
+    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
         let cloc = { cloc with clocTopImplQualifiedName = qname.Text }
         if isIncrementalFragment then 
             match mexpr with
@@ -1628,67 +1640,140 @@ let LocalScope nm cgbuf (f : (Mark * Mark) -> 'a) : 'a =
 let compileSequenceExpressions = true // try (System.Environment.GetEnvironmentVariable("COMPILED_SEQ") <> null) with _ -> false
 
 //-------------------------------------------------------------------------
-// Generate expressions
+// Sequence Point Logic
 //------------------------------------------------------------------------- 
+
+type EmitSequencePointState = 
+    /// Indicates that we need a sequence point at first opportunity. Used on entrance to a method
+    /// and whenever we drop into an expression within the stepping control structure.
+    | SPAlways 
+    | SPSuppress
+
+/// Determines what sequence point should be emitted for a binding
+let ComputeSequencePointInfoForBinding g (TBind(vspec,e,spBind)) = 
+    if IsValCompiledAsMethod g vspec then 
+        false, None, SPSuppress
+    else
+        match spBind, stripExpr e with 
+        | NoSequencePointAtInvisibleBinding, _ -> false, None, SPSuppress
+        | NoSequencePointAtStickyBinding, _ -> true, None, SPSuppress
+        | NoSequencePointAtDoBinding, _ -> false, None, SPAlways
+        | NoSequencePointAtLetBinding, _ -> false, None, SPSuppress
+        // Don't emit sequence points for lambdas.
+        // SEQUENCE POINT REVIEW: don't emit for lazy either, nor any builder expressions
+        | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None, SPSuppress
+        | SequencePointAtBinding m,_ -> false, Some m, SPSuppress
+
+ 
+/// Determines if a sequence wil be emitted when we generate the code for a binding
+let BindingEmitsSequencePoint g bind = 
+    match ComputeSequencePointInfoForBinding g bind with
+    | _, None, SPSuppress -> false
+    | _ -> true
+
+/// Determines if any code at all will be emitted for a binding
+let BindingEmitsNoCode g (TBind(vspec,_,_)) = IsValCompiledAsMethod g vspec 
 
 let bindHasSeqPt = function (TBind(_,_,SequencePointAtBinding _)) -> true | _ -> false
 let bindIsInvisible = function (TBind(_,_,NoSequencePointAtInvisibleBinding _)) -> true | _ -> false
 
-let AlwaysSuppressSequencePoint sp expr = 
-    match sp with 
-    | SPAlways -> 
-        // These extra cases have historically always had their sequence point suppressed 
-        match expr with 
-        | Expr.Let (bind,_,_,_) when bindIsInvisible(bind) -> true
-        | Expr.LetRec(binds,_,_,_) when (binds |> FlatList.exists bindHasSeqPt) || (binds |> FlatList.forall bindIsInvisible) -> true
-        | Expr.Sequential _ 
-        | Expr.Match _  -> true
-        | Expr.Op((TOp.Label _ | TOp.Goto _ | TOp.TryCatch _ | TOp.TryFinally _ | TOp.For _ | TOp.While _),_,_,_) -> true
-        | _ -> false
-    | SPSuppress -> 
-        true
-  
-// This is the list of composite statement expressions where we're about to emit a sequence
-// point for sure. They get sequence points on their sub-expressions
-//
-// Determine if expression code generation certainly starts with a sequence point. An approximation used
+    
+// This determines if we're about to emit a sequence point as the first emitted code for an expression.
+// It determines if expression code generation certainly starts with a sequence point. An approximation used
 // to prevent the generation of duplicat sequence points for conditionals and pattern matching
-let rec WillGenerateSequencePoint sp expr = 
+let rec FirstEmittedCodeWillBeSequencePoint g sp expr = 
     match sp with 
     | SPAlways -> 
-        let definiteSequencePoint = 
-            match expr with 
-            | Expr.Let (bind,expr,_,_) 
-                 -> bindHasSeqPt(bind)  || 
-                    (bind.Var.IsCompiledAsTopLevel && WillGenerateSequencePoint sp expr)
-            | Expr.LetRec(binds,expr,_,_) 
-                 -> (binds |> FlatList.forall (fun bind -> bind.Var.IsCompiledAsTopLevel)) && WillGenerateSequencePoint sp expr
-                 
-            | Expr.Sequential (_, _, NormalSeq,spSeq,_) -> 
-              (match spSeq with 
-               | SequencePointsAtSeq -> true
-               | SuppressSequencePointOnExprOfSequential -> true
-               | SuppressSequencePointOnStmtOfSequential -> false)
-            | Expr.Match (SequencePointAtBinding _,_,_,_,_,_)   -> true
-            | Expr.Op((  TOp.TryCatch (SequencePointAtTry _,_) 
-                        | TOp.TryFinally (SequencePointAtTry _,_) 
-                        | TOp.For (SequencePointAtForLoop _,_) 
-                        | TOp.While (SequencePointAtWhileLoop _,_)),_,_,_) -> true
-            | _ -> false
-        definiteSequencePoint 
+        match stripExpr expr with 
+        | Expr.Let (bind,body,_,_) -> 
+            BindingEmitsSequencePoint g bind || 
+            FirstEmittedCodeWillBeSequencePoint g sp bind.Expr || 
+            (BindingEmitsNoCode g bind && FirstEmittedCodeWillBeSequencePoint g sp body)
+        | Expr.LetRec(binds,body,_,_) -> 
+            binds |> List.exists (BindingEmitsSequencePoint g) || 
+            (binds |> FlatList.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
+        | Expr.Sequential (_, _, NormalSeq,spSeq,_) -> 
+            match spSeq with 
+            | SequencePointsAtSeq -> true
+            | SuppressSequencePointOnExprOfSequential -> true
+            | SuppressSequencePointOnStmtOfSequential -> false
+        | Expr.Match (SequencePointAtBinding _,_,_,_,_,_)   -> true
+        | Expr.Op((  TOp.TryCatch (SequencePointAtTry _,_) 
+                    | TOp.TryFinally (SequencePointAtTry _,_) 
+                    | TOp.For (SequencePointAtForLoop _,_) 
+                    | TOp.While (SequencePointAtWhileLoop _,_)),_,_,_) -> true
+        | _ -> false
 
      | SPSuppress -> 
         false                  
 
-let DoesGenExprStartWithSequencePoint sp expr = 
-    WillGenerateSequencePoint sp expr || not (AlwaysSuppressSequencePoint sp expr)
+/// Suppress sequence points in some cases even though "SPAlways" is set.  In most
+/// cases this is for code-generated constructs that form part of the compilation of a larger 
+/// construct.
+///
+/// Note this is only used when FirstEmittedCodeWillBeSequencePoint is false.
+let AlwaysSuppressSequencePoint g sp expr = 
+    assert (not(FirstEmittedCodeWillBeSequencePoint g sp expr))
+    match sp with 
+    | SPAlways -> 
+        match expr with 
+        
+        // We suppress sequence points at invisible let bindings even if they are requested by SPAlways.
+        | Expr.Let (bind,_,_,_) when bindIsInvisible bind -> true
+        | Expr.LetRec(binds,_,_,_) when (binds |> FlatList.exists bindHasSeqPt) || (binds |> FlatList.forall bindIsInvisible) -> true
 
-let rec GenExpr cenv (cgbuf:CodeGenBuffer) eenv sp expr sequel =
+        // We always suppress at sequential where the sequence point is missing. We need to document better why.
+        | Expr.Sequential _ -> true 
+
+        // We always suppress at labels and gotos, it makes no sense to emit sequence points at these
+        | Expr.Op(TOp.Label _,_,_,_) -> true
+        | Expr.Op(TOp.Goto _,_,_,_) -> true
+
+        // We always suppress at 'match'/'try'/... where the sequence point is missing (if the sequence point was
+        // present then FirstEmittedCodeWillBeSequencePoint would have returned true).  
+        //
+        // These cases need more looking into. For example, a typical 'match' gets compiled to 
+        //    let tmp = expr   // generates a sequence point, BEFORE tmp is evaluated
+        //    match tmp with  // a match marked with NoSequencePointAtInvisibleLetBinding
+        // So since the 'let tmp = expr' has a sequence point, then no sequence point is needed for the 'match'. But the processing
+        // of the 'let' requests SPAlways for the body.
+        | Expr.Match _ -> true
+        | Expr.Op(TOp.TryCatch _,_,_,_) -> true
+        | Expr.Op(TOp.TryFinally _,_,_,_) -> true
+        | Expr.Op(TOp.For _,_,_,_)  -> true
+        | Expr.Op(TOp.While _,_,_,_) -> true
+        | _ -> false
+    | SPSuppress -> 
+        true
+
+
+/// Some expressions must emit some preparation code, then emit the actual code.  
+let rec RangeOfEventualEmittedSequencePoint g expr = 
+    match stripExpr expr with 
+    | Expr.Let (bind,body,_,_) ->
+        match ComputeSequencePointInfoForBinding g bind with
+        | true, _, _ -> expr.Range  // for sticky bindings, prefer the range of the overall expression
+        | _, None, SPSuppress -> RangeOfEventualEmittedSequencePoint g body 
+        | _, Some m, _ -> m
+        | _, None, SPAlways -> RangeOfEventualEmittedSequencePoint g bind.Expr
+    | Expr.LetRec(_,body,_,_)  -> RangeOfEventualEmittedSequencePoint g body 
+    | Expr.Sequential (expr1, _, NormalSeq, _, _) -> RangeOfEventualEmittedSequencePoint g expr1
+    | _ -> expr.Range
+
+let DoesGenExprStartWithSequencePoint g  sp expr = 
+    FirstEmittedCodeWillBeSequencePoint g sp expr || not (AlwaysSuppressSequencePoint g sp expr)
+
+
+//-------------------------------------------------------------------------
+// Generate expressions
+//------------------------------------------------------------------------- 
+
+let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
 
   let expr =  stripExpr expr
 
-  if not (WillGenerateSequencePoint sp expr) && not (AlwaysSuppressSequencePoint sp expr) then 
-      CG.EmitSeqPoint cgbuf expr.Range
+  if not (FirstEmittedCodeWillBeSequencePoint cenv.g sp expr) && not (AlwaysSuppressSequencePoint cenv.g sp expr) then 
+      CG.EmitSeqPoint cgbuf (RangeOfEventualEmittedSequencePoint cenv.g expr)
 
   match (if compileSequenceExpressions then LowerCallsAndSeqs.LowerSeqExpr cenv.g cenv.amap expr else None) with
   | Some info ->
@@ -1709,7 +1794,7 @@ let rec GenExpr cenv (cgbuf:CodeGenBuffer) eenv sp expr sequel =
      // Make sure we generate the sequence point outside the scope of the variable
      let startScope,endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
      let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-     let spBind = GenSequencePointForBind cenv cgbuf eenv bind
+     let spBind = GenSequencePointForBind cenv cgbuf bind
      CG.SetMarkToHere cgbuf startScope 
      GenBindAfterSequencePoint cenv cgbuf eenv spBind bind
 
@@ -2876,8 +2961,12 @@ and GenForLoop cenv cgbuf eenv (spFor,v,e1,dir,e2,loopBody,m) sequel =
     // FSharpForLoopUp: if v <> e2 + 1 then goto .inner
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // CSharpStyle: if v < e2 then goto .inner
-    CG.EmitSeqPoint cgbuf  e2.Range
+    match spFor with 
+    | SequencePointAtForLoop(spStart) -> CG.EmitSeqPoint cgbuf  spStart
+    | NoSequencePointAtForLoop -> () //CG.EmitSeqPoint cgbuf  e2.Range
+    
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
+
     let cmp = match dir with FSharpForLoopUp | FSharpForLoopDown -> BI_bne_un | CSharpForLoopUp -> BI_blt
     let e2Sequel =  (CmpThenBrOrContinue (pop 2, [ I_brcmp(cmp,inner.CodeLabel) ]))
 
@@ -3200,6 +3289,7 @@ and GenTraitCall cenv cgbuf eenv (traitInfo, argExprs, m) expr sequel =
                              [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))],m)) 
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr -> 
+        let expr = cenv.optimizeDuringCodeGen expr
         GenExpr cenv cgbuf eenv SPSuppress expr sequel 
 
 //--------------------------------------------------------------------------
@@ -3226,7 +3316,7 @@ and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
         EmitGetStaticFieldAddr cgbuf ilTy fspec
     | Env (_,_,ilField,_) -> 
         CG.EmitInstrs cgbuf (pop 0) (Push [ILType.Byref ilTy]) [ mkLdarg0; mkNormalLdflda ilField ] 
-    | Local (_,Some _) | StaticProperty _ | Method _ | Env _ | Unrealized | Null ->  
+    | Local (_,Some _) | StaticProperty _ | Method _ | Env _  | Null ->  
         errorR(Error(FSComp.SR.ilAddressOfValueHereIsInvalid(v.DisplayName),m))
         CG.EmitInstrs cgbuf (pop 1) (Push [ILType.Byref ilTy]) [ I_ldarga (uint16 669 (* random value for post-hoc diagnostic analysis on generated tree *) ) ] ;
 
@@ -3581,8 +3671,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
 and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls,ext, ilIntfTys) =
 
   let cloInfo = 
-      { cloSource=None
-        cloFreeVars=ilCloFreeVars
+      { cloFreeVars=ilCloFreeVars
         cloStructure=ilCloLambdas
         cloCode=notlazy ilCtorBody }
 
@@ -3702,7 +3791,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv:Val) =
     | Local(_,Some _) | Env(_,_,_,Some _) -> cenv.g.ilg.typ_Object
 #if DEBUG
     // Check for things that should never make it into the free variable set. Only do this in debug for performance reasons
-    | (StaticField _ | StaticProperty _ | Method _ |  Unrealized | Null) -> error(InternalError("GenFreevar: compiler error: unexpected unrealized value",fv.Range))
+    | (StaticField _ | StaticProperty _ | Method _ | Null) -> error(InternalError("GenFreevar: compiler error: unexpected unrealized value",fv.Range))
 #endif
     | _ -> GenType cenv.amap m cenv.g tyenvinner fv.Type
 
@@ -3742,7 +3831,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
         |> Zset.elements 
         |> List.filter (fun fv -> 
             match StorageForVal m fv eenvouter with 
-            | (StaticField _ | StaticProperty _ | Method _ |  Unrealized | Null) -> false
+            | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
             | _ -> 
                 match selfv with 
                 | Some v -> not (valRefEq cenv.g (mkLocalValRef fv) v) 
@@ -4161,7 +4250,7 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
        match inplabOpt with Some inplab -> CG.SetMarkToHere cgbuf inplab | None -> ()
        let startScope,endScope as scopeMarks = StartDelayedLocalScope "dtreeBind" cgbuf
        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-       let sp = GenSequencePointForBind cenv cgbuf eenv bind
+       let sp = GenSequencePointForBind cenv cgbuf bind
        CG.SetMarkToHere cgbuf startScope
        GenBindAfterSequencePoint cenv cgbuf eenv sp bind
        // We don't get the scope marks quite right for dtree-bound variables.  This is because 
@@ -4242,7 +4331,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets _targetIdx (targetMarkBefore
     //
     // Only repeat the sequence point if we really have to, i.e. if the target expression doesn't start with a
     // sequence point anyway
-    if FlatList.isEmpty vs && DoesGenExprStartWithSequencePoint spExpr successExpr then 
+    if FlatList.isEmpty vs && DoesGenExprStartWithSequencePoint cenv.g spExpr successExpr then 
        () 
     else 
        match spTarget with 
@@ -4431,7 +4520,7 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester eenv successTree
 
         // Turn 'isdata' tests that branch into EI_brisdata tests 
         | Some (_,_,Choice1Of2 (avoidHelpers,cuspec,idx)) ->
-            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsNotData cenv.g.ilg (avoidHelpers,cuspec, idx, failure.CodeLabel)))
+            GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData cenv.g.ilg false (avoidHelpers,cuspec, idx, failure.CodeLabel)))
 
         | Some (pops,pushes,i) ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
@@ -4461,9 +4550,8 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
             match (StorageForVal m b.Var eenv) with  
             | StaticProperty _
             | Method _ 
-            | Unrealized 
-            (* Note: Recursive data stored in static fields may require fixups e.g. let x = C(x) *) 
-            (* | StaticField _  *)
+            // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x) 
+            // | StaticField _ 
             | Null -> false 
             | _ -> true)
 
@@ -4516,36 +4604,20 @@ and GenLetRec cenv cgbuf eenv (binds,body,m) sequel =
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
     GenLetRecBinds cenv cgbuf eenv (binds,m)
     
-    let sp = if FlatList.exists bindHasSeqPt binds || FlatList.forall bindIsInvisible binds then SPAlways else SPSuppress 
+    let sp = if FlatList.exists (BindingEmitsSequencePoint cenv.g) binds then SPAlways else SPSuppress 
     GenExpr cenv cgbuf eenv sp body (EndLocalScope(sequel,endScope))
 
 //-------------------------------------------------------------------------
 // Generate simple bindings
 //------------------------------------------------------------------------- 
 
-and GenSequencePointForBind _cenv cgbuf eenv (TBind(vspec,e,spBind)) =
-
-    let emitSP() =
-        match spBind,e with 
-        | (( NoSequencePointAtInvisibleBinding | NoSequencePointAtStickyBinding),_) -> SPSuppress
-        | (NoSequencePointAtDoBinding,_) -> SPAlways
-        | (NoSequencePointAtLetBinding,_) -> SPSuppress
-        // Don't emit sequence points for lambdas.
-        // SEQUENCE POINT REVIEW: don't emit for lazy either, nor any builder expressions
-        | _, (Expr.Lambda _ | Expr.TyLambda _) -> SPSuppress
-        | SequencePointAtBinding m,_ -> 
-            CG.EmitSeqPoint cgbuf m
-            SPSuppress
-    
-    let m = vspec.Range
-   
-    match StorageForVal m vspec eenv with 
-    | Unrealized -> SPSuppress
-    | Method _ -> SPSuppress
-    | _ -> emitSP() 
+and GenSequencePointForBind cenv cgbuf bind =
+    let _, pt, sp = ComputeSequencePointInfoForBinding cenv.g bind
+    pt |> Option.iter (CG.EmitSeqPoint cgbuf)
+    sp
 
 and GenBind cenv cgbuf eenv bind =
-    let sp = GenSequencePointForBind cenv cgbuf eenv bind
+    let sp = GenSequencePointForBind cenv cgbuf bind
     GenBindAfterSequencePoint cenv cgbuf eenv sp bind
     
 and ComputeMemberAccessRestrictedBySig eenv vspec =
@@ -4579,8 +4651,6 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
     let m = vspec.Range
 
     match StorageForVal m vspec eenv with 
-
-    | Unrealized -> ()
 
     | Null -> 
         GenExpr cenv cgbuf eenv SPSuppress rhsExpr discard
@@ -5329,8 +5399,6 @@ and GenSetStorage m cgbuf storage =
         // Note: ldarg0 has already been emitted in GenSetVal
         CG.EmitInstr cgbuf (pop 2) Push0  (mkNormalStfld ilField)
 
-    | Unrealized -> error(Error(FSComp.SR.ilUnexpectedUnrealizedValue(),m))
-
 and CommitGetStorageSequel cenv cgbuf eenv m typ localCloInfo storeSequel = 
     match localCloInfo,storeSequel with 
     | Some {contents =NamedLocalIlxClosureInfoGenerator _cloinfo},_ -> error(InternalError("Unexpected generator",m))
@@ -5384,9 +5452,6 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (typ,ilTy) storage storeSequel =
     | Null  ->   
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldnull) 
         CommitGetStorageSequel cenv cgbuf eenv m typ None storeSequel
-
-    | Unrealized  ->
-        error(InternalError(sprintf "getting an unrealized value of type '%s'" (showL(typeL typ)),m))
 
     | Arg i -> 
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdarg (uint16 i)) 
@@ -5751,8 +5816,10 @@ and GenModuleBinding cenv (cgbuf:CodeGenBuffer) (qname:QualifiedNameOfFile) lazy
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript))  =
+and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplicitEntryPoint, isScript), optimizeDuringCodeGen)  =
     let eenv = {eenv with cloc = { eenv.cloc with clocTopImplQualifiedName = qname.Text } }
+
+    cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
 
     // This is used to point the inner classes back to the startup module for initialization purposes 
     let isFinalFile = isSome mainInfoOpt
@@ -6730,7 +6797,7 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlxGen)
 
@@ -6858,7 +6925,6 @@ let LookupGeneratedValue (amap:Import.ImportMap) (ctxt: ExecutionContext) g eenv
           Some (null,objTyp)
       | Local _ -> None     
       | Method _ -> None
-      | Unrealized -> None
       | Arg _ -> None
       | Env _ -> None
   with
@@ -6900,7 +6966,6 @@ let LookupGeneratedInfo (ctxt: ExecutionContext) (g:TcGlobals) eenv (v:Val) =
       | Null -> None
       | Local _ -> None     
       | Method _ -> None
-      | Unrealized -> None
       | Arg _ -> None
       | Env _ -> None
   with
@@ -6928,20 +6993,21 @@ type IlxAssemblyGenerator(amap: Import.ImportMap, tcGlobals: TcGlobals, tcVal : 
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member __.AddIncrementalLocalAssemblyFragment  (isIncrementalFragment, fragName, typedAssembly) = 
-        ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedAssembly)
+    member __.AddIncrementalLocalAssemblyFragment  (isIncrementalFragment, fragName, typedImplFiles) = 
+        ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedImplFiles)
 
     /// Generate ILX code for an assembly fragment
     member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) = 
         let cenv : cenv = 
             { g=tcGlobals
               TcVal = tcVal
-              viewCcu                                = ccu
-              ilUnitTy                               = None
-              amap                                   = amap
-              casApplied                             = casApplied
-              intraAssemblyInfo                      = intraAssemblyInfo
-              opts                                   = codeGenOpts }
+              viewCcu = ccu
+              ilUnitTy = None
+              amap = amap
+              casApplied = casApplied
+              intraAssemblyInfo = intraAssemblyInfo
+              opts = codeGenOpts 
+              optimizeDuringCodeGen = (fun x -> x) }
         GenerateCode (cenv, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value

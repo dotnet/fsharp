@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -26,27 +26,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ComputationExpr07
 {
-  // Offset: 0x00000000 Length: 0x00000237
+  // Offset: 0x00000000 Length: 0x00000212
 }
 .mresource public FSharpOptimizationData.ComputationExpr07
 {
-  // Offset: 0x00000240 Length: 0x0000007D
+  // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr07.exe
-// MVID: {4F31D668-35BD-E566-A745-038368D6314F}
+// MVID: {5775B6D2-35BD-E566-A745-0383D2B67557}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000370000
+// Image base: 0x00B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,6 +64,8 @@
             instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@,
                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       21 (0x15)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -84,11 +86,11 @@
       .maxstack  7
       .locals init ([0] int32 v)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 9,9 : 9,29 
+      .line 9,9 : 9,29 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr07.fs'
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 10,10 : 13,24 
+      .line 10,10 : 13,24
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ComputationExpr07/'res7@9-1'::x
       IL_0009:  ldarg.0
@@ -117,6 +119,8 @@
             instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@,
                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       21 (0x15)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -135,7 +139,7 @@
     {
       // Code size       26 (0x1a)
       .maxstack  8
-      .line 11,11 : 9,18 
+      .line 11,11 : 9,18
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr07/'res7@11-2'::builder@
@@ -156,6 +160,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -172,12 +178,12 @@
       // Code size       91 (0x5b)
       .maxstack  9
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x)
-      .line 8,8 : 9,22 
+      .line 8,8 : 9,22
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
       IL_0007:  stloc.0
-      .line 9,9 : 9,29 
+      .line 9,9 : 9,29
       IL_0008:  ldarg.0
       IL_0009:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr07/res7@8::builder@
       IL_000e:  ldarg.0
@@ -247,7 +253,7 @@
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res7,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder builder@)
-    .line 13,13 : 1,25 
+    .line 13,13 : 1,25
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
     IL_0006:  ldloc.1
