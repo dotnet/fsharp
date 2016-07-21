@@ -18,6 +18,7 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+	<DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -78,6 +79,9 @@
     </Compile>
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
+      <Link>ProjectOptionsTests.fs</Link>
     </Compile>
     <CustomCopyLocal Include="app.config">
       <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
