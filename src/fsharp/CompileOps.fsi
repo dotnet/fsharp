@@ -594,7 +594,7 @@ type TcImports =
     member GetCcusExcludingBase : unit -> CcuThunk list 
     member FindDllInfo : range * string -> ImportedBinary
     member TryFindDllInfo : range * string * lookupOnly: bool -> option<ImportedBinary>
-    member FindCcuFromAssemblyRef : range * ILAssemblyRef -> Tast.CcuResolutionResult
+    member FindCcuFromAssemblyRef : range * ILAssemblyRef -> CcuResolutionResult
 #if EXTENSIONTYPING
     member ProviderGeneratedTypeRoots : ProviderGeneratedType list
 #endif
@@ -661,8 +661,7 @@ val ProcessMetaCommandsFromInput :
 val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
 
 /// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput*string) -> TcConfig
-
+val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
 
 //----------------------------------------------------------------------------
 // Scoped pragmas
@@ -717,23 +716,21 @@ val GetInitialTcState :
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
-           -> Eventually<(TcEnv * TopAttribs * Tast.TypedImplFile list) * TcState>
+           -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Finish the checking of multiple inputs 
 val TypeCheckMultipleInputsFinish : (TcEnv * TopAttribs * 'T list) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
     
 /// Finish the checking of a closed set of inputs 
-val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * TypedAssembly
+val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * TypedImplFile list
 
 /// Check a closed set of inputs 
-val TypeCheckClosedInputSet :
-    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list 
-        -> TcState * TopAttribs * Tast.TypedAssembly * TcEnv
+val TypeCheckClosedInputSet :(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckSingleInputAndFinishEventually :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
-        -> Eventually<(TcEnv * TopAttribs * Tast.TypedImplFile list) * TcState>
+        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Indicates if we should report a warning
 val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedError -> bool

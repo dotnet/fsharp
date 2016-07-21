@@ -4133,13 +4133,12 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
             AddCxMethodConstraint env.DisplayEnv cenv.css m NoTrace traitInfo
             tpenv
       
-and TcPseudoMemberSpec cenv newOk env synTypars tpenv memSpfn m = 
+and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m = 
 #if ALLOW_MEMBER_CONSTRAINTS_ON_MEASURES
     let tps,tpenv = List.mapFold (TcTyparOrMeasurePar None cenv env newOk) tpenv synTypars
 #else
-    let tps,tpenv = List.mapFold (TcTypar cenv env newOk) tpenv synTypars
+    let tys,tpenv = List.mapFold (TcTypeAndRecover cenv newOk CheckCxs ItemOccurence.UseInType env) tpenv synTypes
 #endif
-    let tys = List.map mkTyparTy tps
     match memSpfn with 
     | SynMemberSig.Member (valSpfn,memberFlags,m) ->
         // REVIEW: Test pseudo constraints cannot refer to polymorphic methods.
@@ -5634,10 +5633,10 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let bodyExpr,tpenv = TcStmt cenv envinner tpenv body
         mkFastForLoop  cenv.g (spBind,m,idv,startExpr,dir,finishExpr,bodyExpr), tpenv
         
-    | SynExpr.ForEach (spBind, SeqExprOnly seqExprOnly, isFromSource, pat, enumExpr, body, m) ->
+    | SynExpr.ForEach (spForLoop, SeqExprOnly seqExprOnly, isFromSource, pat, enumSynExpr, bodySynExpr, m) ->
         assert isFromSource
         if seqExprOnly then warning (Error(FSComp.SR.tcExpressionRequiresSequence(),m))
-        TcForEachExpr cenv overallTy env tpenv (pat,enumExpr,body,m,spBind)
+        TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,bodySynExpr,m,spForLoop)
 
     | SynExpr.CompExpr (isArrayOrList,isNotNakedRefCell,comp,m) ->
         let env = ExitFamilyRegion env
@@ -5813,7 +5812,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             TcLongIdentThen cenv overallTy env tpenv lidwd [ DelayedApp(ExprAtomicFlag.Atomic, e1, mStmt); MakeDelayedSet(e2,mStmt) ]
 
     | SynExpr.TraitCall(tps,memSpfn,arg,m) ->
-        let (TTrait(_,logicalCompiledName,_,argtys,returnTy,_) as traitInfo),tpenv = TcPseudoMemberSpec cenv NewTyparsOK env tps  tpenv memSpfn m
+        let synTypes =  tps |> List.map (fun tp -> SynType.Var(tp,m))
+        let (TTrait(_,logicalCompiledName,_,argtys,returnTy,_) as traitInfo),tpenv = TcPseudoMemberSpec cenv NewTyparsOK env synTypes tpenv memSpfn m
         if List.contains logicalCompiledName BakedInTraitConstraintNames then 
             warning(BakedInMemberConstraintName(logicalCompiledName,m))
         
@@ -6690,12 +6690,18 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 // TcForEachExpr 
 //------------------------------------------------------------------------- 
  
-and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,body,m,spForLoop)  =
-    UnifyTypes cenv env m overallTy cenv.g.unit_ty
+and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,bodySynExpr,mWholeExpr,spForLoop)  =
+    UnifyTypes cenv env mWholeExpr overallTy cenv.g.unit_ty
 
-    let enumExpr,enumExprTy,tpenv = 
-        TcExprOfUnknownType cenv env tpenv enumSynExpr
+    let mPat = pat.Range
+    //let mBodyExpr = bodySynExpr.Range
+    let mEnumExpr = enumSynExpr.Range
+    let mForLoopStart = (match spForLoop with SequencePointAtForLoop(mStart) -> mStart | NoSequencePointAtForLoop -> mEnumExpr)
 
+    // Check the expression being enumerated
+    let enumExpr,enumExprTy,tpenv = TcExprOfUnknownType cenv env tpenv enumSynExpr
+
+    // Depending on its type we compile it in different ways
     let enumElemTy, bodyExprFixup, overallExprFixup, iterationTechnique = 
         match enumExpr with 
 
@@ -6706,24 +6712,24 @@ and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,body,m,spForLoop)  =
 
         // optimize 'for i in arr do' 
         | _ when isArray1DTy cenv.g enumExprTy  -> 
-            let arrVar,arrExpr = mkCompGenLocal m "arr" enumExprTy
-            let idxVar,idxExpr = mkCompGenLocal m "idx" cenv.g.int32_ty
+            let arrVar,arrExpr = mkCompGenLocal mEnumExpr "arr" enumExprTy
+            let idxVar,idxExpr = mkCompGenLocal mPat "idx" cenv.g.int32_ty
             let elemTy = destArrayTy cenv.g enumExprTy
             
             // Evaluate the array index lookup
-            let bodyExprFixup = (fun elemVar bodyExpr -> mkCompGenLet m elemVar (mkLdelem cenv.g m elemTy arrExpr idxExpr) bodyExpr)
+            let bodyExprFixup = (fun elemVar bodyExpr -> mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr)
 
             // Evaluate the array expression once and put it in arrVar
-            let overallExprFixup = (fun overallExpr -> mkCompGenLet m arrVar enumExpr overallExpr)
+            let overallExprFixup = (fun overallExpr -> mkCompGenLet mForLoopStart arrVar enumExpr overallExpr)
 
             // Ask for a loop over integers for the given range
-            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar,mkZero cenv.g m,mkDecr cenv.g m (mkLdlen cenv.g m arrExpr)))
+            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar,mkZero cenv.g mForLoopStart,mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
 
         | _ -> 
 
-            let enumerableVar,enumerableExprInVar = mkCompGenLocal enumExpr.Range "inputSequence" enumExprTy
+            let enumerableVar,enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
             let enumeratorVar, enumeratorExpr,_,enumElemTy,getEnumExpr,getEnumTy,guardExpr,_,currentExpr = 
-                    AnalyzeArbitraryExprAsEnumerable cenv env true enumExpr.Range enumExprTy enumerableExprInVar
+                    AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
             (enumElemTy, (fun _ x -> x), id, Choice3Of3(enumerableVar,enumeratorVar, enumeratorExpr,getEnumExpr,getEnumTy,guardExpr,currentExpr))
             
     let pat,_,vspecs,envinner,tpenv = TcMatchPattern cenv enumElemTy env tpenv (pat,None)
@@ -6733,44 +6739,52 @@ and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,body,m,spForLoop)  =
         | TPat_as (pat1,PBind(v,TypeScheme([],_)),_) -> 
               v,pat1
         | _ -> 
-              let tmp,_ = mkCompGenLocal m "forLoopVar" enumElemTy
+              let tmp,_ = mkCompGenLocal pat.Range "forLoopVar" enumElemTy
               tmp,pat
 
-    let bodyExpr,tpenv = TcStmt cenv envinner tpenv body
+    // Check the body of the loop
+    let bodyExpr,tpenv = TcStmt cenv envinner tpenv bodySynExpr
 
+    // Add the pattern match compilation
     let bodyExpr = 
         let valsDefinedByMatching = FlatListSet.remove valEq elemVar vspecs
-        CompilePatternForMatch cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar,[]) 
-            [TClause(pat,None,TTarget(valsDefinedByMatching,bodyExpr,SequencePointAtTarget),m)] enumElemTy overallTy
+        CompilePatternForMatch 
+            cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar,[]) 
+            [TClause(pat,None,TTarget(valsDefinedByMatching,bodyExpr,SequencePointAtTarget),mForLoopStart)] 
+            enumElemTy 
+            overallTy
 
     // Apply the fixup to bind the elemVar if needed
     let bodyExpr = bodyExprFixup elemVar bodyExpr
     
+    // Build the overall loop
     let overallExpr =  
 
         match iterationTechnique with 
 
         // Build iteration as a for loop
         | Choice1Of3(startExpr,finishExpr) -> 
-            mkFastForLoop  cenv.g (spForLoop,m,elemVar,startExpr,true,finishExpr,bodyExpr)
+            mkFastForLoop  cenv.g (spForLoop,mWholeExpr,elemVar,startExpr,true,finishExpr,bodyExpr)
 
         // Build iteration as a for loop with a specific index variable that is not the same as the elemVar
         | Choice2Of3(idxVar,startExpr,finishExpr) -> 
-            mkFastForLoop  cenv.g (spForLoop,m,idxVar,startExpr,true,finishExpr,bodyExpr)
+            mkFastForLoop  cenv.g (spForLoop,mWholeExpr,idxVar,startExpr,true,finishExpr,bodyExpr)
 
         // Build iteration as a while loop with a try/finally disposal
         | Choice3Of3(enumerableVar,enumeratorVar, _,getEnumExpr,_,guardExpr,currentExpr) -> 
 
             // This compiled for must be matched EXACTLY by CompiledForEachExpr in opt.fs and creflect.fs
-            mkCompGenLet enumExpr.Range enumerableVar enumExpr
-              (let cleanupE = BuildDisposableCleanup cenv env m enumeratorVar
+            mkCompGenLet mForLoopStart enumerableVar enumExpr
+              (let cleanupE = BuildDisposableCleanup cenv env mWholeExpr enumeratorVar
                let spBind = (match spForLoop with SequencePointAtForLoop(spStart) -> SequencePointAtBinding(spStart) | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
-               (mkLet spBind getEnumExpr.Range  enumeratorVar getEnumExpr
+               (mkLet spBind mForLoopStart enumeratorVar getEnumExpr
                    (mkTryFinally cenv.g 
                        (mkWhile cenv.g 
-                           (NoSequencePointAtWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr,
-                               mkCompGenLet bodyExpr.Range elemVar currentExpr bodyExpr,m),
-                        cleanupE,m,cenv.g.unit_ty,NoSequencePointAtTry,NoSequencePointAtFinally))))
+                           (NoSequencePointAtWhileLoop, 
+                            WhileLoopForCompiledForEachExprMarker, guardExpr,
+                            mkCompGenLet mForLoopStart elemVar currentExpr bodyExpr,
+                            mForLoopStart),
+                        cleanupE,mForLoopStart,cenv.g.unit_ty,NoSequencePointAtTry,NoSequencePointAtFinally))))
 
     let overallExpr = overallExprFixup  overallExpr
     overallExpr, tpenv
@@ -8239,16 +8253,16 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                             else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
                             currentIndex <- SEEN_NAMED_ARGUMENT
                         | None ->
-                            // ambiguity may apprear only when if argument is boolean\generic.
+                            // ambiguity may appear only when if argument is boolean\generic.
                             // if 
                             // - we didn't find argument with specified name AND 
                             // - we have not seen any named arguments so far AND 
                             // - type of current argument is bool\generic 
                             // then we'll favor old behavior and treat current argument as positional.
                             let isSpecialCaseForBackwardCompatibility = 
-                                if currentIndex = SEEN_NAMED_ARGUMENT then false
-                                else
-                                match stripTyEqns cenv.g (List.item currentIndex argtys) with
+                                (currentIndex <> SEEN_NAMED_ARGUMENT) &&
+                                (currentIndex < nargtys) &&
+                                match stripTyEqns cenv.g argtys.[currentIndex] with
                                 | TType_app(tcref, _) -> tyconRefEq cenv.g cenv.g.bool_tcr tcref || tyconRefEq cenv.g cenv.g.system_Bool_tcref tcref
                                 | TType_var(_) -> true
                                 | _ -> false
@@ -8454,11 +8468,13 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         let logicalCompiledName = ComputeLogicalName id memberFlags
         let traitInfo = TTrait(argTys,logicalCompiledName,memberFlags,argTys,Some retTy, sln)
 
-        AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
-      
         let expr = Expr.Op(TOp.TraitCall(traitInfo), [], ves, mItem)
         let expr = mkLambdas mItem [] vs (expr,retTy)
-        PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed
+        let resultExpr = PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed
+        // Add the constraint after the arguments have been checked to allow annotations to kick in on rigid type parameters
+        AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
+        resultExpr
+      
         
     | Item.DelegateCtor typ ->
         match delayed with 
