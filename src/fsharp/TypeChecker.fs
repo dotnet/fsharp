@@ -6210,11 +6210,23 @@ and GetNameAndArityOfObjExprBinding _cenv _env b =
         lookPat pat
 
 
-and FreshenObjExprAbstractSlot cenv (_env: TcEnv) (implty:TType) virtNameAndArityPairs (bind,bindAttribs,bindName,absSlots:(_ * MethInfo) list) = 
-    let (NormalizedBinding (_,_,_,_,_,_,synTyparDecls,_,_,_,mBinding,_)) = bind 
+and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArityPairs (bind,bindAttribs,bindName,absSlots:(_ * MethInfo) list) = 
+    let (NormalizedBinding (_,_,_,_,_,_,synTyparDecls,_,_,_,mBinding,_)) = bind
     match absSlots with 
     | [] when not (CompileAsEvent cenv.g bindAttribs) -> 
         let absSlotsByName = List.filter (fst >> fst >> (=) bindName) virtNameAndArityPairs
+        let getSignature absSlot = (NicePrint.stringOfMethInfo cenv.amap mBinding env.DisplayEnv absSlot).Replace("abstract ","")
+        let getDetails (absSlot:MethInfo) = 
+            if absSlot.GetParamTypes(cenv.amap,mBinding,[]) |> List.existsSquared (isTupleTy cenv.g) then
+                FSComp.SR.tupleRequiredInAbstractMethod()
+            else ""
+
+        // Compute the argument counts of the member arguments
+        let _,synValInfo = GetNameAndArityOfObjExprBinding cenv env bind
+        let arity = 
+            match SynInfo.AritiesOfArgs synValInfo with            
+            | _::x::_ -> x
+            | _ -> 0
         
         match absSlotsByName with 
         | [] ->
@@ -6232,8 +6244,10 @@ and FreshenObjExprAbstractSlot cenv (_env: TcEnv) (implty:TType) virtNameAndArit
                 errorR(Error(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))                
             else
                 errorR(Error(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName, ErrorResolutionHints.FormatPredictions predictions),mBinding))
-        | [(_,absSlot:MethInfo)]     -> errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, (List.sum absSlot.NumArgs)),mBinding))
-        | (_,absSlot:MethInfo) :: _  -> errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, (List.sum absSlot.NumArgs)),mBinding))
+        | [(_,absSlot:MethInfo)]     ->
+            errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
+        | (_,absSlot:MethInfo) :: _  ->
+            errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         
         None
         
