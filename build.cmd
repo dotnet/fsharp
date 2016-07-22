@@ -26,6 +26,8 @@ exit /b 1
 
 :ARGUMENTS_OK
 
+set BUILD_PROTO_WITH_CORECLR_LKG=1
+
 set BUILD_PROTO=0
 set BUILD_NET40=1
 set BUILD_CORECLR=0
@@ -98,6 +100,11 @@ if /i '%ARG%' == 'all' (
     set TEST_VS=1
 
     set SKIP_EXPENSIVE_TESTS=0
+)
+
+if /i '%ARG%' == 'protofx' (
+    set BUILD_PROTO_WITH_CORECLR_LKG=0
+    set BUILD_PROTO=1
 )
 
 if /i '%ARG%' == 'microbuild' (
@@ -257,6 +264,7 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
+echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
@@ -327,7 +335,7 @@ if '%RestorePackages%' == 'true' (
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
-if '%BUILD_CORECLR%' == '1' (
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
@@ -358,6 +366,11 @@ if '%BUILD_CORECLR%' == '1' (
     popd
 
 )
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+    %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj %BUILD_DIAG%
+    @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj %BUILD_DIAG%' failed && goto :failure
+)
+
 rem copy targestfile into tools directory ... temporary fix until packaging complete.
 copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
 copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
