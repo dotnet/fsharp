@@ -739,12 +739,25 @@
 
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
-      <PropertyGroup>
-         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
-         <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
-         <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
-      </PropertyGroup>
+      <Choose>
+        <When Condition="Exists('$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish\fsc.exe')">
+          <PropertyGroup >
+            <FSharpTargetsPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
+            <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
+            <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup >
+            <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+            <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
+            <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+		
     </When>
     <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
       <PropertyGroup>
