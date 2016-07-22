@@ -2563,17 +2563,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
     let m = id.idRange
     match mp with 
     | [] -> 
-        if isAppTy g typ then 
-            match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
-            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
-            | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
-                if isRecdTy g typ then
-                    // record label doesn't belong to record type -> predict other labels of same record                    
-                    error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
-                else
-                    error(Error(FSComp.SR.nrTypeDoesNotContainSuchField(typeName, id.idText),m))
-        else 
+        let lookup() =
             let frefs = 
                 try Map.find id.idText nenv.eFieldLabels 
                 with :? KeyNotFoundException ->
@@ -2584,7 +2574,19 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             frefs 
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x,false))
-                        
+
+        if isAppTy g typ then 
+            match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
+            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
+            | None ->
+                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
+                if isRecdTy g typ then
+                    // record label doesn't belong to record type -> predict other labels of same record                    
+                    error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
+                else
+                    lookup()
+        else 
+            lookup()            
     | _ -> 
         let lid = (mp@[id])
         let tyconSearch ad = 
