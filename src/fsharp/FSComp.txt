@@ -343,7 +343,7 @@ csCtorHasNoArgumentOrReturnProperty,"The object constructor '%s' has no argument
 500,csMemberSignatureMismatchArityNamed,"The member or object constructor '%s' requires %d argument(s) but is here given %d unnamed and %d named argument(s). The required signature is '%s'."
 501,csMemberSignatureMismatchArity,"The member or object constructor '%s' takes %d argument(s) but is here given %d. The required signature is '%s'."
 502,csMemberSignatureMismatchArityType,"The member or object constructor '%s' takes %d type argument(s) but is here given %d. The required signature is '%s'."
-503,csMemberNotAccessible,"The member or object constructor '%s' taking %d arguments are not accessible from this code location. All accessible versions of method '%s' take %d arguments."
+503,csMemberNotAccessible,"A member or object constructor '%s' taking %d arguments is not accessible from this code location. All accessible versions of method '%s' take %d arguments."
 504,csIncorrectGenericInstantiation,"Incorrect generic instantiation. No %s member named '%s' takes %d generic arguments."
 505,csMemberOverloadArityMismatch,"The member or object constructor '%s' does not take %d argument(s). An overload was found taking %d arguments."
 506,csNoMemberTakesTheseArguments,"No %s member or object constructor named '%s' takes %d arguments"
