@@ -367,8 +367,7 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
 )
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-    %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj %BUILD_DIAG%
-    @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj %BUILD_DIAG%' failed && goto :failure
+    rmdir /s .\lkg\bin\debug
 )
 
 rem copy targestfile into tools directory ... temporary fix until packaging complete.
