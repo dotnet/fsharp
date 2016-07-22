@@ -73,6 +73,12 @@
     <Compile Include="option.fs">
       <Link>Collections/option.fs</Link>
     </Compile>
+    <Compile Include="result.fsi">
+      <Link>Collections/result.fsi</Link>
+    </Compile>
+    <Compile Include="result.fs">
+      <Link>Collections/result.fs</Link>
+    </Compile>
     <Compile Include="collections.fsi">
       <Link>Collections/collections.fsi</Link>
     </Compile>

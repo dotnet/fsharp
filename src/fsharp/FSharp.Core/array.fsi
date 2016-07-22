@@ -62,7 +62,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentException">Thrown when any of sourceIndex, targetIndex or count are negative,
         /// or when there aren't enough elements in source or target.</exception>
         [<CompiledName("CopyTo")>]
-        val blit: source:'T[] -> sourceIndex:int -> target:'T[] -> targetIndex:int -> count:int -> unit
+        val inline blit: source:'T[] -> sourceIndex:int -> target:'T[] -> targetIndex:int -> count:int -> unit
         
         /// <summary>For each element of the array, applies the given function. Concatenates all the results and return the combined array.</summary>
         /// <param name="mapping">The function to create sub-arrays from the input array elements.</param>
