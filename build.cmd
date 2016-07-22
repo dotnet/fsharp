@@ -339,8 +339,15 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
+)
 
-    set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
+
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+
     pushd .\lkg & %_dotnetexe% restore &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
