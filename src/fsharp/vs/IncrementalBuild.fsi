@@ -77,15 +77,27 @@ type internal CompilationErrorLogger =
 
 /// Represents the state in the incremental graph assocaited with checking a file
 type internal PartialCheckResults = 
-    { TcState : TcState 
+    { /// This field is None if a major unrecoverd error occured when preparing the initial state
+      TcState : TcState
       TcImports: TcImports 
       TcGlobals: TcGlobals 
       TcConfig: TcConfig 
-      TcEnvAtEnd : TypeChecker.TcEnv 
+
+      /// This field is None if a major unrecoverd error occured when preparing the initial state
+      TcEnvAtEnd : TypeChecker.TcEnv
+
+      /// Represents the collected errors from type checking
       Errors : (PhasedError * FSharpErrorSeverity) list 
+
+      /// Represents the collected name resolutions from type checking
       TcResolutions: TcResolutions list 
+
+      /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
+
+      /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
+
       TimeStamp: DateTime }
 
 /// Manages an incremental build graph for the build of an F# project

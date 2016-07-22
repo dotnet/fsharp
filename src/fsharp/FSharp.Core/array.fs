@@ -83,17 +83,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("CopyTo")>]
-        let blit (source : 'T[]) sourceIndex (target: 'T[]) targetIndex count = 
-            checkNonNull "source" source
-            checkNonNull "target" target
-            if sourceIndex < 0 then invalidArg "sourceIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            if targetIndex < 0 then invalidArg "targetIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if sourceIndex + count > source.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
-            if targetIndex + count > target.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+        let inline blit (source : 'T[]) (sourceIndex:int) (target: 'T[]) (targetIndex:int) (count:int) = 
             Array.Copy(source, sourceIndex, target, targetIndex, count)
-            // for i = 0 to count - 1 do 
-            //    target.[targetIndex+i] <- source.[sourceIndex + i]
 
         let rec concatAddLengths (arrs:'T[][]) i acc =
             if i >= arrs.Length then acc 
@@ -969,9 +960,13 @@ namespace Microsoft.FSharp.Collections
             accv
 
         [<CompiledName("Average")>]
-        let inline average      (array:_[]) = 
+        let inline average      (array:'T[]) = 
             checkNonNull "array" array
-            Seq.average array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            for i = 0 to array.Length - 1 do
+                acc <- Checked.(+) acc array.[i]
+            LanguagePrimitives.DivideByInt< (^T) > acc array.Length
 
         [<CompiledName("AverageBy")>]
         let inline averageBy f (array:_[]) = 

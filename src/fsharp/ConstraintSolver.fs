@@ -2006,10 +2006,22 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
 
     // One method, incorrect name/arg assignment 
     | _,_,_,_,([],[cmeth]) -> 
-        let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv cmeth.Method)
+        let minfo = cmeth.Method
+        let msgNum,msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
         let msgNum,msgText,msgRange = 
             match cmeth.UnassignedNamedArgs with 
-            | CallerNamedArg(id,_) :: _ -> (msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange)
+            | CallerNamedArg(id,_) :: _ -> 
+                if minfo.IsConstructor then
+                    let typ = minfo.DeclaringEntityRef
+
+                    let predictions =
+                        typ.AllInstanceFieldsAsList
+                        |> List.map (fun p -> p.Name.Replace("@",""))
+                        |> ErrorResolutionHints.FilterPredictions id.idText
+
+                    msgNum,FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText, ErrorResolutionHints.FormatPredictions predictions),id.idRange
+                else
+                    msgNum,FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText),id.idRange
             | [] -> (msgNum,msgText,m)
         ErrorD (Error ((msgNum,msgText),msgRange))
 
@@ -2052,8 +2064,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
 
     // One or more accessible, all the same arity, none correct 
     | ((cmeth :: cmeths2),_),_,_,_,_ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
-        ErrorD (Error (FSComp.SR.csMemberNotAccessible(methodName, (cmeth.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCalledArgs)), methodName, cmeth.TotalNumUnnamedCalledArgs),m))
-
+        ErrorD (Error (FSComp.SR.csMemberNotAccessible(methodName, nUnnamedCallerArgs, methodName, cmeth.TotalNumUnnamedCalledArgs),m))
     // Many methods, all with incorrect number of generic arguments
     | _,_,_,([],(cmeth :: _)),_ -> 
         let msg = FSComp.SR.csIncorrectGenericInstantiation((ShowAccessDomain ad), methodName, cmeth.NumCallerTyArgs)

@@ -34,9 +34,9 @@ let ``append is consistent`` () =
 
 let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
-    let s = run (fun () -> xs |> Seq.average)
-    let l = run (fun () -> xs |> List.ofArray |> List.average)
-    let a = run (fun () -> xs |> Array.average)
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.average)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.average)
     s = a && l = a
 
 [<Test>]
@@ -46,9 +46,9 @@ let ``average is consistent`` () =
 let averageBy (xs : float []) f =
     let xs = xs |> Array.map float
     let f x = (f x : NormalFloat) |> float
-    let s = run (fun () -> xs |> Seq.averageBy f)
-    let l = run (fun () -> xs |> List.ofArray |> List.averageBy f)
-    let a = run (fun () -> xs |> Array.averageBy f)
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f)
     s = a && l = a
 
 [<Test>]
