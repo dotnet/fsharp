@@ -83,8 +83,8 @@ type Stack<'a>(n)  =
         let oldSize = contents.Length
         if newSize > oldSize then 
             let old = contents
-            contents <- Array.zeroCreate (max newSize (oldSize * 2));
-            Array.blit old 0 contents 0 count;
+            contents <- Array.zeroCreate (max newSize (oldSize * 2))
+            Array.blit old 0 contents 0 count
     
     member buf.Count = count
     member buf.Pop() = count <- count - 1

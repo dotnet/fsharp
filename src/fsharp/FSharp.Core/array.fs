@@ -83,17 +83,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("CopyTo")>]
-        let blit (source : 'T[]) sourceIndex (target: 'T[]) targetIndex count = 
-            checkNonNull "source" source
-            checkNonNull "target" target
-            if sourceIndex < 0 then invalidArg "sourceIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            if targetIndex < 0 then invalidArg "targetIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if sourceIndex + count > source.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
-            if targetIndex + count > target.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+        let inline blit (source : 'T[]) (sourceIndex:int) (target: 'T[]) (targetIndex:int) (count:int) = 
             Array.Copy(source, sourceIndex, target, targetIndex, count)
-            // for i = 0 to count - 1 do 
-            //    target.[targetIndex+i] <- source.[sourceIndex + i]
 
         let rec concatAddLengths (arrs:'T[][]) i acc =
             if i >= arrs.Length then acc 
