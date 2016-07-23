@@ -26,6 +26,8 @@ exit /b 1
 
 :ARGUMENTS_OK
 
+set BUILD_PROTO_WITH_CORECLR_LKG=1
+
 set BUILD_PROTO=0
 set BUILD_NET40=1
 set BUILD_CORECLR=0
@@ -98,6 +100,11 @@ if /i '%ARG%' == 'all' (
     set TEST_VS=1
 
     set SKIP_EXPENSIVE_TESTS=0
+)
+
+if /i '%ARG%' == 'protofx' (
+    set BUILD_PROTO_WITH_CORECLR_LKG=0
+    set BUILD_PROTO=1
 )
 
 if /i '%ARG%' == 'microbuild' (
@@ -257,6 +264,7 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
+echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
@@ -327,34 +335,47 @@ if '%RestorePackages%' == 'true' (
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-:: Restore the Tools directory
-call %~dp0init-tools.cmd
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+)
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
-pushd .\lkg & %_dotnetexe% restore &popd
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-pushd .\lkg & %_dotnetexe% publish project.json &popd
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-fc fsc.exe dotnet.exe >nul
-@if ERRORLEVEL 1 (
-  copy fsc.exe fsc.dll
-  copy dotnet.exe fsc.exe
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+
+    pushd .\lkg & %_dotnetexe% restore &popd
+    @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+
+    pushd .\lkg & %_dotnetexe% publish project.json &popd
+    @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+
+    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
+    fc fsc.exe dotnet.exe >nul
+    @if ERRORLEVEL 1 (
+      copy fsc.exe fsc.dll
+      copy dotnet.exe fsc.exe
+    )
+    popd
+
+    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
+    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
+    fc fsi.exe dotnet.exe >nul
+    @if ERRORLEVEL 1 (
+      copy fsi.exe fsi.dll
+      copy dotnet.exe fsi.exe
+    )
+    popd
+
 )
-popd
-
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-fc fsi.exe dotnet.exe >nul
-@if ERRORLEVEL 1 (
-  copy fsi.exe fsi.dll
-  copy dotnet.exe fsi.exe
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+    rmdir /s .\lkg\bin\debug
 )
-popd
 
 rem copy targestfile into tools directory ... temporary fix until packaging complete.
 copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
