@@ -742,7 +742,7 @@
       <Choose>
         <When Condition="Exists('$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish\fsc.exe')">
           <PropertyGroup >
-            <FSharpTargetsPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+            <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
             <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
             <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
