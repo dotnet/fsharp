@@ -8,7 +8,6 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
 open System.Diagnostics.CodeAnalysis                                    
 open System.Collections.Generic
-open System.Runtime.InteropServices
 #if FX_NO_ICLONEABLE
 open Microsoft.FSharp.Core.ICloneableExtensions            
 #else
@@ -40,12 +39,12 @@ module internal List =
             else
                 distinctToFreshConsTail cons hashSet rest
 
-    let distinctWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'T>) (list:'T list) =       
+    let distinctWithComparer (comparer: IEqualityComparer<'T>) (list:'T list) =
         match list with
         | [] -> []
         | [h] -> [h]
         | x::rest ->
-            let hashSet =  System.Collections.Generic.HashSet<'T>(comparer)
+            let hashSet = HashSet<'T>(comparer)
             hashSet.Add(x) |> ignore
             let cons = freshConsNoTail x
             distinctToFreshConsTail cons hashSet rest
@@ -67,7 +66,7 @@ module internal List =
         | [] -> []
         | [h] -> [h]
         | x::rest ->
-            let hashSet = System.Collections.Generic.HashSet<'Key>(comparer)
+            let hashSet = HashSet<'Key>(comparer)
             hashSet.Add(keyf x) |> ignore
             let cons = freshConsNoTail x
             distinctByToFreshConsTail cons hashSet keyf rest
@@ -108,7 +107,7 @@ module internal List =
         match x with
         | [] -> 
             setFreshConsTail cons []
-        | (h::t) -> 
+        | h::t -> 
             let cons2 = freshConsNoTail (f.Invoke(i,h))
             setFreshConsTail cons cons2
             mapiToFreshConsTail cons2 f t (i+1)
@@ -309,7 +308,7 @@ module internal List =
         | [] -> setFreshConsTail cons []
         | h::t ->
             let p = allPairsToFreshConsTailSingle h ys cons
-            allPairsToFreshConsTail  t ys p
+            allPairsToFreshConsTail t ys p
 
     let allPairs (xs:'T list) (ys:'U list) =
         match xs, ys with
@@ -348,7 +347,11 @@ module internal List =
 
     let iteri f x = 
         let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-        let rec loop n x = match x with [] -> () | (h::t) -> f.Invoke(n,h); loop (n+1) t
+        let rec loop n x = 
+            match x with 
+            | [] -> () 
+            | h::t -> f.Invoke(n,h); loop (n+1) t
+
         loop 0 x
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -422,7 +425,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then  invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -852,7 +855,7 @@ module internal Array =
             arr.[i] <- f i
         arr
 
-    let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+    let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
     let findBack f (array: _[]) =
         let rec loop i =
@@ -937,12 +940,12 @@ module internal Array =
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do 
                 keys.[i] <- f array.[i]
-            System.Array.Sort<_,_>(keys, array, fastComparerForArraySort())
+            Array.Sort<_,_>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array : array<'T>) = 
         let len = array.Length 
         if len < 2 then () 
-        else System.Array.Sort<_>(array, fastComparerForArraySort())
+        else Array.Sort<_>(array, fastComparerForArraySort())
 
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
         // 'places' is an array or integers storing the permutation performed by the sort
@@ -958,7 +961,7 @@ module internal Array =
         let len = array.Length
         let intCompare = fastComparerForArraySort<int>()
             
-        while i <  len do 
+        while i < len do 
             let mutable j = i
             let ki = keys.[i]
             while j < len && (j = i || c.Compare(ki, keys.[j]) = 0) do 
@@ -967,7 +970,7 @@ module internal Array =
             for n = i to j - 1 do
                array.[n] <- array2.[places.[n]]
             if j - i >= 2 then
-                System.Array.Sort<_,_>(places, array, i, j-i, intCompare)
+                Array.Sort<_,_>(places, array, i, j-i, intCompare)
             i <- j
 
     let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
@@ -994,7 +997,7 @@ module internal Array =
             | null -> 
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
-                System.Array.Sort<_,_>(array, null)
+                Array.Sort<_,_>(array, null)
             | _ -> 
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
