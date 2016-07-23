@@ -48,7 +48,7 @@ module Byrefs =
 
         use testOkFile = fileguard "test.ok"
 
-        do! fsc "%s -a -o:test.dll -g" cfg.fsc_flags ["test.fsx"]
+        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         do! exec ("."/"test.exe") ""
 
