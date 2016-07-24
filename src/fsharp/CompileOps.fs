@@ -524,6 +524,7 @@ let TypeTestUnnecessaryE() = DeclareResourceString("TypeTestUnnecessary","")
 let OverrideDoesntOverride1E() = DeclareResourceString("OverrideDoesntOverride1","%s")
 let OverrideDoesntOverride2E() = DeclareResourceString("OverrideDoesntOverride2","%s")
 let OverrideDoesntOverride3E() = DeclareResourceString("OverrideDoesntOverride3","%s")
+let OverrideDoesntOverride4E() = DeclareResourceString("OverrideDoesntOverride4","%s")
 let UnionCaseWrongArgumentsE() = DeclareResourceString("UnionCaseWrongArguments","%d%d")
 let UnionPatternsBindDifferentNamesE() = DeclareResourceString("UnionPatternsBindDifferentNames","")
 let RequiredButNotSpecifiedE() = DeclareResourceString("RequiredButNotSpecified","%s%s%s")
@@ -1144,15 +1145,32 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           Printf.bprintf os "%s" msg
       | OverrideDoesntOverride(denv,impl,minfoVirtOpt,g,amap,m) ->
           let sig1 = DispatchSlotChecking.FormatOverride denv impl
-          begin match minfoVirtOpt with 
+          match minfoVirtOpt with 
           | None -> 
               os.Append(OverrideDoesntOverride1E().Format sig1) |> ignore
-          | Some minfoVirt -> 
-              os.Append(OverrideDoesntOverride2E().Format sig1) |> ignore
-              let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
-              if sig1 <> sig2 then 
-                  os.Append(OverrideDoesntOverride3E().Format  sig2) |> ignore
-          end
+          | Some minfoVirt ->
+              // https://github.com/Microsoft/visualfsharp/issues/35 
+              // Improve error message when attempting to override generic return type with unit:
+              // we need to check if unit was used as a type argument
+              let rec hasUnitTType_app (types: TType list) =
+                  match types with
+                  | TType_app (maybeUnit, []) :: ts -> 
+                      match maybeUnit.TypeAbbrev with
+                      | Some ttype when Tastops.isUnitTy g ttype -> true
+                      | _ -> hasUnitTType_app ts
+                  | _ :: ts -> hasUnitTType_app ts
+                  | [] -> false
+
+              match minfoVirt.EnclosingType with
+              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+                  // match abstract member with 'unit' passed as generic argument
+                  os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
+              | _ -> 
+                  os.Append(OverrideDoesntOverride2E().Format sig1) |> ignore
+                  let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
+                  if sig1 <> sig2 then 
+                      os.Append(OverrideDoesntOverride3E().Format  sig2) |> ignore
+
       | UnionCaseWrongArguments (_,n1,n2,_) ->
           os.Append(UnionCaseWrongArgumentsE().Format n2 n1) |> ignore
       | UnionPatternsBindDifferentNames _ -> 
