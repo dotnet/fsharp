@@ -490,6 +490,10 @@ let AddDeclaredTypars check typars env =
     let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
     RegisterDeclaredTypars typars env
 
+[<NoEquality; NoComparison>]
+type StringFormatEnv =
+    { StringConcatMethod: MethInfo  }
+
 /// Compilation environment for typechecking a compilation unit. Contains the
 /// F# and .NET modules loaded from disk, the search path, a table indicating
 /// how to List.map F# modules to assembly names, and some nasty globals 
@@ -536,13 +540,31 @@ type cenv =
       nameResolver: NameResolver
       
       conditionalDefines: string list
-            
+      
+      stringFormatEnv: Lazy<StringFormatEnv>
+
+      exprParser: string -> SynExpr
     } 
 
-    static member Create (g,isScript,niceNameGen,amap,topCcu,isSig,haveSig,conditionalDefines,tcSink, tcVal) =
+    static member Create (g, nenv, exprParser, isScript,niceNameGen,amap,topCcu,isSig,haveSig,conditionalDefines,tcSink, tcVal) =
         let infoReader = new InfoReader(g,amap)
         let instantiationGenerator m tpsorig = ConstraintSolver.FreshenTypars m tpsorig
         let nameResolver = new NameResolver(g,amap,infoReader,instantiationGenerator)
+        let stringFormatEnv = 
+            lazy
+                let concat =
+                    AllMethInfosOfTypeInScope infoReader nenv (Some("Concat"), AccessibleFromEverywhere) IgnoreOverrides range.Zero g.string_ty
+                    |> List.find (fun meth -> 
+                        match meth with
+                        | ILMeth(_, ilMethInfo, _) ->
+                            match ilMethInfo.ParamMetadata with
+                            | [{ Type = ILType.Array(shape, ty) }] -> shape = ILArrayShape.SingleDimensional && isILObjectTy ty
+                            | _ -> false
+                        | _ -> false
+                        )
+                { StringConcatMethod = concat }
+
+
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
@@ -558,7 +580,9 @@ type cenv =
           isSig = isSig
           haveSig = haveSig
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFslib
-          conditionalDefines = conditionalDefines }
+          conditionalDefines = conditionalDefines
+          stringFormatEnv = stringFormatEnv
+          exprParser = exprParser }
 
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
@@ -6548,7 +6572,7 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
         let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
         let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
         
-        let (aty',ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
+        let fragments, (aty',ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
 
         match cenv.tcSink.CurrentSink with 
         | None -> () 
@@ -6558,7 +6582,33 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
 
         UnifyTypes cenv env m aty aty'
         UnifyTypes cenv env m ety ety'
-        mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s),tpenv
+        let tpenv, formatString = 
+
+            match fragments with
+            | [CheckFormatStrings.FormatStringFragment.Text s] -> tpenv, mkString cenv.g m s
+            | _ ->
+                let tpenv, stringFragments = 
+                    ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
+                        match v with
+                        | CheckFormatStrings.FormatStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s)::l)
+                        | CheckFormatStrings.FormatStringFragment.Expr s -> 
+                            let synExpr = cenv.exprParser s
+                            let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
+                            tpenv1, expr::l
+                            //mkString cenv.g m s // TODO
+                    )
+
+                let coersed = 
+                    stringFragments
+                    |> List.rev
+                    |> List.map (fun s -> mkCoerceIfNeeded cenv.g cenv.g.obj_ty cenv.g.string_ty s)
+
+                let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
+                let expr, _  = 
+                    BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.StringConcatMethod NormalValUse [] [] [arr]
+                tpenv, expr
+
+        mkCallNewFormat cenv.g m aty bty cty dty ety formatString, tpenv
       else 
         UnifyTypes cenv env m overallTy cenv.g.string_ty
         mkString cenv.g m s,tpenv
@@ -16665,12 +16715,13 @@ let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig im
 let TypeCheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
        (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink) 
-       env 
+       (env: TcEnv)
+       (exprParser: string -> SynExpr)
        (rootSigOpt : ModuleOrNamespaceType option)
        (ParsedImplFileInput(_,isScript,qualNameOfFile,scopedPragmas,_,implFileFrags,isLastCompiland)) =
 
  eventually {
-    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))    
+    let cenv = cenv.Create (g, env.NameEnv, exprParser, isScript, niceNameGen, amap, topCcu, false, isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))    
 
     let envinner, mtypeAcc = MakeInitialEnv env 
 
@@ -16747,9 +16798,13 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile  (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) tcEnv (ParsedSigFileInput(_,qualNameOfFile,_, _,sigFileFrags)) = 
- eventually {     
-    let cenv = cenv.Create (g,false,niceNameGen,amap,topCcu,true,false,conditionalDefines,tcSink, (LightweightTcValForUsingInBuildMethodCall g))
+let TypeCheckOneSigFile  
+       (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) 
+       (tcEnv: TcEnv)
+       exprParser
+       (ParsedSigFileInput(_,qualNameOfFile,_, _,sigFileFrags)) = 
+ eventually {
+    let cenv = cenv.Create (g, tcEnv.NameEnv, exprParser, false,niceNameGen,amap,topCcu,true,false,conditionalDefines,tcSink, (LightweightTcValForUsingInBuildMethodCall g))
     let envinner,mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment(x) ]

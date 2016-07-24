@@ -260,7 +260,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <Ast.LexerWhitespaceContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
 %token <range * string * Ast.LexerWhitespaceContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
-%start signatureFile implementationFile interaction typedSeqExprEOF typEOF
+%start signatureFile implementationFile interaction declExpr typedSeqExprEOF typEOF
 %type <Ast.SynExpr> typedSeqExprEOF
 %type <Ast.ParsedImplFile> implementationFile
 %type <Ast.ParsedSigFile> signatureFile

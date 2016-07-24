@@ -51,6 +51,12 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
+type FormatStringFragment = 
+    | Text of string
+    | Expr of string
+
+type FormatString = FormatStringFragment list
+
 let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
@@ -79,16 +85,18 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
 
     let specifierLocations = ResizeArray()
 
-    let rec parseLoop acc (i, relLine, relCol) = 
+    let rec parseLoop acc start fragments (i, relLine, relCol) = 
        if i >= len then
            let argtys =
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
-           argtys
+
+           let fragments = if (len - start) = 0 then fragments else Text(fmt.Substring(start, len - start))::fragments
+           List.rev fragments, argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
-          parseLoop acc (i+2, relLine, relCol+2)
+          parseLoop acc start fragments (i+2, relLine, relCol+2)
        else 
           let c = fmt.[i]
           match c with
@@ -211,12 +219,12 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
               let ch = fmt.[i]
               match ch with
               | '%' -> 
-                  parseLoop acc (i+1, relLine, relCol+1) 
+                  parseLoop acc start fragments (i+1, relLine, relCol+1) 
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) start fragments (i+1, relLine, relCol+1)
 
               | ('l' | 'L') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
@@ -231,46 +239,46 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
                   match fmt.[i] with
                   | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') -> 
                       collectSpecifierLocation relLine relCol
-                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i+1, relLine, relCol+1)
+                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) start fragments (i+1, relLine, relCol+1)
                   | _ -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
 
               | ('h' | 'H') ->
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
-              | 'M' ->
+              | 'M' -> 
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, g.decimal_ty) :: acc) start fragments (i+1, relLine, relCol+1)
 
               | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 'b' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, g.bool_ty)  :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, g.bool_ty)  :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 'c' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, g.char_ty)  :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, g.char_ty)  :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 's' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, g.string_ty)  :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, g.string_ty)  :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 'O' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, NewInferenceType ()) :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 'A' ->
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' -> 
                       collectSpecifierLocation relLine relCol
-                      parseLoop ((posi, NewInferenceType ()) :: acc)  (i+1, relLine, relCol+1)
+                      parseLoop ((posi, NewInferenceType ()) :: acc) start fragments (i+1, relLine, relCol+1)
                   | Some _   -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), (Option.get info.numPrefixIfPos).ToString())
 
               | 'a' ->
@@ -278,30 +286,46 @@ let parseFormatStringInternal (m:range) g (source: string option) fmt bty cty =
                   let xty = NewInferenceType () 
                   let fty = bty --> (xty --> cty)
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) start fragments (i+1, relLine, relCol+1)
 
               | 't' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol
-                  parseLoop ((posi, bty --> cty) :: acc)  (i+1, relLine, relCol+1)
+                  parseLoop ((posi, bty --> cty) :: acc) start fragments (i+1, relLine, relCol+1)
+              | '(' ->
+                  let rec findEndPosition i count = 
+                      if i >= len then failwith "Non-terminated expression in format string"
+                      else
+                      let ch = fmt.[i]
+                      match ch with
+                      | ')' ->
+                          if count = 0 then i
+                          else findEndPosition (i + 1) (count - 1)
+                      | '(' -> findEndPosition (i + 1) (count + 1)
+                      | _ -> findEndPosition (i + 1) count
+                  let endPos = findEndPosition (i + 1) 0
+                  let textLen = i - start - 1
+                  let fragments = if textLen <> 0 then Text(fmt.Substring(start, textLen)):: fragments else fragments
+                  let expr = fmt.Substring(i, endPos - i + 1)
+                  parseLoop acc (endPos + 1) (Expr(expr)::fragments) (endPos+1, relLine, relCol+1)
 
               | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c) 
           
-          | '\n' -> parseLoop acc (i+1, relLine+1, 0)   
-          | _ -> parseLoop acc (i+1, relLine, relCol+1)
+          | '\n' -> parseLoop acc start fragments (i+1, relLine+1, 0)   
+          | _ -> parseLoop acc start fragments (i+1, relLine, relCol+1)
            
-    let results = parseLoop [] (0, 0, m.StartColumn)
+    let results = parseLoop [] 0 [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
 
 let ParseFormatString m g source fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g source fmt bty cty
+    let (fragments, argtys), specifierLocations = parseFormatStringInternal m g source fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkTupledTy g argtys
-    (aty, ety), specifierLocations 
+    fragments, (aty, ety), specifierLocations 
 
 let TryCountFormatStringArguments m g fmt bty cty =
     try
-        let argtys, _specifierLocations = parseFormatStringInternal m g None fmt bty cty
+        let (_, argtys), _specifierLocations = parseFormatStringInternal m g None fmt bty cty
         Some argtys.Length
     with _ ->
         None
