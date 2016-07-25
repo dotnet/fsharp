@@ -1019,6 +1019,6 @@ type ListModule() =
     member this.``pairwise should return pairs of the input list``() =
         Assert.AreEqual(([] : (obj*obj) list), List.pairwise [])
         Assert.AreEqual(([] : (int*int) list), List.pairwise [1])
-        Assert.AreEqual([1,2],List.pairwise [1;2])
-        Assert.AreEqual([1,2; 2,3],List.pairwise [1;2;3])
-        Assert.AreEqual(["H","E"; "E","L"; "L","L"; "L","O"],List.pairwise ["H";"E";"L";"L";"O"])
+        Assert.AreEqual([1,2], List.pairwise [1;2])
+        Assert.AreEqual([1,2; 2,3], List.pairwise [1;2;3])
+        Assert.AreEqual(["H","E"; "E","L"; "L","L"; "L","O"], List.pairwise ["H";"E";"L";"L";"O"])
