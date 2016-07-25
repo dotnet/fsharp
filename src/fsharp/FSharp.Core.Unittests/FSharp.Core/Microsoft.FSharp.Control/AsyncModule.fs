@@ -427,16 +427,17 @@ type AsyncModule() =
 
     [<Test>] 
     member this.``Async.Choice repro``() =
-        let workflow = 
-          ChoiceWorkflow
-              ([NoneResultAfter 0; NoneResultAfter 7; SomeResultAfter -8; SomeResultAfter -1;
-                ExceptionAfter 9; ExceptionAfter 7; NoneResultAfter -11; NoneResultAfter -1;
-                SomeResultAfter 6; SomeResultAfter -9; ExceptionAfter -2; ExceptionAfter 8;
-                NoneResultAfter -10; NoneResultAfter 0],Some 10)
+        for i in 1..100000 do
+            let workflow = 
+              ChoiceWorkflow
+                  ([NoneResultAfter 0; NoneResultAfter 7; SomeResultAfter -8; SomeResultAfter -1;
+                    ExceptionAfter 9; ExceptionAfter 7; NoneResultAfter -11; NoneResultAfter -1;
+                    SomeResultAfter 6; SomeResultAfter -9; ExceptionAfter -2; ExceptionAfter 8;
+                    NoneResultAfter -10; NoneResultAfter 0],Some 10)
 
-        workflow
-        |> normalize 
-        |> runChoice
+            workflow
+            |> normalize 
+            |> runChoice
 #endif
 
     [<Test>]
