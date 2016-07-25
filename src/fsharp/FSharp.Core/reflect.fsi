@@ -324,10 +324,15 @@ type FSharpType =
     /// <returns>The type representing the tuple containing the input elements.</returns>
     static member MakeTupleType: types:Type[] -> Type
 
+    /// <summary>Returns a <c>System.Type</c> representing an F# tuple type with the given element types</summary>
+    /// <param name="types">An array of types for the tuple elements.</param>
+    /// <returns>The type representing the tuple containing the input elements.</returns>
+    static member MakeTupleTypeWithAssembly: asm:Assembly -> types:Type[] -> Type
+
     /// <summary>Returns a <c>System.Type</c> representing an F# struct tuple type with the given element types</summary>
     /// <param name="types">An array of types for the tuple elements.</param>
     /// <returns>The type representing the struct tuple containing the input elements.</returns>
-    static member MakeStructTupleType: types:Type[] -> Type
+    static member MakeStructTupleTypeWithAssembly: asm:Assembly -> types:Type[] -> Type
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# tuple type </summary>
     /// <param name="typ">The type to check.</param>

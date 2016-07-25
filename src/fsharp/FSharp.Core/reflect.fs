@@ -374,148 +374,63 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
+    let tupleNames = [|
+        "System.Tuple`1";      "System.Tuple`2";      "System.Tuple`3";
+        "System.Tuple`4";      "System.Tuple`5";      "System.Tuple`6";
+        "System.Tuple`7";      "System.Tuple`8";      "System.Tuple";
+        "System.ValueTuple`1"; "System.ValueTuple`2"; "System.ValueTuple`3";
+        "System.ValueTuple`4"; "System.ValueTuple`5"; "System.ValueTuple`6";
+        "System.ValueTuple`7"; "System.ValueTuple`8"; "System.ValueTuple" |]
 
-    let tuple1 = typedefof<Tuple<obj>>
-    let tuple2 = typedefof<obj * obj>
-    let tuple3 = typedefof<obj * obj * obj>
-    let tuple4 = typedefof<obj * obj * obj * obj>
-    let tuple5 = typedefof<obj * obj * obj * obj * obj>
-    let tuple6 = typedefof<obj * obj * obj * obj * obj * obj>
-    let tuple7 = typedefof<obj * obj * obj * obj * obj * obj * obj>
-    let tuple8 = typedefof<obj * obj * obj * obj * obj * obj * obj * obj>
-
-    let isTuple1Type typ = equivHeadTypes typ tuple1
-    let isTuple2Type typ = equivHeadTypes typ tuple2
-    let isTuple3Type typ = equivHeadTypes typ tuple3
-    let isTuple4Type typ = equivHeadTypes typ tuple4
-    let isTuple5Type typ = equivHeadTypes typ tuple5
-    let isTuple6Type typ = equivHeadTypes typ tuple6
-    let isTuple7Type typ = equivHeadTypes typ tuple7
-    let isTuple8Type typ = equivHeadTypes typ tuple8
-
-    let mutable systemValueTupleException = null
-
-    let reflectedValueTuple n =
-        try        
-#if FX_ASSEMBLYLOADBYSTRING
-            let a = Assembly.Load("System.ValueTuple")
-#else
-            let a = Assembly.Load(new AssemblyName("System.ValueTuple"))
-#endif
-            match n with
-            | 1 -> Some (a.GetType("System.ValueTuple`1"))
-            | 2 -> Some (a.GetType("System.ValueTuple`2"))
-            | 3 -> Some (a.GetType("System.ValueTuple`3"))
-            | 4 -> Some (a.GetType("System.ValueTuple`4"))
-            | 5 -> Some (a.GetType("System.ValueTuple`5"))
-            | 6 -> Some (a.GetType("System.ValueTuple`6"))
-            | 7 -> Some (a.GetType("System.ValueTuple`7"))
-            | 8 -> Some (a.GetType("System.ValueTuple`8"))
-            | 0 -> Some (a.GetType("System.ValueTuple"))
-            | _ -> None
-        with | :? System.IO.FileNotFoundException as e -> 
-            systemValueTupleException <- e
-            None
-
-    let reflectedValueTupleType n parms =
-        match reflectedValueTuple n with
-        | Some t -> Some (t.MakeGenericType(parms))
-        | None -> None
-
-    let deOption (o: option<Type>) =
-        match o with 
-        | Some v -> v
-        | None -> Unchecked.defaultof<Type>
-
-    let stuple1 = reflectedValueTupleType 1 [| typedefof<obj> |]
-    let stuple2 = reflectedValueTupleType 2 [| typedefof<obj>; typedefof<obj> |]
-    let stuple3 = reflectedValueTupleType 3 [| typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple4 = reflectedValueTupleType 4 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple5 = reflectedValueTupleType 5 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple6 = reflectedValueTupleType 6 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple7 = reflectedValueTupleType 7 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj> |]
-    let stuple8 = reflectedValueTupleType 8 [| typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; typedefof<obj>; deOption(reflectedValueTuple 0) |]
-
-    let structTupleEquivHeadTypes typ stuple =
-        match stuple with
-        | Some s -> equivHeadTypes typ s
-        | None -> false
-
-    let isStructTuple1Type typ = structTupleEquivHeadTypes typ stuple1
-    let isStructTuple2Type typ = structTupleEquivHeadTypes typ stuple2
-    let isStructTuple3Type typ = structTupleEquivHeadTypes typ stuple3
-    let isStructTuple4Type typ = structTupleEquivHeadTypes typ stuple4
-    let isStructTuple5Type typ = structTupleEquivHeadTypes typ stuple5
-    let isStructTuple6Type typ = structTupleEquivHeadTypes typ stuple6
-    let isStructTuple7Type typ = structTupleEquivHeadTypes typ stuple7
-    let isStructTuple8Type typ = structTupleEquivHeadTypes typ stuple8
-
-    let isTupleType typ = 
-        let isRefTupleType = 
-               isTuple1Type typ
-            || isTuple2Type typ
-            || isTuple3Type typ
-            || isTuple4Type typ
-            || isTuple5Type typ
-            || isTuple6Type typ
-            || isTuple7Type typ
-            || isTuple8Type typ
-
-        let isStructTupleType =
-            // If we can't load the System.ValueTuple Assembly then it can't be a struct tuple
-            try
-                   isStructTuple1Type typ
-                || isStructTuple2Type typ
-                || isStructTuple3Type typ
-                || isStructTuple4Type typ
-                || isStructTuple5Type typ
-                || isStructTuple6Type typ
-                || isStructTuple7Type typ
-                || isStructTuple8Type typ
-            with | :? System.IO.FileNotFoundException -> false
-        isRefTupleType || isStructTupleType
+    let isTupleType (typ:Type) = 
+        // Simple Name Match on typ
+        tupleNames |> Seq.exists(fun n -> typ.FullName.StartsWith(n))
 
     let maxTuple = 8
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple-1
 
-    let rec mkTupleType isStruct (tys: Type[]) =
-        let deOption (o: option<Type>) =
-            match o with 
-            | Some v -> v
-            | None -> raise systemValueTupleException
-        if isStruct then
-            match tys.Length with 
-            | 1 -> deOption(stuple1).MakeGenericType(tys)
-            | 2 -> deOption(stuple2).MakeGenericType(tys)
-            | 3 -> deOption(stuple3).MakeGenericType(tys)
-            | 4 -> deOption(stuple4).MakeGenericType(tys)
-            | 5 -> deOption(stuple5).MakeGenericType(tys)
-            | 6 -> deOption(stuple6).MakeGenericType(tys)
-            | 7 -> deOption(stuple7).MakeGenericType(tys)
-            | n when n >= maxTuple -> 
-                let tysA = tys.[0..tupleEncField-1]
-                let tysB = tys.[maxTuple-1..]
-                let tyB = mkTupleType isStruct tysB
-                deOption(stuple8).MakeGenericType(Array.append tysA [| tyB |])
-            | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
-        else
-            match tys.Length with 
-            | 1 -> tuple1.MakeGenericType(tys)
-            | 2 -> tuple2.MakeGenericType(tys)
-            | 3 -> tuple3.MakeGenericType(tys)
-            | 4 -> tuple4.MakeGenericType(tys)
-            | 5 -> tuple5.MakeGenericType(tys)
-            | 6 -> tuple6.MakeGenericType(tys)
-            | 7 -> tuple7.MakeGenericType(tys)
-            | n when n >= maxTuple ->
-                let tysA = tys.[0..tupleEncField-1]
-                let tysB = tys.[maxTuple-1..]
-                let tyB = mkTupleType isStruct tysB
-                tuple8.MakeGenericType(Array.append tysA [| tyB |])
-            | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+    let rec mkTupleType isStruct (asm:Assembly) (tys: Type[]) =
+        let tupleFullName n =
+            if isStruct then
+                match n with
+                | 1 -> "System.ValueTuple`1"
+                | 2 -> "System.ValueTuple`2"
+                | 3 -> "System.ValueTuple`3"
+                | 4 -> "System.ValueTuple`4"
+                | 5 -> "System.ValueTuple`5"
+                | 6 -> "System.ValueTuple`6"
+                | 7 -> "System.ValueTuple`7"
+                | 8 -> "System.ValueTuple`8"
+                | _ -> "System.ValueTuple"
+            else
+                match n with
+                | 1 -> "System.Tuple`1"
+                | 2 -> "System.Tuple`2"
+                | 3 -> "System.Tuple`3"
+                | 4 -> "System.Tuple`4"
+                | 5 -> "System.Tuple`5"
+                | 6 -> "System.Tuple`6"
+                | 7 -> "System.Tuple`7"
+                | 8 -> "System.Tuple`8"
+                | _ -> "System.Tuple"
 
-    let rec getTupleTypeInfo    (typ:Type) = 
+        match tys.Length with 
+        | 1 -> asm.GetType(tupleFullName 1).MakeGenericType(tys)
+        | 2 -> asm.GetType(tupleFullName 2).MakeGenericType(tys)
+        | 3 -> asm.GetType(tupleFullName 3).MakeGenericType(tys)
+        | 4 -> asm.GetType(tupleFullName 4).MakeGenericType(tys)
+        | 5 -> asm.GetType(tupleFullName 5).MakeGenericType(tys)
+        | 6 -> asm.GetType(tupleFullName 6).MakeGenericType(tys)
+        | 7 -> asm.GetType(tupleFullName 7).MakeGenericType(tys)
+        | n when n >= maxTuple -> 
+            let tysA = tys.[0..tupleEncField-1]
+            let tysB = tys.[maxTuple-1..]
+            let tyB = mkTupleType isStruct asm tysB
+            asm.GetType(tupleFullName 8).MakeGenericType(Array.append tysA [| tyB |])
+        | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+
+    let rec getTupleTypeInfo (typ:Type) = 
       if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
       let tyargs = typ.GetGenericArguments()
       if tyargs.Length = maxTuple then
@@ -538,7 +453,7 @@ module internal Impl =
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
 #if FX_ATLEAST_PORTABLE  
-#else      
+#else
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
                let expectNames = Array.init props.Length (fun i -> let j = i+1 // index j = 1,2,..,props.Length <= maxTuple
@@ -576,7 +491,7 @@ module internal Impl =
     let getTupleConstructorMethod(typ:Type,bindingFlags) =
         let ctor =
             if typ.IsValueType then
-                let fields = typ.GetFields() |> orderTupleFields
+                let fields = typ.GetFields(bindingFlags) |> orderTupleFields
 #if FX_ATLEAST_PORTABLE
                 ignore bindingFlags
                 typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
@@ -698,8 +613,7 @@ module internal Impl =
         (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then 
             (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
          else 
-            true) &&
-        not (isTupleType typ)
+            true)
 
     let fieldPropsOfRecordType(typ:Type,bindingFlags) =
       typ.GetProperties(instancePropertyFlags ||| bindingFlags) 
@@ -776,7 +690,7 @@ module internal Impl =
             else
                 invalidArg argName (SR.GetString1(SR.notARecordType, recordType.FullName))
         
-    let checkTupleType(argName,tupleType) =
+    let checkTupleType(argName,(tupleType:Type)) =
         checkNonNull argName tupleType;
         if not (isTupleType tupleType) then invalidArg argName (SR.GetString1(SR.notATupleType, tupleType.FullName))
 
@@ -822,77 +736,86 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
 type FSharpType = 
 
     static member IsTuple(typ:Type) =  
-        Impl.checkNonNull "typ" typ;
+        Impl.checkNonNull "typ" typ
         Impl.isTupleType typ
 
     static member IsRecord(typ:Type,?bindingFlags) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
 
-        Impl.checkNonNull "typ" typ;
+        Impl.checkNonNull "typ" typ
         Impl.isRecordType (typ,bindingFlags)
 
     static member IsUnion(typ:Type,?bindingFlags) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "typ" typ;
+        Impl.checkNonNull "typ" typ
         let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isUnionType (typ,bindingFlags)
 
     static member IsFunction(typ:Type) =  
-        Impl.checkNonNull "typ" typ;
+        Impl.checkNonNull "typ" typ
         let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isFunctionType typ
 
     static member IsModule(typ:Type) =  
-        Impl.checkNonNull "typ" typ;
+        Impl.checkNonNull "typ" typ
         Impl.isModuleType typ
 
     static member MakeFunctionType(domain:Type,range:Type) = 
-        Impl.checkNonNull "domain" domain;
-        Impl.checkNonNull "range" range;
+        Impl.checkNonNull "domain" domain
+        Impl.checkNonNull "range" range
         Impl.func.MakeGenericType [| domain; range |]
 
     static member MakeTupleType(types:Type[]) =  
-        Impl.checkNonNull "types" types;
-        if types |> Array.exists (function null -> true | _ -> false) then 
-             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
-        Impl.mkTupleType false types
+        Impl.checkNonNull "types" types
 
-    static member MakeStructTupleType(types:Type[]) =  
-        Impl.checkNonNull "types" types;
+        // No assembly passed therefore just get framework local version of Tuple
+        let asm = typeof<System.Tuple>.Assembly
+        if types |> Array.exists (function null -> true | _ -> false) then 
+            invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
+        Impl.mkTupleType false asm types
+
+    static member MakeTupleTypeWithAssembly (asm:Assembly) (types:Type[]) =
+        Impl.checkNonNull "types" types
         if types |> Array.exists (function null -> true | _ -> false) then 
              invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
-        Impl.mkTupleType true types
+        Impl.mkTupleType false asm types
+
+    static member MakeStructTupleTypeWithAssembly (asm:Assembly) (types:Type[]) =
+        Impl.checkNonNull "types" types
+        if types |> Array.exists (function null -> true | _ -> false) then 
+             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
+        Impl.mkTupleType true asm types
 
     static member GetTupleElements(tupleType:Type) =
-        Impl.checkTupleType("tupleType",tupleType);
+        Impl.checkTupleType("tupleType",tupleType)
         Impl.getTupleTypeInfo tupleType
 
     static member GetFunctionElements(functionType:Type) =
-        Impl.checkNonNull "functionType" functionType;
+        Impl.checkNonNull "functionType" functionType
         let functionType = Impl.getTypeOfReprType (functionType ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.getFunctionTypeInfo functionType
 
     static member GetRecordFields(recordType:Type,?bindingFlags) =
-        let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkRecordType("recordType",recordType,bindingFlags);
+        let bindingFlags = defaultArg bindingFlags BindingFlags.Public
+        Impl.checkRecordType("recordType",recordType,bindingFlags)
         Impl.fieldPropsOfRecordType(recordType,bindingFlags)
 
     static member GetUnionCases (unionType:Type,?bindingFlags) = 
-        let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "unionType" unionType;
+        let bindingFlags = defaultArg bindingFlags BindingFlags.Public
+        Impl.checkNonNull "unionType" unionType
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags);
         Impl.getUnionTypeTagNameMap(unionType,bindingFlags) |> Array.mapi (fun i _ -> UnionCaseInfo(unionType,i))
 
     static member IsExceptionRepresentation(exceptionType:Type, ?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
-        Impl.checkNonNull "exceptionType" exceptionType;
+        Impl.checkNonNull "exceptionType" exceptionType
         Impl.isExceptionRepr(exceptionType,bindingFlags)
 
     static member GetExceptionFields(exceptionType:Type, ?bindingFlags) = 
-        let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "exceptionType" exceptionType;
-        Impl.checkExnType(exceptionType,bindingFlags);
+        let bindingFlags = defaultArg bindingFlags BindingFlags.Public
+        Impl.checkNonNull "exceptionType" exceptionType
+        Impl.checkExnType(exceptionType,bindingFlags)
         Impl.fieldPropsOfRecordType (exceptionType,bindingFlags) 
 
 type DynamicFunction<'T1,'T2>() =
@@ -904,8 +827,8 @@ type DynamicFunction<'T1,'T2>() =
 type FSharpValue = 
 
     static member MakeRecord(recordType:Type,args,?bindingFlags) = 
-        let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkRecordType("recordType",recordType,bindingFlags);
+        let bindingFlags = defaultArg bindingFlags BindingFlags.Public
+        Impl.checkRecordType("recordType",recordType,bindingFlags)
         Impl.getRecordConstructor (recordType,bindingFlags) args
 
     static member GetRecordField(record:obj,info:PropertyInfo) =
@@ -916,35 +839,35 @@ type FSharpValue =
         info.GetValue(record,null)
 
     static member GetRecordFields(record:obj,?bindingFlags) =
-        let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "record" record;
+        let bindingFlags = defaultArg bindingFlags BindingFlags.Public
+        Impl.checkNonNull "record" record
         let typ = record.GetType() 
         if not (Impl.isRecordType(typ,bindingFlags)) then invalidArg "record" (SR.GetString(SR.objIsNotARecord));
         Impl.getRecordReader (typ,bindingFlags) record
 
     static member PreComputeRecordFieldReader(info:PropertyInfo) = 
-        Impl.checkNonNull "info" info;
+        Impl.checkNonNull "info" info
         (fun (obj:obj) -> info.GetValue(obj,null))
 
     static member PreComputeRecordReader(recordType:Type,?bindingFlags) : (obj -> obj[]) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkRecordType("recordType",recordType,bindingFlags);
+        Impl.checkRecordType("recordType",recordType,bindingFlags)
         Impl.getRecordReader (recordType,bindingFlags)
 
     static member PreComputeRecordConstructor(recordType:Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkRecordType("recordType",recordType,bindingFlags);
+        Impl.checkRecordType("recordType",recordType,bindingFlags)
         Impl.getRecordConstructor (recordType,bindingFlags)
 
     static member PreComputeRecordConstructorInfo(recordType:Type, ?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkRecordType("recordType",recordType,bindingFlags);
+        Impl.checkRecordType("recordType",recordType,bindingFlags)
         Impl.getRecordConstructorMethod(recordType,bindingFlags)
 
     static member MakeFunction(functionType:Type,implementation:(obj->obj)) = 
-        Impl.checkNonNull "functionType" functionType;
+        Impl.checkNonNull "functionType" functionType
         if not (Impl.isFunctionType functionType) then invalidArg "functionType" (SR.GetString1(SR.notAFunctionType, functionType.FullName));
-        Impl.checkNonNull "implementation" implementation;
+        Impl.checkNonNull "implementation" implementation
         let domain,range = Impl.getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj,obj>>
         let saverTy = dynCloMakerTy.MakeGenericType [| domain; range |]
@@ -953,18 +876,18 @@ type FSharpValue =
         f implementation
 
     static member MakeTuple(tupleElements: obj[],tupleType:Type) =
-        Impl.checkNonNull "tupleElements" tupleElements;
+        Impl.checkNonNull "tupleElements" tupleElements
         Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleConstructor tupleType tupleElements
     
     static member GetTupleFields(tuple:obj) = // argument name(s) used in error message
-        Impl.checkNonNull "tuple" tuple;
+        Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
         if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
         Impl.getTupleReader typ tuple
 
     static member GetTupleField(tuple:obj,index:int) = // argument name(s) used in error message
-        Impl.checkNonNull "tuple" tuple;
+        Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
         if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
         let fields = Impl.getTupleReader typ tuple
@@ -1014,19 +937,19 @@ type FSharpValue =
         //System.Console.WriteLine("typ1 = {0}",box unionType)
         let unionType = ensureType(unionType,obj) 
         //System.Console.WriteLine("typ2 = {0}",box unionType)
-        Impl.checkNonNull "unionType" unionType;
+        Impl.checkNonNull "unionType" unionType
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         //System.Console.WriteLine("typ3 = {0}",box unionType)
-        Impl.checkUnionType(unionType,bindingFlags);
+        Impl.checkUnionType(unionType,bindingFlags)
         let tag = Impl.getUnionTagReader (unionType,bindingFlags) obj
         let flds = Impl.getUnionCaseRecordReader (unionType,tag,bindingFlags) obj 
         UnionCaseInfo(unionType,tag), flds
         
     static member PreComputeUnionTagReader(unionType: Type,?bindingFlags) : (obj -> int) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "unionType" unionType;
+        Impl.checkNonNull "unionType" unionType
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
-        Impl.checkUnionType(unionType,bindingFlags);
+        Impl.checkUnionType(unionType,bindingFlags)
         Impl.getUnionTagReader (unionType ,bindingFlags)
 
 
@@ -1034,12 +957,12 @@ type FSharpValue =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         Impl.checkNonNull "unionType" unionType;
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
-        Impl.checkUnionType(unionType,bindingFlags);
+        Impl.checkUnionType(unionType,bindingFlags)
         Impl.getUnionTagMemberInfo(unionType ,bindingFlags)
 
     static member PreComputeUnionReader(unionCase: UnionCaseInfo,?bindingFlags) : (obj -> obj[])  = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull "unionCase" unionCase;
+        Impl.checkNonNull "unionCase" unionCase
         let typ = unionCase.DeclaringType 
         Impl.getUnionCaseRecordReader (typ,unionCase.Tag,bindingFlags)
 
@@ -1047,7 +970,7 @@ type FSharpValue =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         Impl.checkNonNull "exn" exn;
         let typ = exn.GetType() 
-        Impl.checkExnType(typ,bindingFlags);
+        Impl.checkExnType(typ,bindingFlags)
         Impl.getRecordReader (typ,bindingFlags) exn
 
 module FSharpReflectionExtensions =
