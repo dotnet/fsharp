@@ -46,6 +46,9 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="..\..\..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll"> 
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition=" '$(OpenBuild)' == 'True' ">
     <Reference Include="$(OpenDrop)\FSharp.Core.dll">
