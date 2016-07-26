@@ -425,21 +425,6 @@ type AsyncModule() =
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.QuickThrowOnFailure (normalize >> runChoice)
-
-    [<Test>] 
-    member this.``Async.Choice repro``() =
-        ThreadPool.SetMinThreads(100,100) |> ignore
-        for i in 1..100000 do
-            let workflow = 
-              ChoiceWorkflow
-                  ([NoneResultAfter 0; NoneResultAfter 7; SomeResultAfter -8; SomeResultAfter -1;
-                    ExceptionAfter 9; ExceptionAfter 7; NoneResultAfter -11; NoneResultAfter -1;
-                    SomeResultAfter 6; SomeResultAfter -9; ExceptionAfter -2; ExceptionAfter 8;
-                    NoneResultAfter -10; NoneResultAfter 0],Some 10)
-
-            workflow
-            |> normalize 
-            |> runChoice
 #endif
 
     [<Test>]
