@@ -78,11 +78,13 @@ module internal Impl =
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
 #if FX_ATLEAST_PORTABLE
+    let instanceFieldFlags = BindingFlags.Instance 
     let instancePropertyFlags = BindingFlags.Instance 
     let staticPropertyFlags = BindingFlags.Static
     let staticFieldFlags = BindingFlags.Static 
     let staticMethodFlags = BindingFlags.Static 
 #else    
+    let instanceFieldFlags = BindingFlags.GetField ||| BindingFlags.Instance 
     let instancePropertyFlags = BindingFlags.GetProperty ||| BindingFlags.Instance 
     let staticPropertyFlags = BindingFlags.GetProperty ||| BindingFlags.Static
     let staticFieldFlags = BindingFlags.GetField ||| BindingFlags.Static 
@@ -385,7 +387,8 @@ module internal Impl =
 
     let isTupleType (typ:Type) = 
         // Simple Name Match on typ
-        tupleNames |> Seq.exists(fun n -> typ.FullName.StartsWith(n))
+        if typ.IsEnum || typ.IsArray || typ.IsPointer then false
+        else tupleNames |> Seq.exists(fun n -> typ.FullName.StartsWith(n))
 
     let maxTuple = 8
     // Which field holds the nested tuple?
@@ -470,7 +473,7 @@ module internal Impl =
                                                                    elif j=maxTuple then "Rest"
                                                                    else (assert false; "")) // dead code under prior assert, props.Length <= maxTuple
                haveNames = expectNames)
-#endif               
+#endif
         props
 
     let orderTupleFields (fields:FieldInfo[]) =
@@ -534,7 +537,7 @@ module internal Impl =
         // Get the reader for the outer tuple record
         let reader =
             if typ.IsValueType then
-                let fields = (typ.GetFields(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleFields)
+                let fields = (typ.GetFields(instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
                 ((fun (obj:obj) -> fields |> Array.map (fun field -> field.GetValue(obj))))
             else
                 let props = (typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
