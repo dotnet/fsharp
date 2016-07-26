@@ -14,7 +14,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.Build.BuildEngine
 open System.Diagnostics
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework

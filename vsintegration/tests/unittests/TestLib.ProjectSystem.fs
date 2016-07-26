@@ -9,7 +9,6 @@ open System.Runtime.Serialization
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Diagnostics
-open Internal.Utilities.Debug
 open System.IO
 open System.Text
 open System.Xml.Linq
@@ -20,7 +19,6 @@ open Microsoft.Win32
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework
         

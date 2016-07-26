@@ -535,8 +535,8 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
         let SaveChunk(p : byte[], sz : int) =
             if Unchecked.defaultof<byte[]> <>  pUnlinkedResource then
                 Bytes.blit p 0 pUnlinkedResource (!unlinkedResourceOffset + offset) sz
-                unlinkedResourceOffset := !unlinkedResourceOffset + sz ;
-            size := !size + sz ;
+                unlinkedResourceOffset := !unlinkedResourceOffset + sz
+            size := !size + sz
  
             ()
             
@@ -846,10 +846,10 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
         let rfh = ResFormatHeader()
         let rfhBytes = rfh.toBytes()
         Bytes.blit rfhBytes 0 pResBuffer 0 ResFormatHeader.Width
-        resBufferOffset <- resBufferOffset + ResFormatHeader.Width ;
+        resBufferOffset <- resBufferOffset + ResFormatHeader.Width
 
         for i = 0 to (nResNodes - 1) do
-            resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset) ;
+            resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
 
     pResBuffer
 #endif

@@ -44,7 +44,7 @@ type IncrementalOptimizationEnv =
 val internal BindCcu : CcuThunk -> CcuOptimizationInfo -> IncrementalOptimizationEnv -> TcGlobals -> IncrementalOptimizationEnv
 
 /// Optimize one implementation file in the given environment
-val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * SignatureHidingInfo * TypedImplFile -> IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo
+val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * SignatureHidingInfo * TypedImplFile -> (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * (Expr -> Expr)
 
 #if DEBUG
 /// Displaying optimization data

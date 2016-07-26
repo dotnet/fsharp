@@ -3378,9 +3378,9 @@ module DebugPrint = begin
         then leftL "{" ^^ (rangeL expr.Range ^^ rightL ":") ++ lay ^^ rightL "}"
         else lay
 
-    and assemblyL (TAssembly(implFiles)) = 
+    and implFilesL implFiles = 
         aboveListL (List.map implFileL implFiles)
-    
+
     and appL flayout tys args =
         let z = flayout
         let z = z ^^ instL typeL tys
@@ -4971,10 +4971,6 @@ and remapAndRenameModBind g compgen tmenv x =
 and remapImplFile g compgen tmenv mv = 
     mapAccImplFile (remapAndBindModExpr g compgen) tmenv mv
 
-and remapAssembly g compgen tmenv (TAssembly(mvs)) = 
-    let mvs,z = List.mapFold (remapImplFile g compgen) tmenv mvs
-    TAssembly(mvs),z
-
 let copyModuleOrNamespaceType     g compgen mtyp = copyAndRemapAndBindModTy g compgen Remap.Empty mtyp |> fst
 let copyExpr     g compgen e    = remapExpr g compgen Remap.Empty e    
 let copyImplFile g compgen e    = remapImplFile g compgen Remap.Empty e |> fst
@@ -5671,6 +5667,7 @@ let mkFolders (folders : _ ExprFolder) =
             | Expr.Lambda(_lambdaId ,_ctorThisValOpt,_baseValOpt,_argvs,body,_m,_rty) -> exprF  z body
             | Expr.TyLambda(_lambdaId,_argtyvs,body,_m,_rty) -> exprF  z body
             | Expr.TyChoose(_,body,_) -> exprF  z body
+
             | Expr.App (f,_fty,_tys,argtys,_) -> 
                 let z = exprF z f
                 let z = exprsF z argtys
@@ -5684,17 +5681,24 @@ let mkFolders (folders : _ ExprFolder) =
                 let z = exprF z body
                 z
             | Expr.Link rX -> exprF z (!rX)
+
             | Expr.Match (_spBind,_exprm,dtree,targets,_m,_ty)                 -> 
                 let z = dtreeF z dtree
                 let z = Array.fold targetF z targets
                 z
-            | Expr.Quote(_e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> exprsF z argExprs
-            | Expr.Quote(_e,{contents=None},_,_m,_) -> z
+            | Expr.Quote(e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> 
+                let z = exprF z e
+                exprsF z argExprs
+
+            | Expr.Quote(e,{contents=None},_,_m,_) -> 
+                exprF z e
+
             | Expr.Obj (_n,_typ,_basev,basecall,overrides,iimpls,_m)    -> 
                 let z = exprF z basecall
                 let z = List.fold tmethodF z overrides
                 let z = List.fold (foldOn snd (List.fold tmethodF)) z iimpls
                 z
+
             | Expr.StaticOptimization (_tcs,csx,x,_) -> exprsF z [csx;x]
 
     and valBindF dtree z bind =
@@ -5761,12 +5765,10 @@ let mkFolders (folders : _ ExprFolder) =
 
     and implF z x = foldTImplFile mexprF z x
 
-    and implsF z (TAssembly(x)) = List.fold implF z x
-   
-    exprF, implF,implsF
+    exprF, implF
 
-let FoldExpr     folders = let exprF,_,_ = mkFolders folders in exprF
-let FoldImplFile folders = let _,implF,_ = mkFolders folders in implF
+let FoldExpr     folders = let exprF,_ = mkFolders folders in exprF
+let FoldImplFile folders = let _,implF = mkFolders folders in implF
 
 #if DEBUG
 //-------------------------------------------------------------------------
@@ -7844,18 +7846,19 @@ let (|CompiledForEachExpr|_|) g expr =
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
                       (let fvs = (freeInExpr CollectLocals bodyExpr)
-                      not (Zset.contains enumerableVar fvs.FreeLocals) && 
-                      not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
+                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
+                       not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
-        let m = enumerableExpr.Range
+        let mEnumExpr = enumerableExpr.Range
         let mBody = bodyExpr.Range
+        let mWholeExpr = expr.Range
 
-        let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,m
+        let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,mEnumExpr
         let spWhileLoop   = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtWhileLoop(spStart)|  _ -> NoSequencePointAtWhileLoop
         let enumerableTy = tyOfExpr g enumerableExpr
 
-        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (m, mBody, spForLoop, mForLoop, spWhileLoop))
+        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
     | _ -> None  
              
 
@@ -7873,12 +7876,12 @@ let DetectAndOptimizeForExpression g option expr =
     match option, expr with
     | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) -> 
 
-           let (m, _mBody, spForLoop, _mForLoop, _spWhileLoop) = ranges
-           mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
+           let (_mEnumExpr, _mBody, spForLoop, _mForLoop, _spWhileLoop, mWholeExpr) = ranges
+           mkFastForLoop  g (spForLoop,mWholeExpr,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
 
     | OptimizeAllForExpressions,CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
-         let (m, mBody, spForLoop, mForLoop, spWhileLoop) = ranges
+         let (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr) = ranges
 
          if isStringTy g enumerableTy then
             // type is string, optimize for expression as:
@@ -7887,18 +7890,18 @@ let DetectAndOptimizeForExpression g option expr =
             //      let elem = str.[idx]
             //      body elem
 
-            let strVar      ,strExpr    = mkCompGenLocal m "str" enumerableTy
-            let idxVar      ,idxExpr    = mkCompGenLocal m "idx" g.int32_ty
+            let strVar      ,strExpr    = mkCompGenLocal mEnumExpr "str" enumerableTy
+            let idxVar      ,idxExpr    = mkCompGenLocal elemVar.Range "idx" g.int32_ty
 
-            let lengthExpr              = mkGetStringLength g m strExpr
-            let charExpr                = mkGetStringChar g m strExpr idxExpr
+            let lengthExpr              = mkGetStringLength g mForLoop strExpr
+            let charExpr                = mkGetStringChar g mForLoop strExpr idxExpr
 
-            let startExpr               = mkZero g m
+            let startExpr               = mkZero g mForLoop
             let finishExpr              = mkDecr g mForLoop lengthExpr
             let loopItemExpr            = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  // for compat reasons, loop item over string is sometimes object, not char
-            let bodyExpr                = mkCompGenLet mBody elemVar loopItemExpr bodyExpr
-            let forExpr                 = mkFastForLoop g (spForLoop,m,idxVar,startExpr,true,finishExpr,bodyExpr)
-            let expr                    = mkCompGenLet m strVar enumerableExpr forExpr
+            let bodyExpr                = mkCompGenLet mForLoop elemVar loopItemExpr bodyExpr
+            let forExpr                 = mkFastForLoop g (spForLoop,mWholeExpr,idxVar,startExpr,true,finishExpr,bodyExpr)
+            let expr                    = mkCompGenLet mEnumExpr strVar enumerableExpr forExpr
 
             expr
 
@@ -7915,27 +7918,31 @@ let DetectAndOptimizeForExpression g option expr =
             let IndexHead                   = 0
             let IndexTail                   = 1
 
-            let currentVar  ,currentExpr    = mkMutableCompGenLocal m "current" enumerableTy
-            let nextVar     ,nextExpr       = mkMutableCompGenLocal m "next" enumerableTy
+            let currentVar  ,currentExpr    = mkMutableCompGenLocal mEnumExpr "current" enumerableTy
+            let nextVar     ,nextExpr       = mkMutableCompGenLocal mEnumExpr "next" enumerableTy
             let elemTy                      = destListTy g enumerableTy
 
-            let guardExpr                   = mkNonNullTest g m nextExpr
-            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
-            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
+            let guardExpr                   = mkNonNullTest g mForLoop nextExpr
+            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexHead,mForLoop)
+            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr,g.cons_ucref,[elemTy],IndexTail,mForLoop)
             let bodyExpr                    =
-                mkCompGenLet m elemVar headOrDefaultExpr
-                    (mkCompGenSequential mBody
+                mkCompGenLet mForLoop elemVar headOrDefaultExpr
+                    (mkCompGenSequential mForLoop
                         bodyExpr
-                        (mkCompGenSequential mBody
-                            (mkValSet mBody (mkLocalValRef currentVar) nextExpr)
-                            (mkValSet mBody (mkLocalValRef nextVar) tailOrNullExpr)
+                        (mkCompGenSequential mForLoop
+                            (mkValSet mForLoop (mkLocalValRef currentVar) nextExpr)
+                            (mkValSet mForLoop (mkLocalValRef nextVar) tailOrNullExpr)
                         )
                     )
-            let whileExpr                   = mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, m)
 
             let expr =
-                mkCompGenLet m currentVar enumerableExpr
-                    (mkCompGenLet m nextVar tailOrNullExpr whileExpr)
+               // let mutable current = enumerableExpr
+                let spBind = (match spForLoop with SequencePointAtForLoop(spStart) -> SequencePointAtBinding(spStart) | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
+                mkLet spBind mEnumExpr currentVar enumerableExpr
+                    // let mutable next = current.TailOrNull
+                    (mkCompGenLet mForLoop nextVar tailOrNullExpr 
+                        // while nonNull next dp
+                       (mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
 
             expr
 

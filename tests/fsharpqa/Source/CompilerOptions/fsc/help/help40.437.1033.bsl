@@ -50,9 +50,10 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 		- CODE GENERATION -
 --debug[+|-]                   Emit debug information (Short form: -g)
 --debug:{full|pdbonly|portable} Specify debugging type: full, portable, pdbonly.
-                               ('full' is the default and enables attaching a
-                               debugger to a running program. 'portable' is a
-                               cross-platform format).
+                               ('full' is the default if no debuggging type
+                               specified and enables attaching a debugger to a
+                               running program. 'portable' is a cross-platform
+                               format).
 --optimize[+|-]                Enable optimizations (Short form: -O)
 --tailcalls[+|-]               Enable or disable tailcalls
 --crossoptimize[+|-]           Enable or disable cross-module optimizations

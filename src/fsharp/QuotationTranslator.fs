@@ -38,9 +38,9 @@ type QuotationSerializationFormat =
 |   FSharp_20_Plus
 
 type QuotationGenerationScope = 
-    { g: TcGlobals; 
-      amap: Import.ImportMap;
-      scope: CcuThunk; 
+    { g: TcGlobals 
+      amap: Import.ImportMap
+      scope: CcuThunk 
       // Accumulate the references to type definitions
       referencedTypeDefs: ResizeArray<ILTypeRef>
       referencedTypeDefsTable: Dictionary<ILTypeRef, int>
@@ -78,10 +78,10 @@ type QuotationGenerationScope =
 
 type QuotationTranslationEnv = 
     { //Map from Val to binding index
-      vs: ValMap<int>; 
-      nvs: int;
+      vs: ValMap<int> 
+      nvs: int
       //Map from typar stamps to binding index
-      tyvs: StampMap<int>;
+      tyvs: StampMap<int>
       // Map for values bound by the 
       //     'let v = isinst e in .... if nonnull v then ...v .... ' 
       // construct arising out the compilation of pattern matching. We decode these back to the form
@@ -90,9 +90,9 @@ type QuotationTranslationEnv =
       substVals: ValMap<Expr> }
 
     static member Empty = 
-        { vs=ValMap<_>.Empty; 
-          nvs=0;
-          tyvs = Map.empty ;
+        { vs=ValMap<_>.Empty 
+          nvs=0
+          tyvs = Map.empty 
           isinstVals = ValMap<_>.Empty 
           substVals = ValMap<_>.Empty }
 
@@ -182,11 +182,11 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : QP.ExprData =
 
             let rangeExpr = 
                     mk_tuple cenv.g m 
-                        [ mkString cenv.g m m.FileName; 
-                            mkInt cenv.g m m.StartLine; 
-                            mkInt cenv.g m m.StartColumn; 
-                            mkInt cenv.g m m.EndLine; 
-                            mkInt cenv.g m m.EndColumn;  ] 
+                        [ mkString cenv.g m m.FileName 
+                          mkInt cenv.g m m.StartLine 
+                          mkInt cenv.g m m.StartColumn 
+                          mkInt cenv.g m m.EndLine 
+                          mkInt cenv.g m m.EndColumn;  ] 
             let attrExpr = 
                 mk_tuple cenv.g m 
                     [ mkString cenv.g m "DebugRange"; rangeExpr ]
@@ -224,7 +224,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some(v) else None) with 
         | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(v.DisplayName), v.Range))
         | None -> ()
-        cenv.exprSplices.Add((x0, m));
+        cenv.exprSplices.Add((x0, m))
         let hole = QP.mkHole(ConvType cenv env m ty,idx)
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
 
@@ -345,7 +345,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     // Simple applications 
     | Expr.App(f,_fty,tyargs,args,m) -> 
-        if nonNil tyargs then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m));
+        if nonNil tyargs then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m))
         List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) (ConvExpr cenv env f) args
     
     // REVIEW: what is the quotation view of literals accessing enumerations? Currently they show up as integers. 
@@ -478,8 +478,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let methArgTypesR = ConvTypes cenv env m argtys
             let argsR = ConvExprs cenv env args
             let objR = 
-                QP.mkCtorCall( { ctorParent   = parentTyconR; 
-                                ctorArgTypes = methArgTypesR },
+                QP.mkCtorCall( { ctorParent   = parentTyconR 
+                                 ctorArgTypes = methArgTypesR },
                               [], argsR)
             let exnTypeR = ConvType cenv env m cenv.g.exn_ty
             QP.mkCoerce(exnTypeR, objR)
@@ -687,17 +687,19 @@ and ConvObjectModelCallCore cenv env m (isPropGet,isPropSet,isNewObj,parentTycon
             QP.mkPropSet( (parentTyconR, propName,propTy,args),tyargsR, callArgsR)
 
     elif isNewObj then 
-        QP.mkCtorCall( { ctorParent   = parentTyconR; 
-                        ctorArgTypes = methArgTypesR },
-                     tyargsR, callArgsR)
+        let ctorR : QuotationPickler.CtorData = 
+            { ctorParent   = parentTyconR 
+              ctorArgTypes = methArgTypesR }        
+        QP.mkCtorCall(ctorR, tyargsR, callArgsR)
 
     else 
-        QP.mkMethodCall( { methParent   = parentTyconR; 
-                        methArgTypes = methArgTypesR;
-                        methRetType  = methRetTypeR;
-                        methName     = methName;
-                        numGenericArgs=numGenericArgs },
-                      tyargsR, callArgsR)
+        let methR : QuotationPickler.MethodData = 
+            { methParent   = parentTyconR 
+              methArgTypes = methArgTypesR
+              methRetType  = methRetTypeR
+              methName     = methName
+              numGenericArgs=numGenericArgs }
+        QP.mkMethodCall(methR, tyargsR, callArgsR)
 
 and ConvModuleValueApp cenv env m (vref:ValRef) tyargs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs args)
@@ -727,7 +729,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
         let e = env.substVals.[v]
         ConvExpr cenv env e
     elif env.vs.ContainsVal v then 
-        if nonNil tyargs then wfail(InternalError("ignoring generic application of local quoted variable",m));
+        if nonNil tyargs then wfail(InternalError("ignoring generic application of local quoted variable",m))
         QP.mkVar(env.vs.[v])
     elif v.BaseOrThisInfo = CtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then 
         QP.mkThisVar(ConvType cenv env m v.Type)
@@ -738,7 +740,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(),m))
               let idx = cenv.exprSplices.Count 
-              cenv.exprSplices.Add((mkCallLiftValueWithName cenv.g m vty v.LogicalName (exprForValRef m vref), m));
+              cenv.exprSplices.Add((mkCallLiftValueWithName cenv.g m vty v.LogicalName (exprForValRef m vref), m))
               QP.mkHole(ConvType cenv env m vty,idx)
         | Parent _ -> 
               ConvModuleValueApp cenv env m vref tyargs []
@@ -772,7 +774,7 @@ and ConvTyparRef cenv env m (tp:Typar) =
         | Some idx -> idx
         | None  ->
             let idx = cenv.typeSplices.Count 
-            cenv.typeSplices.Add((tp, m));
+            cenv.typeSplices.Add((tp, m))
             idx
 
 and FilterMeasureTyargs tys = 
@@ -1022,14 +1024,14 @@ let ConvMethodBase cenv env (methName, v:Val) =
 
         if isNewObj then 
              QP.MethodBaseData.Ctor 
-                 { ctorParent   = parentTyconR; 
+                 { ctorParent   = parentTyconR 
                    ctorArgTypes = methArgTypesR }
         else 
              QP.MethodBaseData.Method 
-                { methParent   = parentTyconR; 
-                  methArgTypes = methArgTypesR;
-                  methRetType  = methRetTypeR;
-                  methName     = methName;
+                { methParent   = parentTyconR 
+                  methArgTypes = methArgTypesR
+                  methRetType  = methRetTypeR
+                  methName     = methName
                   numGenericArgs=numGenericArgs }
 
     | _ when v.IsExtensionMember -> 
@@ -1050,8 +1052,8 @@ let ConvMethodBase cenv env (methName, v:Val) =
     | _ ->
 
         QP.MethodBaseData.ModuleDefn
-            { Name = methName;
-              Module = parentTyconR;
+            { Name = methName
+              Module = parentTyconR
               IsProperty = IsCompiledAsStaticProperty cenv.g v }
 
 

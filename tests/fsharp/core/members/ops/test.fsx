@@ -345,7 +345,13 @@ module MiscOperatorOverloadTests =
         res
 
 
+// See https://github.com/Microsoft/visualfsharp/issues/1306
+module OperatorConstraintsWithExplicitRigidTypeParameters = 
+    type M() = class end
 
+    let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M ->  ^R)> =        
+        let m = M()
+        Unchecked.defaultof< ^R> $ m: ^R
 
 module EnumerationOperatorTests = 
     let x1 : System.DateTimeKind =  enum 3
@@ -373,6 +379,24 @@ module TraitCallsAndConstructors =
      
      
     let _ : Inherited = -aInherited
+
+
+module CodeGenTraitCallWitnessesNotBeingInlined = 
+    // From: http://stackoverflow.com/questions/28243963/how-to-write-a-variadic-function-in-f-emulating-a-similar-haskell-solution/28244413#28244413
+    type T = T with
+        static member        ($) (T, _:int    ) = (+)
+        static member        ($) (T, _:decimal) = (+)       // required, if only the prev line is here, type inference will constrain too much
+
+    [<AutoOpen>]
+    module TestT =
+        let inline sum (i:'a) (x:'a) :'r = (T $ Unchecked.defaultof<'r>) i x
+
+    type T with
+        static member inline ($) (T, _:'t-> 'rest) = fun (a:'t) x -> sum  (x + a)
+
+    module TestT2 =
+        let x:int = sum 2 3 
+        let y:int = sum 2 3 4       // this line was throwing TypeInitializationException in Debug build
 
 
 let _ = 

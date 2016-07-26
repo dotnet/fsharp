@@ -69,7 +69,17 @@ neg10.fs(174,9,175,20): typecheck error FS0951: Literal enumerations must have t
 
 neg10.fs(180,10,180,11): typecheck error FS0866: Interfaces cannot contain definitions of object constructors
 
-neg10.fs(193,39,193,46): typecheck error FS0767: The member 'MyX' does not correspond to any abstract or virtual method available to override or implement
+neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement.
+
+Maybe you want one of the following:
+
+   Equals
+
+   ToString
+
+   Finalize
+
+   GetHashCode
 
 neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX : unit -> int' does not have the correct type to override any given virtual method
 
