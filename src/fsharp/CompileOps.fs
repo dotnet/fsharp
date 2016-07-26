@@ -1618,7 +1618,6 @@ let DefaultBasicReferencesForOutOfProjectSources =
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      yield "System.ValueTuple"
 
       // Don't reference System.Core for .NET 2.0 compilations.
       //
@@ -1693,7 +1692,6 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Threading.Thread"
       yield "System.Threading.ThreadPool"
       yield "System.Threading.Timer"
-      yield "System.ValueTuple"
       ] 
 
 // The set of references entered into the TcConfigBuilder for scripts prior to computing
