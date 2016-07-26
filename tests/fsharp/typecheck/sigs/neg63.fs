@@ -23,7 +23,7 @@ let posTest4(addr:byref<int>) =
 let negTest5() = 
     let mutable x = 0
     let addr = &x
-    &addr // TODO: this should give an error
+    &addr
 
 type Struct(initial:int) = 
     let mutable x = initial
@@ -35,4 +35,4 @@ let posTest6(iterator: byref<Struct>) =
 
 let negTest7() = 
     let mutable iterator = Struct(0)
-    iterator.AddrX  // TODO: this should give an error
+    iterator.AddrX
