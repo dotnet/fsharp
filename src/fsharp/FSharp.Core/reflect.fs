@@ -8,6 +8,7 @@ namespace Microsoft.FSharp.Core
 
 open System
 open System.Reflection
+open System.Threading
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 
@@ -390,44 +391,53 @@ module internal Impl =
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple-1
 
-    let refTupleTypes = Dictionary<Assembly, Type[]>()
-    let valueTupleTypes = Dictionary<Assembly, Type[]>()
+    let dictionaryLock = obj()
+    let refTupleTypes = System.Collections.Generic.Dictionary<Assembly, Type[]>()
+    let valueTupleTypes = System.Collections.Generic.Dictionary<Assembly, Type[]>()
 
     let rec mkTupleType isStruct (asm:Assembly) (tys:Type[]) =
         let table =
-            let makeIt n = 
+            let makeIt n =
                 let tupleFullName n =
                     let structOffset = if isStruct then 9 else 0
                     let index = n - 1 + structOffset
                     tupleNames.[index]
 
-                match tys.Length with 
-                | 1 -> asm.GetType(tupleFullName 1).MakeGenericType(tys)
-                | 2 -> asm.GetType(tupleFullName 2).MakeGenericType(tys)
-                | 3 -> asm.GetType(tupleFullName 3).MakeGenericType(tys)
-                | 4 -> asm.GetType(tupleFullName 4).MakeGenericType(tys)
-                | 5 -> asm.GetType(tupleFullName 5).MakeGenericType(tys)
-                | 6 -> asm.GetType(tupleFullName 6).MakeGenericType(tys)
-                | 7 -> asm.GetType(tupleFullName 7).MakeGenericType(tys)
-                | n when n >= maxTuple ->
-                    let tysA = tys.[0..tupleEncField-1]
-                    let tysB = tys.[maxTuple-1..]
-                    let tyB = mkTupleType isStruct asm tysB
-                    asm.GetType(tupleFullName 8).MakeGenericType(Array.append tysA [| tyB |])
+                match n with
+                | 1 -> asm.GetType(tupleFullName 1)
+                | 2 -> asm.GetType(tupleFullName 2)
+                | 3 -> asm.GetType(tupleFullName 3)
+                | 4 -> asm.GetType(tupleFullName 4)
+                | 5 -> asm.GetType(tupleFullName 5)
+                | 6 -> asm.GetType(tupleFullName 6)
+                | 7 -> asm.GetType(tupleFullName 7)
+                | 8 -> asm.GetType(tupleFullName 8)
                 | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
-            if isStruct then
-                match refTupleTypes.TryGetValue(asm). ->
-                | false, _ ->
-                    let table = Array init<Type> 9
-                    try
-                        for i = 1 .. 8 do table.[i] <- makeIt i
-                        refTupleTypes.Add(asm, table)
-                    with
-                    | :? ArgumentException ->
-                    | _ - reraise()
-                    table
-                | true, table -> table
+            let tables = if isStruct then valueTupleTypes else refTupleTypes
+            match tables.TryGetValue(asm) with
+            | false, _ ->
+                let a = ref (Array.init<Type> 8 (fun i -> makeIt (i + 1)))
+                lock dictionaryLock (fun () ->  match tables.TryGetValue(asm) with
+                                                | true, t -> a := t
+                                                | false, _ -> tables.Add(asm, !a))
+                !a
+            | true, t -> t
+
+        match tys.Length with
+        | 1 -> table.[0].MakeGenericType(tys)
+        | 2 -> table.[1].MakeGenericType(tys)
+        | 3 -> table.[2].MakeGenericType(tys)
+        | 4 -> table.[3].MakeGenericType(tys)
+        | 5 -> table.[4].MakeGenericType(tys)
+        | 6 -> table.[5].MakeGenericType(tys)
+        | 7 -> table.[6].MakeGenericType(tys)
+        | n when n >= maxTuple ->
+            let tysA = tys.[0..tupleEncField-1]
+            let tysB = tys.[maxTuple-1..]
+            let tyB = mkTupleType isStruct asm tysB
+            table.[7].MakeGenericType(Array.append tysA [| tyB |])
+        | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
     let rec getTupleTypeInfo (typ:Type) = 
       if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
