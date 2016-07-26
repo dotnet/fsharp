@@ -92,6 +92,12 @@ module NestedStructPatternMatchingAcrossAssemblyBoundaries =
     let _ = test "structunion394b3f" (testPattern3mut(u2))
 
 
+let TestAccessibility() = 
+     let x = new Newtonsoft.Json.Converters.SomeClass()
+     let x2 = new Newtonsoft.Json.Converters.ContainerClass.SomeClass()
+     Newtonsoft.Json.Converters.SomeClass.SomeMethod()
+     Newtonsoft.Json.Converters.ContainerClass.SomeClass.SomeMethod()
+
 (*
     public Lib.discr1_0 d10a = Lib.discr1_0.MkDiscr1_0_A();
     public Lib.discr1_1 d11a = Lib.discr1_1.MkDiscr1_1_A(3);

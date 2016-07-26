@@ -413,6 +413,214 @@ module TestsForUsingTypeNamesAsValuesWhenTheTypeHasAConstructor = begin
 
 end
 
+module Ok1 = 
+
+    module A =
+        let create() = 1
+        type Dummy = A | B
+
+
+    type A() = 
+        member x.P = 1
+
+    test "lkneecec09iew1" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok2 = 
+
+    type A() = 
+        member x.P = 1
+
+
+    module A =
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew2" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok3 = 
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    type A() = 
+        member x.P = 1
+
+    test "lkneecec09iew3" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok4 = 
+
+    type A() = 
+        member x.P = 1
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew4" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+
+module rec Ok5 = 
+
+    module A =
+        let create() = 1
+        type Dummy = A | B
+
+
+    type A() = 
+        member x.P = 1
+
+    test "lkneecec09iew5" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module rec Ok6 = 
+
+    type A() = 
+        member x.P = 1
+
+
+    module A =
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew6" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module rec Ok7 = 
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    type A() = 
+        member x.P = 1
+
+    test "lkneecec09iew7" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module rec Ok8 = 
+
+    type A() = 
+        member x.P = 1
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew8" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok9 = 
+
+    type A() = 
+        member x.P = 1
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+
+    test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok9b = 
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+
+    test "lkneecec09iew9" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module rec Ok10 = 
+
+    type A() = 
+        member x.P = 1
+
+    type A<'T>() = 
+        member x.P = 1
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew10" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module Ok11 = 
+
+    type A = int
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew11" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module Ok12 = 
+
+    type A = A
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew12" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+module Ok13 = 
+
+    type A = A of string
+
+    module A = 
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew13" (typeof<A.Dummy>.FullName.Contains("AModule") )
+
+
+module Ok14 = 
+
+    module X = 
+        type A = A of string
+
+    type X.A with 
+        member x.P = 1
+
+    module A =  // the type definition is an augmentation so doesn't get the suffix
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew14" (not (typeof<A.Dummy>.FullName.Contains("AModule") )) 
+
+module rec Ok15 = 
+
+    open X
+    
+    module X = 
+        type A = A of string
+
+    type A with 
+        member x.P = 1
+
+    module A =  // the type definition is an augmentation so doesn't get the suffix
+        let create() = 1
+        type Dummy = A | B
+
+    test "lkneecec09iew15" (not (typeof<A.Dummy>.FullName.Contains("AModule") )) 
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 

@@ -1725,6 +1725,53 @@ module GenericPropertyConstraintSolvedByRecord =
 
     let v = print_foo_memb { foo=1 } 
 
+
+module SRTPFix = 
+
+    open System
+
+    let inline konst x _ = x
+
+    type CFunctor() = 
+      static member inline fmap (f : ^a -> ^b, a : ^a list) = List.map f a
+      static member inline fmap (f : ^a -> ^b, a : ^a option) =
+        match a with
+        | None -> None
+        | Some x -> Some (f x)
+
+      // default implementation of replace
+      static member inline replace< ^a, ^b, ^c, ^d, ^e when ^a :> CFunctor and (^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) > (a, f) =
+        ((^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) (konst a, f))
+
+      // call overridden replace if present
+      static member inline replace< ^a, ^b, ^c when ^b : (static member replace : ^a * ^b -> ^c)>(a : ^a, f : ^b) =
+        (^b : (static member replace : ^a * ^b -> ^c) (a, f))
+
+    let inline replace_instance< ^a, ^b, ^c, ^d when (^a or ^c) : (static member replace : ^b * ^c -> ^d)> (a : ^b, f : ^c) =
+      ((^a or ^c) : (static member replace : ^b * ^c -> ^d) (a, f))
+
+    let inline fmap_instance< ^a, ^b, ^c, ^d, ^e when (^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e)>(f : ^b -> ^c, a : ^d) =
+      ((^a or ^d) : (static member fmap : (^b -> ^c) * ^d -> ^e) (f, a))
+
+    let inline fmap (f : ^a -> ^b) (a : ^c) =
+      fmap_instance<CFunctor, _, _, _, _> (f, a)
+
+    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b ->  ^a0) =
+      replace_instance<CFunctor, _, _, _> (a, f)
+
+    (*
+    type test(arg : string) = class
+      member __.data = arg
+      static member inline fmap (f : char -> char, a : test) = String.map f a.data
+      static member inline replace (a : char, f : test) = test.fmap (konst a, f)
+    end
+
+    let _ =
+      printfn "%A" <| fmap id [1;2;3];
+      printfn "%A" <| replace 5 [1;2;3];
+      printfn "%A" <| fmap ((+) 1) (Some 2);
+      printfn "%A" <| replace 'q' (test("HI"))
+     *)
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
