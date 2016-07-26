@@ -543,6 +543,15 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
                  v.IsConstructor && 
                  (match v.ActualParent with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false) then 
                 errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
+
+              if isByrefTy cenv.g v.Type &&
+                 // A byref return location...
+                 (match context with PermitByref isReturn -> isReturn | _ -> false) && 
+                 // The value is a local....
+                 v.ValReprInfo.IsNone && 
+                 // The value is not an argument...
+                 not (env.argVals.ContainsVal(v.Deref)) then 
+                errorR(Error(FSComp.SR.chkNoByrefReturnOfLocal(v.DisplayName), m))
           
           CheckVal cenv env v m context
           
@@ -576,7 +585,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,((Expr.Val(baseVal,_,_)::rest) as argsl),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,((Expr.Val(baseVal,_,_) :: _) as argsl),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
         // dprintfn "GOT BASE VAL USE"
