@@ -132,6 +132,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 type env = 
     { boundTyparNames: string list 
       boundTypars: TyparMap<unit>
+      argVals: ValMap<unit>
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
       /// Constructor limited - are we in the prelude of a constructor, prior to object initialization
@@ -155,6 +156,11 @@ let BindTypars g env (tps:Typar list) =
             if PrettyTypes.NeedsPrettyTyparName tp  then 
                 tp.Data.typar_id <- ident (nm,tp.Range))      
     List.fold BindTypar env tps 
+
+/// Set the set of vals which are arguments in the active lambda. We are allowed to return 
+/// byref arguments as byref returns.
+let SetArgVals env (vs: Val list) = 
+    { env with argVals = ValMap.OfList (List.map (fun v -> (v,())) vs) }
 
 type cenv = 
     { boundVals: Dictionary<Stamp,int> // really a hash set
@@ -195,7 +201,7 @@ let BindVals cenv vs = List.iter (BindVal cenv) vs
 // approx walk of type
 //--------------------------------------------------------------------------
 
-let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTraitSolutionOpt, visitTyparOpt) as f) g env typ =
+let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutionOpt, visitTyparOpt) as f) g env typ =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
     // those attached to _solved_ type variables. This is used by PostTypeCheckSemanticChecks to detect uses of
@@ -229,8 +235,8 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTr
         | Some visitTyconRef -> visitTyconRef tcref 
         | None -> ()
         CheckTypesDeep f g env tinst
-        match visitByrefsOfByrefsOpt with 
-        | Some visitByrefsOfByrefs -> visitByrefsOfByrefs (tcref, tinst)
+        match visitAppTyOpt with 
+        | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
 
     | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
@@ -273,7 +279,7 @@ and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs
 //--------------------------------------------------------------------------
 
 let CheckForByrefLikeType cenv env typ check = 
-    CheckTypeDeep (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()), None, None, None) cenv.g env typ
+    CheckTypeDeep (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env typ
 
 
 //--------------------------------------------------------------------------
@@ -389,7 +395,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                 errorR(Error(FSComp.SR.chkSystemVoidOnlyInTypeof(), m))
 
         // check if T contains byref types in case of byref<T>
-        let visitByrefsOfByrefs (tcref,tinst) = 
+        let visitAppTy (tcref,tinst) = 
             if isByrefLikeTyconRef cenv.g tcref then
                 let visitType ty0 =
                     match tryDestAppTy cenv.g ty0 with
@@ -408,7 +414,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                    cenv.potentialUnboundUsesOfVals <- cenv.potentialUnboundUsesOfVals.Add(vref.Stamp,m)
             | _ -> ()
 
-        CheckTypeDeep (ignore, Some visitTyconRef, Some visitByrefsOfByrefs, Some visitTraitSolution, Some visitTypar) cenv.g env ty
+        CheckTypeDeep (ignore, Some visitTyconRef, Some visitAppTy, Some visitTraitSolution, Some visitTypar) cenv.g env ty
 
 
 /// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
@@ -570,7 +576,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,((Expr.Val(baseVal,_,_)::rest) as argsl),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
         // dprintfn "GOT BASE VAL USE"
@@ -582,7 +588,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
             CheckVal cenv env baseVal m NoByrefs
             CheckTypePermitByrefs cenv env m fty
             CheckTypeInstPermitByrefs cenv env m tyargs
-            CheckExprs cenv env rest (mkArgsForAppliedExpr false f)
+            CheckExprs cenv env argsl (mkArgsForAppliedExpr false f)
 
     // Allow base calls to IL methods
     | Expr.Op (TOp.ILCall (virt,_,_,_,_,_,_,mref,enclTypeArgs,methTypeArgs,tys),tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
@@ -776,7 +782,12 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         if cenv.reportErrors  then 
             if noByrefs context && cenv.reportErrors then 
                 errorR(Error(FSComp.SR.chkNoAddressOfAtThisPoint(v.DisplayName), m))
-            elif (match context with PermitByref isReturn -> isReturn | _ -> false) && v.ValReprInfo.IsNone then 
+            elif (// The context is a byref return....
+                  match context with PermitByref isReturn -> isReturn | _ -> false) && 
+                  // The value is a local....
+                  v.ValReprInfo.IsNone && 
+                  // The value is not an argument...
+                  not (env.argVals.ContainsVal(v.Deref)) then 
                 errorR(Error(FSComp.SR.chkNoByrefReturnOfLocal(v.DisplayName), m))
 
         // Address-of operator generates byref, and context permits this. 
@@ -904,6 +915,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
+        let env = SetArgVals env restArgs
 
         match memInfo with 
         | None -> ()
@@ -1699,6 +1711,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           quote=false
           limited=false 
           boundTyparNames=[]
+          argVals = ValMap.Empty
           boundTypars= TyparMap.Empty
           reflect=false }
 
