@@ -86,13 +86,36 @@ module internal List =
             setFreshConsTail cons []
             res
 
+    let rec chooseToFreshConsTail cons f xs =
+        match xs with 
+        | [] -> setFreshConsTail cons []
+        | h::t -> 
+            match f h with 
+            | None -> chooseToFreshConsTail cons f t 
+            | Some x -> 
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                chooseToFreshConsTail cons2 f t
+
+    let rec choose f xs =
+        match xs with 
+        | [] -> []
+        | h::t -> 
+            match f h with
+            | None -> choose f t
+            | Some x -> 
+                let cons = freshConsNoTail x
+                chooseToFreshConsTail cons f t
+                cons
+            
+
     let rec mapToFreshConsTail cons f x = 
         match x with
         | [] -> 
             setFreshConsTail cons [];
         | (h::t) -> 
             let cons2 = freshConsNoTail (f h)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             mapToFreshConsTail cons2 f t
 
     let map f x = 
