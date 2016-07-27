@@ -151,16 +151,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Get")>]
         let nth list index = item index list
 
-        let rec chooseAllAcc f xs acc =
-            match xs with 
-            | [] -> rev acc
-            | h :: t -> 
-                 match f h with 
-                 | None -> chooseAllAcc f t acc 
-                 | Some x -> chooseAllAcc f t (x::acc)
-
         [<CompiledName("Choose")>]
-        let choose f xs = chooseAllAcc f xs []
+        let choose f xs = Microsoft.FSharp.Primitives.Basics.List.choose f xs
     
         [<CompiledName("SplitAt")>]
         let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
