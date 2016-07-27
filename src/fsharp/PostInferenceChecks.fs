@@ -234,9 +234,9 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTr
         | None -> ()
 
     | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
-    | TType_tuple typs        -> CheckTypesDeep f g env typs
-    | TType_fun (s,t)         -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
-    | TType_var tp            -> 
+    | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
+    | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
+    | TType_var tp -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
               | None -> ()
@@ -730,7 +730,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckExprDirectArgs cenv env args  
 
     // Tuple expression in known tuple context
-    | TOp.Tuple,_,_,KnownArityTuple nArity ->           
+    | TOp.Tuple tupInfo,_,_,KnownArityTuple nArity when not (evalTupInfoIsStruct tupInfo) ->           
         if cenv.reportErrors then 
             if args.Length <> nArity then 
                 errorR(InternalError("Tuple arity does not correspond to planned function argument arity",m))
@@ -744,6 +744,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         else            
           if cenv.reportErrors  then 
               errorR(Error(FSComp.SR.chkNoAddressOfAtThisPoint(v.DisplayName), m))
+    | TOp.TupleFieldGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs;
+        CheckExprDirectArgs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
     | TOp.ValFieldGet _rf,_,[arg1],_arity -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprDirectArgs cenv env [arg1]          (* See mkRecdFieldGetViaExprAddr -- byref arg1 when #args =1 *)
@@ -818,7 +821,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprDirectArgs cenv env args (* allow args to be byref here *)
 
-    | (   TOp.Tuple
+    | (   TOp.Tuple _
         | TOp.UnionCase _
         | TOp.ExnConstr _
         | TOp.Array

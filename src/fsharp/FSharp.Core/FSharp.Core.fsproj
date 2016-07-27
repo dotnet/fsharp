@@ -219,15 +219,6 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                               '$(TargetFramework)' == 'portable47' OR 
-                                               '$(TargetFramework)' == 'XNA\5.0' OR 
-                                               '$(TargetFramework)' == 'sl3-wp' "/>
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/>
-    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                                '$(TargetFramework)' == 'portable47' OR 
-                                                '$(TargetFramework)' == 'XNA\5.0' OR 
-                                                '$(TargetFramework)' == 'sl3-wp' "/>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />

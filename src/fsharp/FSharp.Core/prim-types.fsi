@@ -1276,13 +1276,7 @@ namespace System
         interface IComparable
         new : 'T1 -> Tuple<'T1>
         member Item1 : 'T1 with get
-#if TUPLE_STRUXT
-    [<Struct>]
-    type Tuple<'T1,'T2> = 
-        new : 'T1 * 'T2 -> Tuple<'T1,'T2> 
-        val Item1 : 'T1 
-        val Item2 : 'T2 //                
-#else
+
     type Tuple<'T1,'T2> =  
         interface IStructuralEquatable
         interface IStructuralComparable
@@ -1290,7 +1284,6 @@ namespace System
         new : 'T1 * 'T2 -> Tuple<'T1,'T2>
         member Item1 : 'T1 with get
         member Item2 : 'T2 with get
-#endif
 
     type Tuple<'T1,'T2,'T3> = 
         interface IStructuralEquatable
@@ -3424,4 +3417,3 @@ namespace Microsoft.FSharp.Control
     /// <summary>First-class listening points (i.e. objects that permit you to register a callback
     /// activated when the event is triggered). </summary>
     type IEvent<'T> = IEvent<Handler<'T>, 'T>
-
