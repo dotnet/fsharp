@@ -13,8 +13,8 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^all^|ci^|ci_part1^|ci_part2^|microbuild^|proto^|net40^|coreclr^|debug^|release^|diag^|compiler^|pcls^|vs^
-echo           ^test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^
+echo build.cmd ^<all^|proto^|protofx^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
+echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^>
 echo.
 echo No arguments default to 'build'
 echo.
