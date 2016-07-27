@@ -605,7 +605,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
                 if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length,m));
                 let tupargs,argst = List.chop arity args
                 let tuptys = tupargs |> List.map (tyOfExpr g) 
-                (mkTupled g m tupargs tuptys),
+                (mkRefTupled g m tupargs tuptys),
                 (argst, rangeOfFunTy g fty) )
     if not leftover.IsEmpty then error(InternalError("Unexpected "+string(leftover.Length)+" remaining arguments in method application",m))
     mkApps g ((vexp,vexprty),[],args3,m), 
@@ -733,7 +733,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
                 let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
                 let actualTypeInst = 
-                    if isTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g (destTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
+                    if isRefTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g false (destRefTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
                     elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
                     else minfo.DeclaringTypeInst
                 let actualMethInst = minst
@@ -793,7 +793,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
                         match delArgVals with 
                         | [] -> error(nonStandardEventError einfo.EventName m)
                         | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
-                        | h :: t -> [exprForVal m h; mkTupledVars g m t] 
+                        | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
                 mkApps g ((f,fty),[],args,m)
@@ -964,7 +964,7 @@ module ProvidedMethodCalls =
             | Some info -> 
                 let elems = info.PApplyArray(id, "GetInvokerExpresson",m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
-                let exprT = mkTupledNoTypes g m elemsT
+                let exprT = mkRefTupledNoTypes g m elemsT
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedNewArrayExpr x -> Some x | _ -> None), m) with
@@ -984,8 +984,8 @@ module ProvidedMethodCalls =
                 let typeOfExpr = 
                     let t = tyOfExpr g inpT
                     stripTyEqnsWrtErasure EraseMeasures g t
-                let tysT = tryDestTupleTy g typeOfExpr
-                let exprT = mkTupleFieldGet (inpT, tysT, n.PUntaint(id,m), m)
+                let tupInfo, tysT = tryDestAnyTupleTy g typeOfExpr
+                let exprT = mkTupleFieldGet g (tupInfo, inpT, tysT, n.PUntaint(id,m), m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with
