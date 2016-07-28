@@ -740,10 +740,12 @@
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <Choose>
-        <When Condition="Exists('$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish\fsc.exe')">
+        <When Condition="Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')">
           <PropertyGroup >
             <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-            <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
+            <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
+            <FscToolExe>dotnet.exe</FscToolExe>
+            <DotnetFscCompilerPath>$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe</DotnetFscCompilerPath>
             <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
             <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
           </PropertyGroup>
@@ -752,12 +754,12 @@
           <PropertyGroup >
             <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+            <DotnetFscCompilerPath></DotnetFscCompilerPath>
             <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
             <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
           </PropertyGroup>
         </Otherwise>
       </Choose>
-		
     </When>
     <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
       <PropertyGroup>
@@ -875,7 +877,7 @@
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
         Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
-        
+
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
