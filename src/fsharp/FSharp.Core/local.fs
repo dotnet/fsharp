@@ -142,11 +142,31 @@ module internal List =
             map2ToFreshConsTail cons f t1 t2
             cons
         | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+    
+    
+    let rec scanToFreshConsTail cons xs s (f: OptimizedClosures.FSharpFunc<_,_,_>) =
+        match xs with
+        | [] ->
+            setFreshConsTail cons []
+        | (h::t) ->
+            let newState = f.Invoke(s,h)
+            let cons2 = freshConsNoTail newState
+            setFreshConsTail cons cons2
+            scanToFreshConsTail cons2 t newState f
+
+    let scan f (s:'State) (list:'T list) = 
+        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+        match list with 
+        | [] -> [s]
+        | _ -> 
+            let cons = freshConsNoTail s
+            scanToFreshConsTail cons list s f
+            cons
 
     let rec indexedToFreshConsTail cons xs i =
         match xs with
         | [] ->
-            setFreshConsTail cons [];
+            setFreshConsTail cons []
         | (h::t) ->
             let cons2 = freshConsNoTail (i,h)
             setFreshConsTail cons cons2;

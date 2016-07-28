@@ -16,8 +16,9 @@ module internal List =
     val filter : predicate:('T -> bool) -> 'T list -> 'T list
     val collect : ('T -> 'U list) -> 'T list -> 'U list
     val partition : predicate:('T -> bool) -> 'T list -> 'T list * 'T list
-    val map : mapping:('T -> 'U) -> 'T list -> 'U list
-    val map2 : mapping:('T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
+    val map : mapping : ('T -> 'U) -> 'T list -> 'U list
+    val map2 : mapping : ('T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
+    val scan : ('State -> 'T -> 'State) -> 'State -> 'T list -> 'State list
     val mapi : (int -> 'T -> 'U) -> 'T list -> 'U list
     val indexed : 'T list -> (int * 'T) list
     val mapFold : ('State -> 'T -> 'U * 'State) -> 'State -> 'T list -> 'U list * 'State
