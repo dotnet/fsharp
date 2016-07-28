@@ -257,12 +257,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Scan")>]
         let scan<'T,'State> f (s:'State) (list:'T list) = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let rec loop s xs acc = 
-                match xs with 
-                | [] -> rev acc
-                | (h::t) -> let s = f.Invoke(s,h) in loop s t (s :: acc)
-            loop s list [s]
+            Microsoft.FSharp.Primitives.Basics.List.scan f s list
 
         [<CompiledName("Singleton")>]
         let inline singleton value = [value]
