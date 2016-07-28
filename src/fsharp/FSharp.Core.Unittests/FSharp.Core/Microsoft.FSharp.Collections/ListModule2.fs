@@ -100,9 +100,9 @@ type ListModule02() =
         // lists of different length
         let shortList = [1]
         let longerList = [1; 2]
-        CheckThrowsArgumentNullException (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
-        CheckThrowsArgumentNullException (fun () -> List.map3 funcInt shortList longerList shortList |> ignore)
-        CheckThrowsArgumentNullException (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)  
+        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)
+        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList longerList shortList |> ignore)
+        CheckThrowsArgumentException  (fun () -> List.map3 funcInt shortList shortList longerList |> ignore)  
 
         // empty List
         let resultEpt = List.map3 funcInt List.empty List.empty List.empty
@@ -186,8 +186,8 @@ type ListModule02() =
         // lists of different length
         let shortList = [1]
         let longerList = [1; 2]       
-        CheckThrowsArgumentNullException (fun () -> List.mapi2 funcInt shortList longerList |> ignore)
-        CheckThrowsArgumentNullException (fun () -> List.mapi2 funcInt longerList shortList |> ignore)
+        CheckThrowsArgumentException  (fun () -> List.mapi2 funcInt shortList longerList |> ignore)
+        CheckThrowsArgumentException  (fun () -> List.mapi2 funcInt longerList shortList |> ignore)
 
         // empty List
         let emptyArr:int list = [ ]
