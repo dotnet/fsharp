@@ -142,7 +142,46 @@ module internal List =
             map2ToFreshConsTail cons f t1 t2
             cons
         | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
-    
+
+    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 xs3 = 
+        match xs1,xs2,xs3 with
+        | [],[],[] -> 
+            setFreshConsTail cons [];
+        | (h1::t1), (h2::t2), (h3::t3) -> 
+            let cons2 = freshConsNoTail (f.Invoke(h1,h2,h3))
+            setFreshConsTail cons cons2;
+            map3ToFreshConsTail cons2 f t1 t2 t3
+        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let map3 f xs1 xs2 xs3 = 
+        match xs1,xs2,xs3 with
+        | [],[],[] -> []
+        | (h1::t1), (h2::t2), (h3::t3) -> 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let cons = freshConsNoTail (f.Invoke(h1,h2,h3))
+            map3ToFreshConsTail cons f t1 t2 t3
+            cons
+        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let rec mapi2ToFreshConsTail n cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 = 
+        match xs1,xs2 with
+        | [],[] -> 
+            setFreshConsTail cons [];
+        | (h1::t1),(h2::t2) -> 
+            let cons2 = freshConsNoTail (f.Invoke(n,h1,h2))
+            setFreshConsTail cons cons2;
+            mapi2ToFreshConsTail (n + 1) cons2 f t1 t2
+        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let mapi2 f xs1 xs2 = 
+        match xs1,xs2 with
+        | [],[] -> []
+        | (h1::t1),(h2::t2) -> 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let cons = freshConsNoTail (f.Invoke(0, h1,h2))
+            mapi2ToFreshConsTail 1 cons f t1 t2
+            cons
+        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
     
     let rec scanToFreshConsTail cons xs s (f: OptimizedClosures.FSharpFunc<_,_,_>) =
         match xs with

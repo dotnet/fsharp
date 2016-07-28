@@ -204,28 +204,14 @@ namespace Microsoft.FSharp.Collections
                 | (h1::t1), (h2::t2) -> f.Invoke(n,h1,h2); loop (n+1) t1 t2 
                 | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
             loop 0 list1 list2
-          
-        let rec map3aux (f:OptimizedClosures.FSharpFunc<_,_,_,_>) list1 list2 list3 acc = 
-            match list1,list2,list3 with
-            | [],[],[] -> rev acc
-            | (h1::t1), (h2::t2),(h3::t3) -> let x = f.Invoke(h1,h2,h3) in map3aux f t1 t2 t3 (x :: acc)
-            | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
 
         [<CompiledName("Map3")>]
         let map3 f list1 list2 list3 = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            map3aux f list1 list2 list3 []
-
-        let rec mapi2aux n (f:OptimizedClosures.FSharpFunc<_,_,_,_>) list1 list2 acc = 
-            match list1,list2 with
-            | [],[] -> rev acc
-            | (h1::t1), (h2::t2) -> let x = f.Invoke(n,h1,h2) in mapi2aux (n+1) f t1 t2 (x :: acc)
-            | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+            Microsoft.FSharp.Primitives.Basics.List.map3 f list1 list2 list3
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f list1 list2 = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            mapi2aux 0 f list1 list2 []
+            Microsoft.FSharp.Primitives.Basics.List.mapi2 f list1 list2
 
         [<CompiledName("Map2")>]
         let map2 f list1 list2 = Microsoft.FSharp.Primitives.Basics.List.map2 f list1 list2
