@@ -191,7 +191,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop list1 list2 = 
                 match list1,list2 with
                 | [],[] -> () 
-                | (h1::t1), (h2::t2) -> f.Invoke(h1,h2); loop t1 t2 
+                | h1::t1, h2::t2 -> f.Invoke(h1,h2); loop t1 t2 
                 | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
             loop list1 list2
 
