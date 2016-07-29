@@ -281,13 +281,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\SilverlightProject\SilverlightProject.csproj">
-      <Project>{15a57828-f9f5-4fb4-8e1e-ae7622a10f70}</Project>
-      <Name>SilverlightProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\TutorialProject\TutorialProject.csproj">
       <Project>{2facee44-48bd-40b5-a2ee-b54a0c9bb7c4}</Project>
       <Name>TutorialProject</Name>
