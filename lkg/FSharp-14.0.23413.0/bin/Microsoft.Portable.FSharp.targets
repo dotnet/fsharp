@@ -1,19 +1,10 @@
-<!--
-***********************************************************************************************
-Microsoft.Portable.FSharp.targets
-
-WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
-          created a backup copy.  Incorrect changes to this file will make it
-          impossible to load or build your projects from the command-line or the IDE.
-
-Copyright (C) Microsoft Corporation. All rights reserved.
-***********************************************************************************************
--->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\v4.0\Microsoft.Portable.Common.targets" />
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\4.0\Framework\v4.0\Microsoft.FSharp.Targets" />
+  <Import Project=".\Microsoft.FSharp.Targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\Microsoft.Portable.Core.targets" />
   
 </Project>
+
