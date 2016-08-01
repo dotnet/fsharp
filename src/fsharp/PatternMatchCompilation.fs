@@ -922,8 +922,7 @@ let CompilePatternBasic
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkApps g ((pexp,tyOfExpr g pexp), [], [argexp],m)
 
-             match evalStructnessInfo structness with 
-             | true -> 
+             if evalStructnessInfo structness then
                  let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates appexp None matchm
                  match vOpt with 
                  | None -> Some addrexp, None
@@ -931,7 +930,7 @@ let CompilePatternBasic
                      if topv.IsMemberOrModuleBinding then 
                          AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
                      Some addrexp, Some (mkInvisibleBind v e) 
-             | false -> 
+             else
                  let v,vexp = mkCompGenLocal m "activePatternResult" rty
                  if topv.IsMemberOrModuleBinding then 
                      AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData

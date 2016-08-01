@@ -5078,9 +5078,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                     else 
                         List.frontAndBack args
 
-            let apStructness = 
-                let _,rty = stripFunTy cenv.g vexpty
-                if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
+            let apStructness = inferActivePatternStructness cenv.g apinfo vexpty 
 
             if nonNil activePatArgsAsSynPats && apinfo.ActiveTags.Length <> 1 then 
                 error(Error(FSComp.SR.tcRequireActivePatternWithOneResult(),m))
@@ -10095,8 +10093,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
                 // Assert the types given in the argument patterns so we can determine if the return result is a struct
                 ApplyTypesFromArgumentPatterns(cenv,envinner,false,ty,mBinding,tpenv,bindingRhs,memberFlagsOpt)
 
-                let _,rty = stripFunTy cenv.g ty
-                let apStructness = if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
+                let apStructness = inferActivePatternStructness cenv.g apinfo ty
 
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag,tagRange) ->
                     let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, apStructness, i, tagRange)
@@ -10135,8 +10132,8 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
         match apinfoOpt with 
         | Some (apinfo,ty,_) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
+            let apStructness = inferActivePatternStructness cenv.g apinfo ty
             let _,rty = stripFunTy cenv.g ty
-            let apStructness = if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
             UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range apStructness activePatResTys) rty
         | None -> 
             ()

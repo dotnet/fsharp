@@ -1370,6 +1370,8 @@ type PrettyNaming.ActivePatternInfo with
     member OverallType : TcGlobals -> range -> TType -> StructnessInfo -> TType list -> TType
 
 val doesActivePatternHaveFreeTypars : TcGlobals -> ValRef -> bool
+val inferActivePatternStructness: TcGlobals -> PrettyNaming.ActivePatternInfo -> TType -> StructnessInfo
+
 
 //---------------------------------------------------------------------------
 // Structural rewrites

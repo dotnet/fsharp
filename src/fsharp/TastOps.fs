@@ -2730,6 +2730,11 @@ let isOptionTy g ty =
     | None -> false
     | Some tcref -> tyconRefEq g g.option_tcr_canon tcref
 
+let isAnyOptionTy g ty = 
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> tyconRefEq g g.option_tcr_canon tcref || tyconRefEq g g.struct_option_tcr_canon tcref
+
 let tryDestOptionTy g ty = 
     match argsOfAppTy g ty with 
     | [ty1]  when isOptionTy g ty  -> Some ty1
@@ -7306,6 +7311,20 @@ let mkAnyChoiceTyconRef g m n s =
          | 7 -> g.choice7_tcr
          | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
 
+let isAnyChoiceTyconRef g tcref = 
+    tyconRefEq g tcref g.struct_choice2_tcr ||
+    tyconRefEq g tcref g.struct_choice3_tcr ||
+    tyconRefEq g tcref g.struct_choice4_tcr ||
+    tyconRefEq g tcref g.struct_choice5_tcr ||
+    tyconRefEq g tcref g.struct_choice6_tcr ||
+    tyconRefEq g tcref g.struct_choice7_tcr ||
+    tyconRefEq g tcref g.choice2_tcr ||
+    tyconRefEq g tcref g.choice3_tcr ||
+    tyconRefEq g tcref g.choice4_tcr ||
+    tyconRefEq g tcref g.choice5_tcr ||
+    tyconRefEq g tcref g.choice6_tcr ||
+    tyconRefEq g tcref g.choice7_tcr
+
 let mkAnyChoiceTy g m structness tinst = 
      match List.length tinst with 
      | 0 -> g.unit_ty
@@ -7314,6 +7333,19 @@ let mkAnyChoiceTy g m structness tinst =
 
 let mkAnyChoiceCaseRef g m n structness i = 
      mkUnionCaseRef (mkAnyChoiceTyconRef g m n structness) ("Choice"+string (i+1)+"Of"+string n)
+
+let isAnyChoiceTy g ty = 
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> isAnyChoiceTyconRef g tcref
+
+let isAnyStructChoiceOrOptionTy g ty = isStructTy g ty && (isAnyOptionTy g ty || isAnyChoiceTy g ty)
+
+let inferActivePatternStructness g (apinfo: ActivePatternInfo) ty =
+    let _,rty = stripFunTy g ty
+    if (not apinfo.IsTotal || apinfo.ActiveTags.Length > 1) && isAnyStructChoiceOrOptionTy g rty then
+        tupInfoStruct
+    else tupInfoRef
 
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
