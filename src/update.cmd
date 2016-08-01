@@ -1,10 +1,9 @@
+@if "%_echo%"=="" echo off
 @rem ===========================================================================================================
 @rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
 @rem               Version 2.0.  See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
-@echo off
-setlocal
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok

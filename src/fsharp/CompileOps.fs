@@ -1612,16 +1612,23 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 //            -- for orphaned files (files in VS without a project context)
 //            -- for files given on a command line without --noframework set
 let DefaultBasicReferencesForOutOfProjectSources = 
-    [ // These are .NET-Framework -style references
-#if !TODO_REWORK_ASSEMBLY_LOAD
-      yield "System"
+    [ yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      yield "System.Core" 
-#endif
+
+      // Don't reference System.Core for .NET 2.0 compilations.
+      //
+      // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
+      // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
+      // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
+      // in which case the compiler will also be running as a .NET 2.0 process.
+      //
+      // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
+      if (try System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")) |> ignore; true with _ -> false) then 
+          yield "System.Core" 
 
       // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
       // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
@@ -1670,6 +1677,7 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Runtime"
       yield "System.Observable"
       yield "System.Numerics"
+      yield "System.ValueTuple"
 
       // Additions for coreclr and portable profiles
       yield "System.Collections"
@@ -4554,19 +4562,20 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                      | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly",rangeStartup)))
                 fslibCcuInfo.FSharpViewOfMetadata            
                   
+        let sysCcus =
+            [| yield sysCcu.FSharpViewOfMetadata 
+               yield! frameworkTcImports.GetCcusInDeclOrder() 
+               for dllName in SystemAssemblies tcConfig.primaryAssembly.Name do 
+                   match frameworkTcImports.CcuTable.TryFind dllName with 
+                   | Some sysCcu -> yield sysCcu.FSharpViewOfMetadata
+                   | None -> () |]
+
         // Search for a type
         let getTypeCcu nsname typeName =
             if ccuHasType sysCcu.FSharpViewOfMetadata nsname typeName  then 
                   sysCcu.FSharpViewOfMetadata
             else
-                let search = 
-                    seq { yield sysCcu.FSharpViewOfMetadata 
-                          yield! frameworkTcImports.GetCcusInDeclOrder() 
-                          for dllName in SystemAssemblies tcConfig.primaryAssembly.Name do 
-                            match frameworkTcImports.CcuTable.TryFind dllName with 
-                            | Some sysCcu -> yield sysCcu.FSharpViewOfMetadata
-                            | None -> () }
-                    |> Seq.tryFind (fun ccu -> ccuHasType ccu nsname typeName)
+                let search = sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu nsname typeName)
                 match search with 
                 | Some x -> x
                 | None -> fslibCcu

@@ -395,7 +395,7 @@ let rec GenTypeArgAux amap m g tyenv tyarg =
 and GenTypeArgsAux amap m g tyenv  tyargs = 
     List.map (GenTypeArgAux amap m g tyenv) (DropErasedTyargs tyargs)
 
-and GenTyAppAux amap m g tyenv repr tinst =  
+and GenTyAppAux amap m g tyenv repr tinst =
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
         let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
@@ -408,7 +408,7 @@ and GenTyAppAux amap m g tyenv repr tinst =
             mkILTy boxity (mkILTySpec (tref,ilTypeInst))
         | Some ilType -> 
             ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
-          
+
 
 and GenNamedTyAppAux (amap:Import.ImportMap) m g tyenv ptrsOK tcref tinst = 
     let tinst = DropErasedTyargs tinst 
@@ -433,7 +433,7 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 #endif
     match stripTyEqnsAndMeasureEqns g ty with 
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m g tyenv ptrsOK tcref tinst
-    | TType_tuple args -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g args)
+    | TType_tuple (tupInfo, args) -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m g tyenv dty) (GenTypeArgAux amap m g tyenv returnTy)
 
     | TType_ucase (ucref, args) -> 
@@ -1836,8 +1836,8 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
           GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel
       | TOp.Recd(isCtor,tycon),_,_ -> 
           GenAllocRecd cenv cgbuf eenv isCtor (tycon,tyargs,args,m) sequel
-      | TOp.TupleFieldGet n,[e],_ -> 
-          GenGetTupleField cenv cgbuf eenv (e,tyargs,n,m) sequel
+      | TOp.TupleFieldGet (tupInfo,n),[e],_ -> 
+          GenGetTupleField cenv cgbuf eenv (tupInfo,e,tyargs,n,m) sequel
       | TOp.ExnFieldGet(ecref,n),[e],_ -> 
           GenGetExnField cenv cgbuf eenv (e,ecref,n,m) sequel
       | TOp.UnionCaseFieldGet(ucref,n),[e],_ -> 
@@ -1864,8 +1864,8 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
          GenSetRecdField cenv cgbuf eenv (e1,f,tyargs,e2,m) sequel
       | TOp.ValFieldSet f,[e2],_ -> 
          GenSetStaticField cenv cgbuf eenv (f,tyargs,e2,m) sequel
-      | TOp.Tuple,_,_ -> 
-         GenAllocTuple cenv cgbuf eenv (args,tyargs,m) sequel
+      | TOp.Tuple tupInfo,_,_ -> 
+         GenAllocTuple cenv cgbuf eenv (tupInfo,args,tyargs,m) sequel
       | TOp.ILAsm(code,returnTys),_,_ ->  
          GenAsmCode cenv cgbuf eenv (code,tyargs,args,returnTys,m) sequel 
       | TOp.While (sp,_),[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)],[]  -> 
@@ -2072,9 +2072,10 @@ and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
 // Generate simple data-related constructs
 //-------------------------------------------------------------------------- 
 
-and GenAllocTuple cenv cgbuf eenv (args,argtys,m) sequel =
+and GenAllocTuple cenv cgbuf eenv (tupInfo, args,argtys,m) sequel =
 
-    let tcref, tys, args, newm = mkCompiledTuple cenv.g (argtys,args,m)
+    let tupInfo = evalTupInfoIsStruct tupInfo
+    let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argtys,args,m)
     let typ = GenNamedTyApp cenv.amap newm cenv.g eenv.tyenv tcref tys
     let ntyvars = if (tys.Length - 1) < goodTupleFields then (tys.Length - 1) else goodTupleFields
     let formalTyvars = [ for n in 0 .. ntyvars do yield mkILTyvarTy (uint16 n) ]
@@ -2086,28 +2087,29 @@ and GenAllocTuple cenv cgbuf eenv (args,argtys,m) sequel =
           (mkILCtorMethSpecForTy (typ,formalTyvars)))
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenGetTupleField cenv cgbuf eenv (e,tys,n,m) sequel =
+and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
+    let tupInfo = evalTupInfoIsStruct tupInfo
     let rec getCompiledTupleItem g (e,tys:TTypes,n,m) =
         let ar = tys.Length
         if ar <= 0 then failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcr' = mkCompiledTupleTyconRef g tys
+            let tcr' = mkCompiledTupleTyconRef g tupInfo tys
             let typ = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys
-            mkGetTupleItemN g m n typ e tys.[n]
+            mkGetTupleItemN g m n typ tupInfo e tys.[n]
+            
         else
             let tysA,tysB = List.splitAfter (goodTupleFields) tys
-            let tyB = mkCompiledTupleTy g tysB
+            let tyB = mkCompiledTupleTy g tupInfo tysB
             let tys' = tysA@[tyB]
-            let tcr' = mkCompiledTupleTyconRef g tys'
+            let tcr' = mkCompiledTupleTyconRef g tupInfo tys'
             let typ' = GenNamedTyApp cenv.amap m g eenv.tyenv tcr' tys'
             let n' = (min n goodTupleFields)
-            let elast = mkGetTupleItemN g m n' typ' e tys'.[n']
+            let elast = mkGetTupleItemN g m n' typ' tupInfo e tys'.[n']
             if n < goodTupleFields then
                 elast
             else
                 getCompiledTupleItem g (elast,tysB,n-goodTupleFields,m)
     GenExpr cenv cgbuf eenv SPSuppress (getCompiledTupleItem cenv.g (e,tys,n,m)) sequel
-
 
 and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
     GenExprs cenv cgbuf eenv args
@@ -2401,10 +2403,10 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
     assert (numRequiredExprs >= 1)
     if numRequiredExprs = 1 then
         GenExpr cenv cgbuf eenv SPSuppress expr sequel
-    elif isTupleExpr expr then
-        let es = tryDestTuple expr
-        if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)",m))
-        es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue)
+    elif isRefTupleExpr expr then
+        let es = tryDestRefTupleExpr expr
+        if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)",m));
+        es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue);
         GenSequel cenv eenv.cloc cgbuf sequel
     else
         let ty = tyOfExpr cenv.g expr
@@ -2412,10 +2414,11 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
         let bind = mkCompGenBind locv expr
         LocalScope "untuple" cgbuf (fun scopeMarks ->
             let eenvinner = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-            GenBind cenv cgbuf eenvinner bind
-            let tys = destTupleTy cenv.g ty
+            GenBind cenv cgbuf eenvinner bind;
+            let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (loce,tys,i,m) Continue)
+            // TODO - tupInfoRef
+            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *),loce,tys,i,m) Continue);
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 
@@ -3045,6 +3048,9 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
               errorR(InternalError(sprintf "%s: bad instruction: %A" s i,m))
 
           let modFieldSpec fspec = 
+              if isNil ilTyArgs then 
+                fspec 
+              else
                 {fspec with EnclosingType= 
                                    let ty = fspec.EnclosingType
                                    let tspec = ty.TypeSpec
@@ -3907,7 +3913,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc  selfv eenvouter expr =
             | Expr.Lambda (_,_,_,vs,body,_,bty) when not isLocalTypeFunc -> 
                 // Transform a lambda taking untupled arguments into one 
                 // taking only a single tupled argument if necessary.  REVIEW: do this earlier 
-                let tupledv, body =  MultiLambdaToTupledLambda vs body 
+                let tupledv, body =  MultiLambdaToTupledLambda cenv.g vs body 
                 getCallStructure tvacc (tupledv :: vacc) (body,bty)
             | _ -> 
                 (List.rev tvacc, List.rev vacc, e, ety)

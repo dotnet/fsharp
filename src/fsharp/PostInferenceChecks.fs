@@ -240,9 +240,9 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
         | None -> ()
 
     | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
-    | TType_tuple typs        -> CheckTypesDeep f g env typs
-    | TType_fun (s,t)         -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
-    | TType_var tp            -> 
+    | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
+    | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
+    | TType_var tp -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
               | None -> ()
@@ -774,7 +774,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         | _ -> CheckExprsPermitByrefs cenv env args  
 
 
-    | TOp.Tuple,_,_ ->
+    | TOp.Tuple tupInfo,_,_,KnownArityTuple nArity when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
         | TupleOfArgsPermitByrefs nArity -> 
             if cenv.reportErrors then 
@@ -801,6 +801,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
 
         // Address-of operator generates byref, and context permits this. 
         CheckExprsNoByrefs cenv env args                   
+
+    | TOp.TupleFieldGet _,_,[arg1],_arity -> 
+        CheckTypeInstNoByrefs cenv env m tyargs
+        CheckExprDirectArgs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
 
     | TOp.ValFieldGet _rf,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -887,7 +891,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         // allow args to be byref here 
         CheckExprsPermitByrefs cenv env args 
 
-    | (   TOp.Tuple
+    | (   TOp.Tuple _
         | TOp.UnionCase _
         | TOp.ExnConstr _
         | TOp.Array
