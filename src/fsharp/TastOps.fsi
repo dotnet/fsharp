@@ -1093,6 +1093,8 @@ val mkListTy         : TcGlobals -> TType -> TType
 val mkOptionTy       : TcGlobals -> TType -> TType
 val mkNoneCase  : TcGlobals -> UnionCaseRef
 val mkSomeCase  : TcGlobals -> UnionCaseRef
+val mkAnyNoneCase  : TcGlobals -> StructnessInfo -> UnionCaseRef
+val mkAnySomeCase  : TcGlobals -> StructnessInfo -> UnionCaseRef
 
 val mkNil  : TcGlobals -> range -> TType -> Expr
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
@@ -1359,7 +1361,7 @@ type ActivePatternElemRef with
     member Name : string
 
 val TryGetActivePatternInfo  : ValRef -> PrettyNaming.ActivePatternInfo option
-val mkChoiceCaseRef : TcGlobals -> range -> numChoices:int -> structness: StructnessInfo -> choiceNumber: int -> UnionCaseRef
+val mkAnyChoiceCaseRef : TcGlobals -> range -> numChoices:int -> structness: StructnessInfo -> choiceNumber: int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
     member Names : string list 

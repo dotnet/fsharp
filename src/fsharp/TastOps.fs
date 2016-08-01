@@ -2711,10 +2711,17 @@ let mkLazyTy g ty = TType_app(g.lazy_tcr_nice,[ty])
 let mkPrintfFormatTy g aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety])
 
 let mkOptionTy g ty = TType_app (g.option_tcr_nice, [ty])
-let mkAnyOptionTy g s ty = 
-     match s with 
-     | StructnessInfo.Const true -> TType_app (g.struct_option_tcr_canon, [ty])
-     | StructnessInfo.Const false -> TType_app (g.option_tcr_nice, [ty])
+let mkAnyCanonOptionTyconRef g s = 
+     match evalStructnessInfo s with 
+     | true -> g.struct_option_tcr_canon
+     | false -> g.option_tcr_canon
+
+let mkAnyNiceOptionTyconRef g s = 
+     match evalStructnessInfo s with 
+     | true -> g.struct_option_tcr_canon
+     | false -> g.option_tcr_nice
+
+let mkAnyOptionTy g s ty = TType_app (mkAnyNiceOptionTyconRef g s, [ty])
 
 let mkListTy g ty = TType_app (g.list_tcr_nice, [ty])
 
@@ -2748,8 +2755,10 @@ let destLinqExpressionTy g ty =
     | Some ty -> ty
     | None -> failwith "destLinqExpressionTy: not an expression type"
 
-let mkNoneCase g = mkUnionCaseRef g.option_tcr_canon "None"
-let mkSomeCase g = mkUnionCaseRef g.option_tcr_canon "Some"
+let mkAnyNoneCase g structness = mkUnionCaseRef (mkAnyCanonOptionTyconRef g structness) "None"
+let mkAnySomeCase g structness = mkUnionCaseRef (mkAnyCanonOptionTyconRef g structness) "Some"
+let mkNoneCase g = mkAnyNoneCase g tupInfoRef
+let mkSomeCase g = mkAnySomeCase g tupInfoRef
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -7275,10 +7284,10 @@ type ActivePatternElemRef with
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
             List.item n nms
 
-let mkChoiceTyconRef g m n s = 
+let mkAnyChoiceTyconRef g m n s = 
     if evalStructnessInfo s then 
          match n with 
-         | 0 | 1 -> error(InternalError("mkChoiceTyconRef",m))
+         | 0 | 1 -> error(InternalError("mkAnyChoiceTyconRef",m))
          | 2 -> g.struct_choice2_tcr
          | 3 -> g.struct_choice3_tcr
          | 4 -> g.struct_choice4_tcr
@@ -7288,7 +7297,7 @@ let mkChoiceTyconRef g m n s =
          | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
     else
          match n with 
-         | 0 | 1 -> error(InternalError("mkChoiceTyconRef",m))
+         | 0 | 1 -> error(InternalError("mkAnyChoiceTyconRef",m))
          | 2 -> g.choice2_tcr
          | 3 -> g.choice3_tcr
          | 4 -> g.choice4_tcr
@@ -7297,20 +7306,20 @@ let mkChoiceTyconRef g m n s =
          | 7 -> g.choice7_tcr
          | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
 
-let mkChoiceTy g m structness tinst = 
+let mkAnyChoiceTy g m structness tinst = 
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | _ -> mkAppTy (mkChoiceTyconRef g m (List.length tinst) structness) tinst
+     | _ -> mkAppTy (mkAnyChoiceTyconRef g m (List.length tinst) structness) tinst
 
-let mkChoiceCaseRef g m n structness i = 
-     mkUnionCaseRef (mkChoiceTyconRef g m n structness) ("Choice"+string (i+1)+"Of"+string n)
+let mkAnyChoiceCaseRef g m n structness i = 
+     mkUnionCaseRef (mkAnyChoiceTyconRef g m n structness) ("Choice"+string (i+1)+"Of"+string n)
 
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
     member apinfo.ResultType g m structness rtys = 
-        let choicety = mkChoiceTy g m structness rtys
+        let choicety = mkAnyChoiceTy g m structness rtys
         if apinfo.IsTotal then choicety else mkAnyOptionTy g structness choicety
     
     member apinfo.OverallType g m dty structness  rtys = 

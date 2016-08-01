@@ -919,13 +919,24 @@ let CompilePatternBasic
              
              if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m structness resTys
-             let v,vexp = mkCompGenLocal m "activePatternResult" rty
-             if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkApps g ((pexp,tyOfExpr g pexp), [], [argexp],m)
+
+             match evalStructnessInfo structness with 
+             | true -> 
+                 let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates appexp None matchm
+                 match vOpt with 
+                 | None -> Some addrexp, None
+                 | Some (v,e) -> 
+                     if topv.IsMemberOrModuleBinding then 
+                         AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                     Some addrexp, Some (mkInvisibleBind v e) 
+             | false -> 
+                 let v,vexp = mkCompGenLocal m "activePatternResult" rty
+                 if topv.IsMemberOrModuleBinding then 
+                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                 Some vexp,Some (mkInvisibleBind v appexp)
              
-             Some(vexp),Some(mkInvisibleBind v appexp)
           | _ -> None,None
                             
 
@@ -976,9 +987,9 @@ let CompilePatternBasic
                          if not total && apArity > 1 then 
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(),m))
                          
-                         if not total then Test.UnionCase(mkSomeCase g,resTys)
+                         if not total then Test.UnionCase(mkAnySomeCase g structness,resTys)
                          elif apArity <= 1 then Test.Const(Const.Unit) 
-                         else Test.UnionCase(mkChoiceCaseRef g m apArity structness idx,resTys) 
+                         else Test.UnionCase(mkAnyChoiceCaseRef g m apArity structness idx,resTys) 
                      | _ -> discrim
                      
                  // Project a successful edge through the frontiers. 
@@ -1053,7 +1064,7 @@ let CompilePatternBasic
                             if apArity <= 1 then 
                                 Option.get inpExprOpt 
                             else
-                                let ucref = mkChoiceCaseRef g m apArity structness idx
+                                let ucref = mkAnyChoiceCaseRef g m apArity structness idx
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
                                 mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt,ucref,instTypes tpinst resTys,j,exprm)
@@ -1070,7 +1081,7 @@ let CompilePatternBasic
                             let accessf' _j tpinst _ =  
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
-                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkAnySomeCase g structness, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
                     else 
                         // Successful active patterns  don't refute other patterns
