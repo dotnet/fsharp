@@ -802,7 +802,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         // Address-of operator generates byref, and context permits this. 
         CheckExprsNoByrefs cenv env args                   
 
-    | TOp.TupleFieldGet _,_,[arg1],_arity -> 
+    | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprDirectArgs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
 
