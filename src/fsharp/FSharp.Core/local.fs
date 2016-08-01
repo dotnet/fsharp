@@ -32,7 +32,7 @@ module internal List =
     let rec distinctToFreshConsTail cons (hashSet:HashSet<_>) list = 
         match list with
         | [] -> setFreshConsTail cons []
-        | (x::rest) ->
+        | x::rest ->
             if hashSet.Add(x) then
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
@@ -44,7 +44,7 @@ module internal List =
         match list with
         | [] -> []
         | [h] -> [h]
-        | (x::rest) ->
+        | x::rest ->
             let hashSet =  System.Collections.Generic.HashSet<'T>(comparer)
             hashSet.Add(x) |> ignore
             let cons = freshConsNoTail x
@@ -54,7 +54,7 @@ module internal List =
     let rec distinctByToFreshConsTail cons (hashSet:HashSet<_>) keyf list = 
         match list with
         | [] -> setFreshConsTail cons []
-        | (x::rest) ->
+        | x::rest ->
             if hashSet.Add(keyf x) then
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
@@ -66,7 +66,7 @@ module internal List =
         match list with
         | [] -> []
         | [h] -> [h]
-        | (x::rest) ->
+        | x::rest ->
             let hashSet = System.Collections.Generic.HashSet<'Key>(comparer)
             hashSet.Add(keyf x) |> ignore
             let cons = freshConsNoTail x
@@ -89,17 +89,17 @@ module internal List =
     let rec mapToFreshConsTail cons f x = 
         match x with
         | [] -> 
-            setFreshConsTail cons [];
-        | (h::t) -> 
+            setFreshConsTail cons []
+        | h::t -> 
             let cons2 = freshConsNoTail (f h)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             mapToFreshConsTail cons2 f t
 
     let map f x = 
         match x with
         | [] -> []
         | [h] -> [f h]
-        | (h::t) -> 
+        | h::t -> 
             let cons = freshConsNoTail (f h)
             mapToFreshConsTail cons f t
             cons
@@ -107,17 +107,17 @@ module internal List =
     let rec mapiToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_>) x i = 
         match x with
         | [] -> 
-            setFreshConsTail cons [];
+            setFreshConsTail cons []
         | (h::t) -> 
             let cons2 = freshConsNoTail (f.Invoke(i,h))
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             mapiToFreshConsTail cons2 f t (i+1)
 
     let mapi f x = 
         match x with
         | [] -> []
         | [h] -> [f 0 h]
-        | (h::t) -> 
+        | h::t -> 
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let cons = freshConsNoTail (f.Invoke(0,h))
             mapiToFreshConsTail cons f t 1
@@ -126,37 +126,96 @@ module internal List =
     let rec map2ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_>) xs1 xs2 = 
         match xs1,xs2 with
         | [],[] -> 
-            setFreshConsTail cons [];
-        | (h1::t1),(h2::t2) -> 
+            setFreshConsTail cons []
+        | h1::t1, h2::t2 -> 
             let cons2 = freshConsNoTail (f.Invoke(h1,h2))
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             map2ToFreshConsTail cons2 f t1 t2
         | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     let map2 f xs1 xs2 = 
         match xs1,xs2 with
         | [],[] -> []
-        | (h1::t1),(h2::t2) -> 
+        | h1::t1, h2::t2 -> 
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let cons = freshConsNoTail (f.Invoke(h1,h2))
             map2ToFreshConsTail cons f t1 t2
             cons
         | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
+    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 xs3 = 
+        match xs1,xs2,xs3 with
+        | [],[],[] ->
+            setFreshConsTail cons []
+        | h1::t1, h2::t2, h3::t3 -> 
+            let cons2 = freshConsNoTail (f.Invoke(h1,h2,h3))
+            setFreshConsTail cons cons2
+            map3ToFreshConsTail cons2 f t1 t2 t3
+        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let map3 f xs1 xs2 xs3 = 
+        match xs1,xs2,xs3 with
+        | [],[],[] -> []
+        | h1::t1, h2::t2, h3::t3 -> 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let cons = freshConsNoTail (f.Invoke(h1,h2,h3))
+            map3ToFreshConsTail cons f t1 t2 t3
+            cons
+        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let rec mapi2ToFreshConsTail n cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 = 
+        match xs1,xs2 with
+        | [],[] -> 
+            setFreshConsTail cons []
+        | h1::t1, h2::t2 -> 
+            let cons2 = freshConsNoTail (f.Invoke(n,h1,h2))
+            setFreshConsTail cons cons2
+            mapi2ToFreshConsTail (n + 1) cons2 f t1 t2
+        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let mapi2 f xs1 xs2 = 
+        match xs1,xs2 with
+        | [],[] -> []
+        | h1::t1, h2::t2 -> 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let cons = freshConsNoTail (f.Invoke(0, h1,h2))
+            mapi2ToFreshConsTail 1 cons f t1 t2
+            cons
+        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+    
+    let rec scanToFreshConsTail cons xs s (f: OptimizedClosures.FSharpFunc<_,_,_>) =
+        match xs with
+        | [] ->
+            setFreshConsTail cons []
+        | h::t ->
+            let newState = f.Invoke(s,h)
+            let cons2 = freshConsNoTail newState
+            setFreshConsTail cons cons2
+            scanToFreshConsTail cons2 t newState f
+
+    let scan f (s:'State) (list:'T list) = 
+        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+        match list with 
+        | [] -> [s]
+        | _ -> 
+            let cons = freshConsNoTail s
+            scanToFreshConsTail cons list s f
+            cons
+
     let rec indexedToFreshConsTail cons xs i =
         match xs with
         | [] ->
-            setFreshConsTail cons [];
-        | (h::t) ->
+            setFreshConsTail cons []
+        | h::t ->
             let cons2 = freshConsNoTail (i,h)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             indexedToFreshConsTail cons2 t (i+1)
 
     let indexed xs =
         match xs with
         | [] -> []
         | [h] -> [(0,h)]
-        | (h::t) ->
+        | h::t ->
             let cons = freshConsNoTail (0,h)
             indexedToFreshConsTail cons t 1
             cons
@@ -164,12 +223,12 @@ module internal List =
     let rec mapFoldToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<'State, 'T, 'U * 'State>) acc xs =
         match xs with
         | [] ->
-            setFreshConsTail cons [];
+            setFreshConsTail cons []
             acc
-        | (h::t) ->
+        | h::t ->
             let x',s' = f.Invoke(acc,h)
             let cons2 = freshConsNoTail x'
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             mapFoldToFreshConsTail cons2 f s' t
 
     let mapFold f acc xs =
@@ -178,7 +237,7 @@ module internal List =
         | [h] ->
             let x',s' = f acc h
             [x'],s'
-        | (h::t) ->
+        | h::t ->
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let x',s' = f.Invoke(acc,h)
             let cons = freshConsNoTail x'
@@ -188,12 +247,12 @@ module internal List =
     let rec forall f xs1 = 
         match xs1 with 
         | [] -> true
-        | (h1::t1) -> f h1 && forall f t1
+        | h1::t1 -> f h1 && forall f t1
 
     let rec exists f xs1 = 
         match xs1 with 
         | [] -> false
-        | (h1::t1) -> f h1 || exists f t1
+        | h1::t1 -> f h1 || exists f t1
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -240,7 +299,7 @@ module internal List =
     let rec allPairsToFreshConsTailSingle x ys cons =
         match ys with
         | [] -> cons
-        | (h2::t2) ->
+        | h2::t2 ->
             let cons2 = freshConsNoTail (x,h2)
             setFreshConsTail cons cons2
             allPairsToFreshConsTailSingle x t2 cons2
@@ -248,7 +307,7 @@ module internal List =
     let rec allPairsToFreshConsTail xs ys cons =
         match xs with
         | [] -> setFreshConsTail cons []
-        | (h::t) ->
+        | h::t ->
             let p = allPairsToFreshConsTailSingle h ys cons
             allPairsToFreshConsTail  t ys p
 
@@ -266,11 +325,11 @@ module internal List =
     let rec filterToFreshConsTail cons f l = 
         match l with 
         | [] -> 
-            setFreshConsTail cons l; // note, l = nil
+            setFreshConsTail cons l // note, l = nil
         | h::t -> 
             if f h then 
                 let cons2 = freshConsNoTail h 
-                setFreshConsTail cons cons2;
+                setFreshConsTail cons cons2
                 filterToFreshConsTail cons2 f t
             else 
                 filterToFreshConsTail cons f t
@@ -282,7 +341,7 @@ module internal List =
         | h::t -> 
             if f h then   
                 let cons = freshConsNoTail h 
-                filterToFreshConsTail cons f t; 
+                filterToFreshConsTail cons f t
                 cons
             else 
                 filter f t
@@ -307,7 +366,7 @@ module internal List =
         | []::t -> concatToEmpty t 
         | (h::t1)::tt2 -> 
             let res = freshConsNoTail h
-            concatToFreshConsTail res t1 tt2;
+            concatToFreshConsTail res t1 tt2
             res
 
     let toArray (l:'T list) =
@@ -356,7 +415,7 @@ module internal List =
     let rec initToFreshConsTail cons i n f = 
         if i < n then 
             let cons2 = freshConsNoTail (f i)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             initToFreshConsTail cons2 (i+1) n f 
         else 
             setFreshConsTail cons []
@@ -418,44 +477,44 @@ module internal List =
     let rec partitionToFreshConsTails consL consR p l = 
         match l with 
         | [] -> 
-            setFreshConsTail consL l; // note, l = nil
-            setFreshConsTail consR l; // note, l = nil
+            setFreshConsTail consL l // note, l = nil
+            setFreshConsTail consR l // note, l = nil
             
         | h::t -> 
             let cons' = freshConsNoTail h
             if p h then 
-                setFreshConsTail consL cons';
+                setFreshConsTail consL cons'
                 partitionToFreshConsTails cons' consR p t
             else 
-                setFreshConsTail consR cons';
+                setFreshConsTail consR cons'
                 partitionToFreshConsTails consL cons' p t
       
     let rec partitionToFreshConsTailLeft consL p l = 
         match l with 
         | [] -> 
-            setFreshConsTail consL l; // note, l = nil
+            setFreshConsTail consL l // note, l = nil
             l // note, l = nil
         | h::t -> 
             let cons' = freshConsNoTail h 
             if p h then 
-                setFreshConsTail consL cons';
+                setFreshConsTail consL cons'
                 partitionToFreshConsTailLeft cons'  p t
             else 
-                partitionToFreshConsTails consL cons' p t; 
+                partitionToFreshConsTails consL cons' p t
                 cons'
 
     let rec partitionToFreshConsTailRight consR p l = 
         match l with 
         | [] -> 
-            setFreshConsTail consR l; // note, l = nil
+            setFreshConsTail consR l // note, l = nil
             l // note, l = nil
         | h::t -> 
             let cons' = freshConsNoTail h 
             if p h then 
-                partitionToFreshConsTails cons' consR p t; 
+                partitionToFreshConsTails cons' consR p t
                 cons'
             else 
-                setFreshConsTail consR cons';
+                setFreshConsTail consR cons'
                 partitionToFreshConsTailRight cons' p t
 
     let partition p l = 
@@ -474,7 +533,7 @@ module internal List =
         | [] -> setFreshConsTail cons []
         | h::t ->
             let cons2 = freshConsNoTail h
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
@@ -514,8 +573,8 @@ module internal List =
         | ((h1,h2)::t) -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
-            setFreshConsTail cons1a cons2a;
-            setFreshConsTail cons1b cons2b;
+            setFreshConsTail cons1a cons2a
+            setFreshConsTail cons1b cons2b
             unzipToFreshConsTail cons2a cons2b t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -527,7 +586,7 @@ module internal List =
         | ((h1,h2)::t) -> 
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
-            unzipToFreshConsTail res1a res1b t; 
+            unzipToFreshConsTail res1a res1b t
             res1a,res1b
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -535,16 +594,16 @@ module internal List =
     let rec unzip3ToFreshConsTail cons1a cons1b cons1c x = 
         match x with 
         | [] -> 
-            setFreshConsTail cons1a [];
-            setFreshConsTail cons1b [];
-            setFreshConsTail cons1c [];
+            setFreshConsTail cons1a []
+            setFreshConsTail cons1b []
+            setFreshConsTail cons1c []
         | ((h1,h2,h3)::t) -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
             let cons2c = freshConsNoTail h3
-            setFreshConsTail cons1a cons2a;
-            setFreshConsTail cons1b cons2b;
-            setFreshConsTail cons1c cons2c;
+            setFreshConsTail cons1a cons2a
+            setFreshConsTail cons1b cons2b
+            setFreshConsTail cons1c cons2c
             unzip3ToFreshConsTail cons2a cons2b cons2c t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -557,7 +616,7 @@ module internal List =
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
             let res1c = freshConsNoTail h3 
-            unzip3ToFreshConsTail res1a res1b res1c t; 
+            unzip3ToFreshConsTail res1a res1b res1c t
             res1a,res1b,res1c
 
     let rec windowedToFreshConsTail cons windowSize i list =
@@ -639,19 +698,19 @@ module internal List =
             setFreshConsTail cons []
         | (h1::t1),(h2::t2) -> 
             let cons2 = freshConsNoTail (h1,h2)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             zipToFreshConsTail cons2 t1 t2
         | _ -> 
             invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
-    let zip  xs1 xs2 = 
+    let zip xs1 xs2 = 
         match xs1,xs2 with 
         | [],[] -> []
         | (h1::t1),(h2::t2) -> 
             let res = freshConsNoTail (h1,h2)
-            zipToFreshConsTail res t1 t2; 
+            zipToFreshConsTail res t1 t2
             res
         | _ -> 
             invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
@@ -661,10 +720,10 @@ module internal List =
     let rec zip3ToFreshConsTail cons xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with 
         | [],[],[] -> 
-            setFreshConsTail cons [];
+            setFreshConsTail cons []
         | (h1::t1),(h2::t2),(h3::t3) -> 
             let cons2 = freshConsNoTail (h1,h2,h3)
-            setFreshConsTail cons cons2;
+            setFreshConsTail cons cons2
             zip3ToFreshConsTail cons2 t1 t2 t3
         | _ -> 
             invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
@@ -677,7 +736,7 @@ module internal List =
             []
         | (h1::t1),(h2::t2),(h3::t3) -> 
             let res = freshConsNoTail (h1,h2,h3) 
-            zip3ToFreshConsTail res t1 t2 t3; 
+            zip3ToFreshConsTail res t1 t2 t3
             res
         | _ -> 
             invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
@@ -867,7 +926,7 @@ module internal Array =
         let res = zeroCreateUnchecked (fin-start+2)
         res.[fin - start + 1] <- state
         for i = fin downto start do
-            state <- f.Invoke(array.[i], state);
+            state <- f.Invoke(array.[i], state)
             res.[i - start] <- state
         res
 
