@@ -1762,7 +1762,7 @@ and FSharpType(cenv, typ:TType) =
        isResolved() &&
        protect <| fun () -> 
         match stripTyparEqns typ with 
-        | TType_tuple (tupInfo,_) -> evalTupInfoIsStruct tupInfo
+        | TType_tuple (tupInfo,_) -> evalStructnessInfo tupInfo
         | _ -> false
 
     member x.IsNamedType = x.HasTypeDefinition

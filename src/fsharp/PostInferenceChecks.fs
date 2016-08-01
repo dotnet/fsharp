@@ -730,7 +730,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckExprDirectArgs cenv env args  
 
     // Tuple expression in known tuple context
-    | TOp.Tuple tupInfo,_,_,KnownArityTuple nArity when not (evalTupInfoIsStruct tupInfo) ->           
+    | TOp.Tuple tupInfo,_,_,KnownArityTuple nArity when not (evalStructnessInfo tupInfo) ->           
         if cenv.reportErrors then 
             if args.Length <> nArity then 
                 errorR(InternalError("Tuple arity does not correspond to planned function argument arity",m))
@@ -943,7 +943,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | Test.Const _                   -> ()
     | Test.IsNull                    -> ()
     | Test.IsInst (srcTyp,dstTyp)    -> (CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp)
-    | Test.ActivePatternCase (exp,_,_,_,_)     -> CheckExpr cenv env exp
+    | Test.ActivePatternCase (exp,_,_,_,_,_)     -> CheckExpr cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
     props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)

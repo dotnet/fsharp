@@ -5078,6 +5078,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                     else 
                         List.frontAndBack args
 
+            let apStructness = 
+                let _,rty = stripFunTy cenv.g vexpty
+                if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
+
             if nonNil activePatArgsAsSynPats && apinfo.ActiveTags.Length <> 1 then 
                 error(Error(FSComp.SR.tcRequireActivePatternWithOneResult(),m))
 
@@ -5107,7 +5111,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
-            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys 
+            let activePatType = apinfo.OverallType cenv.g m ty apStructness activePatResTys 
 
             let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range)) 
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
@@ -5123,7 +5127,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             (fun values -> 
                 // Report information about the 'active recognizer' occurence to IDE
                 CallNameResolutionSink cenv.tcSink (rangeOfLid longId,env.NameEnv,item,item,ItemOccurence.Pattern,env.DisplayEnv,env.eAccessRights)
-                TPat_query((activePatExpr, activePatResTys, activePatIdentity, idx, apinfo), arg' values, m)), 
+                TPat_query((activePatExpr, activePatResTys, activePatIdentity, apStructness, idx, apinfo), arg' values, m)), 
             (tpenv,names,takenNames)
 
         | (Item.UnionCase _ | Item.ExnCase _) as item ->
@@ -8237,14 +8241,14 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         let ucaseAppTy = NewInferenceType ()
         let mkConstrApp,argtys, argNames = 
           match item with 
-          | Item.ActivePatternResult(apinfo, _, n, _) -> 
-              let aparity = apinfo.Names.Length
-              match aparity with 
+          | Item.ActivePatternResult(apinfo, _, apStructness, n, _) -> 
+              let apArity = apinfo.Names.Length
+              match apArity with 
               | 0 | 1 -> 
                   let mkConstrApp _mArgs = function [arg] -> arg | _ -> error(InternalError("ApplyUnionCaseOrExn",mItem))
                   mkConstrApp, [ucaseAppTy], [ for (s,m) in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
               | _ ->
-                  let ucref = mkChoiceCaseRef cenv.g mItem aparity n
+                  let ucref = mkChoiceCaseRef cenv.g mItem apArity apStructness n
                   let _,_,tinst,_ = infoOfTyconRef mItem ucref.TyconRef
                   let ucinfo = UnionCaseInfo(tinst,ucref)
                   ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo,false))
@@ -10087,11 +10091,14 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
                 if isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
                     error(Error(FSComp.SR.tcInvalidActivePatternName(),mBinding))
 
+                let _,rty = stripFunTy cenv.g ty
+                let apStructness = if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
+
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag,tagRange) ->
-                    let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
+                    let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, apStructness, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange,env.NameEnv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights))
 
-                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apinfo nenv ty m) envinner 
+                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apStructness apinfo nenv ty m) envinner 
             | None -> 
                 envinner
         
@@ -10125,7 +10132,8 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
         | Some (apinfo,ty,_) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
             let _,rty = stripFunTy cenv.g ty
-            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys) rty
+            let apStructness = if isStructTy cenv.g rty then tupInfoStruct else tupInfoRef
+            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range apStructness activePatResTys) rty
         | None -> 
             ()
 
@@ -14882,8 +14890,13 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck(false)
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
 
+                    //if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                    //    errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                        errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]
+                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
+                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(),m))
 
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo

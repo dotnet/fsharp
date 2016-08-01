@@ -54,7 +54,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     | TType_ucase (tc1,l1)  ,TType_ucase (tc2,l2) when g.unionCaseRefEq tc1 tc2  ->  
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2
     | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
+        evalStructnessInfo tupInfo1 = evalStructnessInfo tupInfo2 && 
         List.lengthsEqAndForall2 (typeEquiv g) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         typeEquiv g d1 d2 && typeEquiv g r1 r2
@@ -90,7 +90,7 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     | TType_app (tc1,l1)  ,TType_app (tc2,l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
     | TType_tuple (tupInfo1, l1)    ,TType_tuple (tupInfo2, l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
+        evalStructnessInfo tupInfo1 = evalStructnessInfo tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
@@ -112,7 +112,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     | TType_app (tc1,l1)  ,TType_app (tc2,l2) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
     | TType_tuple (tupInfo1,l1)    ,TType_tuple (tupInfo2,l2)     -> 
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 && 
+        evalStructnessInfo tupInfo1 = evalStructnessInfo tupInfo2 && 
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
     | TType_fun (d1,r1)  ,TType_fun (d2,r2)   -> 
         (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2

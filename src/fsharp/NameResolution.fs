@@ -146,7 +146,7 @@ type Item =
     /// Represents the resolution of a name to an F# union case.
     | UnionCase of UnionCaseInfo * bool
     /// Represents the resolution of a name to an F# active pattern result.
-    | ActivePatternResult of ActivePatternInfo * TType * int  * range
+    | ActivePatternResult of ActivePatternInfo * TType * StructnessInfo * int * range
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
     | ActivePatternCase of ActivePatternElemRef 
     /// Represents the resolution of a name to an F# exception definition.
@@ -513,10 +513,10 @@ let AddValRefToNameEnv nenv vref =
     AddValRefsToNameEnvWithPriority BulkAdd.No (NextExtensionMethodPriority()) nenv [| vref |]
 
 /// Add a set of active pattern result tags to the environment.
-let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
+let AddActivePatternResultTagsToNameEnv apStructness (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
     let nms = apinfo.Names
     let apresl = nms |> List.mapi (fun j nm -> nm, j)
-    { nenv with  eUnqualifiedItems= (apresl,nenv.eUnqualifiedItems) ||> List.foldBack (fun (nm,j) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,j, m))) } 
+    { nenv with  eUnqualifiedItems= (apresl,nenv.eUnqualifiedItems) ||> List.foldBack (fun (nm,j) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo,ty,apStructness,j,m))) } 
 
 /// Generalize a union case, from Cons --> List<T>.Cons
 let GeneralizeUnionCaseRef (ucref:UnionCaseRef) = 
@@ -1210,7 +1210,7 @@ let (|ValUse|_|) (item:Item) =
 let (|ActivePatternCaseUse|_|) (item:Item) = 
     match item with 
     | Item.ActivePatternCase(APElemRef(_, vref, idx)) -> Some (vref.SigRange, vref.DefinitionRange, idx)
-    | Item.ActivePatternResult(ap, _, idx,_) -> Some (ap.Range, ap.Range, idx)
+    | Item.ActivePatternResult(ap, _, _, idx,_) -> Some (ap.Range, ap.Range, idx)
     | _ -> None
 
 let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =

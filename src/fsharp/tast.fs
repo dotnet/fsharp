@@ -3287,7 +3287,7 @@ and
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of TupInfo * TTypes
+    | TType_tuple of StructnessInfo * TTypes
 
     /// TType_fun(domainType,rangeType).
     ///
@@ -3313,8 +3313,8 @@ and
         | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
-             | TupInfo.Const false -> ""
-             | TupInfo.Const true -> "struct ")
+             | StructnessInfo.Const false -> ""
+             | StructnessInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
@@ -3324,8 +3324,8 @@ and
 and TypeInst = TType list 
 and TTypes = TType list 
 
-and [<RequireQualifiedAccess>] TupInfo = 
-    /// Some constant, e.g. true or false for tupInfo
+and [<RequireQualifiedAccess>] StructnessInfo = 
+    /// Some non-inferred constant, e.g. true or false 
     | Const of bool
 
 and [<RequireQualifiedAccess>] Measure = 
@@ -3654,7 +3654,7 @@ and
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx               -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
-    | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
+    | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * StructnessInfo * int * ActivePatternInfo
 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
@@ -3815,7 +3815,7 @@ and
     /// An operation representing the creation of an exception value using an F# exception declaration
     | ExnConstr of TyconRef
     /// An operation representing the creation of a tuple value
-    | Tuple of TupInfo 
+    | Tuple of StructnessInfo 
     /// An operation representing the creation of an array value
     | Array
     /// Constant byte arrays (used for parser tables and other embedded data)
@@ -3859,7 +3859,7 @@ and
     /// An operation representing a field-set on an F# exception value.
     | ExnFieldSet of TyconRef * int 
     /// An operation representing a field-get from an F# tuple value.
-    | TupleFieldGet of TupInfo * int 
+    | TupleFieldGet of StructnessInfo * int 
     /// IL assembly code - type list are the types pushed on the stack 
     | ILAsm of ILInstr list * TTypes 
     /// Generate a ldflda on an 'a ref. 
@@ -4148,8 +4148,8 @@ let typesOfVals (v:Val list) = v |> List.map (fun v -> v.Type)
 let nameOfVal   (v:Val) = v.LogicalName
 let arityOfVal (v:Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
 
-let tupInfoRef = TupInfo.Const false
-let tupInfoStruct = TupInfo.Const true
+let tupInfoRef = StructnessInfo.Const false
+let tupInfoStruct = StructnessInfo.Const true
 let structnessDefault = false
 let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)

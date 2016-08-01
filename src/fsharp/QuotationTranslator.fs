@@ -442,7 +442,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldGet(rfref),tyargs,args ->
             ConvRFieldGet cenv env m rfref tyargs args            
 
-        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] when not (evalTupInfoIsStruct tupInfo) -> 
+        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] when not (evalStructnessInfo tupInfo) -> 
             let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
             QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
 
@@ -795,7 +795,7 @@ and ConvType cenv env m typ =
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
-    | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+    | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalStructnessInfo tupInfo) l)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))

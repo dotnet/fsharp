@@ -1456,7 +1456,7 @@ let rec RearrangeTupleBindings expr fin =
         match RearrangeTupleBindings body fin with
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
-    | Expr.Op (TOp.Tuple tupInfo,_,_,_) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Op (TOp.Tuple tupInfo,_,_,_) when not (evalStructnessInfo tupInfo) -> Some (fin expr)
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -1531,7 +1531,7 @@ let (|QueryZero|_|) g = function
 /// Look for a possible tuple and transform
 let (|AnyRefTupleTrans|) e = 
     match e with 
-    | Expr.Op (TOp.Tuple tupInfo,tys,es,m) when not (evalTupInfoIsStruct tupInfo) -> (es, (fun es -> Expr.Op (TOp.Tuple tupInfo,tys,es,m)))  
+    | Expr.Op (TOp.Tuple tupInfo,tys,es,m) when not (evalStructnessInfo tupInfo) -> (es, (fun es -> Expr.Op (TOp.Tuple tupInfo,tys,es,m)))  
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
@@ -1879,7 +1879,7 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
       | TOp.UnionCase c -> 2,MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possible here *)
       | TOp.Tuple tupInfo        -> 
-          let isStruct = evalTupInfoIsStruct tupInfo 
+          let isStruct = evalStructnessInfo tupInfo 
           if isStruct then 0,valu 
           else 1,MakeValueInfoForTuple (Array.ofList argValues)
       | TOp.ValFieldGet _     
@@ -2900,7 +2900,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | Test.IsNull,StripConstValue(c2) -> Some(c2=Const.Zero)
     | Test.IsInst (_srcty1,_tgty1), _ -> None
     // These should not occur in optimization
-    | Test.ActivePatternCase (_,_,_vrefOpt1,_,_),_ -> None
+    | Test.ActivePatternCase (_,_,_vrefOpt1,_,_,_),_ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 

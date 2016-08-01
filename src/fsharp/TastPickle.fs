@@ -1562,7 +1562,7 @@ let _ = fill_p_typ (fun ty st ->
     let ty = stripTyparEqns ty
     match ty with 
     | TType_tuple (tupInfo,l) -> 
-          if evalTupInfoIsStruct tupInfo then 
+          if evalStructnessInfo tupInfo then 
               p_byte 8 st; p_typs l st
           else
               p_byte 0 st; p_typs l st
@@ -2294,7 +2294,7 @@ and p_op x st =
     | TOp.UnionCase c                   -> p_byte 0 st; p_ucref c st
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
     | TOp.Tuple tupInfo             -> 
-         if evalTupInfoIsStruct tupInfo then 
+         if evalStructnessInfo tupInfo then 
               p_byte 29 st
          else 
               p_byte 2 st
@@ -2307,7 +2307,7 @@ and p_op x st =
     | TOp.ExnFieldGet (a,b) -> p_byte 9 st; p_tup2 (p_tcref "exn op") p_int (a,b) st
     | TOp.ExnFieldSet (a,b) -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a,b) st
     | TOp.TupleFieldGet (tupInfo,a)       -> 
-         if evalTupInfoIsStruct tupInfo then 
+         if evalStructnessInfo tupInfo then 
               p_byte 30 st; p_int a st
          else 
               p_byte 11 st; p_int a st
