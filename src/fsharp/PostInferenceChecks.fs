@@ -774,7 +774,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         | _ -> CheckExprsPermitByrefs cenv env args  
 
 
-    | TOp.Tuple tupInfo,_,_,KnownArityTuple nArity when not (evalTupInfoIsStruct tupInfo) ->           
+    | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
         | TupleOfArgsPermitByrefs nArity -> 
             if cenv.reportErrors then 
