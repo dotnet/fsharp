@@ -804,7 +804,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
 
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
-        CheckExprDirectArgs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
+        CheckExprsPermitByrefs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
 
     | TOp.ValFieldGet _rf,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
