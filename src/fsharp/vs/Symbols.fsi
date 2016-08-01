@@ -842,8 +842,11 @@ and [<Class>] internal FSharpType =
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments : IList<FSharpType>
     
-    /// Indicates if the type is a tuple type. The GenericArguments property returns the elements of the tuple type.
+    /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType : bool
+
+    /// Indicates if the type is a struct tuple type. The GenericArguments property returns the elements of the tuple type.
+    member IsStructTupleType : bool
 
     /// Indicates if the type is a function type. The GenericArguments property returns the domain and range of the function type.
     member IsFunctionType : bool
