@@ -304,6 +304,7 @@ type TcConfigBuilder =
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
       mutable useSignatureDataFile : bool
+      mutable jitTracking : bool
       mutable portablePDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
@@ -456,6 +457,7 @@ type TcConfig =
     member onlyEssentialOptimizationData : bool
     member useOptimizationDataFile : bool
     member useSignatureDataFile : bool
+    member jitTracking : bool
     member portablePDB : bool
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
