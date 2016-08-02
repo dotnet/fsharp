@@ -10,9 +10,9 @@ type StructRecord =
 
 let x = StructRecord ()
 
-let invalidUse() = 
-    use mutable x = (null : System.IDisposable)
-    ()
+
+
+
 
 
 type T = X<__SOURCE_DIRECTORY__>
