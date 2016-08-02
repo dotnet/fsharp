@@ -39,10 +39,10 @@ type Pattern =
   | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
   | TPat_disjs of  Pattern list * range
   | TPat_conjs of  Pattern list * range
-  | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+  | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * StructnessInfo * int * ActivePatternInfo) * Pattern * range
   | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
   | TPat_exnconstr of TyconRef * Pattern list * range
-  | TPat_tuple of  TupInfo * Pattern list * TType list * range
+  | TPat_tuple of  StructnessInfo * Pattern list * TType list * range
   | TPat_array of  Pattern list * TType * range
   | TPat_recd of TyconRef * TypeInst * Pattern list * range
   | TPat_range of char * char * range
@@ -374,8 +374,8 @@ let getDiscrimOfPattern g tpinst t =
         Some(Test.UnionCase (c,instTypes tpinst tyargs'))
     | TPat_array (args,ty,_m) -> 
         Some(Test.ArrayLength (args.Length,ty))
-    | TPat_query ((pexp,resTys,apatVrefOpt,idx,apinfo),_,_m) -> 
-        Some(Test.ActivePatternCase (pexp, instTypes tpinst resTys, apatVrefOpt, idx, apinfo))
+    | TPat_query ((pexp,resTys,apatVrefOpt,structness,idx,apinfo),_,_m) -> 
+        Some(Test.ActivePatternCase (pexp, instTypes tpinst resTys, apatVrefOpt, structness, idx, apinfo))
     | _ -> None
 
 let constOfDiscrim discrim =
@@ -393,7 +393,7 @@ let discrimsEq g d1 d2 =
   | Test.Const c1,              Test.Const c2 -> (c1=c2)
   | Test.IsNull ,               Test.IsNull -> true
   | Test.IsInst (srcty1,tgty1), Test.IsInst (srcty2,tgty2) -> typeEquiv g srcty1 srcty2 && typeEquiv g tgty1 tgty2
-  | Test.ActivePatternCase (_,_,vrefOpt1,n1,_),        Test.ActivePatternCase (_,_,vrefOpt2,n2,_) -> 
+  | Test.ActivePatternCase (_,_,vrefOpt1,_,n1,_),        Test.ActivePatternCase (_,_,vrefOpt2,_,n2,_) -> 
       match vrefOpt1, vrefOpt2 with 
       | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2 && n1 = n2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
       | _ -> false (* for equality purposes these are considered unequal! This is because adhoc computed patterns have no identity. *)
@@ -439,7 +439,7 @@ let discrimsHaveSameSimultaneousClass g d1 d2 =
     | Test.UnionCase _,    Test.UnionCase _  -> true
 
     | Test.IsInst _, Test.IsInst _ -> false
-    | Test.ActivePatternCase (_,_,apatVrefOpt1,_,_),        Test.ActivePatternCase (_,_,apatVrefOpt2,_,_) -> 
+    | Test.ActivePatternCase (_,_,apatVrefOpt1,_,_,_),        Test.ActivePatternCase (_,_,apatVrefOpt2,_,_,_) -> 
         match apatVrefOpt1, apatVrefOpt2 with 
         | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
         | _ -> false (* for equality purposes these are considered different classes of discriminators! This is because adhoc computed patterns have no identity! *)
@@ -626,7 +626,7 @@ let getRuleIndex (Frontier (i,_active,_valMap)) = i
 /// Is a pattern a partial pattern?
 let rec isPatternPartial p = 
     match p with 
-    | TPat_query ((_,_,_,_,apinfo),p,_m) -> not apinfo.IsTotal || isPatternPartial p
+    | TPat_query ((_,_,_,_,_,apinfo),p,_m) -> not apinfo.IsTotal || isPatternPartial p
     | TPat_const _ -> false
     | TPat_wild _ -> false
     | TPat_as (p,_,_) -> isPatternPartial p
@@ -640,8 +640,8 @@ let rec isPatternPartial p =
 
 let rec erasePartialPatterns inpp = 
     match inpp with 
-    | TPat_query ((expr,resTys,apatVrefOpt,idx,apinfo),p,m) -> 
-         if apinfo.IsTotal then TPat_query ((expr,resTys,apatVrefOpt,idx,apinfo),erasePartialPatterns p,m)
+    | TPat_query (((_,_,_,_,_,apinfo) as apdata),p,m) -> 
+         if apinfo.IsTotal then TPat_query (apdata,erasePartialPatterns p,m)
          else TPat_disjs ([],m) (* always fail *)
     | TPat_as (p,x,m) -> TPat_as (erasePartialPatterns p,x,m)
     | TPat_disjs (ps,m) -> TPat_disjs(erasePartials ps, m)
@@ -915,17 +915,27 @@ let CompilePatternBasic
 #endif
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern. 
-         | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_,_,apinfo)),m) :: _) ->
+         | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_,structness,_,apinfo)),m) :: _) ->
              
              if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
-             let rty = apinfo.ResultType g m resTys
-             let v,vexp = mkCompGenLocal m "activePatternResult" rty
-             if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+             let rty = apinfo.ResultType g m structness resTys
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkApps g ((pexp,tyOfExpr g pexp), [], [argexp],m)
+
+             if evalStructnessInfo structness then
+                 let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates appexp None matchm
+                 match vOpt with 
+                 | None -> Some addrexp, None
+                 | Some (v,e) -> 
+                     if topv.IsMemberOrModuleBinding then 
+                         AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                     Some addrexp, Some (mkInvisibleBind v e) 
+             else
+                 let v,vexp = mkCompGenLocal m "activePatternResult" rty
+                 if topv.IsMemberOrModuleBinding then 
+                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                 Some vexp,Some (mkInvisibleBind v appexp)
              
-             Some(vexp),Some(mkInvisibleBind v appexp)
           | _ -> None,None
                             
 
@@ -970,15 +980,15 @@ let CompilePatternBasic
                  // Convert active pattern edges to tests on results data 
                  let discrim' = 
                      match discrim with 
-                     | Test.ActivePatternCase(_pexp,resTys,_apatVrefOpt,idx,apinfo) -> 
-                         let aparity = apinfo.Names.Length
+                     | Test.ActivePatternCase(_pexp,resTys,_apatVrefOpt,structness,idx,apinfo) -> 
+                         let apArity = apinfo.Names.Length
                          let total = apinfo.IsTotal
-                         if not total && aparity > 1 then 
+                         if not total && apArity > 1 then 
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(),m))
                          
-                         if not total then Test.UnionCase(mkSomeCase g,resTys)
-                         elif aparity <= 1 then Test.Const(Const.Unit) 
-                         else Test.UnionCase(mkChoiceCaseRef g m aparity idx,resTys) 
+                         if not total then Test.UnionCase(mkAnySomeCase g structness,resTys)
+                         elif apArity <= 1 then Test.Const(Const.Unit) 
+                         else Test.UnionCase(mkAnyChoiceCaseRef g m apArity structness idx,resTys) 
                      | _ -> discrim
                      
                  // Project a successful edge through the frontiers. 
@@ -1042,18 +1052,18 @@ let CompilePatternBasic
             let active' = removeActive path active
             match pat with 
             | TPat_wild _ | TPat_as _ | TPat_tuple _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ -> failwith "Unexpected projection pattern"
-            | TPat_query ((_,resTys,apatVrefOpt,idx,apinfo),p,m) -> 
+            | TPat_query ((_,resTys,apatVrefOpt,structness,idx,apinfo),p,m) -> 
             
                 if apinfo.IsTotal then
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref,_) -> doesActivePatternHaveFreeTypars g vref)
                     if (hasParam && i = i') || (discrimsEq g discrim (Option.get (getDiscrimOfPattern pat))) then
-                        let aparity = apinfo.Names.Length
+                        let apArity = apinfo.Names.Length
                         let accessf' j tpinst _e' = 
                             assert inpExprOpt.IsSome
-                            if aparity <= 1 then 
+                            if apArity <= 1 then 
                                 Option.get inpExprOpt 
                             else
-                                let ucref = mkChoiceCaseRef g m aparity idx
+                                let ucref = mkAnyChoiceCaseRef g m apArity structness idx
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
                                 mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt,ucref,instTypes tpinst resTys,j,exprm)
@@ -1070,7 +1080,7 @@ let CompilePatternBasic
                             let accessf' _j tpinst _ =  
                                 // TODO: In the future we will want active patterns to be able to return struct-unions
                                 //       In that eventuality, we need to check we are taking the address correctly
-                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkAnySomeCase g structness, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path,int64 j))
                     else 
                         // Successful active patterns  don't refute other patterns
@@ -1197,7 +1207,7 @@ let CompilePatternBasic
                 res :=  BindProjectionPattern (Active(path,subExpr,TPat_const(Const.Char(char i),m))) s @ !res
             !res
         // Assign an identifier to each TPat_query based on our knowledge of the 'identity' of the active pattern, if any 
-        | TPat_query ((_,_,apatVrefOpt,_,_),_,_) -> 
+        | TPat_query ((_,_,apatVrefOpt,_,_,_),_,_) -> 
             let uniqId = 
                 match apatVrefOpt with 
                 | Some (vref,_) when not (doesActivePatternHaveFreeTypars g vref) -> vref.Stamp 

@@ -433,7 +433,7 @@ and GenTypeAux amap m g (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 #endif
     match stripTyEqnsAndMeasureEqns g ty with 
     | TType_app (tcref, tinst) -> GenNamedTyAppAux amap m g tyenv ptrsOK tcref tinst
-    | TType_tuple (tupInfo, args) -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+    | TType_tuple (tupInfo, args) -> GenTypeAux amap m g tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalStructnessInfo tupInfo) args)
     | TType_fun (dty, returnTy) -> EraseClosures.mkILFuncTy g.ilxPubCloEnv  (GenTypeArgAux amap m g tyenv dty) (GenTypeArgAux amap m g tyenv returnTy)
 
     | TType_ucase (ucref, args) -> 
@@ -2074,7 +2074,7 @@ and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
 
 and GenAllocTuple cenv cgbuf eenv (tupInfo, args,argtys,m) sequel =
 
-    let tupInfo = evalTupInfoIsStruct tupInfo
+    let tupInfo = evalStructnessInfo tupInfo
     let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argtys,args,m)
     let typ = GenNamedTyApp cenv.amap newm cenv.g eenv.tyenv tcref tys
     let ntyvars = if (tys.Length - 1) < goodTupleFields then (tys.Length - 1) else goodTupleFields
@@ -2088,7 +2088,7 @@ and GenAllocTuple cenv cgbuf eenv (tupInfo, args,argtys,m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetTupleField cenv cgbuf eenv (tupInfo,e,tys,n,m) sequel =
-    let tupInfo = evalTupInfoIsStruct tupInfo
+    let tupInfo = evalStructnessInfo tupInfo
     let rec getCompiledTupleItem g (e,tys:TTypes,n,m) =
         let ar = tys.Length
         if ar <= 0 then failwith "getCompiledTupleItem"

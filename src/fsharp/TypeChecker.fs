@@ -2337,9 +2337,9 @@ let ComputeInlineFlag memFlagsOption isInline isMutable m =
 type NormalizedBindingRhs = 
     | NormalizedBindingRhs of SynSimplePats list * SynBindingReturnInfo option * SynExpr 
 
-let PushOnePatternToRhs (cenv:cenv) isMember p (NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr)) = 
+let PushOnePatternToRhs (cenv:cenv) isMember p (NormalizedBindingRhs(spatsL,retInfoOpt,rhsExpr)) = 
     let spats,rhsExpr = PushPatternToExpr cenv.synArgNameGenerator isMember p rhsExpr
-    NormalizedBindingRhs(spats::spatsL, rtyOpt,rhsExpr)
+    NormalizedBindingRhs(spats::spatsL, retInfoOpt,rhsExpr)
 
 type NormalizedBindingPatternInfo = 
     NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData * SynValTyparDecls 
@@ -2372,9 +2372,9 @@ type IsObjExprBinding =
 module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ... 
     /// In this case the sematnics is let f a b = let A x = a in let B y = b 
-    let private PushMultiplePatternsToRhs (cenv:cenv) isMember ps (NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr)) = 
+    let private PushMultiplePatternsToRhs (cenv:cenv) isMember ps (NormalizedBindingRhs(spatsL,retInfoOpt,rhsExpr)) = 
         let spatsL2,rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember ps rhsExpr
-        NormalizedBindingRhs(spatsL2@spatsL, rtyOpt, rhsExpr)
+        NormalizedBindingRhs(spatsL2@spatsL, retInfoOpt, rhsExpr)
 
 
     let private MakeNormalizedStaticOrValBinding cenv isObjExprBinding id vis typars args rhsExpr valSynData = 
@@ -5078,6 +5078,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                     else 
                         List.frontAndBack args
 
+            let apStructness = inferActivePatternStructness cenv.g apinfo vexpty 
+
             if nonNil activePatArgsAsSynPats && apinfo.ActiveTags.Length <> 1 then 
                 error(Error(FSComp.SR.tcRequireActivePatternWithOneResult(),m))
 
@@ -5107,7 +5109,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
-            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys 
+            let activePatType = apinfo.OverallType cenv.g m ty apStructness activePatResTys 
 
             let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range)) 
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
@@ -5123,7 +5125,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             (fun values -> 
                 // Report information about the 'active recognizer' occurence to IDE
                 CallNameResolutionSink cenv.tcSink (rangeOfLid longId,env.NameEnv,item,item,ItemOccurence.Pattern,env.DisplayEnv,env.eAccessRights)
-                TPat_query((activePatExpr, activePatResTys, activePatIdentity, idx, apinfo), arg' values, m)), 
+                TPat_query((activePatExpr, activePatResTys, activePatIdentity, apStructness, idx, apinfo), arg' values, m)), 
             (tpenv,names,takenNames)
 
         | (Item.UnionCase _ | Item.ExnCase _) as item ->
@@ -6329,7 +6331,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo,bind) =
             implty --> NewInferenceType ()
 
     let (CheckedBindingInfo(inlineFlag,bindingAttribs,_,_,ExplicitTyparInfo(_,declaredTypars,_),nameToPrelimValSchemeMap,rhsExpr,_,_,m,_,_,_,_),tpenv) = 
-        let flex, tpenv = TcNonrecBindingTyparDecls cenv env tpenv bind
+        let flex, tpenv = TcNonRecBindingTyparDecls cenv env tpenv bind
         TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv false bindingTy None NoSafeInitInfo ([],flex) bind
 
     // 4c. generalize the binding - only relevant when implementing a generic virtual method 
@@ -8237,14 +8239,14 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         let ucaseAppTy = NewInferenceType ()
         let mkConstrApp,argtys, argNames = 
           match item with 
-          | Item.ActivePatternResult(apinfo, _, n, _) -> 
-              let aparity = apinfo.Names.Length
-              match aparity with 
+          | Item.ActivePatternResult(apinfo, _, apStructness, n, _) -> 
+              let apArity = apinfo.Names.Length
+              match apArity with 
               | 0 | 1 -> 
                   let mkConstrApp _mArgs = function [arg] -> arg | _ -> error(InternalError("ApplyUnionCaseOrExn",mItem))
                   mkConstrApp, [ucaseAppTy], [ for (s,m) in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
               | _ ->
-                  let ucref = mkChoiceCaseRef cenv.g mItem aparity n
+                  let ucref = mkAnyChoiceCaseRef cenv.g mItem apArity apStructness n
                   let _,_,tinst,_ = infoOfTyconRef mItem ucref.TyconRef
                   let ucinfo = UnionCaseInfo(tinst,ucref)
                   ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo,false))
@@ -9961,7 +9963,8 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
 
     match bind with 
 
-    | NormalizedBinding(vis,bkind,isInline,isMutable,attrs,doc,_,valSynData,pat,NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr),mBinding,spBind) ->
+    | NormalizedBinding(vis,bkind,isInline,isMutable,attrs,doc,_,valSynData,pat,bindingRhs,mBinding,spBind) ->
+        let (NormalizedBindingRhs(spatsL,retInfoOpt,rhsExpr)) = bindingRhs
         let (SynValData(memberFlagsOpt,valSynInfo,_)) = valSynData 
 
         let callerName = 
@@ -10006,7 +10009,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
 
         let retAttribs = 
-            match rtyOpt with 
+            match retInfoOpt with 
             | Some (SynBindingReturnInfo(_,_,retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
             | None -> [] 
 
@@ -10087,11 +10090,16 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
                 if isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
                     error(Error(FSComp.SR.tcInvalidActivePatternName(),mBinding))
 
+                // Assert the types given in the argument patterns so we can determine if the return result is a struct
+                ApplyTypesFromArgumentPatterns(cenv,envinner,false,ty,mBinding,tpenv,bindingRhs,memberFlagsOpt)
+
+                let apStructness = inferActivePatternStructness cenv.g apinfo ty
+
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag,tagRange) ->
-                    let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
+                    let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, apStructness, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange,env.NameEnv,item,item,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights))
 
-                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apinfo nenv ty m) envinner 
+                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apStructness apinfo nenv ty m) envinner 
             | None -> 
                 envinner
         
@@ -10124,8 +10132,9 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv isUse overallTy safeThisV
         match apinfoOpt with 
         | Some (apinfo,ty,_) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
+            let apStructness = inferActivePatternStructness cenv.g apinfo ty
             let _,rty = stripFunTy cenv.g ty
-            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys) rty
+            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range apStructness activePatResTys) rty
         | None -> 
             ()
 
@@ -10178,13 +10187,13 @@ and TcBindingTyparDecls alwaysRigid cenv env tpenv (SynValTyparDecls(synTypars,i
             
     ExplicitTyparInfo(rigidCopyOfDeclaredTypars,declaredTypars,infer) , tpenv
 
-and TcNonrecBindingTyparDecls cenv env tpenv bind = 
+and TcNonRecBindingTyparDecls cenv env tpenv bind = 
     let (NormalizedBinding(_,_,_,_,_,_,synTyparDecls,_,_,_,_,_)) = bind
     TcBindingTyparDecls true cenv env tpenv synTyparDecls
 
 and TcNonRecursiveBinding declKind cenv env tpenv isUse ty b =
     let b = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env b
-    let flex, tpenv = TcNonrecBindingTyparDecls cenv env tpenv b
+    let flex, tpenv = TcNonRecBindingTyparDecls cenv env tpenv b
     TcNormalizedBinding declKind cenv env tpenv isUse ty None NoSafeInitInfo ([],flex) b 
 
 //-------------------------------------------------------------------------
@@ -14882,8 +14891,13 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck(false)
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
 
+                    //if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                    //    errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                        errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]
+                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
+                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(),m))
 
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo

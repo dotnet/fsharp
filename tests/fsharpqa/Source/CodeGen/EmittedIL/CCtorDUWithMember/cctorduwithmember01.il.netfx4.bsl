@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly CCtorDUWithMember01
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.CCtorDUWithMember01
 {
-  // Offset: 0x00000000 Length: 0x000007BF
+  // Offset: 0x00000000 Length: 0x00000790
 }
 .mresource public FSharpOptimizationData.CCtorDUWithMember01
 {
-  // Offset: 0x000007C8 Length: 0x00000227
+  // Offset: 0x00000798 Length: 0x00000227
 }
 .module CCtorDUWithMember01.exe
-// MVID: {4F20DB7B-26F1-14EE-A745-03837BDB204F}
+// MVID: {579FB63B-26F1-14EE-A745-03833BB69F57}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000000E300750000
+// Image base: 0x00490000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,7 +70,7 @@
              [2] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
              [3] class CCtorDUWithMember01a/C V_3)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 2,2 : 1,46 
+    .line 2,2 : 1,46 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01.fs'
     IL_0000:  ldstr      "File1.A = %A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class CCtorDUWithMember01a/C>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -86,7 +86,7 @@
     IL_0024:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class CCtorDUWithMember01a/C>::.ctor(string)
     IL_0029:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_002e:  stloc.2
-    .line 3,3 : 1,47 
+    .line 3,3 : 1,47 ''
     IL_002f:  call       class CCtorDUWithMember01a/C CCtorDUWithMember01a::get_e2()
     IL_0034:  stloc.3
     IL_0035:  ldloc.2
@@ -120,7 +120,7 @@
       .field public static literal int32 B = int32(0x00000001)
     } // end of class Tags
 
-    .field assembly initonly int32 _tag
+    .field assembly initonly bool _tag
     .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -138,16 +138,16 @@
       // Code size       23 (0x17)
       .maxstack  8
       IL_0000:  ldc.i4.0
-      IL_0001:  newobj     instance void CCtorDUWithMember01a/C::.ctor(int32)
+      IL_0001:  newobj     instance void CCtorDUWithMember01a/C::.ctor(bool)
       IL_0006:  stsfld     class CCtorDUWithMember01a/C CCtorDUWithMember01a/C::_unique_A
       IL_000b:  ldc.i4.1
-      IL_000c:  newobj     instance void CCtorDUWithMember01a/C::.ctor(int32)
+      IL_000c:  newobj     instance void CCtorDUWithMember01a/C::.ctor(bool)
       IL_0011:  stsfld     class CCtorDUWithMember01a/C CCtorDUWithMember01a/C::_unique_B
       IL_0016:  ret
     } // end of method C::.cctor
 
     .method assembly specialname rtspecialname 
-            instance void  .ctor(int32 _tag) cil managed
+            instance void  .ctor(bool _tag) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -157,7 +157,7 @@
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0008:  stfld      bool CCtorDUWithMember01a/C::_tag
       IL_000d:  ret
     } // end of method C::.ctor
 
@@ -219,7 +219,7 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0001:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0006:  ret
     } // end of method C::get_Tag
 
@@ -266,10 +266,10 @@
       IL_0013:  br.s       IL_0031
 
       IL_0015:  ldarg.0
-      IL_0016:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0016:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_001b:  stloc.0
       IL_001c:  ldarg.1
-      IL_001d:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_001d:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0022:  stloc.1
       IL_0023:  ldloc.0
       IL_0024:  ldloc.1
@@ -312,7 +312,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
-      .line 3,3 : 6,7 
+      .line 3,3 : 6,7 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01a.fs'
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -331,7 +331,7 @@
       .locals init ([0] class CCtorDUWithMember01a/C V_0,
                [1] int32 V_1,
                [2] int32 V_2)
-      .line 3,3 : 6,7 
+      .line 3,3 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  CCtorDUWithMember01a/C
@@ -345,7 +345,7 @@
 
       IL_0010:  br.s       IL_003f
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0012:  ldarg.1
       IL_0013:  unbox.any  CCtorDUWithMember01a/C
       IL_0018:  ldnull
@@ -356,12 +356,12 @@
 
       IL_001f:  br.s       IL_003d
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0021:  ldarg.0
-      IL_0022:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0022:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0027:  stloc.1
       IL_0028:  ldloc.0
-      IL_0029:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0029:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_002e:  stloc.2
       IL_002f:  ldloc.1
       IL_0030:  ldloc.2
@@ -371,21 +371,21 @@
 
       IL_0035:  br.s       IL_0039
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0037:  ldc.i4.0
       IL_0038:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0039:  ldloc.1
       IL_003a:  ldloc.2
       IL_003b:  sub
       IL_003c:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_003d:  ldc.i4.1
       IL_003e:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_003f:  ldarg.1
       IL_0040:  unbox.any  CCtorDUWithMember01a/C
       IL_0045:  ldnull
@@ -396,11 +396,11 @@
 
       IL_004c:  br.s       IL_0050
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_004e:  ldc.i4.m1
       IL_004f:  ret
 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_0050:  ldc.i4.0
       IL_0051:  ret
     } // end of method C::CompareTo
@@ -459,7 +459,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 3,3 : 6,7 
+      .line 3,3 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -501,10 +501,10 @@
       IL_0019:  ldloc.0
       IL_001a:  stloc.1
       IL_001b:  ldarg.0
-      IL_001c:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_001c:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0021:  stloc.2
       IL_0022:  ldloc.1
-      IL_0023:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0023:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0028:  stloc.3
       IL_0029:  ldloc.2
       IL_002a:  ldloc.3
@@ -527,7 +527,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 6,6 : 18,19 
+      .line 6,6 : 18,19 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  ret
@@ -561,10 +561,10 @@
       IL_0013:  br.s       IL_0028
 
       IL_0015:  ldarg.0
-      IL_0016:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_0016:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_001b:  stloc.0
       IL_001c:  ldarg.1
-      IL_001d:  ldfld      int32 CCtorDUWithMember01a/C::_tag
+      IL_001d:  ldfld      bool CCtorDUWithMember01a/C::_tag
       IL_0022:  stloc.1
       IL_0023:  ldloc.0
       IL_0024:  ldloc.1
@@ -683,7 +683,7 @@
     // Code size       8 (0x8)
     .maxstack  3
     .locals init ([0] class CCtorDUWithMember01a/C e2)
-    .line 8,8 : 1,13 
+    .line 8,8 : 1,13 ''
     IL_0000:  nop
     IL_0001:  call       class CCtorDUWithMember01a/C CCtorDUWithMember01a::get_e2()
     IL_0006:  stloc.0

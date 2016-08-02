@@ -47,7 +47,7 @@ type Item =
   | Value of  ValRef
   // UnionCaseInfo and temporary flag which is used to show a "use case is deprecated" message
   | UnionCase of UnionCaseInfo * bool 
-  | ActivePatternResult of ActivePatternInfo * TType * int  * range
+  | ActivePatternResult of ActivePatternInfo * TType * StructnessInfo * int  * range
   | ActivePatternCase of ActivePatternElemRef 
   | ExnCase of TyconRef 
   | RecdField of RecdFieldInfo
@@ -122,7 +122,7 @@ val internal AddFakeNameToNameEnv : string -> NameResolutionEnv -> Item -> NameR
 val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef -> NameResolutionEnv
 
 /// Add active pattern result tags to the environment.
-val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
+val internal AddActivePatternResultTagsToNameEnv   : StructnessInfo -> ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
 val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv

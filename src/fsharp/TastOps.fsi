@@ -180,7 +180,7 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 // Make projection operations
 //------------------------------------------------------------------------- 
  
-val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+val mkTupleFieldGet                : TcGlobals -> StructnessInfo * Expr * TypeInst * int * range -> Expr
 val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
@@ -232,7 +232,7 @@ val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
 val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
-val evalTupInfoIsStruct : TupInfo -> bool
+val evalStructnessInfo : StructnessInfo -> bool
 
 //-------------------------------------------------------------------------
 // Take the address of an expression, or force it into a mutable local. Any allocated
@@ -397,7 +397,7 @@ val recdFieldTysOfExnDefRef : TyconRef -> TType list
 
 val destForallTy     : TcGlobals -> TType -> Typars * TType
 val destFunTy        : TcGlobals -> TType -> TType * TType
-val destAnyTupleTy    : TcGlobals -> TType -> TupInfo * TTypes
+val destAnyTupleTy    : TcGlobals -> TType -> StructnessInfo * TTypes
 val destRefTupleTy    : TcGlobals -> TType -> TTypes
 val destStructTupleTy    : TcGlobals -> TType -> TTypes
 val destTyparTy      : TcGlobals -> TType -> Typar
@@ -442,7 +442,7 @@ val stripFunTyN    : TcGlobals -> int -> TType -> TType list * TType
 
 val applyForallTy : TcGlobals -> TType -> TypeInst -> TType
 
-val tryDestAnyTupleTy : TcGlobals -> TType -> TupInfo * TType list
+val tryDestAnyTupleTy : TcGlobals -> TType -> StructnessInfo * TType list
 val tryDestRefTupleTy : TcGlobals -> TType -> TType list
 
 //-------------------------------------------------------------------------
@@ -1093,6 +1093,8 @@ val mkListTy         : TcGlobals -> TType -> TType
 val mkOptionTy       : TcGlobals -> TType -> TType
 val mkNoneCase  : TcGlobals -> UnionCaseRef
 val mkSomeCase  : TcGlobals -> UnionCaseRef
+val mkAnyNoneCase  : TcGlobals -> StructnessInfo -> UnionCaseRef
+val mkAnySomeCase  : TcGlobals -> StructnessInfo -> UnionCaseRef
 
 val mkNil  : TcGlobals -> range -> TType -> Expr
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
@@ -1300,9 +1302,9 @@ val isByrefLikeTy : TcGlobals -> TType -> bool
 val isRefTupleExpr : Expr -> bool
 val tryDestRefTupleExpr : Expr -> Exprs
 
-val mkAnyTupledTy : TcGlobals -> TupInfo -> TType list -> TType
+val mkAnyTupledTy : TcGlobals -> StructnessInfo -> TType list -> TType
 
-val mkAnyTupled : TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr 
+val mkAnyTupled : TcGlobals -> range -> StructnessInfo -> Exprs -> TType list -> Expr 
 val mkRefTupled : TcGlobals -> range -> Exprs -> TType list -> Expr 
 val mkRefTupledNoTypes : TcGlobals -> range -> Exprs -> Expr 
 val mkRefTupledTy : TcGlobals -> TType list -> TType
@@ -1359,15 +1361,17 @@ type ActivePatternElemRef with
     member Name : string
 
 val TryGetActivePatternInfo  : ValRef -> PrettyNaming.ActivePatternInfo option
-val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
+val mkAnyChoiceCaseRef : TcGlobals -> range -> numChoices:int -> structness: StructnessInfo -> choiceNumber: int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
     member Names : string list 
 
-    member ResultType : TcGlobals -> range -> TType list -> TType
-    member OverallType : TcGlobals -> range -> TType -> TType list -> TType
+    member ResultType : TcGlobals -> range -> StructnessInfo -> TType list -> TType
+    member OverallType : TcGlobals -> range -> TType -> StructnessInfo -> TType list -> TType
 
 val doesActivePatternHaveFreeTypars : TcGlobals -> ValRef -> bool
+val inferActivePatternStructness: TcGlobals -> PrettyNaming.ActivePatternInfo -> TType -> StructnessInfo
+
 
 //---------------------------------------------------------------------------
 // Structural rewrites

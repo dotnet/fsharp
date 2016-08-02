@@ -157,7 +157,7 @@ module internal ItemDescriptionsImpl =
         | Item.ModuleOrNamespaces(modrefs) -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.MethodGroup(_,minfos,_) 
         | Item.CtorGroup(_,minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
-        | Item.ActivePatternResult(APInfo _,_, _, m) -> Some m
+        | Item.ActivePatternResult(APInfo _, _, _, _, m) -> Some m
         | Item.SetterArg (_,item) -> rangeOfItem g preferFlag item
         | Item.ArgName (id,_, _) -> Some id.idRange
         | Item.CustomOperation (_,_,implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
@@ -603,7 +603,7 @@ module internal ItemDescriptionsImpl =
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_,vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo,_) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
-        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
+        | Item.ActivePatternResult(apinfo, _ty, _, idx, _) -> apinfo.Names.[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
@@ -673,7 +673,7 @@ module internal ItemDescriptionsImpl =
             FSharpToolTipElement.Single(text, xml)
 
         // Active pattern tag inside the declaration (result)             
-        | Item.ActivePatternResult(apinfo, ty, idx, _) ->
+        | Item.ActivePatternResult(apinfo, ty, _, idx, _) ->
             let items = apinfo.ActiveTags
             let text = bufs (fun os -> 
                 bprintf os "%s %s: " (FSComp.SR.typeInfoActivePatternResult()) (List.item idx items) 

@@ -209,7 +209,7 @@ and remapMeasureAux tyenv unt =
 
 and remapTupInfoAux _tyenv unt =
     match unt with
-    | TupInfo.Const _ -> unt
+    | StructnessInfo.Const _ -> unt
 
 and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
@@ -645,9 +645,9 @@ let rec stripTyEqnsA g canShortcut ty =
 
 let stripTyEqns g ty = stripTyEqnsA g false ty
 
-let evalTupInfoIsStruct aexpr = 
+let evalStructnessInfo aexpr = 
     match aexpr with 
-    | TupInfo.Const b -> b
+    | StructnessInfo.Const b -> b
 
 /// This erases outermost occurences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
@@ -665,7 +665,7 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple g ty =
         else
             ty
     | TType_fun(a,b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr,[ a; b]) 
-    | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+    | TType_tuple(tupInfo,l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalStructnessInfo tupInfo) l
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -689,16 +689,16 @@ let rec stripExnEqns (eref:TyconRef) =
 let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs,tau) -> (tyvs,tau) | _ -> failwith "primDestForallTy: not a forall type")
 let destFunTy      g ty = ty |> stripTyEqns g |> (function TType_fun (tyv,tau) -> (tyv,tau) | _ -> failwith "destFunTy: not a function type")
 let destAnyTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) -> tupInfo,l | _ -> failwith "destAnyTupleTy: not a tuple type")
-let destRefTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
-let destStructTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
+let destRefTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when not (evalStructnessInfo tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
+let destStructTupleTy    g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,l) when evalStructnessInfo tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
 let destTyparTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
 let destAnyParTy   g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
 let destMeasureTy  g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
 let isFunTy        g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
 let isForallTy     g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
 let isAnyTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
-let isRefTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
-let isStructTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> evalTupInfoIsStruct tupInfo | _ -> false)
+let isRefTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> not (evalStructnessInfo tupInfo) | _ -> false)
+let isStructTupleTy      g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo,_) -> evalStructnessInfo tupInfo | _ -> false)
 let isUnionTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsUnionTycon | _ -> false)
 let isReprHiddenTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsFSharpObjectModelTycon | _ -> false)
@@ -717,7 +717,7 @@ let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> 
 let tcrefOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let tryDestAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> Some tcref | _ -> None) 
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
-let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
+let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalStructnessInfo tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
 let argsOfAppTy   g ty = ty |> stripTyEqns g |> (function TType_app(_,tinst) -> tinst | _ -> []) 
 let tyconOfAppTy   g ty = (tcrefOfAppTy g ty).Deref
@@ -875,7 +875,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
 
 and structnessAEquiv un1 un2 =
     match un1, un2 with 
-    | TupInfo.Const b1, TupInfo.Const b2 -> (b1 = b2)
+    | StructnessInfo.Const b1, StructnessInfo.Const b2 -> (b1 = b2)
 
 and measureAEquiv g aenv un1 un2 =
     let vars1 = ListMeasureVarOccs un1
@@ -1002,8 +1002,8 @@ let rec stripExpr e =
 
 let mkCase (a,b) = TCase(a,b)
 
-let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo,_,_,_) -> not (evalTupInfoIsStruct tupInfo) | _ -> false
-let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo,_,es,_) when not (evalTupInfoIsStruct tupInfo) -> es | _ -> [e]
+let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo,_,_,_) -> not (evalStructnessInfo tupInfo) | _ -> false
+let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo,_,es,_) when not (evalStructnessInfo tupInfo) -> es | _ -> [e]
 
 //---------------------------------------------------------------------------
 // Range info for expressions
@@ -1922,7 +1922,7 @@ and accFreeInType opts ty acc  =
 
 and accFreeInTupInfo _opts unt acc = 
     match unt with 
-    | TupInfo.Const _ -> acc
+    | StructnessInfo.Const _ -> acc
 and accFreeInMeasure opts unt acc = List.foldBack (fun (tp,_) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 and accFreeInTypes opts tys acc = 
     match tys with 
@@ -2009,7 +2009,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
 
 and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
     match unt with 
-    | TupInfo.Const _ -> acc
+    | StructnessInfo.Const _ -> acc
 
 and accFreeInTypesLeftToRight g cxFlag thruFlag acc tys = 
     match tys with 
@@ -2711,6 +2711,17 @@ let mkLazyTy g ty = TType_app(g.lazy_tcr_nice,[ty])
 let mkPrintfFormatTy g aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety])
 
 let mkOptionTy g ty = TType_app (g.option_tcr_nice, [ty])
+let mkAnyCanonOptionTyconRef g s = 
+     match evalStructnessInfo s with 
+     | true -> g.struct_option_tcr_canon
+     | false -> g.option_tcr_canon
+
+let mkAnyNiceOptionTyconRef g s = 
+     match evalStructnessInfo s with 
+     | true -> g.struct_option_tcr_canon
+     | false -> g.option_tcr_nice
+
+let mkAnyOptionTy g s ty = TType_app (mkAnyNiceOptionTyconRef g s, [ty])
 
 let mkListTy g ty = TType_app (g.list_tcr_nice, [ty])
 
@@ -2718,6 +2729,11 @@ let isOptionTy g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> tyconRefEq g g.option_tcr_canon tcref
+
+let isAnyOptionTy g ty = 
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> tyconRefEq g g.option_tcr_canon tcref || tyconRefEq g g.struct_option_tcr_canon tcref
 
 let tryDestOptionTy g ty = 
     match argsOfAppTy g ty with 
@@ -2744,8 +2760,10 @@ let destLinqExpressionTy g ty =
     | Some ty -> ty
     | None -> failwith "destLinqExpressionTy: not an expression type"
 
-let mkNoneCase g = mkUnionCaseRef g.option_tcr_canon "None"
-let mkSomeCase g = mkUnionCaseRef g.option_tcr_canon "Some"
+let mkAnyNoneCase g structness = mkUnionCaseRef (mkAnyCanonOptionTyconRef g structness) "None"
+let mkAnySomeCase g structness = mkUnionCaseRef (mkAnyCanonOptionTyconRef g structness) "Some"
+let mkNoneCase g = mkAnyNoneCase g tupInfoRef
+let mkSomeCase g = mkAnySomeCase g tupInfoRef
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -3463,7 +3481,7 @@ module DebugPrint = begin
         |  (Test.Const       c        ) -> wordL "is" ^^ constL c
         |  (Test.IsNull               ) -> wordL "isnull"
         |  (Test.IsInst (_,typ)           ) -> wordL "isinst" ^^ typeL typ
-        |  (Test.ActivePatternCase (exp,_,_,_,_)) -> wordL "query" ^^ exprL exp
+        |  (Test.ActivePatternCase (exp,_,_,_,_,_)) -> wordL "query" ^^ exprL exp
             
     and targetL i (TTarget (argvs,body,_)) = leftL "T" ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL ":" --- exprL body
     and flatValsL vs = vs |> FlatList.toList |> List.map valL
@@ -3991,7 +4009,7 @@ and accFreeInTest (opts:FreeVarOptions) discrim acc =
     | Test.Const _
     | Test.IsNull -> acc
     | Test.IsInst (srcty,tgty) -> accFreeVarsInTy opts srcty (accFreeVarsInTy opts tgty acc)
-    | Test.ActivePatternCase (exp, tys, activePatIdentity, _, _) -> 
+    | Test.ActivePatternCase (exp, tys, activePatIdentity, _, _, _) -> 
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref,tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
@@ -5550,7 +5568,7 @@ let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e a
     | Some (tmp,rval) -> (fun x -> mkCompGenLet m tmp rval x), addre
 
 let mkTupleFieldGet g (tupInfo,e,tinst,i,m) = 
-    let wrap,e' = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
+    let wrap,e' = mkExprAddrOfExpr g (evalStructnessInfo tupInfo) false NeverMutates e None m
     wrap (mkTupleFieldGetViaExprAddr(tupInfo,e',tinst,i,m))
 
 let mkRecdFieldGet g (e,fref:RecdFieldRef,tinst,m) = 
@@ -5590,7 +5608,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   let exprToFix =  stripExpr exprToFix
   match exprToFix with 
   | Expr.Const _ -> ()
-  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
+  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalStructnessInfo tupInfo) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
@@ -6908,7 +6926,7 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
                 | _ -> assert(false); failwith "impossible"
             tyName + tyargsEnc g (gtpsType,gtpsMethod) tinst
     | TType_tuple (tupInfo, typs) -> 
-        if evalTupInfoIsStruct tupInfo then 
+        if evalStructnessInfo tupInfo then 
             sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType,gtpsMethod) typs)
@@ -7271,35 +7289,73 @@ type ActivePatternElemRef with
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
             List.item n nms
 
-let mkChoiceTyconRef g m n = 
-     match n with 
-     | 0 | 1 -> error(InternalError("mkChoiceTyconRef",m))
-     | 2 -> g.choice2_tcr
-     | 3 -> g.choice3_tcr
-     | 4 -> g.choice4_tcr
-     | 5 -> g.choice5_tcr
-     | 6 -> g.choice6_tcr
-     | 7 -> g.choice7_tcr
-     | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
+let mkAnyChoiceTyconRef g m n s = 
+    if evalStructnessInfo s then 
+         match n with 
+         | 0 | 1 -> error(InternalError("mkAnyChoiceTyconRef",m))
+         | 2 -> g.struct_choice2_tcr
+         | 3 -> g.struct_choice3_tcr
+         | 4 -> g.struct_choice4_tcr
+         | 5 -> g.struct_choice5_tcr
+         | 6 -> g.struct_choice6_tcr
+         | 7 -> g.struct_choice7_tcr
+         | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
+    else
+         match n with 
+         | 0 | 1 -> error(InternalError("mkAnyChoiceTyconRef",m))
+         | 2 -> g.choice2_tcr
+         | 3 -> g.choice3_tcr
+         | 4 -> g.choice4_tcr
+         | 5 -> g.choice5_tcr
+         | 6 -> g.choice6_tcr
+         | 7 -> g.choice7_tcr
+         | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(),m))
 
-let mkChoiceTy g m tinst = 
+let isAnyChoiceTyconRef g tcref = 
+    tyconRefEq g tcref g.struct_choice2_tcr ||
+    tyconRefEq g tcref g.struct_choice3_tcr ||
+    tyconRefEq g tcref g.struct_choice4_tcr ||
+    tyconRefEq g tcref g.struct_choice5_tcr ||
+    tyconRefEq g tcref g.struct_choice6_tcr ||
+    tyconRefEq g tcref g.struct_choice7_tcr ||
+    tyconRefEq g tcref g.choice2_tcr ||
+    tyconRefEq g tcref g.choice3_tcr ||
+    tyconRefEq g tcref g.choice4_tcr ||
+    tyconRefEq g tcref g.choice5_tcr ||
+    tyconRefEq g tcref g.choice6_tcr ||
+    tyconRefEq g tcref g.choice7_tcr
+
+let mkAnyChoiceTy g m structness tinst = 
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | _ -> mkAppTy (mkChoiceTyconRef g m (List.length tinst)) tinst
+     | _ -> mkAppTy (mkAnyChoiceTyconRef g m (List.length tinst) structness) tinst
 
-let mkChoiceCaseRef g m n i = 
-     mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
+let mkAnyChoiceCaseRef g m n structness i = 
+     mkUnionCaseRef (mkAnyChoiceTyconRef g m n structness) ("Choice"+string (i+1)+"Of"+string n)
+
+let isAnyChoiceTy g ty = 
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> isAnyChoiceTyconRef g tcref
+
+let isAnyStructChoiceOrOptionTy g ty = isStructTy g ty && (isAnyOptionTy g ty || isAnyChoiceTy g ty)
+
+let inferActivePatternStructness g (apinfo: ActivePatternInfo) ty =
+    let _,rty = stripFunTy g ty
+    if (not apinfo.IsTotal || apinfo.ActiveTags.Length > 1) && isAnyStructChoiceOrOptionTy g rty then
+        tupInfoStruct
+    else tupInfoRef
 
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
-    member apinfo.ResultType g m rtys = 
-        let choicety = mkChoiceTy g m rtys
-        if apinfo.IsTotal then choicety else mkOptionTy g choicety
+    member apinfo.ResultType g m structness rtys = 
+        let choicety = mkAnyChoiceTy g m structness rtys
+        if apinfo.IsTotal then choicety else mkAnyOptionTy g structness choicety
     
-    member apinfo.OverallType g m dty rtys = 
-        mkFunTy dty (apinfo.ResultType g m rtys)
+    member apinfo.OverallType g m dty structness  rtys = 
+        mkFunTy dty (apinfo.ResultType g m structness rtys)
 
 //---------------------------------------------------------------------------
 // Active pattern validation
@@ -7815,12 +7871,12 @@ let rec mkCompiledTuple g isStruct (argtys,args,m) =
                     ty8,arg8
                 | _ ->
                     let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr),[ty8])
-                    let v8enc = Expr.Op (TOp.Tuple (TupInfo.Const isStruct),[ty8],[arg8],m) 
+                    let v8enc = Expr.Op (TOp.Tuple (StructnessInfo.Const isStruct),[ty8],[arg8],m) 
                     ty8enc,v8enc
             | _ -> 
                 let a,b,c,d = mkCompiledTuple g isStruct (argtysB, argsB, m)
                 let ty8plus = TType_app(a,b)
-                let v8plus = Expr.Op (TOp.Tuple(TupInfo.Const isStruct),b,c,d)
+                let v8plus = Expr.Op (TOp.Tuple(StructnessInfo.Const isStruct),b,c,d)
                 ty8plus,v8plus
         let argtysAB = argtysA @ [ty8] 
         (mkCompiledTupleTyconRef g isStruct argtysAB, argtysAB,argsA @ [v8],m)

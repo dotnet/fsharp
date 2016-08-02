@@ -1762,7 +1762,7 @@ and FSharpType(cenv, typ:TType) =
        isResolved() &&
        protect <| fun () -> 
         match stripTyparEqns typ with 
-        | TType_tuple (tupInfo,_) -> evalTupInfoIsStruct tupInfo
+        | TType_tuple (tupInfo,_) -> evalStructnessInfo tupInfo
         | _ -> false
 
     member x.IsNamedType = x.HasTypeDefinition
@@ -2111,7 +2111,7 @@ type FSharpSymbol with
         | Item.ActivePatternCase apref -> 
              FSharpActivePatternCase(cenv,  apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item) :> _
 
-        | Item.ActivePatternResult (apinfo, typ, n, _) ->
+        | Item.ActivePatternResult (apinfo, typ, _structness, n, _) ->
              FSharpActivePatternCase(cenv,  apinfo, typ, n, None, item) :> _
 
         | Item.ArgName(id,ty,_)  ->

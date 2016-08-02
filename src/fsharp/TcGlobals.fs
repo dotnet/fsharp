@@ -116,12 +116,19 @@ type public TcGlobals =
       better_tcref_map: TyconRef -> TypeInst -> TType option
       refcell_tcr_canon: TyconRef
       option_tcr_canon : TyconRef
+      struct_option_tcr_canon : TyconRef
       choice2_tcr : TyconRef
       choice3_tcr : TyconRef
       choice4_tcr : TyconRef
       choice5_tcr : TyconRef
       choice6_tcr : TyconRef
       choice7_tcr : TyconRef
+      struct_choice2_tcr : TyconRef
+      struct_choice3_tcr : TyconRef
+      struct_choice4_tcr : TyconRef
+      struct_choice5_tcr : TyconRef
+      struct_choice6_tcr : TyconRef
+      struct_choice7_tcr : TyconRef
       list_tcr_canon   : TyconRef
       set_tcr_canon   : TyconRef
       map_tcr_canon   : TyconRef
@@ -796,6 +803,12 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let choice5_tcr     = mk_MFCore_tcref fslibCcu "Choice`5" 
   let choice6_tcr     = mk_MFCore_tcref fslibCcu "Choice`6" 
   let choice7_tcr     = mk_MFCore_tcref fslibCcu "Choice`7" 
+  let struct_choice2_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`2" 
+  let struct_choice3_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`3" 
+  let struct_choice4_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`4" 
+  let struct_choice5_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`5" 
+  let struct_choice6_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`6" 
+  let struct_choice7_tcr     = mk_MFCore_tcref fslibCcu "StructChoice`7" 
   let tyconRefEq x y = primEntityRefEq compilingFslib fslibCcu  x y
   let valRefEq  x y = primValRefEq compilingFslib fslibCcu x y
   let unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
@@ -1031,6 +1044,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     sysCcu                   = sysCcu
     refcell_tcr_canon    = mk_MFCore_tcref     fslibCcu "Ref`1"
     option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
+    struct_option_tcr_canon     = mk_MFCore_tcref     fslibCcu "StructOption`1"
     list_tcr_canon       = mk_MFCollections_tcref   fslibCcu "List`1"
     set_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Set`1"
     map_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Map`2"
@@ -1105,6 +1119,12 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     choice5_tcr    = choice5_tcr
     choice6_tcr    = choice6_tcr
     choice7_tcr    = choice7_tcr
+    struct_choice2_tcr    = struct_choice2_tcr
+    struct_choice3_tcr    = struct_choice3_tcr
+    struct_choice4_tcr    = struct_choice4_tcr
+    struct_choice5_tcr    = struct_choice5_tcr
+    struct_choice6_tcr    = struct_choice6_tcr
+    struct_choice7_tcr    = struct_choice7_tcr
     nativeint_ty  = mkNonGenericTy nativeint_tcr
     unativeint_ty = mkNonGenericTy unativeint_tcr
     int32_ty      = mkNonGenericTy int32_tcr

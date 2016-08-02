@@ -911,7 +911,7 @@ module private PrintTypes =
 
         // Layout a tuple type 
         | TType_tuple (tupInfo,t)  ->
-            if evalTupInfoIsStruct tupInfo then 
+            if evalStructnessInfo tupInfo then 
                 wordL "struct" --- bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)
             else 
                 bracketIfL (prec <= 2) (layoutTypesWithInfoAndPrec denv env 2 (wordL "*") t)

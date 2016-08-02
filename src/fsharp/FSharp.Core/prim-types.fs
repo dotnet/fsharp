@@ -3233,6 +3233,104 @@ namespace Microsoft.FSharp.Core
       | Choice6Of7 of 'T6
       | Choice7Of7 of 'T7
           
+
+    /// <summary>Helper types for active patterns with 2 choices.</summary>
+    //[<UnqualfiedLabels(false)>]
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`2")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2> = 
+      /// <summary>Choice 1 of 2 choices</summary>
+      | Choice1Of2 of Item1: 'T1 
+      /// <summary>Choice 2 of 2 choices</summary>
+      | Choice2Of2 of Item2: 'T2
+    
+    /// <summary>Helper types for active patterns with 3 choices.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`3")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2,'T3> = 
+      /// <summary>Choice 1 of 3 choices</summary>
+      | Choice1Of3 of Item1: 'T1 
+      /// <summary>Choice 2 of 3 choices</summary>
+      | Choice2Of3 of Item2: 'T2
+      /// <summary>Choice 3 of 3 choices</summary>
+      | Choice3Of3 of Item3: 'T3
+    
+    /// <summary>Helper types for active patterns with 4 choices.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`4")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2,'T3,'T4> = 
+      /// <summary>Choice 1 of 4 choices</summary>
+      | Choice1Of4 of Item1: 'T1 
+      /// <summary>Choice 2 of 4 choices</summary>
+      | Choice2Of4 of Item2: 'T2
+      /// <summary>Choice 3 of 4 choices</summary>
+      | Choice3Of4 of Item3: 'T3
+      /// <summary>Choice 4 of 4 choices</summary>
+      | Choice4Of4 of Item4: 'T4
+    
+    /// <summary>Helper types for active patterns with 5 choices.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`5")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2,'T3,'T4,'T5> = 
+      /// <summary>Choice 1 of 5 choices</summary>
+      | Choice1Of5 of Item1: 'T1 
+      /// <summary>Choice 2 of 5 choices</summary>
+      | Choice2Of5 of Item2: 'T2
+      /// <summary>Choice 3 of 5 choices</summary>
+      | Choice3Of5 of Item3: 'T3
+      /// <summary>Choice 4 of 5 choices</summary>
+      | Choice4Of5 of Item4: 'T4
+      /// <summary>Choice 5 of 5 choices</summary>
+      | Choice5Of5 of Item5: 'T5
+    
+    /// <summary>Helper types for active patterns with 6 choices.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`6")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2,'T3,'T4,'T5,'T6> = 
+      /// <summary>Choice 1 of 6 choices</summary>
+      | Choice1Of6 of Item1: 'T1 
+      /// <summary>Choice 2 of 6 choices</summary>
+      | Choice2Of6 of Item2: 'T2
+      /// <summary>Choice 3 of 6 choices</summary>
+      | Choice3Of6 of Item3: 'T3
+      /// <summary>Choice 4 of 6 choices</summary>
+      | Choice4Of6 of Item4: 'T4
+      /// <summary>Choice 5 of 6 choices</summary>
+      | Choice5Of6 of Item5: 'T5
+      /// <summary>Choice 6 of 6 choices</summary>
+      | Choice6Of6 of Item6: 'T6
+    
+    /// <summary>Helper types for active patterns with 7 choices.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructChoice`7")>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
+      /// <summary>Choice 1 of 7 choices</summary>
+      | Choice1Of7 of Item1: 'T1 
+      /// <summary>Choice 2 of 7 choices</summary>
+      | Choice2Of7 of Item2: 'T2
+      /// <summary>Choice 3 of 7 choices</summary>
+      | Choice3Of7 of Item3: 'T3
+      /// <summary>Choice 4 of 7 choices</summary>
+      | Choice4Of7 of Item4: 'T4
+      /// <summary>Choice 5 of 7 choices</summary>
+      | Choice5Of7 of Item5: 'T5
+      /// <summary>Choice 6 of 7 choices</summary>
+      | Choice6Of7 of Item6: 'T6
+      /// <summary>Choice 7 of 7 choices</summary>
+      | Choice7Of7 of Item7: 'T7
+
     //-------------------------------------------------------------------------
     // F#-specific Exceptions
 
@@ -3471,10 +3569,24 @@ namespace Microsoft.FSharp.Core
 
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
+    [<Struct>]
     type Result<'T,'TError> = 
-        | Ok of 'T 
-        | Error of 'TError
+        | Ok of ResultValue: 'T 
+        | Error of ErrorValue: 'TError
 
+    /// <summary>The type of optional values, represented as structs.</summary>
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpStructOption`1")>]
+    [<Struct>]
+    [<RequireQualifiedAccess>]
+    type StructOption<'T> =
+        /// <summary>The representation of "No value"</summary>
+        | None :       StructOption<'T> 
+
+        /// <summary>The representation of "Value of type 'T"</summary>
+        /// <param name="Value">The input value.</param>
+        /// <returns>An option representing the value.</returns>
+        | Some : Value:'T -> StructOption<'T>
 
 //============================================================================
 //============================================================================

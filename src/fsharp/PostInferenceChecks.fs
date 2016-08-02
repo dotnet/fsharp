@@ -774,7 +774,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         | _ -> CheckExprsPermitByrefs cenv env args  
 
 
-    | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
+    | TOp.Tuple tupInfo,_,_ when not (evalStructnessInfo tupInfo) ->           
         match context with 
         | TupleOfArgsPermitByrefs nArity -> 
             if cenv.reportErrors then 
@@ -1036,7 +1036,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | Test.Const _ -> ()
     | Test.IsNull -> ()
     | Test.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
-    | Test.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
+    | Test.ActivePatternCase (exp,_,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
     props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)

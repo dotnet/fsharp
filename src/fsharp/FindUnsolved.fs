@@ -171,7 +171,7 @@ and accDiscrim cenv env d =
     | Test.Const _
     | Test.IsNull -> ()
     | Test.IsInst (srcty,tgty) -> accTy cenv env srcty; accTy cenv env tgty
-    | Test.ActivePatternCase (exp, tys, _, _, _) -> 
+    | Test.ActivePatternCase (exp, tys, _, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
 
