@@ -474,11 +474,11 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "portable" -> tcConfigB.portablePDB <- true
-       | "pdbonly" ->  tcConfigB.portablePDB <- false
-       | "full" ->     tcConfigB.portablePDB <- false
+       | "portable" -> tcConfigB.portablePDB <- true ; tcConfigB.jitTracking <- false
+       | "pdbonly" ->  tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- false
+       | "full" ->     tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- true
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None -> tcConfigB.portablePDB <- false
+    | None -> tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let setOutFileName tcConfigB s = 
@@ -520,6 +520,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  doDetuple  . . . . . . : %+A" tcConfigB.doDetuple
     printfn "  doTLR  . . . . . . . . : %+A" tcConfigB.doTLR
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
+    printfn "  jitTracking  . . . . . : %+A" tcConfigB.jitTracking
     printfn "  portablePDB. . . . . . : %+A" tcConfigB.portablePDB
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
@@ -910,8 +911,8 @@ let deprecatedFlagsFsc tcConfigB =
     cliRootFlag tcConfigB
     CompilerOption("jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None)
     CompilerOption("no-jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None)
-    CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> () ), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
-    CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> () ), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
+    CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
+    CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
     CompilerOption("progress", tagNone, OptionUnit (fun () -> progress := true), Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
     (compilingFsLibFlag tcConfigB) 
     (compilingFsLib20Flag tcConfigB) 
