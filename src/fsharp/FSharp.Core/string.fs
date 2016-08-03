@@ -2,8 +2,8 @@
 
 namespace Microsoft.FSharp.Core
 
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
+    open System
+    open System.Text
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.Operators.Checked
@@ -14,11 +14,13 @@ namespace Microsoft.FSharp.Core
     module String =
 
         let inline emptyIfNull str = 
-            if str = null then "" else str
+            match str with
+            | null -> String.Empty
+            | _ -> str
 
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
-            System.String.Join(sep, Seq.toArray strings)
+            String.Join(sep, Seq.toArray strings)
 
         [<CompiledName("Iterate")>]
         let iter (f : (char -> unit)) (str:string) =
@@ -36,47 +38,47 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Map")>]
         let map (f: char -> char) (str:string) =
             let str = emptyIfNull str
-            let res = new System.Text.StringBuilder(str.Length)
-            str |> iter (fun c -> res.Append(f c) |> ignore);
+            let res = StringBuilder(str.Length)
+            str |> iter (fun c -> res.Append(f c) |> ignore)
             res.ToString()
 
         [<CompiledName("MapIndexed")>]
         let mapi (f: int -> char -> char) (str:string) =
             let str = emptyIfNull str
-            let res = new System.Text.StringBuilder(str.Length)
+            let res = StringBuilder(str.Length)
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore);
+            str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
             res.ToString()
 
         [<CompiledName("Filter")>]
         let filter (f: char -> bool) (str:string) =
             let str = emptyIfNull str
-            let res = new System.Text.StringBuilder(str.Length)
+            let res = StringBuilder(str.Length)
             str |> iter (fun c -> if f c then res.Append(c) |> ignore)
             res.ToString()
 
         [<CompiledName("Collect")>]
         let collect (f: char -> string) (str:string) =
             let str = emptyIfNull str
-            let res = new System.Text.StringBuilder(str.Length)
-            str |> iter (fun c -> res.Append(f c) |> ignore);
+            let res = StringBuilder(str.Length)
+            str |> iter (fun c -> res.Append(f c) |> ignore)
             res.ToString()
 
         [<CompiledName("Initialize")>]
         let init (count:int) (initializer: int-> string) =
-            if count < 0 then  invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            let res = new System.Text.StringBuilder(count)
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            let res = StringBuilder(count)
             for i = 0 to count - 1 do 
-               res.Append(initializer i) |> ignore;
+               res.Append(initializer i) |> ignore
             res.ToString()
 
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
-            if count < 0 then  invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative)) 
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             let str = emptyIfNull str
-            let res = new System.Text.StringBuilder(str.Length)
+            let res = StringBuilder(str.Length)
             for i = 0 to count - 1 do 
-               res.Append(str) |> ignore;
+               res.Append(str) |> ignore
             res.ToString()
 
         [<CompiledName("ForAll")>]
@@ -95,5 +97,3 @@ namespace Microsoft.FSharp.Core
         let length (str:string) =
             let str = emptyIfNull str
             str.Length
-
-
