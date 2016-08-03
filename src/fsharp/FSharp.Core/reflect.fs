@@ -791,7 +791,7 @@ type FSharpType =
              invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
         Impl.mkTupleType false asm types
 
-    static member MakeValueTupleType (asm:Assembly, types:Type[]) =
+    static member MakeStructTupleType (asm:Assembly, types:Type[]) =
         Impl.checkNonNull "types" types
         if types |> Array.exists (function null -> true | _ -> false) then 
              invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))

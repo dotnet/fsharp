@@ -58,4 +58,4 @@ namespace Neg95B
     type StructUnion3 = A of X:int | B of X:string
 
     [<Struct>]
-    type StructUnion3 = A of X:int | B of Y:StructUnion3
+    type StructUnion4 = A of X:int | B of Y:StructUnion4
