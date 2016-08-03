@@ -2,10 +2,6 @@
 
 namespace Microsoft.FSharp.Core
 
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -57,7 +53,7 @@ namespace Microsoft.FSharp.Core
         let toNullable option = match option with None -> System.Nullable() | Some v -> System.Nullable(v)
 
         [<CompiledName("OfNullable")>]
-        let ofNullable (value:System.Nullable<'T>) =  if value.HasValue then Some value.Value else None
+        let ofNullable (value:System.Nullable<'T>) = if value.HasValue then Some value.Value else None
 
         [<CompiledName("OfObj")>]
         let ofObj value = match value with null -> None | _ -> Some value

@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
 
+    open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -399,8 +400,8 @@ namespace Microsoft.FSharp.Collections
           
         let mkIterator s = { stack = collapseLHS [s]; started = false }
 
-        let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-        let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+        let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+        let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
         let current i =
             if i.started then
@@ -426,13 +427,13 @@ namespace Microsoft.FSharp.Collections
         let mkIEnumerator s = 
             let i = ref (mkIterator s) 
             { new IEnumerator<_> with 
-                  member x.Current = current !i
+                  member __.Current = current !i
               interface IEnumerator with 
-                  member x.Current = box (current !i)
-                  member x.MoveNext() = moveNext !i
-                  member x.Reset() = i :=  mkIterator s
+                  member __.Current = box (current !i)
+                  member __.MoveNext() = moveNext !i
+                  member __.Reset() = i :=  mkIterator s
               interface System.IDisposable with 
-                  member x.Dispose() = () }
+                  member __.Dispose() = () }
 
         //--------------------------------------------------------------------------
         // Set comparison.  This can be expensive.
@@ -510,11 +511,11 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpSet`1")>]
 #if FX_NO_DEBUG_PROXIES
 #else
-    [<System.Diagnostics.DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
+    [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
 #endif
 #if FX_NO_DEBUG_DISPLAYS
 #else
-    [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
+    [<DebuggerDisplay("Count = {Count}")>]
 #endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
@@ -760,19 +761,15 @@ namespace Microsoft.FSharp.Collections
 
 #if FX_NO_DEBUG_DISPLAYS
 #else
-             [<System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)>]
+             [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
 #endif
              member x.Items = v |> Seq.truncate 1000 |> Seq.toArray 
 
 namespace Microsoft.FSharp.Collections
 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
