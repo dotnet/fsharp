@@ -474,7 +474,7 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "portable" -> tcConfigB.portablePDB <- true ; tcConfigB.jitTracking <- false
+       | "portable" -> tcConfigB.portablePDB <- true ; tcConfigB.jitTracking <- true
        | "pdbonly" ->  tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- false
        | "full" ->     tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- true
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
