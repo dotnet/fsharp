@@ -1624,7 +1624,7 @@ type ILGlobals =
       with
       member mkDebuggableAttribute: bool (* disable JIT optimizations *) -> ILAttribute
       /// Some commonly used custom attibutes
-      member mkDebuggableAttributeV2               : bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
+      member mkDebuggableAttributeV2               : bool (* jitTracking *) * bool (* ignoreSymbolStoreSequencePoints *) * bool (* disable JIT optimizations *) * bool (* enable EnC *) -> ILAttribute
       member mkCompilerGeneratedAttribute          : unit -> ILAttribute
       member mkDebuggerNonUserCodeAttribute        : unit -> ILAttribute
       member mkDebuggerStepThroughAttribute        : unit -> ILAttribute
