@@ -33,6 +33,8 @@
     <Compile Include="ColorizationService.fs" />
     <Compile Include="BraceMatchingService.fs" />
     <Compile Include="IndentationService.fs" />
+    <Compile Include="BreakpointResolutionService.fs" />
+    <Compile Include="LanguageDebugInfoService.fs" />
     <Compile Include="ProjectSiteService.fs" />
     <Compile Include="ContentType.fs" />
   </ItemGroup>
@@ -110,7 +112,6 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion)" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>

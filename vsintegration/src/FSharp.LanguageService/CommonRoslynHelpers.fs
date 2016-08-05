@@ -9,7 +9,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
 module internal CommonRoslynHelpers =
-    /// Create F# project options for a Roslyn project.
+
+    // Create F# project options for a Roslyn project.
     let rec GetFSharpProjectOptionsForRoslynProject(project: Project) : FSharpProjectOptions = { 
         ProjectFileName = project.FilePath
         ProjectFileNames = project.Documents
