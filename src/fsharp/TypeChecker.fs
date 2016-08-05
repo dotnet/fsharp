@@ -935,18 +935,7 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(attrs,isOpt,nm)) =
                   ArgExpr=mkSynUnit m 
                   Target=None 
                   AppliesToGetterAndSetter=false 
-                  Range=m} : SynAttribute) ;
-                // C# compat
-                { TypeName=LongIdentWithDots(pathToSynLid m ["System";"Runtime";"InteropServices";"OptionalAttribute"],[])
-                  ArgExpr=mkSynUnit m 
-                  Target=None 
-                  AppliesToGetterAndSetter=false 
-                  Range=m} ; 
-                { TypeName=LongIdentWithDots(pathToSynLid m ["System";"Runtime";"InteropServices";"DefaultParameterValueAttribute"],[])
-                  ArgExpr=SynExpr.Null m
-                  Target=None 
-                  AppliesToGetterAndSetter=false 
-                  Range=m} ]
+                  Range=m} : SynAttribute) ] 
          else 
             []
 
