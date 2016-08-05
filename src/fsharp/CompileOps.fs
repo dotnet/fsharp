@@ -2063,6 +2063,7 @@ type TcConfigBuilder =
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
       mutable useSignatureDataFile : bool
+      mutable jitTracking : bool
       mutable portablePDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
@@ -2232,6 +2233,7 @@ type TcConfigBuilder =
           onlyEssentialOptimizationData = false
           useOptimizationDataFile = false
           useSignatureDataFile = false
+          jitTracking = true
           portablePDB = true
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
@@ -2713,6 +2715,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.onlyEssentialOptimizationData  = data.onlyEssentialOptimizationData
     member x.useOptimizationDataFile  = data.useOptimizationDataFile
     member x.useSignatureDataFile = data.useSignatureDataFile
+    member x.jitTracking  = data.jitTracking
     member x.portablePDB  = data.portablePDB
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
@@ -2838,7 +2841,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
              (systemAssemblies |> List.exists (fun sysFile -> sysFile = fileNameWithoutExtension filename)))
         with _ ->
             false    
-        
+
     // This is not the complete set of search paths, it is just the set 
     // that is special to F# (as compared to MSBuild resolution)
     member tcConfig.SearchPathsForLibraryFiles = 
@@ -2849,11 +2852,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.MakePathAbsolute path = 
         let result = ComputeMakePathAbsolute tcConfig.implicitIncludeDir path
-#if TRACK_DOWN_EXTRA_BACKSLASHES        
-        System.Diagnostics.Debug.Assert(not(result.Contains(@"\\")), "tcConfig.MakePathAbsolute results in a non-canonical filename with extra backslashes: "+result)
-#endif
         result
-        
+
     member tcConfig.TryResolveLibWithDirectories (r:AssemblyReference) = 
         let m,nm = r.Range, r.Text
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
@@ -3501,16 +3501,6 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
         let resolutions = TcAssemblyResolutions.Resolve(tcConfig,assemblyList,tcConfig.knownUnresolvedReferences)
         let frameworkDLLs,nonFrameworkReferences = resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir) 
         let unresolved = resolutions.GetUnresolvedReferences()
-#if TRACK_DOWN_EXTRA_BACKSLASHES        
-        frameworkDLLs |> List.iter(fun x ->
-            let path = x.resolvedPath 
-            System.Diagnostics.Debug.Assert(not(path.Contains(@"\\")), "SplitNonFoundationalResolutions results in a non-canonical filename with extra backslashes: "+path)
-            )
-        nonFrameworkReferences |> List.iter(fun x ->
-            let path = x.resolvedPath 
-            System.Diagnostics.Debug.Assert(not(path.Contains(@"\\")), "SplitNonFoundationalResolutions results in a non-canonical filename with extra backslashes: "+path)
-            )
-#endif       
 #if DEBUG
         let itFailed = ref false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
@@ -4985,10 +4975,13 @@ module private ScriptPreprocessClosure =
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
-            match List.frontAndBack closureFiles with
-            | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
-                rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
-            | _ -> closureFiles
+            if isNil closureFiles  then  
+                closureFiles 
+            else 
+                match List.frontAndBack closureFiles with
+                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
+                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
+                | _ -> closureFiles
 
         // Get all source files.
         let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]

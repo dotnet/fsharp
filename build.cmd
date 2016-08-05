@@ -356,30 +356,12 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
     pushd .\lkg & %_dotnetexe% restore &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-    pushd .\lkg & %_dotnetexe% publish project.json &popd
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-    fc fsc.exe dotnet.exe >nul
-    @if ERRORLEVEL 1 (
-      copy fsc.exe fsc.dll
-      copy dotnet.exe fsc.exe
-    )
-    popd
-
-    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-    fc fsi.exe dotnet.exe >nul
-    @if ERRORLEVEL 1 (
-      copy fsi.exe fsi.dll
-      copy dotnet.exe fsi.exe
-    )
-    popd
-
 )
+
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-    rmdir /s .\lkg\bin\debug
+    rmdir /s /q %~dp0\Tools\lkg
 )
 
 rem copy targestfile into tools directory ... temporary fix until packaging complete.
