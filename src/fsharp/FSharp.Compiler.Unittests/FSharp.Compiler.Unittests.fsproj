@@ -42,9 +42,9 @@
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework" >
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework">
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
@@ -54,6 +54,9 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
+    <Reference Include="System.ValueTuple">
+        <HintPath>..\..\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
@@ -62,6 +65,7 @@
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
+    <Compile Include="EditDistance.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">

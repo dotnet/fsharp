@@ -59,6 +59,7 @@ try
 
     let fsharpCoreFiles =
         seq {
+            yield Path.Combine(bindir, "FSharp.Core.xml")
             yield Path.Combine(bindir, "FSharp.Core.dll")
             yield Path.Combine(bindir, "FSharp.Core.sigdata")
             yield Path.Combine(bindir, "FSharp.Core.optdata")

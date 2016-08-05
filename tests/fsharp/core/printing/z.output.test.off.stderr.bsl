@@ -237,17 +237,17 @@ stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same n
       type public   IBPublic   = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^
 
-stdin(779,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBPublic' it is used in
+stdin(779,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBPublic' it is used in.
 
       type internal IBInternal = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^^^
 
-stdin(784,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBInternal' it is used in
+stdin(784,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBInternal' it is used in.
 
       type public   IBPublic   = interface inherit IAInternal abstract Q : int end
   ------------------^^^^^^^^
 
-stdin(793,19): error FS0410: The type 'IAInternal' is less accessible than the value, member or type 'IBPublic' it is used in
+stdin(793,19): error FS0410: The type 'IAInternal' is less accessible than the value, member or type 'IBPublic' it is used in.
 
           override x.M(a:string) = 1
   -------------------^

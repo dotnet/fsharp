@@ -164,7 +164,8 @@ module internal AstTraversal =
                     |> pick expr
                 | SynExpr.Const(_synConst, _range) -> None
                 | SynExpr.Typed(synExpr, _synType, _range) -> traverseSynExpr synExpr
-                | SynExpr.Tuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                | SynExpr.Tuple(synExprList, _, _range) 
+                | SynExpr.StructTuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.Record(inheritOpt,copyOpt,fields, _range) -> 
                     [

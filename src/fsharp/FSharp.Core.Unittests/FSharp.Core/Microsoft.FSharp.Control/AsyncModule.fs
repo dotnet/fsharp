@@ -420,9 +420,10 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE)
+#if !(FSHARP_CORE_PORTABLE || FSHARP_CORE_NETCORE_PORTABLE || coreclr)
     [<Test; Category("Expensive")>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
+        ThreadPool.SetMinThreads(100,100) |> ignore
         Check.QuickThrowOnFailure (normalize >> runChoice)
 #endif
 
