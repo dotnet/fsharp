@@ -96,10 +96,12 @@
     <!-- These flags provide a better debugging experience. Locals should be visible. -->
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
     <DefineConstants>CODE_ANALYSIS; $(DefineConstants)</DefineConstants>
+    <OtherFlags>$(OtherFlags) --debug:full</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
+    <OtherFlags>$(OtherFlags) --debug:pdbonly</OtherFlags>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler. -->
@@ -111,11 +113,6 @@
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
   <PropertyGroup>
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
-  </PropertyGroup>
-
-  <!-- Produce portable pdbs -->
-  <PropertyGroup Condition="'$(Configuration)'!='Proto'">
-    <OtherFlags>$(OtherFlags) --debug:full</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup>
