@@ -42,9 +42,9 @@
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework" >
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework">
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
@@ -65,6 +65,7 @@
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />
+    <Compile Include="EditDistance.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
