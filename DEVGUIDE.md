@@ -31,9 +31,10 @@ There are various qualifiers:
     build.cmd debug           -- build debug instead of release
 
     build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
+    build.cmd protofx         -- build using a .NET Framework proto (no .NET Core is used)
 
-    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools)
-    build.cmd compiler        -- build/tests only the compiler (not the Visual F# IDE Tools)
+    build.cmd net40           -- build/tests for .NET Framework version of the compiler (not the Visual F# IDE Tools or .NET Core)
+    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools or .NET Framework)
     build.cmd vs              -- build/tests the Visual F# IDE Tools
     build.cmd pcls            -- build/tests the PCL FSharp.Core libraries
 
@@ -44,7 +45,7 @@ There are various qualifiers:
 
     build.cmd test-smoke      -- build, run smoke tests
     build.cmd test-coreunit   -- build, run FSharp.Core tests
-    build.cmd test-coreclr    -- build, run CoreCLR tests
+    build.cmd test-coreclr    -- build, run .NET Core tests
     build.cmd test-pcls       -- build, run PCL tests
     build.cmd test-fsharp     -- build, run tests\fsharp suite
     build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite

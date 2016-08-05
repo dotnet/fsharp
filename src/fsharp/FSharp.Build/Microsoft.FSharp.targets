@@ -189,7 +189,7 @@ this file.
               SubsystemVersion="$(SubsystemVersion)"
               HighEntropyVA="$(HighEntropyVA)"
               TargetProfile="$(TargetProfile)"
-              SqmSessionGuid="$(SqmSessionGuid)"
+              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
         />
 
         <ItemGroup>

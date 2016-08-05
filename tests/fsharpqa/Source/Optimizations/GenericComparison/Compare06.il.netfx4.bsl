@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly Compare06
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Compare06
 {
-  // Offset: 0x00000000 Length: 0x000006FB
+  // Offset: 0x00000000 Length: 0x000006DF
 }
 .mresource public FSharpOptimizationData.Compare06
 {
-  // Offset: 0x00000700 Length: 0x000003BC
+  // Offset: 0x000006E8 Length: 0x000003BC
 }
 .module Compare06.dll
-// MVID: {4F20E44A-04FD-F88E-A745-03834AE4204F}
+// MVID: {5772F646-04FD-F88E-A745-038346F67257}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000000D37CAE0000
+// Image base: 0x01420000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -203,7 +203,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Compare06.fsx'
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -223,7 +223,7 @@
                  [1] int32 V_1,
                  [2] int32 V_2,
                  [3] int32 V_3)
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 ''
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR
@@ -360,7 +360,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 4,4 : 10,14 
+        .line 4,4 : 10,14 ''
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -504,28 +504,28 @@
                [1] class Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR t1,
                [2] class Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR t2,
                [3] int32 i)
-      .line 6,6 : 8,25 
+      .line 6,6 : 8,25 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  stloc.0
-      .line 7,7 : 8,39 
+      .line 7,7 : 8,39 ''
       IL_0003:  ldc.i4.1
       IL_0004:  ldc.i4.2
       IL_0005:  newobj     instance void Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR::.ctor(int32,
                                                                                                       int32)
       IL_000a:  stloc.1
-      .line 8,8 : 8,39 
+      .line 8,8 : 8,39 ''
       IL_000b:  ldc.i4.1
       IL_000c:  ldc.i4.3
       IL_000d:  newobj     instance void Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR::.ctor(int32,
                                                                                                       int32)
       IL_0012:  stloc.2
-      .line 9,9 : 8,32 
+      .line 9,9 : 8,32 ''
       IL_0013:  ldc.i4.0
       IL_0014:  stloc.3
       IL_0015:  br.s       IL_0023
 
-      .line 10,10 : 12,30 
+      .line 10,10 : 12,30 ''
       IL_0017:  ldloc.1
       IL_0018:  ldloc.2
       IL_0019:  callvirt   instance int32 Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR::CompareTo(class Compare06/CompareMicroPerfAndCodeGenerationTests/KeyR)
@@ -534,7 +534,7 @@
       IL_0020:  ldc.i4.1
       IL_0021:  add
       IL_0022:  stloc.3
-      .line 9,9 : 21,29 
+      .line 9,9 : 8,32 ''
       IL_0023:  ldloc.3
       IL_0024:  ldc.i4     0x989681
       IL_0029:  blt.s      IL_0017
