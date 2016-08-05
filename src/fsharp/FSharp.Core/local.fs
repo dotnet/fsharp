@@ -21,7 +21,7 @@ module internal List =
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]      
     let nonempty x = match x with [] -> false | _ -> true
 
-    let rec iter f x = match x with [] -> () | (h::t) -> f h; iter f t
+    let rec iter f x = match x with [] -> () | h::t -> f h; iter f t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -61,7 +61,7 @@ module internal List =
             else
                 distinctByToFreshConsTail cons hashSet keyf rest
 
-    let distinctByWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
+    let distinctByWithComparer (comparer: IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
         match list with
         | [] -> []
         | [h] -> [h]
@@ -73,7 +73,7 @@ module internal List =
             cons
     
     let countBy (dict:Dictionary<_, int>) (keyf:'T -> 'Key) = 
-        let mutable ie = dict.GetEnumerator()
+        use mutable ie = dict.GetEnumerator()
         if not (ie.MoveNext()) then []
         else
             let res = freshConsNoTail (keyf ie.Current.Key, ie.Current.Value)
@@ -573,7 +573,7 @@ module internal List =
         | [] -> 
             setFreshConsTail cons1a []
             setFreshConsTail cons1b []
-        | ((h1,h2)::t) -> 
+        | (h1,h2)::t -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
             setFreshConsTail cons1a cons2a
@@ -586,7 +586,7 @@ module internal List =
         match x with 
         | [] -> 
             [],[]
-        | ((h1,h2)::t) -> 
+        | (h1,h2)::t -> 
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
             unzipToFreshConsTail res1a res1b t
@@ -600,7 +600,7 @@ module internal List =
             setFreshConsTail cons1a []
             setFreshConsTail cons1b []
             setFreshConsTail cons1c []
-        | ((h1,h2,h3)::t) -> 
+        | (h1,h2,h3)::t -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
             let cons2c = freshConsNoTail h3
@@ -615,7 +615,7 @@ module internal List =
         match x with 
         | [] -> 
             [],[],[]
-        | ((h1,h2,h3)::t) -> 
+        | (h1,h2,h3)::t -> 
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
             let res1c = freshConsNoTail h3 
@@ -699,7 +699,7 @@ module internal List =
         match xs1,xs2 with 
         | [],[] -> 
             setFreshConsTail cons []
-        | (h1::t1),(h2::t2) -> 
+        | h1::t1, h2::t2 -> 
             let cons2 = freshConsNoTail (h1,h2)
             setFreshConsTail cons cons2
             zipToFreshConsTail cons2 t1 t2
@@ -711,7 +711,7 @@ module internal List =
     let zip xs1 xs2 = 
         match xs1,xs2 with 
         | [],[] -> []
-        | (h1::t1),(h2::t2) -> 
+        | h1::t1, h2::t2 -> 
             let res = freshConsNoTail (h1,h2)
             zipToFreshConsTail res t1 t2
             res
@@ -724,7 +724,7 @@ module internal List =
         match xs1,xs2,xs3 with 
         | [],[],[] -> 
             setFreshConsTail cons []
-        | (h1::t1),(h2::t2),(h3::t3) -> 
+        | h1::t1, h2::t2, h3::t3 -> 
             let cons2 = freshConsNoTail (h1,h2,h3)
             setFreshConsTail cons cons2
             zip3ToFreshConsTail cons2 t1 t2 t3
@@ -737,7 +737,7 @@ module internal List =
         match xs1,xs2,xs3 with 
         | [],[],[] -> 
             []
-        | (h1::t1),(h2::t2),(h3::t3) -> 
+        | h1::t1, h2::t2, h3::t3 -> 
             let res = freshConsNoTail (h1,h2,h3) 
             zip3ToFreshConsTail res t1 t2 t3
             res
