@@ -1798,6 +1798,7 @@ Microsoft.FSharp.Core.FSharpOption`1[T]: Microsoft.FSharp.Core.FSharpOption`1+Ta
 Microsoft.FSharp.Core.FSharpOption`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] None
 Microsoft.FSharp.Core.FSharpOption`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] Some(T)
 Microsoft.FSharp.Core.FSharpOption`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] get_None()
+Microsoft.FSharp.Core.FSharpOption`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] op_Implicit(T)
 Microsoft.FSharp.Core.FSharpOption`1[T]: System.String ToString()
 Microsoft.FSharp.Core.FSharpOption`1[T]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpOption`1[T]: T Value
