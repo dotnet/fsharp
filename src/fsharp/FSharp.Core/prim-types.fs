@@ -3616,7 +3616,7 @@ namespace Microsoft.FSharp.Collections
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
             | h::t -> 
-               if n < 0 then raise (new System.ArgumentException(SR.GetString(SR.inputMustBeNonNegative),"n"))
+               if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
 

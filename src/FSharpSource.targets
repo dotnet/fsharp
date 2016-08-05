@@ -96,10 +96,12 @@
     <!-- These flags provide a better debugging experience. Locals should be visible. -->
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
     <DefineConstants>CODE_ANALYSIS; $(DefineConstants)</DefineConstants>
+    <OtherFlags>$(OtherFlags) --debug:full</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
+    <OtherFlags>$(OtherFlags) --debug:pdbonly</OtherFlags>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler. -->
@@ -111,11 +113,6 @@
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
   <PropertyGroup>
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
-  </PropertyGroup>
-
-  <!-- Produce portable pdbs -->
-  <PropertyGroup Condition="'$(Configuration)'!='Proto'">
-    <OtherFlags>$(OtherFlags) --debug:full</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -740,10 +737,12 @@
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <Choose>
-        <When Condition="Exists('$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish\fsc.exe')">
+        <When Condition="Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')">
           <PropertyGroup >
             <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-            <FscToolPath>$(FSharpSourcesRoot)\..\lkg\bin\Debug\netstandard1.6\win7-x64\publish</FscToolPath>
+            <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
+            <FscToolExe>dotnet.exe</FscToolExe>
+            <DotnetFscCompilerPath>$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe</DotnetFscCompilerPath>
             <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
             <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
           </PropertyGroup>
@@ -752,12 +751,12 @@
           <PropertyGroup >
             <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
             <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+            <DotnetFscCompilerPath></DotnetFscCompilerPath>
             <FSLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FSLKGPath>
             <FSCoreLKGPath>$(FSLKGPath)\FSharp.Core.dll</FSCoreLKGPath>
           </PropertyGroup>
         </Otherwise>
       </Choose>
-		
     </When>
     <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr'">
       <PropertyGroup>
@@ -875,7 +874,7 @@
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
         Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
-        
+
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
