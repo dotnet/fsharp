@@ -101,7 +101,7 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <Optimize>true</Optimize>
-    <OtherFlags>$(OtherFlags) --debug:portable</OtherFlags>
+    <OtherFlags>$(OtherFlags) --debug:pdbonly</OtherFlags>
   </PropertyGroup>
 
   <!-- Flags used to build the bootstrap compiler. -->
