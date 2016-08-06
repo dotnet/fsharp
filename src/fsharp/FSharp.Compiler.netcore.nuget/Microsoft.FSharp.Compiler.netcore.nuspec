@@ -19,6 +19,7 @@
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
                 <dependency id="System.Collections.Immutable" version="1.2.0" />
+                <dependency id="System.Console" version="4.0.0" />
                 <dependency id="System.Diagnostics.Process" version="4.1.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
                 <dependency id="System.Linq.Expressions" version="4.1.0" />
