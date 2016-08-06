@@ -3692,12 +3692,13 @@ type ILGlobals with
         mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
 
-    member this.mkDebuggableAttributeV2(ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
+    member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-           [ILAttribElem.Int32( (if jitOptimizerDisabled then 256 else 0) |||  
+           [ILAttribElem.Int32( (if jitTracking then 1 else 0) |||
+                                (if jitOptimizerDisabled then 256 else 0) |||  
                                 (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
                                 (if enableEnC then 4 else 0))],[])
 
