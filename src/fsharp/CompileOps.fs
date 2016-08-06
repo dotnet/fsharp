@@ -1618,14 +1618,7 @@ let DefaultBasicReferencesForOutOfProjectSources =
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-
-      // Don't reference System.Core for .NET 2.0 compilations.
-      //
-      // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
-      // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
-      // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
-      // in which case the compiler will also be running as a .NET 2.0 process.
-
+      yield "System.Core"
       // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
       // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
       // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
@@ -2575,10 +2568,12 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             with _ -> 
                 error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
         | _ ->
+#if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
             if data.useSimpleResolution then
                 None, (0, ""), false
             else
+#endif
                 None, MSBuildResolver.HighestInstalledNetFrameworkVersionMajorMinor(), false
 
     // Note: anycpu32bitpreferred can only be used with .Net version 4.5 and above
