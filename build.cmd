@@ -13,15 +13,20 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
+echo build.cmd ^<all^|proto^|protofx^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
+echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^>
 echo.
-echo No arguments default to 'build' 
+echo No arguments default to 'build'
 echo.
 echo To specify multiple values, separate strings by comma
 echo.
+echo.This builds the net40 build of the compiler without running tests
+echo.
+echo.    build net40 notests
+echo.
 echo The example below run pcls, vs and qa:
 echo.
-echo build.cmd pcls,vs,debug
+echo     build.cmd pcls,vs,debug
 exit /b 1
 
 :ARGUMENTS_OK
@@ -351,30 +356,12 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
     pushd .\lkg & %_dotnetexe% restore &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-    pushd .\lkg & %_dotnetexe% publish project.json &popd
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-
-    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-    fc fsc.exe dotnet.exe >nul
-    @if ERRORLEVEL 1 (
-      copy fsc.exe fsc.dll
-      copy dotnet.exe fsc.exe
-    )
-    popd
-
-    rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-    pushd .\lkg\bin\debug\netstandard1.6\win7-x64\publish
-    fc fsi.exe dotnet.exe >nul
-    @if ERRORLEVEL 1 (
-      copy fsi.exe fsi.dll
-      copy dotnet.exe fsi.exe
-    )
-    popd
-
 )
+
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-    rmdir /s .\lkg\bin\debug
+    rmdir /s /q %~dp0\Tools\lkg
 )
 
 rem copy targestfile into tools directory ... temporary fix until packaging complete.

@@ -33,10 +33,12 @@
         <file src="FSharp.Core.dll"     target="lib/netstandard1.6" />
         <file src="FSharp.Core.sigdata" target="lib/netstandard1.6" />
         <file src="FSharp.Core.optdata" target="lib/netstandard1.6" />
+        <file src="FSharp.Core.xml"     target="lib/netstandard1.6" />
         <file src="FSharp.Core.runtimeconfig.json" target="lib/netstandard1.6" />
         <file src="FSharp.Core.sigdata" target="content/any/netstandard1.6" />
         <file src="FSharp.Core.optdata" target="content/any/netstandard1.6" />
         <file src="FSharp.Core.sigdata" target="runtimes/any/native/" />
         <file src="FSharp.Core.optdata" target="runtimes/any/native/" />
+        <file src="FSharp.Core.xml"     target="runtimes/any/native/" />
     </files>
 </package>

@@ -196,7 +196,8 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr false e2
 
                   | SynExpr.ArrayOrList (_,es,_)
-                  | SynExpr.Tuple (es,_,_) -> 
+                  | SynExpr.Tuple (es,_,_) 
+                  | SynExpr.StructTuple (es,_,_) -> 
                       yield! walkExprs es
 
                   | SynExpr.Record (_,copyExprOpt,fs,_) ->
