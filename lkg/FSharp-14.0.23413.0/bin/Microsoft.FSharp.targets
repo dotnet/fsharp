@@ -1,3 +1,5 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
 <!--
 ***********************************************************************************************
 Microsoft.FSharp.targets
@@ -10,8 +12,6 @@ This file defines the steps in the standard build process specific for F# .NET p
 For example, it contains the step that actually calls the F# compiler.  The remainder
 of the build process is defined in Microsoft.Common.targets, which is imported by 
 this file.
-
-Copyright (C) Microsoft Corporation. All rights reserved.
 ***********************************************************************************************
 -->
 
@@ -189,7 +189,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
               SubsystemVersion="$(SubsystemVersion)"
               HighEntropyVA="$(HighEntropyVA)"
               TargetProfile="$(TargetProfile)"
-              SqmSessionGuid="$(SqmSessionGuid)"
+              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
         />
 
         <ItemGroup>
@@ -201,14 +201,15 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
 
-  <!--
-      ============================================================
-                                          GenerateTargetFrameworkMonikerAttribute
+        <!--
+            ============================================================
+            GenerateTargetFrameworkMonikerAttribute
 
-      Emit the target framework moniker attribute as  a code fragment into a temporary source file for the compiler.
+            Emit the target framework moniker attribute as  a code 
+            fragment into a temporary source file for the compiler.
 
-      ============================================================
-      -->
+            ============================================================
+        -->
 
     <Target Name="GenerateTargetFrameworkMonikerAttribute" BeforeTargets="BeforeCompile" DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths" Inputs="$(MSBuildThisFileFullPath)" Outputs="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(GenerateTargetFrameworkAttribute)' == 'true'">
 
@@ -240,3 +241,4 @@ Copyright (C) Microsoft Corporation. All rights reserved.
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
 
 </Project>
+

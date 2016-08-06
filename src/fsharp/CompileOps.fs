@@ -1612,16 +1612,23 @@ let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"
 //            -- for orphaned files (files in VS without a project context)
 //            -- for files given on a command line without --noframework set
 let DefaultBasicReferencesForOutOfProjectSources = 
-    [ // These are .NET-Framework -style references
-#if !TODO_REWORK_ASSEMBLY_LOAD
-      yield "System"
+    [ yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
       yield "System.Runtime.Serialization.Formatters.Soap"
       yield "System.Data"
       yield "System.Drawing"
-      yield "System.Core" 
-#endif
+
+      // Don't reference System.Core for .NET 2.0 compilations.
+      //
+      // We only use a default reference to System.Core if one exists which we can load it into the compiler process.
+      // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
+      // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
+      // in which case the compiler will also be running as a .NET 2.0 process.
+      //
+      // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
+      if (try System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")) |> ignore; true with _ -> false) then 
+          yield "System.Core" 
 
       // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
       // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
@@ -1670,6 +1677,7 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Runtime"
       yield "System.Observable"
       yield "System.Numerics"
+      yield "System.ValueTuple"
 
       // Additions for coreclr and portable profiles
       yield "System.Collections"
@@ -2055,6 +2063,7 @@ type TcConfigBuilder =
       mutable onlyEssentialOptimizationData : bool
       mutable useOptimizationDataFile : bool
       mutable useSignatureDataFile : bool
+      mutable jitTracking : bool
       mutable portablePDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
@@ -2224,6 +2233,7 @@ type TcConfigBuilder =
           onlyEssentialOptimizationData = false
           useOptimizationDataFile = false
           useSignatureDataFile = false
+          jitTracking = true
           portablePDB = true
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
@@ -2705,6 +2715,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.onlyEssentialOptimizationData  = data.onlyEssentialOptimizationData
     member x.useOptimizationDataFile  = data.useOptimizationDataFile
     member x.useSignatureDataFile = data.useSignatureDataFile
+    member x.jitTracking  = data.jitTracking
     member x.portablePDB  = data.portablePDB
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
@@ -2830,7 +2841,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
              (systemAssemblies |> List.exists (fun sysFile -> sysFile = fileNameWithoutExtension filename)))
         with _ ->
             false    
-        
+
     // This is not the complete set of search paths, it is just the set 
     // that is special to F# (as compared to MSBuild resolution)
     member tcConfig.SearchPathsForLibraryFiles = 
@@ -2841,11 +2852,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.MakePathAbsolute path = 
         let result = ComputeMakePathAbsolute tcConfig.implicitIncludeDir path
-#if TRACK_DOWN_EXTRA_BACKSLASHES        
-        System.Diagnostics.Debug.Assert(not(result.Contains(@"\\")), "tcConfig.MakePathAbsolute results in a non-canonical filename with extra backslashes: "+result)
-#endif
         result
-        
+
     member tcConfig.TryResolveLibWithDirectories (r:AssemblyReference) = 
         let m,nm = r.Range, r.Text
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
@@ -3493,16 +3501,6 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
         let resolutions = TcAssemblyResolutions.Resolve(tcConfig,assemblyList,tcConfig.knownUnresolvedReferences)
         let frameworkDLLs,nonFrameworkReferences = resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir) 
         let unresolved = resolutions.GetUnresolvedReferences()
-#if TRACK_DOWN_EXTRA_BACKSLASHES        
-        frameworkDLLs |> List.iter(fun x ->
-            let path = x.resolvedPath 
-            System.Diagnostics.Debug.Assert(not(path.Contains(@"\\")), "SplitNonFoundationalResolutions results in a non-canonical filename with extra backslashes: "+path)
-            )
-        nonFrameworkReferences |> List.iter(fun x ->
-            let path = x.resolvedPath 
-            System.Diagnostics.Debug.Assert(not(path.Contains(@"\\")), "SplitNonFoundationalResolutions results in a non-canonical filename with extra backslashes: "+path)
-            )
-#endif       
 #if DEBUG
         let itFailed = ref false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
@@ -4554,19 +4552,20 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                      | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly",rangeStartup)))
                 fslibCcuInfo.FSharpViewOfMetadata            
                   
+        let sysCcus =
+            [| yield sysCcu.FSharpViewOfMetadata 
+               yield! frameworkTcImports.GetCcusInDeclOrder() 
+               for dllName in SystemAssemblies tcConfig.primaryAssembly.Name do 
+                   match frameworkTcImports.CcuTable.TryFind dllName with 
+                   | Some sysCcu -> yield sysCcu.FSharpViewOfMetadata
+                   | None -> () |]
+
         // Search for a type
         let getTypeCcu nsname typeName =
             if ccuHasType sysCcu.FSharpViewOfMetadata nsname typeName  then 
                   sysCcu.FSharpViewOfMetadata
             else
-                let search = 
-                    seq { yield sysCcu.FSharpViewOfMetadata 
-                          yield! frameworkTcImports.GetCcusInDeclOrder() 
-                          for dllName in SystemAssemblies tcConfig.primaryAssembly.Name do 
-                            match frameworkTcImports.CcuTable.TryFind dllName with 
-                            | Some sysCcu -> yield sysCcu.FSharpViewOfMetadata
-                            | None -> () }
-                    |> Seq.tryFind (fun ccu -> ccuHasType ccu nsname typeName)
+                let search = sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu nsname typeName)
                 match search with 
                 | Some x -> x
                 | None -> fslibCcu
@@ -4976,10 +4975,13 @@ module private ScriptPreprocessClosure =
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
-            match List.frontAndBack closureFiles with
-            | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
-                rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
-            | _ -> closureFiles
+            if isNil closureFiles  then  
+                closureFiles 
+            else 
+                match List.frontAndBack closureFiles with
+                | rest, ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,_))),errs,warns,nowarns) -> 
+                    rest @ [ClosureFile(filename,m,Some(ParsedInput.ImplFile(ParsedImplFileInput(name,isScript,qualNameOfFile,scopedPragmas,hashDirectives,implFileFlags,(true, tcConfig.target.IsExe)))),errs,warns,nowarns)]
+                | _ -> closureFiles
 
         // Get all source files.
         let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
