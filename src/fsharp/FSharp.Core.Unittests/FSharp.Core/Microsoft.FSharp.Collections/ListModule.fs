@@ -224,11 +224,11 @@ type ListModule() =
     member this.Choose() = 
         // int List
         let intSrc:int list = [ 1..100 ]    
-        let funcInt x = if (x%5=0) then Some x else None       
+        let funcInt x = if (x%5=0) then Some (x*x) else None       
         let intChosen = List.choose funcInt intSrc        
-        Assert.AreEqual(5, intChosen.[0])
-        Assert.AreEqual(10, intChosen.[1])
-        Assert.AreEqual(15, intChosen.[2])
+        Assert.AreEqual(25, intChosen.[0])
+        Assert.AreEqual(100, intChosen.[1])
+        Assert.AreEqual(225, intChosen.[2])
         
         // string List
         let stringSrc: string list = [ "List"; "this"; "is" ;"str"; "list" ]
@@ -240,6 +240,11 @@ type ListModule() =
         Assert.AreEqual("list", strChosen.[0].ToLower())
         Assert.AreEqual("list", strChosen.[1].ToLower())
         
+        // always None 
+        let emptySrc :int list = [ ]
+        let emptyChosen = List.choose (fun i -> Option<int>.None) intSrc        
+        Assert.AreEqual(emptySrc, emptyChosen)
+
         // empty List
         let emptySrc :int list = [ ]
         let emptyChosen = List.choose funcInt emptySrc        
