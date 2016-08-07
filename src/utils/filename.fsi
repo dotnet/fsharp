@@ -25,4 +25,5 @@ val fileNameOfPath: string -> string
 /// Get the filename without extension of the given path.
 val fileNameWithoutExtension: string -> string
 
-
+/// Trim the quotes and spaces from either end of a string
+val trimQuotes: string -> string
