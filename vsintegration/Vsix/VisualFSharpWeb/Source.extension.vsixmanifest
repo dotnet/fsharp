@@ -44,7 +44,6 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Compiler.Server.Shared.pkgdef" />
 
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|SilverlightProject;TemplateProjectOutputGroup|" d:ProjectName="SilverlightProject" d:VsixSubPath="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|TutorialProject;TemplateProjectOutputGroup|" d:ProjectName="TutorialProject" d:VsixSubPath="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
     

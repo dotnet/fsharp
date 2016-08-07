@@ -13,9 +13,11 @@ let test s b = if b then () else report_failure(s)
 
 let out r (s:string) = r := !r @ [s]
 
-let check s v1 v2 = 
-    if v1 = v2 then printfn "%s: OK" s
-    else report_failure (sprintf "%s: FAILED, expected %A, got %A" s v2 v1)
+let check s actual expected = 
+    if actual = expected then printfn "%s: OK" s
+    else report_failure (sprintf "%s: FAILED, expected %A, got %A" s expected actual)
+
+let check2 s expected actual = check s actual expected 
 
 module CheckMutationOfArgumentValuesInOtherArguments = 
     let test1232() = 
@@ -841,6 +843,7 @@ module AppOneRecGeneric =
         
     test1mod()
     test2mod()
+
     
 module DuplicateTestsWithCondensedArgs = 
     module CheckMutationOfArgumentValuesInOtherArguments = 

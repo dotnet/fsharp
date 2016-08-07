@@ -1,2 +1,5 @@
 
-neg_byref_21.fs(4,5,4,7): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+neg_byref_21.fs(5,14,5,17): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'float'    

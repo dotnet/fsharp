@@ -57,7 +57,7 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 15,27 ''
+    .line 5,5 : 15,27
     IL_0000:  nop
     IL_0001:  ldstr      "%A"
     IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,!!a>::.ctor(string)
@@ -86,11 +86,11 @@
              [5] bool V_5,
              [6] int64 V_6,
              [7] class [mscorlib]System.Tuple`2<bool,int64> t)
-    .line 7,7 : 5,64 ''
+    .line 7,7 : 5,64
     IL_0000:  nop
     IL_0001:  newobj     instance void class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
     IL_0006:  stloc.0
-    .line 9,9 : 31,48 ''
+    .line 9,9 : 31,48
     IL_0007:  ldc.i4.0
     IL_0008:  stloc.1
     IL_0009:  ldloc.0
@@ -101,15 +101,15 @@
     IL_0012:  stloc.2
     IL_0013:  ldloc.1
     IL_0014:  stloc.3
-    .line 10,10 : 5,6 ''
+    .line 10,10 : 5,6
     IL_0015:  ldloc.2
     IL_0016:  call       void TupleElimination::p@5<bool>(!!0)
     IL_001b:  nop
-    .line 11,11 : 5,6 ''
+    .line 11,11 : 5,6
     IL_001c:  ldloc.3
     IL_001d:  call       void TupleElimination::p@5<int32>(!!0)
     IL_0022:  nop
-    .line 14,14 : 38,65 ''
+    .line 14,14 : 38,65
     IL_0023:  ldc.i8     0x0
     IL_002c:  stloc.s    V_4
     IL_002e:  ldstr      "123"
@@ -119,25 +119,25 @@
     IL_003a:  stloc.s    V_5
     IL_003c:  ldloc.s    V_4
     IL_003e:  stloc.s    V_6
-    .line 14,14 : 5,65 ''
+    .line 14,14 : 5,65
     IL_0040:  ldloc.s    V_5
     IL_0042:  ldloc.s    V_6
     IL_0044:  newobj     instance void class [mscorlib]System.Tuple`2<bool,int64>::.ctor(!0,
                                                                                          !1)
     IL_0049:  stloc.s    t
-    .line 15,15 : 5,6 ''
+    .line 15,15 : 5,6
     IL_004b:  ldloc.s    V_5
     IL_004d:  call       void TupleElimination::p@5<bool>(!!0)
     IL_0052:  nop
-    .line 16,16 : 5,6 ''
+    .line 16,16 : 5,6
     IL_0053:  ldloc.s    V_6
     IL_0055:  call       void TupleElimination::p@5<int64>(!!0)
     IL_005a:  nop
-    .line 21,21 : 5,6 ''
+    .line 21,21 : 5,6
     IL_005b:  ldloc.s    t
     IL_005d:  call       void TupleElimination::p@5<class [mscorlib]System.Tuple`2<bool,int64>>(!!0)
     IL_0062:  nop
-    .line 23,23 : 5,6 ''
+    .line 23,23 : 5,6
     IL_0063:  ldc.i4.0
     IL_0064:  ret
   } // end of method TupleElimination::main

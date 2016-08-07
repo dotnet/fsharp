@@ -37,7 +37,7 @@ type internal IlxGenOptions =
       // Indicates System.SerializableAttribute is available in the targeting framework
       netFxHasSerializableAttribute          : bool
       /// Indicates that, whenever possible, use callvirt instead of call
-      alwaysCallVirt                         : bool}
+      alwaysCallVirt                         : bool }
 
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults = 
@@ -68,10 +68,10 @@ type public IlxAssemblyGenerator =
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member AddIncrementalLocalAssemblyFragment : isIncrementalFragment: bool * fragName:string * typedAssembly: TypedAssembly -> unit
+    member AddIncrementalLocalAssemblyFragment : isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile list -> unit
 
     /// Generate ILX code for an assembly fragment
-    member GenerateCode : IlxGenOptions * TypedAssembly * Attribs * Attribs -> IlxGenResults
+    member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
     /// Create the CAS permission sets for an assembly fragment
     member CreatePermissionSets : Attrib list ->  ILPermission list
