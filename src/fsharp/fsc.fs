@@ -24,6 +24,7 @@ open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Internal.Utilities.Filename
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -282,14 +283,13 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,a
     setProcessThreadLocals(tcConfigB)
 
     (* step - get dll references *)
-    let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
+    let dllFiles,sourceFiles = inputFiles |> List.map(fun p -> trimQuotes p) |> List.partition Filename.isDll
     match dllFiles with
     | [] -> ()
     | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h),rangeStartup))
 
     dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup,f))
     sourceFiles
-          
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This code has logic for a prefix of the compile that is also used by the project system to do the front-end
