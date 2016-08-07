@@ -8,6 +8,8 @@ open Microsoft.FSharp.Collections
 
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
+    val choose: ('T -> 'U option) -> 'T list -> 'U list
+    val countBy : System.Collections.Generic.Dictionary<'T1, int> -> ('T1 -> 'T2) -> ('T2 * int) list
     val distinctWithComparer : System.Collections.Generic.IEqualityComparer<'T> -> 'T list -> 'T list
     val distinctByWithComparer : System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
     val init : int -> (int -> 'T) -> 'T list
@@ -15,9 +17,12 @@ module internal List =
     val filter : predicate:('T -> bool) -> 'T list -> 'T list
     val collect : ('T -> 'U list) -> 'T list -> 'U list
     val partition : predicate:('T -> bool) -> 'T list -> 'T list * 'T list
-    val map : mapping:('T -> 'U) -> 'T list -> 'U list
-    val map2 : mapping:('T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
+    val map : mapping : ('T -> 'U) -> 'T list -> 'U list
+    val map2 : mapping : ('T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
+    val map3 : mapping : ('T1 -> 'T2 -> 'T3 -> 'U) -> 'T1 list -> 'T2 list -> 'T3 list -> 'U list
+    val scan : ('State -> 'T -> 'State) -> 'State -> 'T list -> 'State list
     val mapi : (int -> 'T -> 'U) -> 'T list -> 'U list
+    val mapi2 : (int -> 'T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
     val indexed : 'T list -> (int * 'T) list
     val mapFold : ('State -> 'T -> 'U * 'State) -> 'State -> 'T list -> 'U list * 'State
     val forall : predicate:('T -> bool) -> 'T list -> bool

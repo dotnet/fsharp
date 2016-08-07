@@ -296,45 +296,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             (let cases = FSharpType.GetUnionCases typ 
              cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
 
-        module Type =
-
-            let recdDescOfProps props = 
-               props |> Array.toList |> List.map (fun (p:PropertyInfo) -> p.Name, p.PropertyType) 
-
-            let getTypeInfoOfType (bindingFlags:BindingFlags) (typ:Type) = 
-#if FX_RESHAPED_REFLECTION
-                let showNonPublic = isNonPublicFlag bindingFlags
-#endif
-                if FSharpType.IsTuple(typ)  then TypeInfo.TupleType (FSharpType.GetTupleElements(typ) |> Array.toList)
-                elif FSharpType.IsFunction(typ) then let ty1,ty2 = FSharpType.GetFunctionElements typ in  TypeInfo.FunctionType( ty1,ty2)
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsUnion(typ, showNonPublic) then 
-                    let cases = FSharpType.GetUnionCases(typ, showNonPublic)
-#else
-                elif FSharpType.IsUnion(typ,bindingFlags) then 
-                    let cases = FSharpType.GetUnionCases(typ,bindingFlags) 
-#endif
-                    match cases with 
-                    | [| |] -> TypeInfo.ObjectType(typ) 
-                    | _ -> 
-                        TypeInfo.SumType(cases |> Array.toList |> List.map (fun case -> 
-                            let flds = case.GetFields()
-                            case.Name,recdDescOfProps(flds)))
-#if FX_RESHAPED_REFLECTION
-                elif FSharpType.IsRecord(typ, showNonPublic) then 
-                    let flds = FSharpType.GetRecordFields(typ, showNonPublic) 
-#else
-                elif FSharpType.IsRecord(typ,bindingFlags) then 
-                    let flds = FSharpType.GetRecordFields(typ,bindingFlags) 
-#endif
-                    TypeInfo.RecordType(recdDescOfProps(flds))
-                else
-                    TypeInfo.ObjectType(typ)
-
-            let IsOptionType (typ:Type) = isOptionTy typ
-            let IsListType (typ:Type) = isListType typ
-            let IsUnitType (typ:Type) = isUnitType typ
-
         [<NoEquality; NoComparison>]
         type ValueInfo =
           | TupleValue of obj list
@@ -1006,7 +967,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     makeRecordL (List.map itemL items)
 
                 | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
-                                                      x<>null && Type.IsListType (x.GetType()) ->
+                                                      x<>null && isListType (x.GetType()) ->
                     match constr with 
                     | "Cons" -> 
                         let (x,xs) = unpackCons recd

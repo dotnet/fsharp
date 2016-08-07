@@ -997,7 +997,7 @@ module Pass4_RewriteAssembly =
             let m = fOrig.Range
             let tps,vss,_b,rty = stripTopLambda (b,fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m) 
-            let vsExprs   = vss |> List.map (mkTupledVars penv.g m) 
+            let vsExprs   = vss |> List.map (mkRefTupledVars penv.g m) 
             let fHat      = Zmap.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
@@ -1315,11 +1315,7 @@ module Pass4_RewriteAssembly =
 
     let TransImplFile penv z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) =        
         let moduleExpr,z = TransModuleExpr penv z moduleExpr
-        TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript),z
-
-    let TransAssembly penv z (TAssembly(mvs)) = 
-        let mvs,_z = List.mapFold (TransImplFile penv) z mvs 
-        TAssembly(mvs)
+        (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)),z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr
