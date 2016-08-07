@@ -153,7 +153,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable subsystemVersion : string = null
     let mutable highEntropyVA : bool = false
     let mutable targetProfile : string = null
-    let mutable sqmSessionGuid : string = null
+    let mutable dotnetFscCompilerPath : string = null
 
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
@@ -332,17 +332,16 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = targetProfile
         and set(p) = targetProfile <- p
 
-    member fsc.SqmSessionGuid
-        with get() = sqmSessionGuid
-        and set(p) = sqmSessionGuid <- p
-        
+    member fsc.DotnetFscCompilerPath  
+        with get() = dotnetFscCompilerPath
+        and set(p) = dotnetFscCompilerPath <- p
+
     // ToolTask methods
     override fsc.ToolName = "fsc.exe" 
     override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
     override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
     override fsc.GenerateFullPathToTool() = 
-        if toolPath = "" then
-            raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
+        if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsc.ToolExe)
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool()  // expose for unit testing
     member internal fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =  // F# does not allow protected members to be captured by lambdas, this is the standard workaround
@@ -378,7 +377,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FscCommandLineBuilder()
-        
+
+        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then builder.AppendSwitch(dotnetFscCompilerPath)
+
         // OutputAssembly
         builder.AppendSwitchIfNotNull("-o:", outputAssembly)
         // CodePage
@@ -461,11 +462,11 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
-        
+
         // TreatWarningsAsErrors
         if treatWarningsAsErrors then
             builder.AppendSwitch("--warnaserror")
-            
+
         // WarningsAsErrors
         // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
         // REVIEW: why is this logic here? In any case these are errors already by default!
@@ -475,14 +476,14 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)                        
 
         builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")            
-     
+
             
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
-        
+
         // Win32ManifestFile
         builder.AppendSwitchIfNotNull("--win32manifest:", win32manifest)
-        
+
         // VisualStudioStyleErrors 
         if vserrors then
             builder.AppendSwitch("--vserrors")      
@@ -494,7 +495,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         // When building using the fsc task, always emit the "fullpaths" flag to make the output easier
         // for the user to parse
         builder.AppendSwitch("--fullpaths")
-        
+
         // When building using the fsc task, also emit "flaterrors" to ensure that multi-line error messages
         // aren't trimmed
         builder.AppendSwitch("--flaterrors")
@@ -505,24 +506,25 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         else
             builder.AppendSwitch("--highentropyva-")
 
-        builder.AppendSwitchIfNotNull("--sqmsessionguid:", sqmSessionGuid)
-
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
         capturedArguments <- builder.CapturedArguments()
-        
+
         // Sources - these have to go last
         builder.AppendFileNamesIfNotNull(sources, " ")
         capturedFilenames <- builder.CapturedFilenames()
         let s = builder.ToString()
         s
+
     // expose this to internal components (for nunit testing)
     member internal fsc.InternalGenerateCommandLineCommands() =
         fsc.GenerateCommandLineCommands()
+
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+
     member internal fsc.GetCapturedArguments() = 
         [|
             yield! capturedArguments

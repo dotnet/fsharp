@@ -54,5 +54,5 @@ type Fsc = class
              member SubsystemVersion : string with get,set
              member HighEntropyVA : bool with get,set
              member TargetProfile : string with get,set
-             member SqmSessionGuid : string with get,set
+             member DotnetFscCompilerPath : string with get,set
            end
