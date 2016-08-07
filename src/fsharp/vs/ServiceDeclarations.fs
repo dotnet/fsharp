@@ -763,7 +763,7 @@ module internal ItemDescriptionsImpl =
         | Item.Property(_,pinfos) -> 
             let pinfo = pinfos.Head
             let rty = pinfo.GetPropertyType(amap,m) 
-            let rty = if pinfo.IsIndexer then mkTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
+            let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
             let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
             let text =
                 bufs (fun os -> 
@@ -1159,7 +1159,7 @@ module internal ItemDescriptionsImpl =
             if isAppTy denv.g typ then 
                 let tcref = tcrefOfAppTy denv.g typ
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isTupleTy denv.g typ then iIconGroupStruct
+            elif isAnyTupleTy denv.g typ then iIconGroupStruct
             elif isFunction denv.g typ then iIconGroupDelegate
             elif isTyparTy denv.g typ then iIconGroupStruct
             else iIconGroupTypedef

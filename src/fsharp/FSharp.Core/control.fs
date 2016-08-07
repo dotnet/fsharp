@@ -298,7 +298,7 @@ namespace Microsoft.FSharp.Control
 
 #if FX_RESHAPED_REFLECTION
     open ReflectionAdapters
-    type BindingFlags = ReflectionAdapters.BindingFlags
+    type internal BindingFlags = ReflectionAdapters.BindingFlags
 #else
     type BindingFlags = System.Reflection.BindingFlags
 #endif

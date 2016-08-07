@@ -13,7 +13,7 @@ namespace Microsoft.FSharp.Control
 
 #if FX_RESHAPED_REFLECTION
     open ReflectionAdapters
-    type BindingFlags = ReflectionAdapters.BindingFlags
+    type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 #if FX_NO_DELEGATE_DYNAMIC_METHOD 

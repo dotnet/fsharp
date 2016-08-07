@@ -46,13 +46,6 @@ folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\PortableLibra
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\PortableLibraryProject\PortableLibrary1.fs"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\PortableLibraryProject\Script.fsx"
 
-folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\SilverlightProject"
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\SilverlightProject\AssemblyInfo.fs"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\Library1.fs"
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\SilverlightProject\Script.fsx"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\SilverlightLibrary.fsproj"
-  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\SilverlightProject\SilverlightLibrary.vstemplate"
-
 folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\TutorialProject"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsproj"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\TutorialProject\Tutorial.fsx"

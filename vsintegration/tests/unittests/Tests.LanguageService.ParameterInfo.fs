@@ -430,11 +430,15 @@ type UsingMSBuild()  =
                 match l with
                 | [] -> System.String.Format((*Mark*)
                 | x :: xs -> f xs"""
+        // Note, 3 of these 8 are only available on .NET 4.6.1.  On .NET 4.5 only 5 overloads are returned.
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["format"; "arg0"];
                                                                         ["format"; "args"];
                                                                         ["provider"; "format"; "args"];
+                                                                        ["provider"; "format"; "arg0"];
                                                                         ["format"; "arg0"; "arg1"];
-                                                                        ["format"; "arg0"; "arg1"; "arg2"]])
+                                                                        ["provider"; "format"; "arg0"; "arg1"];
+                                                                        ["format"; "arg0"; "arg1"; "arg2"];
+                                                                        ["provider"; "format"; "arg0"; "arg1"; "arg2"]])
   
     (* --- Parameter Info Systematic Tests ------------------------------------------------- *)
 

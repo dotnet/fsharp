@@ -2,12 +2,10 @@
 
 namespace Microsoft.FSharp.Collections
 
-    open System.Diagnostics
-    open Microsoft.FSharp.Collections
+    open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.Operators.Checked
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -54,9 +52,9 @@ namespace Microsoft.FSharp.Collections
 #endif                
             else
 #if FX_NO_BASED_ARRAYS
-                raise (new System.NotSupportedException(SR.GetString(SR.nonZeroBasedDisallowed)))
+                raise (NotSupportedException(SR.GetString(SR.nonZeroBasedDisallowed)))
 #else
-                (System.Array.CreateInstance(typeof<'T>, [|n1;n2|],[|b1;b2|]) :?> 'T[,])
+                (Array.CreateInstance(typeof<'T>, [|n1;n2|],[|b1;b2|]) :?> 'T[,])
 #endif
 
         [<CompiledName("CreateBased")>]

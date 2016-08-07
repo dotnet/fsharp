@@ -241,7 +241,7 @@
                [3] class [mscorlib]System.Collections.IComparer V_3,
                [4] int32 V_4,
                [5] int32 V_5)
-      .line 6,6 : 14,18 ''
+      .line 6,6 : 14,18
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  ABC/Expr
@@ -255,7 +255,7 @@
 
       IL_0010:  br.s       IL_004e
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0012:  ldarg.1
       IL_0013:  unbox.any  ABC/Expr
       IL_0018:  ldnull
@@ -266,10 +266,10 @@
 
       IL_001f:  br.s       IL_004c
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0021:  ldarg.0
       IL_0022:  pop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0023:  ldarg.0
       IL_0024:  stloc.1
       IL_0025:  ldloc.0
@@ -290,21 +290,21 @@
 
       IL_0041:  br.s       IL_0045
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0043:  ldc.i4.m1
       IL_0044:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0045:  ldloc.s    V_4
       IL_0047:  ldloc.s    V_5
       IL_0049:  cgt
       IL_004b:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_004c:  ldc.i4.1
       IL_004d:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_004e:  ldarg.1
       IL_004f:  unbox.any  ABC/Expr
       IL_0054:  ldnull
@@ -315,11 +315,11 @@
 
       IL_005b:  br.s       IL_005f
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_005d:  ldc.i4.m1
       IL_005e:  ret
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_005f:  ldc.i4.0
       IL_0060:  ret
     } // end of method Expr::CompareTo
@@ -379,7 +379,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 6,6 : 14,18 ''
+      .line 6,6 : 14,18
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -645,7 +645,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 7,7 : 19,24 ''
+      .line 7,7 : 19,24
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -815,7 +815,7 @@
     {
       // Code size       17 (0x11)
       .maxstack  8
-      .line 8,8 : 16,17 ''
+      .line 8,8 : 16,17
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -824,7 +824,7 @@
       IL_0009:  ldarg.0
       IL_000a:  ldarg.1
       IL_000b:  stfld      string ABC/A::x
-      .line 8,8 : 14,15 ''
+      .line 8,8 : 14,15
       IL_0010:  ret
     } // end of method A::.ctor
 
@@ -833,7 +833,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .line 8,8 : 42,43 ''
+      .line 8,8 : 42,43
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldfld      string ABC/A::x
@@ -1017,7 +1017,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       14 (0xe)
         .maxstack  8
-        .line 16,16 : 18,22 ''
+        .line 16,16 : 18,22
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldarg.1
@@ -1039,7 +1039,7 @@
                  [3] class [mscorlib]System.Collections.IComparer V_3,
                  [4] int32 V_4,
                  [5] int32 V_5)
-        .line 16,16 : 18,22 ''
+        .line 16,16 : 18,22
         IL_0000:  nop
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  ABC/ABC/Expr
@@ -1053,7 +1053,7 @@
 
         IL_0010:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0012:  ldarg.1
         IL_0013:  unbox.any  ABC/ABC/Expr
         IL_0018:  ldnull
@@ -1064,10 +1064,10 @@
 
         IL_001f:  br.s       IL_004c
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0021:  ldarg.0
         IL_0022:  pop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0023:  ldarg.0
         IL_0024:  stloc.1
         IL_0025:  ldloc.0
@@ -1088,21 +1088,21 @@
 
         IL_0041:  br.s       IL_0045
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0043:  ldc.i4.m1
         IL_0044:  ret
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_0045:  ldloc.s    V_4
         IL_0047:  ldloc.s    V_5
         IL_0049:  cgt
         IL_004b:  ret
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_004c:  ldc.i4.1
         IL_004d:  ret
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_004e:  ldarg.1
         IL_004f:  unbox.any  ABC/ABC/Expr
         IL_0054:  ldnull
@@ -1113,11 +1113,11 @@
 
         IL_005b:  br.s       IL_005f
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_005d:  ldc.i4.m1
         IL_005e:  ret
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0
         IL_005f:  ldc.i4.0
         IL_0060:  ret
       } // end of method Expr::CompareTo
@@ -1177,7 +1177,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 16,16 : 18,22 ''
+        .line 16,16 : 18,22
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -1443,7 +1443,7 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 17,17 : 23,28 ''
+        .line 17,17 : 23,28
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -1613,7 +1613,7 @@
       {
         // Code size       17 (0x11)
         .maxstack  8
-        .line 18,18 : 20,21 ''
+        .line 18,18 : 20,21
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
         IL_0006:  ldarg.0
@@ -1622,7 +1622,7 @@
         IL_0009:  ldarg.0
         IL_000a:  ldarg.1
         IL_000b:  stfld      string ABC/ABC/A::x
-        .line 18,18 : 18,19 ''
+        .line 18,18 : 18,19
         IL_0010:  ret
       } // end of method A::.ctor
 
@@ -1631,7 +1631,7 @@
       {
         // Code size       8 (0x8)
         .maxstack  8
-        .line 18,18 : 46,47 ''
+        .line 18,18 : 46,47
         IL_0000:  nop
         IL_0001:  ldarg.0
         IL_0002:  ldfld      string ABC/ABC/A::x
@@ -1650,7 +1650,7 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       // Code size       5 (0x5)
       .maxstack  8
-      .line 21,21 : 27,32 ''
+      .line 21,21 : 27,32
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -1682,7 +1682,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     // Code size       5 (0x5)
     .maxstack  8
-    .line 11,11 : 23,28 ''
+    .line 11,11 : 23,28
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldarg.1
@@ -1722,11 +1722,11 @@
     .maxstack  3
     .locals init ([0] string V_0,
              [1] string greeting)
-    .line 12,12 : 9,31 ''
+    .line 12,12 : 9,31
     IL_0000:  nop
     IL_0001:  call       string ABC::get_greeting()
     IL_0006:  stloc.0
-    .line 22,22 : 13,35 ''
+    .line 22,22 : 13,35
     IL_0007:  call       string ABC/ABC::get_greeting()
     IL_000c:  stloc.1
     IL_000d:  ret
