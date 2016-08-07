@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
 // Verify property setters must have type unit
-//<Expects id="FS1129" status="error" span="(10,67)">The type 'unit' does not contain a field 'immutStr'</Expects>
+//<Expects id="FS0001" status="error" span="(10,66)">This expression was expected to have type</Expects>
 
 type immut =       
   {

@@ -3,18 +3,19 @@
 /// Functions to compute the edit distance between two strings
 module internal Internal.Utilities.EditDistance
 
-/// Computes the DamerauLevenstein distance
+/// Computes the restricted Damerau-Levenstein edit distance,
+/// also known as the "optimal string alignment" distance.
 ///  - read more at https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 ///  - Implementation taken from http://www.navision-blog.de/2008/11/01/damerau-levenshtein-distance-in-fsharp-part-ii/
 let private calcDamerauLevenshtein (a:string, b:string) =
     let m = b.Length + 1
-    let mutable lastLine = Array.init m (fun i -> i)
-    let mutable lastLastLine = Array.create m 0
-    let mutable actLine = Array.create m 0
-      
-    for i in [1..a.Length] do
+    let mutable lastLine = Array.init m id
+    let mutable lastLastLine = Array.zeroCreate m
+    let mutable actLine = Array.zeroCreate m
+
+    for i in 1 .. a.Length do
         actLine.[0] <- i
-        for j in [1..b.Length] do          
+        for j in 1 .. b.Length do
             let cost = if a.[i-1] = b.[j-1] then 0 else 1
             let deletion = lastLine.[j] + 1
             let insertion = actLine.[j-1] + 1

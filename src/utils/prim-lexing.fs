@@ -74,28 +74,27 @@ namespace Internal.Utilities.Text.Lexing
     and [<Sealed>]
         internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>) = 
         let context = new Dictionary<string,obj>(1) 
-        let mutable buffer=[||];
+        let mutable buffer = [||]
         /// number of valid characters beyond bufferScanStart.
-        let mutable bufferMaxScanLength=0;
+        let mutable bufferMaxScanLength = 0
         /// count into the buffer when scanning.
-        let mutable bufferScanStart=0;
+        let mutable bufferScanStart = 0
         /// number of characters scanned so far.
-        let mutable bufferScanLength=0;
+        let mutable bufferScanLength = 0
         /// length of the scan at the last accepting state.
-        let mutable lexemeLength=0;
+        let mutable lexemeLength = 0
         /// action related to the last accepting state.
-        let mutable bufferAcceptAction=0;
-        let mutable eof = false;
-        let mutable startPos = Position.Empty ;
+        let mutable bufferAcceptAction = 0
+        let mutable eof = false
+        let mutable startPos = Position.Empty
         let mutable endPos = Position.Empty
 
-        // Throw away all the input besides the lexeme 
-              
+        // Throw away all the input besides the lexeme
         let discardInput () = 
             let keep = Array.sub buffer bufferScanStart bufferScanLength
             let nkeep = keep.Length 
-            Array.blit keep 0 buffer 0 nkeep;
-            bufferScanStart <- 0;
+            Array.blit keep 0 buffer 0 nkeep
+            bufferScanStart <- 0
             bufferMaxScanLength <- nkeep
                  
               
@@ -142,7 +141,7 @@ namespace Internal.Utilities.Text.Lexing
         member lexbuf.EnsureBufferSize n = 
             if lexbuf.BufferScanPos + n >= buffer.Length then 
                 let repl = Array.zeroCreate (lexbuf.BufferScanPos + n) 
-                Array.blit buffer bufferScanStart repl bufferScanStart bufferScanLength;
+                Array.blit buffer bufferScanStart repl bufferScanStart bufferScanLength
                 buffer <- repl
 
 
@@ -151,8 +150,8 @@ namespace Internal.Utilities.Text.Lexing
             let extension= Array.zeroCreate 4096
             let filler (lexBuffer: LexBuffer<'Char>) =
                  let n = f (extension,0,extension.Length)
-                 lexBuffer.EnsureBufferSize n;
-                 Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n;
+                 lexBuffer.EnsureBufferSize n
+                 Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
                  lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
             new LexBuffer<'Char>(filler)
               

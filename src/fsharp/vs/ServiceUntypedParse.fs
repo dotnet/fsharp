@@ -196,7 +196,8 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                       yield! walkExpr false e2
 
                   | SynExpr.ArrayOrList (_,es,_)
-                  | SynExpr.Tuple (es,_,_) -> 
+                  | SynExpr.Tuple (es,_,_) 
+                  | SynExpr.StructTuple (es,_,_) -> 
                       yield! walkExprs es
 
                   | SynExpr.Record (_,copyExprOpt,fs,_) ->
@@ -603,7 +604,7 @@ module UntypedParseImpl =
                         | _ -> defaultTraverse(expr) }
         AstTraversal.Traverse(pos, parseTree, walker)
     
-    type TS = AstTraversal.TraverseStep
+    type internal TS = AstTraversal.TraverseStep
 
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option) : CompletionContext option = 
