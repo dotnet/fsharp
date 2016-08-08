@@ -114,3 +114,7 @@ module NestedStructUnionsTests =
         | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
 
 
+module OptionalParameterTests =
+
+    type API =
+        static member MethodWithOptionalParams<'T>(?value1 : 'T, ?value2 : int) = (value1, value2)
