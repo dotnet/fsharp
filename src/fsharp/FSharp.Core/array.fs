@@ -494,23 +494,23 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array            
-            let len = array.Length    
-            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+            checkNonNull "array" array                        
+            let temp = Array.zeroCreateUnchecked array.Length            
             let mutable c = 0
-            for i = 0 to len-1 do        
-                let b = f array.[i]        
-                if b then
-                    temp.[i] <- b
-                    c <- c + 1
+            for i = 0 to array.Length-1 do                
+            if f array.[i] then
+                temp.[i] <- true
+                c <- c + 1
                     
-            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked c
+            let result = Array.zeroCreateUnchecked c
             c <- 0    
-            for i = 0 to len-1 do
+            let mutable i = 0
+            while c < result.Length do
                 if temp.[i] then
-                    res.[c] <- array.[i]
+                    result.[c] <- array.[i]
                     c <- c + 1
-            res
+                i <- i + 1
+            result
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
