@@ -496,7 +496,7 @@ namespace Microsoft.FSharp.Collections
         let filter f (array: _[]) = 
             checkNonNull "array" array            
             let len = array.Length    
-            let temp = Array.zeroCreate len
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
             let mutable c = 0
             for i = 0 to len-1 do        
                 let b = f array.[i]        
@@ -504,7 +504,7 @@ namespace Microsoft.FSharp.Collections
                     temp.[i] <- b
                     c <- c + 1
                     
-            let res = Array.zeroCreate c
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked c
             c <- 0    
             for i = 0 to len-1 do
                 if temp.[i] then
