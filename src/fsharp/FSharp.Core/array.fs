@@ -495,11 +495,23 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
             checkNonNull "array" array
-            let res = List<_>() // ResizeArray
-            for i = 0 to array.Length - 1 do 
-                let x = array.[i] 
-                if f x then res.Add(x)
-            res.ToArray()
+            
+            let len = array.Length    
+            let temp = Array.zeroCreate len
+            let mutable c = 0
+            for i = 0 to len-1 do        
+                let b = f array.[i]        
+                if b then
+                    temp.[i] <- b
+                    c <- c + 1
+                    
+            let res = Array.zeroCreate c
+            c <- 0    
+            for i = 0 to len-1 do
+                if temp.[i] then
+                    res.[c] <- array.[i]
+                    c <- c + 1
+            res
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
