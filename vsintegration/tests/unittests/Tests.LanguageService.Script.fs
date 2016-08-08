@@ -570,13 +570,23 @@ type UsingMSBuild() as this =
     [<Test>]
     [<Category("fsx closure")>]
 
-    // 'Microsoft.VisualStudio.Shell.15.0.dll' is resolved via AssemblyFoldersEx over recent VS releases
+    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
     member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
         let fileContent = """
             #light
-            #r "Microsoft.VisualStudio.Shell.15.0.dll"
+            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
             """
         this.VerifyFSXNoErrorList(fileContent)
+
+    [<Test>]
+    [<Category("fsx closure")>]
+    // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
+    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFolders``() = 
+        let fileContent = """
+            #light
+            #r "Microsoft.SqlServer.SString"
+            """
+        this.VerifyFSXNoErrorList(fileContent) 
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -967,14 +977,24 @@ type UsingMSBuild() as this =
             """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
             "#r \"mscor" "Global Assembly Cache"
 
-    // as it used to be.
-    [<Test;Category("fsx closure"); Category("NO_CI")>] 
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
-        let fileContent = """#r "Microsoft.VisualStudio.Shell.15.0.dll" """     // 'Microsoft.VisualStudio.Shell.15.0' is located via AssemblyFoldersEx
-        let marker = "#r \"Microsoft.Vis"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.Shell.15.0, Version="
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.Shell.15.0.dll"
+    // // Disabled because it seems Microsoft.VisualStudio.QualityTools.Common.dll is no longer always available on CI installs in the same way
+    // // as it used to be.
+    // [<Test;Category("fsx closure"); Category("NO_CI")>] 
+    // member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
+    //     let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
+    //     let marker = "#r \"Microsoft.Vis"
+    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
+    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
+    // // Disabled because it seems Microsoft.SqlServer.SString.dll is no longer always available on CI installs in the same way
+    //[<Test>]
+    //[<Category("fsx closure")>]
+    //member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
+    //    let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
+    //    let marker = "#r \"Microsoft.SqlSe"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
+    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
+        
     [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromFullyQualifiedPath``() = 
