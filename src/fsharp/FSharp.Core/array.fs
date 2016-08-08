@@ -494,8 +494,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array
-            
+            checkNonNull "array" array            
             let len = array.Length    
             let temp = Array.zeroCreate len
             let mutable c = 0
