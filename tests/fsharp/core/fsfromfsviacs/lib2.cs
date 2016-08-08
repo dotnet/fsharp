@@ -67,7 +67,7 @@ namespace FSharpOptionalTests
     {
         public static Tuple<FSharpOption<T>, FSharpOption<int>> MethodWithOptionalParams<T>(T value1, int value2)
         {
-            return OptinalParameterTests.API.MethodWithOptionalParams<T>(value1 = value1, value2 = value);
+            return OptinalParameterTests.API.MethodWithOptionalParams<T>(value1 = value1, value2 = value2);
         }
     }
 }
