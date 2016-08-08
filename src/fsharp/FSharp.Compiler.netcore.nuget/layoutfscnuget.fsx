@@ -66,6 +66,9 @@ try
             yield Path.Combine(bindir, "default.win32manifest")
             yield Path.Combine(bindir, "fsi.exe")
             yield Path.Combine(bindir, "FSharp.Compiler.Interactive.Settings.dll")
+            yield Path.Combine(bindir, "FSharp.Build.dll")
+            yield Path.Combine(bindir, "Microsoft.FSharp.targets")
+            yield Path.Combine(bindir, "Microsoft.Portable.FSharp.targets")
         }
     
     //Clean intermediate directoriy
