@@ -486,8 +486,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     override fsc.GenerateFullPathToTool() = 
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsc.ToolExe)
-    member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool()  // expose for unit testing
-    member internal fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =  // F# does not allow protected members to be captured by lambdas, this is the standard workaround
+    member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool()             // expose for unit testing
+    member internal fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
     /// Intercept the call to ExecuteTool to handle the host compile case.
@@ -526,11 +526,15 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
 
     override fsc.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
-        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + Environment.NewLine + f) ""
+        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + f + Environment.NewLine) ""
 
     // expose this to internal components (for nunit testing)
     member internal fsc.InternalGenerateCommandLineCommands() =
         fsc.GenerateCommandLineCommands()
+
+    // expose this to internal components (for nunit testing)
+    member internal fsc.InternalGenerateResponseFileCommands() = 
+        fsc.GenerateResponseFileCommands()
 
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
