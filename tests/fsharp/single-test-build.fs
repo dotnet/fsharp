@@ -19,6 +19,10 @@ let singleTestBuild cfg testDir =
     let buildOkPath = testDir / "build.ok"
     do if fileExists "build.ok" then del "build.ok"
 
+    //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct fsharp.core.dll
+    do if fileExists "FSharp.Core.dll" then del "FSharp.Core.dll"
+
+
     //call %~d0%~p0..\config.bat
     ignore "param"
 
