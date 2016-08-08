@@ -24,6 +24,9 @@ module internal XmlAdapters =
 module internal ReflectionAdapters = 
     open System
     open System.Reflection
+#if FX_RESHAPED_REFLECTION_CORECLR
+    open System.Runtime.Loader
+#endif
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Collections
     open PrimReflectionAdapters
@@ -313,7 +316,13 @@ module internal ReflectionAdapters =
         member this.GetSetMethod() = this.SetMethod
 
 #if FX_RESHAPED_REFLECTION_CORECLR
-    let globalLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default
+    type CustomAssemblyResolver() =
+        inherit AssemblyLoadContext()
+        override this.Load (assemblyName:AssemblyName):Assembly =
+            this.LoadFromAssemblyName(assemblyName)
+
+    let globalLoadContext = new CustomAssemblyResolver()
+
 #endif
     type System.Reflection.Assembly with
         member this.GetTypes() = 
@@ -330,10 +339,10 @@ module internal ReflectionAdapters =
 
 #if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
+            globalLoadContext.LoadFromAssemblyPath(filename)
 
         static member UnsafeLoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
+            globalLoadContext.LoadFromAssemblyPath(filename)
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 

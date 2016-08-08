@@ -52,8 +52,11 @@ let directoryName (s:string) =
 
 let fileNameOfPath s = 
     checkPathForIllegalChars s
-    Path.GetFileName(s)        
+    Path.GetFileName(s)
 
 let fileNameWithoutExtension s = 
     checkPathForIllegalChars s
-    Path.GetFileNameWithoutExtension(s)        
+    Path.GetFileNameWithoutExtension(s)
+
+let trimQuotes (s:string) =
+    s.Trim( [|' '; '\"'|] )

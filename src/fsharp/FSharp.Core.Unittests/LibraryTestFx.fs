@@ -134,4 +134,4 @@ module SurfaceArea =
         let actual = actualNotNormalized |> normalize
         let expected = expected |> normalize
         
-        Assert.AreEqual(expected, actual, sprintf "\r\nAssembly: %A\r\n\r\n%s\r\n\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" asm actual fileName logFile)
+        Assert.AreEqual(expected, actual, sprintf "\r\nAssembly: %A\r\n--------------------- ACTUAL -------------------\r\n%s\r\n--------------------EXPECTED--------------------\r\n%s\r\n-----------------\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" asm actual expected fileName logFile)
