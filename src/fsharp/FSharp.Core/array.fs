@@ -495,14 +495,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
             checkNonNull "array" array                        
-            let temp = Array.zeroCreateUnchecked array.Length            
+            let temp = Array.zeroCreateUnchecked array.Length : bool[]
             let mutable c = 0
             for i = 0 to array.Length-1 do                
             if f array.[i] then
                 temp.[i] <- true
                 c <- c + 1
                     
-            let result = Array.zeroCreateUnchecked c
+            let result = Array.zeroCreateUnchecked c : _[]
             c <- 0    
             let mutable i = 0
             while c < result.Length do
