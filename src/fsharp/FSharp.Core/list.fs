@@ -223,10 +223,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Pairwise")>]
         let pairwise (list: 'T list) =
-            let array = List.toArray list
-            if array.Length < 2 then [] else
-            List.init (array.Length-1) (fun i -> array.[i],array.[i+1])
-        
+            Microsoft.FSharp.Primitives.Basics.List.pairwise list
 
         [<CompiledName("Reduce")>]
         let reduce f list = 
