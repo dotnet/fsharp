@@ -84,6 +84,24 @@ module internal List =
                 cons <- cons2
             setFreshConsTail cons []
             res
+    
+    let rec pairwiseToFreshConsTail cons list lastvalue = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | [h] -> setFreshConsTail cons [(lastvalue, h)]
+        | h::t ->
+            let cons2 = freshConsNoTail (lastvalue, h)
+            setFreshConsTail cons cons2
+            pairwiseToFreshConsTail cons2 t h
+
+    let pairwise list =       
+        match list with
+        | [] -> []
+        | [_] -> []
+        | x1::x2::t ->
+            let cons = freshConsNoTail (x1, x2)
+            pairwiseToFreshConsTail cons t x2
+            cons
 
     let rec chooseToFreshConsTail cons f xs =
         match xs with 
