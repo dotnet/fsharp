@@ -130,10 +130,13 @@ if /i '%ARG%' == 'microbuild' (
     set TEST_FSHARP_SUITE=0
     set TEST_FSHARPQA_SUITE=0
     set SKIP_EXPENSIVE_TESTS=1
+    
+    set CHECK_PEVERIFY_ERRORS=1
 )
 
 if /i '%ARG%' == 'proto' (
-    set BUILD_PROTO=1
+    set BUILD_PROTO=1    
+    set CHECK_PEVERIFY_ERRORS=1
 )
 
 REM Same as 'all' but smoke testing only
@@ -154,6 +157,8 @@ if /i '%ARG%' == 'ci' (
     set TEST_VS=0
     set TEST_TAGS=
     set CONF_FSHARPQA_SUITE=Smoke
+    
+    set CHECK_PEVERIFY_ERRORS=1
 )
 
 
@@ -174,6 +179,8 @@ if /i '%ARG%' == 'ci_part1' (
     set TEST_FSHARP_SUITE=0
     set TEST_VS=1
     set TEST_TAGS=
+    
+    set CHECK_PEVERIFY_ERRORS=1
 )
 
 if /i '%ARG%' == 'ci_part2' (
@@ -190,14 +197,27 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_FSHARP_SUITE=1
     set TEST_VS=0
     set TEST_TAGS=
+    
+    set CHECK_PEVERIFY_ERRORS=1
 )
 
+if /i '%ARG%' == 'ci_debug' (
+    set BUILD_CONFIG=debug
+    set BUILD_CONFIG_LOWERCASE=debug
+    
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=1
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    
+    set CHECK_PEVERIFY_ERRORS=1
+)
 
 if /i '%ARG%' == 'coreclr' (
     set BUILD_CORECLR=1
     set TEST_CORECLR=1
 )
-
 if /i '%ARG%' == 'debug' (
     set BUILD_CONFIG=debug
     set BUILD_CONFIG_LOWERCASE=debug

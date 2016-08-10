@@ -173,6 +173,65 @@
     </Task>
   </UsingTask>
   
+  <UsingTask TaskName="PEVerifyBuiltAssemblyTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <Assemblies ParameterType="System.String[]" Required="true" />
+    </ParameterGroup>
+    
+    <Task>
+      <Using Namespace="System.Diagnostics"/>
+      
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        if(Assemblies.Length == 0)
+        {
+            throw new Exception("Cannot PEVerify assemblies. None passed to task.");
+        }
+        
+        var tool = Environment.ExpandEnvironmentVariables(@"%PROGRAMFILES(X86)%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\PEVerify.exe");
+        
+        foreach(var assembly in Assemblies)
+        {
+            Log.LogMessage("Verifying assembly: " + assembly, MessageImportance.High);
+            
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = tool,
+                    Arguments = assembly,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            var processOutput = new StringBuilder();
+
+            while (!process.StandardOutput.EndOfStream)
+            {
+                processOutput.AppendLine(process.StandardOutput.ReadLine());
+            }
+            
+            process.WaitForExit();
+            
+            if (process.ExitCode == 0)
+            {
+                Log.LogMessage("Assembly verified: " + assembly, MessageImportance.High);
+            }
+            else
+            {
+                Log.LogMessage("Assembly verification failed: " + assembly, MessageImportance.High);
+                Log.LogMessage(processOutput.ToString(), MessageImportance.High);
+                throw new Exception("PEVerify failed. Check the target output for: " + assembly);
+            }
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  
   <!-- In case of a microbuild, depend on 'Localize' target to use the localized resources -->
   <Target Name="LocalizeTemplateProjectsInMicrobuild" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true' and '$(Languages)' != '' and '@(FilesToLocalize)' != ''">
     <LocalizeTemplateProjectsTask
@@ -225,6 +284,10 @@
       <Compile Remove="@(Compile)" />
       <Compile Include="@(TempCompile)" />
     </ItemGroup>
+  </Target>
+  
+  <Target Name="PEVerifyBuiltAssembly" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(CHECK_PEVERIFY_ERRORS)'=='1'">
+    <PEVerifyBuiltAssemblyTask Assemblies="@(MainAssembly)" />
   </Target>
   
   <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
