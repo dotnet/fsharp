@@ -1,7 +1,7 @@
 
 {
   "dependencies": {
-    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160805",
+    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160807",
      "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2",
      "Microsoft.NETCore.DotNetHostPolicy":  "1.0.1",
      "Microsoft.NETCore.DotNetHost": "1.0.1"
