@@ -47,7 +47,8 @@ type internal FSharpLanguageDebugInfoService() =
                 match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) (position - textLine.Start) with
                 | None -> Unchecked.defaultof<DebugDataTipInfo>
                 | Some(island, islandPosition, _) -> new DebugDataTipInfo(TextSpan.FromBounds(islandPosition, islandPosition + island.Length), island)
-
+                
+            // FSROSLYNTODO: enable numeric literal and identifier data tips in VS
             match token.ClassificationType with
             | ClassificationTypeNames.NumericLiteral -> constructLiteralDataTip()
             | ClassificationTypeNames.StringLiteral -> constructLiteralDataTip()
