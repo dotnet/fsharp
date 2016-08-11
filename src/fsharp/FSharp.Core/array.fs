@@ -491,7 +491,7 @@ namespace Microsoft.FSharp.Collections
                 match f array.[i] with
                 | None -> ()
                 | Some b -> res.[count] <- b
-                count <- count + 1
+                            count <- count + 1
             Array.subUnchecked 0 count res
             
         [<CompiledName("Filter")>]
