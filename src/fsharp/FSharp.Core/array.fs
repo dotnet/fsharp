@@ -518,12 +518,26 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 
             checkNonNull "array" array
-            let res1 = List<_>() // ResizeArray
-            let res2 = List<_>() // ResizeArray
-            for i = 0 to array.Length - 1 do 
-                let x = array.[i] 
-                if f x then res1.Add(x) else res2.Add(x)
-            res1.ToArray(), res2.ToArray()
+            let res = Array.zeroCreateUnchecked array.Length        
+            let mutable upCount = 0
+            let mutable downCount = array.Length-1    
+            for i = 0 to array.Length-1 do
+                let x = array.[i]
+                if f x then 
+                    res.[upCount] <- x
+                    upCount <- upCount + 1
+                else
+                    res.[downCount] <- x
+                    downCount <- downCount - 1
+                
+            let res1 = Array.subUnchecked 0 upCount res
+            let res2 = Array.zeroCreateUnchecked (array.Length - upCount)    
+            downCount <- array.Length-1
+            for i = 0 to res2.Length-1 do
+                res2.[i] <- res.[downCount]        
+                downCount <- downCount - 1
+        
+            res1 , res2
 
         [<CompiledName("Find")>]
         let find f (array: _[]) = 
