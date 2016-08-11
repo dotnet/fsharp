@@ -521,8 +521,7 @@ namespace Microsoft.FSharp.Collections
             let res = Array.zeroCreateUnchecked array.Length        
             let mutable upCount = 0
             let mutable downCount = array.Length-1    
-            for i = 0 to array.Length-1 do
-                let x = array.[i]
+            for x in array do                
                 if f x then 
                     res.[upCount] <- x
                     upCount <- upCount + 1
