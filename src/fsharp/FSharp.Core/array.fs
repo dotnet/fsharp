@@ -481,36 +481,30 @@ namespace Microsoft.FSharp.Collections
                 | None -> loop(i+1)
                 | res -> res
             loop 0 
-
+        
         [<CompiledName("Choose")>]
         let choose f (array: _[]) = 
             checkNonNull "array" array
-            let res = List<_>() // ResizeArray
+            let res = Array.zeroCreateUnchecked array.Length 
+            let mutable count = 0
             for i = 0 to array.Length - 1 do 
-                match f array.[i] with 
+                match f array.[i] with
                 | None -> ()
-                | Some b -> res.Add(b)
-            res.ToArray()
-
+                | Some b -> res.[count] <- b
+                count <- count + 1
+            Array.subUnchecked 0 count res
+            
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array                        
-            let temp = Array.zeroCreateUnchecked array.Length
-            let mutable c = 0
-            for i = 0 to array.Length-1 do                
-                if f array.[i] then
-                    temp.[i] <- true
-                    c <- c + 1
-                    
-            let result = Array.zeroCreateUnchecked c
-            c <- 0    
-            let mutable i = 0
-            while c < result.Length do
-                if temp.[i] then
-                    result.[c] <- array.[i]
-                    c <- c + 1
-                i <- i + 1
-            result
+            checkNonNull "array" array                                    
+            let res = Array.zeroCreateUnchecked array.Length 
+            let mutable count = 0
+            for i = 0 to array.Length - 1 do 
+                let x = array.[i] 
+                if f x then 
+                    res.[count] <- x
+                    count <- count + 1
+            Array.subUnchecked 0 count res
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
