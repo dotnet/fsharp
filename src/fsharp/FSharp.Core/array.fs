@@ -493,10 +493,10 @@ namespace Microsoft.FSharp.Collections
                 | Some b -> res.[count] <- b
                             count <- count + 1
             Array.subUnchecked 0 count res
-            
+
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array                                    
+            checkNonNull "array" array
             let res = Array.zeroCreateUnchecked array.Length 
             let mutable count = 0
             for i = 0 to array.Length - 1 do 
