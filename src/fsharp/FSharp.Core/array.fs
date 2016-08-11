@@ -1156,4 +1156,4 @@ namespace Microsoft.FSharp.Collections
                         iFalse <- iFalse + 1
 
                 (trueResult, falseResult)
-#endif               
+#endif
