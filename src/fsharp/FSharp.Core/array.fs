@@ -537,6 +537,7 @@ namespace Microsoft.FSharp.Collections
                 
             let res1 = Array.subUnchecked 0 upCount res
             let res2 = Array.zeroCreateUnchecked (array.Length - upCount)    
+        
             downCount <- array.Length-1
             for i = 0 to res2.Length-1 do
                 res2.[i] <- res.[downCount]        
