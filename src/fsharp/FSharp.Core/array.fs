@@ -491,26 +491,15 @@ namespace Microsoft.FSharp.Collections
                 | None -> ()
                 | Some b -> res.Add(b)
             res.ToArray()
-        
+
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array                        
-            let temp = Array.zeroCreateUnchecked array.Length            
-            let mutable c = 0
-            for i = 0 to array.Length-1 do                
-            if f array.[i] then
-                temp.[i] <- true
-                c <- c + 1
-                    
-            let result = Array.zeroCreateUnchecked c
-            c <- 0    
-            let mutable i = 0
-            while c < result.Length do
-                if temp.[i] then
-                    result.[c] <- array.[i]
-                    c <- c + 1
-                i <- i + 1
-            result
+            checkNonNull "array" array
+            let res = List<_>() // ResizeArray
+            for i = 0 to array.Length - 1 do 
+                let x = array.[i] 
+                if f x then res.Add(x)
+            res.ToArray()
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
