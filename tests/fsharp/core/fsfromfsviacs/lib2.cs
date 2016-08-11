@@ -69,5 +69,11 @@ namespace FSharpOptionalTests
         {
             return OptionalParameterTests.API.MethodWithOptionalParams<T>(value1 = value1, value2 = value2);
         }
+
+        public static int MethodThatImplicitlyConvertsFSharpOption(int x)
+        {
+            FSharpOption<int> opt = x;
+            return opt.Value;
+        }
     }
 }

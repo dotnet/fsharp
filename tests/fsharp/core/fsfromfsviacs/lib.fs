@@ -118,3 +118,10 @@ module OptionalParameterTests =
 
     type API =
         static member MethodWithOptionalParams<'T>(?value1 : 'T, ?value2 : int) = (value1, value2)
+
+        static member FSharpMethodThatConsumesOptionalParams() = 
+            let _ = API.MethodWithOptionalParams<int>()
+            let _ = API.MethodWithOptionalParams<int>(42)
+            let _ = API.MethodWithOptionalParams<int>(value2 = 42)
+            let _ = API.MethodWithOptionalParams<int>(42, ?value2 = None)
+            ()
