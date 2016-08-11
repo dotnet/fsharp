@@ -1,3 +1,4 @@
+using System;
 using Microsoft.FSharp;
 using Microsoft.FSharp.Core;
 using Microsoft.FSharp.Collections;
@@ -67,7 +68,7 @@ namespace FSharpOptionalTests
     {
         public static Tuple<FSharpOption<T>, FSharpOption<int>> MethodWithOptionalParams<T>(T value1, int value2)
         {
-            return OptionalParameterTests.API.MethodWithOptionalParams<T>(value1 = value1, value2 = value2);
+            return Lib.OptionalParameterTests.MethodWithOptionalParams<T>(value1 = value1, value2 = value2);
         }
 
         public static int MethodThatImplicitlyConvertsFSharpOption(int x)
