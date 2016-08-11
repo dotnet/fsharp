@@ -30,11 +30,21 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ColorizationService.fs" />
-    <Compile Include="BraceMatchingService.fs" />
-    <Compile Include="IndentationService.fs" />
-    <Compile Include="BreakpointResolutionService.fs" />
-    <Compile Include="LanguageDebugInfoService.fs" />
+    <Compile Include="ColorizationService.fs">
+        <Link>Classification\ColorizationService.fs</Link>
+    </Compile>
+    <Compile Include="BraceMatchingService.fs">
+        <Link>Utilities\BraceMatchingService.fs</Link>
+    </Compile>
+    <Compile Include="IndentationService.fs">
+        <Link>Utilities\IndentationService.fs</Link>
+    </Compile>
+    <Compile Include="BreakpointResolutionService.fs">
+        <Link>Debugging\BreakpointResolutionService.fs</Link>
+    </Compile>
+    <Compile Include="LanguageDebugInfoService.fs">
+        <Link>Debugging\LanguageDebugInfoService.fs</Link>
+    </Compile>
     <Compile Include="ProjectSiteService.fs" />
     <Compile Include="ContentType.fs" />
   </ItemGroup>

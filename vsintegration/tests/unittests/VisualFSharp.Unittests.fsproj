@@ -34,9 +34,15 @@
     <Compile Include="TestLib.Salsa.fs" />
     <Compile Include="TestLib.LanguageService.fs" />
     <Compile Include="TestLib.ProjectSystem.fs" />
-    <Compile Include="Tests.Roslyn.ColorizationService.fs" />
-    <Compile Include="Tests.Roslyn.BraceMatchingService.fs" />
-    <Compile Include="Tests.Roslyn.IndentationService.fs" />
+    <Compile Include="ColorizationServiceTests.fs">
+        <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="BraceMatchingServiceTests.fs">
+        <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="IndentationServiceTests.fs">
+        <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
+    </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
