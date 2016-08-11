@@ -279,7 +279,7 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let len1 = array1.Length 
             if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            for i = 0 to array1.Length do 
+            for i = 0 to array1.Length-1 do 
                 f.Invoke(array1.[i], array2.[i])
 
         [<CompiledName("DistinctBy")>]
@@ -756,7 +756,7 @@ namespace Microsoft.FSharp.Collections
             let mutable state = acc 
             let len = array1.Length
             if len <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
-            for i = 0 to array1.Length do 
+            for i = 0 to array1.Length-1 do 
                 state <- f.Invoke(state,array1.[i],array2.[i])
             state
 
