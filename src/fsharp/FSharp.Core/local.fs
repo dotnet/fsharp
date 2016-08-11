@@ -73,7 +73,8 @@ module internal List =
             cons
     
     let countBy (dict:Dictionary<_, int>) (keyf:'T -> 'Key) = 
-        use mutable ie = dict.GetEnumerator()
+        // No need to dispose enumerator Dispose does nothing.
+        let mutable ie = dict.GetEnumerator()
         if not (ie.MoveNext()) then []
         else
             let res = freshConsNoTail (keyf ie.Current.Key, ie.Current.Value)
