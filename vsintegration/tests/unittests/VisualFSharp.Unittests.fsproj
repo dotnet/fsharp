@@ -43,6 +43,12 @@
     <Compile Include="IndentationServiceTests.fs">
         <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
     </Compile>
+    <Compile Include="BreakpointResolutionService.fs">
+        <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
+    </Compile>
+    <Compile Include="LanguageDebugInfoServiceTests.fs">
+        <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
+    </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />

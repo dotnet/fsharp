@@ -31,28 +31,28 @@ open Microsoft.FSharp.Compiler.Range
 [<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpLanguageDebugInfoService() =
 
-    static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): DebugDataTipInfo =
+    static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
         let tokenIndex = tokens |> Seq.tryFindIndex(fun t -> t.TextSpan.Contains(position))
 
         if tokenIndex.IsNone then
-            Unchecked.defaultof<DebugDataTipInfo>
+            None
         else
             let token = tokens.[tokenIndex.Value]
         
             match token.ClassificationType with
 
             | ClassificationTypeNames.StringLiteral ->
-                new DebugDataTipInfo(token.TextSpan, sourceText.GetSubText(token.TextSpan).ToString())
+                Some(token.TextSpan)
 
             | ClassificationTypeNames.Identifier ->
                 let textLine = sourceText.Lines.GetLineFromPosition(position)
                 match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) (position - textLine.Start) with
-                | None -> Unchecked.defaultof<DebugDataTipInfo>
-                | Some(island, islandPosition, _) ->
-                    let islandDocumentStart = textLine.Start + islandPosition - 1 // TextSpan expects a zero-based absolute value
-                    new DebugDataTipInfo(TextSpan.FromBounds(islandDocumentStart, islandDocumentStart + island.Length), island)
+                | None -> None
+                | Some(island, islandEnd, _) ->
+                    let islandDocumentStart = textLine.Start + islandEnd - island.Length
+                    Some(TextSpan.FromBounds(islandDocumentStart, islandDocumentStart + island.Length))
 
-            | _ -> Unchecked.defaultof<DebugDataTipInfo>
+            | _ -> None
 
 
     interface ILanguageDebugInfoService with
@@ -70,7 +70,9 @@ type internal FSharpLanguageDebugInfoService() =
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
                 let tokens = FSharpColorizationService.GetColorizationData(sourceText, textSpan, Some(document.Name), defines, cancellationToken)
 
-                return FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens)
+                return match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
+                       | None -> Unchecked.defaultof<DebugDataTipInfo>
+                       | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
             }
 
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken).ContinueWith(fun(task: Task<DebugDataTipInfo>) ->
