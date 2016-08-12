@@ -301,12 +301,11 @@ module internal Impl =
         else
             // Lookup the type holding the fields for the union case
             let caseTyp = getUnionCaseTyp (typ, tag, bindingFlags)
-            match caseTyp with 
-            | null ->  [| |]
-            | _ ->  caseTyp.GetProperties(instancePropertyFlags ||| bindingFlags) 
-                    |> Array.filter isFieldProperty
-                    |> Array.filter (fun prop -> variantNumberOfMember prop = tag)
-                    |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
+            let caseTyp = match caseTyp with null ->  typ | _ -> caseTyp
+            caseTyp.GetProperties(instancePropertyFlags ||| bindingFlags) 
+            |> Array.filter isFieldProperty
+            |> Array.filter (fun prop -> variantNumberOfMember prop = tag)
+            |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
                 
 
     let getUnionCaseRecordReader (typ:Type,tag:int,bindingFlags) = 
