@@ -39,20 +39,19 @@ type internal FSharpLanguageDebugInfoService() =
         else
             let token = tokens.[tokenIndex.Value]
         
-            let constructLiteralDataTip() =
+            match token.ClassificationType with
+
+            | ClassificationTypeNames.StringLiteral ->
                 new DebugDataTipInfo(token.TextSpan, sourceText.GetSubText(token.TextSpan).ToString())
 
-            let constructIdentifierDataTip() =
+            | ClassificationTypeNames.Identifier ->
                 let textLine = sourceText.Lines.GetLineFromPosition(position)
                 match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) (position - textLine.Start) with
                 | None -> Unchecked.defaultof<DebugDataTipInfo>
-                | Some(island, islandPosition, _) -> new DebugDataTipInfo(TextSpan.FromBounds(islandPosition, islandPosition + island.Length), island)
-                
-            // FSROSLYNTODO: enable numeric literal and identifier data tips in VS
-            match token.ClassificationType with
-            | ClassificationTypeNames.NumericLiteral -> constructLiteralDataTip()
-            | ClassificationTypeNames.StringLiteral -> constructLiteralDataTip()
-            | ClassificationTypeNames.Identifier -> constructIdentifierDataTip()
+                | Some(island, islandPosition, _) ->
+                    let islandDocumentStart = textLine.Start + islandPosition - 1 // TextSpan expects a zero-based absolute value
+                    new DebugDataTipInfo(TextSpan.FromBounds(islandDocumentStart, islandDocumentStart + island.Length), island)
+
             | _ -> Unchecked.defaultof<DebugDataTipInfo>
 
 
