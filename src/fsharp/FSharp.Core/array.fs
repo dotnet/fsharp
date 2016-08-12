@@ -1136,29 +1136,32 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName("Partition")>]
             let partition predicate (array : 'T[]) =
                 checkNonNull "array" array
-                let inputLength = array.Length
-                let lastInputIndex = inputLength - 1
-
-                let isTrue = Array.zeroCreateUnchecked inputLength
-                Parallel.For(0, inputLength, 
-                    fun i -> isTrue.[i] <- predicate array.[i]
-                    ) |> ignore
-                
+                let inputLength = array.Length                
+                let isTrue = Array.zeroCreateUnchecked inputLength                
                 let mutable trueLength = 0
-                for i in 0 .. lastInputIndex do
-                    if isTrue.[i] then trueLength <- trueLength + 1
-                
-                let trueResult = Array.zeroCreateUnchecked trueLength
-                let falseResult = Array.zeroCreateUnchecked (inputLength - trueLength)
+                                                
+                Parallel.For(0, 
+                             inputLength, 
+                             (fun () -> 0),
+                             (fun i _ trueCount -> 
+                                if predicate array.[i] then
+                                    isTrue.[i] <- true
+                                    trueCount + 1
+                                else
+                                    trueCount),                        
+                             Action<int> (fun x -> System.Threading.Interlocked.Add(&trueLength,x) |> ignore) ) |> ignore
+                                
+                let res1 = Array.zeroCreateUnchecked trueLength
+                let res2 = Array.zeroCreateUnchecked (inputLength - trueLength)
                 let mutable iTrue = 0
                 let mutable iFalse = 0
-                for i = 0 to lastInputIndex do
+                for i = 0 to isTrue.Length-1 do
                     if isTrue.[i] then
-                        trueResult.[iTrue] <- array.[i]
+                        res1.[iTrue] <- array.[i]
                         iTrue <- iTrue + 1
                     else
-                        falseResult.[iFalse] <- array.[i]
+                        res2.[iFalse] <- array.[i]
                         iFalse <- iFalse + 1
 
-                (trueResult, falseResult)
+                res1, res2
 #endif
