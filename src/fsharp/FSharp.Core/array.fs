@@ -277,8 +277,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
             for i = 0 to array1.Length-1 do 
                 f.Invoke(array1.[i], array2.[i])
 
@@ -300,9 +299,8 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            let res = Array.zeroCreateUnchecked len1 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            let res = Array.zeroCreateUnchecked array1.Length
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
             res
@@ -326,9 +324,8 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            let res = Array.zeroCreateUnchecked len1 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            let res = Array.zeroCreateUnchecked array1.Length 
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(i,array1.[i], array2.[i])
             res
@@ -345,8 +342,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
             for i = 0 to array1.Length-1 do 
                 f.Invoke(i,array1.[i], array2.[i])
 
@@ -754,8 +750,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let mutable state = acc 
-            let len = array1.Length
-            if len <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             for i = 0 to array1.Length-1 do 
                 state <- f.Invoke(state,array1.[i],array2.[i])
             state
