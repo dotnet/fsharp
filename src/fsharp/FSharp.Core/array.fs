@@ -1061,28 +1061,29 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName("Choose")>]
             let choose f (array: 'T[]) = 
                 checkNonNull "array" array
-                let inputLength = array.Length
-                let lastInputIndex = inputLength - 1
-
+                let inputLength = array.Length                
+      
                 let isChosen : bool [] = Array.zeroCreateUnchecked inputLength
                 let results : 'U [] = Array.zeroCreateUnchecked inputLength
                 
-                Parallel.For(0, inputLength, (fun i -> 
-                    match f array.[i] with 
-                    | None -> () 
-                    | Some v -> 
-                        isChosen.[i] <- true; 
-                        results.[i] <- v
-                )) |> ignore         
-                                                                                      
-                let mutable outputLength = 0                
-                for i = 0 to lastInputIndex do 
-                    if isChosen.[i] then 
-                        outputLength <- outputLength + 1
+                let mutable outputLength = 0        
+                Parallel.For(0, 
+                             inputLength, 
+                             (fun () ->0),
+                             (fun i _ count -> 
+                                match f array.[i] with 
+                                | None -> count 
+                                | Some v -> 
+                                    isChosen.[i] <- true; 
+                                    results.[i] <- v
+                                    count+1),
+                             Action<int> (fun x -> System.Threading.Interlocked.Add(&outputLength,x) |> ignore )
+                             ) |> ignore         
+                                                                                                                              
                         
                 let output = Array.zeroCreateUnchecked outputLength
                 let mutable curr = 0
-                for i = 0 to lastInputIndex do 
+                for i = 0 to isChosen.Length-1 do 
                     if isChosen.[i] then 
                         output.[curr] <- results.[i]
                         curr <- curr + 1
