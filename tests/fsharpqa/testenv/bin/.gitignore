@@ -4,6 +4,7 @@
 /HostedCompilerServer.*
 /ILComparer.*
 /diff.*
+/System.Collections.Immutable.*
 /x86/
 /AMD64/
 /nunit/
