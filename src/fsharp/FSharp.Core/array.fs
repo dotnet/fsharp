@@ -1136,7 +1136,7 @@ namespace Microsoft.FSharp.Collections
                     ) |> ignore
                 
                 let mutable trueLength = 0
-                for i in 0 .. isTrue.Length-1 do
+                for i = 0 to isTrue.Length-1 do
                     if isTrue.[i] then trueLength <- trueLength + 1
                 
                 let trueResult = Array.zeroCreateUnchecked trueLength
