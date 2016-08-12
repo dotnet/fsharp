@@ -8,7 +8,9 @@ open Microsoft.FSharp.Collections
 
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
+    val choose: ('T -> 'U option) -> 'T list -> 'U list
     val countBy : System.Collections.Generic.Dictionary<'T1, int> -> ('T1 -> 'T2) -> ('T2 * int) list
+    val pairwise : 'T list -> ('T * 'T) list
     val distinctWithComparer : System.Collections.Generic.IEqualityComparer<'T> -> 'T list -> 'T list
     val distinctByWithComparer : System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
     val init : int -> (int -> 'T) -> 'T list

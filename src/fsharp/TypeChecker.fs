@@ -14876,9 +14876,11 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck(false)
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
-
+                        
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                        errorR(Error(FSComp.SR.tcStructUnionMultiCase(),m))
+                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]
+                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
+                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(),m))
 
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo
