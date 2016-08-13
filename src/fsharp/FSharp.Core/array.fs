@@ -547,15 +547,15 @@ namespace Microsoft.FSharp.Collections
                 Array.subUnchecked count (array.Length - count) array
 
         [<CompiledName("SkipWhile")>]
-        let skipWhile p (array: 'T[]) =
+        let skipWhile p (array: 'T[]) =        
             checkNonNull "array" array
-            let mutable i = 0
-            let len = array.Length
-            while i < len && p array.[i] do i <- i + 1
+            let mutable i = 0            
+            while i < array.Length && p array.[i] do i <- i + 1
 
-            match len - i with
+            match array.Length - i with
             | 0 -> empty
             | resLen -> Array.subUnchecked i resLen array
+
 
         [<CompiledName("FindBack")>]
         let findBack f (array: _[]) =
