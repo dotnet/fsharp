@@ -355,7 +355,7 @@ module FsFromFsViaCs =
 
         do! peverify "test.exe"
 
-        // Same with library refrences the other way around
+        // Same with library references the other way around
         do! fsc "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
 
         do! peverify "test.exe"
