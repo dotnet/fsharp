@@ -777,7 +777,7 @@ type ListModule() =
         let group_byEmpty = List.groupBy funcInt emptyList
         let expectedEmptyList = []
 
-        Assert.AreEqual(expectedEmptyList, emptyList)
+        Assert.AreEqual(expectedEmptyList, group_byEmpty)
 
         ()
 
