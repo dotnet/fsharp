@@ -86,11 +86,7 @@ let memoizeNamespaceRightTable = new ConcurrentDictionary<string,string option *
 
 
 let splitNamespace nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = splitNamespaceAux nm
-    (memoizeNamespaceTable.[nm] <- x; x)
+    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
 
 let splitNamespaceMemoized nm = splitNamespace nm
 
@@ -99,12 +95,9 @@ let memoizeNamespaceArrayTable =
     Concurrent.ConcurrentDictionary<string,string[]>()
 
 let splitNamespaceToArray nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceArrayTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = Array.ofList (splitNamespace nm)
-    (memoizeNamespaceArrayTable.[nm] <- x; x)
-
+    memoizeNamespaceArrayTable.GetOrAdd(nm, fun nm -> 
+        let x = Array.ofList (splitNamespace nm)
+        x)
 
 let splitILTypeName (nm:string) = 
     match nm.LastIndexOf '.' with
@@ -157,11 +150,7 @@ let splitTypeNameRightAux nm =
     else None, nm
 
 let splitTypeNameRight nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceRightTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = splitTypeNameRightAux nm
-    (memoizeNamespaceRightTable.[nm] <- x; x)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
 
 // -------------------------------------------------------------------- 
 // Ordered lists with a lookup table

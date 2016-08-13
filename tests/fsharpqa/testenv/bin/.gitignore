@@ -5,6 +5,7 @@
 /ILComparer.*
 /System.Collections.Immutable.*
 /diff.*
+/System.Collections.Immutable.*
 /x86/
 /AMD64/
 /nunit/
