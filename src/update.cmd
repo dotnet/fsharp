@@ -21,8 +21,8 @@ set BINDIR=%~dp0..\%1\net40\bin
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86"   set X86_PROGRAMFILES="%ProgramFiles%"
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES="%ProgramFiles(x86)%"
 
-if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64="%WindowsSDK_ExecutablePath_x64%"
-if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86="%WindowsSDK_ExecutablePath_x86%"
+if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64=%WindowsSDK_ExecutablePath_x64%
+if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86=%WindowsSDK_ExecutablePath_x86%
 
 if not "%WindowsSDK_ExecutablePath_x86%" == "" goto :havesdk
 
@@ -34,11 +34,12 @@ if "%WINSDKNETFXTOOLS_x86%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32B
 if "%WINSDKNETFXTOOLS_x86%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS_x86="%%B"
 if "%WINSDKNETFXTOOLS_x86%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder')  DO SET WINSDKNETFXTOOLS_x86="%%B"
 if "%WINSDKNETFXTOOLS_x86%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS_x86="%%B"
+
 set WINSDKNETFXTOOLS_x64=%WINSDKNETFXTOOLS_x86%x64\
 
 :havesdk
-set SN32=%WINSDKNETFXTOOLS_x86%sn.exe
-set SN64=%WINSDKNETFXTOOLS_x64%sn.exe
+set SN32="%WINSDKNETFXTOOLS_x86%sn.exe"
+set SN64="%WINSDKNETFXTOOLS_x64%sn.exe"
 
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
