@@ -571,7 +571,6 @@ namespace Microsoft.FSharp.Collections
             | 0 -> empty
             | resLen -> Array.subUnchecked i resLen array
 
-
         [<CompiledName("FindBack")>]
         let findBack f (array: _[]) =
             checkNonNull "array" array
