@@ -3,6 +3,7 @@
 /FSharp.Core.*
 /HostedCompilerServer.*
 /ILComparer.*
+/System.Collections.Immutable.*
 /diff.*
 /x86/
 /AMD64/

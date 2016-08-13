@@ -21,7 +21,6 @@ set BINDIR=%~dp0..\%1\net40\bin
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86"   set X86_PROGRAMFILES="%ProgramFiles%"
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES="%ProgramFiles(x86)%"
 
-
 if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64="%WindowsSDK_ExecutablePath_x64%"
 if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86="%WindowsSDK_ExecutablePath_x86%"
 
