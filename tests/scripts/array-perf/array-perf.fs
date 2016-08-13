@@ -35,7 +35,7 @@ module Array =
         Array.zeroCreate count
 
     let inline subUnchecked startIndex count (array : 'T[]) =
-        Array.sub startIndex count array 
+        Array.sub array startIndex count
 
 // Almost every array function calls this, so mock it with 
 // the exact same code
