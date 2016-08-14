@@ -149,12 +149,14 @@ module internal List =
         let mutable ie = dict.GetEnumerator()
         if not (ie.MoveNext()) then []
         else
-            setFreshConsTail ie.Current.Value.[1] []
-            let res = freshConsNoTail (getKey ie.Current.Key, ie.Current.Value.[0])
+            let mutable curr = ie.Current
+            setFreshConsTail curr.Value.[1] []
+            let res = freshConsNoTail (getKey curr.Key, curr.Value.[0])
             let mutable cons = res
             while ie.MoveNext() do
-                setFreshConsTail ie.Current.Value.[1] []
-                let cons2 = freshConsNoTail (getKey ie.Current.Key, ie.Current.Value.[0])
+                curr <- ie.Current
+                setFreshConsTail curr.Value.[1] []
+                let cons2 = freshConsNoTail (getKey curr.Key, curr.Value.[0])
                 setFreshConsTail cons cons2
                 cons <- cons2
             setFreshConsTail cons []
