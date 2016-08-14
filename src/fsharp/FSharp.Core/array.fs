@@ -282,7 +282,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             for i = 0 to len1 - 1 do 
                 f.Invoke(array1.[i], array2.[i])
 
@@ -305,7 +305,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             let res = Array.zeroCreateUnchecked len1 
             for i = 0 to len1 - 1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
@@ -331,7 +331,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             let res = Array.zeroCreateUnchecked len1 
             for i = 0 to len1 - 1 do 
                 res.[i] <- f.Invoke(i,array1.[i], array2.[i])
@@ -351,7 +351,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             for i = 0 to len1 - 1 do 
                 f.Invoke(i,array1.[i], array2.[i])
 
@@ -782,7 +782,7 @@ namespace Microsoft.FSharp.Collections
             let mutable state = initState 
             let res = create (2+fin-start) initState 
             for i = start to fin do
-                state <- f.Invoke(state,array.[i]);
+                state <- f.Invoke(state,array.[i])
                 res.[i - start+1] <- state
             res
 
@@ -835,7 +835,7 @@ namespace Microsoft.FSharp.Collections
                 let c = f array.[0] array.[1] 
                 if c > 0 then
                     let tmp = array.[0] 
-                    array.[0] <- array.[1]; 
+                    array.[0] <- array.[1]
                     array.[1] <- tmp
             else 
                 Array.Sort(array, ComparisonIdentity.FromFunction(f))
@@ -918,9 +918,9 @@ namespace Microsoft.FSharp.Collections
             Array.permute p array
 
         [<CompiledName("Sum")>]
-        let inline sum (array: (^T)[] ) : ^T = 
+        let inline sum (array: ^T[] ) : ^T = 
             checkNonNull "array" array
-            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^T>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc array.[i]
             acc
@@ -928,7 +928,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SumBy")>]
         let inline sumBy (f: 'T -> ^U) (array:'T[]) : ^U = 
             checkNonNull "array" array
-            let mutable acc = LanguagePrimitives.GenericZero< (^U) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^U>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc (f array.[i])
             acc
@@ -987,15 +987,19 @@ namespace Microsoft.FSharp.Collections
         let inline average      (array:'T[]) = 
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
-            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^T>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc array.[i]
-            LanguagePrimitives.DivideByInt< (^T) > acc array.Length
+            LanguagePrimitives.DivideByInt< ^T> acc array.Length
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy f (array:_[]) = 
+        let inline averageBy (f : 'T -> ^U) (array:'T[]) : ^U = 
             checkNonNull "array" array
-            Seq.averageBy f array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            let mutable acc = LanguagePrimitives.GenericZero< ^U>
+            for i = 0 to array.Length - 1 do
+                acc <- Checked.(+) acc (f array.[i])
+            LanguagePrimitives.DivideByInt< ^U> acc array.Length
 
         [<CompiledName("CompareWith")>]
         let inline compareWith (comparer:'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
@@ -1086,7 +1090,7 @@ namespace Microsoft.FSharp.Collections
                     match f array.[i] with 
                     | None -> () 
                     | Some v -> 
-                        isChosen.[i] <- true; 
+                        isChosen.[i] <- true
                         results.[i] <- v
                 )) |> ignore         
                                                                                       
