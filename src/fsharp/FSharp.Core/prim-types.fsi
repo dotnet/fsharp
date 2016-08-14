@@ -1740,6 +1740,11 @@ namespace Microsoft.FSharp.Core
         /// <returns>An option representing the value.</returns>
         static member Some : value:'T -> 'T option
 
+        /// <summary>Implicitly converts a value into an optional that is a 'Some' value.</summary>
+        /// <param name="value">The input value</param>
+        /// <returns>An option representing the value.</returns>
+        static member op_Implicit : value:'T -> 'T option
+
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         /// <summary>Get the value of a 'Some' option. A NullReferenceException is raised if the option is 'None'.</summary>
         member Value : 'T
