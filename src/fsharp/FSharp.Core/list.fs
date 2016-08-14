@@ -419,7 +419,7 @@ namespace Microsoft.FSharp.Collections
         let where f x = List.filter f x
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-            Microsoft.FSharp.Primitives.Basics.List.groupBy comparer keyf getKey list
+            List.groupBy comparer keyf getKey list
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
         let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
