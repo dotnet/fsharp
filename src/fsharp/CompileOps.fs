@@ -1061,8 +1061,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
                                          | NONTERM_Category_Definition -> Parser.NONTERM_moduleDefn
                                          | NONTERM_Category_Interaction -> Parser.NONTERM_interaction
                                          | nt -> nt)
-                            |> Set.ofList 
-                            |> Set.toList with 
+                            |> List.distinct with 
                       | [Parser.NONTERM_interaction] -> os.Append(NONTERM_interactionE().Format) |> ignore; true
                       | [Parser.NONTERM_hashDirective] -> os.Append(NONTERM_hashDirectiveE().Format) |> ignore; true
                       | [Parser.NONTERM_fieldDecl] -> os.Append(NONTERM_fieldDeclE().Format) |> ignore; true
@@ -1111,8 +1110,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
                            |> List.map Parser.tokenTagToTokenId 
                            |> List.filter (function Parser.TOKEN_error | Parser.TOKEN_EOF -> false | _ -> true) 
                            |> List.map tokenIdToText 
-                           |> Set.ofList 
-                           |> Set.toList) with 
+                           |> List.distinct) with 
               | [tokenName1]            -> os.Append(TokenName1E().Format (fix tokenName1)) |> ignore
               | [tokenName1;tokenName2] -> os.Append(TokenName1TokenName2E().Format (fix tokenName1) (fix tokenName2)) |> ignore
               | [tokenName1;tokenName2;tokenName3] -> os.Append(TokenName1TokenName2TokenName3E().Format (fix tokenName1) (fix tokenName2) (fix tokenName3)) |> ignore

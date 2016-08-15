@@ -133,8 +133,8 @@ let private singleNegTestAux (cfg: TestConfig) workDir testname = attempt {
     do! match testnameDiff with
         | [] -> Success
         | l ->
-            // echo ***** %testname%.err %testname%.bsl differed: a bug or baseline may neeed updating
-            log "***** %s.err %s.bsl differed: a bug or baseline may neeed updating" testname testname
+            // echo ***** %testname%.err %testname%.bsl differed: a bug or baseline may need updating
+            log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname
             // set ERRORMSG=%ERRORMSG% %testname%.err %testname%.bsl differ;
             NUnitConf.genericError (sprintf "%s.err %s.bsl differ; %A" testname testname l)
 
@@ -155,8 +155,8 @@ let private singleNegTestAux (cfg: TestConfig) workDir testname = attempt {
     do! match testnameDiff with
         | [] -> Success
         | l ->
-            // echo ***** %testname%.vserr %BSLFILE% differed: a bug or baseline may neeed updating
-            log "***** %s.vserr %s differed: a bug or baseline may neeed updating" testname VSBSLFILE
+            // echo ***** %testname%.vserr %BSLFILE% differed: a bug or baseline may need updating
+            log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
             // set ERRORMSG=%ERRORMSG% %testname%.vserr %BSLFILE% differ;
             NUnitConf.genericError (sprintf "%s.vserr %s differ; %A" testname VSBSLFILE l)
 

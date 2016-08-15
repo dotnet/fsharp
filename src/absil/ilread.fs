@@ -1508,9 +1508,7 @@ let dataEndPoints ctxtH =
                 @ (if ctxt.strongnameAddr = 0x0 then [] else [("managed strongname",ctxt.strongnameAddr) ])
                 @ (if ctxt.vtableFixupsAddr = 0x0 then [] else [("managed vtable_fixups",ctxt.vtableFixupsAddr) ])
                 @ methodRVAs)))
-           // Make distinct 
-           |> Set.ofList
-           |> Set.toList
+           |> List.distinct
            |> List.sort 
       
 
