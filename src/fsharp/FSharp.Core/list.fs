@@ -153,7 +153,7 @@ namespace Microsoft.FSharp.Collections
         let nth list index = item index list
 
         [<CompiledName("Choose")>]
-        let choose f xs = Microsoft.FSharp.Primitives.Basics.List.choose f xs
+        let choose f xs = List.choose f xs
     
         [<CompiledName("SplitAt")>]
         let splitAt index (list:'T list) = List.splitAt index list
@@ -223,7 +223,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Pairwise")>]
         let pairwise (list: 'T list) =
-            Microsoft.FSharp.Primitives.Basics.List.pairwise list
+            List.pairwise list
 
         [<CompiledName("Reduce")>]
         let reduce f list = 
