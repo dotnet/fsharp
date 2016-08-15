@@ -168,7 +168,7 @@ type ArrayBenchmark () =
 
     [<Benchmark>]
     member self.New () =
-        array |> partition (fun x -> x % 2 = 0)
+        array |> partitionNew (fun x -> x % 2 = 0)
         
     //Create any number of benchmarks                           
                                        
