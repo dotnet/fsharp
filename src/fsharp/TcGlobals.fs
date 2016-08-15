@@ -221,6 +221,7 @@ type public TcGlobals =
       exn_ty         : TType 
       char_ty        : TType 
       decimal_ty                   : TType 
+      timespan_ty                  : TType
       float_ty                     : TType 
       float32_ty                   : TType 
       system_Array_typ             : TType 
@@ -670,6 +671,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let string_ty       = mkNonGenericTy string_tcr
   let byte_ty         = mkNonGenericTy byte_tcr
   let decimal_ty      = mkSysNonGenericTy sys "Decimal"
+  let timespan_ty     = mkSysNonGenericTy sys "TimeSpan"
   let unit_ty         = mkNonGenericTy unit_tcr_nice 
   let system_Type_typ = mkSysNonGenericTy sys "Type" 
 
@@ -1123,6 +1125,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     exn_ty        = mkNonGenericTy exn_tcr
     char_ty       = mkNonGenericTy char_tcr
     decimal_ty    = mkNonGenericTy decimal_tcr
+    timespan_ty   = timespan_ty
     float_ty      = mkNonGenericTy float_tcr 
     float32_ty    = mkNonGenericTy float32_tcr
     memoize_file  = memoize_file.Apply
