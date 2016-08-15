@@ -85,22 +85,21 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("CopyTo")>]
         let inline blit (source : 'T[]) (sourceIndex:int) (target: 'T[]) (targetIndex:int) (count:int) = 
             Array.Copy(source, sourceIndex, target, targetIndex, count)
-
-        let rec concatAddLengths (arrs:'T[][]) i acc =
-            if i >= arrs.Length then acc 
-            else concatAddLengths arrs (i+1) (acc + arrs.[i].Length)
-
-        let rec concatBlit (arrs:'T[][]) i j (tgt:'T[]) =
-            if i < arrs.Length then 
-                let h = arrs.[i]
-                let len = h.Length 
-                Array.Copy(h, 0, tgt, j, len)
-                concatBlit arrs (i+1) (j+len) tgt
+                       
+        let concatArrays (arrs : 'T[][]) : 'T[] =
+            let mutable acc = 0    
+            for h in arrs do
+                acc <- acc + h.Length        
                 
-        let concatArrays (arrs : 'T[][]) =
-            let res = Array.zeroCreateUnchecked (concatAddLengths arrs 0 0) 
-            concatBlit arrs 0 0 res
-            res            
+            let res = Array.zeroCreateUnchecked acc  
+                
+            let mutable j = 0
+            for i = 0 to arrs.Length-1 do     
+                let h = arrs.[i]
+                let len = h.Length
+                Array.Copy(h,0,res,j,len)        
+                j <- j + len
+            res               
 
         [<CompiledName("Concat")>]
         let concat (arrays: seq<'T[]>) = 
@@ -988,22 +987,26 @@ namespace Microsoft.FSharp.Collections
         let inline compareWith (comparer:'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
             checkNonNull "array1" array1
             checkNonNull "array2" array2
-    
+
             let length1 = array1.Length
             let length2 = array2.Length
-            let minLength = Operators.min length1 length2
+            
+            let mutable i = 0
+            let mutable result = 0
+            
+            if length1 < length2 then
+                while i < array1.Length && result = 0 do
+                    result <- comparer array1.[i] array2.[i]
+                    i <- i + 1
+            else
+                while i < array2.Length && result = 0 do
+                    result <- comparer array1.[i] array2.[i]
+                    i <- i + 1
 
-            let rec loop index  =
-                if index = minLength  then
-                    if length1 = length2 then 0
-                    elif length1 < length2 then -1
-                    else 1
-                else  
-                    let result = comparer array1.[index] array2.[index]
-                    if result <> 0 then result else
-                    loop (index+1)
-
-            loop 0
+            if result <> 0 then result
+            elif length1 = length2 then 0            
+            elif length1 < length2 then -1
+            else 1          
 
         [<CompiledName("GetSubArray")>]
         let sub (array:'T[]) (startIndex:int) (count:int) =
