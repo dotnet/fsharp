@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -35,3 +36,10 @@ module internal CommonRoslynHelpers =
         let startPosition = sourceText.Lines.[range.StartLine - 1].Start + range.StartColumn
         let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
+
+    let GetCompletedTaskResult(task: Task<'TResult>) =
+        if task.Status = TaskStatus.RanToCompletion then
+            task.Result
+        else
+            Assert.Exception(task.Exception.GetBaseException())
+            raise(task.Exception.GetBaseException())

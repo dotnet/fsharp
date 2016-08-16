@@ -74,12 +74,8 @@ type internal FSharpLanguageDebugInfoService() =
                        | None -> Unchecked.defaultof<DebugDataTipInfo>
                        | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
             }
-
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken).ContinueWith(fun(task: Task<DebugDataTipInfo>) ->
-                if task.Status = TaskStatus.RanToCompletion then
-                    task.Result
-                else
-                    Assert.Exception(task.Exception.GetBaseException())
-                    raise(task.Exception.GetBaseException())
-            , cancellationToken)
+            
+            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+            
             

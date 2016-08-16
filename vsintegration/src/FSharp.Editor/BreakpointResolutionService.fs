@@ -53,13 +53,8 @@ type internal FSharpBreakpointResolutionService() =
                        | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
             }
 
-            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken).ContinueWith(fun(task: Task<BreakpointResolutionResult>) ->
-                if task.Status = TaskStatus.RanToCompletion then
-                    task.Result
-                else
-                    Assert.Exception(task.Exception.GetBaseException())
-                    raise(task.Exception.GetBaseException())
-            , cancellationToken)
+            Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+                 .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
             
         // FSROSLYNTODO: enable placing breakpoints by when user suplies fully-qualified function names
         member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<BreakpointResolutionResult>> =
