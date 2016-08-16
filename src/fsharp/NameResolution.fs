@@ -1894,15 +1894,22 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     success(resInfo,Item.RecdField(rfinfo),rest)
                 | _ ->
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
-                if nonNil pinfos && (match lookupKind with LookupKind.Expr -> true | _ -> false)  then 
+                if nonNil pinfos && lookupKind = LookupKind.Expr then 
                     success (resInfo,Item.Property (nm,pinfos),rest) else
-                
                 let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
-                if nonNil minfos && (match lookupKind with LookupKind.Expr -> true | _ -> false) then 
-                    success (resInfo,Item.MakeMethGroup (nm,minfos),rest) 
-                                
+                if nonNil minfos && lookupKind = LookupKind.Expr then 
+                    success (resInfo,Item.MakeMethGroup (nm,minfos),rest)
                 elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
-                else raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
+                else
+                    let predictedLabels =
+                        if isRecdTy g typ then
+                            ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, typ)
+                            |> List.map (fun r -> r.Name)
+                            |> Set.ofSeq
+                        else
+                            Set.empty
+
+                    raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, predictedLabels))
               
         let nestedSearchAccessible = 
             let nestedTypes = GetNestedTypesOfType (ad, ncenv, Some nm, (if isNil rest then typeNameResInfo.StaticArgsInfo else TypeNameResolutionStaticArgsInfo.Indefinite), true, m) typ
@@ -2579,7 +2586,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
             | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
+                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
                     // record label doesn't belong to record type -> predict other labels of same record                    
                     error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
