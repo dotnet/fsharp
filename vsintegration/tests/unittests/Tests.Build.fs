@@ -7,7 +7,6 @@ open System
 open System.IO
 open System.Diagnostics
 open Microsoft.FSharp.Build
-open Microsoft.Build.BuildEngine
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -64,7 +63,7 @@ type Build() =
             Assert.Fail(message)
 
     let MakeTaskItem (itemSpec : string) = new TaskItem(itemSpec) :> ITaskItem
- 
+
     /// Called per test
     [<SetUp>]
     member this.Setup() =
@@ -90,28 +89,45 @@ type Build() =
         printfn "By the way, the registry or app.config tool path is %s" tool.ToolPath
         tool.CodePage <- "65001"
         AssertEqual "65001" tool.CodePage 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--codepage:65001 --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--codepage:65001" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-"  + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDebugSymbols() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.DebugSymbols <- true
         AssertEqual true tool.DebugSymbols
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "-g --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("-g" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDebugType() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.DebugType <- "pdbONly"
         AssertEqual "pdbONly" tool.DebugType
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--debug:pdbonly --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
-
+        AssertEqual ("--debug:pdbonly" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDefineConstants() =
@@ -119,184 +135,302 @@ type Build() =
         tool.DefineConstants <- [| MakeTaskItem "FOO=3"
                                    MakeTaskItem "BAR=4" |]
         AssertEqual 2 tool.DefineConstants.Length 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--define:FOO=3 --define:BAR=4 --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--define:FOO=3" + Environment.NewLine +
+                     "--define:BAR=4" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDisabledWarnings1() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.DisabledWarnings <- "52;109"
         AssertEqual "52;109" tool.DisabledWarnings
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --nowarn:52,109 --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--nowarn:52,109" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDisabledWarnings2() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.DisabledWarnings <- ";"  // e.g. someone may have <NoWarn>$(NoWarn);$(SomeOtherVar)</NoWarn> and both vars are empty
         AssertEqual ";" tool.DisabledWarnings
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestVersionFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.VersionFile <- "src/version"
         AssertEqual "src/version" tool.VersionFile 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --versionfile:src/version --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--versionfile:src/version" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestDocumentationFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.DocumentationFile <- "foo.xml"
         AssertEqual "foo.xml" tool.DocumentationFile 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--doc:foo.xml --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--doc:foo.xml" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestGenerateInterfaceFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.GenerateInterfaceFile <- "foo.fsi"
         AssertEqual "foo.fsi" tool.GenerateInterfaceFile 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--sig:foo.fsi --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--sig:foo.fsi" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestKeyFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.KeyFile <- "key.txt"
         AssertEqual "key.txt" tool.KeyFile 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--keyfile:key.txt --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--keyfile:key.txt" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestNoFramework() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.NoFramework <- true
         AssertEqual true tool.NoFramework 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--noframework --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--noframework" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestOptimize() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Optimize <- false
         AssertEqual false tool.Optimize 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual cmd "--optimize- --warnaserror:76 --fullpaths --flaterrors --highentropyva-"
+        AssertEqual ("--optimize-" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestTailcalls() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Tailcalls <- true
         AssertEqual true tool.Tailcalls
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         // REVIEW we don't put the default, is that desired?
-        AssertEqual "--optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestOtherFlags() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.OtherFlags <- "--yadda yadda"
         AssertEqual "--yadda yadda" tool.OtherFlags 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva- --yadda yadda" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine +
+                     "--yadda" + Environment.NewLine +
+                     "yadda" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestOutputAssembly() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.OutputAssembly <- "oUt.dll"
         AssertEqual "oUt.dll" tool.OutputAssembly 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "-o:oUt.dll --optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("-o:oUt.dll" + Environment.NewLine +
+                     "--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestPdbFile() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.PdbFile <- "out.pdb"
         AssertEqual "out.pdb" tool.PdbFile 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --pdb:out.pdb --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--pdb:out.pdb" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestPlatform1() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Platform <- "x64"
         AssertEqual "x64" tool.Platform 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --platform:x64 --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--platform:x64" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestPlatform2() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Platform <- "itanium"
         AssertEqual "itanium" tool.Platform 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --platform:Itanium --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--platform:Itanium" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestPlatform3() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Platform <- "x86"
         AssertEqual "x86" tool.Platform 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --platform:x86 --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--platform:x86" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestReferences() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         let dll = "c:\\sd\\staging\\tools\\nunit\\nunit.framework.dll"
         tool.References <- [| MakeTaskItem dll |]
         AssertEqual 1 tool.References.Length 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--optimize+ -r:" + dll + " --warnaserror:76 --fullpaths --flaterrors --highentropyva-") cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "-r:" + dll + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestReferencePath() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         let path = "c:\\sd\\staging\\tools\\nunit\\;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--optimize+ --lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo --warnaserror:76 --fullpaths --flaterrors --highentropyva-") cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine) cmd
+
     [<Test>]
     member public this.TestReferencePathWithSpaces() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         let path = "c:\\program files;c:\\sd\\staging\\tools\\nunit;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--optimize+ --lib:\"c:\\program files\",c:\\sd\\staging\\tools\\nunit,c:\\Foo --warnaserror:76 --fullpaths --flaterrors --highentropyva-") cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--lib:c:\\program files,c:\\sd\\staging\\tools\\nunit,c:\\Foo" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestResources() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Resources <- [| MakeTaskItem "Foo.resources" |]
         AssertEqual 1 tool.Resources.Length 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --resource:Foo.resources --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--resource:Foo.resources" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestSources() =
@@ -305,10 +439,16 @@ type Build() =
         let iti = MakeTaskItem src
         tool.Sources <- [| iti; iti |]
         AssertEqual 2 tool.Sources.Length 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        let expect = "--optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva- " + src + " " + src
-        AssertEqual expect cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine +
+                     src + Environment.NewLine +
+                     src + Environment.NewLine)
+                    cmd
         ()
 
     [<Test>]
@@ -316,68 +456,114 @@ type Build() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.TargetType <- "Library"
         AssertEqual "Library" tool.TargetType 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --target:library --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--target:library" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestTargetType2() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.TargetType <- "Winexe"
         AssertEqual "Winexe" tool.TargetType 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --target:winexe --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--target:winexe" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestTargetType3() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.TargetType <- "Module"
         AssertEqual "Module" tool.TargetType 
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --target:module --warnaserror:76 --fullpaths --flaterrors --highentropyva-" cmd
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--target:module" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
 
     [<Test>]
     member public this.TestUtf8Output() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Utf8Output <- true
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --utf8output --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--utf8output" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestWin32Res() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Win32ResourceFile <- "foo.res"
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --win32res:foo.res --fullpaths --flaterrors --highentropyva-" cmd
-        
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--win32res:foo.res" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd
+
     [<Test>]
     member public this.TestWin32Manifest() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Win32ManifestFile <- "foo.manifest"
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --win32manifest:foo.manifest --fullpaths --flaterrors --highentropyva-" cmd 
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--win32manifest:foo.manifest" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd 
 
     [<Test>]
     member public this.TestHighEntropyVA() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.HighEntropyVA <- true
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --fullpaths --flaterrors --highentropyva+" cmd 
-
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--highentropyva+" + Environment.NewLine)
+                    cmd 
 
     [<Test>]
     member public this.TestSubsystemVersion() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.SubsystemVersion <- "6.02"
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual "--optimize+ --warnaserror:76 --fullpaths --flaterrors --subsystemversion:6.02 --highentropyva-" cmd 
+        AssertEqual ("--optimize+" + Environment.NewLine +
+                     "--warnaserror:76" + Environment.NewLine +
+                     "--fullpaths" + Environment.NewLine +
+                     "--flaterrors" + Environment.NewLine +
+                     "--subsystemversion:6.02" + Environment.NewLine +
+                     "--highentropyva-" + Environment.NewLine)
+                    cmd 
 
     [<Test>]
     member public this.TestAllCombo() =
@@ -399,7 +585,7 @@ type Build() =
         tool.OutputAssembly <- "out.dll"
         tool.PdbFile <- "out.pdb"
         tool.References <- [| MakeTaskItem "ref.dll"; MakeTaskItem "C:\\Program Files\\SpacesPath.dll" |]
-        tool.ReferencePath <- "c:\\foo;c:\\bar"
+        tool.ReferencePath <- @"c:\foo;c:\bar"
         tool.Resources <- [| MakeTaskItem "MyRes.resources"; MakeTaskItem "OtherRes.resources" |]
         tool.Sources <- [| MakeTaskItem "foo.fs"; MakeTaskItem "C:\\Program Files\\spaces.fs" |]
         tool.WarningLevel <- "4"
@@ -410,21 +596,49 @@ type Build() =
         tool.Utf8Output <- true
         tool.VisualStudioStyleErrors <- true
         tool.SubsystemVersion <- "4.0"
-        let cmd = tool.InternalGenerateCommandLineCommands()
+        let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
 
-        let expected = "-o:out.dll --codepage:65001 -g --debug:full --noframework " +
-                       "--baseaddress:0xBADF00D " +
-                       "--define:FOO=3 --define:BAR=4 " +
-                       "--doc:foo.xml --sig:foo.fsi --keyfile:key.txt " +
-                       "--optimize+ --pdb:out.pdb --platform:anycpu " +
-                       "--resource:MyRes.resources --resource:OtherRes.resources " +
-                       "--versionfile:src/version -r:ref.dll -r:\"C:\\Program Files\\SpacesPath.dll\" --lib:c:\\foo,c:\\bar --target:exe --nowarn:52,109 " +
-                       "--warn:4 --warnaserror --warnaserror:76 --vserrors --utf8output --fullpaths --flaterrors --subsystemversion:4.0 " +
-                       "--highentropyva- --yadda:yadda --other:\"internal quote\" blah foo.fs \"C:\\Program Files\\spaces.fs\""
-                       
+        let expected = 
+            "-o:out.dll" + Environment.NewLine +
+            "--codepage:65001" + Environment.NewLine +
+            "-g" + Environment.NewLine +
+            "--debug:full" + Environment.NewLine +
+            "--noframework" + Environment.NewLine  +
+            "--baseaddress:0xBADF00D" + Environment.NewLine +
+            "--define:FOO=3" + Environment.NewLine +
+            "--define:BAR=4" + Environment.NewLine +
+            "--doc:foo.xml" + Environment.NewLine +
+            "--sig:foo.fsi" + Environment.NewLine +
+            "--keyfile:key.txt" + Environment.NewLine +
+            "--optimize+" + Environment.NewLine +
+            "--pdb:out.pdb" + Environment.NewLine +
+            "--platform:anycpu" + Environment.NewLine +
+            "--resource:MyRes.resources" + Environment.NewLine +
+            "--resource:OtherRes.resources" + Environment.NewLine +
+            "--versionfile:src/version" + Environment.NewLine +
+            "-r:ref.dll" + Environment.NewLine +
+            @"-r:C:\Program Files\SpacesPath.dll" + Environment.NewLine +
+            @"--lib:c:\foo,c:\bar" + Environment.NewLine +
+            "--target:exe" + Environment.NewLine +
+            "--nowarn:52,109" + Environment.NewLine +
+            "--warn:4" + Environment.NewLine +
+            "--warnaserror" + Environment.NewLine +
+            "--warnaserror:76" + Environment.NewLine +
+            "--vserrors" + Environment.NewLine +
+            "--utf8output" + Environment.NewLine +
+            "--fullpaths" + Environment.NewLine +
+            "--flaterrors" + Environment.NewLine +
+            "--subsystemversion:4.0" + Environment.NewLine +
+            "--highentropyva-" + Environment.NewLine +
+            "--yadda:yadda" + Environment.NewLine +
+            "--other:internal quote" + Environment.NewLine +
+            "blah" + Environment.NewLine +
+            "foo.fs" + Environment.NewLine +
+            @"C:\Program Files\spaces.fs" + Environment.NewLine
+
         AssertEqual expected cmd
-        
+
         let hostObject = new FauxHostObject()
         tool.HostObject <- hostObject
         tool.InternalExecuteTool("", "", "") |> ignore

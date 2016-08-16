@@ -977,24 +977,6 @@ type UsingMSBuild() as this =
             """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
             "#r \"mscor" "Global Assembly Cache"
 
-    // // Disabled because it seems Microsoft.VisualStudio.QualityTools.Common.dll is no longer always available on CI installs in the same way
-    // // as it used to be.
-    // [<Test;Category("fsx closure"); Category("NO_CI")>] 
-    // member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
-    //     let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
-    //     let marker = "#r \"Microsoft.Vis"
-    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
-    //     this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
-
-    // // Disabled because it seems Microsoft.SqlServer.SString.dll is no longer always available on CI installs in the same way
-    //[<Test>]
-    //[<Category("fsx closure")>]
-    //member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFolders``() =
-    //    let fileContent = """#r "Microsoft.SqlServer.SString" """       // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-    //    let marker = "#r \"Microsoft.SqlSe"
-    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.SqlServer.SString.dll"
-    //    this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFolders registry key"
-        
     [<Test>]
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromFullyQualifiedPath``() = 
@@ -1237,8 +1219,6 @@ type UsingMSBuild() as this =
         Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
         Assert.AreEqual(1, fas.ProjectFileNames.Length)
 
-#if OPEN_BUILD
-#else
 
     /// FEATURE: #reference against a strong name should work.
     [<Test>]
@@ -1246,7 +1226,7 @@ type UsingMSBuild() as this =
         let code =
                                             ["#light"
 #if FX_ATLEAST_40                                            
-                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" Microsoft.BuildSettings.Version.OfAssembly
+                                             sprintf "#reference \"System.Core, Version=%s, Culture=neutral, PublicKeyToken=b77a5c561934e089\"" (System.Environment.Version.ToString())
 #else
                                              "#reference \"System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089\""
 #endif                                             
@@ -1255,7 +1235,7 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file,"open System.") 
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Linq")   
-#endif
+
 
     /// Try out some bogus file names in #r, #I and #load.
     [<Test>]

@@ -42,7 +42,7 @@ type Pattern =
   | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
   | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
   | TPat_exnconstr of TyconRef * Pattern list * range
-  | TPat_tuple of  Pattern list * TType list * range
+  | TPat_tuple of  TupInfo * Pattern list * TType list * range
   | TPat_array of  Pattern list * TType * range
   | TPat_recd of TyconRef * TypeInst * Pattern list * range
   | TPat_range of char * char * range
@@ -58,7 +58,7 @@ type Pattern =
     |   TPat_query(_,_,m) -> m
     |   TPat_unioncase(_,_,_,m) -> m
     |   TPat_exnconstr(_,_,m) -> m
-    |   TPat_tuple(_,_,m) -> m
+    |   TPat_tuple(_,_,_,m) -> m
     |   TPat_array(_,_,m) -> m
     |   TPat_recd(_,_,_,m) -> m
     |   TPat_range(_,_,m) -> m
@@ -181,7 +181,7 @@ let RefuteDiscrimSet g m path discrims =
         | PathConj (p,_j) -> 
              go p tm
         | PathTuple (p,tys,j) -> 
-             go p (fun _ -> mkTupled g m (mkOneKnown tm j tys) tys)
+             go p (fun _ -> mkRefTupled g m (mkOneKnown tm j tys) tys)
         | PathRecd (p,tcref,tinst,j) -> 
              let flds = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
              go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m))
@@ -310,7 +310,7 @@ let ShowCounterExample g denv m refuted =
           match refutations with 
           | [] -> raise CannotRefute
           | h :: t -> 
-              if verbose then dprintf "h = %s\n" (Layout.showL (exprL h));
+              if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
               List.fold (CombineRefutations g) h t
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
       let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
@@ -320,7 +320,7 @@ let ShowCounterExample g denv m refuted =
         | CannotRefute ->    
           None 
         | e -> 
-          warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m));
+          warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m))
           None
        
 //---------------------------------------------------------------------------
@@ -494,7 +494,7 @@ let (|ListEmptyDiscrim|_|) g = function
 ///     switches, string switches and floating point switches are treated in the
 ///     same way as Test.IsInst.
 let rec BuildSwitch inpExprOpt g expr edges dflt m =
-    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt); 
+    if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt) 
     match edges,dflt with 
     | [], None      -> failwith "internal error: no edges and no default"
     | [], Some dflt -> dflt      (* NOTE: first time around, edges<>[] *)
@@ -562,7 +562,6 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
             | _ -> failwith "illtyped term during pattern compilation" 
         let edges' = List.sortWith edgeCompare edges
         let rec compactify curr edges = 
-            if debug then  dprintf "--> compactify@%a\n" outputRange m; 
             match curr,edges with 
             | None,[] -> []
             | Some last,[] -> [List.rev last]
@@ -592,7 +591,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // For a total pattern match, run the active pattern, bind the result and 
     // recursively build a switch in the choice type 
     | (TCase(Test.ActivePatternCase _,_)::_), _ -> 
-       error(InternalError("Test.ActivePatternCase should have been eliminated",m));
+       error(InternalError("Test.ActivePatternCase should have been eliminated",m))
 
     // For a complete match, optimize one test to be the default 
     | (TCase(_,tree)::rest), None -> TDSwitch (expr,rest,Some tree,m)
@@ -602,12 +601,11 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
 #if DEBUG
 let rec layoutPat pat = 
-    if debug then  dprintf "--> layoutPat\n"; 
     match pat with
     | TPat_query (_,pat,_) -> Layout.(--) (Layout.wordL "query") (layoutPat pat)
     | TPat_wild _ -> Layout.wordL "wild"
     | TPat_as _ -> Layout.wordL "var"
-    | TPat_tuple (pats, _, _) 
+    | TPat_tuple (_, pats, _, _) 
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
     | _ -> Layout.wordL "?" 
   
@@ -633,7 +631,7 @@ let rec isPatternPartial p =
     | TPat_wild _ -> false
     | TPat_as (p,_,_) -> isPatternPartial p
     | TPat_disjs (ps,_) | TPat_conjs(ps,_) 
-    | TPat_tuple (ps,_,_) | TPat_exnconstr(_,ps,_) 
+    | TPat_tuple (_,ps,_,_) | TPat_exnconstr(_,ps,_) 
     | TPat_array (ps,_,_) | TPat_unioncase (_,_,ps,_)
     | TPat_recd (_,_,ps,_) -> List.exists isPatternPartial ps
     | TPat_range _ -> false
@@ -648,7 +646,7 @@ let rec erasePartialPatterns inpp =
     | TPat_as (p,x,m) -> TPat_as (erasePartialPatterns p,x,m)
     | TPat_disjs (ps,m) -> TPat_disjs(erasePartials ps, m)
     | TPat_conjs(ps,m) -> TPat_conjs(erasePartials ps, m)
-    | TPat_tuple (ps,x,m) -> TPat_tuple(erasePartials ps, x, m)
+    | TPat_tuple (tupInfo,ps,x,m) -> TPat_tuple(tupInfo,erasePartials ps, x, m)
     | TPat_exnconstr(x,ps,m) -> TPat_exnconstr(x,erasePartials ps,m) 
     | TPat_array (ps,x,m) -> TPat_array (erasePartials ps,x,m)
     | TPat_unioncase (x,y,ps,m) -> TPat_unioncase (x,y,erasePartials ps,m)
@@ -696,9 +694,9 @@ let CompilePatternBasic
                 if warnOnIncomplete then 
                    match actionOnFailure with 
                    | ThrowIncompleteMatchException ->
-                        warning (MatchIncomplete (false,ShowCounterExample g denv matchm refuted, matchm));
+                        warning (MatchIncomplete (false,ShowCounterExample g denv matchm refuted, matchm))
                    | IgnoreWithWarning ->
-                        warning (MatchIncomplete (true,ShowCounterExample g denv matchm refuted, matchm));
+                        warning (MatchIncomplete (true,ShowCounterExample g denv matchm refuted, matchm))
                    | _ -> 
                         ()
                         
@@ -722,8 +720,8 @@ let CompilePatternBasic
                       | ThrowIncompleteMatchException  -> 
                           mkThrow   matchm resultTy 
                               (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException", 
-                                            [ mkString g matchm matchm.FileName; 
-                                              mkInt g matchm matchm.StartLine; 
+                                            [ mkString g matchm matchm.FileName 
+                                              mkInt g matchm matchm.StartLine 
                                               mkInt g matchm matchm.StartColumn],matchm))
 
                       | IgnoreWithWarning  -> 
@@ -737,9 +735,9 @@ let CompilePatternBasic
                 // will run the handler and hit the sequence point there.
                 // That sequence point will have the pattern variables bound, which is exactly what we want.
                 let tg = TTarget(FlatList.empty,throwExpr,SuppressSequencePointAtTarget  )
-                mbuilder.AddTarget tg |> ignore;
+                mbuilder.AddTarget tg |> ignore
                 let clause = TClause(TPat_wild matchm,None,tg,matchm)
-                incompleteMatchClauseOnce := Some(clause);
+                incompleteMatchClauseOnce := Some(clause)
                 clause
                 
         | Some c -> c
@@ -769,7 +767,6 @@ let CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler 
     let rec InvestigateFrontiers refuted frontiers = 
-        if debug then dprintf "frontiers = %s\n" (String.concat ";" (List.map (getRuleIndex >> string) frontiers));
         match frontiers with
         | [] -> failwith "CompilePattern:compile - empty clauses: at least the final clause should always succeed"
         | (Frontier (i,active,valMap)) :: rest ->
@@ -779,7 +776,6 @@ let CompilePatternBasic
             | [] -> CompileSuccessPointAndGuard i refuted valMap rest 
 
             | _ -> 
-                if debug then dprintf "Investigating based on rule %d, #active = %d\n" i (List.length active);
                 (* Otherwise choose a point (i.e. a path) to investigate. *)
                 let (Active(path,subexpr,pat))  = ChooseInvestigationPointLeftToRight frontiers
                 match pat with
@@ -789,7 +785,6 @@ let CompilePatternBasic
                 // Leaving the ones where we have real work to do 
                 | _ -> 
 
-                    if debug then dprintf "chooseSimultaneousEdgeSet\n";
                     let simulSetOfEdgeDiscrims,fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
                     let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr    
@@ -797,13 +792,7 @@ let CompilePatternBasic
                     // For each case, recursively compile the residue decision trees that result if that case successfully matches 
                     let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt 
                           
-                    assert (nonNil(simulSetOfCases));
-
-                    if debug then 
-                        dprintf "#fallthroughPathFrontiers = %d, #simulSetOfEdgeDiscrims = %d\n"  (List.length fallthroughPathFrontiers) (List.length simulSetOfEdgeDiscrims);
-                        dprintf "Making cases for each discriminator...\n";
-                        dprintf "#edges = %d\n" (List.length simulSetOfCases);
-                        dprintf "Checking for completeness of edge set from earlier investigation of rule %d, #active = %d\n" i (List.length active);
+                    assert (nonNil(simulSetOfCases))
 
                     // Work out what the default/fall-through tree looks like, is any 
                     // Check if match is complete, if so optimize the default case away. 
@@ -822,7 +811,6 @@ let CompilePatternBasic
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
 
-        if debug then dprintf "generating success node for rule %d\n" i;
         let vs2 = GetValsBoundByClause i refuted
         let es2 = 
             vs2 |> FlatList.map (fun v -> 
@@ -832,7 +820,6 @@ let CompilePatternBasic
         let rhs' = TDSuccess(es2, i)
         match GetWhenGuardOfClause i refuted with 
         | Some whenExpr -> 
-            if debug then dprintf "generating success node for rule %d, with 'when' clause\n" i;
 
             let m = whenExpr.Range
 
@@ -856,16 +843,14 @@ let CompilePatternBasic
     /// Record the rule numbers so we know which rule the TPat_query cam from, so that when we project through 
     /// the frontier we only project the right rule. 
     and ChooseSimultaneousEdges frontiers path =
-        if debug then dprintf "chooseSimultaneousEdgeSet\n";
         frontiers |> chooseSimultaneousEdgeSet None (fun prevOpt (Frontier (i',active',_)) -> 
               if isMemOfActives path active' then 
                   let p = lookupActive path active' |> snd
                   match getDiscrimOfPattern p with
                   | Some discrim -> 
-                      if (match prevOpt with None -> true | Some (EdgeDiscrim(_,discrimPrev,_)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then (
-                          if debug then dprintf "taking rule %d\n" i';
+                      if (match prevOpt with None -> true | Some (EdgeDiscrim(_,discrimPrev,_)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then 
                           Some (EdgeDiscrim(i',discrim,p.Range)),true
-                      ) else 
+                      else 
                           None,false
                                                         
                   | None -> 
@@ -892,7 +877,7 @@ let CompilePatternBasic
 
              let v,vexp = mkCompGenLocal m "typeTestResult" tgty
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkIsInst tgty argexp matchm
              Some(vexp),Some(mkInvisibleBind v appexp)
@@ -907,7 +892,7 @@ let CompilePatternBasic
              | None -> Some addrexp, None
              | Some (v,e) -> 
                  if topv.IsMemberOrModuleBinding then 
-                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
                  Some addrexp, Some (mkInvisibleBind v e) 
              
 
@@ -923,7 +908,7 @@ let CompilePatternBasic
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v,vexp = mkCompGenLocal m "unionTestResult" ucaseTy
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkIsInst ucaseTy argexp matchm
              Some vexp,Some (mkInvisibleBind v appexp)
@@ -931,13 +916,12 @@ let CompilePatternBasic
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern. 
          | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_,_,apinfo)),m) :: _) ->
-             if debug then dprintf "Building result var for active pattern...\n";
              
-             if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m));
+             if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m resTys
              let v,vexp = mkCompGenLocal m "activePatternResult" rty
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData;
+                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkApps g ((pexp,tyOfExpr g pexp), [], [argexp],m)
              
@@ -990,7 +974,7 @@ let CompilePatternBasic
                          let aparity = apinfo.Names.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then 
-                             error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(),m));
+                             error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(),m))
                          
                          if not total then Test.UnionCase(mkSomeCase g,resTys)
                          elif aparity <= 1 then Test.Const(Const.Unit) 
@@ -1033,7 +1017,6 @@ let CompilePatternBasic
             (* Add to the refuted set *)
             let refuted = (RefutedInvestigation(path,simulSetOfDiscrims)) :: refuted
         
-            if debug then dprintf "Edge set was incomplete. Compiling remaining cases\n";
             match fallthroughPathFrontiers with
             | [] -> 
                 None
@@ -1043,11 +1026,9 @@ let CompilePatternBasic
     // Build a new frontier that represents the result of a successful investigation 
     // at rule point (i',discrim,path) 
     and GenerateNewFrontiersAfterSucccessfulInvestigation inpExprOpt resPostBindOpt (Investigation(i',discrim,path)) (Frontier (i, active,valMap) as frontier) =
-        if debug then dprintf "projecting success of investigation encompassing rule %d through rule %d \n" i' i;
 
         if (isMemOfActives path active) then
             let (SubExpr(accessf,ve)),pat = lookupActive path active
-            if debug then dprintf "active...\n";
 
             let mkSubFrontiers path accessf' active' argpats pathBuilder = 
                 let mkSubActive j p = 
@@ -1192,8 +1173,8 @@ let CompilePatternBasic
         | TPat_as(p',pbind,m) -> 
             let (v,subExpr') =  BindSubExprOfInput g amap topgtvs pbind m subExpr
             BindProjectionPattern (Active(path,subExpr,p')) (accActive,accValMap.Add v subExpr' )
-        | TPat_tuple(ps,tyargs,_m) ->
-            let accessf' j tpinst exprIn = mkTupleFieldGet(accessf tpinst exprIn,instTypes tpinst tyargs,j,exprm)
+        | TPat_tuple(tupInfo,ps,tyargs,_m) ->
+            let accessf' j tpinst subExpr' = mkTupleFieldGet g (tupInfo,accessf tpinst subExpr',instTypes tpinst tyargs,j,exprm)
             let pathBuilder path j = PathTuple(path,tyargs,j)
             let newActives = List.mapi (mkSubActive pathBuilder accessf') ps
             BindProjectionPatterns newActives s 
@@ -1273,7 +1254,6 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (t
         let warnOnIncomplete = false
         
         let rec atMostOnePartialAtATime clauses = 
-            if debug then dprintf "atMostOnePartialAtATime: #clauses = %A\n" clauses;
             match List.takeUntil isPartialOrWhenClause clauses with 
             | l,[]       -> 
                 CompilePatternBasic g denv amap exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (topv,topgtvs) l inputTy resultTy
@@ -1282,7 +1262,6 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (t
                 doGroupWithAtMostOnePartial (l @ [h]) t
 
         and doGroupWithAtMostOnePartial group rest = 
-            if debug then dprintf "doGroupWithAtMostOnePartial: #group = %A\n" group;
 
             // Compile the remaining clauses
             let dtree,targets = atMostOnePartialAtATime rest

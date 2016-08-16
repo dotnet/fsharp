@@ -62,8 +62,9 @@
       <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Name>FSharp.VS.FSI</Name>
     </ProjectReference>
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="microsoft.msxml" />
     <Reference Include="System.Drawing" />
     <Reference Include="System" />

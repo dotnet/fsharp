@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using MSBuild = Microsoft.Build.BuildEngine;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -184,7 +183,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     xmlProj = Microsoft.Build.Construction.ProjectRootElement.Open(filename);
                 }
-                catch (Microsoft.Build.BuildEngine.InvalidProjectFileException)
+                catch (Microsoft.Build.Exceptions.InvalidProjectFileException)
                 {
                     // leave xmlProj non-initialized, other methods will check its state in prologue
                 }                

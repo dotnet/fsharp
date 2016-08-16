@@ -25,13 +25,13 @@ let mkGenericIComparableCompareToSlotSig g typ =
     TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.int_ty)
     
 let mkIStructuralComparableCompareToSlotSig g =
-    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkTupleTy [g.obj_ty ; g.mk_IComparer_ty]),false,false,false,[])]], Some g.int_ty)
+    TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]),false,false,false,[])]], Some g.int_ty)
     
 let mkGenericIEquatableEqualsSlotSig g typ =
     TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.bool_ty)
     
 let mkIStructuralEquatableEqualsSlotSig g =
-    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkTupleTy [g.obj_ty ; g.mk_IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
+    TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
 
 let mkIStructuralEquatableGetHashCodeSlotSig g =
     TSlotSig("GetHashCode",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,g.mk_IEqualityComparer_ty,false,false,false,[])]], Some g.int_ty)
@@ -55,11 +55,11 @@ let mkThisTy  g ty = if isStructTy g ty then mkByrefTy g ty else ty
 
 let mkCompareObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.int_ty)
 let mkCompareTy             g ty = (mkThisTy g ty) --> (ty --> g.int_ty)
-let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkTupleTy [g.obj_ty ; g.mk_IComparer_ty]) --> g.int_ty)
+let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IComparer_ty]) --> g.int_ty)
 
 let mkEqualsObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.bool_ty)
 let mkEqualsTy             g ty = (mkThisTy g ty) --> (ty --> g.bool_ty)
-let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkTupleTy [g.obj_ty ; g.mk_IEqualityComparer_ty]) --> g.bool_ty)
+let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.mk_IEqualityComparer_ty]) --> g.bool_ty)
 
 let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
 let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.mk_IEqualityComparer_ty --> g.int_ty)
@@ -850,24 +850,24 @@ let TyconIsCandidateForAugmentationWithHash g tycon = TyconIsCandidateForAugment
 //------------------------------------------------------------------------- 
 
 let slotImplMethod (final,c,slotsig) : ValMemberInfo = 
-  { ImplementedSlotSigs=[slotsig];
+  { ImplementedSlotSigs=[slotsig]
     MemberFlags=
-        { IsInstance=true; 
-          IsDispatchSlot=false;
-          IsFinal=final;
-          IsOverrideOrExplicitImpl=true;
-          MemberKind=MemberKind.Member};
-    IsImplemented=false;
+        { IsInstance=true 
+          IsDispatchSlot=false
+          IsFinal=final
+          IsOverrideOrExplicitImpl=true
+          MemberKind=MemberKind.Member}
+    IsImplemented=false
     ApparentParent=c} 
 
 let nonVirtualMethod c : ValMemberInfo = 
-  { ImplementedSlotSigs=[];
-    MemberFlags={ IsInstance=true; 
-                  IsDispatchSlot=false;
-                  IsFinal=false;
-                  IsOverrideOrExplicitImpl=false;
-                  MemberKind=MemberKind.Member};
-    IsImplemented=false;
+  { ImplementedSlotSigs=[]
+    MemberFlags={ IsInstance=true 
+                  IsDispatchSlot=false
+                  IsFinal=false
+                  IsOverrideOrExplicitImpl=false
+                  MemberKind=MemberKind.Member}
+    IsImplemented=false
     ApparentParent=c} 
 
 let unitArg = ValReprInfo.unitArgData
@@ -945,7 +945,7 @@ let MakeBindingsForCompareAugmentation g (tycon:Tycon) =
               let thisv,thatv,comparee = comparef g tcref tycon 
               mkLambdas m tps [thisv;thatv] (comparee,g.int_ty)  
             [ // This one must come first because it may be inlined into the second
-              mkCompGenBind vspec2 rhs2;
+              mkCompGenBind vspec2 rhs2
               mkCompGenBind vspec1 rhs1; ] 
     if tycon.IsUnionTycon then mkCompare mkUnionCompare 
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkCompare mkRecdCompare 
@@ -1016,8 +1016,8 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
                 
                 mkLambdas m tps [thisv; unitv] (hashe,g.int_ty)  
                   
-            [(mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr) ; 
-             (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr) ; 
+            [(mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr)  
+             (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr)  
              (mkCompGenBind withcEqualsVal.Deref withcEqualsExpr)] 
     if tycon.IsUnionTycon then mkStructuralEquatable mkUnionHashWithComparer mkUnionEqualityWithComparer
     elif (tycon.IsRecordTycon || tycon.IsStructOrEnumTycon) then mkStructuralEquatable mkRecdHashWithComparer mkRecdEqualityWithComparer
@@ -1054,8 +1054,8 @@ let MakeBindingsForEqualsAugmentation g (tycon:Tycon) =
             mkLambdas m tps [thisv;thatobjv] (equalse,g.bool_ty)  
 
 
-          [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr;
-            mkCompGenBind objEqualsVal.Deref objEqualsExpr;   ] 
+          [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr
+            mkCompGenBind objEqualsVal.Deref objEqualsExpr   ] 
     if tycon.IsExceptionDecl then mkEquals mkExnEquality 
     elif tycon.IsUnionTycon then mkEquals mkUnionEquality 
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 

@@ -13,18 +13,25 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|proto^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
+echo build.cmd ^<all^|proto^|protofx^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
+echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^|publicsign^>
 echo.
-echo No arguments default to 'build' 
+echo No arguments default to 'build'
 echo.
 echo To specify multiple values, separate strings by comma
 echo.
+echo.This builds the net40 build of the compiler without running tests
+echo.
+echo.    build net40 notests
+echo.
 echo The example below run pcls, vs and qa:
 echo.
-echo build.cmd pcls,vs,debug
+echo     build.cmd pcls,vs,debug
 exit /b 1
 
 :ARGUMENTS_OK
+
+set BUILD_PROTO_WITH_CORECLR_LKG=1
 
 set BUILD_PROTO=0
 set BUILD_NET40=1
@@ -34,6 +41,7 @@ set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
+set BUILD_PUBLICSIGN=0
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
@@ -100,6 +108,11 @@ if /i '%ARG%' == 'all' (
     set SKIP_EXPENSIVE_TESTS=0
 )
 
+if /i '%ARG%' == 'protofx' (
+    set BUILD_PROTO_WITH_CORECLR_LKG=0
+    set BUILD_PROTO=1
+)
+
 if /i '%ARG%' == 'microbuild' (
     set BUILD_PROTO=1
     set BUILD_NET40=1
@@ -141,7 +154,8 @@ if /i '%ARG%' == 'ci' (
     set CONF_FSHARPQA_SUITE=Smoke
 )
 
-REM These divide 'ci' into three chunks which can be done in parallel
+
+REM These divide 'ci' into two chunks which can be done in parallel
 if /i '%ARG%' == 'ci_part1' (
     set BUILD_PROTO=1
     set SKIP_EXPENSIVE_TESTS=1
@@ -247,6 +261,10 @@ if /i '%ARG%' == 'test-fsharp' (
     set TEST_FSHARP_SUITE=1
 )
 
+if /i '%ARG%' == 'publicsign' (
+    set BUILD_PUBLICSIGN=1
+)
+
 goto :EOF
 
 :MAIN
@@ -256,6 +274,7 @@ REM after this point, ARG variable should not be used, use only BUILD_* or TEST_
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
+echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
@@ -263,6 +282,7 @@ echo BUILD_VS=%BUILD_VS%
 echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
+echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
 echo TEST_COMPILERUNIT=%TEST_COMPILERUNIT%
 echo TEST_NET40_COREUNIT=%TEST_NET40_COREUNIT%
@@ -285,13 +305,17 @@ call src\update.cmd signonly
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%VS150COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=15.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
+
+if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS150COMNTOOLS%..\..\ide\devenv.exe" set VisualStudioVersion=15.0
+if not '%VisualStudioVersion%' == '' goto vsversionset
+
 if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
+
 if exist "%VS120COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
@@ -299,9 +323,22 @@ if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" se
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
 
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
+if exist "%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
+    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
+    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+echo Error: Could not find MSBuild.exe. && goto :failure
+goto :eof
+
+:havemsbuild
 set _nrswitch=/nr:false
 
 rem uncomment to use coreclr msbuild not ready yet!!!!
@@ -326,34 +363,29 @@ if '%RestorePackages%' == 'true' (
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-:: Restore the Tools directory
-call %~dp0init-tools.cmd
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+)
 
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
-pushd .\lkg & %_dotnetexe% restore &popd
-@if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
-pushd .\lkg & %_dotnetexe% publish project.json &popd
-@if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
-fc fsc.exe corehost.exe >nul
-@if ERRORLEVEL 1 (
-  copy fsc.exe fsc.dll
-  copy corehost.exe fsc.exe
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+
+    pushd .\lkg & %_dotnetexe% restore &popd
+    @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
+
+    pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
+    @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
 )
-popd
 
-rem rename fsc and coreconsole to allow fsc.exe to to start compiler
-pushd .\lkg\bin\debug\dnxcore50\win7-x64\publish
-fc fsi.exe corehost.exe >nul
-@if ERRORLEVEL 1 (
-  copy fsi.exe fsi.dll
-  copy corehost.exe fsi.exe
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+    rmdir /s /q %~dp0\Tools\lkg
 )
-popd
 
 rem copy targestfile into tools directory ... temporary fix until packaging complete.
 copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
@@ -371,8 +403,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%' failed && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:SIGNTYPE=%BUILD_PUBLICSIGN%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:SIGNTYPE=%BUILD_PUBLICSIGN%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen

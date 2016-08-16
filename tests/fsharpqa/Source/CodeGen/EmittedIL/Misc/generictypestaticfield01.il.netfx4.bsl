@@ -77,14 +77,14 @@
     {
       // Code size       20 (0x14)
       .maxstack  8
-      .line 3,3 : 10,41 ''
+      .line 3,3 : 10,41
       IL_0000:  nop
       IL_0001:  newobj     instance void class GenericTypeStaticField01/Foo`1<!a>::.ctor()
       IL_0006:  stsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
       IL_000b:  ldc.i4.1
       IL_000c:  volatile.
       IL_000e:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
-      .line 2,2 : 6,9 ''
+      .line 2,2 : 6,9
       IL_0013:  ret
     } // end of method Foo`1::.cctor
 
@@ -93,7 +93,7 @@
     {
       // Code size       27 (0x1b)
       .maxstack  8
-      .line 4,4 : 28,39 ''
+      .line 4,4 : 28,39
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
       IL_0007:  ldc.i4.1
@@ -128,7 +128,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 6,6 : 6,9 ''
+      .line 6,6 : 6,9
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -142,14 +142,14 @@
     {
       // Code size       20 (0x14)
       .maxstack  8
-      .line 7,7 : 10,44 ''
+      .line 7,7 : 10,44
       IL_0000:  nop
       IL_0001:  newobj     instance void class GenericTypeStaticField01/Bar`2<!a,!b>::.ctor()
       IL_0006:  stsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
       IL_000b:  ldc.i4.1
       IL_000c:  volatile.
       IL_000e:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
-      .line 6,6 : 6,9 ''
+      .line 6,6 : 6,9
       IL_0013:  ret
     } // end of method Bar`2::.cctor
 
@@ -158,7 +158,7 @@
     {
       // Code size       27 (0x1b)
       .maxstack  8
-      .line 8,8 : 28,39 ''
+      .line 8,8 : 28,39
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
       IL_0007:  ldc.i4.1

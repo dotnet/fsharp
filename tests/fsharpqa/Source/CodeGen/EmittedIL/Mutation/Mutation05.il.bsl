@@ -73,7 +73,7 @@
       IL_000a:  ldc.i4.1
       IL_000b:  volatile.
       IL_000d:  stfld      int32 Mutation05/C::x
-      .line 2,2 : 6,7 ''
+      .line 2,2 : 6,7
       IL_0012:  ret
     } // end of method C::.ctor
 
@@ -82,7 +82,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 6,6 : 32,33 ''
+      .line 6,6 : 32,33
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  volatile.
@@ -95,7 +95,7 @@
     {
       // Code size       11 (0xb)
       .maxstack  8
-      .line 6,6 : 46,52 ''
+      .line 6,6 : 46,52
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -123,7 +123,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 9,9 : 6,13 ''
+      .line 9,9 : 6,13
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -137,7 +137,7 @@
     {
       // Code size       33 (0x21)
       .maxstack  8
-      .line 13,13 : 34,35 ''
+      .line 13,13 : 34,35
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 Mutation05/StaticC::init@9
       IL_0007:  ldc.i4.1
@@ -147,15 +147,15 @@
 
       IL_000c:  br.s       IL_0017
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_0013:  nop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0014:  nop
       IL_0015:  br.s       IL_0018
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0017:  nop
       IL_0018:  nop
       IL_0019:  volatile.
@@ -168,7 +168,7 @@
     {
       // Code size       34 (0x22)
       .maxstack  8
-      .line 13,13 : 48,54 ''
+      .line 13,13 : 48,54
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 Mutation05/StaticC::init@9
       IL_0007:  ldc.i4.1
@@ -178,15 +178,15 @@
 
       IL_000c:  br.s       IL_0017
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_0013:  nop
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0014:  nop
       IL_0015:  br.s       IL_0018
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0
       IL_0017:  nop
       IL_0018:  nop
       IL_0019:  ldarg.0
@@ -200,7 +200,7 @@
     {
       // Code size       13 (0xd)
       .maxstack  8
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0
       IL_0000:  ldc.i4.0
       IL_0001:  stsfld     int32 '<StartupCode$Mutation05>'.$Mutation05::init@
       IL_0006:  ldsfld     int32 '<StartupCode$Mutation05>'.$Mutation05::init@
@@ -229,7 +229,7 @@
     .entrypoint
     // Code size       18 (0x12)
     .maxstack  8
-    .line 11,11 : 12,29 ''
+    .line 11,11 : 12,29
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  volatile.
@@ -237,7 +237,7 @@
     IL_0009:  ldc.i4.1
     IL_000a:  volatile.
     IL_000c:  stsfld     int32 Mutation05/StaticC::init@9
-    .line 9,9 : 6,13 ''
+    .line 9,9 : 6,13
     IL_0011:  ret
   } // end of method $Mutation05::main@
 

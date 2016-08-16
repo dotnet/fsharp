@@ -227,13 +227,13 @@ module GlobalUsageAnalysis =
     let logNonRecBinding z (bind:Binding) =
         let v = bind.Var
         let vs = FlatList.one v
-        {z with RecursiveBindings = Zmap.add v (false,vs) z.RecursiveBindings;
+        {z with RecursiveBindings = Zmap.add v (false,vs) z.RecursiveBindings
                 Defns = Zmap.add v bind.Expr z.Defns } 
 
     /// Log the definition of a recursive binding
     let logRecBindings z binds =
         let vs = valsOfBinds binds
-        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> FlatList.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds);
+        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> FlatList.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
                 Defns    = (z.Defns,binds) ||> FlatList.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
@@ -285,7 +285,7 @@ module GlobalUsageAnalysis =
                   | _ ->
                      // NO: app but function is not val 
                      None
-             | Expr.Op(TOp.TupleFieldGet (n),ts,[x],_)   -> 
+             | Expr.Op(TOp.TupleFieldGet (tupInfo,n),ts,[x],_) when not (evalTupInfoIsStruct tupInfo)  -> 
                  let context = TupleGet (n,ts) :: context
                  recognise context x
                  
@@ -366,12 +366,14 @@ let checkTS = function
 /// explicit tuple-structure in expr 
 let rec uncheckedExprTS expr = 
     match expr with 
-    | Expr.Op(TOp.Tuple,_tys,args,_) -> TupleTS (List.map uncheckedExprTS args)
-    | _                               -> UnknownTS
+    | Expr.Op(TOp.Tuple tupInfo,_tys,args,_) when not (evalTupInfoIsStruct tupInfo) -> 
+        TupleTS (List.map uncheckedExprTS args)
+    | _ -> 
+        UnknownTS
 
 let rec uncheckedTypeTS g ty =
-    if isTupleTy g ty then 
-        let tys = destTupleTy g ty 
+    if isRefTupleTy g ty then 
+        let tys = destRefTupleTy g ty 
         TupleTS (List.map (uncheckedTypeTS g) tys)
     else 
         UnknownTS
@@ -387,12 +389,12 @@ let rebuildTS g m ts vs =
       | vs   ,TupleTS tss -> 
           let xtys,vs = List.mapFold rebuild vs tss
           let xs,tys  = List.unzip xtys
-          let x  = mkTupled g m xs tys
-          let ty = mkTupledTy g tys
+          let x  = mkRefTupled g m xs tys
+          let ty = mkRefTupledTy g tys
           (x,ty),vs
    
     let (x,_ty),vs = rebuild vs ts
-    if vs.Length <> 0 then internalError "rebuildTS: had more fringe vars than fringe. REPORT BUG" else ();
+    if vs.Length <> 0 then internalError "rebuildTS: had more fringe vars than fringe. REPORT BUG" 
     x
 
 /// CallPattern is tuple-structure for each argument position.
@@ -505,8 +507,8 @@ let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list
         //  (a) (restricted) tuple-structure, and
         //  (b) type fringe for each arg position.
         match ts with
-        | TupleTS tss when isTupleTy g typ ->
-            let tys = destTupleTy g typ 
+        | TupleTS tss when isRefTupleTy g typ ->
+            let tys = destRefTupleTy g typ 
             let tss,tyfringe = zipTSListTypList tss tys
             TupleTS tss,tyfringe
         | _ -> 
@@ -674,7 +676,7 @@ let buildProjections env bindings x xtys =
         xtys 
         |> List.mapi (fun i xty ->
             let vi,vix = newLocalN env i xty
-            let bind = mkBind NoSequencePointAtInvisibleBinding vi (mkTupleFieldGet (x,xtys,i,env.m))
+            let bind = mkBind NoSequencePointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef,x,xtys,i,env.m))
             bind,vix)
         |> List.unzip
 
@@ -689,7 +691,7 @@ let rec collapseArg env bindings ts (x:Expr) =
     | UnknownTS  ,x -> 
         let bindings,vx = noEffectExpr env bindings x
         bindings,[vx]
-    | TupleTS tss,Expr.Op(TOp.Tuple,_xtys,xs,_) -> 
+    | TupleTS tss,Expr.Op(TOp.Tuple tupInfo,_xtys,xs,_) when not (evalTupInfoIsStruct tupInfo) -> 
         let env = suffixE env "'"
         collapseArgs env bindings 1 tss xs
     | TupleTS tss,x                      -> 
@@ -697,9 +699,9 @@ let rec collapseArg env bindings ts (x:Expr) =
         let bindings,x = noEffectExpr env bindings x
         let env  = suffixE env "_p" 
         let xty = tyOfExpr env.eg x
-        let xtys = destTupleTy env.eg xty
+        let xtys = destRefTupleTy env.eg xty
         let bindings,xs = buildProjections env bindings x xtys
-        collapseArg env bindings (TupleTS tss) (mkTupled env.eg m xs xtys)
+        collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
 and collapseArgs env bindings n (callPattern) args =
     match callPattern,args with
@@ -759,7 +761,7 @@ let transRebind ybi xi =
     match xi,ybi with
     | _ ,SameArg        -> []                    (* no rebinding, reused original formal *)
     | [u],NewArgs (_vs,x) -> [mkCompGenBind u x]
-    | us ,NewArgs (_vs,x) -> List.map2 mkCompGenBind us (tryDestTuple x)
+    | us ,NewArgs (_vs,x) -> List.map2 mkCompGenBind us (tryDestRefTupleExpr x)
 
 
 //-------------------------------------------------------------------------
@@ -794,7 +796,7 @@ let passBind penv (TBind(fOrig,repr,letSeqPtOpt) as bind) =
          // fCBody - parts - formals 
          let transformedFormals = trans.transformedFormals 
          let p     = transformedFormals.Length
-         if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" else (); (* ASSERTION *)
+         if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" 
          let xqNs  = List.drop p vss  
          let x1ps  = List.take p vss  
          let y1Ps  = List.concat (List.map2 transFormal transformedFormals x1ps)

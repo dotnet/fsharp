@@ -32,7 +32,7 @@ val NewInferenceType : unit -> TType
 val NewErrorType : unit -> TType
 
 /// Create an inference type variable representing an error condition when checking a measure
-val NewErrorMeasure : unit -> MeasureExpr
+val NewErrorMeasure : unit -> Measure
 
 /// Create a list of inference type variables, one for each element in the input list
 val NewInferenceTypes : 'a list -> TType list
@@ -98,7 +98,8 @@ val BakedInTraitConstraintNames : string list
 
 val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
 
-type Trace = Trace of (unit -> unit) list ref
+[<Sealed; NoEquality; NoComparison>]
+type Trace 
 
 type OptionalTrace =
   | NoTrace

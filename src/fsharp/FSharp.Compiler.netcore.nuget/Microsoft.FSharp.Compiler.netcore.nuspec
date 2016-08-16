@@ -19,6 +19,7 @@
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
                 <dependency id="System.Collections.Immutable" version="1.2.0" />
+                <dependency id="System.Console" version="4.0.0" />
                 <dependency id="System.Diagnostics.Process" version="4.1.0" />
                 <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
                 <dependency id="System.Linq.Expressions" version="4.1.0" />
@@ -32,6 +33,7 @@
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
+                <dependency id="System.ValueTuple" version="4.0.1-beta-24405-03" />
                 <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
                 <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
             </group>
@@ -43,5 +45,8 @@
         <file src="default.win32manifest"   target="runtimes/any/native/" />
         <file src="fsi.exe"                 target="lib/netstandard1.6" />
         <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.6" />
+        <file src="FSharp.Build.dll"        target="lib/netstandard1.6" />
+        <file src="Microsoft.FSharp.targets" target="runtimes/any/native/" />
+        <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
     </files>
 </package>

@@ -237,7 +237,7 @@ module Pass1_DetermineTLRAndArities =
        (* REPORT OVER *)   
        let arityM = Zmap.ofList valOrder fArities
 #if DEBUG
-       if verboseTLR then DumpArity arityM;
+       if verboseTLR then DumpArity arityM
 #endif
        tlrS,topValS, arityM
 
@@ -342,20 +342,20 @@ let reqdItemOrder =
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
 type ReqdItemsForDefn =
-    { reqdTypars   : Zset<Typar>;
-      reqdItems : Zset<ReqdItem>;
-      m      : Range.range; }
+    { reqdTypars   : Zset<Typar>
+      reqdItems : Zset<ReqdItem>
+      m      : Range.range }
     member env.ReqdSubEnvs = [ for x in env.reqdItems do match x with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
     member env.ReqdVals = [ for x in env.reqdItems do match x with | ReqdSubEnv _ -> () | ReqdVal v -> yield v ]
 
     member env.Extend (typars,items) =
         {env with
-               reqdTypars   = Zset.addList typars env.reqdTypars;
+               reqdTypars   = Zset.addList typars env.reqdTypars
                reqdItems = Zset.addList items  env.reqdItems}
 
     static member Initial typars m = 
-        {reqdTypars   = Zset.addList typars  (Zset.empty typarOrder);
-         reqdItems = Zset.empty reqdItemOrder;
+        {reqdTypars   = Zset.addList typars  (Zset.empty typarOrder)
+         reqdItems = Zset.empty reqdItemOrder
          m      = m }
 
     override env.ToString() = 
@@ -427,19 +427,19 @@ module Pass2_DetermineReqdItems =
     ///
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
     type state =
-        { stack         : (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list;
-          reqdItemsMap  : Zmap<BindingGroupSharingSameReqdItems,ReqdItemsForDefn>;
-          fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems>;
-          revDeclist    : BindingGroupSharingSameReqdItems list;
-          recShortCallS : Zset<Val>;
+        { stack         : (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list
+          reqdItemsMap  : Zmap<BindingGroupSharingSameReqdItems,ReqdItemsForDefn>
+          fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems>
+          revDeclist    : BindingGroupSharingSameReqdItems list
+          recShortCallS : Zset<Val>
         }
 
     let state0 =
-        { stack         = [];
-          reqdItemsMap  = Zmap.empty fclassOrder;
-          fclassM       = Zmap.empty valOrder;
-          revDeclist    = [];
-          recShortCallS = Zset.empty valOrder; }
+        { stack         = []
+          reqdItemsMap  = Zmap.empty fclassOrder
+          fclassM       = Zmap.empty valOrder
+          revDeclist    = []
+          recShortCallS = Zset.empty valOrder }
 
     /// PUSH = start collecting for fclass 
     let PushFrame (fclass: BindingGroupSharingSameReqdItems) (reqdTypars0,reqdVals0,m) state =
@@ -447,12 +447,12 @@ module Pass2_DetermineReqdItems =
             state 
         else
           {state with
-               revDeclist = fclass :: state.revDeclist;
-               stack = (let env = ReqdItemsForDefn.Initial reqdTypars0 m in (fclass,reqdVals0,env)::state.stack); }
+               revDeclist = fclass :: state.revDeclist
+               stack = (let env = ReqdItemsForDefn.Initial reqdTypars0 m in (fclass,reqdVals0,env)::state.stack) }
 
     /// POP & SAVE = end collecting for fclass and store 
     let SaveFrame     (fclass: BindingGroupSharingSameReqdItems) state = 
-        if verboseTLR then dprintf "SaveFrame: %A\n" fclass;
+        if verboseTLR then dprintf "SaveFrame: %A\n" fclass
         if fclass.IsEmpty then 
             state 
         else
@@ -460,8 +460,8 @@ module Pass2_DetermineReqdItems =
             | []                             -> internalError "trl: popFrame has empty stack"
             | (fclass,_reqdVals0,env)::stack -> (* ASSERT: same fclass *)
                 {state with
-                   stack        = stack;
-                   reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap;
+                   stack        = stack
+                   reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
                    fclassM      = FlatList.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
 
     /// Log requirements for gv in the relevant stack frames 
@@ -478,12 +478,12 @@ module Pass2_DetermineReqdItems =
 
     let LogShortCall gv state =
         if state.stack  |> List.exists (fun (fclass,_reqdVals0,_env) ->  fclass.Contains gv) then
-           if verboseTLR then dprintf "shortCall:     rec: %s\n" gv.LogicalName;
+           if verboseTLR then dprintf "shortCall:     rec: %s\n" gv.LogicalName
            // Have short call to gv within it's (mutual) definition(s) 
            {state with
                recShortCallS = Zset.add gv state.recShortCallS}
         else
-          if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName;
+          if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName
           state
 
     let FreeInBindings bs = FlatList.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
@@ -569,7 +569,7 @@ module Pass2_DetermineReqdItems =
     /// For each direct call to a gv, a generator for fclass,
     /// Required to include the reqdTypars(gv) in reqdTypars(fclass).
     let CloseReqdTypars fclassM reqdItemsMap =
-        if verboseTLR then dprintf "CloseReqdTypars------\n";
+        if verboseTLR then dprintf "CloseReqdTypars------\n"
        
         let closeStep reqdItemsMap changed fc (env: ReqdItemsForDefn) =
             let directCallReqdEnvs   = env.ReqdSubEnvs
@@ -584,7 +584,7 @@ module Pass2_DetermineReqdItems =
             let env   = {env with reqdTypars = reqdTypars}
 #if DEBUG
             if verboseTLR then 
-                dprintf "closeStep: fc=%30A nSubs=%d reqdTypars0=%s reqdTypars=%s\n" fc directCallReqdEnvs.Length (showTyparSet reqdTypars0) (showTyparSet reqdTypars);
+                dprintf "closeStep: fc=%30A nSubs=%d reqdTypars0=%s reqdTypars=%s\n" fc directCallReqdEnvs.Length (showTyparSet reqdTypars0) (showTyparSet reqdTypars)
                 directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall    f=%s\n" f.LogicalName)          
                 directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (Zmap.find f fclassM))
                 directCallReqdTypars |> List.iter (fun _reqdTypars -> dprintf "closeStep: dcall reqdTypars=%s\n" (showTyparSet reqdTypars0)) 
@@ -610,7 +610,7 @@ module Pass2_DetermineReqdItems =
 #endif
 
     let DetermineReqdItems (tlrS,arityM) expr =
-        if verboseTLR then dprintf "DetermineReqdItems------\n";
+        if verboseTLR then dprintf "DetermineReqdItems------\n"
         let folder = {ExprFolder0 with exprIntercept = ExprEnvIntercept (tlrS,arityM)}
         let z = state0
         // Walk the entire assembly
@@ -622,7 +622,7 @@ module Pass2_DetermineReqdItems =
         let recShortCallS = z.recShortCallS
         // diagnostic dump 
 #if DEBUG
-        if verboseTLR then DumpReqdValMap reqdItemsMap;
+        if verboseTLR then DumpReqdValMap reqdItemsMap
 #endif
         // close the reqdTypars under the subEnv reln 
         let reqdItemsMap    = CloseReqdTypars fclassM reqdItemsMap
@@ -633,7 +633,7 @@ module Pass2_DetermineReqdItems =
 #if DEBUG
         // diagnostic dump 
         if verboseTLR then
-             DumpReqdValMap reqdItemsMap;
+             DumpReqdValMap reqdItemsMap
              declist |> List.iter (fun fc -> dprintf "Declist: %A\n" fc) 
              recShortCallS |> Zset.iter (fun f -> dprintf "RecShortCall: %s\n" f.LogicalName) 
 #endif
@@ -659,13 +659,13 @@ module Pass2_DetermineReqdItems =
 
 type PackedReqdItems =
     { /// The actual typars            
-      ep_etps   : Typars; 
+      ep_etps   : Typars 
       /// The actual env carrier values 
-      ep_aenvs  : Val   list; 
+      ep_aenvs  : Val   list 
       /// Sequentially define the aenvs in terms of the fvs   
-      ep_pack   : Bindings;       
+      ep_pack   : Bindings       
       /// Sequentially define the fvs   in terms of the aenvs 
-      ep_unpack : Bindings;       
+      ep_unpack : Bindings       
     }
 
 
@@ -696,7 +696,7 @@ exception AbortTLR of Range.range
 let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupSharingSameReqdItems,ReqdItemsForDefn>) =
    let fclassOf f = Zmap.force f fclassM ("fclassM",nameOfVal)
    let packEnv carrierMaps (fc:BindingGroupSharingSameReqdItems) =
-       if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc;
+       if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
        let env = Zmap.force fc reqdItemsMap ("packEnv",string)
 
        // carrierMaps = (fclass,(v,aenv)map)map 
@@ -722,10 +722,10 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //
        //    let resutl1 = 
        //        let x = &a  // This is NOT given TLR, because it is byref
-       //        x <- 111; 
+       //        x <- 111 
        //        let temp = x // This is given a static field TLR, not a method TLR 
        //        // let f () = x  // This is not allowed, can't capture x
-       //        x <- 999; 
+       //        x <- 999 
        //        temp
        // 
        // Compare with this:
@@ -733,10 +733,10 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //
        //    let result2 = 
        //        let x = a  // this is given static field TLR
-       //        a <- 111; 
+       //        a <- 111 
        //        let temp = a
        //        let f () = x  // This is not allowed, and is given a method TLR
-       //        a <- 999; 
+       //        a <- 999 
        //        temp
 
 
@@ -748,7 +748,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        // we'll just abandon TLR altogether and give a warning about this condition. 
        match vals |> FlatList.tryFind (IsGenericValWithGenericContraints g) with 
        | None -> () 
-       | Some v -> raise (AbortTLR v.Range);
+       | Some v -> raise (AbortTLR v.Range)
 
        // build cmap for env 
        let cmapPairs = vals |> FlatList.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
@@ -774,17 +774,17 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // dump 
        if verboseTLR then
-           dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL  env.ReqdVals));
-           dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL  env.ReqdSubEnvs));
-           dprintf "tlr: packEnv vals    =%s\n" (showL (listL valL (FlatList.toList vals)));
-           dprintf "tlr: packEnv aenvs   =%s\n" (showL (listL valL aenvs));
-           dprintf "tlr: packEnv pack    =%s\n" (showL (listL bindingL  (FlatList.toList pack)));
+           dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL  env.ReqdVals))
+           dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL  env.ReqdSubEnvs))
+           dprintf "tlr: packEnv vals    =%s\n" (showL (listL valL (FlatList.toList vals)))
+           dprintf "tlr: packEnv aenvs   =%s\n" (showL (listL valL aenvs))
+           dprintf "tlr: packEnv pack    =%s\n" (showL (listL bindingL  (FlatList.toList pack)))
            dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL  unpack))
 
        // result 
-       (fc, { ep_etps   = Zset.elements reqdTypars;
-              ep_aenvs  = aenvs;
-              ep_pack   = pack;
+       (fc, { ep_etps   = Zset.elements reqdTypars
+              ep_aenvs  = aenvs
+              ep_pack   = pack
               ep_unpack = FlatList.ofList unpack}),carrierMaps
   
    let carriedMaps = Zmap.empty fclassOrder
@@ -800,11 +800,11 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 #if DEBUG
 let DumpEnvPackM envPackM =
     for KeyValue(fc,packedReqdItems) in envPackM do 
-        dprintf "packedReqdItems: fc     = %A\n" fc;
-        dprintf "         reqdTypars   = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)));
-        dprintf "         aenvs  = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)));
-        dprintf "         pack   = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_pack))));
-        dprintf "         unpack = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_unpack))));
+        dprintf "packedReqdItems: fc     = %A\n" fc
+        dprintf "         reqdTypars   = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
+        dprintf "         aenvs  = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)))
+        dprintf "         pack   = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_pack))))
+        dprintf "         unpack = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_unpack))))
         dprintf "\n"
 #endif
 
@@ -817,10 +817,10 @@ let DumpEnvPackM envPackM =
 /// For now, pass all environments via arguments since aiming to eliminate allocations.
 /// Later, package as tuples if arg lists get too long.
 let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
-    if verboseTLR then dprintf "ChooseReqdItemPackings------\n";
+    if verboseTLR then dprintf "ChooseReqdItemPackings------\n"
     let envPackM = FlatEnvPacks g fclassM topValS  declist reqdItemsMap
 #if DEBUG
-    if verboseTLR then DumpEnvPackM envPackM;
+    if verboseTLR then DumpEnvPackM envPackM
 #endif
     envPackM
 
@@ -834,7 +834,7 @@ let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
 let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps,List.replicate n ValReprInfo.unnamedTopArg,ValReprInfo.unnamedRetVal)
 
 let CreateNewValuesForTLR g tlrS arityM fclassM envPackM = 
-    if verboseTLR then dprintf "CreateNewValuesForTLR------\n";
+    if verboseTLR then dprintf "CreateNewValuesForTLR------\n"
     let createFHat (f:Val) =
         let wf     = Zmap.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
         let fc     = Zmap.force f fclassM ("createFHat - fc",nameOfVal)
@@ -866,16 +866,16 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
 module Pass4_RewriteAssembly =
     [<NoEquality; NoComparison>]
     type RewriteContext =
-       { ccu           : CcuThunk;
-         g             : TcGlobals;
-         tlrS          : Zset<Val> ;
-         topValS       : Zset<Val> ;
-         arityM        : Zmap<Val,int> ;
-         fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems> ;
-         recShortCallS : Zset<Val> ;
-         envPackM      : Zmap<BindingGroupSharingSameReqdItems,PackedReqdItems>;
+       { ccu           : CcuThunk
+         g             : TcGlobals
+         tlrS          : Zset<Val> 
+         topValS       : Zset<Val> 
+         arityM        : Zmap<Val,int> 
+         fclassM       : Zmap<Val,BindingGroupSharingSameReqdItems> 
+         recShortCallS : Zset<Val> 
+         envPackM      : Zmap<BindingGroupSharingSameReqdItems,PackedReqdItems>
          /// The mapping from 'f' values to 'fHat' values
-         fHatM         : Zmap<Val,Val> ;
+         fHatM         : Zmap<Val,Val> 
        }
 
 
@@ -898,9 +898,9 @@ module Pass4_RewriteAssembly =
     /// Any TLR repr bindings under lambdas can be filtered out (and collected),
     /// giving pre-declarations to insert before the outermost lambda expr.
     type RewriteState =
-        { rws_mustinline: bool;
+        { rws_mustinline: bool
           /// counts level of enclosing "lambdas"  
-          rws_innerLevel : int;        
+          rws_innerLevel : int        
           /// collected preDecs (fringe is in-order) 
           rws_preDecs    : Tree<LiftedDeclaration>  
         }
@@ -997,7 +997,7 @@ module Pass4_RewriteAssembly =
             let m = fOrig.Range
             let tps,vss,_b,rty = stripTopLambda (b,fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m) 
-            let vsExprs   = vss |> List.map (mkTupledVars penv.g m) 
+            let vsExprs   = vss |> List.map (mkRefTupledVars penv.g m) 
             let fHat      = Zmap.force fOrig penv.fHatM ("fRebinding",nameOfVal) 
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
@@ -1315,11 +1315,7 @@ module Pass4_RewriteAssembly =
 
     let TransImplFile penv z (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)) =        
         let moduleExpr,z = TransModuleExpr penv z moduleExpr
-        TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript),z
-
-    let TransAssembly penv z (TAssembly(mvs)) = 
-        let mvs,_z = List.mapFold (TransImplFile penv) z mvs 
-        TAssembly(mvs)
+        (TImplFile(fragName,pragmas,moduleExpr,hasExplicitEntryPoint,isScript)),z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr
@@ -1345,7 +1341,7 @@ let MakeTLRDecisions ccu g expr =
       let fHatM    = CreateNewValuesForTLR g tlrS arityM fclassM envPackM
 
       // pass4: rewrite 
-      if verboseTLR then dprintf "TransExpr(rw)------\n";
+      if verboseTLR then dprintf "TransExpr(rw)------\n"
       let expr,_ = 
           let penv : Pass4_RewriteAssembly.RewriteContext = 
               {ccu=ccu; g=g; tlrS=tlrS; topValS=topValS; arityM=arityM; fclassM=fclassM; recShortCallS=recShortCallS; envPackM=envPackM; fHatM=fHatM}
@@ -1354,9 +1350,9 @@ let MakeTLRDecisions ccu g expr =
 
       // pass5: copyExpr to restore "each bound is unique" property 
       // aka, copyExpr 
-      if verboseTLR then dprintf "copyExpr------\n";
+      if verboseTLR then dprintf "copyExpr------\n"
       let expr = RecreateUniqueBounds g expr 
-      if verboseTLR then dprintf "TLR-done------\n";
+      if verboseTLR then dprintf "TLR-done------\n"
 
       // Summary:
       //   GTL = genuine top-level
@@ -1370,5 +1366,5 @@ let MakeTLRDecisions ccu g expr =
       // DONE 
       expr
    with AbortTLR m -> 
-       warning(Error(FSComp.SR.tlrLambdaLiftingOptimizationsNotApplied(),m));
+       warning(Error(FSComp.SR.tlrLambdaLiftingOptimizationsNotApplied(),m))
        expr

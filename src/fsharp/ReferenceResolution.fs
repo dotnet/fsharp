@@ -39,7 +39,6 @@ module internal MSBuildResolver =
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
-    open Microsoft.Build.BuildEngine
     open System.IO
 
     type ResolvedFile = 
@@ -135,13 +134,18 @@ module internal MSBuildResolver =
     [<Literal>]    
     let private Net451 = "v4.5.1"
 
-    /// The list of supported .NET Framework version numbers, using the monikers of the Reference Assemblies folder.
-    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; (*SL only*) "v5.0" ]
+    //[<Literal>]    
+    //let private Net452 = "v4.5.2" // not available in Dev15 MSBuild version
+
+    [<Literal>]    
+    let private Net46 = "v4.6"
+
+    [<Literal>]    
+    let private Net461 = "v4.6.1"
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
     /// This is only used to specify the "last resort" path for assembly resolution.
     let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
-#if FX_ATLEAST_45
         let v =
             match v with
             | Net11 ->  Some TargetDotNetFrameworkVersion.Version11
@@ -151,6 +155,9 @@ module internal MSBuildResolver =
             | Net40 ->  Some TargetDotNetFrameworkVersion.Version40
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+            //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
+            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
+            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
             | _ -> assert false; None
         match v with
         | Some v -> 
@@ -158,20 +165,17 @@ module internal MSBuildResolver =
             | null -> []
             | x -> [x]
         | _ -> []
-#else
-        // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
-        ignore v
-        []
-#endif        
 
     let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if FX_ATLEAST_45
         // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
         let v =
             match version with
             | Net40 -> Some TargetDotNetFrameworkVersion.Version40
             | Net45 -> Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+            //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
+            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
+            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
             | _ -> assert false; None // unknown version - some parts in the code are not synced
         match v with
         | Some v -> 
@@ -179,22 +183,16 @@ module internal MSBuildResolver =
             | null -> []
             | x -> [x]
         | None -> []        
-#else
-        // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
-        ignore version
-        []
-#endif
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersionMajorMinor() =
-#if FX_ATLEAST_45
-        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then 4, Net451 
+        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then 4, Net461
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then 4, Net46
+        // 4.5.2 enumeration is not available in Dev15 MSBuild version
+        //elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then 4, Net452 
+        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then 4, Net451 
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then 4, Net45 
         else 4, Net40 // version is 4.0 assumed since this code is running. 
-#else
-        // FX_ATLEAST_45 is not defined is required for step when we build compiler with proto compiler and this branch should not be hit
-        4, Net40
-#endif
 
     /// Derive the target framework directories.        
     let DeriveTargetFrameworkDirectories (targetFrameworkVersion:string, logMessage) =
