@@ -639,7 +639,6 @@ namespace System
 #else   
 #endif
 
-
 namespace Microsoft.FSharp.Core
 
     open System
@@ -3463,12 +3462,21 @@ namespace Microsoft.FSharp.Core
 
         static member Some(x) : 'T option = Some(x)
 
+        static member op_Implicit(x) : 'T option = Some(x)
+
         override x.ToString() = 
            // x is non-null, hence Some
            "Some("^anyToStringShowingNull x.Value^")"
 
     and 'T option = Option<'T> 
 
+
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpResult`2")>]
+    [<Struct>]
+    type Result<'T,'TError> = 
+      | Ok of ResultValue:'T 
+      | Error of ErrorValue:'TError
 
 
 //============================================================================
@@ -3609,7 +3617,7 @@ namespace Microsoft.FSharp.Collections
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
             | h::t -> 
-               if n < 0 then raise (new System.ArgumentException(SR.GetString(SR.inputMustBeNonNegative),"n"))
+               if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
 
@@ -6424,7 +6432,7 @@ namespace Microsoft.FSharp.Control
     type Handler<'Args> =  delegate of sender:obj * args:'Args -> unit 
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
-    
+
     // FxCop suppressions 
     open System.Diagnostics.CodeAnalysis
     [<assembly: SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates", Scope="member", Target="Microsoft.FSharp.Core.Operators.#op_Addition`3(!!0,!!1)",Justification="This is an F# primitive operator name")>]
@@ -6453,15 +6461,14 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpVar.#Type",Justification="This appears to be a false warning from FxCop")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpSet`1",Justification="Adding suffix 'Collection' would break the simple user model of this type, akin to 'List'")>]
-    
+
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="This is a compilation residue from a public discrimianted union, which are allowed in FSharp.Core.dll")>]
     [<assembly: SuppressMessage("Microsoft.Usage", "CA2224:OverrideEqualsOnOverloadingOperatorEquals", Scope="type", Target="Microsoft.FSharp.Core.Operators",Justification="This is from the use of op_Equality as a primitive F# operator name. We do not need any override")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Control.FSharpEvent`1.#Publish",Justification="This appears to be a false warning from FxCop")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1030:UseEventsWhereAppropriate", Scope="member", Target="Microsoft.FSharp.Core.Operators.#Raise`1(System.Exception)",Justification="No event required here")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1724:TypeNamesShouldNotMatchNamespaces", Scope="type", Target="Microsoft.FSharp.Text.StructuredPrintfImpl.Layout",Justification="This functionality is scheduled for deletion from FSharp.Core.dll")>]
-    
-    
+
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value(System.Object,System.Type)", MessageId="0#")>]
     [<assembly: SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", Scope="member", Target="Microsoft.FSharp.Quotations.FSharpExpr.#Value`1(!!0)", MessageId="0#")>]
 
@@ -6568,4 +6575,3 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="Like F# record types, F# exception declarations implement one primary constructor which accepts initial values for all fields")>]
     [<assembly:CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields", Scope="member", Target="Microsoft.FSharp.Core.FSharpRef`1.#contents@")>]
     do()
-

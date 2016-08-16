@@ -50,10 +50,10 @@ type LexResourceManager() =
               
 /// Lexer parameters 
 type lexargs =  
-    { defines: string list;
-      ifdefStack: LexerIfdefStack;
-      resourceManager: LexResourceManager;
-      lightSyntaxStatus : LightSyntaxStatus;
+    { defines: string list
+      ifdefStack: LexerIfdefStack
+      resourceManager: LexResourceManager
+      lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger }
 
 /// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
@@ -63,16 +63,16 @@ type LongUnicodeLexResult =
     | Invalid
 
 let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,errorLogger) =
-    { defines = defines;
-      ifdefStack= ifdefStack;
-      lightSyntaxStatus=lightSyntaxStatus;
-      resourceManager=resourceManager;
+    { defines = defines
+      ifdefStack= ifdefStack
+      lightSyntaxStatus=lightSyntaxStatus
+      resourceManager=resourceManager
       errorLogger=errorLogger }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
-    LexbufLocalXmlDocStore.ClearXmlDoc lexbuf;
+    LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     try
       f () 
     with e ->
@@ -83,7 +83,7 @@ let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) =
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
 let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf,filename) f =
-    resetLexbufPos filename lexbuf;
+    resetLexbufPos filename lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
 //------------------------------------------------------------------------
@@ -97,14 +97,14 @@ let callStringFinisher fin (buf: ByteBuffer) endm b = fin endm b (buf.Close())
 let addUnicodeString (buf: ByteBuffer) (x:string) = buf.EmitBytes (Encoding.Unicode.GetBytes x)
 
 let addIntChar (buf: ByteBuffer) c = 
-    buf.EmitIntAsByte (c % 256);
+    buf.EmitIntAsByte (c % 256)
     buf.EmitIntAsByte (c / 256)
 
 let addUnicodeChar buf c = addIntChar buf (int c)
 let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 let stringBufferAsString (buf: byte[]) =
-    if buf.Length % 2 <> 0 then failwith "Expected even number of bytes";
+    if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
         let hi = buf.[i*2+1]
@@ -148,15 +148,15 @@ let hexdigit d =
     else failwith "hexdigit" 
 
 let unicodeGraphShort (s:string) =
-    if s.Length <> 4 then failwith "unicodegraph";
+    if s.Length <> 4 then failwith "unicodegraph"
     uint16 (hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3])
 
 let hexGraphShort (s:string) =
-    if s.Length <> 2 then failwith "hexgraph";
+    if s.Length <> 2 then failwith "hexgraph"
     uint16 (hexdigit s.[0] * 16 + hexdigit s.[1])
 
 let unicodeGraphLong (s:string) =
-    if s.Length <> 8 then failwith "unicodeGraphLong";
+    if s.Length <> 8 then failwith "unicodeGraphLong"
     let high = hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3] in 
     let low = hexdigit s.[4] * 4096 + hexdigit s.[5] * 256 + hexdigit s.[6] * 16 + hexdigit s.[7] in 
     // not a surrogate pair
@@ -196,101 +196,96 @@ module Keywords =
         | FSHARP  (* keyword, but an identifier under --ml-compatibility mode *)
 
     let private keywordList = 
-     [ FSHARP, "abstract", ABSTRACT;
-      ALWAYS, "and"        ,AND;
-      ALWAYS, "as"         ,AS;
-      ALWAYS, "assert"     ,ASSERT;
-      ALWAYS, "asr"        ,INFIX_STAR_STAR_OP "asr";
-      ALWAYS, "base"       ,BASE;
-      ALWAYS, "begin"      ,BEGIN;
-      ALWAYS, "class"      ,CLASS;
-      FSHARP, "const"      ,CONST;
-      FSHARP, "default"    ,DEFAULT;
-      FSHARP, "delegate"   ,DELEGATE;
-      ALWAYS, "do"         ,DO;
-      ALWAYS, "done"       ,DONE;
-      FSHARP, "downcast"   ,DOWNCAST;
-      ALWAYS, "downto"     ,DOWNTO;
-      FSHARP, "elif"       ,ELIF;
-      ALWAYS, "else"       ,ELSE;
-      ALWAYS, "end"        ,END;
-      ALWAYS, "exception"  ,EXCEPTION;
-      FSHARP, "extern"     ,EXTERN;
-      ALWAYS, "false"      ,FALSE;
-      ALWAYS, "finally"    ,FINALLY;
-      FSHARP, "fixed"      ,FIXED;
-      ALWAYS, "for"        ,FOR;
-      ALWAYS, "fun"        ,FUN;
-      ALWAYS, "function"   ,FUNCTION;
-      FSHARP, "global"     ,GLOBAL;
-      ALWAYS, "if"         ,IF;
-      ALWAYS, "in"         ,IN;
-      ALWAYS, "inherit"    ,INHERIT;
-      FSHARP, "inline"     ,INLINE;
-      FSHARP, "interface"  ,INTERFACE;
-      FSHARP, "internal"   ,INTERNAL;
-      ALWAYS, "land"       ,INFIX_STAR_DIV_MOD_OP "land";
-      ALWAYS, "lazy"       ,LAZY;
-      ALWAYS, "let"        ,LET(false);
-      ALWAYS, "lor"        ,INFIX_STAR_DIV_MOD_OP "lor";
-      ALWAYS, "lsl"        ,INFIX_STAR_STAR_OP "lsl";
-      ALWAYS, "lsr"        ,INFIX_STAR_STAR_OP "lsr";
-      ALWAYS, "lxor"       ,INFIX_STAR_DIV_MOD_OP "lxor";
-      ALWAYS, "match"      ,MATCH;
-      FSHARP, "member"     ,MEMBER;
-      ALWAYS, "mod"        ,INFIX_STAR_DIV_MOD_OP "mod";
-      ALWAYS, "module"     ,MODULE;
-      ALWAYS, "mutable"    ,MUTABLE;
-      FSHARP, "namespace"  ,NAMESPACE;
-      ALWAYS, "new"        ,NEW;
-      FSHARP, "null"       ,NULL;
-      ALWAYS, "of"         ,OF;
-      ALWAYS, "open"       ,OPEN;
-      ALWAYS, "or"         ,OR;
-      FSHARP, "override"   ,OVERRIDE;
-      ALWAYS, "private"    ,PRIVATE;  
-      FSHARP, "public"     ,PUBLIC;
-      ALWAYS, "rec"        ,REC;
-      FSHARP, "return"      ,YIELD(false);
-      ALWAYS, "sig"        ,SIG;
-      FSHARP, "static"     ,STATIC;
-      ALWAYS, "struct"     ,STRUCT;
-      ALWAYS, "then"       ,THEN;
-      ALWAYS, "to"         ,TO;
-      ALWAYS, "true"       ,TRUE;
-      ALWAYS, "try"        ,TRY;
-      ALWAYS, "type"       ,TYPE;
-      FSHARP, "upcast"     ,UPCAST;
-      FSHARP, "use"        ,LET(true);
-      ALWAYS, "val"        ,VAL;
-      FSHARP, "void"       ,VOID;
-      ALWAYS, "when"       ,WHEN;
-      ALWAYS, "while"      ,WHILE;
-      ALWAYS, "with"       ,WITH;
-      FSHARP, "yield"      ,YIELD(true);
-      ALWAYS, "_"          ,UNDERSCORE;
-    (*------- for prototyping and explaining offside rule *)
-      FSHARP, "__token_OBLOCKSEP" ,OBLOCKSEP;
-      FSHARP, "__token_OWITH"     ,OWITH;
-      FSHARP, "__token_ODECLEND"  ,ODECLEND;
-      FSHARP, "__token_OTHEN"     ,OTHEN;
-      FSHARP, "__token_OELSE"     ,OELSE;
-      FSHARP, "__token_OEND"      ,OEND;
-      FSHARP, "__token_ODO"       ,ODO;
-      FSHARP, "__token_OLET"      ,OLET(true);
-      FSHARP, "__token_constraint",CONSTRAINT;
+     [ FSHARP, "abstract", ABSTRACT
+       ALWAYS, "and"        ,AND
+       ALWAYS, "as"         ,AS
+       ALWAYS, "assert"     ,ASSERT
+       ALWAYS, "asr"        ,INFIX_STAR_STAR_OP "asr"
+       ALWAYS, "base"       ,BASE
+       ALWAYS, "begin"      ,BEGIN
+       ALWAYS, "class"      ,CLASS
+       FSHARP, "const"      ,CONST
+       FSHARP, "default"    ,DEFAULT
+       FSHARP, "delegate"   ,DELEGATE
+       ALWAYS, "do"         ,DO
+       ALWAYS, "done"       ,DONE
+       FSHARP, "downcast"   ,DOWNCAST
+       ALWAYS, "downto"     ,DOWNTO
+       FSHARP, "elif"       ,ELIF
+       ALWAYS, "else"       ,ELSE
+       ALWAYS, "end"        ,END
+       ALWAYS, "exception"  ,EXCEPTION
+       FSHARP, "extern"     ,EXTERN
+       ALWAYS, "false"      ,FALSE
+       ALWAYS, "finally"    ,FINALLY
+       FSHARP, "fixed"      ,FIXED
+       ALWAYS, "for"        ,FOR
+       ALWAYS, "fun"        ,FUN
+       ALWAYS, "function"   ,FUNCTION
+       FSHARP, "global"     ,GLOBAL
+       ALWAYS, "if"         ,IF
+       ALWAYS, "in"         ,IN
+       ALWAYS, "inherit"    ,INHERIT
+       FSHARP, "inline"     ,INLINE
+       FSHARP, "interface"  ,INTERFACE
+       FSHARP, "internal"   ,INTERNAL
+       ALWAYS, "land"       ,INFIX_STAR_DIV_MOD_OP "land"
+       ALWAYS, "lazy"       ,LAZY
+       ALWAYS, "let"        ,LET(false)
+       ALWAYS, "lor"        ,INFIX_STAR_DIV_MOD_OP "lor"
+       ALWAYS, "lsl"        ,INFIX_STAR_STAR_OP "lsl"
+       ALWAYS, "lsr"        ,INFIX_STAR_STAR_OP "lsr"
+       ALWAYS, "lxor"       ,INFIX_STAR_DIV_MOD_OP "lxor"
+       ALWAYS, "match"      ,MATCH
+       FSHARP, "member"     ,MEMBER
+       ALWAYS, "mod"        ,INFIX_STAR_DIV_MOD_OP "mod"
+       ALWAYS, "module"     ,MODULE
+       ALWAYS, "mutable"    ,MUTABLE
+       FSHARP, "namespace"  ,NAMESPACE
+       ALWAYS, "new"        ,NEW
+       FSHARP, "null"       ,NULL
+       ALWAYS, "of"         ,OF
+       ALWAYS, "open"       ,OPEN
+       ALWAYS, "or"         ,OR
+       FSHARP, "override"   ,OVERRIDE
+       ALWAYS, "private"    ,PRIVATE  
+       FSHARP, "public"     ,PUBLIC
+       ALWAYS, "rec"        ,REC
+       FSHARP, "return"      ,YIELD(false)
+       ALWAYS, "sig"        ,SIG
+       FSHARP, "static"     ,STATIC
+       ALWAYS, "struct"     ,STRUCT
+       ALWAYS, "then"       ,THEN
+       ALWAYS, "to"         ,TO
+       ALWAYS, "true"       ,TRUE
+       ALWAYS, "try"        ,TRY
+       ALWAYS, "type"       ,TYPE
+       FSHARP, "upcast"     ,UPCAST
+       FSHARP, "use"        ,LET(true)
+       ALWAYS, "val"        ,VAL
+       FSHARP, "void"       ,VOID
+       ALWAYS, "when"       ,WHEN
+       ALWAYS, "while"      ,WHILE
+       ALWAYS, "with"       ,WITH
+       FSHARP, "yield"      ,YIELD(true)
+       ALWAYS, "_"          ,UNDERSCORE
+     (*------- for prototyping and explaining offside rule *)
+       FSHARP, "__token_OBLOCKSEP" ,OBLOCKSEP
+       FSHARP, "__token_OWITH"     ,OWITH
+       FSHARP, "__token_ODECLEND"  ,ODECLEND
+       FSHARP, "__token_OTHEN"     ,OTHEN
+       FSHARP, "__token_OELSE"     ,OELSE
+       FSHARP, "__token_OEND"      ,OEND
+       FSHARP, "__token_ODO"       ,ODO
+       FSHARP, "__token_OLET"      ,OLET(true)
+       FSHARP, "__token_constraint",CONSTRAINT
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 
     @ List.map (fun s -> (FSHARP,s,RESERVED)) 
-        [ "break"; 
-          "checked"; "component"; "constraint"; "continue"; 
-          "fori";  
-          "include";  
-          "mixin"; 
+        [ "break"; "checked"; "component"; "constraint"; "continue"; 
+          "fori";  "include";  "mixin"; 
           "parallel"; "params";  "process"; "protected"; "pure"; 
-          "sealed"; 
-          "trait";  "tailcall";
-          "virtual"; ]
+          "sealed"; "trait";  "tailcall"; "virtual"; ]
 
     let private unreserveWords = 
         keywordList |> List.choose (function (mode,keyword,_) -> if mode = FSHARP then Some keyword else None) 
@@ -312,7 +307,7 @@ module Keywords =
 
     let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
-            warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange));
+            warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange))
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
@@ -320,7 +315,7 @@ module Keywords =
         | true,v ->
             match v with 
             | RESERVED ->
-                warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange));
+                warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
             | _ -> v
         | _ ->

@@ -86,11 +86,7 @@ let memoizeNamespaceRightTable = new ConcurrentDictionary<string,string option *
 
 
 let splitNamespace nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = splitNamespaceAux nm
-    (memoizeNamespaceTable.[nm] <- x; x)
+    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
 
 let splitNamespaceMemoized nm = splitNamespace nm
 
@@ -99,12 +95,9 @@ let memoizeNamespaceArrayTable =
     Concurrent.ConcurrentDictionary<string,string[]>()
 
 let splitNamespaceToArray nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceArrayTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = Array.ofList (splitNamespace nm)
-    (memoizeNamespaceArrayTable.[nm] <- x; x)
-
+    memoizeNamespaceArrayTable.GetOrAdd(nm, fun nm -> 
+        let x = Array.ofList (splitNamespace nm)
+        x)
 
 let splitILTypeName (nm:string) = 
     match nm.LastIndexOf '.' with
@@ -157,11 +150,7 @@ let splitTypeNameRightAux nm =
     else None, nm
 
 let splitTypeNameRight nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceRightTable.TryGetValue(nm,&res)
-    if ok then res else
-    let x = splitTypeNameRightAux nm
-    (memoizeNamespaceRightTable.[nm] <- x; x)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
 
 // -------------------------------------------------------------------- 
 // Ordered lists with a lookup table
@@ -1987,7 +1976,7 @@ let mkILFieldRef(tref,nm,ty) = { EnclosingTypeRef=tref; Name=nm; Type=ty}
 let mkILFieldSpec (tref,ty) = { FieldRef= tref; EnclosingType=ty }
 
 let mkILFieldSpecInTy (typ:ILType,nm,fty) = 
-  mkILFieldSpec (mkILFieldRef (typ.TypeRef,nm,fty), typ)
+    mkILFieldSpec (mkILFieldRef (typ.TypeRef,nm,fty), typ)
     
 let emptyILCustomAttrs = ILAttributes (fun () -> [| |])
 
@@ -2982,8 +2971,14 @@ let mdef_code2code f md  =
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) = 
     let instrs = Array.ofList instrs
     let n = instrs.Length
-    { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
-              Instrs = Array.append instrs c2.Instrs }
+    match c2.Instrs.[0] with 
+    // If there is a sequence point as the first instruction then keep it at the front
+    | I_seqpoint _ as i0 -> 
+        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n) ]
+                  Instrs = Array.append [| i0 |] (Array.append instrs c2.Instrs.[1..]) }
+    | _ -> 
+        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
+                  Instrs = Array.append instrs c2.Instrs }
 
 let prependInstrsToMethod new_code md  = 
     mdef_code2code (prependInstrsToCode new_code) md
@@ -3686,12 +3681,13 @@ type ILGlobals with
         mkILCustomAttribute this (mkSystemDiagnosticsDebuggableTypeRef this, [this.typ_Bool; this.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
 
-    member this.mkDebuggableAttributeV2(ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
+    member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-           [ILAttribElem.Int32( (if jitOptimizerDisabled then 256 else 0) |||  
+           [ILAttribElem.Int32( (if jitTracking then 1 else 0) |||
+                                (if jitOptimizerDisabled then 256 else 0) |||  
                                 (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
                                 (if enableEnC then 4 else 0))],[])
 

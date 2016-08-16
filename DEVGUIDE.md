@@ -31,9 +31,10 @@ There are various qualifiers:
     build.cmd debug           -- build debug instead of release
 
     build.cmd proto           -- force the rebuild of the Proto bootstrap compiler in addition to other things
+    build.cmd protofx         -- build using a .NET Framework proto (no .NET Core is used)
 
-    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools)
-    build.cmd compiler        -- build/tests only the compiler (not the Visual F# IDE Tools)
+    build.cmd net40           -- build/tests for .NET Framework version of the compiler (not the Visual F# IDE Tools or .NET Core)
+    build.cmd coreclr         -- build/tests only the coreclr version compiler (not the Visual F# IDE Tools or .NET Framework)
     build.cmd vs              -- build/tests the Visual F# IDE Tools
     build.cmd pcls            -- build/tests the PCL FSharp.Core libraries
 
@@ -44,11 +45,15 @@ There are various qualifiers:
 
     build.cmd test-smoke      -- build, run smoke tests
     build.cmd test-coreunit   -- build, run FSharp.Core tests
-    build.cmd test-coreclr    -- build, run CoreCLR tests
+    build.cmd test-coreclr    -- build, run .NET Core tests
     build.cmd test-pcls       -- build, run PCL tests
     build.cmd test-fsharp     -- build, run tests\fsharp suite
     build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite
     build.cmd test-vs         -- build, run Visual F# IDE Tools unit tests
+
+**Notes**
+To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
+Please ensure that the Visual Studio SDK version is matched with your current Visual Studio to ensure successful builds. For example: Visual Studio 2015 Update 1 requires Visual Studio 2015 SDK Update 1. Any installation of Visual Studio 2015 and later provides Visual Studio SDK as part of the installation of Visual Studio 2015 as feature installation. 
 
 Combinations are also allowed:
 
@@ -147,8 +152,13 @@ For **Release** this corresponds to these steps, which you can run individually 
 
 ### 4. [Optional] Install the Visual F# IDE Tools 
 
-**Note:** This step will install a VSIX extension into Visual Studio 15 that changes the Visual F# IDE Tools 
-components installed into Visual Studio 15.  You can revert this step by disabling or uninstalling the addin.
+At time of writing, the Visual F# IDE Tools can only be installed into Visual Studio "Next" (aka "Dev15") releases.
+The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
+
+You can install VIsual Studio "Next (aka "Dev15") from https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx.
+
+**Note:** This step will install a VSIX extension into Visual Studio "Next" (aka "Dev15") that changes the Visual F# IDE Tools 
+components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**:
 

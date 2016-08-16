@@ -36,6 +36,30 @@ module Attributes =
     [<Test; FSharpSuiteScriptPermutations("core/attributes")>]
     let attributes p = singleTestBuildAndRun p
 
+module Byrefs = 
+    [<Test; FSharpSuiteScriptPermutations("core/byrefs")>]
+    let byrefs p = check  (attempt {
+
+        let { Directory = dir; Config = cfg } = testContext ()
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None} p >> checkResult
+        let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+
+        use testOkFile = fileguard "test.ok"
+
+        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+
+        do! exec ("."/"test.exe") ""
+
+        do! testOkFile |> NUnitConf.checkGuardExists
+
+        do! fsi "" ["test.fsx"]
+
+        do! testOkFile |> NUnitConf.checkGuardExists
+
+        })
+
 module Comprehensions = 
     [<Test; FSharpSuiteScriptPermutations("core/comprehensions")>]
     let comprehensions p = singleTestBuildAndRun p
@@ -139,51 +163,54 @@ module Events =
         do! run cfg dir
         })
 
-
-module ``FSI-Shadowcopy`` = 
-
-    [<Test>]
-    // "%FSI%" %fsi_flags%                          < test1.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
-    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")>]
-    let ``shadowcopy disabled`` (flags: string) = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // if exist test1.ok (del /f /q test1.ok)
-        use testOkFile = fileguard "test1.ok"
-
-        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test1.fsx"
-
-        // if NOT EXIST test1.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-        })
-
-    [<Test>]
-    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
-    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")>]
-    let ``shadowcopy enabled`` (flags: string) = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // if exist test2.ok (del /f /q test2.ok)
-        use testOkFile = fileguard "test2.ok"
-
-        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test2.fsx"
-
-        // if NOT EXIST test2.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-        })
+//
+// Shadowcopy does not work for public signed assemblies
+// =====================================================
+//
+//module ``FSI-Shadowcopy`` = 
+//
+//    [<Test>]
+//    // "%FSI%" %fsi_flags%                          < test1.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
+//    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")>]
+//    let ``shadowcopy disabled`` (flags: string) = check  (attempt {
+//        let { Directory = dir; Config = cfg } = testContext ()
+//
+//        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+//        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
+//        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+//
+//        // if exist test1.ok (del /f /q test1.ok)
+//        use testOkFile = fileguard "test1.ok"
+//
+//        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test1.fsx"
+//
+//        // if NOT EXIST test1.ok goto SetError
+//        do! testOkFile |> NUnitConf.checkGuardExists
+//        })
+//
+//    [<Test>]
+//    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
+//    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")>]
+//    let ``shadowcopy enabled`` (flags: string) = check (attempt {
+//        let { Directory = dir; Config = cfg } = testContext ()
+//
+//        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+//        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
+//        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+//
+//        // if exist test2.ok (del /f /q test2.ok)
+//        use testOkFile = fileguard "test2.ok"
+//
+//        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
+//        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test2.fsx"
+//
+//        // if NOT EXIST test2.ok goto SetError
+//        do! testOkFile |> NUnitConf.checkGuardExists
+//        })
 
     
 
@@ -316,19 +343,21 @@ module FsFromFsViaCs =
         let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
         let fsc_flags = cfg.fsc_flags
 
-        // "%FSC%" %fsc_flags% -a -o:lib.dll -g lib.fs
         do! fsc "%s -a -o:lib.dll -g" fsc_flags ["lib.fs"]
 
-        // "%PEVERIFY%" lib.dll
         do! peverify "lib.dll"
 
-        // %CSC% /nologo /target:library /r:"%FSCOREDLLPATH%" /r:lib.dll /out:lib2.dll lib2.cs 
         do! csc """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll""" cfg.FSCOREDLLPATH ["lib2.cs"]
 
-        // "%FSC%" %fsc_flags% -r:lib.dll -r:lib2.dll -o:test.exe -g test.fsx
-        do! fsc "%s -r:lib.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+        do! csc """/nologo /target:library /r:"%s" /out:lib3.dll""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        // "%PEVERIFY%" test.exe 
+        do! fsc "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+
+        do! peverify "test.exe"
+
+        // Same with library references the other way around
+        do! fsc "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
+
         do! peverify "test.exe"
 
         }
@@ -904,6 +933,43 @@ module InternalsVisible =
         log "== Run F# main. Quick test!"
         // main.exe
         do! exec ("."/"main.exe") ""
+        }) 
+
+
+// Repro for https://github.com/Microsoft/visualfsharp/issues/1298
+module FileOrder =
+
+    [<Test; FSharpSuiteTest("core/fileorder")>]
+    let fileorder () = check  (attempt {
+        let { Directory = dir; Config = cfg } = testContext ()
+
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+        let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
+        let csc = Printf.ksprintf (Commands.csc exec cfg.CSC)
+        let fsc_flags = cfg.fsc_flags
+
+        log "== Compiling F# Library and Code, when empty file libfile2.fs IS NOT included"
+        do! fsc "%s -a --optimize -o:lib.dll " fsc_flags ["libfile1.fs"]
+
+        do! peverify "lib.dll"
+
+        do! fsc "%s -r:lib.dll -o:test.exe" fsc_flags ["test.fsx"]
+
+        do! peverify "test.exe"
+
+        do! exec ("."/"test.exe") ""
+
+        log "== Compiling F# Library and Code, when empty file libfile2.fs IS included"
+        do! fsc "%s -a --optimize -o:lib2.dll " fsc_flags ["libfile1.fs"; "libfile2.fs"]
+
+        do! peverify "lib2.dll"
+
+        do! fsc "%s -r:lib2.dll -o:test2.exe" fsc_flags ["test.fsx"]
+
+        do! peverify "test2.exe"
+
+        do! exec ("."/"test2.exe") ""
         }) 
 
 

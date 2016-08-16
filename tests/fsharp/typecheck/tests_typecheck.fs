@@ -55,39 +55,27 @@ module Sigs =
         let singleNegTest = SingleNegTest.singleNegTest cfg dir
 
 
-        // "%FSC%" %fsc_flags% --target:exe -o:pos23.exe  pos23.fs 
+        do! fsc "%s --target:exe -o:pos24.exe" fsc_flags ["pos24.fs"]
+        do! peverify "pos24.exe"
+
         do! fsc "%s --target:exe -o:pos23.exe" fsc_flags ["pos23.fs"]
-        // "%PEVERIFY%" pos23.exe
         do! peverify "pos23.exe"
-        // pos23.exe
         do! exec ("."/"pos23.exe") ""
 
-        // "%FSC%" %fsc_flags% --target:exe -o:pos20.exe  pos20.fs 
         do! fsc "%s --target:exe -o:pos20.exe" fsc_flags ["pos20.fs"]
-        // "%PEVERIFY%" pos20.exe
         do! peverify "pos20.exe"
-        // pos20.exe
         do! exec ("."/"pos20.exe") ""
 
-        // "%FSC%" %fsc_flags% --target:exe -o:pos19.exe  pos19.fs 
         do! fsc "%s --target:exe -o:pos19.exe" fsc_flags ["pos19.fs"]
-        // "%PEVERIFY%" pos19.exe
         do! peverify "pos19.exe"
-        // pos19.exe
         do! exec ("."/"pos19.exe") ""
 
-        // "%FSC%" %fsc_flags% --target:exe -o:pos18.exe  pos18.fs 
         do! fsc "%s --target:exe -o:pos18.exe" fsc_flags ["pos18.fs"]
-        // "%PEVERIFY%" pos18.exe
         do! peverify "pos18.exe"
-        // pos18.exe
         do! exec ("."/"pos18.exe") ""
 
-        // "%FSC%" %fsc_flags% --target:exe -o:pos16.exe  pos16.fs 
         do! fsc "%s --target:exe -o:pos16.exe" fsc_flags ["pos16.fs"]
-        // "%PEVERIFY%" pos16.exe
         do! peverify "pos16.exe"
-        // pos16.exe
         do! exec ("."/"pos16.exe") ""
 
         // "%FSC%" %fsc_flags% --target:exe -o:pos17.exe  pos17.fs 
@@ -136,7 +124,7 @@ module Sigs =
         // "%PEVERIFY%" pos09.dll
         do! peverify "pos09.dll"
 
-        do! attempt.For (["neg95"; "neg94"; "neg93"; "neg92"; "neg91"; 
+        do! attempt.For (["neg97"; "neg96"; "neg95"; "neg94"; "neg93"; "neg92"; "neg91"; 
                           "neg90"; "neg89"; "neg88";
                           "neg87"; "neg86"; "neg85"; "neg84"; "neg83"; "neg82"; "neg81"; "neg80"; "neg79"; "neg78"; "neg77"; "neg76"; "neg75"; 
                           "neg74"; "neg73"; "neg72"; "neg71"; "neg70"; "neg69"; "neg68"; "neg67"; "neg66"; "neg65"; "neg64"; "neg61"; "neg63"; 

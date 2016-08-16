@@ -1,6 +1,10 @@
+
 {
   "dependencies": {
-    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160406",
+    "Microsoft.FSharp.Compiler.Host.netcore": "1.0.0-alpha-160807",
+     "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2",
+     "Microsoft.NETCore.DotNetHostPolicy":  "1.0.1",
+     "Microsoft.NETCore.DotNetHost": "1.0.1"
   },
   "runtimes": {
     "win7-x86": { },
@@ -9,7 +13,7 @@
     "ubuntu.14.04-x64": { }
   },
   "frameworks": {
-    "dnxcore50": {
+    "netstandard1.6": {
       "imports": "portable-net45+win8"
     }
   }

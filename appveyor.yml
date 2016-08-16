@@ -1,5 +1,5 @@
 os: Visual Studio 2015
-
+ 
 environment:
   matrix:
     - BUILD_PROFILE: ci_part1
