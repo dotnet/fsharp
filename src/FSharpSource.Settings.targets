@@ -25,7 +25,7 @@
 
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
