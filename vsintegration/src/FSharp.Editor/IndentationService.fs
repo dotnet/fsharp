@@ -49,17 +49,11 @@ type internal FSharpIndentationService() =
     // FSROSLYNTODO: post beta5, update implementation to use ISynchronousIndentationService instead to guarentee Indentation is UI-blocking
     interface IIndentationService with
         member this.GetDesiredIndentationAsync(document: Document, lineNumber: int, cancellationToken: CancellationToken): Task<Nullable<IndentationResult>> =
-            document.GetTextAsync(cancellationToken).ContinueWith(
-                fun (sourceTextTask: Task<SourceText>) ->
-                    if sourceTextTask.Status = TaskStatus.RanToCompletion then
-                        // FSROSLYNTODO: post beta5, update to use document.Options.GetOption() instead
-                        let tabSize = document.Project.Solution.Workspace.Options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-                        try match FSharpIndentationService.GetDesiredIndentation(sourceTextTask.Result, lineNumber, tabSize) with
-                            | None -> Nullable<IndentationResult>()
-                            | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceTextTask.Result.Lines.[lineNumber].Start, indentation))
-                        with ex -> 
-                            Assert.Exception(ex)
-                            reraise()
-                    else
-                        raise(sourceTextTask.Exception.GetBaseException())
-                , cancellationToken)
+            document.GetTextAsync(cancellationToken).ContinueWith(fun (sourceTextTask: Task<SourceText>) ->
+                let sourceText = CommonRoslynHelpers.GetCompletedTaskResult(sourceTextTask)
+                // FSROSLYNTODO: post beta5, update to use document.Options.GetOption() instead
+                let tabSize = document.Project.Solution.Workspace.Options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
+                | None -> Nullable<IndentationResult>()
+                | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
+            , cancellationToken)
