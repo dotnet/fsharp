@@ -51,8 +51,9 @@
     <EmbeddedResource Include="VSPackage.resx" />
     <EmbeddedResource Include="FSLangSvcStrings.resx" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="CommonConstants.fs" />
     <Compile Include="Error.fs" />
+    <Compile Include="CommonConstants.fs" />
+    <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="Quickparse.fs" />
     <Compile Include="Vs.fs" />
     <Compile Include="Colorize.fs" />

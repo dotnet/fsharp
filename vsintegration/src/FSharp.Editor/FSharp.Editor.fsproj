@@ -30,9 +30,21 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ColorizationService.fs" />
-    <Compile Include="BraceMatchingService.fs" />
-    <Compile Include="IndentationService.fs" />
+    <Compile Include="ColorizationService.fs">
+        <Link>Classification\ColorizationService.fs</Link>
+    </Compile>
+    <Compile Include="BraceMatchingService.fs">
+        <Link>Utilities\BraceMatchingService.fs</Link>
+    </Compile>
+    <Compile Include="IndentationService.fs">
+        <Link>Utilities\IndentationService.fs</Link>
+    </Compile>
+    <Compile Include="BreakpointResolutionService.fs">
+        <Link>Debugging\BreakpointResolutionService.fs</Link>
+    </Compile>
+    <Compile Include="LanguageDebugInfoService.fs">
+        <Link>Debugging\LanguageDebugInfoService.fs</Link>
+    </Compile>
     <Compile Include="ProjectSiteService.fs" />
     <Compile Include="ContentType.fs" />
   </ItemGroup>
@@ -110,7 +122,6 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion)" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>

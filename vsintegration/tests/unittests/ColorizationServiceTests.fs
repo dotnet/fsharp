@@ -937,7 +937,6 @@ type ColorizationServiceTests()  =
     [<TestCase("else //(*Else*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<TestCase("t(*Active*)", ClassificationTypeNames.Keyword)>]
     [<TestCase("endif //(*Endif*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("(*If*)", ClassificationTypeNames.Comment)>]
     [<TestCase("(*Else*)", ClassificationTypeNames.Comment)>]
     [<TestCase("(*Endif*)", ClassificationTypeNames.Comment)>]
     member public this.Preprocessor_Keywords(marker: string, classificationType: string) =
