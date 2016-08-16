@@ -3462,6 +3462,8 @@ namespace Microsoft.FSharp.Core
 
         static member Some(x) : 'T option = Some(x)
 
+        static member op_Implicit(x) : 'T option = Some(x)
+
         override x.ToString() = 
            // x is non-null, hence Some
            "Some("^anyToStringShowingNull x.Value^")"
