@@ -126,7 +126,7 @@ module internal List =
                 chooseToFreshConsTail cons f t
                 cons
                   
-    let inline groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+    let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
         let dict = Dictionary<_, _ list []> comparer
 
         // Build the groupings
