@@ -57,7 +57,7 @@ namespace Microsoft.FSharp.Collections
         let create (count:int) (x:'T) =
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             let array: 'T[] = Array.zeroCreateUnchecked count
-            for i = 0 to Operators.Checked.(-) count 1 do // use checked arithmetic here to satisfy FxCop
+            for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
                 array.[i] <- x
             array
 
@@ -75,9 +75,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Tail")>]
         let tail (array : 'T[]) =
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))
-            let len = array.Length - 1
-            Array.subUnchecked 1 len array
+            if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))            
+            Array.subUnchecked 1 (array.Length - 1) array
 
         [<CompiledName("Empty")>]
         let empty<'T> : 'T [] = [| |]
@@ -114,7 +113,7 @@ namespace Microsoft.FSharp.Collections
         let replicate count x = 
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             let arr : 'T array = Array.zeroCreateUnchecked count
-            for i = 0 to count - 1 do 
+            for i = 0 to arr.Length-1 do 
                 arr.[i] <- x
             arr
 
@@ -123,7 +122,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let len = array.Length
             let result = Array.zeroCreateUnchecked<'U[]> len
-            for i = 0 to len - 1 do
+            for i = 0 to result.Length-1 do
                 result.[i] <- f array.[i]
             concatArrays result
         
@@ -239,18 +238,16 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Indexed")>]
         let indexed (array: 'T[]) =
-            checkNonNull "array" array
-            let len = array.Length
-            let res = Array.zeroCreateUnchecked len
-            for i = 0 to len - 1 do
+            checkNonNull "array" array            
+            let res = Array.zeroCreateUnchecked array.Length
+            for i = 0 to res.Length-1 do
                 res.[i] <- (i,array.[i])
             res
 
         [<CompiledName("Iterate")>]
         let inline iter f (array: 'T[]) = 
-            checkNonNull "array" array
-            let len = array.Length
-            for i = 0 to len - 1 do 
+            checkNonNull "array" array            
+            for i = 0 to array.Length-1 do 
                 f array.[i]
 
         [<CompiledName("Distinct")>]
@@ -269,10 +266,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Map")>]
         let inline map (f: 'T -> 'U) (array:'T[]) =
-            checkNonNull "array" array
-            let len = array.Length
-            let res : 'U[] = Array.zeroCreateUnchecked len
-            for i = 0 to len - 1 do 
+            checkNonNull "array" array            
+            let res : 'U[] = Array.zeroCreateUnchecked array.Length
+            for i = 0 to res.Length-1 do 
                 res.[i] <- f array.[i]
             res
 
@@ -281,9 +277,8 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            for i = 0 to len1 - 1 do 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            for i = 0 to array1.Length-1 do 
                 f.Invoke(array1.[i], array2.[i])
 
         [<CompiledName("DistinctBy")>]
@@ -304,10 +299,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            let res = Array.zeroCreateUnchecked len1 
-            for i = 0 to len1 - 1 do 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            let res = Array.zeroCreateUnchecked array1.Length
+            for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
             res
 
@@ -321,7 +315,7 @@ namespace Microsoft.FSharp.Collections
             if not (len1 = array2.Length && len1 = array3.Length) then invalidArg "" (SR.GetString(SR.arraysHadDifferentLengths))
             
             let res = Array.zeroCreateUnchecked len1
-            for i = 0 to len1 - 1 do
+            for i = 0 to res.Length-1 do
                 res.[i] <- f.Invoke(array1.[i], array2.[i], array3.[i])
             res
 
@@ -330,19 +324,17 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            let res = Array.zeroCreateUnchecked len1 
-            for i = 0 to len1 - 1 do 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            let res = Array.zeroCreateUnchecked array1.Length 
+            for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(i,array1.[i], array2.[i])
             res
 
         [<CompiledName("IterateIndexed")>]
         let iteri f (array:'T[]) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len = array.Length
-            for i = 0 to len - 1 do 
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)            
+            for i = 0 to array.Length-1 do 
                 f.Invoke(i, array.[i])
 
         [<CompiledName("IterateIndexed2")>]
@@ -350,18 +342,16 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
-            for i = 0 to len1 - 1 do 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            for i = 0 to array1.Length-1 do 
                 f.Invoke(i,array1.[i], array2.[i])
 
         [<CompiledName("MapIndexed")>]
         let mapi (f : int -> 'T -> 'U) (array: 'T[]) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let len = array.Length
-            let res = Array.zeroCreateUnchecked len 
-            for i = 0 to len - 1 do 
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)            
+            let res = Array.zeroCreateUnchecked array.Length
+            for i = 0 to array.Length-1 do 
                 res.[i] <- f.Invoke(i,array.[i])
             res
 
@@ -572,13 +562,12 @@ namespace Microsoft.FSharp.Collections
                 Array.subUnchecked count (array.Length - count) array
 
         [<CompiledName("SkipWhile")>]
-        let skipWhile p (array: 'T[]) =
+        let skipWhile p (array: 'T[]) =        
             checkNonNull "array" array
-            let mutable i = 0
-            let len = array.Length
-            while i < len && p array.[i] do i <- i + 1
+            let mutable i = 0            
+            while i < array.Length && p array.[i] do i <- i + 1
 
-            match len - i with
+            match array.Length - i with
             | 0 -> empty
             | resLen -> Array.subUnchecked i resLen array
 
@@ -646,7 +635,7 @@ namespace Microsoft.FSharp.Collections
             let len1 = array1.Length 
             if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             let res = Array.zeroCreateUnchecked len1 
-            for i = 0 to len1 - 1 do 
+            for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i])
             res
 
@@ -659,7 +648,7 @@ namespace Microsoft.FSharp.Collections
             if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             if len1 <> array3.Length then invalidArg "array3" (SR.GetString(SR.arraysHadDifferentLengths))
             let res = Array.zeroCreateUnchecked len1 
-            for i = 0 to len1 - 1 do 
+            for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i],array3.[i])
             res
 
@@ -670,8 +659,8 @@ namespace Microsoft.FSharp.Collections
             let len1 = array1.Length
             let len2 = array2.Length
             let res = Array.zeroCreateUnchecked (len1 * len2)
-            for i = 0 to len1 - 1 do
-                for j = 0 to len2 - 1 do
+            for i = 0 to array1.Length-1 do
+                for j = 0 to array2.Length-1 do
                     res.[i * len2 + j] <- (array1.[i],array2.[j])
             res
 
@@ -693,7 +682,7 @@ namespace Microsoft.FSharp.Collections
             let len = array.Length 
             let res1 = Array.zeroCreateUnchecked len 
             let res2 = Array.zeroCreateUnchecked len 
-            for i = 0 to len - 1 do 
+            for i = 0 to array.Length-1 do 
                 let x,y = array.[i] 
                 res1.[i] <- x
                 res2.[i] <- y
@@ -706,7 +695,7 @@ namespace Microsoft.FSharp.Collections
             let res1 = Array.zeroCreateUnchecked len 
             let res2 = Array.zeroCreateUnchecked len 
             let res3 = Array.zeroCreateUnchecked len 
-            for i = 0 to len - 1 do 
+            for i = 0 to array.Length-1 do 
                 let x,y,z = array.[i] 
                 res1.[i] <- x
                 res2.[i] <- y
@@ -715,20 +704,20 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reverse")>]
         let rev (array: _[]) = 
-            checkNonNull "array" array
-            let len = array.Length 
-            let res = Array.zeroCreateUnchecked len 
-            for i = 0 to len - 1 do 
-                res.[(len - i) - 1] <- array.[i]
+            checkNonNull "array" array        
+            let res = Array.zeroCreateUnchecked array.Length
+            let mutable j = array.Length-1
+            for i = 0 to array.Length-1 do 
+                res.[j] <- array.[i]
+                j <- j - 1
             res
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> (f : 'State -> 'T -> 'State) (acc: 'State) (array:'T[]) =
             checkNonNull "array" array
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable state = acc 
-            let len = array.Length
-            for i = 0 to len - 1 do 
+            let mutable state = acc             
+            for i = 0 to array.Length-1 do 
                 state <- f.Invoke(state,array.[i])
             state
 
@@ -736,9 +725,8 @@ namespace Microsoft.FSharp.Collections
         let foldBack<'T,'State> (f : 'T -> 'State -> 'State) (array:'T[]) (acc: 'State) =
             checkNonNull "array" array
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable res = acc 
-            let len = array.Length
-            for i = len - 1 downto 0 do 
+            let mutable res = acc             
+            for i = array.Length-1 downto 0 do 
                 res <- f.Invoke(array.[i],res)
             res
 
@@ -751,7 +739,7 @@ namespace Microsoft.FSharp.Collections
             let mutable res = acc 
             let len = array1.Length
             if len <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
-            for i = len - 1 downto 0 do 
+            for i = len-1 downto 0 do 
                 res <- f.Invoke(array1.[i],array2.[i],res)
             res
 
@@ -761,9 +749,8 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let mutable state = acc 
-            let len = array1.Length
-            if len <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
-            for i = 0 to len - 1 do 
+            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            for i = 0 to array1.Length-1 do 
                 state <- f.Invoke(state,array1.[i],array2.[i])
             state
 
@@ -815,7 +802,7 @@ namespace Microsoft.FSharp.Collections
             else 
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let mutable res = array.[0]
-                for i = 1 to len - 1 do
+                for i = 1 to array.Length-1 do
                     res <- f.Invoke(res,array.[i])
                 res
 
@@ -1077,8 +1064,7 @@ namespace Microsoft.FSharp.Collections
             let choose f (array: 'T[]) = 
                 checkNonNull "array" array
                 let inputLength = array.Length
-                let lastInputIndex = inputLength - 1
-
+                
                 let isChosen : bool [] = Array.zeroCreateUnchecked inputLength
                 let results : 'U [] = Array.zeroCreateUnchecked inputLength
                 
@@ -1091,13 +1077,13 @@ namespace Microsoft.FSharp.Collections
                 )) |> ignore         
                                                                                       
                 let mutable outputLength = 0                
-                for i = 0 to lastInputIndex do 
+                for i = 0 to isChosen.Length-1 do 
                     if isChosen.[i] then 
                         outputLength <- outputLength + 1
                         
                 let output = Array.zeroCreateUnchecked outputLength
                 let mutable curr = 0
-                for i = 0 to lastInputIndex do 
+                for i = 0 to isChosen.Length-1 do 
                     if isChosen.[i] then 
                         output.[curr] <- results.[i]
                         curr <- curr + 1
@@ -1151,8 +1137,7 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName("Partition")>]
             let partition predicate (array : 'T[]) =
                 checkNonNull "array" array
-                let inputLength = array.Length
-                let lastInputIndex = inputLength - 1
+                let inputLength = array.Length                
 
                 let isTrue = Array.zeroCreateUnchecked inputLength
                 Parallel.For(0, inputLength, 
@@ -1160,14 +1145,14 @@ namespace Microsoft.FSharp.Collections
                     ) |> ignore
                 
                 let mutable trueLength = 0
-                for i in 0 .. lastInputIndex do
+                for i = 0 to isTrue.Length-1 do
                     if isTrue.[i] then trueLength <- trueLength + 1
                 
                 let trueResult = Array.zeroCreateUnchecked trueLength
                 let falseResult = Array.zeroCreateUnchecked (inputLength - trueLength)
                 let mutable iTrue = 0
                 let mutable iFalse = 0
-                for i = 0 to lastInputIndex do
+                for i = 0 to isTrue.Length-1 do
                     if isTrue.[i] then
                         trueResult.[iTrue] <- array.[i]
                         iTrue <- iTrue + 1
