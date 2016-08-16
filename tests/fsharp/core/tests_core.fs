@@ -163,51 +163,54 @@ module Events =
         do! run cfg dir
         })
 
-
-module ``FSI-Shadowcopy`` = 
-
-    [<Test>]
-    // "%FSI%" %fsi_flags%                          < test1.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
-    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")>]
-    let ``shadowcopy disabled`` (flags: string) = check  (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // if exist test1.ok (del /f /q test1.ok)
-        use testOkFile = fileguard "test1.ok"
-
-        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test1.fsx"
-
-        // if NOT EXIST test1.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-        })
-
-    [<Test>]
-    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
-    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
-    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")>]
-    let ``shadowcopy enabled`` (flags: string) = check (attempt {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
-        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
-        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
-
-        // if exist test2.ok (del /f /q test2.ok)
-        use testOkFile = fileguard "test2.ok"
-
-        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test2.fsx"
-
-        // if NOT EXIST test2.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
-        })
+//
+// Shadowcopy does not work for public signed assemblies
+// =====================================================
+//
+//module ``FSI-Shadowcopy`` = 
+//
+//    [<Test>]
+//    // "%FSI%" %fsi_flags%                          < test1.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
+//    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")>]
+//    let ``shadowcopy disabled`` (flags: string) = check  (attempt {
+//        let { Directory = dir; Config = cfg } = testContext ()
+//
+//        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+//        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
+//        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+//
+//        // if exist test1.ok (del /f /q test1.ok)
+//        use testOkFile = fileguard "test1.ok"
+//
+//        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test1.fsx"
+//
+//        // if NOT EXIST test1.ok goto SetError
+//        do! testOkFile |> NUnitConf.checkGuardExists
+//        })
+//
+//    [<Test>]
+//    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
+//    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
+//    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")>]
+//    let ``shadowcopy enabled`` (flags: string) = check (attempt {
+//        let { Directory = dir; Config = cfg } = testContext ()
+//
+//        let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+//        let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
+//        let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+//
+//        // if exist test2.ok (del /f /q test2.ok)
+//        use testOkFile = fileguard "test2.ok"
+//
+//        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
+//        do! ``fsi <`` "%s %s" cfg.fsi_flags flags "test2.fsx"
+//
+//        // if NOT EXIST test2.ok goto SetError
+//        do! testOkFile |> NUnitConf.checkGuardExists
+//        })
 
     
 
@@ -352,7 +355,7 @@ module FsFromFsViaCs =
 
         do! peverify "test.exe"
 
-        // Same with library refrences the other way around
+        // Same with library references the other way around
         do! fsc "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" fsc_flags ["test.fsx"]
 
         do! peverify "test.exe"

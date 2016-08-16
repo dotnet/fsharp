@@ -2,7 +2,8 @@
 
 REM Search for the Linker
 REM Use VS2015 or fall back to VS2014
-SET LINK_EXE="%VS150COMNTOOLS%\..\..\VC\bin\link.exe"
+SET LINK_EXE="%VS150COMNTOOLS%\..\IDE\VC\bin\link.exe"
+IF NOT EXIST %LINK_EXE% ( SET LINK_EXE="%VS150COMNTOOLS%..\..\VC\bin\link.exe" )
 IF NOT EXIST %LINK_EXE% ( SET LINK_EXE="%VS140COMNTOOLS%..\..\VC\bin\link.exe" )
 IF NOT EXIST %LINK_EXE% ( 
     @echo "Test Requires LINK.EXE" --- Not found 
