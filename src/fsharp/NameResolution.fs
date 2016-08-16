@@ -2014,8 +2014,15 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                 else 
                     NoResultsOrUsefulErrors
 
-            AtMostOneResult id.idRange ( tyconSearch +++   moduleSearch +++ raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,NoPredictions)))
+            match tyconSearch +++ moduleSearch with
+            | Result [] ->
+                let predictedPossibleTypes =
+                    modref.ModuleOrNamespaceType.AllEntities
+                    |> Seq.map (fun e -> e.DisplayName)
+                    |> Set.ofSeq
 
+                raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,predictedPossibleTypes))
+            | results -> AtMostOneResult id.idRange results
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs). 
 /// Return either a set of constructors (later refined by overload resolution), or a set of TyconRefs.
