@@ -6,6 +6,7 @@ namespace Microsoft.FSharp.Core
     open System.Text
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
+    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.Operators.Checked
     open Microsoft.FSharp.Collections
 
@@ -38,14 +39,14 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Map")>]
         let map (f: char -> char) (str:string) =
             let str = emptyIfNull str
-            let res = StringBuilder(str.Length)
+            let res = StringBuilder str.Length
             str |> iter (fun c -> res.Append(f c) |> ignore)
             res.ToString()
 
         [<CompiledName("MapIndexed")>]
         let mapi (f: int -> char -> char) (str:string) =
             let str = emptyIfNull str
-            let res = StringBuilder(str.Length)
+            let res = StringBuilder str.Length
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
             res.ToString()
@@ -53,32 +54,32 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Filter")>]
         let filter (f: char -> bool) (str:string) =
             let str = emptyIfNull str
-            let res = StringBuilder(str.Length)
-            str |> iter (fun c -> if f c then res.Append(c) |> ignore)
+            let res = StringBuilder str.Length
+            str |> iter (fun c -> if f c then res.Append c |> ignore)
             res.ToString()
 
         [<CompiledName("Collect")>]
         let collect (f: char -> string) (str:string) =
             let str = emptyIfNull str
-            let res = StringBuilder(str.Length)
+            let res = StringBuilder str.Length
             str |> iter (fun c -> res.Append(f c) |> ignore)
             res.ToString()
 
         [<CompiledName("Initialize")>]
         let init (count:int) (initializer: int-> string) =
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            let res = StringBuilder(count)
+            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
+            let res = StringBuilder count
             for i = 0 to count - 1 do 
                res.Append(initializer i) |> ignore
             res.ToString()
 
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
             let str = emptyIfNull str
-            let res = StringBuilder(str.Length)
+            let res = StringBuilder str.Length
             for i = 0 to count - 1 do 
-               res.Append(str) |> ignore
+               res.Append str |> ignore
             res.ToString()
 
         [<CompiledName("ForAll")>]
