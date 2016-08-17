@@ -1,8 +1,27 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+
+namespace Microsoft.FSharp.Core
+
+module DetailedExceptions =
+    
+    /// takes an argument, a formatting string, a param array to splice into the formatting string
+    let inline internal invalidArgFmt (arg:string) (format:string) paramArray =    
+        let msg = System.String.Format (format,paramArray)
+        raise (new System.ArgumentException (msg,arg))
+
+    /// takes a formatting string and a param array to splice into the formatting string
+    let inline internal invalidOpFmt (format:string) paramArray =
+        let msg = System.String.Format (format,paramArray)
+        raise (new System.InvalidOperationException(msg))
+
+
+
+
 namespace Microsoft.FSharp.Primitives.Basics 
 
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.DetailedExceptions
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
@@ -13,20 +32,6 @@ open Microsoft.FSharp.Core.ICloneableExtensions
 #else
 #endif  
 
-
-module internal DetailedExceptions =
-    
-    /// takes an argument, a formatting string, a param array to splice into the formatting string
-    let inline internal invalidArgFmt (arg:string) (fmt:string) argArray =    
-        let msg = System.String.Format (fmt,argArray)
-        raise (new System.ArgumentException (msg,arg))
-
-    /// takes a formatting string and a param array to splice into the formatting string
-    let inline internal invalidOpFmt (fmt:string) argArray =
-        let msg = System.String.Format (fmt,argArray)
-        raise (new System.InvalidOperationException(msg))
-
-open DetailedExceptions
 
 module internal List = 
 

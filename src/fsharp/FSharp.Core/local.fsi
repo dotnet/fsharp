@@ -1,5 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+namespace Microsoft.FSharp.Core
+open Microsoft.FSharp.Core
+
+module internal DetailedExceptions =
+    val inline internal invalidArgFmt: arg:string -> format:string -> paramArray:obj array -> 'a
+    val inline internal invalidOpFmt: format:string -> paramArray:obj array -> 'a
+
 /// Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics 
 
