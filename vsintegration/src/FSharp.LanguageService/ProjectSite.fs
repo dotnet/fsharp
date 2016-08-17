@@ -59,7 +59,7 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
             | (VSConstants.S_OK, id) -> id
             | _ -> uint32 VSConstants.VSITEMID.Nil
 
-        let document = this.ProjectTracker.DocumentProvider.TryGetDocumentForFile(this, itemid, file, SourceCodeKind.Regular, fun x -> true)
+        let document = this.ProjectTracker.DocumentProvider.TryGetDocumentForFile(this, itemid, file, SourceCodeKind.Regular, false, fun x -> true)
         this.AddDocument(document, true)
 
     member internal this.OnProjectSettingsChanged(hier: IVsHierarchy, site : IProjectSite) = 
