@@ -4,18 +4,44 @@
 namespace Microsoft.FSharp.Core
 
 module DetailedExceptions =
-    
+    open System
+
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline internal invalidArgFmt (arg:string) (format:string) paramArray =    
-        let msg = System.String.Format (format,paramArray)
-        raise (new System.ArgumentException (msg,arg))
+        let msg = String.Format (format,paramArray)
+        raise (new ArgumentException (msg,arg))
 
     /// takes a formatting string and a param array to splice into the formatting string
     let inline internal invalidOpFmt (format:string) paramArray =
-        let msg = System.String.Format (format,paramArray)
-        raise (new System.InvalidOperationException(msg))
+        let msg = String.Format (format,paramArray)
+        raise (new InvalidOperationException(msg))
 
+    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    let invalidArgDifferentListLength (arg1:string) (arg2:string) (diff:int) =
+        invalidArgFmt arg1
+            "{0}\n{1} is {2} elements shorter than {3}" 
+            [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; arg2|]
 
+    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    let invalidArg3ListsDifferent arg1 arg2 arg3 len1 len2 len3 =  
+        invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
+            "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
+            [|SR.GetString SR.listsHadDifferentLengths; arg1; len1; arg2; len2; arg3; len3|]
+
+    /// throws an invalid operation exception and returns how many elements the 
+    /// list is shorter than the index
+    let invalidOpListNotEnoughElements index = 
+        invalidOpFmt 
+            "{0}\nThe list was {1} {2} shorter than the index" 
+            [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+
+    /// throws an invalid argument exception and returns the arg's value
+    let invalidArgInputMustBeNonNegative arg count =
+        invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBeNonNegative; arg; count|]
+        
+    /// throws an invalid argument exception and returns the arg's value
+    let invalidArgInputMustBePositive arg count =
+        invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
 
 namespace Microsoft.FSharp.Primitives.Basics 
@@ -191,14 +217,8 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(h1,h2))
             setFreshConsTail cons cons2
             map2ToFreshConsTail cons2 f t1 t2
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let map2 f xs1 xs2 = 
         match xs1,xs2 with
@@ -208,14 +228,8 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(h1,h2))
             map2ToFreshConsTail cons f t1 t2
             cons
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with
@@ -226,9 +240,7 @@ module internal List =
             setFreshConsTail cons cons2
             map3ToFreshConsTail cons2 f t1 t2 t3
         | xs1,xs2,xs3 -> 
-            invalidArgFmt "list1, list2, list3" 
-                "{0}\n list1.Length = {1}, list2.Length = {2}, list3.Length = {3}" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length; xs2.Length; xs3.Length|]
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let map3 f xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with
@@ -239,9 +251,7 @@ module internal List =
             map3ToFreshConsTail cons f t1 t2 t3
             cons
         | xs1,xs2,xs3 -> 
-            invalidArgFmt "list1, list2, list3" 
-                "{0}\n list1.Length = {1}, list2.Length = {2}, list3.Length = {3}" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length; xs2.Length; xs3.Length|]
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let rec mapi2ToFreshConsTail n cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 = 
         match xs1,xs2 with
@@ -251,14 +261,8 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(n,h1,h2))
             setFreshConsTail cons cons2
             mapi2ToFreshConsTail (n + 1) cons2 f t1 t2
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let mapi2 f xs1 xs2 = 
         match xs1,xs2 with
@@ -268,14 +272,8 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(0, h1,h2))
             mapi2ToFreshConsTail 1 cons f t1 t2
             cons
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
     
     let rec scanToFreshConsTail cons xs s (f: OptimizedClosures.FSharpFunc<_,_,_>) =
         match xs with
@@ -519,8 +517,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then 
-            invalidArgFmt "count" "{0}\ncount = {1}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString; count|]
+        if count < 0 then invalidArgInputMustBeNonNegative "count"  count
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -530,23 +527,17 @@ module internal List =
     let rec takeFreshConsTail cons n l =
         if n = 0 then setFreshConsTail cons [] else
         match l with
-        | [] -> 
-            invalidOpFmt 
-                "{0}\nThe list was short by {1} {2}" 
-                [|SR.GetString SR.notEnoughElements; n; (if n=1 then "element" else "elements")|]
+        | [] -> invalidOpListNotEnoughElements n
         | x::xs ->
             let cons2 = freshConsNoTail x
             setFreshConsTail cons cons2
             takeFreshConsTail cons2 (n - 1) xs
  
     let take n l =
-        if n < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString; n|]
+        if n < 0 then invalidArgInputMustBeNonNegative "count" n
         if n = 0 then [] else 
         match l with
-        | [] -> 
-            invalidOpFmt 
-                "{0}\nThe list was short by {1} {2}" 
-                [|SR.GetString SR.notEnoughElements; n; (if n=1 then "element" else "elements")|]
+        | [] -> invalidOpListNotEnoughElements n
         | x::xs ->
             let cons = freshConsNoTail x
             takeFreshConsTail cons (n - 1) xs
@@ -558,26 +549,20 @@ module internal List =
             l
         else
         match l with
-        | [] -> 
-            invalidOpFmt 
-                "{0}\nThe list was short by {1} {2}" 
-                [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+        | [] -> invalidOpListNotEnoughElements index
         | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 splitAtFreshConsTail cons2 (index - 1) xs
  
     let splitAt index l =
-        if index < 0 then invalidArgFmt "index" "{0}\nindex = {1}" [|SR.GetString SR.inputMustBeNonNegative; index|]
+        if index < 0 then invalidArgInputMustBeNonNegative "index" index
         if index = 0 then [], l else
         match l with
         | []  -> invalidOp (SR.GetString SR.inputListWasEmpty)
         | [_] -> 
             if index = 1 then l, [] else 
-            invalidOpFmt 
-                "{0}\nThe list was {1} {2} shorter than the index" 
-                [|SR.GetString SR.notEnoughElements; index-1; (if index=2 then "element" else "elements")|]
-            
+            invalidOpListNotEnoughElements (index-1)            
         | x::xs ->
             if index = 1 then [x], xs else
             let cons = freshConsNoTail x
@@ -740,7 +725,7 @@ module internal List =
             windowedToFreshConsTail cons2 windowSize (i - 1) list.Tail
 
     let windowed windowSize (list: 'T list) =
-        if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}" [|SR.GetString SR.inputMustBePositive; windowSize|]
+        if windowSize <= 0 then invalidArgInputMustBePositive "windowSize" windowSize
         let len = list.Length
         if windowSize > len then
             []
@@ -766,7 +751,7 @@ module internal List =
                 chunkBySizeToFreshConsTail cons resCons chunkSize (i+1) t
 
     let chunkBySize chunkSize list =
-        if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nwindowSize = {1}" [|SR.GetString SR.inputMustBePositive; chunkSize|]
+        if chunkSize <= 0 then invalidArgInputMustBePositive "chunkSize" chunkSize
         match list with
         | [] -> []
         | head::tail ->
@@ -792,7 +777,7 @@ module internal List =
                 splitIntoToFreshConsTail cons resCons lenDivCount lenModCount i (j + 1) t
 
     let splitInto count (list: _ list) =
-        if count <= 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBePositive; count|]
+        if count <= 0 then invalidArgInputMustBePositive "count" count
         match list.Length with
         | 0 -> []
         | len ->
@@ -812,14 +797,8 @@ module internal List =
             let cons2 = freshConsNoTail (h1,h2)
             setFreshConsTail cons cons2
             zipToFreshConsTail cons2 t1 t2
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -830,14 +809,8 @@ module internal List =
             let res = freshConsNoTail (h1,h2)
             zipToFreshConsTail res t1 t2
             res
-        | [],xs2 -> 
-            invalidArgFmt "list1" 
-                "{0}\nlist1 is {1} elements shorter than list2" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-        | xs1,[] -> 
-            invalidArgFmt "list2" 
-                "{0}\nlist2 is {1} elements shorter than list1" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -850,9 +823,7 @@ module internal List =
             setFreshConsTail cons cons2
             zip3ToFreshConsTail cons2 t1 t2 t3
         | xs1,xs2,xs3 -> 
-            invalidArgFmt "list1, list2, list3" 
-                "{0}\n list1.Length = {1}, list2.Length = {2}, list3.Length = {3}" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length; xs2.Length; xs3.Length|]
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -865,9 +836,7 @@ module internal List =
             zip3ToFreshConsTail res t1 t2 t3
             res
         | xs1,xs2,xs3 -> 
-            invalidArgFmt "list1, list2, list3" 
-                "{0}\n list1.Length = {1}, list2.Length = {2}, list3.Length = {3}" 
-                [|SR.GetString SR.listsHadDifferentLengths; xs1.Length; xs2.Length; xs3.Length|]
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let rec takeWhileFreshConsTail cons p l =
         match l with
@@ -974,7 +943,7 @@ module internal Array =
         (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) (f: int -> 'T) = 
-        if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString; count|]
+        if count < 0 then invalidArgInputMustBeNonNegative "count" count
         let arr = (zeroCreateUnchecked count : 'T array)  
         for i = 0 to arr.Length-1 do 
             arr.[i] <- f i
