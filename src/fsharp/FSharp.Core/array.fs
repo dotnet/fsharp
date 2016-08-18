@@ -483,8 +483,11 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1
             Array.subUnchecked 0 count res
 
+
+
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
+        
             checkNonNull "array" array                    
             let mutable i = 0    
             while i < array.Length && not (f array.[i]) do
@@ -492,10 +495,11 @@ namespace Microsoft.FSharp.Collections
     
             if i <> array.Length then            
                 let mutable element = array.[i]
-                let mutable count = 0
+                let mutable count = 1
                 let mutable res = Array.zeroCreateUnchecked (((array.Length-i) >>> 2) + 1)
                 res.[i] <- element
-                i <- i + 1                         
+                i <- i + 1
+                         
                 while count < res.Length && i < array.Length do
                     element <- array.[i]                                
                     if f element then                    
@@ -520,6 +524,9 @@ namespace Microsoft.FSharp.Collections
                     res
 
             else empty
+
+            
+
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
