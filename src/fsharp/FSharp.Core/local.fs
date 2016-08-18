@@ -23,30 +23,30 @@ module DetailedExceptions =
             [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; arg2|]
 
     /// throws an invalid argument exception and returns the difference between the lists' lengths
-    let invalidArg3ListsDifferent arg1 arg2 arg3 len1 len2 len3 =  
+    let invalidArg3ListsDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
         invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
             "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
             [|SR.GetString SR.listsHadDifferentLengths; arg1; len1; arg2; len2; arg3; len3|]
 
     /// throws an invalid operation exception and returns how many elements the 
     /// list is shorter than the index
-    let invalidOpListNotEnoughElements index = 
+    let invalidOpListNotEnoughElements (index:int) = 
         invalidOpFmt 
             "{0}\nThe list was {1} {2} shorter than the index" 
             [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
 
     /// throws an invalid argument exception and returns the arg's value
-    let invalidArgInputMustBeNonNegative arg count =
+    let invalidArgInputMustBeNonNegative (arg:string) (count:int) =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBeNonNegative; arg; count|]
         
     /// throws an invalid argument exception and returns the arg's value
-    let invalidArgInputMustBePositive arg count =
+    let invalidArgInputMustBePositive (arg:string) (count:int) =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
     /// throws an invalid argument exception and returns the out of range index,
     /// a text description of the range, and the bound of the range
     /// e.g. sourceIndex = -4, source axis-0 lower bound = 0" 
-    let invalidArgOutOfRange arg index text bound =
+    let invalidArgOutOfRange (arg:string) (index:int) (text:string) (bound:int) =
         invalidArgFmt arg
             "{0}\n{1} = {2}, {3} = {4}" 
             [|SR.GetString SR.outOfRange; arg; index; text; bound|]

@@ -186,14 +186,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with
                 | [],[] -> () 
                 | h1::t1, h2::t2 -> f.Invoke(h1,h2); loop t1 t2 
-                | [],xs2 -> 
-                    invalidArgFmt "list1" 
-                        "{0}\nlist1 is {1} elements shorter than list2" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-                | xs1,[] -> 
-                    invalidArgFmt "list2" 
-                        "{0}\nlist2 is {1} elements shorter than list1" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop list1 list2
 
         [<CompiledName("IterateIndexed2")>]
@@ -203,14 +197,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with
                 | [],[] -> () 
                 | h1::t1, h2::t2 -> f.Invoke(n,h1,h2); loop (n+1) t1 t2 
-                | [],xs2 -> 
-                    invalidArgFmt "list1" 
-                        "{0}\nlist1 is {1} elements shorter than list2" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-                | xs1,[] -> 
-                    invalidArgFmt "list2" 
-                        "{0}\nlist2 is {1} elements shorter than list1" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop 0 list1 list2
 
         [<CompiledName("Map3")>]
@@ -260,14 +248,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with 
                 | [],[] -> acc
                 | h1::t1, h2::t2 -> loop (f.Invoke(acc,h1,h2)) t1 t2
-                | [],xs2 -> 
-                    invalidArgFmt "list1" 
-                        "{0}\nlist1 is {1} elements shorter than list2" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-                | xs1,[] -> 
-                    invalidArgFmt "list2" 
-                        "{0}\nlist2 is {1} elements shorter than list1" 
-                        [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop acc list1 list2
 
         let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc = 
@@ -351,27 +333,15 @@ namespace Microsoft.FSharp.Collections
                 | [h2;h3],[k2;k3] -> f.Invoke(h1,k1,f.Invoke(h2,k2,f.Invoke(h3,k3,acc)))
                 | [h2;h3;h4],[k2;k3;k4] -> f.Invoke(h1,k1,f.Invoke(h2,k2,f.Invoke(h3,k3,f.Invoke(h4,k4,acc))))
                 | _ -> foldBack2UsingArrays f list1 list2 acc
-            | [],xs2 -> 
-                invalidArgFmt "list1" 
-                    "{0}\nlist1 is {1} elements shorter than list2" 
-                    [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-            | xs1,[] -> 
-                invalidArgFmt "list2" 
-                    "{0}\nlist2 is {1} elements shorter than list1" 
-                    [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+            | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+            | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
         let rec forall2aux (f:OptimizedClosures.FSharpFunc<_,_,_>) list1 list2 = 
             match list1,list2 with 
             | [],[] -> true
             | h1::t1, h2::t2 -> f.Invoke(h1,h2)  && forall2aux f t1 t2
-            | [],xs2 -> 
-                invalidArgFmt "list1" 
-                    "{0}\nlist1 is {1} elements shorter than list2" 
-                    [|SR.GetString SR.listsHadDifferentLengths; xs2.Length|]
-            | xs1,[] -> 
-                invalidArgFmt "list2" 
-                    "{0}\nlist2 is {1} elements shorter than list1" 
-                    [|SR.GetString SR.listsHadDifferentLengths; xs1.Length|]
+            | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+            | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
         [<CompiledName("ForAll2")>]
         let forall2 f list1 list2 = 
@@ -528,10 +498,7 @@ namespace Microsoft.FSharp.Collections
                 match lst with
                 | _ when i = 0 -> lst
                 | _::t -> loop (i-1) t
-                | [] -> 
-                    invalidArgFmt "count" 
-                        "{0}\ncount of {1} exceeds the length of list by {2}"
-                        [|SR.GetString SR.outOfRange; count; i|]
+                | [] -> invalidArgOutOfRange "count" count "distance past the list" i
             loop count list
 
         [<CompiledName("SkipWhile")>]

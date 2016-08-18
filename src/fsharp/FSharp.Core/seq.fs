@@ -905,7 +905,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Initialize")>]
         let init count f =
-            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             mkSeq (fun () -> IEnumerator.upto (Some (count-1)) f)
 
         [<CompiledName("Iterate")>]
@@ -918,7 +918,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
             checkNonNull "source" source
-            if i < 0 then invalidArgFmt "index" "{0}\nindex = {1}" [|SR.GetString SR.inputMustBeNonNegative; i|]
+            if i < 0 then invalidArgInputMustBeNonNegative "index" i
             use e = source.GetEnumerator()
             IEnumerator.nth i e
 
@@ -1100,7 +1100,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Take")>]
         let take count (source : seq<'T>)    =
             checkNonNull "source" source
-            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             (* Note: don't create or dispose any IEnumerable if n = 0 *)
             if count = 0 then empty else
             seq { use e = source.GetEnumerator()

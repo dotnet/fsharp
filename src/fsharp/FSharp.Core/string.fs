@@ -67,7 +67,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Initialize")>]
         let init (count:int) (initializer: int-> string) =
-            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             let res = StringBuilder count
             for i = 0 to count - 1 do 
                res.Append(initializer i) |> ignore
@@ -75,7 +75,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
-            if count < 0 then invalidArgFmt "count" "{0}\ncount = {1}" [|SR.GetString SR.inputMustBeNonNegative; count|]
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             let str = emptyIfNull str
             let res = StringBuilder str.Length
             for i = 0 to count - 1 do 
