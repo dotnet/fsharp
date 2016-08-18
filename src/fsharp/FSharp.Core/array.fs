@@ -483,18 +483,43 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1
             Array.subUnchecked 0 count res
 
-
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
-            checkNonNull "array" array
-            let res = Array.zeroCreateUnchecked array.Length 
-            let mutable count = 0
-            for x in array do                 
-                if f x then 
-                    res.[count] <- x
-                    count <- count + 1
-            Array.subUnchecked 0 count res
+            checkNonNull "array" array                    
+            let mutable i = 0    
+            while i < array.Length && not (f array.[i]) do
+                i <- i + 1
+    
+            if i <> array.Length then            
+                let mutable element = array.[i]
+                let mutable count = 0
+                let mutable res = Array.zeroCreateUnchecked (((array.Length-i) >>> 2) + 1)
+                res.[i] <- element
+                i <- i + 1                         
+                while count < res.Length && i < array.Length do
+                    element <- array.[i]                                
+                    if f element then                    
+                        res.[count] <- element
+                        count <- count + 1                            
+                    i <- i + 1
+        
+                if i < array.Length then                            
+                    let newRes = Array.zeroCreateUnchecked (res.Length+(array.Length-i))
+                    Array.Copy(res,newRes,res.Length)
+                    res <- newRes        
+                    while i < array.Length do
+                        element <- array.[i]                                
+                        if f element then                    
+                            res.[count] <- element
+                            count <- count + 1                            
+                        i <- i + 1
+        
+                if res.Length <> array.Length then
+                    Array.subUnchecked 0 count res
+                else 
+                    res
 
+            else empty
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
