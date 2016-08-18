@@ -7,6 +7,7 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.CompilerServices
@@ -46,16 +47,16 @@ namespace Microsoft.FSharp.Collections
             else Some array.[array.Length-1]
 
         [<CompiledName("Initialize")>]
-        let inline init count f      = Array.init count f
+        let inline init count f = Array.init count f
 
         [<CompiledName("ZeroCreate")>]
         let zeroCreate count    = 
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             Array.zeroCreateUnchecked count
 
         [<CompiledName("Create")>]
         let create (count:int) (x:'T) =
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             let array: 'T[] = Array.zeroCreateUnchecked count
             for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
                 array.[i] <- x
@@ -110,7 +111,7 @@ namespace Microsoft.FSharp.Collections
             
         [<CompiledName("Replicate")>]
         let replicate count x = 
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             let arr : 'T array = Array.zeroCreateUnchecked count
             for i = 0 to arr.Length-1 do 
                 arr.[i] <- x
@@ -128,7 +129,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         let splitAt index (array:'T[]) =
             checkNonNull "array" array
-            if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))
+            if index < 0 then invalidArgInputMustBeNonNegative "index" index
             if array.Length < index then raise <| InvalidOperationException (SR.GetString(SR.notEnoughElements))
             if index = 0 then
                 let right = Array.subUnchecked 0 array.Length array
@@ -145,7 +146,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Take")>]
         let take count (array : 'T[]) =
             checkNonNull "array" array
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             if count = 0 then 
                 empty
             else
@@ -1076,8 +1077,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("GetSubArray")>]
         let sub (array:'T[]) (startIndex:int) (count:int) =
             checkNonNull "array" array
-            if startIndex < 0 then invalidArg "startIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if startIndex < 0 then invalidArgInputMustBeNonNegative "startIndex" startIndex
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             if startIndex + count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
             Array.subUnchecked startIndex count array
 
@@ -1102,8 +1103,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Fill")>]
         let fill (target:'T[]) (targetIndex:int) (count:int) (x:'T) =
             checkNonNull "target" target
-            if targetIndex < 0 then invalidArg "targetIndex" (SR.GetString(SR.inputMustBeNonNegative))
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if targetIndex < 0 then invalidArgInputMustBeNonNegative "targetIndex" targetIndex
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
             for i = targetIndex to targetIndex + count - 1 do 
                 target.[i] <- x
 
