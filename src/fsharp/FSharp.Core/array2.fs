@@ -38,8 +38,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ZeroCreate")>]
         let zeroCreate (n:int) (m:int) = 
-            if n < 0 then invalidArgFmt "length1" "{0}\nlength1 = {0}" [|SR.GetString SR.inputMustBeNonNegative; n|]
-            if m < 0 then invalidArgFmt "length2" "{0}\nlength2 = {0}" [|SR.GetString SR.inputMustBeNonNegative; m|]
+            if n < 0 then invalidArgInputMustBeNonNegative "length1" n 
+            if m < 0 then invalidArgInputMustBeNonNegative "length2" m 
             (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
 
         [<CompiledName("ZeroCreateBased")>]
@@ -131,46 +131,27 @@ namespace Microsoft.FSharp.Collections
             init (length1 array) (length2 array) (fun i j -> array.[b1+i,b2+j])
 
         [<CompiledName("CopyTo")>]
-        let blit (source : 'T[,])  sourceIndex1 sourceIndex2 (target : 'T[,]) targetIndex1 targetIndex2 count1 count2 = 
+        let blit (source : 'T[,])  sourceIndex1 sourceIndex2 (target: 'T[,]) targetIndex1 targetIndex2 count1 count2 = 
             checkNonNull "source" source
             checkNonNull "target" target
+
             let sourceX0, sourceY0 = source.GetLowerBound 0     , source.GetLowerBound 1
             let sourceXN, sourceYN = (length1 source) + sourceX0, (length2 source) + sourceY0  
             let targetX0, targetY0 = target.GetLowerBound 0     , target.GetLowerBound 1
             let targetXN, targetYN = (length1 target) + targetX0, (length2 target) + targetY0  
 
-            if sourceIndex1 <  sourceX0 then 
-                invalidArgFmt "sourceIndex1" 
-                    "{0}\nsourceIndex1 = {1}, source axis-0 lower bound = {2}" 
-                    [|SR.GetString SR.outOfRange; sourceIndex1; sourceX0|]
-            if sourceIndex2 < sourceY0 then 
-                invalidArgFmt "sourceIndex2" 
-                    "{0}\nsourceIndex2 = {1}, source axis-1 lower bound = {2}" 
-                    [|SR.GetString SR.outOfRange; sourceIndex2; sourceY0|]
-            if targetIndex1 < targetX0 then 
-                invalidArgFmt "targetIndex1" 
-                    "{0}\ntargetIndex1 = {1}, target axis-0 lower bound = {2}" 
-                    [|SR.GetString SR.outOfRange; targetIndex1; targetX0|]
-            if targetIndex2 < targetY0 then 
-                invalidArgFmt "targetIndex2" 
-                    "{0}\ntargetIndex2 = {1}, target axis-1 lower bound = {2}" 
-                    [|SR.GetString SR.outOfRange; targetIndex2; targetY0|]
+            if sourceIndex1 < sourceX0 then invalidArgOutOfRange "sourceIndex1" sourceIndex1 "source axis-0 lower bound" sourceX0
+            if sourceIndex2 < sourceY0 then invalidArgOutOfRange "sourceIndex2" sourceIndex2 "source axis-1 lower bound" sourceY0
+            if targetIndex1 < targetX0 then invalidArgOutOfRange "targetIndex1" targetIndex1 "target axis-0 lower bound" targetX0
+            if targetIndex2 < targetY0 then invalidArgOutOfRange "targetIndex2" targetIndex2 "target axis-1 lower bound" targetY0
             if sourceIndex1 + count1 > sourceXN then 
-                invalidArgFmt "count1" 
-                    "{0}\nsource axis-0 end index = {1}, source axis-0 upper bound = {2}" 
-                    [|SR.GetString SR.outOfRange; sourceIndex1 + count1; sourceXN|]
+                invalidArgOutOfRange "count1" count1 ("source axis-0 end index = " + string(sourceIndex1+count1) + " source axis-0 upper bound") sourceXN
             if sourceIndex2 + count2 > sourceYN then 
-                invalidArgFmt "count2" 
-                    "{0}\nsource axis-1 end index = {1}, source axis-1 upper bound = {2}" 
-                    [|SR.GetString SR.outOfRange; sourceIndex2 + count2; sourceYN|]
+                invalidArgOutOfRange "count2" count2 ("source axis-1 end index = " + string(sourceIndex2+count2) + " source axis-1 upper bound") sourceYN
             if targetIndex1 + count1 > targetXN then 
-                invalidArgFmt "count1" 
-                    "{0}\ntarget axis-0 end index = {1}, target axis-0 upper bound = {2}" 
-                    [|SR.GetString SR.outOfRange; targetIndex1 + count1; targetXN|]
+                invalidArgOutOfRange "count1" count1 ("target axis-0 end index = " + string(targetIndex1+count1) + " target axis-0 upper bound") targetXN
             if targetIndex2 + count2 > targetYN then 
-                invalidArgFmt "count2" 
-                    "{0}\ntarget axis-1 end index = {1}, target axis-1 upper bound = {2}" 
-                    [|SR.GetString SR.outOfRange; targetIndex2 + count2; targetYN|]
+                invalidArgOutOfRange "count2" count2 ("target axis-1 end index = " + string(targetIndex2+count2) + " target axis-1 upper bound") targetYN
 
             for i = 0 to count1 - 1 do
                 for j = 0 to count2 - 1 do
