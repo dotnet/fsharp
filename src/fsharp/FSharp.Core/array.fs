@@ -483,8 +483,6 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1
             Array.subUnchecked 0 count res
 
-
-
         [<CompiledName("Filter")>]
         let filter f (array: _[]) = 
         
@@ -524,10 +522,7 @@ namespace Microsoft.FSharp.Collections
                     res
 
             else empty
-
             
-
-
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
 
