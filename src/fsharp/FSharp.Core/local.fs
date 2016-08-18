@@ -43,6 +43,14 @@ module DetailedExceptions =
     let invalidArgInputMustBePositive arg count =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
+    /// throws an invalid argument exception and returns the out of range index,
+    /// a text description of the range, and the bound of the range
+    /// e.g. sourceIndex = -4, source axis-0 lower bound = 0" 
+    let invalidArgOutOfRange arg index text bound =
+        invalidArgFmt arg
+            "{0}\n{1} = {2}, {3} = {4}" 
+            [|SR.GetString SR.outOfRange; arg; index; text; bound|]
+
 
 namespace Microsoft.FSharp.Primitives.Basics 
 
