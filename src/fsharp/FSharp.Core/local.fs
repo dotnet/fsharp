@@ -3,16 +3,17 @@
 
 namespace Microsoft.FSharp.Core
 
-module DetailedExceptions =
+module internal DetailedExceptions =
     open System
+    open Microsoft.FSharp.Core
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
-    let inline internal invalidArgFmt (arg:string) (format:string) paramArray =    
+    let inline invalidArgFmt (arg:string) (format:string) paramArray =    
         let msg = String.Format (format,paramArray)
         raise (new ArgumentException (msg,arg))
 
     /// takes a formatting string and a param array to splice into the formatting string
-    let inline internal invalidOpFmt (format:string) paramArray =
+    let inline invalidOpFmt (format:string) paramArray =
         let msg = String.Format (format,paramArray)
         raise (new InvalidOperationException(msg))
 
@@ -36,11 +37,11 @@ module DetailedExceptions =
             [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
 
     /// throws an invalid argument exception and returns the arg's value
-    let invalidArgInputMustBeNonNegative (arg:string) (count:int) =
-        invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBeNonNegative; arg; count|]
+    let inline invalidArgInputMustBeNonNegative (arg:string) (count:int) =
+        invalidArgFmt arg "{0}\n{1} = {2}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString ; arg; count|]
         
     /// throws an invalid argument exception and returns the arg's value
-    let invalidArgInputMustBePositive (arg:string) (count:int) =
+    let inline invalidArgInputMustBePositive (arg:string) (count:int) =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
     /// throws an invalid argument exception and returns the out of range index,
