@@ -277,7 +277,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             for i = 0 to array1.Length-1 do 
                 f.Invoke(array1.[i], array2.[i])
 
@@ -299,7 +299,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let res = Array.zeroCreateUnchecked array1.Length
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
@@ -312,7 +312,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array3" array3
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let len1 = array1.Length
-            if not (len1 = array2.Length && len1 = array3.Length) then invalidArg "" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len1 <> array2.Length || len1 <> array3.Length then invalidArg3ArraysDifferent "array1" "array2" "array3" len1 array2.Length array3.Length
             
             let res = Array.zeroCreateUnchecked len1
             for i = 0 to res.Length-1 do
@@ -324,7 +324,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let res = Array.zeroCreateUnchecked array1.Length 
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(i,array1.[i], array2.[i])
@@ -342,7 +342,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths));
+            if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             for i = 0 to array1.Length-1 do 
                 f.Invoke(i,array1.[i], array2.[i])
 
@@ -388,7 +388,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let len1 = array1.Length
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len1 <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let rec loop i = i < len1 && (f.Invoke(array1.[i], array2.[i]) || loop (i+1))
             loop 0
 
@@ -405,7 +405,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let len1 = array1.Length
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len1 <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
 
@@ -615,7 +615,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         let skip count (array:'T[]) =
             checkNonNull "array" array
-            if count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+            if count > array.Length then invalidArgOutOfRange "count" count "array.Length" array.Length
             if count = array.Length then
                 empty
             else
@@ -655,7 +655,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Windowed")>]
         let windowed windowSize (array:'T[]) =
             checkNonNull "array" array
-            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
+            if windowSize <= 0 then invalidArgInputMustBePositive "windowSize" windowSize
             let len = array.Length
             if windowSize > len then
                 empty
@@ -668,7 +668,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (array:'T[]) =
             checkNonNull "array" array
-            if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+            if chunkSize <= 0 then invalidArgInputMustBePositive "chunkSize" chunkSize
             let len = array.Length
             if len = 0 then
                 empty
@@ -686,7 +686,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitInto")>]
         let splitInto count (array:_[]) =
             checkNonNull "array" array
-            if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+            if count <= 0 then invalidArgInputMustBePositive "count" count
             Array.splitInto count array
 
         [<CompiledName("Zip")>]
@@ -694,7 +694,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array1" array1
             checkNonNull "array2" array2
             let len1 = array1.Length 
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len1 <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let res = Array.zeroCreateUnchecked len1 
             for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i])
@@ -706,8 +706,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             checkNonNull "array3" array3
             let len1 = array1.Length
-            if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
-            if len1 <> array3.Length then invalidArg "array3" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len1 <> array2.Length || len1 <> array3.Length then invalidArg3ArraysDifferent "array1" "array2" "array3" len1 array2.Length array3.Length
             let res = Array.zeroCreateUnchecked len1 
             for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i],array3.[i])
@@ -799,7 +798,7 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let mutable res = acc 
             let len = array1.Length
-            if len <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if len <> array2.Length then invalidArgDifferentArrayLength "array1" len "array2" array2.Length
             for i = len-1 downto 0 do 
                 res <- f.Invoke(array1.[i],array2.[i],res)
             res
@@ -810,7 +809,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             let mutable state = acc 
-            if array1.Length <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
+            if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             for i = 0 to array1.Length-1 do 
                 state <- f.Invoke(state,array1.[i],array2.[i])
             state
@@ -1079,7 +1078,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             if startIndex < 0 then invalidArgInputMustBeNonNegative "startIndex" startIndex
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            if startIndex + count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+            if startIndex + count > array.Length then invalidArgOutOfRange "count" count "array.Length" array.Length
             Array.subUnchecked startIndex count array
 
         [<CompiledName("Item")>]
