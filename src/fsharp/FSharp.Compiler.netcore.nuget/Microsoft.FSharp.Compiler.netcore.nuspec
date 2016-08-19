@@ -45,5 +45,8 @@
         <file src="default.win32manifest"   target="runtimes/any/native/" />
         <file src="fsi.exe"                 target="lib/netstandard1.6" />
         <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.6" />
+        <file src="FSharp.Build.dll"        target="lib/netstandard1.6" />
+        <file src="Microsoft.FSharp.targets" target="runtimes/any/native/" />
+        <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
     </files>
 </package>
