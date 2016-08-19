@@ -47,7 +47,7 @@ type References() =
     static let GetReferenceContainerNode(project : ProjectNode) =
         let l = new List<ReferenceContainerNode>()
         project.FindNodesOfType(l)
-        l.[0]  
+        l.[0]
 
 
     [<Test>]
@@ -505,8 +505,10 @@ type References() =
             AssertContains contents newPropVal
         )
 
-            
-    [<Test>]
+    // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+    // On DEV 15 Preview 4 the VS IDE Test fails with :
+    //     System.InvalidOperationException : Operation is not valid due to the current state of the object.
+    // [<Test>]     // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
     member public this.``AddReference.COM`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -549,7 +551,7 @@ type References() =
             printfn "%O" fsproj
             let xn s = fsproj.Root.GetDefaultNamespace().GetName(s)
             let comReferencesXml = fsproj.Descendants(xn "COMReference") |> Seq.toList
-
+            
             Assert.AreEqual(1, comReferencesXml |> List.length)
 
             let comRefXml = comReferencesXml |> List.head

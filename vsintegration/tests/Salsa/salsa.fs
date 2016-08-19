@@ -615,7 +615,7 @@ module internal Salsa =
                  versionFile,
                  otherFlags:string,
                  otherProjMisc:string,
-                 targetFrameworkVersion:string) =        
+                 targetFrameworkVersion:string) =
 
             // Determine which FSharp.targets file to use. If we use the installed
             // targets file then we check the registry for F#'s install path. Otherwise
@@ -633,7 +633,7 @@ module internal Salsa =
 //            The salsa layer does Configuration/Platform in a kind of hacky way
 //            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
 //            Append "        <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>"
-            Append "        <OutputPath>bin\Debug\</OutputPath>"  
+            Append "        <OutputPath>bin\Debug\</OutputPath>"
             if versionFile<>null then Append (sprintf "        <VersionFile>%s</VersionFile>" versionFile)
             if otherFlags<>null then Append (sprintf "        <OtherFlags>%s --resolutions</OtherFlags>" otherFlags)
             if targetFrameworkVersion<>null then
@@ -690,10 +690,10 @@ module internal Salsa =
                 
             Append "    </ItemGroup>"
             Append otherProjMisc
-            
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" targetsFileFolder)
+
+            let t = targetsFileFolder.TrimEnd([|'\\'|])
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" t)
             Append "</Project>"
-            
             sb.ToString()
 
         type MSBuildBehaviorHooks(useInstalledTargets) = 
@@ -710,10 +710,9 @@ module internal Salsa =
             interface ProjectBehaviorHooks with 
                 member x.CreateProjectHook (projectName, files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion : string) =
                     if File.Exists(projectName) then File.Delete(projectName)
-
                     let text = CreateMsBuildProjectText useInstalledTargets (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, preImportXml, targetFrameworkVersion)
-                    File.AppendAllText(projectName,text+"\r\n")
-            
+                    File.WriteAllText(projectName,text+"\r\n")
+
                 member x.InitializeProjectHook op = openProject <- Some(op:?>IOpenProject)
                 member x.MakeHierarchyHook (projdir, fullname, projectname, configChangeNotifier, serviceProvider) = 
                     let projectSite = NewMSBuildProjectSite(Conf, Plat, fullname)
