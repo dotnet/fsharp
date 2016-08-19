@@ -8,11 +8,17 @@ open NUnit.Framework
 open FsCheck
 open Utils
 
+/// helper function that creates labeled FsCheck properties for equality comparisons
+let consistency name sqs ls arr =
+    (sqs = arr) |@ (sprintf  "Seq.%s = Array.%s" name name) .&. 
+    (ls  = arr) |@ (sprintf "List.%s = Array.%s" name name)
+
+
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
-    let s = xs |> Seq.allPairs xs2
-    let l = xs |> List.allPairs xs2
-    let a = xs |> Seq.toArray |> Array.allPairs (Seq.toArray xs2)
-    Seq.toArray s = a && List.toArray l = a
+    let s = xs |> Seq.allPairs xs2 |> Seq.toArray
+    let l = xs |> List.allPairs xs2  |> List.toArray
+    let a = xs |> Seq.toArray |> Array.allPairs (Seq.toArray xs2)    
+    consistency "allPairs" s l a
 
 [<Test>]
 let ``allPairs is consistent`` () =
@@ -21,10 +27,11 @@ let ``allPairs is consistent`` () =
     Check.QuickThrowOnFailure allPairs<NormalFloat>
 
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
-    let s = xs |> Seq.append xs2 
-    let l = xs |> List.append xs2
+    let s = xs |> Seq.append xs2 |> Seq.toArray
+    let l = xs |> List.append xs2 |> List.toArray
     let a = xs |> Seq.toArray |> Array.append (Seq.toArray xs2)
-    Seq.toArray s = a && List.toArray l = a
+    consistency "append" s l a
+
 
 [<Test>]
 let ``append is consistent`` () =
@@ -36,8 +43,8 @@ let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
     let s = runAndCheckErrorType (fun () -> xs |> Seq.average)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.average)
-    s = a && l = a
+    let a = runAndCheckErrorType (fun () -> xs |> Array.average)    
+    consistency "average" s l a
 
 [<Test>]
 let ``average is consistent`` () =
@@ -49,7 +56,8 @@ let averageBy (xs : float []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f)
     let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f)
-    s = a && l = a
+    consistency "averageBy" s l a
+
 
 [<Test>]
 let ``averageBy is consistent`` () =
@@ -59,7 +67,8 @@ let contains<'a when 'a : equality> (xs : 'a []) x  =
     let s = xs |> Seq.contains x
     let l = xs |> List.ofArray |> List.contains x
     let a = xs |> Array.contains x
-    s = a && l = a
+    consistency "contains" s l a
+
 
 [<Test>]
 let ``contains is consistent`` () =
@@ -68,10 +77,10 @@ let ``contains is consistent`` () =
     Check.QuickThrowOnFailure contains<float>
 
 let choose<'a when 'a : equality> (xs : 'a []) f  =
-    let s = xs |> Seq.choose f
-    let l = xs |> List.ofArray |> List.choose f
+    let s = xs |> Seq.choose f |> Seq.toArray
+    let l = xs |> List.ofArray |> List.choose f |> List.toArray
     let a = xs |> Array.choose f
-    Seq.toArray s = a && List.toArray l = a
+    consistency "contains" s l a
 
 [<Test>]
 let ``choose is consistent`` () =
@@ -83,7 +92,8 @@ let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
     let s = run (fun () -> xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
     let a = run (fun () -> xs |> Array.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
-    s = a && l = a
+    consistency "chunkBySize" s l a
+
 
 [<Test>]
 let ``chunkBySize is consistent`` () =
@@ -92,10 +102,12 @@ let ``chunkBySize is consistent`` () =
     Check.QuickThrowOnFailure chunkBySize<NormalFloat>
 
 let collect<'a> (xs : 'a []) f  =
-    let s = xs |> Seq.collect f
-    let l = xs |> List.ofArray |> List.collect (fun x -> f x |> List.ofArray)
+    let s = xs |> Seq.collect f |> Seq.toArray
+    let l = xs |> List.ofArray |> List.collect (fun x -> f x |> List.ofArray) |> List.toArray
     let a = xs |> Array.collect f
-    Seq.toArray s = a && List.toArray l = a
+    consistency "collect" s l a
+
+
 
 [<Test>]
 let ``collect is consistent`` () =
@@ -107,7 +119,9 @@ let compareWith<'a>(xs : 'a []) (xs2 : 'a []) f  =
     let s = (xs, xs2) ||> Seq.compareWith f
     let l = (List.ofArray xs, List.ofArray xs2) ||> List.compareWith f
     let a = (xs, xs2) ||> Array.compareWith f
-    s = a && l = a
+    consistency "compareWith" s l a
+
+
 
 [<Test>]
 let ``compareWith is consistent`` () =
@@ -116,10 +130,10 @@ let ``compareWith is consistent`` () =
     Check.QuickThrowOnFailure compareWith<float>
         
 let concat<'a when 'a : equality> (xs : 'a [][]) =
-    let s = xs |> Seq.concat
-    let l = xs |> List.ofArray |> List.map List.ofArray |> List.concat
+    let s = xs |> Seq.concat |> Seq.toArray
+    let l = xs |> List.ofArray |> List.map List.ofArray |> List.concat |> List.toArray
     let a = xs |> Array.concat
-    Seq.toArray s = a && List.toArray l = a
+    consistency "concat" s l a
 
 [<Test>]
 let ``concat is consistent`` () =
@@ -128,10 +142,10 @@ let ``concat is consistent`` () =
     Check.QuickThrowOnFailure concat<NormalFloat>
 
 let countBy<'a> (xs : 'a []) f =
-    let s = xs |> Seq.countBy f
-    let l = xs |> List.ofArray |> List.countBy f
+    let s = xs |> Seq.countBy f |> Seq.toArray
+    let l = xs |> List.ofArray |> List.countBy f |> List.toArray
     let a = xs |> Array.countBy f
-    Seq.toArray s = a && List.toArray l = a
+    consistency "countBy" s l a
 
 [<Test>]
 let ``countBy is consistent`` () =
@@ -140,10 +154,10 @@ let ``countBy is consistent`` () =
     Check.QuickThrowOnFailure countBy<float>
 
 let distinct<'a when 'a : comparison> (xs : 'a []) =
-    let s = xs |> Seq.distinct 
-    let l = xs |> List.ofArray |> List.distinct
-    let a = xs |> Array.distinct
-    Seq.toArray s = a && List.toArray l = a
+    let s = xs |> Seq.distinct |> Seq.toArray
+    let l = xs |> List.ofArray |> List.distinct |> List.toArray
+    let a = xs |> Array.distinct 
+    consistency "distinct" s l a
 
 [<Test>]
 let ``distinct is consistent`` () =
@@ -152,10 +166,10 @@ let ``distinct is consistent`` () =
     Check.QuickThrowOnFailure distinct<NormalFloat>
 
 let distinctBy<'a when 'a : equality> (xs : 'a []) f =
-    let s = xs |> Seq.distinctBy f
-    let l = xs |> List.ofArray |> List.distinctBy f
-    let a = xs |> Array.distinctBy f
-    Seq.toArray s = a && List.toArray l = a
+    let s = xs |> Seq.distinctBy f |> Seq.toArray
+    let l = xs |> List.ofArray |> List.distinctBy f |> List.toArray
+    let a = xs |> Array.distinctBy f 
+    consistency "distinctBy" s l a
 
 [<Test>]
 let ``distinctBy is consistent`` () =
@@ -167,7 +181,7 @@ let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.exactlyOne)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.exactlyOne)
     let a = runAndCheckErrorType (fun () -> xs |> Array.exactlyOne)
-    s = a && l = a
+    consistency "exactlyOne" s l a
 
 [<Test>]
 let ``exactlyOne is consistent`` () =
@@ -176,10 +190,10 @@ let ``exactlyOne is consistent`` () =
     Check.QuickThrowOnFailure exactlyOne<NormalFloat>
 
 let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
-    let s = xs |> Seq.except itemsToExclude
-    let l = xs |> List.ofArray |> List.except itemsToExclude
+    let s = xs |> Seq.except itemsToExclude |> Seq.toArray
+    let l = xs |> List.ofArray |> List.except itemsToExclude |> List.toArray
     let a = xs |> Array.except itemsToExclude
-    Seq.toArray s = a && List.toArray l = a
+    consistency "except" s l a
 
 [<Test>]
 let ``except is consistent`` () =
@@ -191,7 +205,7 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
     let l = xs |> List.ofArray |> List.exists f
     let a = xs |> Array.exists f
-    s = a && l = a
+    consistency "exists" s l a
 
 [<Test>]
 let ``exists is consistent`` () =
@@ -205,7 +219,7 @@ let exists2<'a when 'a : equality> (xs':('a*'a) []) f =
     let s = runAndCheckErrorType (fun () -> Seq.exists2 f xs xs2)
     let l = runAndCheckErrorType (fun () -> List.exists2 f (List.ofSeq xs) (List.ofSeq xs2))
     let a = runAndCheckErrorType (fun () -> Array.exists2 f (Array.ofSeq xs) (Array.ofSeq xs2))
-    s = a && l = a
+    consistency "exists2" s l a
     
 [<Test>]
 let ``exists2 is consistent for collections with equal length`` () =
@@ -229,7 +243,7 @@ let find<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.find predicate)
     let l = run (fun () -> xs |> List.ofArray |> List.find predicate)
     let a = run (fun () -> xs |> Array.find predicate)
-    s = a && l = a
+    consistency "filter" s l a
 
 [<Test>]
 let ``find is consistent`` () =
@@ -241,7 +255,7 @@ let findBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findBack predicate)
     let l = run (fun () -> xs |> List.ofArray |> List.findBack predicate)
     let a = run (fun () -> xs |> Array.findBack predicate)
-    s = a && l = a
+    consistency "findBack" s l a
 
 [<Test>]
 let ``findBack is consistent`` () =
@@ -253,7 +267,7 @@ let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findIndex predicate)
     let l = run (fun () -> xs |> List.ofArray |> List.findIndex predicate)
     let a = run (fun () -> xs |> Array.findIndex predicate)
-    s = a && l = a
+    consistency "findIndex" s l a
 
 [<Test>]
 let ``findIndex is consistent`` () =
@@ -265,7 +279,7 @@ let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.findIndexBack predicate)
     let l = run (fun () -> xs |> List.ofArray |> List.findIndexBack predicate)
     let a = run (fun () -> xs |> Array.findIndexBack predicate)
-    s = a && l = a
+    consistency "findIndexBack" s l a
 
 [<Test>]
 let ``findIndexBack is consistent`` () =
@@ -277,7 +291,7 @@ let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> xs |> Seq.fold f start)
     let l = run (fun () -> xs |> List.ofArray |> List.fold f start)
     let a = run (fun () -> xs |> Array.fold f start)
-    s = a && l = a
+    consistency "fold" s l a
 
 [<Test>]
 let ``fold is consistent`` () =
@@ -292,7 +306,7 @@ let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let s = run (fun () -> Seq.fold2 f start xs xs2)
     let l = run (fun () -> List.fold2 f start (List.ofArray xs) (List.ofArray xs2))
     let a = run (fun () -> Array.fold2 f start xs xs2)
-    s = a && l = a
+    consistency "fold2" s l a
 
 [<Test>]
 let ``fold2 is consistent`` () =
@@ -307,7 +321,7 @@ let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> Seq.foldBack f xs start)
     let l = run (fun () -> List.foldBack f (xs |> List.ofArray) start)
     let a = run (fun () -> Array.foldBack f xs start)
-    s = a && l = a
+    consistency "foldBack" s l a
 
 [<Test>]
 let ``foldBack is consistent`` () =
@@ -322,7 +336,7 @@ let foldBack2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let s = run (fun () -> Seq.foldBack2 f xs xs2 start)
     let l = run (fun () -> List.foldBack2 f (List.ofArray xs) (List.ofArray xs2) start)
     let a = run (fun () -> Array.foldBack2 f xs xs2 start)
-    s = a && l = a
+    consistency "foldBack2" s l a
 
 [<Test>]
 let ``foldBack2 is consistent`` () =
@@ -337,7 +351,7 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
     let l = xs |> List.ofArray |> List.forall f
     let a = xs |> Array.forall f
-    s = a && l = a
+    consistency "forall" s l a
 
 [<Test>]
 let ``forall is consistent`` () =
@@ -351,7 +365,7 @@ let forall2<'a when 'a : equality> (xs':('a*'a) []) f =
     let s = runAndCheckErrorType (fun () -> Seq.forall2 f xs xs2)
     let l = runAndCheckErrorType (fun () -> List.forall2 f (List.ofSeq xs) (List.ofSeq xs2))
     let a = runAndCheckErrorType (fun () -> Array.forall2 f (Array.ofSeq xs) (Array.ofSeq xs2))
-    s = a && l = a
+    consistency "forall2" s l a
     
 [<Test>]
 let ``forall2 is consistent for collections with equal length`` () =
@@ -363,7 +377,7 @@ let groupBy<'a when 'a : equality> (xs : 'a []) f =
     let s = run (fun () -> xs |> Seq.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
     let l = run (fun () -> xs |> List.ofArray |> List.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
     let a = run (fun () -> xs |> Array.groupBy f |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
-    s = a && l = a
+    consistency "groupBy" s l a
 
 [<Test>]
 let ``groupBy is consistent`` () =
@@ -375,7 +389,7 @@ let head<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.head)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.head)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.head)
-    s = a && l = a
+    consistency "head" s l a
 
 [<Test>]
 let ``head is consistent`` () =
@@ -384,10 +398,10 @@ let ``head is consistent`` () =
     Check.QuickThrowOnFailure head<NormalFloat>
 
 let indexed<'a when 'a : equality> (xs : 'a []) =
-    let s = xs |> Seq.indexed
-    let l = xs |> List.ofArray |> List.indexed
+    let s = xs |> Seq.indexed |> Seq.toArray
+    let l = xs |> List.ofArray |> List.indexed |> List.toArray
     let a = xs |> Array.indexed
-    Seq.toArray s = a && List.toArray l = a
+    consistency "indexed" s l a
 
 [<Test>]
 let ``indexed is consistent`` () =
@@ -399,7 +413,7 @@ let init<'a when 'a : equality> count f =
     let s = run (fun () -> Seq.init count f |> Seq.toArray)
     let l = run (fun () -> List.init count f |> Seq.toArray)
     let a = run (fun () -> Array.init count f)
-    s = a && l = a
+    consistency "init" s l a
 
 [<Test>]
 let ``init is consistent`` () =
@@ -411,7 +425,7 @@ let isEmpty<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.isEmpty
     let l = xs |> List.ofArray |> List.isEmpty
     let a = xs |> Array.isEmpty
-    s = a && l = a
+    consistency "isEmpty" s l a
 
 [<Test>]
 let ``isEmpty is consistent`` () =
@@ -423,7 +437,7 @@ let item<'a when 'a : equality> (xs : 'a []) index =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.item index)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.item index)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.item index)
-    s = a && l = a
+    consistency "item" s l a
 
 [<Test>]
 let ``item is consistent`` () =
@@ -521,7 +535,7 @@ let last<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.last)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.last)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.last)
-    s = a && l = a
+    consistency "last" s l a
 
 [<Test>]
 let ``last is consistent`` () =
@@ -533,7 +547,7 @@ let length<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.length
     let l = xs |> List.ofArray |> List.length
     let a = xs |> Array.length
-    s = a && l = a
+    consistency "length" s l a
 
 [<Test>]
 let ``length is consistent`` () =
@@ -542,10 +556,10 @@ let ``length is consistent`` () =
     Check.QuickThrowOnFailure length<float>
 
 let map<'a when 'a : equality> (xs : 'a []) f =
-    let s = xs |> Seq.map f
-    let l = xs |> List.ofArray |> List.map f
+    let s = xs |> Seq.map f |> Seq.toArray
+    let l = xs |> List.ofArray |> List.map f |> List.toArray
     let a = xs |> Array.map f
-    Seq.toArray s = a && List.toArray l = a
+    consistency "map" s l a
 
 [<Test>]
 let ``map is consistent`` () =
@@ -665,7 +679,7 @@ let max<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.max)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.max)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
-    s = a && l = a
+    consistency "max" s l a
 
 [<Test>]
 let ``max is consistent`` () =
@@ -677,7 +691,7 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.maxBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.maxBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
-    s = a && l = a
+    consistency "maxBy" s l a
 
 [<Test>]
 let ``maxBy is consistent`` () =
@@ -689,7 +703,7 @@ let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.min)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
-    s = a && l = a
+    consistency "min" s l a
 
 [<Test>]
 let ``min is consistent`` () =
@@ -701,7 +715,7 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.minBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.minBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
-    s = a && l = a
+    consistency "minBy" s l a
 
 [<Test>]
 let ``minBy is consistent`` () =
@@ -713,7 +727,7 @@ let pairwise<'a when 'a : comparison> (xs : 'a []) =
     let s = run (fun () -> xs |> Seq.pairwise |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.pairwise |> List.toArray)
     let a = run (fun () -> xs |> Array.pairwise)
-    s = a && l = a
+    consistency "pairwise" s l a
 
 [<Test>]
 let ``pairwise is consistent`` () =
@@ -750,7 +764,7 @@ let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let s = run (fun () -> xs |> Seq.permute permutation |> Seq.toArray)
     let l = run (fun () -> xs |> List.permute permutation |> List.toArray)
     let a = run (fun () -> xs |> Array.ofSeq |> Array.permute permutation)
-    s = a && l = a
+    consistency "partition" s l a
 
 [<Test>]
 let ``permute is consistent`` () =
@@ -762,7 +776,7 @@ let pick<'a when 'a : comparison> (xs : 'a []) f =
     let s = run (fun () -> xs |> Seq.pick f)
     let l = run (fun () -> xs |> List.ofArray |> List.pick f)
     let a = run (fun () -> xs |> Array.pick f)
-    s = a && l = a
+    consistency "pick" s l a
 
 [<Test>]
 let ``pick is consistent`` () =
@@ -774,7 +788,7 @@ let reduce<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduce f)
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
-    s = a && l = a
+    consistency "reduce" s l a
 
 [<Test>]
 let ``reduce is consistent`` () =
@@ -786,7 +800,7 @@ let reduceBack<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduceBack f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduceBack f)
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduceBack f)
-    s = a && l = a
+    consistency "reduceBack" s l a
 
 [<Test>]
 let ``reduceBack is consistent`` () =
@@ -798,7 +812,7 @@ let replicate<'a when 'a : equality> x count =
     let s = runAndCheckIfAnyError (fun () -> Seq.replicate count x |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.replicate count x |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.replicate count x)
-    s = a && l = a
+    consistency "replicate" s l a
 
 [<Test>]
 let ``replicate is consistent`` () =
@@ -810,7 +824,7 @@ let rev<'a when 'a : equality> (xs : 'a []) =
     let s = Seq.rev xs |> Seq.toArray
     let l = xs |> List.ofArray |> List.rev |> List.toArray
     let a = Array.rev xs
-    s = a && l = a
+    consistency "rev" s l a
 
 [<Test>]
 let ``rev is consistent`` () =
@@ -822,7 +836,7 @@ let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> xs |> Seq.scan f start |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.scan f start |> Seq.toArray)
     let a = run (fun () -> xs |> Array.scan f start)
-    s = a && l = a
+    consistency "scan" s l a
 
 [<Test>]
 let ``scan is consistent`` () =
@@ -835,7 +849,7 @@ let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> Seq.scanBack f xs start |> Seq.toArray)
     let l = run (fun () -> List.scanBack f (xs |> List.ofArray) start |> Seq.toArray)
     let a = run (fun () -> Array.scanBack f xs start)
-    s = a && l = a
+    consistency "scanback" s l a
 
 [<Test>]
 let ``scanBack is consistent`` () =
@@ -848,7 +862,7 @@ let singleton<'a when 'a : equality> (x : 'a) =
     let s = Seq.singleton x |> Seq.toArray
     let l = List.singleton x |> List.toArray
     let a = Array.singleton x
-    s = a && l = a
+    consistency "singleton" s l a
 
 [<Test>]
 let ``singleton is consistent`` () =
@@ -860,7 +874,7 @@ let skip<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.skip count xs |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.skip count (Seq.toList xs) |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.skip count xs)
-    s = a && l = a
+    consistency "skip" s l a
 
 [<Test>]
 let ``skip is consistent`` () =
@@ -872,7 +886,7 @@ let skipWhile<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> Seq.skipWhile f xs |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.skipWhile f (Seq.toList xs) |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.skipWhile f xs)
-    s = a && l = a
+    consistency "skipWhile" s l a
 
 [<Test>]
 let ``skipWhile is consistent`` () =
@@ -881,10 +895,10 @@ let ``skipWhile is consistent`` () =
     Check.QuickThrowOnFailure skipWhile<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
-    let s = xs |> Seq.sort 
-    let l = xs |> List.ofArray |> List.sort
+    let s = xs |> Seq.sort |> Seq.toArray
+    let l = xs |> List.ofArray |> List.sort |> List.toArray
     let a = xs |> Array.sort
-    Seq.toArray s = a && List.toArray l = a
+    consistency "sort" s l a
 
 [<Test>]
 let ``sort is consistent`` () =
@@ -934,10 +948,10 @@ let ``sortWith actually sorts (but is inconsistent in regards of stability)`` ()
     Check.QuickThrowOnFailure sortWith<NormalFloat,int>
 
 let sortDescending<'a when 'a : comparison> (xs : 'a []) =
-    let s = xs |> Seq.sortDescending 
-    let l = xs |> List.ofArray |> List.sortDescending
+    let s = xs |> Seq.sortDescending |> Seq.toArray
+    let l = xs |> List.ofArray |> List.sortDescending |> List.toArray
     let a = xs |> Array.sortDescending
-    Seq.toArray s = a && List.toArray l = a
+    consistency "sortDescending" s l a
 
 [<Test>]
 let ``sortDescending is consistent`` () =
@@ -965,7 +979,7 @@ let sum (xs : int []) =
     let s = run (fun () -> xs |> Seq.sum)
     let l = run (fun () -> xs |> Array.toList |> List.sum)
     let a = run (fun () -> xs |> Array.sum)
-    s = a && l = a
+    consistency "sum" s l a
 
 [<Test>]
 let ``sum is consistent`` () =
@@ -975,7 +989,7 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let s = run (fun () -> xs |> Seq.sumBy f)
     let l = run (fun () -> xs |> Array.toList |> List.sumBy f)
     let a = run (fun () -> xs |> Array.sumBy f)
-    s = a && l = a
+    consistency "sumBy" s l a
 
 [<Test>]
 let ``sumBy is consistent`` () =
@@ -999,7 +1013,7 @@ let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
-    s = a && l = a
+    consistency "splitInto" s l a
 
 [<Test>]
 let ``splitInto is consistent`` () =
@@ -1011,7 +1025,7 @@ let tail<'a when 'a : equality> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.tail |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.tail |> Seq.toArray)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.tail)
-    s = a && l = a
+    consistency "tail" s l a
 
 [<Test>]
 let ``tail is consistent`` () =
@@ -1023,7 +1037,7 @@ let take<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.take count xs |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.take count (Seq.toList xs) |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.take count xs)
-    s = a && l = a
+    consistency "take" s l a
 
 [<Test>]
 let ``take is consistent`` () =
@@ -1035,7 +1049,7 @@ let takeWhile<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> Seq.takeWhile f xs |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.takeWhile f (Seq.toList xs) |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.takeWhile f xs)
-    s = a && l = a
+    consistency "takeWhile" s l a
 
 [<Test>]
 let ``takeWhile is consistent`` () =
@@ -1047,7 +1061,7 @@ let truncate<'a when 'a : equality> (xs : 'a []) count =
     let s = runAndCheckIfAnyError (fun () -> Seq.truncate count xs |> Seq.toArray)
     let l = runAndCheckIfAnyError (fun () -> List.truncate count (Seq.toList xs) |> List.toArray)
     let a = runAndCheckIfAnyError (fun () -> Array.truncate count xs)
-    s = a && l = a
+    consistency "truncate" s l a
 
 [<Test>]
 let ``truncate is consistent`` () =
@@ -1059,7 +1073,7 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFind predicate
     let l = xs |> List.ofArray |> List.tryFind predicate
     let a = xs |> Array.tryFind predicate
-    s = a && l = a
+    consistency "tryFind" s l a
 
 [<Test>]
 let ``tryFind is consistent`` () =
@@ -1071,7 +1085,7 @@ let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindBack predicate
     let l = xs |> List.ofArray |> List.tryFindBack predicate
     let a = xs |> Array.tryFindBack predicate
-    s = a && l = a
+    consistency "tryFindBack" s l a
 
 [<Test>]
 let ``tryFindBack is consistent`` () =
@@ -1083,7 +1097,7 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndex predicate
     let l = xs |> List.ofArray |> List.tryFindIndex predicate
     let a = xs |> Array.tryFindIndex predicate
-    s = a && l = a
+    consistency "tryFindIndex" s l a
 
 [<Test>]
 let ``tryFindIndex is consistent`` () =
@@ -1095,7 +1109,7 @@ let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndexBack predicate
     let l = xs |> List.ofArray |> List.tryFindIndexBack predicate
     let a = xs |> Array.tryFindIndexBack predicate
-    s = a && l = a
+    consistency "tryFindIndexBack" s l a
 
 [<Test>]
 let ``tryFindIndexBack is consistent`` () =
@@ -1107,7 +1121,7 @@ let tryHead<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.tryHead
     let l = xs |> List.ofArray |> List.tryHead
     let a = xs |> Array.tryHead
-    s = a && l = a
+    consistency "tryHead" s l a
 
 [<Test>]
 let ``tryHead is consistent`` () =
@@ -1119,7 +1133,7 @@ let tryItem<'a when 'a : equality> (xs : 'a []) index =
     let s = xs |> Seq.tryItem index
     let l = xs |> List.ofArray |> List.tryItem index
     let a = xs |> Array.tryItem index
-    s = a && l = a
+    consistency "tryItem" s l a
 
 [<Test>]
 let ``tryItem is consistent`` () =
@@ -1131,7 +1145,7 @@ let tryLast<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.tryLast
     let l = xs |> List.ofArray |> List.tryLast
     let a = xs |> Array.tryLast
-    s = a && l = a
+    consistency "tryLast" s l a
 
 [<Test>]
 let ``tryLast is consistent`` () =
@@ -1143,7 +1157,7 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let s = xs |> Seq.tryPick f
     let l = xs |> List.ofArray |> List.tryPick f
     let a = xs |> Array.tryPick f
-    s = a && l = a
+    consistency "tryPick" s l a
 
 [<Test>]
 let ``tryPick is consistent`` () =
@@ -1163,7 +1177,7 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
     let s : 'b [] = Seq.unfold (f()) start |> Seq.toArray
     let l = List.unfold (f()) start |> List.toArray
     let a = Array.unfold (f()) start
-    s = a && l = a
+    consistency "unfold" s l a
 
 
 [<Test>]
@@ -1202,10 +1216,10 @@ let ``unzip3 is consistent`` () =
     Check.QuickThrowOnFailure unzip3<NormalFloat>
 
 let where<'a when 'a : equality> (xs : 'a []) predicate =
-    let s = xs |> Seq.where predicate
-    let l = xs |> List.ofArray |> List.where predicate
+    let s = xs |> Seq.where predicate |> Seq.toArray
+    let l = xs |> List.ofArray |> List.where predicate |> List.toArray
     let a = xs |> Array.where predicate
-    Seq.toArray s = a && List.toArray l = a
+    consistency "where" s l a
 
 [<Test>]
 let ``where is consistent`` () =
@@ -1217,7 +1231,7 @@ let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
     let s = run (fun () -> xs |> Seq.windowed windowSize |> Seq.toArray |> Array.map Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.windowed windowSize |> List.toArray |> Array.map Seq.toArray)
     let a = run (fun () -> xs |> Array.windowed windowSize)
-    s = a && l = a
+    consistency "windowed" s l a
 
 [<Test>]
 let ``windowed is consistent`` () =
@@ -1231,7 +1245,7 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
     let l = runAndCheckErrorType (fun () -> List.zip (List.ofSeq xs) (List.ofSeq xs2) |> List.toArray)
     let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
-    s = a && l = a
+    consistency "zip" s l a
     
 [<Test>]
 let ``zip is consistent for collections with equal length`` () =
@@ -1246,7 +1260,7 @@ let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     let s = runAndCheckErrorType (fun () -> Seq.zip3 xs xs2 xs3 |> Seq.toArray)
     let l = runAndCheckErrorType (fun () -> List.zip3 (List.ofSeq xs) (List.ofSeq xs2) (List.ofSeq xs3) |> List.toArray)
     let a = runAndCheckErrorType (fun () -> Array.zip3 (Array.ofSeq xs) (Array.ofSeq xs2) (Array.ofSeq xs3))
-    s = a && l = a
+    consistency "zip3" s l a
     
 [<Test>]
 let ``zip3 is consistent for collections with equal length`` () =
