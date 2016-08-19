@@ -493,9 +493,9 @@ namespace Microsoft.FSharp.Collections
     
             if i <> array.Length then            
                 let mutable element = array.[i]
-                let mutable count = 1
                 let mutable res = Array.zeroCreateUnchecked (((array.Length-i) >>> 2) + 1)
-                res.[i] <- element
+                let mutable count = 1
+                res.[0] <- element
                 i <- i + 1
                          
                 while count < res.Length && i < array.Length do
@@ -516,7 +516,7 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1                            
                         i <- i + 1
         
-                if res.Length <> array.Length then
+                if count <> array.Length then
                     Array.subUnchecked 0 count res
                 else 
                     res
