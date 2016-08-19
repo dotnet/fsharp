@@ -23,7 +23,7 @@ module internal DetailedExceptions =
             "{0}\n{1} is {2} {3} shorter than {4}" 
             [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; (if diff=1 then "element" else "elements"); arg2|]
 
-    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    /// throws an invalid argument exception and returns the length of the 3 arrays
     let invalidArg3ListsDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
         invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
             "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
@@ -51,6 +51,18 @@ module internal DetailedExceptions =
         invalidArgFmt arg
             "{0}\n{1} = {2}, {3} = {4}" 
             [|SR.GetString SR.outOfRange; arg; index; text; bound|]
+
+    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    let invalidArgDifferentArrayLength (arg1:string) (len1:int) (arg2:string) (len2:int) =
+        invalidArgFmt arg1
+            "{0}\n{1}.Length = {2}, {3}.Length = {4}" 
+            [|SR.GetString SR.arraysHadDifferentLengths; arg1; len1; arg2; len2 |]
+
+    /// throws an invalid argument exception and returns the lengths of the 3 arrays
+    let invalidArg3ArraysDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
+        invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
+            "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
+            [|SR.GetString SR.arraysHadDifferentLengths; arg1; len1; arg2; len2; arg3; len3|]
 
 
 namespace Microsoft.FSharp.Primitives.Basics 

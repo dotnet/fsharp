@@ -12,6 +12,8 @@ module internal DetailedExceptions =
     val inline invalidArgInputMustBeNonNegative: arg:string -> count:int -> _
     val inline invalidArgInputMustBePositive: arg:string -> count:int -> _
     val invalidArgOutOfRange: arg:string -> index:int -> text:string -> bound:int -> _ 
+    val invalidArgDifferentArrayLength: arg1:string -> len1:int -> arg2:string -> len2:int -> _
+    val invalidArg3ArraysDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
 
 /// Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics 
