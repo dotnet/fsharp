@@ -4,13 +4,13 @@ namespace Microsoft.FSharp.Core
 open Microsoft.FSharp.Core
 
 module internal DetailedExceptions =
-    val inline internal invalidArgFmt: arg:string -> format:string -> paramArray:obj array -> _
-    val inline internal invalidOpFmt: format:string -> paramArray:obj array -> _
+    val inline invalidArgFmt: arg:string -> format:string -> paramArray:obj array -> _
+    val inline invalidOpFmt: format:string -> paramArray:obj array -> _
     val invalidArgDifferentListLength: arg1:string -> arg2:string -> diff:int -> _
     val invalidArg3ListsDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
     val invalidOpListNotEnoughElements: index:int -> _
-    val invalidArgInputMustBeNonNegative: arg:string -> count:int -> _
-    val invalidArgInputMustBePositive: arg:string -> count:int -> _
+    val inline invalidArgInputMustBeNonNegative: arg:string -> count:int -> _
+    val inline invalidArgInputMustBePositive: arg:string -> count:int -> _
     val invalidArgOutOfRange: arg:string -> index:int -> text:string -> bound:int -> _ 
 
 /// Definitions internal for this library.
