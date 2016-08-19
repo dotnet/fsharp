@@ -17,7 +17,7 @@ let consistency name sqs ls arr =
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.allPairs xs2 |> Seq.toArray
     let l = xs |> List.allPairs xs2  |> List.toArray
-    let a = xs |> Seq.toArray |> Array.allPairs (Seq.toArray xs2)    
+    let a = xs |> List.toArray |> Array.allPairs (List.toArray xs2)    
     consistency "allPairs" s l a
 
 [<Test>]
@@ -29,7 +29,7 @@ let ``allPairs is consistent`` () =
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.append xs2 |> Seq.toArray
     let l = xs |> List.append xs2 |> List.toArray
-    let a = xs |> Seq.toArray |> Array.append (Seq.toArray xs2)
+    let a = xs |> List.toArray |> Array.append (List.toArray xs2)
     consistency "append" s l a
 
 
@@ -89,10 +89,16 @@ let ``choose is consistent`` () =
     Check.QuickThrowOnFailure choose<float>
 
 let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
-    let s = run (fun () -> xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
-    let l = run (fun () -> xs |> List.ofArray |> List.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
-    let a = run (fun () -> xs |> Array.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
-    consistency "chunkBySize" s l a
+    let ls = List.ofArray xs
+    if size <= 0 then 
+        Prop.throws<ArgumentException,_> (lazy Seq.chunkBySize size xs) .&.
+        Prop.throws<ArgumentException,_> (lazy Array.chunkBySize size xs) .&.
+        Prop.throws<ArgumentException,_> (lazy List.chunkBySize size ls) 
+    else
+        let s = xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray
+        let l = ls |> List.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray
+        let a = xs |> Array.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray
+        consistency "chunkBySize" s l a
 
 
 [<Test>]
@@ -243,7 +249,7 @@ let find<'a when 'a : equality> (xs : 'a []) predicate =
     let s = run (fun () -> xs |> Seq.find predicate)
     let l = run (fun () -> xs |> List.ofArray |> List.find predicate)
     let a = run (fun () -> xs |> Array.find predicate)
-    consistency "filter" s l a
+    consistency "find" s l a
 
 [<Test>]
 let ``find is consistent`` () =
@@ -998,10 +1004,18 @@ let ``sumBy is consistent`` () =
     Check.QuickThrowOnFailure sumBy<float>
 
 let splitAt<'a when 'a : equality> (xs : 'a []) index =
-    // no seq version
-    let l = run (fun () -> xs |> List.ofArray |> List.splitAt index |> fun (a,b) -> List.toArray a,List.toArray b)
-    let a = run (fun () -> xs |> Array.splitAt index)
-    l = a
+    let ls = List.ofArray xs
+    if index < 0 then 
+        Prop.throws<ArgumentException,_> (lazy List.splitAt index ls) .&.
+        Prop.throws<ArgumentException,_> (lazy Array.splitAt index xs) 
+    elif index > xs.Length then
+        Prop.throws<InvalidOperationException,_> (lazy List.splitAt index ls) .&.
+        Prop.throws<InvalidOperationException,_> (lazy Array.splitAt index xs) 
+    else
+        // no seq version
+        let l = run (fun () -> ls |> List.splitAt index |> fun (a,b) -> List.toArray a,List.toArray b)
+        let a = run (fun () -> xs |> Array.splitAt index)
+        (l = a) |@ "splitAt"
 
 [<Test>]
 let ``splitAt is consistent`` () =
@@ -1010,10 +1024,16 @@ let ``splitAt is consistent`` () =
     Check.QuickThrowOnFailure splitAt<NormalFloat>
 
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
-    let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
-    let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
-    let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
-    consistency "splitInto" s l a
+    let ls = List.ofArray xs
+    if count < 1 then 
+        Prop.throws<ArgumentException,_> (lazy List.splitInto count ls) .&.
+        Prop.throws<ArgumentException,_> (lazy Array.splitInto count xs) .&.
+        Prop.throws<ArgumentException,_> (lazy Seq.splitInto count xs) 
+    else
+        let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+        let l = run (fun () -> ls |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+        let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+        consistency "splitInto" s l a
 
 [<Test>]
 let ``splitInto is consistent`` () =
@@ -1172,8 +1192,6 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
             if !c > 100 then None else // prevent infinity seqs
             c := !c + 1
             f x
-
-    
     let s : 'b [] = Seq.unfold (f()) start |> Seq.toArray
     let l = List.unfold (f()) start |> List.toArray
     let a = Array.unfold (f()) start
@@ -1228,10 +1246,16 @@ let ``where is consistent`` () =
     Check.QuickThrowOnFailure where<NormalFloat>
 
 let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
-    let s = run (fun () -> xs |> Seq.windowed windowSize |> Seq.toArray |> Array.map Seq.toArray)
-    let l = run (fun () -> xs |> List.ofArray |> List.windowed windowSize |> List.toArray |> Array.map Seq.toArray)
-    let a = run (fun () -> xs |> Array.windowed windowSize)
-    consistency "windowed" s l a
+    let ls = List.ofArray xs
+    if windowSize < 1 then 
+        Prop.throws<ArgumentException,_> (lazy   Seq.windowed windowSize xs) .&.
+        Prop.throws<ArgumentException,_> (lazy Array.windowed windowSize xs) .&.
+        Prop.throws<ArgumentException,_> (lazy  List.windowed windowSize ls)
+    else
+        let s = run (fun () -> xs |> Seq.windowed windowSize |> Seq.toArray |> Array.map Seq.toArray)
+        let l = run (fun () -> ls |> List.windowed windowSize |> List.toArray |> Array.map Seq.toArray)
+        let a = run (fun () -> xs |> Array.windowed windowSize)
+        consistency "windowed" s l a
 
 [<Test>]
 let ``windowed is consistent`` () =
