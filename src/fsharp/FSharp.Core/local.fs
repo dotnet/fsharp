@@ -21,7 +21,7 @@ module internal List =
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]      
     let nonempty x = match x with [] -> false | _ -> true
 
-    let rec iter f x = match x with [] -> () | (h::t) -> f h; iter f t
+    let rec iter f x = match x with [] -> () | h::t -> f h; iter f t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -61,7 +61,7 @@ module internal List =
             else
                 distinctByToFreshConsTail cons hashSet keyf rest
 
-    let distinctByWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
+    let distinctByWithComparer (comparer: IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
         match list with
         | [] -> []
         | [h] -> [h]
@@ -73,6 +73,7 @@ module internal List =
             cons
     
     let countBy (dict:Dictionary<_, int>) (keyf:'T -> 'Key) = 
+        // No need to dispose enumerator Dispose does nothing.
         let mutable ie = dict.GetEnumerator()
         if not (ie.MoveNext()) then []
         else
@@ -84,6 +85,24 @@ module internal List =
                 cons <- cons2
             setFreshConsTail cons []
             res
+    
+    let rec pairwiseToFreshConsTail cons list lastvalue = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | [h] -> setFreshConsTail cons [(lastvalue, h)]
+        | h::t ->
+            let cons2 = freshConsNoTail (lastvalue, h)
+            setFreshConsTail cons cons2
+            pairwiseToFreshConsTail cons2 t h
+
+    let pairwise list =       
+        match list with
+        | [] -> []
+        | [_] -> []
+        | x1::x2::t ->
+            let cons = freshConsNoTail (x1, x2)
+            pairwiseToFreshConsTail cons t x2
+            cons
 
     let rec chooseToFreshConsTail cons f xs =
         match xs with 
@@ -407,10 +426,9 @@ module internal List =
         loop 0 l
         res
 
-    let ofArray (arr:'T[]) =
-        let len = arr.Length
+    let ofArray (arr:'T[]) =        
         let mutable res = ([]: 'T list)
-        for i = len - 1 downto 0 do
+        for i = arr.Length-1 downto 0 do
             res <- arr.[i] :: res
         res
 
@@ -596,7 +614,7 @@ module internal List =
         | [] -> 
             setFreshConsTail cons1a []
             setFreshConsTail cons1b []
-        | ((h1,h2)::t) -> 
+        | (h1,h2)::t -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
             setFreshConsTail cons1a cons2a
@@ -609,7 +627,7 @@ module internal List =
         match x with 
         | [] -> 
             [],[]
-        | ((h1,h2)::t) -> 
+        | (h1,h2)::t -> 
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
             unzipToFreshConsTail res1a res1b t
@@ -623,7 +641,7 @@ module internal List =
             setFreshConsTail cons1a []
             setFreshConsTail cons1b []
             setFreshConsTail cons1c []
-        | ((h1,h2,h3)::t) -> 
+        | (h1,h2,h3)::t -> 
             let cons2a = freshConsNoTail h1
             let cons2b = freshConsNoTail h2
             let cons2c = freshConsNoTail h3
@@ -638,7 +656,7 @@ module internal List =
         match x with 
         | [] -> 
             [],[],[]
-        | ((h1,h2,h3)::t) -> 
+        | (h1,h2,h3)::t -> 
             let res1a = freshConsNoTail h1
             let res1b = freshConsNoTail h2
             let res1c = freshConsNoTail h3 
@@ -722,7 +740,7 @@ module internal List =
         match xs1,xs2 with 
         | [],[] -> 
             setFreshConsTail cons []
-        | (h1::t1),(h2::t2) -> 
+        | h1::t1, h2::t2 -> 
             let cons2 = freshConsNoTail (h1,h2)
             setFreshConsTail cons cons2
             zipToFreshConsTail cons2 t1 t2
@@ -734,7 +752,7 @@ module internal List =
     let zip xs1 xs2 = 
         match xs1,xs2 with 
         | [],[] -> []
-        | (h1::t1),(h2::t2) -> 
+        | h1::t1, h2::t2 -> 
             let res = freshConsNoTail (h1,h2)
             zipToFreshConsTail res t1 t2
             res
@@ -747,7 +765,7 @@ module internal List =
         match xs1,xs2,xs3 with 
         | [],[],[] -> 
             setFreshConsTail cons []
-        | (h1::t1),(h2::t2),(h3::t3) -> 
+        | h1::t1, h2::t2, h3::t3 -> 
             let cons2 = freshConsNoTail (h1,h2,h3)
             setFreshConsTail cons cons2
             zip3ToFreshConsTail cons2 t1 t2 t3
@@ -760,7 +778,7 @@ module internal List =
         match xs1,xs2,xs3 with 
         | [],[],[] -> 
             []
-        | (h1::t1),(h2::t2),(h3::t3) -> 
+        | h1::t1, h2::t2, h3::t3 -> 
             let res = freshConsNoTail (h1,h2,h3) 
             zip3ToFreshConsTail res t1 t2 t3
             res
@@ -874,7 +892,7 @@ module internal Array =
     let inline init (count:int) (f: int -> 'T) = 
         if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
         let arr = (zeroCreateUnchecked count : 'T array)  
-        for i = 0 to count - 1 do 
+        for i = 0 to arr.Length-1 do 
             arr.[i] <- f i
         arr
 
@@ -927,7 +945,7 @@ module internal Array =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable acc = acc
             let res = zeroCreateUnchecked len
-            for i = 0 to len - 1 do
+            for i = 0 to array.Length-1 do
                 let h',s' = f.Invoke(acc,array.[i])
                 res.[i] <- h'
                 acc <- s'
@@ -1037,7 +1055,7 @@ module internal Array =
     let inline subUnchecked startIndex count (array : 'T[]) =
         let res = zeroCreateUnchecked count : 'T[]
         if count < 64 then
-            for i = 0 to count - 1 do
+            for i = 0 to res.Length-1 do
                 res.[i] <- array.[startIndex+i]
         else
             Array.Copy(array, startIndex, res, 0, count)
