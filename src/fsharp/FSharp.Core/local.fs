@@ -20,8 +20,8 @@ module internal DetailedExceptions =
     /// throws an invalid argument exception and returns the difference between the lists' lengths
     let invalidArgDifferentListLength (arg1:string) (arg2:string) (diff:int) =
         invalidArgFmt arg1
-            "{0}\n{1} is {2} elements shorter than {3}" 
-            [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; arg2|]
+            "{0}\n{1} is {2} {3} shorter than {4}" 
+            [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; (if diff=1 then "element" else "elements"); arg2|]
 
     /// throws an invalid argument exception and returns the difference between the lists' lengths
     let invalidArg3ListsDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
