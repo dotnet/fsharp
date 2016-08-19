@@ -35,6 +35,12 @@ module internal DetailedExceptions =
         invalidOpFmt 
             "{0}\nThe list was {1} {2} shorter than the index" 
             [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+    
+
+    /// eg. tried to {skip} {2} {elements} past the end of the seq. Seq.Length = {10}
+    let invalidOpExceededSeqLength (fnName:string) (diff:int) (len:int) =
+        invalidOpFmt "{0}\ntried to {1} {2} {3} past the end of the seq\nSeq.Length = {4}" 
+            [|SR.GetString SR.notEnoughElements; fnName; diff; (if diff=1 then "element" else "elements");len|] 
 
     /// throws an invalid argument exception and returns the arg's value
     let inline invalidArgInputMustBeNonNegative (arg:string) (count:int) =
