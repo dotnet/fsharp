@@ -285,6 +285,9 @@ namespace Microsoft.FSharp.Collections
         let filter comparer f s = filterAux comparer f s SetEmpty
 
         let rec diffAux comparer m acc = 
+            match acc with
+            | SetEmpty -> acc
+            | _ ->
             match m with 
             | SetNode(k,l,r,_) -> diffAux comparer l (diffAux comparer r (remove comparer k acc))
             | SetOne(k) -> remove comparer k acc
