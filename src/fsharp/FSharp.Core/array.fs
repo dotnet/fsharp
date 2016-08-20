@@ -483,19 +483,45 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1
             Array.subUnchecked 0 count res
 
-
         [<CompiledName("Filter")>]
-        let filter f (array: _[]) = 
-            checkNonNull "array" array
-            let res = Array.zeroCreateUnchecked array.Length 
-            let mutable count = 0
-            for x in array do                 
-                if f x then 
-                    res.[count] <- x
-                    count <- count + 1
-            Array.subUnchecked 0 count res
+        let filter f (array: _[]) =         
+            checkNonNull "array" array                    
+            let mutable i = 0    
+            while i < array.Length && not (f array.[i]) do
+                i <- i + 1
+            
+            if i <> array.Length then                    
+                let mutable element = array.[i]
+                let chunk1 : 'T[] = Array.zeroCreateUnchecked (((array.Length-i) >>> 2) + 1)
+                let mutable count = 1
+                chunk1.[0] <- element
+                i <- i + 1                                
+                while count < chunk1.Length && i < array.Length do
+                    element <- array.[i]                                
+                    if f element then                    
+                        chunk1.[count] <- element
+                        count <- count + 1                            
+                    i <- i + 1
+                
+                if i < array.Length then                            
+                    let chunk2 = Array.zeroCreateUnchecked (array.Length-i)                        
+                    count <- 0
+                    while i < array.Length do
+                        element <- array.[i]                                
+                        if f element then                    
+                            chunk2.[count] <- element
+                            count <- count + 1                            
+                        i <- i + 1
 
+                    let res : 'T[] = Array.zeroCreateUnchecked (chunk1.Length + count)
+                    Array.Copy(chunk1,res,chunk1.Length)
+                    Array.Copy(chunk2,0,res,chunk1.Length,count)
+                    res
+                else
+                    Array.subUnchecked 0 count chunk1                
+            else empty
 
+            
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
 
