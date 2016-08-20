@@ -95,9 +95,8 @@ let updateCmd envVars args = attempt {
                 }
 
             match allWINSDKNETFXTOOLS |> Seq.tryPick id with 
-            | Some sdk -> sdk, sdk + "x64"
+            | Some sdk -> sdk, sdk + @"x64\"
             | None -> "", ""
-
 
     let SN32 = WINSDKNETFXTOOLS_X86+"sn.exe"
     let SN64 = WINSDKNETFXTOOLS_X64+"sn.exe"
