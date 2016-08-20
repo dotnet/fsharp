@@ -62,7 +62,7 @@ let updateCmd envVars args = attempt {
     // if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64=%WindowsSDK_ExecutablePath_x64%
     // if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86=%WindowsSDK_ExecutablePath_x86%
 
-    let WINSDKNETFXTOOLS_X86, WINSDKNETFXTOOLS_X64  =
+    let WINSDKNETFXTOOLS_X86, WINSDKNETFXTOOLS_X64 =
         let EnvironmentPath var =
             match env var () with
             | Success x -> if Directory.Exists(x) then x else ""
@@ -80,7 +80,10 @@ let updateCmd envVars args = attempt {
                     | Some _ | None -> None
                 seq {
                     //                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools"   "InstallationFolder"
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools"   "InstallationFolder"
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools"     "InstallationFolder"
+
                     // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
                     yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
                     // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
@@ -134,15 +137,21 @@ let updateCmd envVars args = attempt {
     let strongName (snExe: string -> Result<_,_>) = attempt {
         let all = 
             [ "FSharp.Core";
-            "FSharp.Build";
-            "FSharp.Compiler.Interactive.Settings";"FSharp.Compiler.Hosted";
-            "FSharp.Compiler";"FSharp.Compiler.Server.Shared";
-            "FSharp.Editor";
-            "FSharp.LanguageService";"FSharp.LanguageService.Base";"FSharp.LanguageService.Compiler";
-            "FSharp.ProjectSystem.Base";"FSharp.ProjectSystem.FSharp";"FSharp.ProjectSystem.PropertyPages";
-            "FSharp.VS.FSI";
-            "VisualFSharp.Unittests";
-            "VisualFSharp.Salsa" ]
+              "FSharp.Build";
+              "FSharp.Compiler.Interactive.Settings";
+              "FSharp.Compiler.Hosted";
+              "FSharp.Compiler";
+              "FSharp.Compiler.Server.Shared";
+              "FSharp.Editor";
+              "FSharp.LanguageService";
+              "FSharp.LanguageService.Base";
+              "FSharp.LanguageService.Compiler";
+              "FSharp.ProjectSystem.Base";
+              "FSharp.ProjectSystem.FSharp";
+              "FSharp.ProjectSystem.PropertyPages";
+              "FSharp.VS.FSI";
+              "VisualFSharp.Unittests";
+              "VisualFSharp.Salsa" ]
         for a in all do
             snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a)   |> ignore // ignore result - SN is not needed for tests to pass, and this fails without admin rights
 
