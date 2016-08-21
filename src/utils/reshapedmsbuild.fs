@@ -743,7 +743,6 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion451 visualStudioVersion120     // v4.5.1
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion452 visualStudioVersion150     // v4.5.2
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion140     // v4.6
-            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion46  visualStudioVersion150     // v4.6
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion461 visualStudioVersion150     // v4.6.1
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
