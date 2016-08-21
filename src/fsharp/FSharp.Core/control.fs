@@ -1548,12 +1548,13 @@ namespace Microsoft.FSharp.Control
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
-        let continueWith (task : Task<'T>, args) = 
+        let continueWith (task : Task<'T>, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException()))
+                        if useCcontForTaskCancellation then args.aux.ccont(new OperationCanceledException())
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException()))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1561,12 +1562,13 @@ namespace Microsoft.FSharp.Control
 
             task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.None) |> ignore |> fake
 
-        let continueWithUnit (task : Task, args) = 
+        let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        args.aux.ccont (new OperationCanceledException())
+                        if useCcontForTaskCancellation then args.aux.ccont (new OperationCanceledException())
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException()))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1623,7 +1625,7 @@ namespace Microsoft.FSharp.Control
                         null
 
                 match edi with
-                | null -> TaskHelpers.continueWithUnit(task, args)
+                | null -> TaskHelpers.continueWithUnit (task, args, true)
                 | _ -> aux.econt edi
             )
 #else
@@ -2117,12 +2119,12 @@ namespace Microsoft.FSharp.Control
 #else
         static member AwaitTask (task:Task<'T>) : Async<'T> = 
             protectedPrimitiveWithResync (fun args -> 
-                TaskHelpers.continueWith(task, args)
+                TaskHelpers.continueWith(task, args, false)
                 )
 
         static member AwaitTask (task:Task) : Async<unit> = 
             protectedPrimitiveWithResync (fun args -> 
-                TaskHelpers.continueWithUnit(task, args)
+                TaskHelpers.continueWithUnit (task, args, false)
                 )
 #endif
 
@@ -2139,7 +2141,7 @@ namespace Microsoft.FSharp.Control
 #if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
                 protectedPrimitiveWithResync (fun ({ aux = aux } as args) ->
-                    TaskHelpers.continueWith(stream.ReadAsync(buffer, offset, count, aux.token), args)
+                    TaskHelpers.continueWith(stream.ReadAsync(buffer, offset, count, aux.token), args, false)
                     )
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginRead,stream.EndRead)
@@ -2163,7 +2165,7 @@ namespace Microsoft.FSharp.Control
 #if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
                 protectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
-                    TaskHelpers.continueWithUnit(stream.WriteAsync(buffer, offset, count, aux.token), args)
+                    TaskHelpers.continueWithUnit(stream.WriteAsync(buffer, offset, count, aux.token), args, false)
                     )
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginWrite,stream.EndWrite)

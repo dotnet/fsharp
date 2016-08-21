@@ -559,11 +559,11 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+    // 'CustomMarshalers' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
         let fileContent = """
             #light
-            #r "mscorcfg"
+            #r "CustomMarshalers"
             """
         this.VerifyFSXNoErrorList(fileContent)
 
@@ -974,8 +974,8 @@ type UsingMSBuild() as this =
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromGAC``() = 
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
-            """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
-            "#r \"mscor" "Global Assembly Cache"
+            """#r "CustomMarshalers" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+            "#r \"Custo" ".NET Framework"
 
     [<Test>]
     [<Category("fsx closure")>]
