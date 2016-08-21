@@ -1,5 +1,6 @@
 // #Conformance #Interop #Unions 
 open Lib
+open FSharpOptionalTests
 
 let mutable failures = false
 let report_failure () = 
@@ -46,6 +47,25 @@ let _ = test "structunion394b33" (Lib.NestedStructUnionsTests.testPattern3(u2))
 let _ = test "structunion394b14" (Lib.NestedStructUnionsTests.testPattern1mut(u2))
 let _ = test "structunion394b25" (Lib.NestedStructUnionsTests.testPattern2mut(u2))
 let _ = test "structunion394b36" (Lib.NestedStructUnionsTests.testPattern3mut(u2))
+
+
+// F# option implicit converter tests
+
+let testFsOpt() =
+    let testOpt (t : 'T option) =
+        test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
+
+    testOpt(Option<int>.None)
+    testOpt(Some 42)
+
+    // check that implicit conversion of optionals does 
+    // differentiate between 'null' and 'Some null'
+    testOpt(Option<string>.None)
+    testOpt(Option<string>.Some null)
+    testOpt(Some "")
+    testOpt(Some "test")
+
+testFsOpt()
 
 
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 

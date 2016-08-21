@@ -42,15 +42,15 @@ namespace Microsoft.FSharp.Collections
           let mutable started = false 
           interface IEnumerator<'T> with 
                 member x.Current = 
-                  check started; 
+                  check started 
                   (alreadyFinished() : 'T)
                   
           interface System.Collections.IEnumerator with 
               member x.Current = 
-                  check started; 
+                  check started 
                   (alreadyFinished() : obj)
               member x.MoveNext() = 
-                  if not started then started <- true;
+                  if not started then started <- true
                   false
               member x.Reset() = noReset()
           interface System.IDisposable with 
@@ -204,10 +204,10 @@ namespace Microsoft.FSharp.Collections
             interface IEnumerator with 
                 member x.Current = box (get())
                 member x.MoveNext() = 
-                    if not !started then started := true;
-                    curr := None; 
+                    if not !started then started := true
+                    curr := None 
                     while ((!curr).IsNone && e.MoveNext()) do 
-                        curr := f e.Current;
+                        curr := f e.Current
                     Option.isSome !curr
                 member x.Reset() = noReset()
             interface System.IDisposable with 
@@ -222,7 +222,7 @@ namespace Microsoft.FSharp.Collections
                     member x.Current = check !started; box e.Current
                     member x.MoveNext() = 
                         let rec next() =
-                            if not !started then started := true;
+                            if not !started then started := true
                             e.MoveNext() && (f  e.Current || next()) 
                         next()
                     member x.Reset() = noReset()
@@ -268,7 +268,7 @@ namespace Microsoft.FSharp.Collections
                   if !index = unstarted then notStarted()
                   if !index = completed then alreadyFinished()
                   match box !current with 
-                  | null -> current := Lazy<_>.Create(fun () -> f !index); 
+                  | null -> current := Lazy<_>.Create(fun () -> f !index) 
                   | _ ->  ()
                   // forced or re-forced immediately.          
                   (!current).Force() 
@@ -302,7 +302,7 @@ namespace Microsoft.FSharp.Collections
           let curr = ref None
           let state = ref (Some(openf())) 
           let getCurr() = 
-              check !started;
+              check !started
               match !curr with None -> alreadyFinished() | Some x -> x 
           let start() = if not !started then (started := true) 
 
@@ -313,7 +313,7 @@ namespace Microsoft.FSharp.Collections
              interface IEnumerator with 
                  member x.Current = box (getCurr())
                  member x.MoveNext() = 
-                     start();
+                     start()
                      match !state with 
                      | None -> false (* we started, then reached the end, then got another MoveNext *)
                      | Some s -> 
@@ -341,7 +341,7 @@ namespace Microsoft.FSharp.Collections
                 member x.MoveNext() = 
                        if curr >= len then false
                        else 
-                         curr <- curr + 1;
+                         curr <- curr + 1
                          (curr < len)
                 member x.Current = box(x.Get())
                 member x.Reset() = noReset()
@@ -411,7 +411,7 @@ namespace Microsoft.FSharp.Collections
                 res
             | Stop -> 
                 //System.Console.WriteLine("appG: Stop")
-                disposeG g; 
+                disposeG g
                 res
         
         // Binding. 
@@ -517,18 +517,18 @@ namespace Microsoft.FSharp.Collections
                 member x.Current= match curr with Some(v) -> v | None -> raise <| System.InvalidOperationException (SR.GetString(SR.moveNextNotCalledOrFinished))
             interface System.Collections.IEnumerator with
                 member x.Current = box (x :> IEnumerator<_>).Current
-                member x.MoveNext() = 
-                    not finished && 
-                    (match appG g with 
+                member x.MoveNext() =
+                    not finished &&
+                    (match appG g with
                      | Stop -> 
-                        curr <- None; 
-                        finished <- true; 
+                        curr <- None 
+                        finished <- true
                         false
                      | Yield(v) ->
-                        curr <- Some(v); 
+                        curr <- Some(v)
                         true
                      | Goto(next) ->
-                        (g <- next);
+                        (g <- next)
                         (x :> IEnumerator).MoveNext())
                 member x.Reset() = IEnumerator.noReset()
             interface System.IDisposable with
@@ -632,13 +632,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
                         let ie = restf().GetEnumerator()
                         match ie with 
                         | :? IFinallyEnumerator as a -> 
-                            a.AppendFinallyAction(compensation); 
+                            a.AppendFinallyAction(compensation)
                             ie
                         | _ -> 
                             IEnumerator.EnumerateThenFinally compensation ie 
                     with e -> 
-                        compensation(); 
-                        reraise() 
+                        compensation()
+                        reraise()
             interface IEnumerable with 
                 member x.GetEnumerator() = ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator) 
               
@@ -686,7 +686,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                             compensations <- []
                 
             member x.GetCurrent() = 
-                IEnumerator.check started;
+                IEnumerator.check started
                 if finished then IEnumerator.alreadyFinished() else x.currElement
             
             interface IFinallyEnumerator with 
@@ -706,7 +706,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                       let rec takeInner () = 
                         // check the inner list
                         if currInnerEnum.MoveNext() then 
-                            x.currElement <- currInnerEnum.Current; 
+                            x.currElement <- currInnerEnum.Current
                             true
                         else
                             // check the outer list
@@ -721,8 +721,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
                                     | _ -> 
                                          // OK, this one may not be empty.
                                          // Don't forget to dispose of the enumerator for the inner list now we're done with it
-                                         currInnerEnum.Dispose(); 
-                                         currInnerEnum <- ie.GetEnumerator(); 
+                                         currInnerEnum.Dispose()
+                                         currInnerEnum <- ie.GetEnumerator()
                                          takeInner ()
                                 else 
                                     // We're done
@@ -749,7 +749,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             let started = ref false 
             let curr = ref None
             let getCurr() = 
-                IEnumerator.check !started;
+                IEnumerator.check !started
                 match !curr with None -> IEnumerator.alreadyFinished() | Some x -> x 
             let start() = if not !started then (started := true) 
 
@@ -761,7 +761,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                        interface IEnumerator with 
                           member x.Current = box (getCurr())
                           member x.MoveNext() = 
-                               start();
+                               start()
                                let keepGoing = (try g() with e -> finish (); reraise ()) in
                                if keepGoing then 
                                    curr := Some(b); true
@@ -831,7 +831,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerable<'T> with 
             member x.GetEnumerator() = x.GetFreshEnumerator()
         interface IEnumerable with
-            member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator);
+            member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
         interface IEnumerator<'T> with 
             member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
@@ -841,7 +841,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl() 
                
-            member x.Reset() = raise <| new System.NotSupportedException();
+            member x.Reset() = raise <| new System.NotSupportedException()
 
 
 namespace Microsoft.FSharp.Collections
@@ -907,7 +907,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator()
             while e.MoveNext() do
-                f e.Current;
+                f e.Current
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
@@ -933,8 +933,8 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable i = 0 
             while e.MoveNext() do
-                f.Invoke(i, e.Current);
-                i <- i + 1;
+                f.Invoke(i, e.Current)
+                i <- i + 1
 
         [<CompiledName("Exists")>]
         let exists f (source : seq<'T>) = 
@@ -972,7 +972,7 @@ namespace Microsoft.FSharp.Collections
             use e2 = source2.GetEnumerator()
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             while (e1.MoveNext() && e2.MoveNext()) do
-                f.Invoke(e1.Current, e2.Current);
+                f.Invoke(e1.Current, e2.Current)
 
         [<CompiledName("IterateIndexed2")>]
         let iteri2 f (source1 : seq<_>) (source2 : seq<_>) = 
@@ -1064,7 +1064,7 @@ namespace Microsoft.FSharp.Collections
             use e = source.GetEnumerator()
             let mutable res = None 
             while (Option.isNone res && e.MoveNext()) do
-                res <-  f e.Current;
+                res <-  f e.Current
             res
 
         [<CompiledName("Pick")>]
@@ -1131,7 +1131,7 @@ namespace Microsoft.FSharp.Collections
                 use e = source.GetEnumerator() 
                 let mutable state = 0 
                 while e.MoveNext() do
-                    state <-  state + 1;
+                    state <-  state + 1
                 state
 
         [<CompiledName("Fold")>]
@@ -1164,7 +1164,7 @@ namespace Microsoft.FSharp.Collections
         let reduce f (source : seq<'T>)  = 
             checkNonNull "source" source
             use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = e.Current 
             while e.MoveNext() do
@@ -1436,9 +1436,9 @@ namespace Microsoft.FSharp.Collections
                lock enumeratorR (fun () -> 
                    prefix.Clear()
                    begin match !enumeratorR with 
-                   | Some (Some e) -> IEnumerator.dispose e; 
+                   | Some (Some e) -> IEnumerator.dispose e
                    | _ -> ()
-                   end;
+                   end
                    enumeratorR := None)
             (new CachedSeq<_>(cleanup, result) :> seq<_>)
 
@@ -1624,7 +1624,7 @@ namespace Microsoft.FSharp.Collections
                 acc <- Checked.(+) acc (f e.Current)
                 count <- count + 1
             if count = 0 then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             LanguagePrimitives.DivideByInt< (^U) > acc count
             
         [<CompiledName("Min")>]
@@ -1632,7 +1632,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1645,7 +1645,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1663,7 +1663,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" InputSequenceEmptyString
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do
@@ -1679,7 +1679,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1692,7 +1692,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1711,7 +1711,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" InputSequenceEmptyString
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do

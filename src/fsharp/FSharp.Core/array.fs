@@ -85,22 +85,21 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("CopyTo")>]
         let inline blit (source : 'T[]) (sourceIndex:int) (target: 'T[]) (targetIndex:int) (count:int) = 
             Array.Copy(source, sourceIndex, target, targetIndex, count)
-
-        let rec concatAddLengths (arrs:'T[][]) i acc =
-            if i >= arrs.Length then acc 
-            else concatAddLengths arrs (i+1) (acc + arrs.[i].Length)
-
-        let rec concatBlit (arrs:'T[][]) i j (tgt:'T[]) =
-            if i < arrs.Length then 
-                let h = arrs.[i]
-                let len = h.Length 
-                Array.Copy(h, 0, tgt, j, len)
-                concatBlit arrs (i+1) (j+len) tgt
+                       
+        let concatArrays (arrs : 'T[][]) : 'T[] =
+            let mutable acc = 0    
+            for h in arrs do
+                acc <- acc + h.Length        
                 
-        let concatArrays (arrs : 'T[][]) =
-            let res = Array.zeroCreateUnchecked (concatAddLengths arrs 0 0) 
-            concatBlit arrs 0 0 res
-            res            
+            let res = Array.zeroCreateUnchecked acc  
+                
+            let mutable j = 0
+            for i = 0 to arrs.Length-1 do     
+                let h = arrs.[i]
+                let len = h.Length
+                Array.Copy(h,0,res,j,len)        
+                j <- j + len
+            res               
 
         [<CompiledName("Concat")>]
         let concat (arrays: seq<'T[]>) = 
@@ -484,19 +483,45 @@ namespace Microsoft.FSharp.Collections
                             count <- count + 1
             Array.subUnchecked 0 count res
 
-
         [<CompiledName("Filter")>]
-        let filter f (array: _[]) = 
-            checkNonNull "array" array
-            let res = Array.zeroCreateUnchecked array.Length 
-            let mutable count = 0
-            for x in array do                 
-                if f x then 
-                    res.[count] <- x
-                    count <- count + 1
-            Array.subUnchecked 0 count res
+        let filter f (array: _[]) =         
+            checkNonNull "array" array                    
+            let mutable i = 0    
+            while i < array.Length && not (f array.[i]) do
+                i <- i + 1
+            
+            if i <> array.Length then                    
+                let mutable element = array.[i]
+                let chunk1 : 'T[] = Array.zeroCreateUnchecked (((array.Length-i) >>> 2) + 1)
+                let mutable count = 1
+                chunk1.[0] <- element
+                i <- i + 1                                
+                while count < chunk1.Length && i < array.Length do
+                    element <- array.[i]                                
+                    if f element then                    
+                        chunk1.[count] <- element
+                        count <- count + 1                            
+                    i <- i + 1
+                
+                if i < array.Length then                            
+                    let chunk2 = Array.zeroCreateUnchecked (array.Length-i)                        
+                    count <- 0
+                    while i < array.Length do
+                        element <- array.[i]                                
+                        if f element then                    
+                            chunk2.[count] <- element
+                            count <- count + 1                            
+                        i <- i + 1
 
+                    let res : 'T[] = Array.zeroCreateUnchecked (chunk1.Length + count)
+                    Array.Copy(chunk1,res,chunk1.Length)
+                    Array.Copy(chunk2,0,res,chunk1.Length,count)
+                    res
+                else
+                    Array.subUnchecked 0 count chunk1                
+            else empty
 
+            
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
 
@@ -769,7 +794,7 @@ namespace Microsoft.FSharp.Collections
             let mutable state = initState 
             let res = create (2+fin-start) initState 
             for i = start to fin do
-                state <- f.Invoke(state,array.[i]);
+                state <- f.Invoke(state,array.[i])
                 res.[i - start+1] <- state
             res
 
@@ -822,7 +847,7 @@ namespace Microsoft.FSharp.Collections
                 let c = f array.[0] array.[1] 
                 if c > 0 then
                     let tmp = array.[0] 
-                    array.[0] <- array.[1]; 
+                    array.[0] <- array.[1]
                     array.[1] <- tmp
             else 
                 Array.Sort(array, ComparisonIdentity.FromFunction(f))
@@ -905,9 +930,9 @@ namespace Microsoft.FSharp.Collections
             Array.permute p array
 
         [<CompiledName("Sum")>]
-        let inline sum (array: (^T)[] ) : ^T = 
+        let inline sum (array: ^T[] ) : ^T = 
             checkNonNull "array" array
-            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^T>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc array.[i]
             acc
@@ -915,7 +940,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SumBy")>]
         let inline sumBy (f: 'T -> ^U) (array:'T[]) : ^U = 
             checkNonNull "array" array
-            let mutable acc = LanguagePrimitives.GenericZero< (^U) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^U>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc (f array.[i])
             acc
@@ -974,36 +999,44 @@ namespace Microsoft.FSharp.Collections
         let inline average      (array:'T[]) = 
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
-            let mutable acc = LanguagePrimitives.GenericZero< (^T) >
+            let mutable acc = LanguagePrimitives.GenericZero< ^T>
             for i = 0 to array.Length - 1 do
                 acc <- Checked.(+) acc array.[i]
-            LanguagePrimitives.DivideByInt< (^T) > acc array.Length
+            LanguagePrimitives.DivideByInt< ^T> acc array.Length
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy f (array:_[]) = 
+        let inline averageBy (f : 'T -> ^U) (array:'T[]) : ^U = 
             checkNonNull "array" array
-            Seq.averageBy f array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            let mutable acc = LanguagePrimitives.GenericZero< ^U>
+            for i = 0 to array.Length - 1 do
+                acc <- Checked.(+) acc (f array.[i])
+            LanguagePrimitives.DivideByInt< ^U> acc array.Length
 
         [<CompiledName("CompareWith")>]
         let inline compareWith (comparer:'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
             checkNonNull "array1" array1
             checkNonNull "array2" array2
-    
+
             let length1 = array1.Length
             let length2 = array2.Length
-            let minLength = Operators.min length1 length2
+            
+            let mutable i = 0
+            let mutable result = 0
+            
+            if length1 < length2 then
+                while i < array1.Length && result = 0 do
+                    result <- comparer array1.[i] array2.[i]
+                    i <- i + 1
+            else
+                while i < array2.Length && result = 0 do
+                    result <- comparer array1.[i] array2.[i]
+                    i <- i + 1
 
-            let rec loop index  =
-                if index = minLength  then
-                    if length1 = length2 then 0
-                    elif length1 < length2 then -1
-                    else 1
-                else  
-                    let result = comparer array1.[index] array2.[index]
-                    if result <> 0 then result else
-                    loop (index+1)
-
-            loop 0
+            if result <> 0 then result
+            elif length1 = length2 then 0            
+            elif length1 < length2 then -1
+            else 1          
 
         [<CompiledName("GetSubArray")>]
         let sub (array:'T[]) (startIndex:int) (count:int) =
