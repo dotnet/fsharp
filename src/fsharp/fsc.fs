@@ -1810,23 +1810,25 @@ let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
     let outDir = Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
+    let copyFileIfDifferent src dest =
+        if not (File.Exists(dest)) || (File.GetCreationTimeUtc(src) <> File.GetCreationTimeUtc(dest)) then
+            File.Copy(src, dest, true)
 
-    if not (File.Exists(fsharpCoreDestinationPath)) then
-        match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
-        | Some referencedFsharpCoreDll -> File.Copy(referencedFsharpCoreDll.Text, fsharpCoreDestinationPath)
-        | None ->
-            let executionLocation =
+    match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+    | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
+    | None ->
+        let executionLocation =
 #if FX_RESHAPED_REFLECTION
-                TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly.Location
+            TypeInThisAssembly(null).GetType().GetTypeInfo().Assembly.Location
 #else
-                Assembly.GetExecutingAssembly().Location
+            Assembly.GetExecutingAssembly().Location
 #endif
-            let compilerLocation = Path.GetDirectoryName(executionLocation)
-            let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
-            if File.Exists(compilerFsharpCoreDllPath) then
-                File.Copy(compilerFsharpCoreDllPath, fsharpCoreDestinationPath)
-            else
-                errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+        let compilerLocation = Path.GetDirectoryName(executionLocation)
+        let compilerFsharpCoreDllPath = Path.Combine(compilerLocation, fsharpCoreAssemblyName)
+        if File.Exists(compilerFsharpCoreDllPath) then
+            copyFileIfDifferent compilerFsharpCoreDllPath fsharpCoreDestinationPath
+        else
+            errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
@@ -2040,7 +2042,8 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     AbortOnError(errorLogger, tcConfig, exiter)
 
-    if tcConfig.copyFSharpCore then
+    // Don't copy referenced fharp.core.dll if we are building fsharp.core.dll
+    if tcConfig.copyFSharpCore && not tcConfig.compilingFslib then
         copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
