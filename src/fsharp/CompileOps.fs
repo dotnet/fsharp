@@ -2583,8 +2583,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     clrRoot, (int v1, sprintf "v%d.%d" v1 v2), (v1=5us && v2=0us && v3=5us) // SL5 mscorlib is 5.0.5.0
                 | _ -> 
                     failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
-            with _ -> 
-                error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
+            with e ->
+                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
@@ -2644,8 +2644,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
                 let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
                 fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
-            with _ -> 
-                error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
+            with e ->
+                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
             data.defaultFSharpBinariesDir
 
