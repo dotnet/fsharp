@@ -5058,7 +5058,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             | _ -> error (UndefinedName(0,FSComp.SR.undefinedNamePatternDiscriminator,id,NoPredictions))
 
         | Item.ActivePatternCase(APElemRef(apinfo,vref,idx)) as item -> 
-            let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible"
+            let args = match args with SynConstructorArgs.Pats args -> args | _ -> error(Error(FSComp.SR.tcNamedActivePattern(apinfo.ActiveTags.[idx]),m))
             // TOTAL/PARTIAL ACTIVE PATTERNS 
             let vexp, _, _, tinst, _ = TcVal true cenv env tpenv vref None m
             let vexp = MakeApplicableExprWithFlex cenv env vexp
