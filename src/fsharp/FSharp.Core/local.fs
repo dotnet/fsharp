@@ -426,10 +426,9 @@ module internal List =
         loop 0 l
         res
 
-    let ofArray (arr:'T[]) =
-        let len = arr.Length
+    let ofArray (arr:'T[]) =        
         let mutable res = ([]: 'T list)
-        for i = len - 1 downto 0 do
+        for i = arr.Length-1 downto 0 do
             res <- arr.[i] :: res
         res
 
@@ -893,7 +892,7 @@ module internal Array =
     let inline init (count:int) (f: int -> 'T) = 
         if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
         let arr = (zeroCreateUnchecked count : 'T array)  
-        for i = 0 to count - 1 do 
+        for i = 0 to arr.Length-1 do 
             arr.[i] <- f i
         arr
 
@@ -946,7 +945,7 @@ module internal Array =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable acc = acc
             let res = zeroCreateUnchecked len
-            for i = 0 to len - 1 do
+            for i = 0 to array.Length-1 do
                 let h',s' = f.Invoke(acc,array.[i])
                 res.[i] <- h'
                 acc <- s'
@@ -1056,7 +1055,7 @@ module internal Array =
     let inline subUnchecked startIndex count (array : 'T[]) =
         let res = zeroCreateUnchecked count : 'T[]
         if count < 64 then
-            for i = 0 to count - 1 do
+            for i = 0 to res.Length-1 do
                 res.[i] <- array.[startIndex+i]
         else
             Array.Copy(array, startIndex, res, 0, count)

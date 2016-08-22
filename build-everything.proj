@@ -40,34 +40,34 @@
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1' or '$(BUILD_ALL)'=='1'">
     <SetupProjects Include="setup/fsharp-setup-build.proj" />
   </ItemGroup>
-  
+
   <Target Name="Build">
-    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
-    <MSBuild Projects="@(SetupProjects)"                 Targets="Build" BuildInParallel="false"  Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Rebuild">
-    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
-    <MSBuild Projects="@(SetupProjects)"                 Targets="Rebuild" BuildInParallel="false"  Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration)" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78" />
-    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr" />
-    <MSBuild Projects="@(SetupProjects)"                 Targets="Clean" BuildInParallel="false"  Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(ProjectsWithDefaultFramework)"  Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFramework)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"           Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(SetupProjects)"                 Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 </Project>
