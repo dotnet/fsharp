@@ -149,21 +149,21 @@ module internal Impl =
 
     let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
         let assem = typ.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
            tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
         let assem = info.DeclaringType.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
         tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
         let assem = info.DeclaringType.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
             findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
