@@ -2228,7 +2228,7 @@ namespace Microsoft.FSharp.Control
                                 event.RemoveHandler handle
                                 if args.Cancelled then
                                     ccont (new OperationCanceledException())
-                                elif args.Error <> null then
+                                elif isNotNull args.Error then
                                     econt args.Error
                                 else
                                     cont (result args)
@@ -2515,8 +2515,8 @@ namespace Microsoft.FSharp.Control
                     | Some res -> return res }
 
         interface System.IDisposable with
-            member x.Dispose() =
-                if pulse <> null then (pulse :> IDisposable).Dispose()
+            member __.Dispose() =
+                if isNotNull pulse then (pulse :> IDisposable).Dispose()
 
 #if DEBUG
         member x.UnsafeContents =
