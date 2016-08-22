@@ -187,10 +187,10 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
         res
       
     override m.ReadInt32 i = 
-        NativePtr.read (NativePtr.ofNativeInt<int32> (m.Addr i)) 
+        Marshal.ReadInt32(m.Addr i)
 
     override m.ReadUInt16 i = 
-        NativePtr.read (NativePtr.ofNativeInt<uint16> (m.Addr i)) 
+        uint16(Marshal.ReadInt16(m.Addr i))
 
     member m.Close() = 
         ignore(MemoryMapping.UnmapViewOfFile start)
@@ -205,7 +205,7 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
 
     override m.ReadUTF8String i = 
         let n = m.CountUtf8String i
-        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), 0, n)
+        System.Runtime.InteropServices.Marshal.PtrToStringAnsi((m.Addr i), n)
 //#if FX_RESHAPED_REFLECTION
 //        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
 //#else
