@@ -159,7 +159,9 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="nunit.framework">

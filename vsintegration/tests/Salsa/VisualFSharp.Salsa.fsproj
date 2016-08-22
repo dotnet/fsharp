@@ -62,7 +62,9 @@
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Text.Internal.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
