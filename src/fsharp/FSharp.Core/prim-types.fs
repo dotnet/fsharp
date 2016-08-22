@@ -3804,6 +3804,12 @@ namespace Microsoft.FSharp.Core
             | null -> true 
             | _ -> false
 
+        [<CompiledName("IsNotNull")>]
+        let inline isNotNull (value : 'T) = 
+            match value with 
+            | null -> false 
+            | _ -> true
+
         [<CompiledName("Raise")>]
         let raise (e: exn) = (# "throw" e : 'T #)
 
