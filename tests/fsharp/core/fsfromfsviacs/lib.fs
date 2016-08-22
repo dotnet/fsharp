@@ -42,7 +42,16 @@ let tup3 = (2,3,4)
 let tup4 = (2,3,4,5)
 
 
+type OptionalParameterTests =
+    static member MethodWithOptionalParam<'T>(?value : 'T) = value
+    static member MethodWithOptionalParams<'T>(?value1 : 'T, ?value2 : int) = (value1, value2)
 
+    static member FSharpMethodThatConsumesOptionalParams() = 
+        let _ = OptionalParameterTests.MethodWithOptionalParams<int>()
+        let _ = OptionalParameterTests.MethodWithOptionalParams<int>(42)
+        let _ = OptionalParameterTests.MethodWithOptionalParams<int>(value2 = 42)
+        let _ = OptionalParameterTests.MethodWithOptionalParams<int>(42, ?value2 = None)
+        ()
 
 
 module StructUnionsTests =
@@ -112,5 +121,3 @@ module NestedStructUnionsTests =
         let mutable u2 = u2
         match u2 with
         | U2(U1(dt1,"a"),U1(dt2,"b")) -> (dt1 = dt2) 
-
-

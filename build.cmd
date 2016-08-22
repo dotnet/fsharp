@@ -14,7 +14,7 @@ echo.
 echo Usage:
 echo.
 echo build.cmd ^<all^|proto^|protofx^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
-echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^>
+echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^|publicsign^>
 echo.
 echo No arguments default to 'build'
 echo.
@@ -41,6 +41,7 @@ set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
+set BUILD_PUBLICSIGN=0
 
 set TEST_COMPILERUNIT=0
 set TEST_NET40_COREUNIT=0
@@ -260,6 +261,10 @@ if /i '%ARG%' == 'test-fsharp' (
     set TEST_FSHARP_SUITE=1
 )
 
+if /i '%ARG%' == 'publicsign' (
+    set BUILD_PUBLICSIGN=1
+)
+
 goto :EOF
 
 :MAIN
@@ -277,6 +282,7 @@ echo BUILD_VS=%BUILD_VS%
 echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_CONFIG_LOWERCASE=%BUILD_CONFIG_LOWERCASE%
+echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
 echo TEST_COMPILERUNIT=%TEST_COMPILERUNIT%
 echo TEST_NET40_COREUNIT=%TEST_NET40_COREUNIT%
@@ -397,8 +403,8 @@ if '%BUILD_PROTO%' == '1' (
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%
-@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%' failed && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+@if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
 
 @echo on
 call src\update.cmd %BUILD_CONFIG_LOWERCASE% -ngen

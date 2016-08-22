@@ -24,8 +24,8 @@
                  <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr'">$(OtherFlags)  --publicsign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -35,8 +35,8 @@
             </When>
             <When Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr'">$(OtherFlags)  --publicsign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -55,8 +55,8 @@
             </When>
             <Otherwise>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr'">$(OtherFlags)  --publicsign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
