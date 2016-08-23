@@ -125,7 +125,42 @@ module internal List =
                 let cons = freshConsNoTail x
                 chooseToFreshConsTail cons f t
                 cons
-            
+                  
+    let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+        let dict = Dictionary<_, _ list []> comparer
+
+        // Build the groupings
+        let rec loop list =
+            match list with
+            | v :: t -> 
+                let safeKey = keyf v
+                match dict.TryGetValue(safeKey) with
+                | true, prev -> 
+                       let cons2 = freshConsNoTail v
+                       setFreshConsTail prev.[1] cons2
+                       prev.[1] <- cons2
+                | _ -> let res = freshConsNoTail v
+                       dict.[safeKey] <- [|res; res |] // First index stores the result list; second index is the most recent cons.
+                    
+                loop t
+            | _ -> ()
+        loop list  
+
+        let mutable ie = dict.GetEnumerator()
+        if not (ie.MoveNext()) then []
+        else
+            let mutable curr = ie.Current
+            setFreshConsTail curr.Value.[1] []
+            let res = freshConsNoTail (getKey curr.Key, curr.Value.[0])
+            let mutable cons = res
+            while ie.MoveNext() do
+                curr <- ie.Current
+                setFreshConsTail curr.Value.[1] []
+                let cons2 = freshConsNoTail (getKey curr.Key, curr.Value.[0])
+                setFreshConsTail cons cons2
+                cons <- cons2
+            setFreshConsTail cons []
+            res
 
     let rec mapToFreshConsTail cons f x = 
         match x with

@@ -419,28 +419,7 @@ namespace Microsoft.FSharp.Collections
         let where f x = List.filter f x
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-            let dict = Dictionary<_,ResizeArray<_>> comparer
-
-            // Build the groupings
-            let rec loop list =
-                match list with
-                | v :: t -> 
-                    let safeKey = keyf v
-                    let mutable prev = Unchecked.defaultof<_>
-                    if dict.TryGetValue(safeKey, &prev) then
-                        prev.Add v
-                    else 
-                        let prev = ResizeArray ()
-                        dict.[safeKey] <- prev
-                        prev.Add v
-                    loop t
-                | _ -> ()
-            loop list
-
-            // Return the list-of-lists.
-            dict
-            |> Seq.map (fun group -> (getKey group.Key, Seq.toList group.Value))
-            |> Seq.toList
+            List.groupBy comparer keyf getKey list
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
         let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
