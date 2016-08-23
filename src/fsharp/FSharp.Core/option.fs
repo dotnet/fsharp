@@ -11,13 +11,13 @@ namespace Microsoft.FSharp.Core
         let get option = match option with None -> invalidArg "option" (SR.GetString(SR.optionValueWasNone)) | Some x -> x
 
         [<CompiledName("IsSome")>]
-        let isSome option = match option with  None -> false | Some _ -> true
+        let inline isSome option = match option with None -> false | Some _ -> true
 
         [<CompiledName("IsNone")>]
-        let isNone option = match option with  None -> true | Some _ -> false
+        let inline isNone option = match option with None -> true | Some _ -> false
 
         [<CompiledName("Count")>]
-        let count option = match option with  None -> 0 | Some _ -> 1
+        let count option = match option with None -> 0 | Some _ -> 1
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> f (s:'State) (inp: option<'T>) = match inp with None -> s | Some x -> f s x

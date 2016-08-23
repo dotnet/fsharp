@@ -1153,7 +1153,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         // Balancing rule. Every 'done' terminates all surrounding blocks up to a CtxtDo, and will be swallowed by 
         // terminating the corresponding CtxtDo in the rule below. 
         let tokenForcesHeadContextClosure token stack = 
-            nonNil stack &&
+            not (List.isEmpty stack) &&
             match token with 
             | Parser.EOF _ -> true
             | SEMICOLON_SEMICOLON  -> not (tokenBalancesHeadContext token stack) 
