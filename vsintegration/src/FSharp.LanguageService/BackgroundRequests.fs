@@ -256,7 +256,7 @@ type internal FSharpLanguageServiceBackgroundRequests
     // Called before a Goto Definition to wait a moment to synchonize the parse
     member fls.TrySynchronizeParseFileInformation(view: IVsTextView, source: ISource, millisecondsTimeout:int) =
 
-        if (lastParseFileRequest = null || lastParseFileRequest.Timestamp <> source.ChangeCount) then
+        if isNull lastParseFileRequest || lastParseFileRequest.Timestamp <> source.ChangeCount then
             let req = fls.TriggerParseFile(view, source)
                     
             if req <> null && (req.IsSynchronous || req.Result <> null) then

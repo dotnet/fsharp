@@ -5162,7 +5162,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                             | _ ->
                                 error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
                     for i = 0 to nargtys - 1 do
-                        if box result.[i] = null then
+                        if isNull (box result.[i]) then
                             result.[i] <- SynPat.Wild(m.MakeSynthetic())
 
                     let args = List.ofArray result
@@ -8299,7 +8299,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                     for (_, id, arg) in namedCallerArgs do
                         match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
                         | Some i -> 
-                            if box fittedArgs.[i] = null then
+                            if isNull(box fittedArgs.[i]) then
                                 fittedArgs.[i] <- arg
                                 let argContainerOpt = match item with
                                                       | Item.UnionCase(uci,_) -> Some(ArgumentContainer.UnionCase(uci))
@@ -8325,7 +8325,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                                 | _ -> false
 
                             if isSpecialCaseForBackwardCompatibility then
-                                assert (box fittedArgs.[currentIndex] = null)
+                                assert (isNull(box fittedArgs.[currentIndex]))
                                 fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parametere
                                 currentIndex <- currentIndex + 1
                             else

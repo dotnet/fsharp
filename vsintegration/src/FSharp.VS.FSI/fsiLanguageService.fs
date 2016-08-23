@@ -202,7 +202,7 @@ type internal FsiLanguageService() =
     member this.Sessions with set x = sessions <- Some x
     
     override this.GetLanguagePreferences() =
-        if preferences = null then
+        if isNull preferences then
             preferences <- new LanguagePreferences(this.Site,
                                                    typeof<FsiLanguageService>.GUID,
                                                    this.Name)
@@ -211,7 +211,7 @@ type internal FsiLanguageService() =
         preferences
         
     override this.GetScanner(buffer:IVsTextLines) =
-        if scanner = null then
+        if isNull scanner then
             scanner <- (new FsiScanner(buffer) :> IScanner)
         scanner
         

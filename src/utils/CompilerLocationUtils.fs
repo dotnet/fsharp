@@ -99,10 +99,10 @@ module internal FSharpEnvironment =
         Option.ofString
             (try
                 let key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-                if key = null then null
+                if isNull key then null
                 else
                     let sub = key.OpenSubKey(subKey)
-                    if sub = null then null
+                    if isNull sub then null
                     else 
                         downcast (sub.GetValue(null, null))
              with e->

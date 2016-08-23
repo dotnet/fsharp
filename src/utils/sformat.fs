@@ -832,7 +832,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                             | res -> 
                                let attr = (res.[0] :?> StructuredFormatDisplayAttribute) 
                                let txt = attr.Value
-                               if txt = null || txt.Length <= 1 then  
+                               if isNull txt || txt.Length <= 1 then  
                                    None
                                else
                                   let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
@@ -1169,8 +1169,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? unativeint  as d -> d.ToString() + "un"
             | :? bool   as b -> (if b then "true" else "false")
             | :? char   as c -> "\'" + formatChar true c + "\'"
-            | _ -> try  let text = obj.ToString()
-                        if text = null then "" else text
+            | _ -> try 
+                        let text = obj.ToString()
+                        match text with
+                        | null -> ""
+                        | _ -> text
                    with e ->
                      // If a .ToString() call throws an exception, catch it and use the message as the result.
                      // This may be informative, e.g. division by zero etc...
