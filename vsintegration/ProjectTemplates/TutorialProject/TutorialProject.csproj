@@ -43,6 +43,7 @@
   <ItemGroup>
     <TemplateFiles Include="Template\Tutorial.fsproj" />
     <TemplateFiles Include="Template\Tutorial.fsx" />
+    <TemplateFiles Include="Template\packages.config" />
     <TemplateFiles Include="Template\Tutorial.vstemplate" />
   </ItemGroup>
   

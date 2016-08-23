@@ -32,28 +32,29 @@
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Script.fsx">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Script.fsx.lci</LciCommentFile>
       <HasLceComments>false</HasLceComments>
-	  <InProject>false</InProject>
+      <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  
+
   <ItemGroup>
     <VSTemplate Include="Template\NETCore78PortableLibrary.vstemplate" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <TemplateFiles Include="Template\AssemblyInfo.fs" />
     <TemplateFiles Include="Template\NETCore78PortableLibrary.vstemplate" />
     <TemplateFiles Include="Template\PortableLibrary.fsproj" />
     <TemplateFiles Include="Template\PortableLibrary1.fs" />
+    <TemplateFiles Include="Template\packages.config" />
     <TemplateFiles Include="Template\Script.fsx" />
   </ItemGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   

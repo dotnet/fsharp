@@ -51,6 +51,7 @@
     <TemplateFiles Include="Template\NETCore259PortableLibrary.vstemplate" />
     <TemplateFiles Include="Template\PortableLibrary.fsproj" />
     <TemplateFiles Include="Template\PortableLibrary1.fs" />
+    <TemplateFiles Include="Template\packages.config" />
     <TemplateFiles Include="Template\Script.fsx" />
   </ItemGroup>
   
