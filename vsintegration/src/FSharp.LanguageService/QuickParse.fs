@@ -159,34 +159,33 @@ module internal QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongName(line:string,index) =
-        if isNull line then ([],"")
-        elif index<0 then ([],"")
-        elif index>=line.Length then ([],"")
+        if isNull line then [],""
+        elif index < 0 then [],""
+        elif index >= line.Length then [],""
         else
-            let IsIdentifierPartCharacter(pos) = IsIdentifierPartCharacter(line.[pos])
-            let IsLongIdentifierPartCharacter(pos) = IsLongIdentifierPartCharacter(line.[pos])
-            let IsDot(pos) = line.[pos]='.'
+            let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter line.[pos]
+            let IsLongIdentifierPartCharacter pos = IsLongIdentifierPartCharacter line.[pos]
+            let IsDot pos = line.[pos] = '.'
 
             let rec InLeadingIdentifier(pos,right,(prior,residue)) = 
-                let PushName() = 
-                    ((line.Substring(pos+1,right-pos-1))::prior),residue
+                let PushName() = ((line.Substring(pos+1,right-pos-1))::prior),residue
                 if pos < 0 then PushName()
-                elif IsIdentifierPartCharacter(pos) then InLeadingIdentifier(pos-1,right,(prior,residue))
-                elif IsDot(pos) then InLeadingIdentifier(pos-1,pos,PushName())
+                elif IsIdentifierPartCharacter pos then InLeadingIdentifier(pos-1,right,(prior,residue))
+                elif IsDot pos then InLeadingIdentifier(pos-1,pos,PushName())
                 else PushName()
 
             let rec InName(pos,startResidue,right) =
                 let NameAndResidue() = 
                     [line.Substring(pos+1,startResidue-pos-1)],(line.Substring(startResidue+1,right-startResidue))
                 if pos < 0 then [line.Substring(pos+1,startResidue-pos-1)],(line.Substring(startResidue+1,right-startResidue))
-                elif IsIdentifierPartCharacter(pos) then InName(pos-1,startResidue,right) 
-                elif IsDot(pos) then InLeadingIdentifier(pos-1,pos,NameAndResidue())
+                elif IsIdentifierPartCharacter pos then InName(pos-1,startResidue,right) 
+                elif IsDot pos then InLeadingIdentifier(pos-1,pos,NameAndResidue())
                 else NameAndResidue()
 
             let rec InResidue(pos,right) =
                 if pos < 0 then [],(line.Substring(pos+1,right-pos))
-                elif IsDot(pos) then InName(pos-1,pos,right)
-                elif IsLongIdentifierPartCharacter(pos) then InResidue(pos-1, right)
+                elif IsDot pos then InName(pos-1,pos,right)
+                elif IsLongIdentifierPartCharacter pos then InResidue(pos-1, right)
                 else [],(line.Substring(pos+1,right-pos))
                 
             let result = InResidue(index,index)
