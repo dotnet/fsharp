@@ -1096,24 +1096,24 @@ namespace Microsoft.FSharp.Collections
             [<CompiledName("Choose")>]
             let choose f (array: 'T[]) = 
                 checkNonNull "array" array
-                let inputLength = array.Length
-                
+                let inputLength = array.Length                      
+
                 let isChosen : bool [] = Array.zeroCreateUnchecked inputLength
-                let results : 'U [] = Array.zeroCreateUnchecked inputLength
-                
-                Parallel.For(0, inputLength, (fun i -> 
-                    match f array.[i] with 
-                    | None -> () 
-                    | Some v -> 
-                        isChosen.[i] <- true
-                        results.[i] <- v
-                )) |> ignore         
-                                                                                      
-                let mutable outputLength = 0                
-                for i = 0 to isChosen.Length-1 do 
-                    if isChosen.[i] then 
-                        outputLength <- outputLength + 1
-                        
+                let results : 'U [] = Array.zeroCreateUnchecked inputLength                
+                let mutable outputLength = 0        
+                Parallel.For(0, 
+                             inputLength, 
+                             (fun () ->0),
+                             (fun i _ count -> 
+                                match f array.[i] with 
+                                | None -> count 
+                                | Some v -> 
+                                    isChosen.[i] <- true; 
+                                    results.[i] <- v
+                                    count+1),
+                             Action<int> (fun x -> System.Threading.Interlocked.Add(&outputLength,x) |> ignore )
+                             ) |> ignore         
+                                                                                                                                                      
                 let output = Array.zeroCreateUnchecked outputLength
                 let mutable curr = 0
                 for i = 0 to isChosen.Length-1 do 
@@ -1171,27 +1171,32 @@ namespace Microsoft.FSharp.Collections
             let partition predicate (array : 'T[]) =
                 checkNonNull "array" array
                 let inputLength = array.Length                
+               
+                let isTrue = Array.zeroCreateUnchecked inputLength                
+                let mutable trueLength = 0                                                
+                Parallel.For(0, 
+                             inputLength, 
+                             (fun () -> 0),
+                             (fun i _ trueCount -> 
+                                if predicate array.[i] then
+                                    isTrue.[i] <- true
+                                    trueCount + 1
+                                else
+                                    trueCount),                        
+                             Action<int> (fun x -> System.Threading.Interlocked.Add(&trueLength,x) |> ignore) ) |> ignore
+                                
+                let res1 = Array.zeroCreateUnchecked trueLength
+                let res2 = Array.zeroCreateUnchecked (inputLength - trueLength)
 
-                let isTrue = Array.zeroCreateUnchecked inputLength
-                Parallel.For(0, inputLength, 
-                    fun i -> isTrue.[i] <- predicate array.[i]
-                    ) |> ignore
-                
-                let mutable trueLength = 0
-                for i = 0 to isTrue.Length-1 do
-                    if isTrue.[i] then trueLength <- trueLength + 1
-                
-                let trueResult = Array.zeroCreateUnchecked trueLength
-                let falseResult = Array.zeroCreateUnchecked (inputLength - trueLength)
                 let mutable iTrue = 0
                 let mutable iFalse = 0
                 for i = 0 to isTrue.Length-1 do
                     if isTrue.[i] then
-                        trueResult.[iTrue] <- array.[i]
+                        res1.[iTrue] <- array.[i]
                         iTrue <- iTrue + 1
                     else
-                        falseResult.[iFalse] <- array.[i]
+                        res2.[iFalse] <- array.[i]
                         iFalse <- iFalse + 1
 
-                (trueResult, falseResult)
+                res1, res2
 #endif
