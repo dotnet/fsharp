@@ -933,36 +933,33 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
 
 let [<Literal>] localVarSize = 1
 
-let rec AddTotalSizesAux acc l = match l with [] -> acc | h::t -> AddTotalSizesAux (h.TotalSize + acc) t
-let AddTotalSizes l = AddTotalSizesAux 0 l
+let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
+let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
 
-let rec AddFunctionSizesAux acc l = match l with [] -> acc | h::t -> AddFunctionSizesAux (h.FunctionSize + acc) t
-let AddFunctionSizes l = AddFunctionSizesAux 0 l
-
-let AddTotalSizesFlat l = l |> FlatList.sumBy (fun x -> x.TotalSize) 
-let AddFunctionSizesFlat l = l |> FlatList.sumBy (fun x -> x.FunctionSize) 
+let inline AddTotalSizesFlat l = l |> FlatList.sumBy (fun x -> x.TotalSize) 
+let inline AddFunctionSizesFlat l = l |> FlatList.sumBy (fun x -> x.FunctionSize) 
 
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
-let rec OrEffects l = match l with [] -> false | h::t -> h.HasEffect || OrEffects t
-let OrEffectsFlat l = FlatList.exists (fun x -> x.HasEffect) l
+let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
+let inline OrEffectsFlat l = FlatList.exists (fun x -> x.HasEffect) l
 
-let rec OrTailcalls l = match l with [] -> false | h::t -> h.MightMakeCriticalTailcall || OrTailcalls t
-let OrTailcallsFlat l = FlatList.exists (fun x -> x.MightMakeCriticalTailcall) l
+let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
+let inline OrTailcallsFlat l = FlatList.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let rec OptimizeListAux f l acc1 acc2 = 
     match l with 
     | [] -> List.rev acc1, List.rev acc2
     | (h ::t) -> 
-        let (x1,x2)  = f h
+        let (x1,x2) = f h
         OptimizeListAux f t (x1::acc1) (x2::acc2) 
 
 let OptimizeList f l = OptimizeListAux f l [] [] 
 
 let OptimizeFlatList f l = l |> FlatList.map f |> FlatList.unzip 
 
-let NoExprs : (Expr list * list<Summary<ExprValueInfo>>)= [],[]
+let NoExprs : (Expr list * list<Summary<ExprValueInfo>>) = [],[]
 let NoFlatExprs : (FlatExprs * FlatList<Summary<ExprValueInfo>>) = FlatList.empty, FlatList.empty
 
 //-------------------------------------------------------------------------
