@@ -392,7 +392,7 @@ type CalledMeth<'T>
     member x.HasOutArgs             = not (List.isEmpty x.UnnamedCalledOutArgs)
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
-    member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
+    member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
     member x.ParamArrayElementType = 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
@@ -533,11 +533,11 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
         match objArgs with
         | [objArgExpr] -> 
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap,objArgExpr' = mkExprAddrOfExpr g mustTakeAddress (isSome ccallInfo) isMutable objArgExpr None m
+            let wrap,objArgExpr' = mkExprAddrOfExpr g mustTakeAddress (Option.isSome ccallInfo) isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
-              if isNone ccallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
+              if Option.isNone ccallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
                  not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.EnclosingType objArgTy) then 
                   mkCoerceExpr(objArgExpr',minfo.EnclosingType,m,objArgTy)
               else
@@ -775,7 +775,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
         // Try to pull apart an explicit lambda and use it directly 
         // Don't do this in the case where we're adjusting the arguments of a function used to build a .NET-compatible event handler 
         let lambdaContents = 
-            if isSome eventInfoOpt then 
+            if Option.isSome eventInfoOpt then 
                 None 
             else 
                 tryDestTopLambda g amap topValInfo (f, fty)        

@@ -939,10 +939,10 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(attrs,isOpt,nm)) =
          else 
             []
 
-    if isArg && not (List.isEmpty attrs) && isNone nm then 
+    if isArg && not (List.isEmpty attrs) && Option.isNone nm then 
         errorR(Error(FSComp.SR.tcParameterRequiresName(),m))
 
-    if not isArg && isSome nm then 
+    if not isArg && Option.isSome nm then 
         errorR(Error(FSComp.SR.tcReturnValuesCannotHaveNames(),m))
        
     // Call the attribute checking function 
@@ -1271,7 +1271,7 @@ let PublishValueDefnPrim cenv env (vspec:Val) =
 let PublishValueDefn cenv env declKind (vspec:Val) =
     if (declKind = ModuleOrMemberBinding) && 
        ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) && 
-       (isNone vspec.MemberInfo) then 
+       (Option.isNone vspec.MemberInfo) then 
            errorR(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(),vspec.Range))
 
     if (declKind = ExtrinsicExtensionBinding) && 
@@ -1301,9 +1301,9 @@ let PublishValueDefn cenv env declKind (vspec:Val) =
     |  _ -> ()
 
 let CombineVisibilityAttribs vis1 vis2 m = 
-   if isSome vis1 && isSome vis2 then 
+   if Option.isSome vis1 && Option.isSome vis2 then 
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributes(),m))
-   if isSome vis1 then vis1 else vis2
+   if Option.isSome vis1 then vis1 else vis2
 
 let ComputeAccessAndCompPath env declKindOpt m vis actualParent = 
     let accessPath = env.eAccessPath
@@ -1312,7 +1312,7 @@ let ComputeAccessAndCompPath env declKindOpt m vis actualParent =
         | None -> true
         | Some declKind -> DeclKind.IsAccessModifierPermitted declKind
 
-    if isSome vis && not accessModPermitted then 
+    if Option.isSome vis && not accessModPermitted then 
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(),m)) 
     let vis = 
         match vis with 
@@ -1330,9 +1330,7 @@ let ComputeAccessAndCompPath env declKindOpt m vis actualParent =
     let cpath = (if accessModPermitted then Some cpath else None)
     vis,cpath 
 
-let CheckForAbnormalOperatorNames cenv (idRange:range) opName isMember =
-    
-
+let CheckForAbnormalOperatorNames cenv (idRange:range) opName isMember =    
     if (idRange.EndColumn - idRange.StartColumn <= 5) && not cenv.g.compilingFslib  then 
         
         match opName, isMember with 
@@ -1392,12 +1390,12 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
 
     // CompiledName not allowed on virtual/abstract/override members        
     let compiledNameAttrib  = TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs
-    if isSome compiledNameAttrib && (   (   match memberInfoOpt with 
-                                            | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
-                                                memberInfo.MemberFlags.IsDispatchSlot 
-                                                || memberInfo.MemberFlags.IsOverrideOrExplicitImpl 
-                                            | None -> false)
-                                     || (match altActualParent with ParentNone -> true | _ -> false)) then 
+    if Option.isSome compiledNameAttrib && (   (   match memberInfoOpt with 
+                                                   | Some (ValMemberInfoTransient(memberInfo,_,_)) -> 
+                                                       memberInfo.MemberFlags.IsDispatchSlot 
+                                                       || memberInfo.MemberFlags.IsOverrideOrExplicitImpl 
+                                                   | None -> false)
+                                            || (match altActualParent with ParentNone -> true | _ -> false)) then 
         errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(),m))
 
     let compiledNameIsOnProp =
@@ -1440,7 +1438,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
                       (hasDeclaredTypars || inSig),isGeneratedEventVal,konst,actualParent)
 
     
-    CheckForAbnormalOperatorNames cenv id.idRange (DecompileOpName vspec.CoreDisplayName) (isSome memberInfoOpt)
+    CheckForAbnormalOperatorNames cenv id.idRange (DecompileOpName vspec.CoreDisplayName) (Option.isSome memberInfoOpt)
 
     PublishValueDefn cenv env declKind vspec
 
@@ -2163,7 +2161,7 @@ module GeneralizationHelpers =
             // A condensation typar may not a user-generated type variable nor has it been unified with any user type variable
             (tp.DynamicReq = TyparDynamicReq.No) && 
             // A condensation typar must have a single constraint "'a :> A"
-            (isSome (relevantUniqueSubtypeConstraint tp)) &&
+            (Option.isSome (relevantUniqueSubtypeConstraint tp)) &&
             // This is type variable is not used on the r.h.s. of the type
             not (ListSet.contains typarEq tp returnTypeFreeTypars) &&
             // A condensation typar can't be used in the constraints of any candidate condensation typars
@@ -2378,7 +2376,7 @@ module BindingNormalization =
 
     let private MakeNormalizedStaticOrValBinding cenv isObjExprBinding id vis typars args rhsExpr valSynData = 
         let (SynValData(memberFlagsOpt,_,_)) = valSynData 
-        NormalizedBindingPat(mkSynPatVar vis id, PushMultiplePatternsToRhs cenv ((isObjExprBinding = ObjExprBinding) || isSome memberFlagsOpt) args rhsExpr,valSynData,typars)
+        NormalizedBindingPat(mkSynPatVar vis id, PushMultiplePatternsToRhs cenv ((isObjExprBinding = ObjExprBinding) || Option.isSome memberFlagsOpt) args rhsExpr,valSynData,typars)
 
     let private MakeNormalizedInstanceMemberBinding cenv thisId memberId toolId vis m typars args rhsExpr valSynData = 
         NormalizedBindingPat(SynPat.InstanceMember(thisId,memberId,toolId,vis,m), PushMultiplePatternsToRhs cenv true args rhsExpr,valSynData,typars)
@@ -3081,7 +3079,7 @@ let TryGetNamedArg e =
     | SimpleEqualsExpr(LongOrSingleIdent(isOpt,LongIdentWithDots([a],_),None,_),b)  -> Some(isOpt,a,b)
     | _ -> None 
 
-let IsNamedArg e = isSome (TryGetNamedArg e)
+let inline IsNamedArg e = Option.isSome (TryGetNamedArg e)
 
 /// Get the method arguments at a callsite, taking into account named and optional arguments
 let GetMethodArgs arg =
@@ -4656,10 +4654,10 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
         args |> List.map (function 
             | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id],_)),v,_) -> (Some id, v)
             | v -> (None, v))
-    let unnamedArgs = args |> Seq.takeWhile (fst >> isNone) |> Seq.toArray |> Array.map snd
-    let otherArgs = args |> List.skipWhile (fst >> isNone)
-    let namedArgs = otherArgs |> List.takeWhile (fst >> isSome) |> List.map (map1Of2 Option.get)
-    let otherArgs = otherArgs |> List.skipWhile (fst >> isSome)
+    let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
+    let otherArgs = args |> List.skipWhile (fst >> Option.isNone)
+    let namedArgs = otherArgs |> List.takeWhile (fst >> Option.isSome) |> List.map (map1Of2 Option.get)
+    let otherArgs = otherArgs |> List.skipWhile (fst >> Option.isSome)
     if not otherArgs.IsEmpty then 
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(),m))
     for (n,_) in namedArgs do
@@ -4923,7 +4921,7 @@ and TcSimplePatsOfUnknownType cenv optArgsOK checkCxs env tpenv spats =
     TcSimplePats cenv optArgsOK checkCxs argty env (tpenv,NameMap.empty,Set.empty) spats
 
 and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag,declaredTypars,argAttribs,isMutable,vis2,compgen) (names,takenNames:Set<string>) = 
-    let vis = if isSome vis1 then vis1 else vis2
+    let vis = if Option.isSome vis1 then vis1 else vis2
     if takenNames.Contains id.idText then errorR (VarBoundTwice id)
     let baseOrThis = if isMemberThis then MemberThisVal else NormalVal
     let names = Map.add id.idText (PrelimValScheme1(id,declaredTypars,ty,topValData,None,isMutable,inlineFlag,baseOrThis,argAttribs,vis,compgen)) names
@@ -5037,7 +5035,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats',m)), acc
 
     | SynPat.LongIdent (LongIdentWithDots(longId,_),_,tyargs,args,vis,m) ->
-        if isSome tyargs then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(),m))
+        if Option.isSome tyargs then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(),m))
         let warnOnUpperForId = 
             match args with
             | SynConstructorArgs.Pats [] -> warnOnUpper
@@ -5780,7 +5778,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.IfThenElse (e1,e2,e3opt,spIfToThen,isRecovery,mIfToThen,m) ->
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
-            if not isRecovery && isNone e3opt then
+            if not isRecovery && Option.isNone e3opt then
                 let env = { env with eContextInfo = ContextInfo.OmittedElseBranch } 
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
                 TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
@@ -6023,8 +6021,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     match attemptArrayString with 
     | Some res -> res
     | None -> 
-    if (isNominal || isSome propName) then 
-
+    if isNominal || Option.isSome propName then
         let nm = 
             match propName with 
             | None -> "Item"
@@ -6173,7 +6170,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let ns1 = NameSet.ofList (List.map fst fldsList)
     let ns2 = NameSet.ofList (List.map (fun x -> x.rfield_id.idText) fspecs)
     
-    if isNone optOrigExpr && not (Zset.subset ns2 ns1) then
+    if Option.isNone optOrigExpr && not (Zset.subset ns2 ns1) then
         error (MissingFields(Zset.elements (Zset.diff ns2 ns1),m))
     
     if  not (Zset.subset ns1 ns2) then 
@@ -6450,9 +6447,9 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy,argopt,binds,extraImpls,mNew
     if // record construction ?
        (isRecdTy cenv.g objTy) || 
        // object construction?
-       (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && isNone argopt) then  
+       (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && Option.isNone argopt) then  
 
-        if isSome argopt then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(),mWholeExpr))
+        if Option.isSome argopt then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(),mWholeExpr))
         if not (List.isEmpty extraImpls) then error(Error(FSComp.SR.tcNoInterfaceImplementationForConstructionExpression(),mNewExpr))
         if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env <> 1 then 
             error(Error(FSComp.SR.tcObjectConstructionCanOnlyBeUsedInClassTypes(),mNewExpr))
@@ -6629,7 +6626,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
                       with _ ->             
                         SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString",SynExpr.Const(SynConst.String (s,m),m),m) 
                 let ccu = ccuOfTyconRef mref
-                if isSome ccu && ccuEq ccu.Value cenv.g.fslibCcu && suffix = "I" then 
+                if Option.isSome ccu && ccuEq ccu.Value cenv.g.fslibCcu && suffix = "I" then 
                     SynExpr.Typed(expr,SynType.LongIdent(LongIdentWithDots(pathToSynLid m ["System";"Numerics";"BigInteger"],[])),m)
                 else
                     expr
@@ -6663,7 +6660,7 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
-    let haveCtor = (isSome inherits)
+    let haveCtor = Option.isSome inherits
 
     let optOrigExpr,tpenv = 
       match optOrigExpr with 
@@ -6691,12 +6688,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match flds with 
         | [] -> []
         | _ ->
-            let tcref,_,fldsList = BuildFieldMap cenv env (isSome optOrigExpr) overallTy flds mWholeExpr
+            let tcref,_,fldsList = BuildFieldMap cenv env (Option.isSome optOrigExpr) overallTy flds mWholeExpr
             let _,_,_,gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp      
             fldsList
 
-    if isSome optOrigExpr && not (isRecdTy cenv.g overallTy) then 
+    if Option.isSome optOrigExpr && not (isRecdTy cenv.g overallTy) then 
         errorR(Error(FSComp.SR.tcExpressionFormRequiresRecordTypes(),mWholeExpr))
 
     if requiresCtor || haveCtor then 
@@ -6708,7 +6705,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     else
         if List.isEmpty flds then 
             let errorInfo = 
-                if isSome optOrigExpr then FSComp.SR.tcEmptyCopyAndUpdateRecordInvalid()
+                if Option.isSome optOrigExpr then FSComp.SR.tcEmptyCopyAndUpdateRecordInvalid()
                 else FSComp.SR.tcEmptyRecordInvalid()
             error(Error(errorInfo,mWholeExpr))
 
@@ -6987,7 +6984,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     /// Decide if the identifier represents a use of a custom query operator
     let hasCustomOperations () = not (List.isEmpty customOperationMethods)
 
-    let isCustomOperation  nm = tryGetDataForCustomOperation nm |> isSome
+    let isCustomOperation  nm = tryGetDataForCustomOperation nm |> Option.isSome
 
     // Check for the MaintainsVariableSpace on custom operation
     let customOperationMaintainsVarSpace (nm:Ident) = 
@@ -7213,7 +7210,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                (let _firstSourceSimplePats,later1 = 
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                     SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
-                isNone later1)
+                Option.isNone later1)
 
              -> Some (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
@@ -7371,8 +7368,8 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let firstSourceSimplePats,later1 = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
             let secondSourceSimplePats,later2 = SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
-            if isSome later1 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), firstSourcePat.Range))
-            if isSome later2 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondSourcePat.Range))
+            if Option.isSome later1 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), firstSourcePat.Range))
+            if Option.isSome later2 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondSourcePat.Range))
 
               // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
             match tryGetDataForCustomOperation nm with 
@@ -7422,7 +7419,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
                 // groupJoin 
                 | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin nm -> 
                     let secondResultSimplePats,later3 = SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
-                    if isSome later3 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondResultPat.Range))
+                    if Option.isSome later3 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondResultPat.Range))
                     match relExpr with 
                     | JoinRelation cenv env (keySelector1, keySelector2) -> 
                         mkJoinExpr keySelector1 keySelector2 secondResultSimplePats, varSpaceWithGroupJoinVars
@@ -9103,7 +9100,7 @@ and TcMethodApplication
                 resultTy)
         curriedArgTys,returnTy
 
-    if isProp && isNone curriedCallerArgsOpt then 
+    if isProp && Option.isNone curriedCallerArgsOpt then 
         error(Error(FSComp.SR.parsIndexerPropertyRequiresAtLeastOneArgument(),mItem))
 
     // STEP 1. UnifyUniqueOverloading. This happens BEFORE we type check the arguments. 
@@ -10029,11 +10026,11 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
             if not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false) then 
                 errorR(Error(FSComp.SR.tcDllImportNotAllowed(),mBinding))
             
-        if HasFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute valAttribs && isNone(memberFlagsOpt) then 
+        if HasFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute valAttribs && Option.isNone memberFlagsOpt then 
             errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(),mBinding))
 
         if HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute valAttribs then 
-            if isSome(memberFlagsOpt) then 
+            if Option.isSome memberFlagsOpt then 
                 errorR(Error(FSComp.SR.tcEntryPointAttributeRequiresFunctionInModule(),mBinding))
             else 
                 UnifyTypes cenv env mBinding overallPatTy (mkArrayType cenv.g cenv.g.string_ty --> cenv.g.int_ty)
@@ -10076,7 +10073,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
         let envinner = 
             match apinfoOpt with 
             | Some (apinfo,ty,m) ->
-                if isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
+                if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
                     error(Error(FSComp.SR.tcInvalidActivePatternName(),mBinding))
 
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag,tagRange) ->
@@ -10507,7 +10504,7 @@ and CheckMemberFlags _g optIntfSlotTy newslotsOK overridesOK memberFlags m =
       errorR(Error(FSComp.SR.tcAbstractMembersIllegalInAugmentation(),m))
     if overridesOK = ErrorOnOverrides && memberFlags.MemberKind = MemberKind.Constructor then 
       errorR(Error(FSComp.SR.tcConstructorsIllegalInAugmentation(),m))
-    if overridesOK = WarnOnOverrides && memberFlags.IsOverrideOrExplicitImpl && isNone optIntfSlotTy then 
+    if overridesOK = WarnOnOverrides && memberFlags.IsOverrideOrExplicitImpl && Option.isNone optIntfSlotTy then 
       warning(OverrideInIntrinsicAugmentation(m))
     if overridesOK = ErrorOnOverrides && memberFlags.IsOverrideOrExplicitImpl then 
       error(Error(FSComp.SR.tcMethodOverridesIllegalHere(),m))
@@ -10713,7 +10710,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner: TcEnv, tpenv, declKin
       
     match tcrefContainerInfo, memberFlagsOpt with 
     | (Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, baseValOpt, _safeInitInfo, declaredTyconTypars)),Some memberFlags) -> 
-        assert (isNone(optIntfSlotTy))
+        assert (Option.isNone optIntfSlotTy)
       
         CheckMemberFlags cenv.g None newslotsOK overridesOK memberFlags id.idRange
         CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
@@ -10780,10 +10777,9 @@ and AnalyzeRecursiveInstanceMemberDecl (cenv,envinner: TcEnv, tpenv, declKind, s
        
          CheckMemberFlags cenv.g optIntfSlotTy newslotsOK overridesOK memberFlags mBinding
 
-         if isSome vis && memberFlags.IsOverrideOrExplicitImpl then 
+         if Option.isSome vis && memberFlags.IsOverrideOrExplicitImpl then 
             errorR(Error(FSComp.SR.tcOverridesCannotHaveVisibilityDeclarations(),memberId.idRange))
-              
-       
+
          // Syntactically push the "this" variable across to be a lambda on the right 
          let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar thisId) bindingRhs
        
@@ -10906,8 +10902,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
                               newslotsOK, overridesOK, vis1, declPattern, bindingAttribs, tcrefContainerInfo,
                               memberFlagsOpt, ty, bindingRhs, mBinding)
 
-
-    let optArgsOK = isSome(memberFlagsOpt)
+    let optArgsOK = Option.isSome memberFlagsOpt
 
     // Assert the types given in the argument patterns
     ApplyTypesFromArgumentPatterns(cenv,envinner,optArgsOK,ty,mBinding,tpenv,bindingRhs,memberFlagsOpt)
@@ -12750,7 +12745,7 @@ module MutRecBindingChecking =
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                     errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(),(trimRangeToLine m)))
 
-                            if isStatic && isNone incrClassCtorLhsOpt then 
+                            if isStatic && Option.isNone incrClassCtorLhsOpt then 
                                 errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(),m))
                               
                             // Phase2A: let-bindings - pass through 
@@ -13454,11 +13449,11 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
                   
                   if not (tcref.HasInterface cenv.g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(),ity.Range))
-                  if (typeEquiv cenv.g ity' cenv.g.mk_IComparable_ty && isSome tcref.GeneratedCompareToValues) || 
-                      (typeEquiv cenv.g ity' cenv.g.mk_IStructuralComparable_ty && isSome tcref.GeneratedCompareToWithComparerValues) ||
-                      (typeEquiv cenv.g ity' ((mkAppTy cenv.g.system_GenericIComparable_tcref [typ])) && isSome tcref.GeneratedCompareToValues) ||
-                      (typeEquiv cenv.g ity' ((mkAppTy cenv.g.system_GenericIEquatable_tcref [typ])) && isSome tcref.GeneratedHashAndEqualsWithComparerValues) ||
-                      (typeEquiv cenv.g ity' cenv.g.mk_IStructuralEquatable_ty && isSome tcref.GeneratedHashAndEqualsWithComparerValues) then
+                  if (typeEquiv cenv.g ity' cenv.g.mk_IComparable_ty && Option.isSome tcref.GeneratedCompareToValues) || 
+                      (typeEquiv cenv.g ity' cenv.g.mk_IStructuralComparable_ty && Option.isSome tcref.GeneratedCompareToWithComparerValues) ||
+                      (typeEquiv cenv.g ity' ((mkAppTy cenv.g.system_GenericIComparable_tcref [typ])) && Option.isSome tcref.GeneratedCompareToValues) ||
+                      (typeEquiv cenv.g ity' ((mkAppTy cenv.g.system_GenericIEquatable_tcref [typ])) && Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues) ||
+                      (typeEquiv cenv.g ity' cenv.g.mk_IStructuralEquatable_ty && Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(),ity.Range))
                   if overridesOK = WarnOnOverrides then  
                       warning(IntfImplInIntrinsicAugmentation(ity.Range))
@@ -13604,19 +13599,19 @@ module AddAugmentationDeclarations =
 
                 
     let AddGenericCompareBindings cenv (tycon:Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) isSome tycon.GeneratedCompareToValues then 
+        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
             AugmentWithHashCompare.MakeBindingsForCompareAugmentation cenv.g tycon
         else
             []
             
     let AddGenericCompareWithComparerBindings cenv (tycon:Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) isSome tycon.GeneratedCompareToWithComparerValues then
+        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToWithComparerValues then
              (AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation cenv.g tycon)
          else
             []
              
     let AddGenericEqualityWithComparerBindings cenv (tycon:Tycon) =
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon  && isSome tycon.GeneratedHashAndEqualsWithComparerValues then
+        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
             (AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation cenv.g tycon)
         else
             []
@@ -13649,7 +13644,7 @@ module AddAugmentationDeclarations =
             // Note: only provide the equals method if Equals is not implemented explicitly, and
             // we're actually generating Hash/Equals for this type
             if not hasExplicitObjectEqualsOverride &&
-                isSome tycon.GeneratedHashAndEqualsWithComparerValues then
+                Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
 
                  let vspec1,vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation cenv.g tcref
                  tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
@@ -13846,7 +13841,7 @@ module TyconConstraintInference =
                             (if initialAssumedTycons.Contains tcref.Stamp then 
                                 assumedTycons.Contains tcref.Stamp
                              elif AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref then
-                                isSome tcref.GeneratedHashAndEqualsWithComparerValues
+                                Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues
                              else
                                 true) 
                              &&
@@ -15678,7 +15673,7 @@ module TcDeclarations =
             let isConcrete = 
                 members |> List.exists (function 
                     | SynMemberDefn.Member(Binding(_,_,_,_,_,_,SynValData(Some memberFlags,_,_),_,_,_,_,_),_) -> not memberFlags.IsDispatchSlot 
-                    | SynMemberDefn.Interface (_,defOpt,_) -> isSome defOpt
+                    | SynMemberDefn.Interface (_,defOpt,_) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
                     | SynMemberDefn.ImplicitCtor _ -> true
                     | SynMemberDefn.ImplicitInherit _ -> true
@@ -16615,10 +16610,8 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
                     ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with e -> errorRecovery e m
 
-
 let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m = 
-    if isNone rootSigOpt then 
-
+    if Option.isNone rootSigOpt then
       let rec check (mty:ModuleOrNamespaceType) =
           for v in mty.AllValsAndMembers do
               let ftyvs = (freeInVal CollectTyparsNoCaching v).FreeTypars |> Zset.elements
@@ -16690,7 +16683,7 @@ let TypeCheckOneImplFile
        (ParsedImplFileInput(_,isScript,qualNameOfFile,scopedPragmas,_,implFileFrags,isLastCompiland)) =
 
  eventually {
-    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))    
+    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g))    
 
     let envinner, mtypeAcc = MakeInitialEnv env 
 

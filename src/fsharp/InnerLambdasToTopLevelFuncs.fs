@@ -935,7 +935,7 @@ module Pass4_RewriteAssembly =
     /// collect Top* repr bindings - if needed... 
 #if TLR_LIFT
     let LiftTopBinds isRec _penv z binds =
-        let isTopBind (bind: Binding) = isSome bind.Var.ValReprInfo
+        let isTopBind (bind: Binding) = Option.isSome bind.Var.ValReprInfo
         let topBinds,otherBinds = FlatList.partition isTopBind binds
         let liftTheseBindings =
             !liftTLR &&             // lifting enabled 

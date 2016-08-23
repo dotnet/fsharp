@@ -1369,7 +1369,7 @@ type CodeGenBuffer(m:range,
             cgbuf.EnsureNopBetweenDebugPoints()
 
             let attr = GenILSourceMarker mgbuf.cenv.g src
-            assert(isSome(attr))
+            assert(Option.isSome attr)
             let i = I_seqpoint (Option.get attr)
             codebuf.Add i
             // Save the first sequence point away to snap it to the top of the method
@@ -1476,7 +1476,7 @@ type CodeGenBuffer(m:range,
                              for kvp in codeLabelToCodeLabel -> (kvp.Key, lab2pc 0 kvp.Key) ] ),
         instrs,
         ResizeArray.toList exnSpecs,
-        isSome seqpoint
+        Option.isSome seqpoint
 
 module CG = 
     let EmitInstr (cgbuf:CodeGenBuffer) pops pushes i = cgbuf.EmitInstr(pops,pushes,i)
@@ -2567,7 +2567,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           let mspec = mkILMethSpec (mspec.MethodRef, boxity,ilEnclArgTys,ilMethArgTys)
           
           // "Unit" return types on static methods become "void" 
-          let mustGenerateUnitAfterCall = isNone returnTy
+          let mustGenerateUnitAfterCall = Option.isNone returnTy
           
           let ccallInfo = 
               match valUseFlags with
@@ -2656,7 +2656,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
 and CanTailcall (hasStructObjArg, ccallInfo, withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, isSelfInit, makesNoCriticalTailcalls, sequel) = 
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
-    if not hasStructObjArg && isNone ccallInfo && not withinSEH && not hasByrefArg && not isDllImport && not isSelfInit && not makesNoCriticalTailcalls &&
+    if not hasStructObjArg && Option.isNone ccallInfo && not withinSEH && not hasByrefArg && not isDllImport && not isSelfInit && not makesNoCriticalTailcalls &&
         // We can tailcall even if we need to generate "unit", as long as we're about to throw the value away anyway as par of the return. 
         // We can tailcall if we don't need to generate "unit", as long as we're about to return. 
         (match sequelIgnoreEndScopes sequel with 
@@ -4389,7 +4389,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         | Test.ArrayLength _
         | Test.IsNull 
         | Test.Const(Const.Zero) -> 
-            if List.length cases <> 1 || isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: Test.IsInst/isnull/query"
+            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: Test.IsInst/isnull/query"
             let bi = 
               match firstDiscrim with 
               | Test.Const(Const.Zero) ->
@@ -4564,7 +4564,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
     let computeFixupsForOneRecursiveVar boundv forwardReferenceSet fixups selfv access set e =
         match e with 
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ -> 
-            let isLocalTypeFunc = (isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e))
+            let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
             let clo,_,eenvclo =  GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with  letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars}  e 
             clo.cloFreeVars |> List.iter (fun fv -> 
@@ -5030,15 +5030,15 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
              let useMethodImpl = 
                  // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
                  let isCompare = 
-                     (isSome tcref.GeneratedCompareToValues && typeEquiv cenv.g oty cenv.g.mk_IComparable_ty) ||
-                     (isSome tcref.GeneratedCompareToValues && tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
+                     (Option.isSome tcref.GeneratedCompareToValues && typeEquiv cenv.g oty cenv.g.mk_IComparable_ty) ||
+                     (Option.isSome tcref.GeneratedCompareToValues && tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
                      
                  let isGenericEquals =
-                     (isSome tcref.GeneratedHashAndEqualsWithComparerValues &&  tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref)
+                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues &&  tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref)
                      
                  let isStructural =
-                     (isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-                     (isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
+                     (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
+                     (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
                  isInterfaceTy cenv.g oty && not isCompare && not isStructural && not isGenericEquals
 
 
@@ -5497,7 +5497,7 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
     let repr,eenv = 
         let ty = v.Type
         if isUnitTy cenv.g ty && not v.IsMutable then  Null,eenv
-        elif isSome repr && IsNamedLocalTypeFuncVal cenv.g v (Option.get repr) then 
+        elif Option.isSome repr && IsNamedLocalTypeFuncVal cenv.g v (Option.get repr) then 
             (* known, named, non-escaping type functions *)
             let cloinfoGenerate eenv = 
                 let eenvinner = 
@@ -5827,7 +5827,7 @@ and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplic
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
 
     // This is used to point the inner classes back to the startup module for initialization purposes 
-    let isFinalFile = isSome mainInfoOpt
+    let isFinalFile = Option.isSome mainInfoOpt
 
     let initClassCompLoc = CompLocForInitClass eenv.cloc 
     let initClassTy = mkILTyForCompLoc initClassCompLoc 
@@ -6110,8 +6110,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         // HOWEVER, if the type doesn't override Object.Equals already.  
         let augmentOverrideMethodDefs = 
 
-              (if isNone tycon.GeneratedCompareToValues &&
-                  isNone tycon.GeneratedHashAndEqualsValues &&
+              (if Option.isNone tycon.GeneratedCompareToValues &&
+                  Option.isNone tycon.GeneratedHashAndEqualsValues &&
                   tycon.HasInterface cenv.g cenv.g.mk_IComparable_ty && 
                   not (tycon.HasOverride cenv.g "Equals" [cenv.g.obj_ty]) &&
                   not tycon.IsFSharpInterfaceTycon

@@ -2637,7 +2637,7 @@ let rec rescopeILTypeSpecQuick scoref (tspec:ILTypeSpec) =
     let tref = tspec.TypeRef
     let tinst = tspec.GenericArgs
     let qtref = qrescope_tref scoref tref
-    if ILList.isEmpty tinst && isNone qtref then 
+    if ILList.isEmpty tinst && Option.isNone qtref then 
         None (* avoid reallocation in the common case *)
     else
         match qtref with 

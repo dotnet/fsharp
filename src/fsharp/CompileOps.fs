@@ -5232,7 +5232,7 @@ let TypeCheckOneInputEventually
                 // Check if we've got an interface for this fragment 
                 let rootSigOpt = rootSigs.TryFind(qualNameOfFile)
 
-                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (isSome rootSigOpt)
+                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (Option.isSome rootSigOpt)
 
                 // Check if we've already seen an implementation for this fragment 
                 if Zset.contains qualNameOfFile rootImpls then 
@@ -5244,7 +5244,7 @@ let TypeCheckOneInputEventually
                 let! topAttrs,implFile,tcEnvAtEnd = 
                     TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
-                let hadSig = isSome rootSigOpt
+                let hadSig = Option.isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
 
                 if verbose then  dprintf "done TypeCheckOneImplFile...\n"

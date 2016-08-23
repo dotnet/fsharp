@@ -1426,7 +1426,7 @@ let GetTopValTypeInFSharpForm g (ValReprInfo(_,argInfos,retInfo) as topValInfo) 
 
 
 let IsCompiledAsStaticProperty g (v:Val) = 
-    (isSome v.ValReprInfo &&
+    (Option.isSome v.ValReprInfo &&
      match GetTopValTypeInFSharpForm g v.ValReprInfo.Value v.Type v.Range with 
      | [],[], _,_ when not v.IsMember -> true
      | _ -> false) 
@@ -1650,7 +1650,7 @@ let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_,_,parentFormalTy
     Option.map (instType (parentTyInst @ methTyInst)) formalRetTy
 
 let slotSigHasVoidReturnTy (TSlotSig(_,_,_,_,_,formalRetTy)) = 
-    isNone formalRetTy 
+    Option.isNone formalRetTy 
 
 let returnTyOfMethod g (TObjExprMethod((TSlotSig(_,parentTy,_,_,_,_) as ss),_,methFormalTypars,_,_,_)) =
     let tinst = argsOfAppTy g parentTy
@@ -4263,8 +4263,8 @@ let freeInModuleOrNamespace opts mdef = accFreeInModuleOrNamespace opts mdef emp
 let rec stripLambda (e,ty) = 
     match e with 
     | Expr.Lambda (_,ctorThisValOpt,baseValOpt,v,b,_,rty) -> 
-        if isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
-        if isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
+        if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
+        if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
         let (vs',b',rty') = stripLambda (b,rty)
         (v :: vs', b', rty') 
     | _ -> ([],e,ty)
@@ -4273,8 +4273,8 @@ let rec stripLambdaN n e =
     assert (n >= 0)
     match e with 
     | Expr.Lambda (_,ctorThisValOpt,baseValOpt,v,body,_,_) when n > 0 -> 
-        if isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
-        if isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
+        if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
+        if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
         let (vs,body',remaining) = stripLambdaN (n-1) body
         (v :: vs, body', remaining) 
     | _ -> ([],e,n)
@@ -4815,7 +4815,7 @@ and remapTyconExnInfo g tmenv inp =
 and remapMemberInfo g m topValInfo ty ty' tmenv x = 
     // The slotsig in the ImplementedSlotSigs is w.r.t. the type variables in the value's type. 
     // REVIEW: this is a bit gross. It would be nice if the slotsig was standalone 
-    assert (isSome topValInfo);
+    assert (Option.isSome topValInfo)
     let tpsOrig,_,_,_ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty m
     let tps,_,_,_ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty' m
     let renaming,_ = mkTyparToTyparRenaming tpsOrig tps 
@@ -5100,7 +5100,7 @@ let isExnFieldMutable ecref n =
     (recdFieldOfExnDefRefByIdx ecref n).IsMutable
 
 let useGenuineField (tycon:Tycon) (f:RecdField) = 
-    isSome f.LiteralValue || tycon.IsEnumTycon || f.rfield_secret || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
+    Option.isSome f.LiteralValue || tycon.IsEnumTycon || f.rfield_secret || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
 
 let ComputeFieldName tycon f = 
     if useGenuineField tycon f then f.rfield_id.idText
@@ -5298,7 +5298,7 @@ let rec decisionTreeHasNonTrivialBindings tree =
         edges |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
-    | TDBind (_,t) -> isNone (targetOfSuccessDecisionTree t)
+    | TDBind (_,t) -> Option.isNone (targetOfSuccessDecisionTree t)
 
 // If a target has assignments and can only be reached through one 
 // branch (i.e. is "linear"), then transfer the assignments to the r.h.s. to be a "let". 
@@ -6173,7 +6173,7 @@ let mkThrow m ty e = mkAsmExpr ([ IL.I_throw ],[], [e],[ty],m)
 let destThrow = function
     | Expr.Op (TOp.ILAsm([IL.I_throw],[ty2]),[],[e],m) -> Some (m,ty2,e)
     | _ -> None
-let isThrow x = isSome (destThrow x)
+let isThrow x = Option.isSome (destThrow x)
 
 // rethrow - parsed as library call - internally represented as op form.
 let mkReraiseLibCall g ty m = let ve,vt = typedExprForIntrinsic g m g.reraise_info in Expr.App(ve,vt,[ty],[mkUnit g m],m)

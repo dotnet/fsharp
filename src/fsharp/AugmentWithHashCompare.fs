@@ -370,7 +370,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
             Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if List.isEmpty nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
         let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
@@ -430,7 +430,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
 
             Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if List.isEmpty nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
         let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
@@ -490,7 +490,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
 
             Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if List.isEmpty nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = (if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget)))
@@ -553,7 +553,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
 
             Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if List.isEmpty nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget))
@@ -1077,6 +1077,6 @@ let rec TypeDefinitelyHasEquality g ty =
            isAppTy g ty &&
            let tcref,tinst = destAppTy g ty 
            // Give a good error for structural types excluded from the equality relation because of their fields
-           not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
+           not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
            // Check the (possibly inferred) structural dependencies
            (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)

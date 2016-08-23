@@ -70,12 +70,12 @@ let UnionCaseRefsInModuleOrNamespace (modref:ModuleOrNamespaceRef) =
 /// Try to find a type with a union case of the given name
 let TryFindTypeWithUnionCase (modref:ModuleOrNamespaceRef) (id: Ident) = 
     modref.ModuleOrNamespaceType.AllEntities
-    |> QueueList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> isSome) 
+    |> QueueList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> Option.isSome) 
 
 /// Try to find a type with a record field of the given name
 let TryFindTypeWithRecdField (modref:ModuleOrNamespaceRef) (id: Ident) = 
     modref.ModuleOrNamespaceType.AllEntities
-    |> QueueList.tryFind (fun tycon -> tycon.GetFieldByName id.idText |> isSome)
+    |> QueueList.tryFind (fun tycon -> tycon.GetFieldByName id.idText |> Option.isSome)
 
 /// Get the active pattern elements defined by a given value, if any
 let ActivePatternElemsOfValRef vref = 

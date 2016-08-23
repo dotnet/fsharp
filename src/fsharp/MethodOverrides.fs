@@ -634,7 +634,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
 #if EXTENSIONTYPING
        not tycon.IsProvidedGeneratedTycon &&
 #endif
-       isNone tycon.GeneratedCompareToValues &&
+       Option.isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
        not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
        not tycon.IsFSharpInterfaceTycon
@@ -657,7 +657,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
         let hasExplicitObjectGetHashCode = tycon.HasOverride g "GetHashCode" []
         let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
 
-        if (isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
+        if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 
             errorR(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(tycon.DisplayName),m)) 
 

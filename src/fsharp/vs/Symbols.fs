@@ -1231,7 +1231,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> 
             let dty = e.GetDelegateType(cenv.amap,range0)
-            TryDestStandardDelegateTyp cenv.infoReader range0 AccessibleFromSomewhere dty |> isSome
+            TryDestStandardDelegateTyp cenv.infoReader range0 AccessibleFromSomewhere dty |> Option.isSome
         | P _ | M _  | V _ -> invalidOp "the value or member is not an event" 
 
     member __.HasSetterMethod =
@@ -1466,7 +1466,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsActivePattern =  
         if isUnresolved() then false else 
         match fsharpInfo() with 
-        | Some v -> PrettyNaming.ActivePatternInfoOfValName v.CoreDisplayName v.Range |> isSome
+        | Some v -> PrettyNaming.ActivePatternInfoOfValName v.CoreDisplayName v.Range |> Option.isSome
         | None -> false
 
     member x.CompiledName = 

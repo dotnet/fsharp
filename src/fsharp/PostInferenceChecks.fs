@@ -951,7 +951,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         | Some membInfo -> testHookMemberBody membInfo body
         
         // Check escapes in the body.  Allow access to protected things within members.
-        let freesOpt = CheckEscapes cenv (isSome memInfo) m syntacticArgs body
+        let freesOpt = CheckEscapes cenv (Option.isSome memInfo) m syntacticArgs body
 
         //  no reraise under lambda expression
         CheckNoReraise cenv freesOpt body 
@@ -1133,7 +1133,7 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         access
 
 and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
-    let isTop = isSome bind.Var.ValReprInfo
+    let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
 
     // Check that active patterns don't have free type variables in their result
@@ -1169,7 +1169,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
               CheckForByrefLikeType cenv env v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(),v.Range)))
           | _ -> ()
 
-        if isSome v.PublicPath then 
+        if Option.isSome v.PublicPath then 
             if 
               // Don't support implicit [<ReflectedDefinition>] on generated members, except the implicit members
               // for 'let' bound functions in classes.

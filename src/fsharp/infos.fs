@@ -785,7 +785,7 @@ type ILMethInfo =
     member x.IsDllImport g = 
         match g.attrib_DllImportAttribute with
         | None -> false
-        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref  |> isSome
+        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method. 
     /// An instance extension method returns one object argument.
@@ -1689,10 +1689,10 @@ type ILPropInfo =
         ILMethInfo(g,x.ILTypeInfo.ToType,None,mdef,[]) 
           
     /// Indicates if the IL property has a 'get' method
-    member x.HasGetter = isSome x.RawMetadata.GetMethod 
+    member x.HasGetter = Option.isSome x.RawMetadata.GetMethod 
 
     /// Indicates if the IL property has a 'set' method
-    member x.HasSetter = isSome x.RawMetadata.SetMethod 
+    member x.HasSetter = Option.isSome x.RawMetadata.SetMethod 
 
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static) 
@@ -1771,7 +1771,7 @@ type PropInfo =
     member x.HasGetter = 
         match x with
         | ILProp(_,x) -> x.HasGetter
-        | FSProp(_,_,x,_) -> isSome x 
+        | FSProp(_,_,x,_) -> Option.isSome x 
 #if EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanRead),m)
 #endif
@@ -1780,7 +1780,7 @@ type PropInfo =
     member x.HasSetter = 
         match x with
         | ILProp(_,x) -> x.HasSetter
-        | FSProp(_,_,_,x) -> isSome x 
+        | FSProp(_,_,_,x) -> Option.isSome x 
 #if EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanWrite),m)
 #endif
@@ -2218,7 +2218,7 @@ type EventInfo =
         | ILEvent(_,ILEventInfo(tinfo,edef)) -> 
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
             // declaring type.
-            if isNone edef.Type then error (nonStandardEventError x.EventName m)
+            if Option.isNone edef.Type then error (nonStandardEventError x.EventName m)
             ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] edef.Type.Value
 
         | FSEvent(g,p,_,_) -> 

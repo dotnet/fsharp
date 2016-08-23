@@ -122,7 +122,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             let rec walkBind (Binding(_, _, _, _, _, _, SynValData(memFlagsOpt,_,_), synPat, _, synExpr, _, spInfo)) =
                 [ // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
                   let isFunction = 
-                      isSome memFlagsOpt ||
+                      Option.isSome memFlagsOpt ||
                       match synPat with 
                       | SynPat.LongIdent (_,_,_, SynConstructorArgs.Pats args,_,_) when not (List.isEmpty args) -> true
                       | _ -> false
