@@ -5,10 +5,10 @@
     <FSharpTreeRoot>$(MSBuildProjectDirectory)\..\..</FSharpTreeRoot>
     <SetupRootFolder>$(FSharpTreeRoot)\setup</SetupRootFolder>
   </PropertyGroup>
-  
+
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" />
   <Import Project="$(SetupRootFolder)\FSharp.Setup.props" />
-  
+
   <PropertyGroup>
     <OutputName>Microsoft.FSharp.SDK</OutputName>
     <ProjectGuid>da0da41f-0e00-4598-8eee-b29d31b0ca04</ProjectGuid>
@@ -19,7 +19,7 @@
     <ServiceByMajorUpgrade>true</ServiceByMajorUpgrade>
     <DefineSolutionProperties>false</DefineSolutionProperties>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);LocaleCode=$(LocaleCode)</DefineConstants>
     <DefineConstants>$(DefineConstants);LocaleId=$(LocaleId)</DefineConstants>
@@ -30,7 +30,7 @@
     <DefineConstants>$(DefineConstants);FSharpTreeRoot=$(FSharpTreeRoot)</DefineConstants>
     <DefineConstants>$(DefineConstants);NugetPackagesDir=$(NugetPackagesDir)</DefineConstants>
   </PropertyGroup>
-    
+
   <ItemGroup>
     <WixExtension Include="WixNetFxExtension">
         <Name>WixNetFxExtension</Name>
@@ -40,28 +40,28 @@
       <HintPath>$(BinariesDir)\setup\FSharp.Wix.Extensions.dll</HintPath>
     </WixExtension>
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Include="Common.Wix.Properties.wxs" />
-    
+
     <Compile Include="FSharp.SDK.wxs" />
     
     <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Compiler_Redist.wxs" />
     <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Compiler_LangPack.wxs" />
-    
+
     <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Runtime_Redist.wxs" />
     <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Runtime_LangPack.wxs" />
   </ItemGroup>
-  
+
   <ItemGroup>
       <FilesToSign Include="$(OutDir)$(OutputName).msi">
          <Authenticode>Microsoft400</Authenticode>
       </FilesToSign>
   </ItemGroup>
-  
+
   <Import Project="$(WixInstallPath)\wix.targets" />
   <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
-  
+
   <Target Name="CheckLocaleIsPassed" BeforeTargets="Build">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
