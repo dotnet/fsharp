@@ -505,7 +505,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // 'isinst' tests where we have stored the result of the 'isinst' in a variable 
     // In this case the 'expr' already holds the result of the 'isinst' test. 
 
-    | (TCase(Test.IsInst _,success)):: edges, dflt  when isSome inpExprOpt -> 
+    | (TCase(Test.IsInst _,success)):: edges, dflt  when Option.isSome inpExprOpt -> 
         TDSwitch(expr,[TCase(Test.IsNull,BuildSwitch None g expr edges dflt m)],Some success,m)    
         
     // isnull and isinst tests
@@ -519,7 +519,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     | [TCase(ListEmptyDiscrim g tinst, emptyCase)], Some consCase 
     | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
     | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
-                     when isSome inpExprOpt -> 
+                     when Option.isSome inpExprOpt -> 
         TDSwitch(expr, [TCase(Test.IsNull, emptyCase)], Some consCase, m)    
 #endif
                 

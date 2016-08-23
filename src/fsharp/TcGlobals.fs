@@ -691,7 +691,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
 
   let makeIntrinsicValRef (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys,rty))  =
       let ty = tryMkForallTy typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
-      let isMember = isSome memberParentName
+      let isMember = Option.isSome memberParentName
       let argCount = if isMember then List.sum (List.map List.length argtys) else 0
       let linkageType = if isMember then Some ty else None
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount },linkageType)

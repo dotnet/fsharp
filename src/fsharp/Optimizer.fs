@@ -1225,7 +1225,7 @@ let ValueOfExpr expr =
 let ValueIsUsedOrHasEffect cenv fvs (b:Binding,binfo) =
     let v = b.Var
     not (cenv.settings.EliminateUnusedBindings()) ||
-    isSome v.MemberInfo ||
+    Option.isSome v.MemberInfo ||
     binfo.HasEffect || 
     v.IsFixed ||
     Zset.contains v (fvs())
@@ -1598,7 +1598,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
     // match --> match
     | Expr.Match (spBind,exprm,pt,targets,m,_ty) ->
         let targets = targets |> Array.map (fun (TTarget(vs,e,spTarget)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs,e,spTarget)))
-        if targets |> Array.forall isSome then 
+        if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
             let ty = targets |> Array.pick (fun (TTarget(_,e,_)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind,exprm,pt,targets,m,ty))
@@ -2595,7 +2595,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
 
     let shapes = 
         match f0' with 
-        | Expr.Val(vref,_,_) when isSome vref.ValReprInfo -> 
+        | Expr.Val(vref,_,_) when Option.isSome vref.ValReprInfo -> 
             let (ValReprInfo(_kinds,detupArgsL,_)) = Option.get vref.ValReprInfo 
             let nargs = (args.Length) 
             let nDetupArgsL = detupArgsL.Length
@@ -2661,7 +2661,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
     match e with 
     | Expr.Lambda (lambdaId,_,_,_,_,m,_)  
     | Expr.TyLambda(lambdaId,_,_,m,_) ->
-        let isTopLevel = isSome vspec && vspec.Value.IsCompiledAsTopLevel
+        let isTopLevel = Option.isSome vspec && vspec.Value.IsCompiledAsTopLevel
         let tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo e
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v,topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
@@ -2939,7 +2939,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
             else env
         
         let repr',einfo = 
-            let env = if v.IsCompilerGenerated && isSome env.latestBoundId then env else {env with latestBoundId=Some v.Id} 
+            let env = if v.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some v.Id} 
             let cenv = if v.InlineInfo = ValInline.PseudoVal then { cenv with optimizing=false} else cenv 
             let e',einfo = OptimizeLambdas (Some v) cenv env (InferArityOfExprBinding cenv.g v e)  e v.Type 
             let size = localVarSize 

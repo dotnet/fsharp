@@ -1675,7 +1675,7 @@ let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
 
 let private isSimplePattern pat =
     let _nowpats,laterf = SimplePatsOfPat (SynArgNameGenerator()) pat
-    isNone laterf
+    Option.isNone laterf
   
 /// "fun (UnionCase x) (UnionCase y) -> body" 
 ///       ==> 

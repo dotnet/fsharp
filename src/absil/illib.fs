@@ -21,9 +21,6 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
 
-let isSome x = match x with None -> false | _ -> true
-let isNone x = match x with None -> true | _ -> false
-
 let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
 let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
 
@@ -438,7 +435,7 @@ module String =
         else
             None
 
-    let hasPrefix s t = isSome (tryDropPrefix s t)
+    let hasPrefix s t = Option.isSome (tryDropPrefix s t)
     let dropPrefix s t = match (tryDropPrefix s t) with Some(res) -> res | None -> failwith "dropPrefix"
 
     let dropSuffix s t = match (tryDropSuffix s t) with Some(res) -> res | None -> failwith "dropSuffix"

@@ -1308,7 +1308,7 @@ let GetMethodRefInfoAsMemberRefIdx cenv env  ((_,typ,_,_,_,_,_) as minfo) =
     FindOrAddSharedRow cenv TableNames.MemberRef (MethodRefInfoAsMemberRefRow cenv env fenv  minfo)
 
 let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm,typ:ILType,cc,args,ret,varargs,genarity) as minfo) =
-    if isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
+    if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
         if not typ.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-typ"
         try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRefRaw(typ.TypeRef, cc, nm, genarity, args,ret)))
         with MethodDefNotFound -> (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
@@ -2463,7 +2463,7 @@ let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  =
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
 and GenParamPass3 cenv env seq (param: ILParameter) = 
-    if param.IsIn=false && param.IsOut=false && param.IsOptional=false && isNone param.Default && isNone param.Name && isNone param.Marshal 
+    if not param.IsIn && not param.IsOut && not param.IsOptional && Option.isNone param.Default && Option.isNone param.Name && Option.isNone param.Marshal 
     then ()
     else    
       let pidx = AddUnsharedRow cenv TableNames.Param (GetParamAsParamRow cenv env seq param)
@@ -2483,7 +2483,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if isSome returnv.Marshal || not (List.isEmpty returnv.CustomAttrs.AsList) then
+    if Option.isSome returnv.Marshal || not (List.isEmpty returnv.CustomAttrs.AsList) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
@@ -2770,7 +2770,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
       | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->  
-          if isSome layout.Pack || isSome layout.Size then 
+          if Option.isSome layout.Pack || Option.isSome layout.Size then 
             AddUnsharedRow cenv TableNames.ClassLayout
                 (UnsharedRow 
                     [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p)

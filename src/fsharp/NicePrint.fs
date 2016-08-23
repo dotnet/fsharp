@@ -1758,7 +1758,7 @@ module private InferredSigPrinting =
         and imdefsL denv  x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv  x = 
-            let filterVal    (v:Val) = not v.IsCompilerGenerated && isNone v.MemberInfo
+            let filterVal    (v:Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
             let filterExtMem (v:Val) = v.IsExtensionMember
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 

@@ -338,7 +338,7 @@ let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAtt
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckILAttributesForUnseen g cattrs _m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-    isSome (TryDecodeILAttribute g tref cattrs)
+    Option.isSome (TryDecodeILAttribute g tref cattrs)
 
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
@@ -402,7 +402,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
             (fun fsAttribs -> 
                 let res = 
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
-                        if isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
+                        if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                             ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName),m))
                         else
                             CompleteD)

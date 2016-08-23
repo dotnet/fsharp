@@ -977,7 +977,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (List.isEmpty minfos || (isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (List.isEmpty minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
@@ -1674,7 +1674,7 @@ and SolveTypeSupportsComparison (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
            elif (isAppTy g ty && 
                  let tcref = tcrefOfAppTy g ty 
                  AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tcref.Deref && 
-                 isNone tcref.GeneratedCompareToWithComparerValues) then
+                 Option.isNone tcref.GeneratedCompareToWithComparerValues) then
  
                ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportComparison3(NicePrint.minimalStringOfType denv ty),m,m2))
 
@@ -1702,7 +1702,7 @@ and SolveTypSupportsEquality (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
 
                // Give a good error for structural types excluded from the equality relation because of their fields
                if (AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref && 
-                   isNone tcref.GeneratedHashAndEqualsWithComparerValues) then
+                   Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) then
 
                    ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty),m,m2))
 

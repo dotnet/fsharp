@@ -2184,7 +2184,7 @@ and seekReadMemberRefAsMethodDataUncached ctxtH (MemberRefAsMspecIdx (numtypars,
 
 and seekReadMemberRefAsMethDataNoVarArgs ctxt numtypars idx : MethodData =
    let (VarArgMethodData(enclTyp, cc, nm, argtys,varargs, retty,minst)) =  seekReadMemberRefAsMethodData ctxt numtypars idx
-   if isSome varargs then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
+   if Option.isSome varargs then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
    (MethodData(enclTyp, cc, nm, argtys, retty,minst))
 
 and seekReadMethodSpecAsMethodData ctxt numtypars idx =  
@@ -3987,7 +3987,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
             { modul = modul 
               ilAssemblyRefs = ilAssemblyRefs
               dispose = (fun () -> ClosePdbReader pdb) }
-        if isNone pdb && succeeded then 
+        if Option.isNone pdb && succeeded then 
             ilModuleReaderCache.Put(key, ilModuleReader)
         ilModuleReader
 

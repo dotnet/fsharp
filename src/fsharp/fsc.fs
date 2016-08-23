@@ -1714,7 +1714,7 @@ type SigningInfo = SigningInfo of (* delaysign:*) bool * (* publicsign:*) bool *
 let GetSigner signingInfo = 
         let (SigningInfo(delaysign,publicsign,signer,container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
-        if isSome container then
+        if Option.isSome container then
           Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
         else
             match signer with 

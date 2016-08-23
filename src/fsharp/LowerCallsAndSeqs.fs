@@ -386,7 +386,7 @@ let LowerSeqExpr g amap overallExpr =
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
             // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be 
             // transferred to the r.h.s. are not yet compiled. 
-            if tgl |> List.forall isSome then 
+            if tgl |> List.forall Option.isSome then 
                 let tgl = List.map Option.get tgl
                 let labs = tgl |> List.collect (fun res -> res.labels)
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
