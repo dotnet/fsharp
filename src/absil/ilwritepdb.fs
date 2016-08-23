@@ -205,10 +205,9 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
-        if info.Documents = null then 
-            Array.empty<PdbDocumentData>
-        else
-            info.Documents
+        match info.Documents with
+        | null -> Array.empty<PdbDocumentData>
+        | _ -> info.Documents
 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name:string) =
@@ -251,9 +250,9 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
     info.Methods |> Array.iteri (fun _i minfo ->
         let docHandle, sequencePointBlob =
             let sps =
-                if minfo.SequencePoints = null then
-                    Array.empty<PdbSequencePoint>
-                else 
+                match minfo.SequencePoints with
+                | null -> Array.empty<PdbSequencePoint>
+                | _ ->
                     match minfo.Range with
                     | None -> Array.empty<PdbSequencePoint>
                     | Some (_,_) -> minfo.SequencePoints
@@ -266,7 +265,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
                     | false, _ -> Unchecked.defaultof<DocumentHandle>
                     | true, f  -> f
 
-            // Return a document that the entire method body is declared within. 
+            // Return a document that the entire method body is declared within.
             // If part of the method body is in another document returns nil handle.
             let tryGetSingleDocumentIndex =
                 let mutable singleDocumentIndex = 0

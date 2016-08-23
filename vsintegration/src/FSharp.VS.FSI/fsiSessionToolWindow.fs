@@ -116,7 +116,7 @@ type internal FsiToolWindow() as this =
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService
-    do  if box fsiLangService = null then
+    do  if isNull(box fsiLangService) then
             // This would be unexpected, since this package provides the service.
             System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.couldNotObtainFSharpLS()) |> ignore
             failwith "No FsiLanguageService"
@@ -443,7 +443,7 @@ type internal FsiToolWindow() as this =
         let fsiProcId = sessions.ProcessID
         let dte = provider.GetService(typeof<DTE>) :?> DTE
 
-        if dte.Debugger.DebuggedProcesses = null || dte.Debugger.DebuggedProcesses.Count = 0 then
+        if isNull dte.Debugger.DebuggedProcesses || dte.Debugger.DebuggedProcesses.Count = 0 then
             FsiDebuggerState.NotRunning, None
         else
             let debuggedFsi =
@@ -478,7 +478,7 @@ type internal FsiToolWindow() as this =
             let fsiProcId = sessions.ProcessID
             let dte = provider.GetService(typeof<DTE>) :?> DTE
             let fsiProc = 
-                if dte.Debugger.LocalProcesses = null then None else
+                if isNull dte.Debugger.LocalProcesses then None else
                 dte.Debugger.LocalProcesses
                 |> Seq.cast<Process>
                 |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
@@ -684,9 +684,9 @@ type internal FsiToolWindow() as this =
             let originalFilter = textView.AddCommandFilter(this :> IOleCommandTarget) |> throwOnFailure1
             // Create a command service that will use the previous command target
             // as parent target and will route to it the commands that it can not handle.
-            if commandService = null then
+            if isNull commandService then
                 commandService <-             
-                    if (null = originalFilter) then                    
+                    if isNull originalFilter then                    
                         new OleMenuCommandService(this)            
                     else
                         new OleMenuCommandService(this, originalFilter)

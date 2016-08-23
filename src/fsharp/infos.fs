@@ -561,24 +561,26 @@ type ParamData =
 type ILFieldInit with 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
     static member FromProvidedObj m (v:obj) = 
-        if v = null then ILFieldInit.Null else
-        let objTy = v.GetType()
-        let v = if objTy.IsEnum then objTy.GetField("value__").GetValue(v) else v
-        match v with 
-        | :? single as i -> ILFieldInit.Single i
-        | :? double as i -> ILFieldInit.Double i
-        | :? bool as i -> ILFieldInit.Bool i
-        | :? char as i -> ILFieldInit.Char (uint16 i)
-        | :? string as i -> ILFieldInit.String i
-        | :? sbyte as i -> ILFieldInit.Int8 i
-        | :? byte as i -> ILFieldInit.UInt8 i
-        | :? int16 as i -> ILFieldInit.Int16 i
-        | :? uint16 as i -> ILFieldInit.UInt16 i
-        | :? int as i -> ILFieldInit.Int32 i
-        | :? uint32 as i -> ILFieldInit.UInt32 i
-        | :? int64 as i -> ILFieldInit.Int64 i
-        | :? uint64 as i -> ILFieldInit.UInt64 i
-        | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"),m))
+        match v with
+        | null -> ILFieldInit.Null
+        | _ ->
+            let objTy = v.GetType()
+            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue(v) else v
+            match v with 
+            | :? single as i -> ILFieldInit.Single i
+            | :? double as i -> ILFieldInit.Double i
+            | :? bool as i -> ILFieldInit.Bool i
+            | :? char as i -> ILFieldInit.Char (uint16 i)
+            | :? string as i -> ILFieldInit.String i
+            | :? sbyte as i -> ILFieldInit.Int8 i
+            | :? byte as i -> ILFieldInit.UInt8 i
+            | :? int16 as i -> ILFieldInit.Int16 i
+            | :? uint16 as i -> ILFieldInit.UInt16 i
+            | :? int as i -> ILFieldInit.Int32 i
+            | :? uint32 as i -> ILFieldInit.UInt32 i
+            | :? int64 as i -> ILFieldInit.Int64 i
+            | :? uint64 as i -> ILFieldInit.UInt64 i
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"),m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter. 
