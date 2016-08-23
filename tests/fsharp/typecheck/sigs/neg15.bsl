@@ -31,9 +31,33 @@ neg15.fs(116,20,116,73): typecheck error FS0072: Lookup on object of indetermina
 
 neg15.fs(122,32,122,57): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined
 
+Maybe you want one of the following:
+
+   InternalUnionType
+
+   InternalRecordType
+
+   PrivateUnionType
+
+   PrivateRecordType
+
+   PublicRecordType
+
 neg15.fs(128,31,128,61): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg15.fs(135,31,135,56): typecheck error FS0039: The value, constructor, namespace or type 'InternalTagOfInternalType' is not defined
+
+Maybe you want one of the following:
+
+   InternalUnionType
+
+   InternalRecordType
+
+   PrivateUnionType
+
+   PrivateRecordType
+
+   PublicRecordType
 
 neg15.fs(141,30,141,60): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
