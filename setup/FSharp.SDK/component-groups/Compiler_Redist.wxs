@@ -73,7 +73,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_fsi.exe" Guid="$(fsharp.guid(Compiler_Redist_fsi.exe, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_fsi.exe.config" Source="$(var.BinariesDir)\net40\bin\fsi.exe" KeyPath="yes">
+        <File Id="Compiler_Redist_fsi.exe" Source="$(var.BinariesDir)\net40\bin\fsi.exe" KeyPath="yes">
           <NetFx:NativeImage Id="Compiler_Redist_fsi.Native.exe" Priority="0" Dependencies="no" Platform="all" />
         </File>
         <File Id="Compiler_Redist_fsi.exe.config" Source="$(var.BinariesDir)\net40\bin\fsi.exe.config" />
