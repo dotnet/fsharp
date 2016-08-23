@@ -55,10 +55,15 @@
     $endif$
     <Reference Include="System.Drawing"/>
     <Reference Include="System.Windows.Forms"/>
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.0.1-beta-24423-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Tutorial.fsx" />
-  </ItemGroup>
+    <Content Include="packages.config" />
+   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>

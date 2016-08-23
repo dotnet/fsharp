@@ -16,6 +16,7 @@
   <TemplateContent>
     <Project File="Tutorial.fsproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" OpenInEditor="true">Tutorial.fsx</ProjectItem>
+      <ProjectItem ReplaceParameters="false">packages.config</ProjectItem>
     </Project>
   </TemplateContent>
 </VSTemplate>
