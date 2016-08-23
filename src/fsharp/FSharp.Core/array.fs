@@ -472,16 +472,51 @@ namespace Microsoft.FSharp.Collections
             loop 0 
         
         [<CompiledName("Choose")>]
-        let choose f (array: _[]) = 
-            checkNonNull "array" array
-            let res = Array.zeroCreateUnchecked array.Length 
-            let mutable count = 0
-            for x in array do 
-                match f x with
-                | None -> ()
-                | Some b -> res.[count] <- b
-                            count <- count + 1
-            Array.subUnchecked 0 count res
+        let choose (f: 'T -> 'U Option) (array: 'T[]) =             
+            checkNonNull "array" array                    
+            
+            let mutable i = 0
+            let mutable first = Unchecked.defaultof<'U>
+            let mutable found = false
+            while i < array.Length && not found do
+                let element = array.[i]
+                match f element with 
+                | None -> i <- i + 1
+                | Some b -> first <- b; found <- true                            
+                
+            if i <> array.Length then
+
+                let chunk1 : 'U[] = Array.zeroCreateUnchecked ((array.Length >>> 2) + 1)
+                chunk1.[0] <- first
+                let mutable count = 1            
+                i <- i + 1                                
+                while count < chunk1.Length && i < array.Length do
+                    let element = array.[i]                                
+                    match f element with
+                    | None -> ()
+                    | Some b -> chunk1.[count] <- b
+                                count <- count + 1                            
+                    i <- i + 1
+                
+                if i < array.Length then                            
+                    let chunk2 : 'U[] = Array.zeroCreateUnchecked (array.Length-i)                        
+                    count <- 0
+                    while i < array.Length do
+                        let element = array.[i]                                
+                        match f element with
+                        | None -> ()
+                        | Some b -> chunk2.[count] <- b
+                                    count <- count + 1                            
+                        i <- i + 1
+
+                    let res : 'U[] = Array.zeroCreateUnchecked (chunk1.Length + count)
+                    Array.Copy(chunk1,res,chunk1.Length)
+                    Array.Copy(chunk2,0,res,chunk1.Length,count)
+                    res
+                else
+                    Array.subUnchecked 0 count chunk1                
+            else
+                empty
 
         [<CompiledName("Filter")>]
         let filter f (array: _[]) =         
