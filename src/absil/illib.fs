@@ -21,10 +21,8 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
 
-let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
-let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
-
-let nonNull msg x = if isNonNull x then x else failwith ("null: " ^ msg) 
+let inline isNonNull x = not (isNull x)
+let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------

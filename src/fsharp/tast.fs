@@ -3430,11 +3430,11 @@ and CcuThunk =
       name: CcuReference  }
 
     member ccu.Deref = 
-        if isNull ccu.target || ccu.orphanfixup then 
+        if isNull (ccu.target :> obj) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
    
-    member ccu.IsUnresolvedReference = (isNull ccu.target || ccu.orphanfixup)
+    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj) || ccu.orphanfixup
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath:string[]) = 
