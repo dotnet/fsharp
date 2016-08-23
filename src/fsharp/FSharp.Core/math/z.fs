@@ -305,7 +305,7 @@ namespace System.Numerics
             | _ -> invalidArg "x" "signs should be +/- 1 or 0"
              
         static member Parse(text:string) =
-            if text = null then raise (new ArgumentNullException("text"))
+            if isNull text then raise (new ArgumentNullException("text"))
             let text = text.Trim()
             let len = text.Length 
             if len = 0 then raise (new System.FormatException(SR.GetString(SR.badFormatString)))

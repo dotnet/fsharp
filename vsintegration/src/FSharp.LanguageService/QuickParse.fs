@@ -76,7 +76,7 @@ module internal QuickParse =
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
     let GetCompleteIdentifierIslandImpl (s : string) (p : int) : (string*int*bool) option =
-        if p<0 || s = null || p>=s.Length then None 
+        if p < 0 || isNull s || p >= s.Length then None 
         else
             let fixup =
                 match () with
@@ -159,7 +159,7 @@ module internal QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongName(line:string,index) =
-        if line = null then ([],"")
+        if isNull line then ([],"")
         elif index<0 then ([],"")
         elif index>=line.Length then ([],"")
         else
@@ -198,7 +198,7 @@ module internal QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongNameEx(line:string,index) : (string list * string) =
-        if line = null then ([],"")
+        if isNull line then ([],"")
         elif index<0 then ([],"")
         elif index>=line.Length then ([],"")
         else

@@ -490,7 +490,10 @@ module internal PrintfImpl =
     let invariantCulture = System.Globalization.CultureInfo.InvariantCulture 
 
     let inline boolToString v = if v then "true" else "false"
-    let inline stringToSafeString v = if v = null then "" else v
+    let inline stringToSafeString v = 
+        match v with
+        | null -> ""
+        | _ -> v
 
     [<Literal>]
     let DefaultPrecision = 6
@@ -1004,7 +1007,7 @@ module internal PrintfImpl =
 
         let verifyMethodInfoWasTaken (_mi : System.Reflection.MemberInfo) =
 #if DEBUG
-            if _mi = null then 
+            if isNull _mi then 
                 ignore (System.Diagnostics.Debugger.Launch())
 #else
             ()
