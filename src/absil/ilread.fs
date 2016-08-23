@@ -1486,7 +1486,7 @@ let dataEndPoints ctxtH =
                   let rva = ctxt.resourcesAddr + offset
                   res := ("manifest resource", rva) :: !res
             !res
-        if isNil dataStartPoints then [] 
+        if List.isEmpty dataStartPoints then [] 
         else
           let methodRVAs = 
               let res = ref []

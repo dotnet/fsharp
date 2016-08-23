@@ -280,13 +280,13 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
              match acc with 
-             | Some(MethodItem(inheritedMethSets)) when nonNil minfos -> Some(MethodItem (minfos::inheritedMethSets))
-             | _ when nonNil minfos -> Some(MethodItem ([minfos]))
-             | Some(PropertyItem(inheritedPropSets)) when nonNil pinfos -> Some(PropertyItem(pinfos::inheritedPropSets))
-             | _ when nonNil pinfos -> Some(PropertyItem([pinfos]))
-             | _ when nonNil finfos -> Some(ILFieldItem(finfos))
-             | _ when nonNil einfos -> Some(EventItem(einfos))
-             | _ when nonNil rfinfos -> 
+             | Some(MethodItem(inheritedMethSets)) when not (List.isEmpty minfos) -> Some(MethodItem (minfos::inheritedMethSets))
+             | _ when not (List.isEmpty minfos) -> Some(MethodItem ([minfos]))
+             | Some(PropertyItem(inheritedPropSets)) when not (List.isEmpty pinfos) -> Some(PropertyItem(pinfos::inheritedPropSets))
+             | _ when not (List.isEmpty pinfos) -> Some(PropertyItem([pinfos]))
+             | _ when not (List.isEmpty finfos) -> Some(ILFieldItem(finfos))
+             | _ when not (List.isEmpty einfos) -> Some(EventItem(einfos))
+             | _ when not (List.isEmpty rfinfos) -> 
                 match rfinfos with
                 | [single] -> Some(RecdFieldItem(single))
                 | _ -> failwith "Unexpected multiple fields with the same name" // Because an explicit name (i.e., nm) was supplied, there will be only one element at most.

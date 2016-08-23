@@ -259,7 +259,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames,_,_) as tvd) (e,ty) =
     let n = tvd.NumCurriedArgs
     let tps,taue,tauty = 
         match e with 
-        | Expr.TyLambda (_,tps,b,_,retTy) when nonNil tpNames -> tps,b,retTy 
+        | Expr.TyLambda (_,tps,b,_,retTy) when not (List.isEmpty tpNames) -> tps,b,retTy 
         | _ -> [],e,ty
     let ctorThisValOpt,baseValOpt,vsl,body,retTy = startStripLambdaUpto n (taue,tauty)
     if vsl.Length <> n then 

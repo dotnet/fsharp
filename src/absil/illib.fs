@@ -23,10 +23,10 @@ let notlazy v = Lazy<_>.CreateFromValue v
 
 let isSome x = match x with None -> false | _ -> true
 let isNone x = match x with None -> true | _ -> false
-let isNil x = match x with [] -> true | _ -> false
-let nonNil x = match x with [] -> false | _ -> true
+
 let isNull (x : 'T) = match (x :> obj) with null -> true | _ -> false
 let isNonNull (x : 'T) = match (x :> obj) with null -> false | _ -> true
+
 let nonNull msg x = if isNonNull x then x else failwith ("null: " ^ msg) 
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
 

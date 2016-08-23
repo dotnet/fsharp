@@ -714,7 +714,7 @@ type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextR
           (new Thread(fun () -> 
               match consoleOpt with 
               | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer ->
-                  if isNil fsiOptions.SourceFiles then 
+                  if List.isEmpty fsiOptions.SourceFiles then 
                       if !progress then fprintfn outWriter "first-line-reader-thread reading first line...";
                       firstLine <- Some(console.ReadLine()); 
                       if !progress then fprintfn outWriter "first-line-reader-thread got first line = %A..." firstLine;
@@ -1900,7 +1900,7 @@ type internal FsiInteractionProcessor
 
         let istate = consume istate fsiOptions.SourceFiles
 
-        if nonNil fsiOptions.SourceFiles then 
+        if not (List.isEmpty fsiOptions.SourceFiles) then 
             fsiConsolePrompt.PrintAhead(); // Seems required. I expected this could be deleted. Why not?
         istate 
 
@@ -2282,7 +2282,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do fsiConsoleOutput.uprintfn ""
 
     // When no source files to load, print ahead prompt here 
-    do if isNil  fsiOptions.SourceFiles then 
+    do if List.isEmpty fsiOptions.SourceFiles then 
         fsiConsolePrompt.PrintAhead()       
 
 

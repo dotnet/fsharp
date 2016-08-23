@@ -353,7 +353,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let rfields = ucase.RecdFields 
-            if isNil rfields then None else
+            if List.isEmpty rfields then None else
             let mkTest thise thataddre j (argty:RecdField) = 
                 mkCallGenericComparisonWithComparerOuter g m argty.FormalType
                   compe
@@ -371,9 +371,9 @@ let mkUnionCompare g tcref (tycon:Tycon) =
             Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
-        if isNil nonNullary then mkZero g m else 
+        if List.isEmpty nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
+        let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
         let dtree = TDSwitch(thise, cases, dflt,m) 
         mbuilder.Close(dtree,m,g.int_ty)
 
@@ -410,7 +410,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let rfields = ucase.RecdFields 
-            if isNil rfields then None else
+            if List.isEmpty rfields then None else
 
             let mkTest thise thataddre j (argty:RecdField) = 
                 mkCallGenericComparisonWithComparerOuter g m argty.FormalType
@@ -431,9 +431,9 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
             Some (mkCase(Test.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
-        if isNil nonNullary then mkZero g m else 
+        if List.isEmpty nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
+        let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
         let dtree = TDSwitch(thise, cases, dflt,m) 
         mbuilder.Close(dtree,m,g.int_ty)
 
@@ -471,7 +471,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let rfields = ucase.RecdFields
-            if isNil rfields then None else
+            if List.isEmpty rfields then None else
 
             let mkTest thise thataddre j (argty:RecdField) = 
                 mkCallGenericEqualityEROuter g m argty.FormalType
@@ -491,9 +491,9 @@ let mkUnionEquality g tcref (tycon:Tycon) =
             Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
-        if isNil nonNullary then mkTrue g m else 
+        if List.isEmpty nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
-        let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget)))
+        let dflt = (if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget)))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree,m,g.bool_ty)
         
@@ -532,7 +532,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
             let m = cref.Range 
 
             let rfields = ucase.RecdFields
-            if isNil rfields then None else
+            if List.isEmpty rfields then None else
 
             let mkTest thise thataddre j (argty:RecdField) = 
               mkCallGenericEqualityWithComparerOuter g m argty.FormalType
@@ -554,9 +554,9 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
             Some (mkCase(Test.UnionCase(cref,tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
         
         let nullary,nonNullary = List.partition isNone (List.map mkCase ucases)  
-        if isNil nonNullary then mkTrue g m else 
+        if List.isEmpty nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget))
+        let dflt = if List.isEmpty nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree,m,g.bool_ty)
         
@@ -938,7 +938,7 @@ let MakeBindingsForCompareAugmentation g (tycon:Tycon) =
                   if isUnitTy g ty then mkZero g m else
                   let thate = mkCoerceExpr (thatobje, ty, m, g.obj_ty)
 
-                  mkApps g ((exprForValRef m vref2,vref2.Type), (if isNil tinst then [] else [tinst]), [thise;thate], m)
+                  mkApps g ((exprForValRef m vref2,vref2.Type), (if List.isEmpty tinst then [] else [tinst]), [thise;thate], m)
               
               mkLambdas m tps [thisv;thatobjv] (comparee,g.int_ty)  
             let rhs2 = 
@@ -1012,7 +1012,7 @@ let MakeBindingsForEqualityWithComparerAugmentation g (tycon:Tycon) =
                     if isUnitTy g ty then mkZero g m else
 
                     let compe = mkILCallGetEqualityComparer g m
-                    mkApps g ((exprForValRef m withcGetHashCodeVal,withcGetHashCodeVal.Type), (if isNil tinst then [] else [tinst]), [thise; compe], m)
+                    mkApps g ((exprForValRef m withcGetHashCodeVal,withcGetHashCodeVal.Type), (if List.isEmpty tinst then [] else [tinst]), [thise; compe], m)
                 
                 mkLambdas m tps [thisv; unitv] (hashe,g.int_ty)  
                   
@@ -1048,7 +1048,7 @@ let MakeBindingsForEqualsAugmentation g (tycon:Tycon) =
 
                 let thatv,thate = mkCompGenLocal m "that" ty  
                 mkIsInstConditional g m ty thatobje thatv 
-                    (mkApps g ((exprForValRef m nocEqualsVal,nocEqualsVal.Type), (if isNil tinst then [] else [tinst]), [thise;thate], m))
+                    (mkApps g ((exprForValRef m nocEqualsVal,nocEqualsVal.Type), (if List.isEmpty tinst then [] else [tinst]), [thise;thate], m))
                     (mkFalse g m)
             
             mkLambdas m tps [thisv;thatobjv] (equalse,g.bool_ty)  

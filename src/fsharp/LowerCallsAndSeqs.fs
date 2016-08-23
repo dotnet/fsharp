@@ -400,8 +400,8 @@ let LowerSeqExpr g amap overallExpr =
                                         gtg,dispose,checkDispose)
                                   |> List.unzip3  
                             let generate = primMkMatch (spBind,exprm,pt,Array.ofList gtgs,m,ty)
-                            let dispose = if isNil disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
-                            let checkDispose = if isNil checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
+                            let dispose = if List.isEmpty disposals then mkUnit g m else List.reduce (mkCompGenSequential m) disposals
+                            let checkDispose = if List.isEmpty checkDisposes then mkFalse g m else List.reduce (mkCompGenSequential m) checkDisposes
                             generate,dispose,checkDispose)
                        labels=labs
                        stateVars = stateVars 

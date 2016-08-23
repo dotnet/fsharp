@@ -199,7 +199,7 @@ type DisposablesTracker() =
 /// Type checking a set of inputs
 let TypeCheck (tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
     try 
-        if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(),Range.rangeStartup))
+        if List.isEmpty inputs then error(Error(FSComp.SR.fscNoImplementationFiles(),Range.rangeStartup))
         let ccuName = assemblyName
         let tcInitialState = GetInitialTcState (rangeStartup,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
         TypeCheckClosedInputSet ((fun () -> errorLogger.ErrorCount > 0),tcConfig,tcImports,tcGlobals,None,tcInitialState,inputs)
@@ -1260,7 +1260,7 @@ module StaticLinker =
     let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 
     let StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
-        if isNil dependentILModules then 
+        if List.isEmpty dependentILModules then 
             ilxMainModule,(fun x -> x) 
         else
 
@@ -1441,7 +1441,7 @@ module StaticLinker =
 
             begin 
                 let remaining = ref (computeILRefs ilxMainModule).AssemblyReferences
-                while nonNil !remaining do
+                while not (List.isEmpty !remaining) do
                     let ilAssemRef = List.head !remaining
                     remaining := List.tail !remaining
                     if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then 
@@ -1503,7 +1503,7 @@ module StaticLinker =
                 ]
                               
             let remaining = ref roots
-            [ while nonNil !remaining do
+            [ while not (List.isEmpty !remaining) do
                 let n = List.head !remaining
                 remaining := List.tail !remaining
                 if not n.visited then 
@@ -1614,7 +1614,7 @@ module StaticLinker =
                   // Build the ILTypeDefs for generated types, starting with the roots 
                   let generatedILTypeDefs = 
                       let rec buildRelocatedGeneratedType (ProviderGeneratedType(ilOrigTyRef, ilTgtTyRef, ch)) = 
-                          let isNested = ilTgtTyRef.Enclosing |> nonNil
+                          let isNested = not (List.isEmpty ilTgtTyRef.Enclosing)
                           if allTypeDefsInProviderGeneratedAssemblies.ContainsKey ilOrigTyRef then 
                               let ilOrigTypeDef = allTypeDefsInProviderGeneratedAssemblies.[ilOrigTyRef]
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
