@@ -153,9 +153,6 @@ module MemoryMapping =
     let OPEN_EXISTING   = 0x0003
     let OPEN_ALWAYS  = 0x0004
 
-let derefByte (p:nativeint) = 
-    NativePtr.read (NativePtr.ofNativeInt<byte> p) 
-
 type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
     inherit BinaryFile()
 
@@ -182,7 +179,7 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
         start + nativeint i
 
     override m.ReadByte i = 
-        derefByte (m.Addr i)
+        Marshal.ReadByte(m.Addr i)
 
     override m.ReadBytes i len = 
         let res = Bytes.zeroCreate len
@@ -190,29 +187,30 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
         res
       
     override m.ReadInt32 i = 
-        NativePtr.read (NativePtr.ofNativeInt<int32> (m.Addr i)) 
+        Marshal.ReadInt32(m.Addr i)
 
     override m.ReadUInt16 i = 
-        NativePtr.read (NativePtr.ofNativeInt<uint16> (m.Addr i)) 
+        uint16(Marshal.ReadInt16(m.Addr i))
 
     member m.Close() = 
         ignore(MemoryMapping.UnmapViewOfFile start)
         ignore(MemoryMapping.CloseHandle hMap)
 
     override m.CountUtf8String i = 
-        let start = m.Addr i  
+        let start = m.Addr i
         let mutable p = start 
-        while derefByte p <> 0uy do
+        while Marshal.ReadByte(p) <> 0uy do
             p <- p + 1n
         int (p - start) 
 
     override m.ReadUTF8String i = 
         let n = m.CountUtf8String i
-#if FX_RESHAPED_REFLECTION
-        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
-#else
-        new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
-#endif
+        System.Runtime.InteropServices.Marshal.PtrToStringAnsi((m.Addr i), n)
+//#if FX_RESHAPED_REFLECTION
+//        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
+//#else
+//        new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
+//#endif
 
 
 //---------------------------------------------------------------------
