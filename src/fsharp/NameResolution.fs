@@ -1896,7 +1896,6 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
                 if not (List.isEmpty pinfos) && (match lookupKind with LookupKind.Expr -> true | _ -> false) then 
                     success (resInfo,Item.Property (nm,pinfos),rest) else
-                
                 let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
                 if not (List.isEmpty minfos) && (match lookupKind with LookupKind.Expr -> true | _ -> false) then 
                     success (resInfo,Item.MakeMethGroup (nm,minfos),rest) 
@@ -2586,7 +2585,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
             | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None ->
-                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ        
+                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
                 if isRecdTy g typ then
                     // record label doesn't belong to record type -> predict other labels of same record                    
                     error(Error(SuggestOtherLabelsOfSameRecordType nenv typeName id allFields,m))
