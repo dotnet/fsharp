@@ -406,7 +406,7 @@ type CallPattern = TupleStructure list
 let callPatternOrder = (compare : CallPattern -> CallPattern -> int)
 let argsCP exprs = List.map exprTS exprs
 let noArgsCP = []
-let isTrivialCP xs = (isNil xs)
+let inline isTrivialCP xs = List.isEmpty xs
 
 let rec minimalCallPattern callPattern =
     match callPattern with 

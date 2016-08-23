@@ -977,7 +977,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (List.isEmpty minfos || (isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
@@ -1268,7 +1268,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   let frees =  GetFreeTyparsOfMemberConstraint csenv traitInfo
 
                   // If there's nothing left to learn then raise the errors 
-                  (if (permitWeakResolution && isNil support) || isNil frees then errors  
+                  (if (permitWeakResolution && List.isEmpty support) || List.isEmpty frees then errors  
                   // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> ResultD TTraitUnsolved)
     ) 
@@ -1355,7 +1355,7 @@ and TransactMemberConstraintSolution traitInfo trace sln  =
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys,_,memFlags,argtys,rty,soln) as traitInfo) : MethInfo list =
     let results = 
-        if permitWeakResolution || isNil (GetSupportOfMemberConstraint csenv traitInfo) then
+        if permitWeakResolution || List.isEmpty (GetSupportOfMemberConstraint csenv traitInfo) then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1408,11 +1408,11 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     let cxst = csenv.SolverState.ExtraCxs
     let tpn = tp.Stamp
     let cxs = cxst.FindAll tpn
-    if isNil cxs then ResultD false else
+    if List.isEmpty cxs then ResultD false else
     
     cxs |> List.iter (fun _ -> cxst.Remove tpn);
 
-    assert (isNil (cxst.FindAll tpn));
+    assert (List.isEmpty (cxst.FindAll tpn))
 
     match trace with 
     | NoTrace -> () 
@@ -1855,7 +1855,7 @@ and CanMemberSigsMatchUpToCheck
     
     Iterate2D unifyTypes minst uminst ++ (fun () -> 
 
-    if not (permitOptArgs || isNil(unnamedCalledOptArgs)) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(),m)) else
+    if not (permitOptArgs || List.isEmpty unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(),m)) else
     
 
     let calledObjArgTys = minfo.GetObjArgTypes(amap, m, minst)
@@ -1909,10 +1909,10 @@ and CanMemberSigsMatchUpToCheck
         match reqdRetTyOpt with 
         | None -> CompleteD 
         | Some _  when minfo.IsConstructor -> CompleteD 
-        | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
+        | Some _  when not alwaysCheckReturn && List.isEmpty unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
             let methodRetTy = 
-                if isNil unnamedCalledOutArgs then 
+                if List.isEmpty unnamedCalledOutArgs then 
                     methodRetTy 
                 else 
                     let outArgTys = unnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
@@ -1995,10 +1995,10 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
 
     // No version accessible 
     | ([],others),_,_,_,_ ->  
-        if nonNil others then
-            ErrorD (Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m))
-        else
+        if List.isEmpty others then
             ErrorD (Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m))
+        else
+            ErrorD (Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m))
     | _,([],(cmeth::_)),_,_,_ ->  
     
         // Check all the argument types. 
@@ -2415,7 +2415,6 @@ let EliminateConstraintsForGeneralizedTypars csenv trace (generalizedTypars: Typ
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn
-        if isNil cxs then () else
         cxs |> List.iter (fun cx -> 
             cxst.Remove tpn
             match trace with 
