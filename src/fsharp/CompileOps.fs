@@ -3252,7 +3252,7 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
             | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
 
-        let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespace(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedImplFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -3280,7 +3280,7 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
             | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
 
-        let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespaceSig(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedSigFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -4969,7 +4969,7 @@ module private ScriptPreprocessClosure =
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
-            if isNil closureFiles  then  
+            if List.isEmpty closureFiles then  
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with
@@ -5232,7 +5232,7 @@ let TypeCheckOneInputEventually
                 // Check if we've got an interface for this fragment 
                 let rootSigOpt = rootSigs.TryFind(qualNameOfFile)
 
-                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (isSome rootSigOpt)
+                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (Option.isSome rootSigOpt)
 
                 // Check if we've already seen an implementation for this fragment 
                 if Zset.contains qualNameOfFile rootImpls then 
@@ -5244,7 +5244,7 @@ let TypeCheckOneInputEventually
                 let! topAttrs,implFile,tcEnvAtEnd = 
                     TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
-                let hadSig = isSome rootSigOpt
+                let hadSig = Option.isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
 
                 if verbose then  dprintf "done TypeCheckOneImplFile...\n"

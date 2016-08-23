@@ -345,7 +345,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     // Simple applications 
     | Expr.App(f,_fty,tyargs,args,m) -> 
-        if nonNil tyargs then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m))
+        if not (List.isEmpty tyargs) then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m))
         List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) (ConvExpr cenv env f) args
     
     // REVIEW: what is the quotation view of literals accessing enumerations? Currently they show up as integers. 
@@ -729,7 +729,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
         let e = env.substVals.[v]
         ConvExpr cenv env e
     elif env.vs.ContainsVal v then 
-        if nonNil tyargs then wfail(InternalError("ignoring generic application of local quoted variable",m))
+        if not (List.isEmpty tyargs) then wfail(InternalError("ignoring generic application of local quoted variable",m))
         QP.mkVar(env.vs.[v])
     elif v.BaseOrThisInfo = CtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then 
         QP.mkThisVar(ConvType cenv env m v.Type)
