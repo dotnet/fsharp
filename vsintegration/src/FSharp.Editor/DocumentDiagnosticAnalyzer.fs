@@ -25,7 +25,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     
     override this.SupportedDiagnostics with get() = ImmutableArray<DiagnosticDescriptor>.Empty
 
-    override this.AnalyzeSyntaxAsync(document: Document, addDiagnostic: Action<Diagnostic>, cancellationToken: CancellationToken): Task =
+    override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let computation = async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
@@ -33,11 +33,10 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             
             parseResults.Errors |> Seq.iter(fun (error) -> printf "%A" error) |> ignore
 
-            return List<Diagnostic>.Empty
+            return ImmutableArray<Diagnostic>.Empty
         }
 
-        let action() = computation |> Async.RunSynchronously |> Seq.iter(fun diagnostic -> addDiagnostic.Invoke(diagnostic))
-        Task.Run(action, cancellationToken)
+        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
 
-    override this.AnalyzeSemanticsAsync(_: Document, _: Action<Diagnostic>, _: CancellationToken): Task =
-        Task.CompletedTask
+    override this.AnalyzeSemanticsAsync(_: Document, _: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        Task.FromResult(ImmutableArray<Diagnostic>.Empty)

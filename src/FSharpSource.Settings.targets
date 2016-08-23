@@ -89,7 +89,7 @@
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-    <RoslynVersion>2.0.0-beta3</RoslynVersion>
+    <RoslynVersion>2.0.0-beta4-60808-03</RoslynVersion>
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
   </PropertyGroup>
