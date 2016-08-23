@@ -931,7 +931,7 @@ module Patterns =
             | Some methInfo -> methInfo 
 
     let bindMethodHelper (parentT: Type, nm,marity,argtys,rty) =
-      if parentT = null then invalidArg "parentT" (SR.GetString(SR.QparentCannotBeNull))
+      if isNull parentT then invalidArg "parentT" (SR.GetString(SR.QparentCannotBeNull))
       if marity = 0 then 
           let tyargTs = if parentT.IsGenericType then parentT.GetGenericArguments() else [| |] 
           let argTs = Array.ofList (List.map (instFormal tyargTs) argtys) 

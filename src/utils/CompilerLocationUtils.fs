@@ -99,12 +99,13 @@ module internal FSharpEnvironment =
         Option.ofString
             (try
                 let key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-                if key = null then null
-                else
+                match key with
+                | null -> null
+                | _ ->
                     let sub = key.OpenSubKey(subKey)
-                    if sub = null then null
-                    else 
-                        downcast (sub.GetValue(null, null))
+                    match sub with
+                    | null -> null
+                    | _ -> downcast (sub.GetValue(null, null))
              with e->
                 System.Diagnostics.Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaDotNet: %s" (e.ToString()))
                 null)

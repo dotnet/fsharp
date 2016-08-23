@@ -490,7 +490,10 @@ module internal PrintfImpl =
     let invariantCulture = System.Globalization.CultureInfo.InvariantCulture 
 
     let inline boolToString v = if v then "true" else "false"
-    let inline stringToSafeString v = if v = null then "" else v
+    let inline stringToSafeString v = 
+        match v with
+        | null -> ""
+        | _ -> v
 
     [<Literal>]
     let DefaultPrecision = 6
@@ -1001,25 +1004,30 @@ module internal PrintfImpl =
     type private PrintfBuilder<'S, 'Re, 'Res>() =
     
         let mutable count = 0
-
-        let verifyMethodInfoWasTaken (_mi : System.Reflection.MemberInfo) =
 #if DEBUG
-            if _mi = null then 
+        let verifyMethodInfoWasTaken (mi : System.Reflection.MemberInfo) =
+            if isNull mi then 
                 ignore (System.Diagnostics.Debugger.Launch())
 #else
-            ()
 #endif
             
         let buildSpecialChained(spec : FormatSpecifier, argTys : Type[], prefix : string, tail : obj, retTy) = 
             if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
+
                 let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
                 let args = [| box prefix; tail   |]
                 mi.Invoke(null, args)
             elif spec.TypeChar = 't' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let mi = mi.MakeGenericMethod([| retTy |])
                 let args = [| box prefix; tail |]
                 mi.Invoke(null, args)
@@ -1031,9 +1039,10 @@ module internal PrintfImpl =
                     let prefix = if spec.TypeChar = '%' then "PercentStarChained" else "StarChained"
                     let name = prefix + (string n)
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-                
+#if DEBUG                
                 verifyMethodInfoWasTaken mi
-                
+#else
+#endif                
                 let argTypes, args =
                     if spec.TypeChar = '%' then
                         [| retTy |], [| box prefix; tail |]
@@ -1048,13 +1057,19 @@ module internal PrintfImpl =
         let buildSpecialFinal(spec : FormatSpecifier, argTys : Type[], prefix : string, suffix : string) =
             if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let mi = mi.MakeGenericMethod(argTys.[1] : Type)
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
             elif spec.TypeChar = 't' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
             else
@@ -1065,8 +1080,10 @@ module internal PrintfImpl =
                     let prefix = if spec.TypeChar = '%' then "PercentStarFinal" else "StarFinal"
                     let name = prefix + (string n)
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-               
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
 
                 let mi, args = 
                     if spec.TypeChar = '%' then 
@@ -1081,13 +1098,19 @@ module internal PrintfImpl =
 
         let buildPlainFinal(args : obj[], argTypes : Type[]) = 
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + (argTypes.Length.ToString()), NonPublicStatics)
+#if DEBUG
             verifyMethodInfoWasTaken mi
+#else
+#endif
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + ((argTypes.Length - 1).ToString()), NonPublicStatics)
+#if DEBUG
             verifyMethodInfoWasTaken mi
+#else
+#endif
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)   
 

@@ -50,7 +50,7 @@ namespace System.Threading
                     
             member this.Equals(ctr:CancellationTokenRegistration) =
                 match this.source with
-                |   null -> ctr.source = null
+                |   null -> isNull ctr.source
                 |   _ ->  this.source.Equals(ctr.source) && this.id = ctr.id
                 
             override this.Equals(o:obj) =
@@ -91,7 +91,7 @@ namespace System.Threading
                     
             member this.Equals(ct:CancellationToken) =
                 match this.source with
-                |   null -> ct.source = null
+                |   null -> isNull ct.source
                 |   _ -> this.source.Equals(ct.source)
                 
             override this.Equals(o:obj) =

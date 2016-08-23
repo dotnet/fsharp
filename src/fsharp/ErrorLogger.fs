@@ -518,7 +518,7 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 let NormalizeErrorString (text : string) =    
-    if text = null then nullArg "text"
+    if isNull text then nullArg "text"
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()

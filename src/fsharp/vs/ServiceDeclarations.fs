@@ -1243,7 +1243,7 @@ type FSharpDeclarationListItem(name, glyph:int, info) =
 
                 // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
                 // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
-                if task = null then
+                if isNull task then
                     // kick off the actual (non-cooperative) work
                     task <- System.Threading.Tasks.Task.Factory.StartNew(fun() -> 
                         let text = decl.DescriptionTextAsync |> Async.RunSynchronously
