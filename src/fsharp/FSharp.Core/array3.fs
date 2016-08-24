@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.Operators.Checked
