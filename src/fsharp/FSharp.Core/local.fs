@@ -2,7 +2,7 @@
 
 
 namespace Microsoft.FSharp.Core
-
+[<AutoOpen>]
 module internal DetailedExceptions =
     open System
     open Microsoft.FSharp.Core
@@ -74,7 +74,6 @@ module internal DetailedExceptions =
 namespace Microsoft.FSharp.Primitives.Basics 
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.DetailedExceptions
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators

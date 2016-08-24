@@ -10,8 +10,8 @@ open Utils
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
-    (sqs = arr) |@ (sprintf  "Seq.%s = %A, Array.%s = %A" name sqs name arr) .&. 
-    (ls  = arr) |@ (sprintf "List.%s = %A, Array.%s = %A" name ls name arr)
+    (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
+    (ls  = arr) |@ (sprintf "List.%s = '%A', Array.%s = '%A'" name ls name arr)
 
 
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
