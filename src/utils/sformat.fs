@@ -709,8 +709,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // pprinter: anyL - support functions
         // -------------------------------------------------------------------- 
 
-        let getProperty (obj: obj) name =
-            let ty = obj.GetType()
+        let getProperty (ty: Type) (obj: obj) name =
 #if FX_ATLEAST_PORTABLE
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
             if isNotNull prop then prop.GetValue(obj,[||])
@@ -732,6 +731,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
 #endif
 #endif
+        let getField obj (fieldInfo: FieldInfo) =
+            fieldInfo.GetValue(obj)
+
         let formatChar isChar c = 
             match c with 
             | '\'' when isChar -> "\\\'"
@@ -862,7 +864,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                         let postText = m.Groups.["post"].Value // Everything after the closing bracket
                                         let prop = replaceEscapedBrackets(m.Groups.["prop"].Value) // Unescape everything between the opening and closing brackets
 
-                                        match catchExn (fun () -> getProperty x prop) with
+                                        match catchExn (fun () -> getProperty ty x prop) with
                                           | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
                                           | Choice1Of2 alternativeObj ->
                                               try 
@@ -1102,8 +1104,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
 #endif                              
-                              let props = 
-                                props |> Array.filter (fun pi ->
+                              let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public)
+                              let propsAndFields = 
+                                props |> Array.map (fun i -> i :> MemberInfo)
+                                      |> Array.append (Array.map (fun i -> i :> MemberInfo) fields)
+                                      |> Array.filter (fun pi ->
                                     // check if property is annotated with System.Diagnostics.DebuggerBrowsable(Never). 
                                     // Its evaluation may have unexpected side effects and\or block printing.
                                     match Seq.toArray (pi.GetCustomAttributes(typeof<System.Diagnostics.DebuggerBrowsableAttribute>, false)) with
@@ -1114,17 +1119,21 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
 #if FX_ATLEAST_PORTABLE
-                              System.Array.Sort((props),{ new System.Collections.Generic.IComparer<PropertyInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
+                              System.Array.Sort((propsAndFields),{ new System.Collections.Generic.IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
-                              System.Array.Sort((props:>System.Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> PropertyInfo).Name) ((p2 :?> PropertyInfo).Name) } );
+                              System.Array.Sort((propsAndFields:>System.Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
 #endif                        
 
-                              if props.Length = 0 || (nDepth <= 0) then basicL 
+                              if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
                               else basicL --- 
-                                     (props 
+                                     (propsAndFields 
                                       |> Array.toList 
-                                      |> List.map (fun p -> (p.Name,(try Some (objL nDepth Precedence.BracketIfTuple (getProperty obj p.Name)) 
-                                                                     with _ -> None)))
+                                      |> List.map 
+                                        (fun m -> 
+                                            (m.Name,
+                                                (try Some (objL nDepth Precedence.BracketIfTuple (getProperty ty obj m.Name)) 
+                                                 with _ -> try Some (objL nDepth Precedence.BracketIfTuple (getField obj (m :?> FieldInfo))) 
+                                                           with _ -> None)))
                                       |> makePropertiesL)
                            | _ -> basicL 
                 | UnitValue -> countNodes 1; measureL
