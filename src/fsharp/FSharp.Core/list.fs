@@ -3,7 +3,6 @@
 namespace Microsoft.FSharp.Collections
 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators

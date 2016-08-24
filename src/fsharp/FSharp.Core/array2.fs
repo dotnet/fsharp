@@ -4,7 +4,6 @@ namespace Microsoft.FSharp.Collections
 
     open System
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.Operators.Checked

@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Core
 open Microsoft.FSharp.Core
 
+[<AutoOpen>]
 module internal DetailedExceptions =
     val inline invalidArgFmt: arg:string -> format:string -> paramArray:obj array -> _
     val inline invalidOpFmt: format:string -> paramArray:obj array -> _

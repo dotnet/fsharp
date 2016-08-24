@@ -8,7 +8,6 @@ namespace Microsoft.FSharp.Collections
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
@@ -456,38 +455,6 @@ namespace Microsoft.FSharp.Collections
 
         let bindG g cont = GenerateThen<_>.Bind(g,cont)
 
-        //let emptyG () =
-        //    { new Generator<_> with
-        //           member x.Apply = (fun () -> Stop)
-        //           member x.Disposer = None }
-        //
-        //let delayG f  =
-        //    { new Generator<_> with
-        //           member x.Apply = fun () -> Goto(f())
-        //           member x.Disposer = None }
-        //
-        //let useG (v: System.IDisposable) f =
-        //    { new Generator<_> with
-        //           member x.Apply = (fun () ->
-        //               let g = f v in
-        //               // We're leaving this generator but want to maintain the disposal on the target.
-        //               // Hence chain it into the disposer of the target
-        //               Goto(chainDisposeG v.Dispose g))
-        //           member x.Disposer = Some (fun () -> v.Dispose()) }
-        //
-        //let yieldG (v:'T) =
-        //    let yielded = ref false
-        //    { new Generator<_> with
-        //           member x.Apply = fun () -> if !yielded then Stop else (yielded := true; Yield(v))
-        //           member x.Disposer = None }
-        //
-        //let rec whileG gd b = if gd() then bindG (b()) (fun () -> whileG gd b) else emptyG()
-        //
-        //let yieldThenG x b = bindG (yieldG x) b
-        //
-        //let forG (v: seq<'T>) f =
-        //    let e = v.GetEnumerator() in
-        //    whileG e.MoveNext (fun () -> f e.Current)
 
         // Internal type. Drive an underlying generator. Crucially when the generator returns
         // a new generator we simply update our current generator and continue. Thus the enumerator
@@ -509,7 +476,6 @@ namespace Microsoft.FSharp.Collections
         //
         // Defined as a type so we can optimize Enumerator/Generator chains in enumerateFromLazyGenerator
         // and GenerateFromEnumerator.
-
 
         [<Sealed>]
         type EnumeratorWrappingLazyGenerator<'T>(g:Generator<'T>) =
@@ -565,7 +531,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System
     open System.Diagnostics
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
@@ -857,7 +822,6 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
     open System.Reflection
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.DetailedExceptions
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.CompilerServices
