@@ -1104,10 +1104,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
 #endif                              
-                              let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public)
+                              let fields = ty.GetFields(BindingFlags.Instance ||| BindingFlags.Public) |> Array.map (fun i -> i :> MemberInfo)
                               let propsAndFields = 
                                 props |> Array.map (fun i -> i :> MemberInfo)
-                                      |> Array.append (Array.map (fun i -> i :> MemberInfo) fields)
+                                      |> Array.append fields
                                       |> Array.filter (fun pi ->
                                     // check if property is annotated with System.Diagnostics.DebuggerBrowsable(Never). 
                                     // Its evaluation may have unexpected side effects and\or block printing.
@@ -1121,19 +1121,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #if FX_ATLEAST_PORTABLE
                               System.Array.Sort((propsAndFields),{ new System.Collections.Generic.IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
-                              System.Array.Sort((propsAndFields:>System.Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
+                              System.Array.Sort((propsAndFields :> System.Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
 #endif                        
 
                               if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
                               else basicL --- 
                                      (propsAndFields 
-                                      |> Array.toList 
-                                      |> List.map 
+                                      |> Array.map 
                                         (fun m -> 
                                             (m.Name,
                                                 (try Some (objL nDepth Precedence.BracketIfTuple (getProperty ty obj m.Name)) 
                                                  with _ -> try Some (objL nDepth Precedence.BracketIfTuple (getField obj (m :?> FieldInfo))) 
                                                            with _ -> None)))
+                                      |> Array.toList 
                                       |> makePropertiesL)
                            | _ -> basicL 
                 | UnitValue -> countNodes 1; measureL
