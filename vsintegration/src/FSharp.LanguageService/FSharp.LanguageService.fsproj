@@ -52,8 +52,6 @@
     <EmbeddedResource Include="FSLangSvcStrings.resx" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Error.fs" />
-    <Compile Include="CommonConstants.fs" />
-    <Compile Include="CommonRoslynHelpers.fs" />
     <Compile Include="Quickparse.fs" />
     <Compile Include="Vs.fs" />
     <Compile Include="Colorize.fs" />
@@ -65,8 +63,6 @@
     <Compile Include="NavigationBar.fs" />
     <Compile Include="Intellisense.fs" />
     <Compile Include="BackgroundRequests.fs" />
-    <Compile Include="ProjectSite.fs" />
-    <Compile Include="LanguageService.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
