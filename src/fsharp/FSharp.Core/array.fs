@@ -518,196 +518,110 @@ namespace Microsoft.FSharp.Collections
             else
                 empty
 
-        module internal Filter =
-            let inline fastGetBitsCount (i:uint32) =
-                 let mutable i = i - ((i >>> 1) &&& 0x55555555u)
-                 i <- (i &&& 0x33333333u) + ((i >>> 2) &&& 0x33333333u)
-                 (((i + (i >>> 4)) &&& 0x0F0F0F0Fu) * 0x01010101u) >>> 24
-
-            let boolToUInt32 (b:bool) = (# "conv.u4" (# "cgt.un" b 0 : int32 #) : uint32 #)
-
-            [<Struct; NoComparison; NoEquality>]
-            type MaskAsBoolStruct =
-                val mutable _0x00 : bool
-                val mutable _0x01 : bool
-                val mutable _0x02 : bool
-                val mutable _0x03 : bool
-                val mutable _0x04 : bool
-                val mutable _0x05 : bool
-                val mutable _0x06 : bool
-                val mutable _0x07 : bool
-                val mutable _0x08 : bool
-                val mutable _0x09 : bool
-                val mutable _0x0A : bool
-                val mutable _0x0B : bool
-                val mutable _0x0C : bool
-                val mutable _0x0D : bool
-                val mutable _0x0E : bool
-                val mutable _0x0F : bool
-                val mutable _0x10 : bool
-                val mutable _0x11 : bool
-                val mutable _0x12 : bool
-                val mutable _0x13 : bool
-                val mutable _0x14 : bool
-                val mutable _0x15 : bool
-                val mutable _0x16 : bool
-                val mutable _0x17 : bool
-                val mutable _0x18 : bool
-                val mutable _0x19 : bool
-                val mutable _0x1A : bool
-                val mutable _0x1B : bool
-                val mutable _0x1C : bool
-                val mutable _0x1D : bool
-                val mutable _0x1E : bool
-                val mutable _0x1F : bool
-
-            let populateMaskAsBoolStruct f (array:array<_>) arrayBaseIdx (fd:byref<MaskAsBoolStruct>) =
-                fd._0x00 <- f array.[arrayBaseIdx+0x00]
-                fd._0x01 <- f array.[arrayBaseIdx+0x01]
-                fd._0x02 <- f array.[arrayBaseIdx+0x02]
-                fd._0x03 <- f array.[arrayBaseIdx+0x03]
-                fd._0x04 <- f array.[arrayBaseIdx+0x04]
-                fd._0x05 <- f array.[arrayBaseIdx+0x05]
-                fd._0x06 <- f array.[arrayBaseIdx+0x06]
-                fd._0x07 <- f array.[arrayBaseIdx+0x07]
-                fd._0x08 <- f array.[arrayBaseIdx+0x08]
-                fd._0x09 <- f array.[arrayBaseIdx+0x09]
-                fd._0x0A <- f array.[arrayBaseIdx+0x0A]
-                fd._0x0B <- f array.[arrayBaseIdx+0x0B]
-                fd._0x0C <- f array.[arrayBaseIdx+0x0C]
-                fd._0x0D <- f array.[arrayBaseIdx+0x0D]
-                fd._0x0E <- f array.[arrayBaseIdx+0x0E]
-                fd._0x0F <- f array.[arrayBaseIdx+0x0F]
-                fd._0x10 <- f array.[arrayBaseIdx+0x10]
-                fd._0x11 <- f array.[arrayBaseIdx+0x11]
-                fd._0x12 <- f array.[arrayBaseIdx+0x12]
-                fd._0x13 <- f array.[arrayBaseIdx+0x13]
-                fd._0x14 <- f array.[arrayBaseIdx+0x14]
-                fd._0x15 <- f array.[arrayBaseIdx+0x15]
-                fd._0x16 <- f array.[arrayBaseIdx+0x16]
-                fd._0x17 <- f array.[arrayBaseIdx+0x17]
-                fd._0x18 <- f array.[arrayBaseIdx+0x18]
-                fd._0x19 <- f array.[arrayBaseIdx+0x19]
-                fd._0x1A <- f array.[arrayBaseIdx+0x1A]
-                fd._0x1B <- f array.[arrayBaseIdx+0x1B]
-                fd._0x1C <- f array.[arrayBaseIdx+0x1C]
-                fd._0x1D <- f array.[arrayBaseIdx+0x1D]
-                fd._0x1E <- f array.[arrayBaseIdx+0x1E]
-                fd._0x1F <- f array.[arrayBaseIdx+0x1F]
-
-            let calculateMask (fd:byref<MaskAsBoolStruct>) =
-                let mutable mask = 
-                                 ((boolToUInt32 fd._0x00) <<< 0x00)
-                mask <- mask ||| ((boolToUInt32 fd._0x01) <<< 0x01)
-                mask <- mask ||| ((boolToUInt32 fd._0x02) <<< 0x02)
-                mask <- mask ||| ((boolToUInt32 fd._0x03) <<< 0x03)
-                mask <- mask ||| ((boolToUInt32 fd._0x04) <<< 0x04)
-                mask <- mask ||| ((boolToUInt32 fd._0x05) <<< 0x05)
-                mask <- mask ||| ((boolToUInt32 fd._0x06) <<< 0x06)
-                mask <- mask ||| ((boolToUInt32 fd._0x07) <<< 0x07)
-                mask <- mask ||| ((boolToUInt32 fd._0x08) <<< 0x08)
-                mask <- mask ||| ((boolToUInt32 fd._0x09) <<< 0x09)
-                mask <- mask ||| ((boolToUInt32 fd._0x0A) <<< 0x0A)
-                mask <- mask ||| ((boolToUInt32 fd._0x0B) <<< 0x0B)
-                mask <- mask ||| ((boolToUInt32 fd._0x0C) <<< 0x0C)
-                mask <- mask ||| ((boolToUInt32 fd._0x0D) <<< 0x0D)
-                mask <- mask ||| ((boolToUInt32 fd._0x0E) <<< 0x0E)
-                mask <- mask ||| ((boolToUInt32 fd._0x0F) <<< 0x0F)
-                mask <- mask ||| ((boolToUInt32 fd._0x10) <<< 0x10)
-                mask <- mask ||| ((boolToUInt32 fd._0x11) <<< 0x11)
-                mask <- mask ||| ((boolToUInt32 fd._0x12) <<< 0x12)
-                mask <- mask ||| ((boolToUInt32 fd._0x13) <<< 0x13)
-                mask <- mask ||| ((boolToUInt32 fd._0x14) <<< 0x14)
-                mask <- mask ||| ((boolToUInt32 fd._0x15) <<< 0x15)
-                mask <- mask ||| ((boolToUInt32 fd._0x16) <<< 0x16)
-                mask <- mask ||| ((boolToUInt32 fd._0x17) <<< 0x17)
-                mask <- mask ||| ((boolToUInt32 fd._0x18) <<< 0x18)
-                mask <- mask ||| ((boolToUInt32 fd._0x19) <<< 0x19)
-                mask <- mask ||| ((boolToUInt32 fd._0x1A) <<< 0x1A)
-                mask <- mask ||| ((boolToUInt32 fd._0x1B) <<< 0x1B)
-                mask <- mask ||| ((boolToUInt32 fd._0x1C) <<< 0x1C)
-                mask <- mask ||| ((boolToUInt32 fd._0x1D) <<< 0x1D)
-                mask <- mask ||| ((boolToUInt32 fd._0x1E) <<< 0x1E)
-                mask         ||| ((boolToUInt32 fd._0x1F) <<< 0x1F)
-
-            let createMask f (array:array<_>) =
-                let thirtytooth = array.Length/32
-
-                let filterMaskMap = Array.zeroCreateUnchecked<uint32> (thirtytooth+1)
-                let mutable filteredLength = 0u
-                let mutable filterMaskMapIdx = 0
-                let mutable fd = Unchecked.defaultof<MaskAsBoolStruct>
-                while filterMaskMapIdx < thirtytooth do
-                    populateMaskAsBoolStruct f array (filterMaskMapIdx*32) &fd
-
-                    let mask = calculateMask &fd
-                    if mask <> 0u then
-                        filteredLength <- filteredLength + fastGetBitsCount mask
-                        filterMaskMap.[filterMaskMapIdx] <- mask
-
-                    filterMaskMapIdx <- filterMaskMapIdx + 1
-
-                let arrayIdx = filterMaskMapIdx*32
-                if arrayIdx < array.Length then
-                    let mutable mask = 0u
-                    let mutable offset = 0
-                    for arrayIdx = arrayIdx to array.Length-1 do
-                        mask <- mask ||| (boolToUInt32 (f array.[arrayIdx]) <<< offset)
-                        offset <- offset + 1
-                    filteredLength <- filteredLength + fastGetBitsCount mask
-                    filterMaskMap.[filterMaskMap.Length-1] <- mask
-
-                filterMaskMap, int filteredLength
-
-            let createAndPopulate (filterMaskMap:array<uint32>,filteredCount) (src:array<_>) =
-                let dst = Array.zeroCreateUnchecked filteredCount
-                let mutable dstIdx = 0
-                let mutable srcIdx = 0
-                for mask in filterMaskMap do
-                    if mask <> 0u then
-                        if (mask &&& (1u<<<0x00)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x00]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x01)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x01]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x02)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x02]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x03)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x03]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x04)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x04]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x05)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x05]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x06)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x06]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x07)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x07]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x08)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x08]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x09)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x09]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0A)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0A]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0B)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0B]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0C)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0C]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0D)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0D]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0E)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0E]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x0F)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x0F]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x10)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x10]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x11)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x11]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x12)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x12]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x13)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x13]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x14)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x14]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x15)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x15]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x16)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x16]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x17)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x17]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x18)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x18]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x19)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x19]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1A)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1A]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1B)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1B]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1C)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1C]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1D)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1D]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1E)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1E]; dstIdx <- dstIdx + 1
-                        if (mask &&& (1u<<<0x1F)) <> 0u then dst.[dstIdx] <- src.[srcIdx+0x1F]; dstIdx <- dstIdx + 1
-                    srcIdx <- srcIdx + 32
-                dst
-
         [<CompiledName("Filter")>]
         let filter f (array: _[]) =         
-            checkNonNull "array" array                    
+            checkNonNull "array" array
 
-            match array |> Filter.createMask f with
-            | _, 0                                 -> empty
-            | _, length when length = array.Length -> array.Clone () :?> _
-            | mask                                 -> array |> Filter.createAndPopulate mask 
+            let thirtytooth = array.Length/32
+
+            let maskArray = Array.zeroCreateUnchecked<uint32> (thirtytooth+1)
+            let mutable count = 0
+
+            let sourceBatchEnd = thirtytooth * 32
+            let mutable sourceIdx = 0
+            while sourceIdx < sourceBatchEnd do
+                let mutable mask = 0u
+                if f array.[sourceIdx+0x00] then mask <- mask + 0x00000001u; count <- count + 1
+                if f array.[sourceIdx+0x01] then mask <- mask + 0x00000002u; count <- count + 1
+                if f array.[sourceIdx+0x02] then mask <- mask + 0x00000004u; count <- count + 1
+                if f array.[sourceIdx+0x03] then mask <- mask + 0x00000008u; count <- count + 1
+                if f array.[sourceIdx+0x04] then mask <- mask + 0x00000010u; count <- count + 1
+                if f array.[sourceIdx+0x05] then mask <- mask + 0x00000020u; count <- count + 1
+                if f array.[sourceIdx+0x06] then mask <- mask + 0x00000040u; count <- count + 1
+                if f array.[sourceIdx+0x07] then mask <- mask + 0x00000080u; count <- count + 1
+                if f array.[sourceIdx+0x08] then mask <- mask + 0x00000100u; count <- count + 1
+                if f array.[sourceIdx+0x09] then mask <- mask + 0x00000200u; count <- count + 1
+                if f array.[sourceIdx+0x0A] then mask <- mask + 0x00000400u; count <- count + 1
+                if f array.[sourceIdx+0x0B] then mask <- mask + 0x00000800u; count <- count + 1
+                if f array.[sourceIdx+0x0C] then mask <- mask + 0x00001000u; count <- count + 1
+                if f array.[sourceIdx+0x0D] then mask <- mask + 0x00002000u; count <- count + 1
+                if f array.[sourceIdx+0x0E] then mask <- mask + 0x00004000u; count <- count + 1
+                if f array.[sourceIdx+0x0F] then mask <- mask + 0x00008000u; count <- count + 1
+                if f array.[sourceIdx+0x10] then mask <- mask + 0x00010000u; count <- count + 1
+                if f array.[sourceIdx+0x11] then mask <- mask + 0x00020000u; count <- count + 1
+                if f array.[sourceIdx+0x12] then mask <- mask + 0x00040000u; count <- count + 1
+                if f array.[sourceIdx+0x13] then mask <- mask + 0x00080000u; count <- count + 1
+                if f array.[sourceIdx+0x14] then mask <- mask + 0x00100000u; count <- count + 1
+                if f array.[sourceIdx+0x15] then mask <- mask + 0x00200000u; count <- count + 1
+                if f array.[sourceIdx+0x16] then mask <- mask + 0x00400000u; count <- count + 1
+                if f array.[sourceIdx+0x17] then mask <- mask + 0x00800000u; count <- count + 1
+                if f array.[sourceIdx+0x18] then mask <- mask + 0x01000000u; count <- count + 1
+                if f array.[sourceIdx+0x19] then mask <- mask + 0x02000000u; count <- count + 1
+                if f array.[sourceIdx+0x1A] then mask <- mask + 0x04000000u; count <- count + 1
+                if f array.[sourceIdx+0x1B] then mask <- mask + 0x08000000u; count <- count + 1
+                if f array.[sourceIdx+0x1C] then mask <- mask + 0x10000000u; count <- count + 1
+                if f array.[sourceIdx+0x1D] then mask <- mask + 0x20000000u; count <- count + 1
+                if f array.[sourceIdx+0x1E] then mask <- mask + 0x40000000u; count <- count + 1
+                if f array.[sourceIdx+0x1F] then mask <- mask + 0x80000000u; count <- count + 1
+
+                maskArray.[sourceIdx / 32] <- mask
+                sourceIdx <- sourceIdx + 32
+
+            if sourceIdx < array.Length then
+                let mutable mask = 0u
+                let mutable elementMask = 1u
+                while sourceIdx < array.Length do
+                    if f array.[sourceIdx] then mask <- mask ||| elementMask; count <- count + 1
+                    elementMask <- elementMask <<< 1
+                    sourceIdx <- sourceIdx + 1
+                maskArray.[maskArray.Length-1] <- mask
+
+            if count = 0 then [||]
+            else
+                if array.Length = count
+                then array.Clone () :?> _
+                else
+                    let res = Array.zeroCreateUnchecked count
+                    let mutable resIdx = 0
+                    let mutable arrayIdx = 0
+                    for mask in maskArray do
+                        if mask <> 0u then
+                            if mask &&& 0x00000001u <> 0u then res.[resIdx] <- array.[arrayIdx+0x00]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000002u <> 0u then res.[resIdx] <- array.[arrayIdx+0x01]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000004u <> 0u then res.[resIdx] <- array.[arrayIdx+0x02]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000008u <> 0u then res.[resIdx] <- array.[arrayIdx+0x03]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000010u <> 0u then res.[resIdx] <- array.[arrayIdx+0x04]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000020u <> 0u then res.[resIdx] <- array.[arrayIdx+0x05]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000040u <> 0u then res.[resIdx] <- array.[arrayIdx+0x06]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000080u <> 0u then res.[resIdx] <- array.[arrayIdx+0x07]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000100u <> 0u then res.[resIdx] <- array.[arrayIdx+0x08]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000200u <> 0u then res.[resIdx] <- array.[arrayIdx+0x09]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000400u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0A]; resIdx <- resIdx + 1
+                            if mask &&& 0x00000800u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0B]; resIdx <- resIdx + 1
+                            if mask &&& 0x00001000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0C]; resIdx <- resIdx + 1
+                            if mask &&& 0x00002000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0D]; resIdx <- resIdx + 1
+                            if mask &&& 0x00004000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0E]; resIdx <- resIdx + 1
+                            if mask &&& 0x00008000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x0F]; resIdx <- resIdx + 1
+                            if mask &&& 0x00010000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x10]; resIdx <- resIdx + 1
+                            if mask &&& 0x00020000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x11]; resIdx <- resIdx + 1
+                            if mask &&& 0x00040000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x12]; resIdx <- resIdx + 1
+                            if mask &&& 0x00080000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x13]; resIdx <- resIdx + 1
+                            if mask &&& 0x00100000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x14]; resIdx <- resIdx + 1
+                            if mask &&& 0x00200000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x15]; resIdx <- resIdx + 1
+                            if mask &&& 0x00400000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x16]; resIdx <- resIdx + 1
+                            if mask &&& 0x00800000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x17]; resIdx <- resIdx + 1
+                            if mask &&& 0x01000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x18]; resIdx <- resIdx + 1
+                            if mask &&& 0x02000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x19]; resIdx <- resIdx + 1
+                            if mask &&& 0x04000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1A]; resIdx <- resIdx + 1
+                            if mask &&& 0x08000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1B]; resIdx <- resIdx + 1
+                            if mask &&& 0x10000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1C]; resIdx <- resIdx + 1
+                            if mask &&& 0x20000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1D]; resIdx <- resIdx + 1
+                            if mask &&& 0x40000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1E]; resIdx <- resIdx + 1
+                            if mask &&& 0x80000000u <> 0u then res.[resIdx] <- array.[arrayIdx+0x1F]; resIdx <- resIdx + 1
+
+                        arrayIdx <- arrayIdx + 32
+
+                    res
 
             
         [<CompiledName("Where")>]
