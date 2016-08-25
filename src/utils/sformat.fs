@@ -829,7 +829,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                             Some (wordL (x.ToString()))
                           else
                             // Try the StructuredFormatDisplayAttribute extensibility attribute
-                            match x.GetType().GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
+                            match ty.GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
                             | null | [| |] -> None
                             | res -> 
                                let attr = (res.[0] :?> StructuredFormatDisplayAttribute) 
@@ -1021,7 +1021,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
                         wordL (formatString s)  
 #endif                        
-                    | :? System.Array as arr -> 
+                    | :? Array as arr -> 
                         match arr.Rank with
                         | 1 -> 
                              let n = arr.Length
@@ -1046,18 +1046,17 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                         
                     // Format 'set' and 'map' nicely
                     | _ when  
-                          (let ty = obj.GetType()
-                           ty.IsGenericType && (ty.GetGenericTypeDefinition() = typedefof<Map<int,int>> 
+                          (ty.IsGenericType && (ty.GetGenericTypeDefinition() = typedefof<Map<int,int>> 
                                                 || ty.GetGenericTypeDefinition() = typedefof<Set<int>>) ) ->
-                         let ty = obj.GetType()
                          let word = if ty.GetGenericTypeDefinition() = typedefof<Map<int,int>> then "map" else "set"
                          let possibleKeyValueL v = 
+                             let tyv = v.GetType()
                              if word = "map" &&
                                 (match v with null -> false | _ -> true) && 
-                                v.GetType().IsGenericType && 
-                                v.GetType().GetGenericTypeDefinition() = typedefof<KeyValuePair<int,int>> then
-                                  objL depthLim Precedence.BracketIfTuple (v.GetType().GetProperty("Key").GetValue(v, [| |]), 
-                                                                           v.GetType().GetProperty("Value").GetValue(v, [| |]))
+                                tyv.IsGenericType && 
+                                tyv.GetGenericTypeDefinition() = typedefof<KeyValuePair<int,int>> then
+                                  objL depthLim Precedence.BracketIfTuple (tyv.GetProperty("Key").GetValue(v, [| |]), 
+                                                                           tyv.GetProperty("Value").GetValue(v, [| |]))
                              else
                                   objL depthLim Precedence.BracketIfTuple v
                          let it = (obj :?>  System.Collections.IEnumerable).GetEnumerator() 
@@ -1091,7 +1090,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                            // Also, in the declared values case, if the sequence is actually a known non-lazy type (list, array etc etc) we could print it.  
                            wordL "<seq>" |> showModeFilter
                     | _ ->
-                         if showMode = ShowTopLevelBinding && typeUsesSystemObjectToString (obj.GetType()) then
+                         if showMode = ShowTopLevelBinding && typeUsesSystemObjectToString ty then
                            emptyL
                          else
                            countNodes 1
@@ -1119,9 +1118,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
 #if FX_ATLEAST_PORTABLE
-                              System.Array.Sort((propsAndFields),{ new System.Collections.Generic.IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
+                              Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
-                              System.Array.Sort((propsAndFields :> System.Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
+                              Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );
 #endif                        
 
                               if propsAndFields.Length = 0 || (nDepth <= 0) then basicL 
