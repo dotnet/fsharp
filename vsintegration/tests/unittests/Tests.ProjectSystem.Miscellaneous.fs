@@ -516,8 +516,6 @@ type Miscellaneous() =
     member public this.TestBuildActions () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"<Import Project=\"My.targets\" />")
-            // Use toolsversion 2.0 project to have predictable default set of BuildActions
-            let text = text.Replace("ToolsVersion='4.0'", "ToolsVersion='2.0'") 
             
             File.AppendAllText(file, text)
             let dirName = Path.GetDirectoryName(file)

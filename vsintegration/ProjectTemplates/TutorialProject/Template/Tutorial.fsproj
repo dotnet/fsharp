@@ -56,7 +56,7 @@
     <Reference Include="System.Drawing"/>
     <Reference Include="System.Windows.Forms"/>
     <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.0.1-beta-24423-01\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
