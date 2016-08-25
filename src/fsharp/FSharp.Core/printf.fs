@@ -936,10 +936,7 @@ module internal PrintfImpl =
                 System.Diagnostics.Debug.Assert((i = n), "i = n")
                 buf.[i] <- ty
                 buf           
-        go ty 0
-    
-    [<Literal>]
-    let ContinuationOnStack = -1
+        go ty 0    
     
     type private PrintfBuilderStack() = 
         let args = Stack(10)
@@ -951,7 +948,7 @@ module internal PrintfImpl =
                 arr.[start + i] <- s.Pop()
             arr
         
-        member this.GetArgumentAndTypesAsArrays
+        member __.GetArgumentAndTypesAsArrays
             (
                 argsArraySize, argsArrayStartPos, argsArrayTotalCount, 
                 typesArraySize, typesArrayStartPos, typesArrayTotalCount 
@@ -960,7 +957,7 @@ module internal PrintfImpl =
             let typesArray = stackToArray typesArraySize typesArrayStartPos typesArrayTotalCount types
             argsArray, typesArray
 
-        member this.PopContinuationWithType() = 
+        member __.PopContinuationWithType() = 
             System.Diagnostics.Debug.Assert(args.Count = 1, "args.Count = 1")
             System.Diagnostics.Debug.Assert(types.Count = 1, "types.Count = 1")
             
@@ -969,7 +966,7 @@ module internal PrintfImpl =
 
             cont, contTy
 
-        member this.PopValueUnsafe() = args.Pop()
+        member __.PopValueUnsafe() = args.Pop()
 
         member this.PushContinuationWithType (cont : obj, contTy : Type) = 
             System.Diagnostics.Debug.Assert(this.IsEmpty, "this.IsEmpty")
@@ -983,17 +980,17 @@ module internal PrintfImpl =
 
             this.PushArgumentWithType(cont, contTy)
 
-        member this.PushArgument(value : obj) =
+        member __.PushArgument(value : obj) =
             args.Push value
 
-        member this.PushArgumentWithType(value : obj, ty) =
+        member __.PushArgumentWithType(value : obj, ty) =
             args.Push value
             types.Push ty
 
-        member this.HasContinuationOnStack(expectedNumberOfArguments) = 
+        member __.HasContinuationOnStack(expectedNumberOfArguments) = 
             types.Count = expectedNumberOfArguments + 1
 
-        member this.IsEmpty = 
+        member __.IsEmpty = 
             System.Diagnostics.Debug.Assert(args.Count = types.Count, "args.Count = types.Count")
             args.Count = 0
 
@@ -1247,7 +1244,7 @@ module internal PrintfImpl =
                 else
                     buildPlain n prefix
                             
-        member this.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
+        member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
             parseFormatString s typeof<'T> :?> _, (2 * count + 1) // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
@@ -1311,23 +1308,23 @@ module internal PrintfImpl =
         let buf : string[] = Array.zeroCreate n
         let mutable ptr = 0
 
-        override this.Finalize() : 'Result = k (String.Concat(buf))
-        override this.Write(s : string) = 
+        override __.Finalize() : 'Result = k (String.Concat(buf))
+        override __.Write(s : string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
         override this.WriteT(s) = this.Write s
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
-        override this.Finalize() : 'Result = k ()
-        override this.Write(s : string) = ignore(buf.Append(s))
-        override this.WriteT(()) = ()
+        override __.Finalize() : 'Result = k ()
+        override __.Write(s : string) = ignore(buf.Append(s))
+        override __.WriteT(()) = ()
 
     type TextWriterPrintfEnv<'Result>(k, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        override this.Finalize() : 'Result = k()
-        override this.Write(s : string) = tw.Write s
-        override this.WriteT(()) = ()
+        override __.Finalize() : 'Result = k()
+        override __.Write(s : string) = tw.Write s
+        override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
         let formatter, n = Cache<_, _, _, _>.Get fmt
