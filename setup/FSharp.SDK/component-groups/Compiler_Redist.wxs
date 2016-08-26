@@ -25,6 +25,11 @@
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" />
 
+      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.dll" />
+      <ComponentRef Id="Compiler_Redist_System.Reflection.Metadata.dll" />
+      <ComponentRef Id="Compiler_Redist_System.Collections.Immutable.dll" />
+
       <ComponentRef Id="Compiler_Redist_OtherResources_Redist.txt" />
       <ComponentRef Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" />
       <ComponentRef Id="Compiler_Redist_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" />
@@ -95,6 +100,7 @@
       <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.targets" />
       </Component>
+
       <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
       </Component>
@@ -138,6 +144,22 @@
 
       <Component Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Utilities.Core.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.Collections.Immutable.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Collections.Immutable.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.Collections.Immutable.dll" Source="$(var.NugetPackagesDir)\System.Collections.Immutable.1.2.0\lib\netstandard1.0\System.Collections.Immutable.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.Reflection.Metadata.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Reflection.Metadata.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.Reflection.Metadata.dll" Source="$(var.NugetPackagesDir)\System.Reflection.Metadata\1.4.1-beta-24227-04\lib\netstandard1.1\System.Reflection.Metadata.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1Microsoft.DiaSymReader.dll" />
       </Component>
     </DirectoryRef>
 
