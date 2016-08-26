@@ -407,7 +407,7 @@ module DispatchSlotChecking =
         // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
         // duplicates.
         for (_i, reqdTy, m, impliedTys) in reqdTyInfos do
-            if isInterfaceTy g reqdTy && isNil impliedTys then 
+            if isInterfaceTy g reqdTy && List.isEmpty impliedTys then 
                 errorR(Error(FSComp.SR.typrelDuplicateInterface(),m))
 
         // Check that no interface type is implied twice
@@ -418,7 +418,7 @@ module DispatchSlotChecking =
                 if i > j then  
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
                     overlap |> List.iter (fun overlappingTy -> 
-                        if nonNil(GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual)) then                                
+                        if not (List.isEmpty (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)),reqdTyRange)))
 
         // Get the SlotImplSet for each implemented type
@@ -605,8 +605,8 @@ module DispatchSlotChecking =
                                         // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
                                         let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
                      
-                                        // Record the slotsig via mutation 
-                                        yield slotsig ] 
+                                        // Record the slotsig via mutation
+                                        yield slotsig ]
                           //if mustOverrideSomething reqdTy overrideBy then 
                           //    assert nonNil overridenForThisSlotImplSet
                           yield! overridenForThisSlotImplSet ]
@@ -634,7 +634,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
 #if EXTENSIONTYPING
        not tycon.IsProvidedGeneratedTycon &&
 #endif
-       isNone tycon.GeneratedCompareToValues &&
+       Option.isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
        not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
        not tycon.IsFSharpInterfaceTycon
@@ -657,7 +657,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
         let hasExplicitObjectGetHashCode = tycon.HasOverride g "GetHashCode" []
         let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
 
-        if (isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
+        if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 
             errorR(Error(FSComp.SR.typrelExplicitImplementationOfGetHashCodeOrEquals(tycon.DisplayName),m)) 
 

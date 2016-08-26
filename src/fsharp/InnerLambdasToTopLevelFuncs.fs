@@ -201,7 +201,7 @@ module Pass1_DetermineTLRAndArities =
             let nFormals    = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f  
             let arity       = Operators.min nFormals nMaxApplied
-            if atTopLevel || arity<>0 || nonNil tps then Some (f,arity)
+            if atTopLevel || arity<>0 || not (List.isEmpty tps) then Some (f,arity)
             else None
 
     /// Check if f involves any value recursion (so can skip those).
@@ -935,7 +935,7 @@ module Pass4_RewriteAssembly =
     /// collect Top* repr bindings - if needed... 
 #if TLR_LIFT
     let LiftTopBinds isRec _penv z binds =
-        let isTopBind (bind: Binding) = isSome bind.Var.ValReprInfo
+        let isTopBind (bind: Binding) = Option.isSome bind.Var.ValReprInfo
         let topBinds,otherBinds = FlatList.partition isTopBind binds
         let liftTheseBindings =
             !liftTLR &&             // lifting enabled 
@@ -1087,7 +1087,7 @@ module Pass4_RewriteAssembly =
                    let args = aenvExprs @ args
                    mkApps penv.g ((exprForVal m fHat, fHat.Type),[tys],args,m) (* change, direct fHat call with closure (reqdTypars,aenvs) *)
         | _ -> 
-            if isNil tys && isNil args then 
+            if List.isEmpty tys && List.isEmpty args then 
                 fx 
             else Expr.App (fx,fty,tys,args,m)
                               (* no change, f is expr *)

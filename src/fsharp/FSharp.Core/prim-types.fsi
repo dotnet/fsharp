@@ -2150,6 +2150,12 @@ namespace Microsoft.FSharp.Core
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
         val inline isNull : value:'T -> bool when 'T : null
+        
+        /// <summary>Determines whether the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is not null, false otherwise.</returns>
+        [<CompiledName("IsNotNull")>]
+        val inline isNotNull : value:'T -> bool when 'T : null
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>

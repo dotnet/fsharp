@@ -153,7 +153,7 @@ namespace Microsoft.FSharp.Collections
         let nth list index = item index list
 
         [<CompiledName("Choose")>]
-        let choose f xs = Microsoft.FSharp.Primitives.Basics.List.choose f xs
+        let choose f xs = List.choose f xs
     
         [<CompiledName("SplitAt")>]
         let splitAt index (list:'T list) = List.splitAt index list
@@ -185,7 +185,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with
                 | [],[] -> () 
                 | h1::t1, h2::t2 -> f.Invoke(h1,h2); loop t1 t2 
-                | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop list1 list2
 
         [<CompiledName("IterateIndexed2")>]
@@ -195,7 +196,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with
                 | [],[] -> () 
                 | h1::t1, h2::t2 -> f.Invoke(n,h1,h2); loop (n+1) t1 t2 
-                | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop 0 list1 list2
 
         [<CompiledName("Map3")>]
@@ -223,7 +225,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Pairwise")>]
         let pairwise (list: 'T list) =
-            Microsoft.FSharp.Primitives.Basics.List.pairwise list
+            List.pairwise list
 
         [<CompiledName("Reduce")>]
         let reduce f list = 
@@ -245,7 +247,8 @@ namespace Microsoft.FSharp.Collections
                 match list1,list2 with 
                 | [],[] -> acc
                 | h1::t1, h2::t2 -> loop (f.Invoke(acc,h1,h2)) t1 t2
-                | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+                | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+                | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
             loop acc list1 list2
 
         let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc = 
@@ -308,7 +311,10 @@ namespace Microsoft.FSharp.Collections
             let arr2 = toArray list2
             let n1 = arr1.Length
             let n2 = arr2.Length
-            if n1 <> n2 then invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths));
+            if n1 <> n2 then 
+                invalidArgFmt "list1, list2" 
+                    "{0}\nlist1.Length = {1}, list2.Length = {2}"
+                    [|SR.GetString SR.listsHadDifferentLengths; arr1.Length; arr2.Length|]
             let mutable res = acc
             for i = n1 - 1 downto 0 do
                 res <- f.Invoke(arr1.[i],arr2.[i],res)
@@ -326,13 +332,15 @@ namespace Microsoft.FSharp.Collections
                 | [h2;h3],[k2;k3] -> f.Invoke(h1,k1,f.Invoke(h2,k2,f.Invoke(h3,k3,acc)))
                 | [h2;h3;h4],[k2;k3;k4] -> f.Invoke(h1,k1,f.Invoke(h2,k2,f.Invoke(h3,k3,f.Invoke(h4,k4,acc))))
                 | _ -> foldBack2UsingArrays f list1 list2 acc
-            | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+            | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+            | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
         let rec forall2aux (f:OptimizedClosures.FSharpFunc<_,_,_>) list1 list2 = 
             match list1,list2 with 
             | [],[] -> true
             | h1::t1, h2::t2 -> f.Invoke(h1,h2)  && forall2aux f t1 t2
-            | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+            | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+            | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
         [<CompiledName("ForAll2")>]
         let forall2 f list1 list2 = 
@@ -419,28 +427,7 @@ namespace Microsoft.FSharp.Collections
         let where f x = List.filter f x
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-            let dict = Dictionary<_,ResizeArray<_>> comparer
-
-            // Build the groupings
-            let rec loop list =
-                match list with
-                | v :: t -> 
-                    let safeKey = keyf v
-                    let mutable prev = Unchecked.defaultof<_>
-                    if dict.TryGetValue(safeKey, &prev) then
-                        prev.Add v
-                    else 
-                        let prev = ResizeArray ()
-                        dict.[safeKey] <- prev
-                        prev.Add v
-                    loop t
-                | _ -> ()
-            loop list
-
-            // Return the list-of-lists.
-            dict
-            |> Seq.map (fun group -> (getKey group.Key, Seq.toList group.Value))
-            |> Seq.toList
+            List.groupBy comparer keyf getKey list
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
         let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
@@ -489,7 +476,7 @@ namespace Microsoft.FSharp.Collections
                 match lst with
                 | _ when i = 0 -> lst
                 | _::t -> loop (i-1) t
-                | [] -> invalidArg "count" (SR.GetString(SR.outOfRange))
+                | [] -> invalidArgOutOfRange "count" count "distance past the list" i
             loop count list
 
         [<CompiledName("SkipWhile")>]

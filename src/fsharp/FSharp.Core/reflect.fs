@@ -41,8 +41,6 @@ open Microsoft.FSharp.Primitives.Basics
 
 module internal Impl =
 
-    let debug = false
-
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open ReflectionAdapters    
@@ -54,11 +52,7 @@ module internal Impl =
         match box v with 
         | null -> nullArg argName 
         | _ -> ()
-     
-        
-    let emptyArray arr = (Array.length arr = 0)
-    let nonEmptyArray arr = Array.length arr > 0
-
+         
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
     let equivHeadTypes (ty1:Type) (ty2:Type) = 
@@ -68,7 +62,6 @@ module internal Impl =
         else 
           ty1.Equals(ty2)
 
-    let option = typedefof<obj option>
     let func = typedefof<(obj -> obj)>
 
     let isOptionType typ = equivHeadTypes typ (typeof<int option>)
@@ -149,21 +142,21 @@ module internal Impl =
 
     let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
         let assem = typ.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
            tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
         let assem = info.DeclaringType.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
         tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
         let assem = info.DeclaringType.Assembly
-        if assem <> null && assem.ReflectionOnly then 
+        if isNotNull assem && assem.ReflectionOnly then 
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
             findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
@@ -179,9 +172,6 @@ module internal Impl =
         match tryFindCompilationMappingAttributeFromMemberInfo(prop) with
         | None -> false
         | Some (flags,_n,_vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
-
-    let allInstance  (ps : PropertyInfo[]) = (ps, false)
-    let allStatic  (ps : PropertyInfo[]) = (ps, true)
 
     let tryFindSourceConstructFlagsOfType (typ:Type) = 
       match tryFindCompilationMappingAttributeFromType typ with 
@@ -283,9 +273,7 @@ module internal Impl =
 
     let unionTypeOfUnionCaseType (typ:Type,bindingFlags) = 
         let rec get (typ:Type) = if isUnionType (typ,bindingFlags) then typ else match typ.BaseType with null -> typ | b -> get b
-        get typ 
-                   
-    let swap (x,y) = (y,x)
+        get typ
 
     let fieldsPropsOfUnionCase(typ:Type, tag:int, bindingFlags) =
         if isOptionType typ then 
@@ -344,15 +332,15 @@ module internal Impl =
         | info -> (info :> MemberInfo)
 
     let isUnionCaseNullary (typ:Type, tag:int, bindingFlags) = 
-        let props = fieldsPropsOfUnionCase(typ, tag, bindingFlags) 
-        emptyArray props
+        fieldsPropsOfUnionCase(typ, tag, bindingFlags).Length = 0
 
     let getUnionCaseConstructorMethod (typ:Type,tag:int,bindingFlags) = 
         let constrname = getUnionTagConverter (typ,bindingFlags) tag 
         let methname = 
-            if isUnionCaseNullary (typ, tag, bindingFlags) then "get_"+constrname 
+            if isUnionCaseNullary (typ, tag, bindingFlags) then "get_" + constrname 
             elif isListType typ || isOptionType typ then constrname
-            else "New"+constrname 
+            else "New" + constrname
+
         match typ.GetMethod(methname, BindingFlags.Static  ||| bindingFlags) with
         | null -> raise <| System.InvalidOperationException (SR.GetString1(SR.constructorForUnionCaseNotFound, methname))
         | meth -> meth
@@ -372,7 +360,6 @@ module internal Impl =
                 invalidArg "unionType" (SR.GetString1(SR.privateUnionType, unionType.FullName))
             else
                 invalidArg "unionType" (SR.GetString1(SR.notAUnionType, unionType.FullName))
-    let emptyObjArray : obj[] = [| |]
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
@@ -387,11 +374,11 @@ module internal Impl =
     let isTupleType (typ:Type) = 
         // Simple Name Match on typ
         if typ.IsEnum || typ.IsArray || typ.IsPointer then false
-        else tupleNames |> Seq.exists(fun n -> typ.FullName.StartsWith(n))
+        else tupleNames |> Seq.exists typ.FullName.StartsWith
 
     let maxTuple = 8
     // Which field holds the nested tuple?
-    let tupleEncField = maxTuple-1
+    let tupleEncField = maxTuple - 1
 
     let dictionaryLock = obj()
     let refTupleTypes = System.Collections.Generic.Dictionary<Assembly, Type[]>()
@@ -715,29 +702,29 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
     // Cache the tag -> name map
     let mutable names = None
     let getMethInfo() = Impl.getUnionCaseConstructorMethod (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic) 
-    member x.Name = 
+    member __.Name = 
         match names with 
         | None -> (let conv = Impl.getUnionTagConverter (typ,BindingFlags.Public ||| BindingFlags.NonPublic) in names <- Some conv; conv tag)
         | Some conv -> conv tag
         
-    member x.DeclaringType = typ
-    //member x.CustomAttributes = failwith<obj[]> "nyi"
-    member x.GetFields() = 
+    member __.DeclaringType = typ
+
+    member __.GetFields() = 
         let props = Impl.fieldsPropsOfUnionCase(typ,tag,BindingFlags.Public ||| BindingFlags.NonPublic) 
         props
 
-    member x.GetCustomAttributes() = getMethInfo().GetCustomAttributes(false)
+    member __.GetCustomAttributes() = getMethInfo().GetCustomAttributes(false)
     
-    member x.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false)
+    member __.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false)
 
 #if FX_NO_CUSTOMATTRIBUTEDATA
 #else
-    member x.GetCustomAttributesData() = getMethInfo().GetCustomAttributesData()
+    member __.GetCustomAttributesData() = getMethInfo().GetCustomAttributesData()
 #endif    
-    member x.Tag = tag
+    member __.Tag = tag
     override x.ToString() = typ.Name + "." + x.Name
     override x.GetHashCode() = typ.GetHashCode() + tag
-    override x.Equals(obj:obj) = 
+    override __.Equals(obj:obj) = 
         match obj with 
         | :? UnionCaseInfo as uci -> uci.DeclaringType = typ && uci.Tag = tag
         | _ -> false
@@ -831,7 +818,7 @@ type FSharpType =
 
 type DynamicFunction<'T1,'T2>() =
     inherit FSharpFunc<obj -> obj, obj>()
-    override x.Invoke(impl: obj -> obj) : obj = 
+    override __.Invoke(impl: obj -> obj) : obj = 
         box<('T1 -> 'T2)> (fun inp -> unbox<'T2>(impl (box<'T1>(inp))))
 
 [<AbstractClass; Sealed>]
