@@ -282,16 +282,16 @@ let NestedTypeRefForCompLoc cloc n =
         mkILTyRef(cloc.clocScope,tyname)
     | h::t -> mkILNestedTyRef(cloc.clocScope,mkTopName cloc.clocNamespace h :: t,n)
         
-let CleanUpGeneratedTypeName (nm:string) = 
+let CleanUpGeneratedName (nm:string) = 
     if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then 
         nm
     else
         (nm,IllegalCharactersInTypeAndNamespaceNames) ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
   
 
-let TypeNameForInitClass cloc = "<StartupCode$" + (CleanUpGeneratedTypeName cloc.clocQualifiedNameOfFile) + ">.$" + cloc.clocTopImplQualifiedName 
+let TypeNameForInitClass cloc = "<StartupCode$" + (CleanUpGeneratedName cloc.clocQualifiedNameOfFile) + ">.$" + (CleanUpGeneratedName cloc.clocTopImplQualifiedName)
 let TypeNameForImplicitMainMethod cloc = TypeNameForInitClass cloc + "$Main"
-let TypeNameForPrivateImplementationDetails cloc = "<PrivateImplementationDetails$" + (CleanUpGeneratedTypeName cloc.clocQualifiedNameOfFile) + ">"
+let TypeNameForPrivateImplementationDetails cloc = "<PrivateImplementationDetails$" + (CleanUpGeneratedName cloc.clocQualifiedNameOfFile) + ">"
 
 let CompLocForInitClass cloc = 
     {cloc with clocEncl=[TypeNameForInitClass cloc]; clocNamespace=None}
@@ -3892,7 +3892,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
     // Choose a name for the closure
     let ilCloTypeRef = 
         // FSharp 1.0 bug 3404: System.Reflection doesn't like '.' and '`' in type names
-        let basenameSafeForUseAsTypename = CleanUpGeneratedTypeName basename
+        let basenameSafeForUseAsTypename = CleanUpGeneratedName basename
         let suffixmark = expr.Range
         let cloName = globalStableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename,suffixmark,uniq)
         NestedTypeRefForCompLoc eenvouter.cloc cloName
