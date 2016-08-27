@@ -1847,6 +1847,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             int utdSupportedFlag = utdSupported ? 1 : 0;
 
+            var optionsFlags = (VsUpToDateCheckFlags)options;
+            if ((optionsFlags & (VsUpToDateCheckFlags.VSUTDCF_DTEEONLY)) == VsUpToDateCheckFlags.VSUTDCF_DTEEONLY)
+            {
+                utdSupported = 0;
+            }
+
             if (supported != null && supported.Length > 0)
                 supported[0] = utdSupportedFlag;
             if (ready != null && ready.Length > 0)
@@ -1890,6 +1896,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int StartUpToDateCheck(IVsOutputWindowPane pane, uint options)
         {
             CCITracing.TraceCall();
+
+            var optionsFlags = (VsUpToDateCheckFlags) options;
+            if ((optionsFlags & (VsUpToDateCheckFlags.VSUTDCF_DTEEONLY)) == VsUpToDateCheckFlags.VSUTDCF_DTEEONLY)
+            {
+                return VSConstants.E_NOTIMPL;
+            }
             
             return config.IsUpToDate(OutputWindowLogger.CreateUpToDateCheckLogger(pane), false) ? VSConstants.S_OK : VSConstants.E_FAIL;
         }
