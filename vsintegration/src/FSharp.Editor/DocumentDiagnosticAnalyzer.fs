@@ -23,12 +23,41 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
-    
-    // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
-    override this.SupportedDiagnostics with get() = ImmutableArray<DiagnosticDescriptor>.Empty
 
-    override this.AnalyzeSyntaxAsync(_, _): Task<ImmutableArray<Diagnostic>> =
-        Task.FromResult(ImmutableArray<Diagnostic>.Empty)
+    let fSharpErrorToRoslynDiagnostic(document: Document, sourceText: SourceText, error: FSharpErrorInfo) =
+        let id = "FS" + error.ErrorNumber.ToString()
+        let emptyString = LocalizableString.op_Implicit("")
+        let description = LocalizableString.op_Implicit(error.Message)
+        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+                
+        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+        let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
+        let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
+
+        // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
+        Diagnostic.Create(descriptor, Location.Create(document.FilePath, correctedTextSpan , linePositionSpan))
+
+
+    // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
+    override this.SupportedDiagnostics
+        with get() =
+            let dummyDescriptor = DiagnosticDescriptor("0", String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null)
+            ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
+
+
+    override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+        let computation = async {
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
+            let! parseResults = FSharpChecker.Instance.ParseFileInProject(document.Name, sourceText.ToString(), options)
+
+            return (parseResults.Errors |> Seq.map(fun (error) -> fSharpErrorToRoslynDiagnostic(document, sourceText, error))).ToImmutableArray()
+        }
+
+        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+             .ContinueWith(CommonRoslynHelpers.GetCompletedTaskResult, cancellationToken)
+
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let computation = async {
@@ -41,22 +70,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                          | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                          | FSharpCheckFileAnswer.Succeeded(results) -> results.Errors
 
-            let diagnostics = errors |> Seq.map(fun (error) ->
-                let id = "FS" + error.ErrorNumber.ToString()
-                let emptyString = LocalizableString.op_Implicit("")
-                let description = LocalizableString.op_Implicit(error.Message)
-                let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
-                let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
-
-                let location = match (error.StartLineAlternate - 1, error.EndLineAlternate - 1) with 
-                               | (-1, _) -> Location.None
-                               | (_, -1) -> Location.None
-                               | (startl, endl) ->
-                                    let linePositionSpan = LinePositionSpan(LinePosition(startl, error.StartColumn), LinePosition(endl, error.EndColumn))
-                                    Location.Create(error.FileName, sourceText.Lines.GetTextSpan(linePositionSpan) , linePositionSpan)
-
-                Diagnostic.Create(descriptor, location))
-            return Seq.toArray(diagnostics).ToImmutableArray()
+            return (errors |> Seq.map(fun (error) -> fSharpErrorToRoslynDiagnostic(document, sourceText, error))).ToImmutableArray()
         }
 
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)

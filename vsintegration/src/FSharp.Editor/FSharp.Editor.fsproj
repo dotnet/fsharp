@@ -55,9 +55,6 @@
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
     </Compile>
-    <Compile Include="ProjectDiagnosticAnalyzer.fs">
-      <Link>Diagnostics\ProjectDiagnosticAnalyzer.fs</Link>
-    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
