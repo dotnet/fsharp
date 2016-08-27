@@ -77,9 +77,14 @@ namespace Microsoft.FSharp.Collections
             if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))
             let len = array.Length - 1
             Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 1 len array
+    
+        [<AbstractClass; Sealed>]
+        type internal EmptyStorage<'T>() =
+            static let empty = (zeroCreate 0 : 'T[])
+            static member Empty = empty
 
         [<CompiledName("Empty")>]
-        let empty<'T> = ([| |] : 'T [])
+        let empty<'T> = EmptyStorage<'T>.Empty
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("CopyTo")>]

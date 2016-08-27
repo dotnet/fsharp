@@ -518,6 +518,7 @@ type public TcGlobals =
 
       array_get_info             : IntrinsicValRef;
       array_length_info          : IntrinsicValRef;
+      array_empty_info           : IntrinsicValRef;
       array2D_get_info           : IntrinsicValRef;
       array3D_get_info           : IntrinsicValRef;
       array4D_get_info           : IntrinsicValRef;
@@ -947,6 +948,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          ,None                 ,None                          ,[],         ([[int_ty]; [int_ty]; [int_ty]; [bool_ty]; [byte_ty]], decimal_ty))
   let array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             ,None                 ,None                          ,[vara],     ([[mkArrayType 1 varaTy]; [int_ty]], varaTy))
   let array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               ,None                 ,Some "Length"                 ,[vara],     ([[mkArrayType 1 varaTy]], int_ty))
+  let array_empty_info           = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "empty"                                ,None                 ,Some "Empty"                  ,[vara],     ([], mkArrayType 1 varaTy))
   let deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkListTy system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
   let deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkArrayType 1 system_Type_typ; mkArrayType 1 system_Type_typ; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
   let cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 ,Some "Expr"          ,None                          ,[vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
@@ -1361,6 +1363,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     range_int32_op_vref        = ValRefForIntrinsic range_int32_op_info;
     //range_step_op_vref         = ValRefForIntrinsic range_step_op_info;
     array_length_info          = array_length_info
+    array_empty_info           = array_empty_info
     array_get_vref             = ValRefForIntrinsic array_get_info;
     array2D_get_vref           = ValRefForIntrinsic array2D_get_info;
     array3D_get_vref           = ValRefForIntrinsic array3D_get_info;
