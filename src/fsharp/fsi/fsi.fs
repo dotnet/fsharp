@@ -310,7 +310,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             let rec prune (text:string) =
                 let stdinReset = "# 1 \"stdin\"\n"
                 let idx = text.IndexOf(stdinReset,StringComparison.Ordinal)
-                if idx <> -1 then
+                if idx >= 0 then
                     prune (text.Substring(idx + stdinReset.Length))
                 else
                     text
