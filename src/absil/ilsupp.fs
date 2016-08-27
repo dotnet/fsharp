@@ -1095,7 +1095,7 @@ let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
         let checkSum = md5.ComputeHash(file)
         if (checkSum.Length = hashSizeOfMD5) then
             writer.SetCheckSum (guidSourceHashMD5, hashSizeOfMD5, checkSum)
-    with _ -> ()
+    with :? System.Reflection.TargetInvocationException -> ()
 
 let pdbDefineDocument (writer:PdbWriter) (url:string) = 
      //3F5162F8-07C6-11D3-9053-00C04FA302A1
@@ -1105,7 +1105,11 @@ let pdbDefineDocument (writer:PdbWriter) (url:string) =
     let mutable corSymDocumentTypeText = System.Guid(0x5a869d0bu, 0x6611us, 0x11d3us, 0xbduy, 0x2auy, 0x0uy, 0x0uy, 0xf8uy, 0x8uy, 0x49uy, 0xbduy)
     let mutable docWriter = Unchecked.defaultof<ISymUnmanagedDocumentWriter>
     writer.symWriter.DefineDocument(url, &corSymLanguageTypeFSharp, &corSymLanguageVendorMicrosoft, &corSymDocumentTypeText, &docWriter)
-    setCheckSum (url, docWriter)
+
+    // Only set the checksum if this file actually exists on disk.
+    if System.IO.File.Exists url then
+        setCheckSum (url, docWriter)
+
     { symDocWriter = docWriter }
 
 let pdbOpenMethod (writer:PdbWriter) (methodToken:int32) = 
