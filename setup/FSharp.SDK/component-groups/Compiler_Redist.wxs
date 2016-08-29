@@ -158,8 +158,8 @@
         <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll" />
       </Component>
 
-      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1Microsoft.DiaSymReader.dll" />
+      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1\Microsoft.DiaSymReader.dll" />
       </Component>
     </DirectoryRef>
 
