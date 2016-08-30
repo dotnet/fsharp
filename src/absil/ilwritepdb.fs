@@ -95,31 +95,34 @@ type idd =
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
+      iddTimestamp: int32;
       iddData: byte[];}
 
 let magicNumber = 0x53445352L
-let pdbGetDebugInfo (mvid:byte[]) (filepath:string) = 
+let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) = 
     let iddDataBuffer = 
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
 
-        let offset, size = 0, sizeof<int32>                                     // Magic Number RSDS dword: 0x53445352L
+        let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
         Buffer.BlockCopy(BitConverter.GetBytes(magicNumber), 0, buffer, offset, size)
 
-        let offset, size = offset + size, mvid.Length                           // mvid Guid
+        let struct (offset, size) = struct (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
 
-        let offset, size = offset + size, sizeof<int32>                         // # of pdb files generated (1)
+        let struct (offset, size) = struct (offset + size, sizeof<int32>)       // # of pdb files generated (1)
         Buffer.BlockCopy(BitConverter.GetBytes(1), 0, buffer, offset, size)
 
-        let offset = offset + size                                              // Path to pdb string
-        Buffer.BlockCopy(path, 0, buffer, offset, path.Length)
+        let struct (offset, size) = struct (offset + size, path.Length)         // Path to pdb string
+        Buffer.BlockCopy(path, 0, buffer, offset, size)
+
         buffer
 
     { iddCharacteristics = 0x0;                                                 // Reserved
       iddMajorVersion = 0x0;                                                    // VersionMajor should be 0
       iddMinorVersion = 0x0;                                                    // VersionMinor should be 0
       iddType = 0x2;                                                            // IMAGE_DEBUG_TYPE_CODEVIEW
+      iddTimestamp = timestamp;
       iddData = iddDataBuffer }                                                 // Path name to the pdb file when built
 
 // Document checksum algorithms
@@ -215,7 +218,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
- 
+
         let writer = new BlobBuilder()
         writer.WriteByte(byte(separator))
 
@@ -223,7 +226,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
             let partIndex = MetadataTokens.GetHeapOffset(BlobHandle.op_Implicit(metadata.GetOrAddBlobUTF8(part)))
             writer.WriteCompressedInteger(int(partIndex))
 
-        metadata.GetOrAddBlob(writer);
+        metadata.GetOrAddBlob(writer)
 
     let corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
     let documentIndex =
@@ -356,15 +359,15 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
         | None -> MetadataTokens.MethodDefinitionHandle(0)
         | Some x -> MetadataTokens.MethodDefinitionHandle(x) 
 
-    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null )
+    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null)
     let blobBuilder = new BlobBuilder()
-    serializer.Serialize(blobBuilder) |> ignore
+    let contentId= serializer.Serialize(blobBuilder)
 
     reportTime showTimes "PDB: Created"
     use portablePdbStream = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     blobBuilder.WriteContentTo(portablePdbStream)
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo info.ModuleID fpdb
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32(contentId.Stamp)) fpdb
 
 #if FX_NO_PDB_WRITER
 #else
@@ -485,6 +488,7 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
       iddMajorVersion = res.iddMajorVersion;
       iddMinorVersion = res.iddMinorVersion;
       iddType = res.iddType;
+      iddTimestamp = info.Timestamp;
       iddData = res.iddData}
 #endif
 
