@@ -1,7 +1,7 @@
 use vs
 
 package name=Microsoft.FSharp.VSIX.$(VSSku).Core
-        version=4.1
+        version=$(FSharpPackageVersion)
         vs.package.type=vsix
         vs.package.vsixId=VisualFSharp
 

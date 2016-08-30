@@ -10,7 +10,7 @@
   <Import Project="$(SetupRootFolder)\FSharp.Setup.props" />
 
   <PropertyGroup>
-    <OutputName Condition="'$(IsLangPack)' == 'false'">Microsoft.FSharp.SDK.Core</OutputName>
+    <OutputName Condition="'$(IsLangPack)' != 'true'">Microsoft.FSharp.SDK.Core</OutputName>
     <OutputName Condition="'$(IsLangPack)' == 'true'">Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
     <ProjectGuid>da0da41f-0e00-4598-8eee-b29d31b0ca04</ProjectGuid>
     <OutputType>Package</OutputType>

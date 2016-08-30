@@ -4,6 +4,7 @@
     <PropertyGroup>
         <SchemaVersion>2.0</SchemaVersion>
         <ProductVersion>3.10</ProductVersion>
+        <FSharpPackageVersion>4.1</FSharpPackageVersion>
         <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
         <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
         <NugetPackagesDir>$(SetupRootFolder)\..\packages</NugetPackagesDir>
