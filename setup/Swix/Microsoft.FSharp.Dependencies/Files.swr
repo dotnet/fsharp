@@ -1,17 +1,7 @@
 use vs
 
-package name=Microsoft.FSharp.Dependencies.$(VSSku)
+package name=Microsoft.FSharp.Dependencies
         version=4.1
-        vs.package.language=neutral
-
-vs.dependencies
-  vs.dependency id=Microsoft.FSharp.VSIX.$(VSSku)
-                version=4.1
-                type=Required
-  
-  vs.dependency id=Microsoft.FSharp.SDK
-                version=4.1
-                type=Required
 
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
   file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"

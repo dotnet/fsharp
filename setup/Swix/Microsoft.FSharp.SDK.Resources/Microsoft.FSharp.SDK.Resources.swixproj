@@ -4,27 +4,18 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
+    <OutputType>manifest</OutputType>
+    <OutputName>Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
     <IsPackage>true</IsPackage>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.VSIX.$(VSSku).$(LocaleCode)</OutputName>
-    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(IsLangPack)' == 'false'">
-    <OutputType>manifest</OutputType>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(IsLangPack)' == 'true'">
-    <OutputType>vsix</OutputType>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
@@ -32,20 +23,18 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsLangPack)' == 'false'">
-    <Package Include="Core.Files.swr" />
+    <Package Include="Empty.swr" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(IsLangPack)' == 'true'">
-    <Package Include="LangPack.Files.swr" />
-    <Package Include="LangPack.$(VSSku).Templates.swr" />
+    <Package Include="Files.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <!-- SWIX plugin adds the built vsix to signing automatically -->
+    <!-- MSI is already signed before wrapping it here -->
   </Target>
   
-  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
-    <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Compile">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
     <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
