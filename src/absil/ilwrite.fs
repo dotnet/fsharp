@@ -2807,6 +2807,9 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
 and GenTypeDefsPass4 enc cenv tds =
     List.iter (GenTypeDefPass4 enc cenv) tds
 
+
+let timestamp = absilWriteGetTimeStamp ()
+
 // -------------------------------------------------------------------- 
 // ILExportedTypesAndForwarders --> ILExportedTypeOrForwarder table 
 // -------------------------------------------------------------------- 
@@ -2888,7 +2891,7 @@ and GenManifestPass3 cenv m =
     | None -> ()
 
 and newGuid (modul: ILModuleDef) = 
-    let n = absilWriteGetTimeStamp ()
+    let n = timestamp
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
@@ -2922,8 +2925,6 @@ let SortTableRows tab (rows:GenericRow[]) =
         |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
         |> Array.ofList
         //|> Array.map SharedRow
-
-let timestamp = absilWriteGetTimeStamp ()
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
@@ -3811,14 +3812,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |];
           
           if (modul.Platform = Some(AMD64)) then
-            writeInt32AsUInt16 os 0x8664 // Machine - IMAGE_FILE_MACHINE_AMD64 
+            writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64 
           elif isItanium then
             writeInt32AsUInt16 os 0x200
           else
-            writeInt32AsUInt16 os 0x014c; // Machine - IMAGE_FILE_MACHINE_I386 
+            writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
-          writeInt32AsUInt16 os numSections; 
-          writeInt32 os timestamp; // date since 1970 
+          writeInt32AsUInt16 os numSections;
+          writeInt32 os timestamp   // date since 1970 
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
@@ -4185,8 +4186,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                writeInt32 os2 idd.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics 
-                writeInt32 os2 timestamp
+                writeInt32 os2 idd.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
+                writeInt32 os2 idd.iddTimestamp
                 writeInt32AsUInt16 os2 idd.iddMajorVersion
                 writeInt32AsUInt16 os2 idd.iddMinorVersion
                 writeInt32 os2 idd.iddType
