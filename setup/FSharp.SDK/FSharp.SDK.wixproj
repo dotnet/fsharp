@@ -10,7 +10,8 @@
   <Import Project="$(SetupRootFolder)\FSharp.Setup.props" />
 
   <PropertyGroup>
-    <OutputName>Microsoft.FSharp.SDK</OutputName>
+    <OutputName Condition="'$(IsLangPack)' == 'false'">Microsoft.FSharp.SDK.Core</OutputName>
+    <OutputName Condition="'$(IsLangPack)' == 'true'">Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
     <ProjectGuid>da0da41f-0e00-4598-8eee-b29d31b0ca04</ProjectGuid>
     <OutputType>Package</OutputType>
     <Media>net</Media>
@@ -74,6 +75,6 @@
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
   
-    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(LocaleCode)%(Extension)')" />
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename)%(Extension)')" />
   </Target>
 </Project>

@@ -1,0 +1,43 @@
+use vs
+
+package name=Microsoft.FSharp.Dependencies
+        version=4.1
+
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.SDK.Core
+                version=4.1
+                type=Required
+  
+  vs.dependency id=Microsoft.FSharp.SDK.Resources
+                version=4.1
+                type=Required
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Full.Core
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.Enterprise,Microsoft.VisualStudio.Product.Professional,Microsoft.VisualStudio.Product.Community
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Full.Resources
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.Enterprise,Microsoft.VisualStudio.Product.Professional,Microsoft.VisualStudio.Product.Community
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Desktop.Core
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.DesktopExpress
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Desktop.Resources
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.DesktopExpress
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Web.Core
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.WebExpress
+                
+  vs.dependency id=Microsoft.FSharp.VSIX.Web.Resources
+                version=4.1
+                type=Required
+                when=Microsoft.VisualStudio.Product.WebExpress

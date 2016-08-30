@@ -1,9 +1,8 @@
 use vs
 
-package name=Microsoft.FSharp.VSIX.$(VSSku)
+package name=Microsoft.FSharp.VSIX.$(VSSku).Core
         version=4.1
         vs.package.type=vsix
-        vs.package.language=$(LocaleRegion)
         vs.package.vsixId=VisualFSharp
 
 vs.payloads
