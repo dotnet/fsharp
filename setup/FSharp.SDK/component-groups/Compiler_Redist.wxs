@@ -151,7 +151,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.Reflection.Metadata.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Reflection.Metadata.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.Reflection.Metadata.dll" Source="$(var.NugetPackagesDir)\System.Reflection.Metadata\1.4.1-beta-24227-04\lib\netstandard1.1\System.Reflection.Metadata.dll" />
+        <File Id="Compiler_Redist_System.Reflection.Metadata.dll" Source="$(var.NugetPackagesDir)\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\netstandard1.1\System.Reflection.Metadata.dll" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll, $(var.LocaleCode)))">
