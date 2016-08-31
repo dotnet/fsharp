@@ -4,14 +4,14 @@ package name=Microsoft.FSharp.VSIX.$(VSSku).Resources
         version=$(FSharpPackageVersion)
         vs.package.language=$(LocaleRegion)
 
-folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\LibraryProject"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\LibraryProject"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\AssemblyInfo.fs"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.fsproj"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.vstemplate"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library1.fs"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\Script.fsx"
 
-folder "InstallDir:Common7\IDE\ProjectTemplates\FSharp\$(LocaleId)\TutorialProject"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\TutorialProject"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsproj"
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\TutorialProject\Tutorial.fsx"
   file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.vstemplate"
