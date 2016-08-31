@@ -21,13 +21,6 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System.IServiceProvider, visualStudioWorkspace: VisualStudioWorkspaceImpl, projectName: string) =
     inherit AbstractProject(visualStudioWorkspace.ProjectTracker, null, projectName, hierarchy, FSharpCommonConstants.FSharpLanguageName, serviceProvider, visualStudioWorkspace, null)
 
-    let mutable checkOptions : FSharpProjectOptions option = None
-
-    member internal this.CheckOptions = 
-            match checkOptions with 
-            | Some options -> options
-            | None -> failwith "Options haven't been computed yet."
-
     member internal this.Initialize(hier: IVsHierarchy, site : IProjectSite) =
         this.ProjectTracker.AddProject(this)
 
@@ -40,9 +33,6 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
         // Add files and references
         for file in site.SourceFilesOnDisk() do this.AddDocument(hier, file)
         for ref in this.GetReferences(site.CompilerFlags()) do this.AddReference(ref)
-        
-        // Capture the F# specific options that we'll pass to the type checker.
-        checkOptions <- Some(ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName()))
 
     member this.GetReferences(flags : string[]) =
         flags |> Array.choose(fun flag -> if flag.StartsWith("-r:") then Some(flag.Substring(3)) else None)
@@ -77,6 +67,3 @@ type internal FSharpProjectSite(hierarchy: IVsHierarchy, serviceProvider: System
         for ref in references do if not(this.HasMetadataReference(ref)) then this.AddReference(ref)
         // Removed references
         for ref in this.GetCurrentMetadataReferences() do if not(references |> Seq.contains(ref.FilePath)) then this.RemoveReference(ref.FilePath)
-
-        // If the order of files changed, that'll be captured in the checkOptions.
-        checkOptions <- Some(ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName()))
