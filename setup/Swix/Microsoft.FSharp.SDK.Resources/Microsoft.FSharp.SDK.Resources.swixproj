@@ -4,12 +4,13 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
-    <OutputType>manifest</OutputType>
     <OutputName>Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
     <IsPackage>true</IsPackage>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+    <OutputType Condition="'$(IsLangPack)' != 'true'">vsix</OutputType>
+    <OutputType Condition="'$(IsLangPack)' == 'true'">manifest</OutputType>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
