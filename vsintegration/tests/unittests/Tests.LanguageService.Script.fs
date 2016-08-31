@@ -569,27 +569,6 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-
-    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """
-            #light
-            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
-            """
-        this.VerifyFSXNoErrorList(fileContent)
-
-    [<Test>]
-    [<Category("fsx closure")>]
-    // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFolders``() = 
-        let fileContent = """
-            #light
-            #r "Microsoft.SqlServer.SString"
-            """
-        this.VerifyFSXNoErrorList(fileContent) 
-
-    [<Test>]
-    [<Category("fsx closure")>]
     member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =         
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" )
         let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]

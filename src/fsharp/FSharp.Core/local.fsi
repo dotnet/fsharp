@@ -1,5 +1,22 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+namespace Microsoft.FSharp.Core
+open Microsoft.FSharp.Core
+
+[<AutoOpen>]
+module internal DetailedExceptions =
+    val inline invalidArgFmt: arg:string -> format:string -> paramArray:obj array -> _
+    val inline invalidOpFmt: format:string -> paramArray:obj array -> _
+    val invalidArgDifferentListLength: arg1:string -> arg2:string -> diff:int -> _
+    val invalidArg3ListsDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
+    val invalidOpListNotEnoughElements: index:int -> _
+    val invalidOpExceededSeqLength: fnName:string -> diff:int -> len: int -> _
+    val inline invalidArgInputMustBeNonNegative: arg:string -> count:int -> _
+    val inline invalidArgInputMustBePositive: arg:string -> count:int -> _
+    val invalidArgOutOfRange: arg:string -> index:int -> text:string -> bound:int -> _ 
+    val invalidArgDifferentArrayLength: arg1:string -> len1:int -> arg2:string -> len2:int -> _
+    val invalidArg3ArraysDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
+
 /// Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics 
 
