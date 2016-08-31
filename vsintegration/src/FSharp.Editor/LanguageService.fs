@@ -29,6 +29,13 @@ type internal SVsSettingsPersistenceManager = class end
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService, FSharpProjectSite>(package)
 
+    static let optionsCache = Dictionary<ProjectId, FSharpProjectOptions>()
+    static member GetOptions(projectId: ProjectId) =
+        if optionsCache.ContainsKey(projectId) then
+            Some(optionsCache.[projectId])
+        else
+            None
+
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
@@ -56,6 +63,11 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 let site = siteProvider.GetProjectSite()
                 let projectFileName = site.ProjectFileName()
                 let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
+
+                let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName())
+                if not (optionsCache.ContainsKey(projectId)) then
+                    optionsCache.Add(projectId, options)
+
                 if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
                     let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, projectFileName);
                     projectSite.Initialize(hier, site)                    

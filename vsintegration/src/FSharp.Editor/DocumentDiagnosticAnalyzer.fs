@@ -62,9 +62,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let computation = async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-            return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, false)
+            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            | Some(options) ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, false)
+            | None -> return ImmutableArray<Diagnostic>.Empty
         }
 
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
@@ -73,9 +75,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let computation = async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-            return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, true)
+            match FSharpLanguageService.GetOptions(document.Project.Id) with
+            | Some(options) ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, true)
+            | None -> return ImmutableArray<Diagnostic>.Empty
         }
 
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)

@@ -23,16 +23,17 @@ type internal FSharpBraceMatchingService() =
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) =
             let computation = async {
-                let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! result = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, options, position)
-
-                return match result with
-                       | None -> Nullable()
-                       | Some(left, right) ->
-                           Nullable(BraceMatchingResult(
-                                       CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, left),
-                                       CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, right)))
+                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                | Some(options) ->
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! result = FSharpBraceMatchingService.GetBraceMatchingResult(sourceText, document.Name, options, position)
+                    return match result with
+                           | None -> Nullable()
+                           | Some(left, right) ->
+                               Nullable(BraceMatchingResult(
+                                           CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, left),
+                                           CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, right)))
+                | None -> return Nullable()
             }
 
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
