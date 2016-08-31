@@ -35,9 +35,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ZeroCreate")>]
         let zeroCreate (n1:int) (n2:int) (n3:int) = 
-            if n1 < 0 then invalidArg "n1" (SR.GetString(SR.inputMustBeNonNegative))
-            if n2 < 0 then invalidArg "n2" (SR.GetString(SR.inputMustBeNonNegative))
-            if n3 < 0 then invalidArg "n3" (SR.GetString(SR.inputMustBeNonNegative))
+            if n1 < 0 then invalidArgInputMustBeNonNegative "n1" n1
+            if n2 < 0 then invalidArgInputMustBeNonNegative "n2" n2
+            if n3 < 0 then invalidArgInputMustBeNonNegative "n3" n3
             (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
  
         [<CompiledName("Create")>]
@@ -127,10 +127,10 @@ namespace Microsoft.FSharp.Collections
  
         [<CompiledName("ZeroCreate")>]
         let zeroCreate (n1:int) (n2:int) (n3:int) (n4:int) = 
-            if n1 < 0 then invalidArg "n1" (SR.GetString(SR.inputMustBeNonNegative))
-            if n2 < 0 then invalidArg "n2" (SR.GetString(SR.inputMustBeNonNegative))
-            if n3 < 0 then invalidArg "n3" (SR.GetString(SR.inputMustBeNonNegative))
-            if n4 < 0 then invalidArg "n4" (SR.GetString(SR.inputMustBeNonNegative))
+            if n1 < 0 then invalidArgInputMustBeNonNegative "n1" n1
+            if n2 < 0 then invalidArgInputMustBeNonNegative "n2" n2
+            if n3 < 0 then invalidArgInputMustBeNonNegative "n3" n3
+            if n4 < 0 then invalidArgInputMustBeNonNegative "n4" n4
             (# "newarr.multi 4 !0" type ('T) n1 n2 n3 n4 : 'T[,,,] #)
  
         [<CompiledName("Create")>]
@@ -156,7 +156,7 @@ namespace Microsoft.FSharp.Collections
 
 
         [<CompiledName("Get")>]
-        let get (array: 'T[,,,]) n1 n2 n3 n4 =  array.[n1,n2,n3,n4]
+        let get (array: 'T[,,,]) n1 n2 n3 n4 = array.[n1,n2,n3,n4]
  
         [<CompiledName("Set")>]
-        let set (array: 'T[,,,]) n1 n2 n3 n4 x =  array.[n1,n2,n3,n4] <- x
+        let set (array: 'T[,,,]) n1 n2 n3 n4 x = array.[n1,n2,n3,n4] <- x

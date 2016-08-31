@@ -260,6 +260,7 @@ Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
 Misc01			ErrorMessages\NameResolution
+Misc01			ErrorMessages\UnitGenericAbstractType
 
 Misc02			Libraries\Portable
 Misc02			Misc

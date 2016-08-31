@@ -1,5 +1,76 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+
+namespace Microsoft.FSharp.Core
+[<AutoOpen>]
+module internal DetailedExceptions =
+    open System
+    open Microsoft.FSharp.Core
+
+    /// takes an argument, a formatting string, a param array to splice into the formatting string
+    let inline invalidArgFmt (arg:string) (format:string) paramArray =    
+        let msg = String.Format (format,paramArray)
+        raise (new ArgumentException (msg,arg))
+
+    /// takes a formatting string and a param array to splice into the formatting string
+    let inline invalidOpFmt (format:string) paramArray =
+        let msg = String.Format (format,paramArray)
+        raise (new InvalidOperationException(msg))
+
+    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    let invalidArgDifferentListLength (arg1:string) (arg2:string) (diff:int) =
+        invalidArgFmt arg1
+            "{0}\n{1} is {2} {3} shorter than {4}" 
+            [|SR.GetString SR.listsHadDifferentLengths; arg1; diff; (if diff=1 then "element" else "elements"); arg2|]
+
+    /// throws an invalid argument exception and returns the length of the 3 arrays
+    let invalidArg3ListsDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
+        invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
+            "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
+            [|SR.GetString SR.listsHadDifferentLengths; arg1; len1; arg2; len2; arg3; len3|]
+
+    /// throws an invalid operation exception and returns how many elements the 
+    /// list is shorter than the index
+    let invalidOpListNotEnoughElements (index:int) = 
+        invalidOpFmt 
+            "{0}\nThe list was {1} {2} shorter than the index" 
+            [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
+    
+
+    /// eg. tried to {skip} {2} {elements} past the end of the seq. Seq.Length = {10}
+    let invalidOpExceededSeqLength (fnName:string) (diff:int) (len:int) =
+        invalidOpFmt "{0}\ntried to {1} {2} {3} past the end of the seq\nSeq.Length = {4}" 
+            [|SR.GetString SR.notEnoughElements; fnName; diff; (if diff=1 then "element" else "elements");len|] 
+
+    /// throws an invalid argument exception and returns the arg's value
+    let inline invalidArgInputMustBeNonNegative (arg:string) (count:int) =
+        invalidArgFmt arg "{0}\n{1} = {2}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString ; arg; count|]
+        
+    /// throws an invalid argument exception and returns the arg's value
+    let inline invalidArgInputMustBePositive (arg:string) (count:int) =
+        invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
+
+    /// throws an invalid argument exception and returns the out of range index,
+    /// a text description of the range, and the bound of the range
+    /// e.g. sourceIndex = -4, source axis-0 lower bound = 0" 
+    let invalidArgOutOfRange (arg:string) (index:int) (text:string) (bound:int) =
+        invalidArgFmt arg
+            "{0}\n{1} = {2}, {3} = {4}" 
+            [|SR.GetString SR.outOfRange; arg; index; text; bound|]
+
+    /// throws an invalid argument exception and returns the difference between the lists' lengths
+    let invalidArgDifferentArrayLength (arg1:string) (len1:int) (arg2:string) (len2:int) =
+        invalidArgFmt arg1
+            "{0}\n{1}.Length = {2}, {3}.Length = {4}" 
+            [|SR.GetString SR.arraysHadDifferentLengths; arg1; len1; arg2; len2 |]
+
+    /// throws an invalid argument exception and returns the lengths of the 3 arrays
+    let invalidArg3ArraysDifferent (arg1:string) (arg2:string) (arg3:string) (len1:int) (len2:int) (len3:int) =  
+        invalidArgFmt (String.Concat [|arg1; ", "; arg2; ", "; arg3|])
+            "{0}\n {1}.Length = {2}, {3}.Length = {4}, {5}.Length = {6}" 
+            [|SR.GetString SR.arraysHadDifferentLengths; arg1; len1; arg2; len2; arg3; len3|]
+
+
 namespace Microsoft.FSharp.Primitives.Basics 
 
 open Microsoft.FSharp.Core
@@ -32,7 +103,7 @@ module internal List =
         match list with
         | [] -> setFreshConsTail cons []
         | x::rest ->
-            if hashSet.Add(x) then
+            if hashSet.Add x then
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 distinctToFreshConsTail cons2 hashSet rest
@@ -45,7 +116,7 @@ module internal List =
         | [h] -> [h]
         | x::rest ->
             let hashSet = HashSet<'T>(comparer)
-            hashSet.Add(x) |> ignore
+            hashSet.Add x |> ignore
             let cons = freshConsNoTail x
             distinctToFreshConsTail cons hashSet rest
             cons
@@ -207,7 +278,8 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(h1,h2))
             setFreshConsTail cons cons2
             map2ToFreshConsTail cons2 f t1 t2
-        | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let map2 f xs1 xs2 = 
         match xs1,xs2 with
@@ -217,7 +289,8 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(h1,h2))
             map2ToFreshConsTail cons f t1 t2
             cons
-        | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with
@@ -227,7 +300,8 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(h1,h2,h3))
             setFreshConsTail cons cons2
             map3ToFreshConsTail cons2 f t1 t2 t3
-        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+        | xs1,xs2,xs3 -> 
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let map3 f xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with
@@ -237,7 +311,8 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(h1,h2,h3))
             map3ToFreshConsTail cons f t1 t2 t3
             cons
-        | _ -> invalidArg "list3" (SR.GetString(SR.listsHadDifferentLengths))
+        | xs1,xs2,xs3 -> 
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let rec mapi2ToFreshConsTail n cons (f:OptimizedClosures.FSharpFunc<_,_,_,_>) xs1 xs2 = 
         match xs1,xs2 with
@@ -247,7 +322,8 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(n,h1,h2))
             setFreshConsTail cons cons2
             mapi2ToFreshConsTail (n + 1) cons2 f t1 t2
-        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     let mapi2 f xs1 xs2 = 
         match xs1,xs2 with
@@ -257,7 +333,8 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(0, h1,h2))
             mapi2ToFreshConsTail 1 cons f t1 t2
             cons
-        | _ -> invalidArg "list2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
     
     let rec scanToFreshConsTail cons xs s (f: OptimizedClosures.FSharpFunc<_,_,_>) =
         match xs with
@@ -501,7 +578,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if count < 0 then invalidArgInputMustBeNonNegative "count"  count
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -511,17 +588,17 @@ module internal List =
     let rec takeFreshConsTail cons n l =
         if n = 0 then setFreshConsTail cons [] else
         match l with
-        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | [] -> invalidOpListNotEnoughElements n
         | x::xs ->
             let cons2 = freshConsNoTail x
             setFreshConsTail cons cons2
             takeFreshConsTail cons2 (n - 1) xs
  
     let take n l =
-        if n < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if n < 0 then invalidArgInputMustBeNonNegative "count" n
         if n = 0 then [] else 
         match l with
-        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | [] -> invalidOpListNotEnoughElements n
         | x::xs ->
             let cons = freshConsNoTail x
             takeFreshConsTail cons (n - 1) xs
@@ -533,18 +610,20 @@ module internal List =
             l
         else
         match l with
-        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | [] -> invalidOpListNotEnoughElements index
         | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 splitAtFreshConsTail cons2 (index - 1) xs
  
     let splitAt index l =
-        if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
+        if index < 0 then invalidArgInputMustBeNonNegative "index" index
         if index = 0 then [], l else
         match l with
-        | []  -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
-        | [_] -> if index = 1 then l, [] else raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | []  -> invalidOp (SR.GetString SR.inputListWasEmpty)
+        | [_] -> 
+            if index = 1 then l, [] else 
+            invalidOpListNotEnoughElements (index-1)            
         | x::xs ->
             if index = 1 then [x], xs else
             let cons = freshConsNoTail x
@@ -707,7 +786,7 @@ module internal List =
             windowedToFreshConsTail cons2 windowSize (i - 1) list.Tail
 
     let windowed windowSize (list: 'T list) =
-        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
+        if windowSize <= 0 then invalidArgInputMustBePositive "windowSize" windowSize
         let len = list.Length
         if windowSize > len then
             []
@@ -733,7 +812,7 @@ module internal List =
                 chunkBySizeToFreshConsTail cons resCons chunkSize (i+1) t
 
     let chunkBySize chunkSize list =
-        if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+        if chunkSize <= 0 then invalidArgInputMustBePositive "chunkSize" chunkSize
         match list with
         | [] -> []
         | head::tail ->
@@ -759,7 +838,7 @@ module internal List =
                 splitIntoToFreshConsTail cons resCons lenDivCount lenModCount i (j + 1) t
 
     let splitInto count (list: _ list) =
-        if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+        if count <= 0 then invalidArgInputMustBePositive "count" count
         match list.Length with
         | 0 -> []
         | len ->
@@ -779,8 +858,8 @@ module internal List =
             let cons2 = freshConsNoTail (h1,h2)
             setFreshConsTail cons cons2
             zipToFreshConsTail cons2 t1 t2
-        | _ -> 
-            invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -791,8 +870,8 @@ module internal List =
             let res = freshConsNoTail (h1,h2)
             zipToFreshConsTail res t1 t2
             res
-        | _ -> 
-            invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+        | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
+        | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -804,8 +883,8 @@ module internal List =
             let cons2 = freshConsNoTail (h1,h2,h3)
             setFreshConsTail cons cons2
             zip3ToFreshConsTail cons2 t1 t2 t3
-        | _ -> 
-            invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
+        | xs1,xs2,xs3 -> 
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -817,8 +896,8 @@ module internal List =
             let res = freshConsNoTail (h1,h2,h3) 
             zip3ToFreshConsTail res t1 t2 t3
             res
-        | _ -> 
-            invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
+        | xs1,xs2,xs3 -> 
+            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
     let rec takeWhileFreshConsTail cons p l =
         match l with
@@ -925,7 +1004,7 @@ module internal Array =
         (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) (f: int -> 'T) = 
-        if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if count < 0 then invalidArgInputMustBeNonNegative "count" count
         let arr = (zeroCreateUnchecked count : 'T array)  
         for i = 0 to arr.Length-1 do 
             arr.[i] <- f i
