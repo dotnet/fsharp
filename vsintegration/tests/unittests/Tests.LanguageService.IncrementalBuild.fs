@@ -24,7 +24,7 @@ module internal Vector =
         Vector.Demultiplex taskname Identity input
             
     
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 [<Category("LanguageService.ProjectSystem")>]
 type IncrementalBuild() = 

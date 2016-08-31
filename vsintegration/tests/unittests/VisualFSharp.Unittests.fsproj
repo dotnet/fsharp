@@ -18,7 +18,7 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-	<DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -35,19 +35,22 @@
     <Compile Include="TestLib.LanguageService.fs" />
     <Compile Include="TestLib.ProjectSystem.fs" />
     <Compile Include="ColorizationServiceTests.fs">
-        <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
+      <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
     </Compile>
     <Compile Include="BraceMatchingServiceTests.fs">
-        <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
+      <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
     </Compile>
     <Compile Include="IndentationServiceTests.fs">
-        <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
+      <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
     </Compile>
     <Compile Include="BreakpointResolutionService.fs">
-        <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
+      <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
     </Compile>
     <Compile Include="LanguageDebugInfoServiceTests.fs">
-        <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
+      <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
+      <Link>Roslyn\Diagnostics\DocumentDiagnosticAnalyzerTests.fs</Link>
     </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
@@ -64,7 +67,6 @@
     <Compile Include="Tests.LanguageService.QuickInfo.fs" />
     <Compile Include="Tests.LanguageService.QuickParse.fs" />
     <Compile Include="Tests.LanguageService.Script.fs" />
-    <Compile Include="Tests.LanguageService.Squiggles.fs" />
     <Compile Include="Tests.LanguageService.TimeStamp.fs" />
     <Compile Include="Tests.LanguageService.ErrorList.fs" />
     <Compile Include="Tests.LanguageService.ErrorRecovery.fs" />
@@ -144,6 +146,9 @@
     <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.Wpf.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.Wpf.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Data.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Data.dll</HintPath>
     </Reference>
@@ -155,6 +160,9 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.CoreUtility.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.CoreUtility.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
