@@ -11,6 +11,7 @@
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
     <OutputType Condition="'$(IsLangPack)' != 'true'">vsix</OutputType>
     <OutputType Condition="'$(IsLangPack)' == 'true'">manifest</OutputType>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />

@@ -10,6 +10,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
