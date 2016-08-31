@@ -404,8 +404,10 @@ module internal Impl =
                 | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
             let tables = if isStruct then valueTupleTypes else refTupleTypes
-            match tables.TryGetValue(asm) with
+            match lock dictionaryLock (fun () -> tables.TryGetValue(asm)) with
             | false, _ ->
+                // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
+                // that would lock while initializing the Type array (maybe not an issue)
                 let a = ref (Array.init<Type> 8 (fun i -> makeIt (i + 1)))
                 lock dictionaryLock (fun () ->  match tables.TryGetValue(asm) with
                                                 | true, t -> a := t
