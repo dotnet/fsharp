@@ -91,14 +91,16 @@ open Helpers
 [<CompiledName("FSharpVar")>]
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage","CA2218:OverrideGetHashCodeOnOverridingEquals",Justification="Equals override does not equate further objects, so default GetHashCode is still valid")>]
 type Var(name: string, typ:Type, ?isMutable: bool) =
-
     inherit obj()
-    static let mutable lastStamp = 0L
+
+    static let getStamp =
+        let mutable lastStamp = -1 // first value retrieved will be 0
+        fun () -> System.Threading.Interlocked.Increment &lastStamp
+
     static let globals = new Dictionary<(string*Type),Var>(11)
 
-    let stamp = lastStamp    
+    let stamp = getStamp ()
     let isMutable = defaultArg isMutable false
-    do lock globals (fun () -> lastStamp <- lastStamp + 1L)
     
     member v.Name = name
     member v.IsMutable = isMutable
