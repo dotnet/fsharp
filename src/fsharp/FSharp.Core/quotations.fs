@@ -94,7 +94,7 @@ type Var(name: string, typ:Type, ?isMutable: bool) =
     inherit obj()
 
     static let getStamp =
-        let mutable lastStamp = -1 // first value retrieved will be 0
+        let mutable lastStamp = -1L // first value retrieved will be 0
         fun () -> System.Threading.Interlocked.Increment &lastStamp
 
     static let globals = new Dictionary<(string*Type),Var>(11)
