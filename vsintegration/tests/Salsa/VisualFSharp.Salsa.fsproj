@@ -110,6 +110,11 @@
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
+      <Name>FSharp.Editor</Name>
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>

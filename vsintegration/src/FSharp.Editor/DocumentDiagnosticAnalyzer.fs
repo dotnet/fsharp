@@ -24,7 +24,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
-    let fSharpErrorToRoslynDiagnostic(document: Document, sourceText: SourceText, error: FSharpErrorInfo) =
+    static member ConvertError(filePath: string, sourceText: SourceText, error: FSharpErrorInfo) =
         let id = "FS" + error.ErrorNumber.ToString()
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(error.Message)
@@ -33,10 +33,24 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 
         let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
         let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-        let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
 
         // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
-        Diagnostic.Create(descriptor, Location.Create(document.FilePath, correctedTextSpan , linePositionSpan))
+        let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
+
+        Diagnostic.Create(descriptor, Location.Create(filePath, correctedTextSpan , linePositionSpan))
+
+    static member GetDiagnostics(filePath: string, sourceText: SourceText, options: FSharpProjectOptions, addSemanticErrors: bool) =
+        let parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options) |> Async.RunSynchronously
+        let errors =
+            if addSemanticErrors then
+                let checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, 0, sourceText.ToString(), options) |> Async.RunSynchronously
+                match checkResultsAnswer with
+                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
+                | FSharpCheckFileAnswer.Succeeded(results) -> results.Errors
+            else
+                parseResults.Errors
+            
+        (errors |> Seq.map(fun (error) -> FSharpDocumentDiagnosticAnalyzer.ConvertError(filePath, sourceText, error))).ToImmutableArray()
 
 
     // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
@@ -50,9 +64,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         let computation = async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(document.Name, sourceText.ToString(), options)
-
-            return (parseResults.Errors |> Seq.map(fun (error) -> fSharpErrorToRoslynDiagnostic(document, sourceText, error))).ToImmutableArray()
+            return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, false)
         }
 
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
@@ -63,14 +75,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         let computation = async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-            let! parseResults = FSharpChecker.Instance.ParseFileInProject(document.Name, sourceText.ToString(), options)
-            let! checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, document.Name, 0, sourceText.ToString(), options)
-
-            let errors = match checkResultsAnswer with
-                         | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                         | FSharpCheckFileAnswer.Succeeded(results) -> results.Errors
-
-            return (errors |> Seq.map(fun (error) -> fSharpErrorToRoslynDiagnostic(document, sourceText, error))).ToImmutableArray()
+            return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, true)
         }
 
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)

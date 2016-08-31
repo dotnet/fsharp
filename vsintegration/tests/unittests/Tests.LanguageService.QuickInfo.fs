@@ -16,7 +16,7 @@ module QuickInfoStandardSettings =
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingMSBuild() = 
     inherit LanguageServiceBaseTests()
 
@@ -3679,6 +3679,6 @@ query."
 
 
 // Context project system
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

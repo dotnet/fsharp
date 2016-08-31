@@ -17,6 +17,7 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.FSharp.Editor
 
 type internal FSharpLanguageServiceTestable() as this =
     static let colorizerGuid = new Guid("{A2976312-7D71-4BB4-A5F8-66A08EBF46C8}") // Guid for colorized user data on IVsTextBuffer
