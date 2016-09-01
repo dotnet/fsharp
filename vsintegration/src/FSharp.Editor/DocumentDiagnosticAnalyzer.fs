@@ -25,7 +25,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
     static member ConvertError(filePath: string, sourceText: SourceText, error: FSharpErrorInfo) =
-        let id = "FS" + error.ErrorNumber.ToString()
+        let id = "FS" + error.ErrorNumber.ToString("0000")
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(error.Message)
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
