@@ -11,7 +11,11 @@ let choice1 v =
     match v with
     | R r -> r
 
+let newChoice = R { a = 1}
+
 let record2 = Module.R.New
 let choice2 v =
     match v with
     | Module.R r -> r
+    
+let newChoice2 = Module.R { a = 1}
