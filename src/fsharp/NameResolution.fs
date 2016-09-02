@@ -2642,11 +2642,38 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
                 let tyconSearch = tyconSearch |?> List.choose (function (resInfo,Item.RecdField(RecdFieldInfo(_,rfref)),rest) -> Some(resInfo,FieldResolution(rfref,false),rest) | _ -> None)
                 tyconSearch
             | _ -> NoResultsOrUsefulErrors
+
         let modulSearch ad = 
             ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m OpenQualified nenv ad lid 
                 (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-        let resInfo,item,rest = ForceRaise (AtMostOneResult m (modulSearch ad +++ tyconSearch ad +++ modulSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode))
-        if not (List.isEmpty rest) then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange))
+
+        let search =
+            let moduleSearch1 = modulSearch ad
+        
+            match moduleSearch1 with
+            | Result (res :: _) -> success res
+            | _ -> 
+
+            let tyconSearch1 = tyconSearch ad
+
+            match tyconSearch1 with
+            | Result (res :: _) -> success res
+            | _ -> 
+
+            let moduleSearch2 = modulSearch AccessibleFromSomeFSharpCode
+
+            match moduleSearch2 with
+            | Result (res :: _) -> success res
+            | _ -> 
+
+            let tyconSearch2 = tyconSearch AccessibleFromSomeFSharpCode
+
+            AtMostOneResult m (moduleSearch1 +++ tyconSearch1 +++ moduleSearch2 +++ tyconSearch2)
+
+        let resInfo,item,rest = ForceRaise search
+        if not (List.isEmpty rest) then 
+            errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange))
+
         [(resInfo,item)]
 
 let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
