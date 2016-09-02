@@ -12,7 +12,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
 
     module IEnumerator =
 
