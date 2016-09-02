@@ -2504,9 +2504,8 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
             match TryFindTypeWithRecdField modref id  with
             | Some tycon when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
                 let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
-                success(resInfo, FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest)
+                success [resInfo, FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest]
             | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
-            |> OneResult
 
         match modulScopedFieldNames with
         | Result (res :: _) -> success res
@@ -2535,10 +2534,10 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                 match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
                 | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
                     let resInfo = resInfo.AddEntity(id.idRange,submodref)
-                    ResolveFieldInModuleOrNamespace ncenv nenv ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType  rest 
+                    ResolveFieldInModuleOrNamespace ncenv nenv ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
+                    |> OneResult
                 | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
             else raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
-            |> OneResult
 
         AtMostOneResult m (modulScopedFieldNames +++ tyconSearch +++ modulSearch)
     | [] -> 
