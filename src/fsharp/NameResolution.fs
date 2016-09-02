@@ -2000,6 +2000,10 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                         |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
                         |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
 
+            match tyconSearch with
+            | Result (res :: _) -> success res
+            | _ -> 
+
             // Something in a sub-namespace or sub-module 
             let moduleSearch = 
                 if not (List.isEmpty rest) then 
@@ -2205,6 +2209,11 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                 ResolveLongIdentInTyconRefs (ncenv:NameResolver) nenv LookupKind.Pattern (depth+1) m ad rest numTyArgsOpt id.idRange tcrefs
             | _ -> 
                 NoResultsOrUsefulErrors
+
+        match tyconSearch with
+        | Result (res :: _) -> success res
+        | _ -> 
+
         // Constructor of a type? 
         let ctorSearch = 
             if List.isEmpty rest then 
@@ -2214,6 +2223,10 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                 |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
             else
                 NoResultsOrUsefulErrors
+
+        match ctorSearch with
+        | Result (res :: _) -> success res
+        | _ -> 
 
         // Something in a sub-namespace or sub-module or nested-type 
         let moduleSearch = 
@@ -2225,8 +2238,16 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                 | _ -> 
                     NoResultsOrUsefulErrors
              else NoResultsOrUsefulErrors
-        let res = AtMostOneResult id.idRange ( tyconSearch +++   ctorSearch +++ moduleSearch +++ raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,NoPredictions)))
-        res
+
+        match tyconSearch +++ ctorSearch +++ moduleSearch with
+        | Result [] -> 
+            let predictedPossibleTypes =
+                modref.ModuleOrNamespaceType.AllEntities
+                |> Seq.map (fun e -> e.DisplayName)
+                |> Set.ofSeq
+
+            raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,predictedPossibleTypes))
+        | results -> AtMostOneResult id.idRange results
         
 /// Used to report a warning condition for the use of upper-case identifiers in patterns
 exception UpperCaseIdentifierInPattern of range
