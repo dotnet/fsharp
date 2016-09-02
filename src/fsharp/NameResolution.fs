@@ -2397,6 +2397,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                 ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
             | _ ->  
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,NoPredictions))
+
         let tyconSearch = 
             let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, modref)
             match tcrefs with 
@@ -2505,6 +2506,12 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                 let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                 success(resInfo, FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest)
             | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
+            |> OneResult
+
+        match modulScopedFieldNames with
+        | Result (res :: _) -> success res
+        | _ -> 
+
         // search for type-qualified names, e.g. { Microsoft.FSharp.Core.Ref.contents = 1 } 
         let tyconSearch = 
             match lid with 
@@ -2517,6 +2524,11 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                 tyconSearch
             | _ -> 
                 NoResultsOrUsefulErrors
+
+        match tyconSearch with
+        | Result (res :: _) -> success res
+        | _ -> 
+
         // search for names in nested modules, e.g. { Microsoft.FSharp.Core.contents = 1 } 
         let modulSearch = 
             if not (List.isEmpty rest) then 
@@ -2526,7 +2538,9 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                     ResolveFieldInModuleOrNamespace ncenv nenv ad resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType  rest 
                 | _ -> raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
             else raze (UndefinedName(depth,FSComp.SR.undefinedNameRecordLabelOrNamespace,id,NoPredictions))
-        AtMostOneResult m (OneResult modulScopedFieldNames +++ tyconSearch +++ OneResult modulSearch)
+            |> OneResult
+
+        AtMostOneResult m (modulScopedFieldNames +++ tyconSearch +++ modulSearch)
     | [] -> 
         error(InternalError("ResolveFieldInModuleOrNamespace",m))
 
