@@ -2455,7 +2455,9 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
                 (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
             |?> List.concat 
 
-        match tyconSearch +++ modulSearch with 
+        let searchSoFar = tyconSearch +++ modulSearch
+
+        match searchSoFar with 
         | Result results -> 
             // NOTE: we delay checking the CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities condition until right at the end after we've
             // collected all possible resolutions of the type
@@ -2465,12 +2467,12 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) fullyQualified m nenv ad (
                 // We've already reported the ambiguity, possibly as an error. Now just take the first possible result.
                 success(resInfo,tcref)
             | [] -> 
-                        // failing case - report nice ambiguity errors even in this case
-                AtMostOneResult m ((tyconSearch +++ modulSearch +++ modulSearchFailed()) |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, rangeOfLid lid)))
+                // failing case - report nice ambiguity errors even in this case
+                AtMostOneResult m ((searchSoFar +++ modulSearchFailed()) |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, rangeOfLid lid)))
             
         | _ ->  
             // failing case - report nice ambiguity errors even in this case
-            AtMostOneResult m ((tyconSearch +++ modulSearch +++ modulSearchFailed()) |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, rangeOfLid lid)))
+            AtMostOneResult m ((searchSoFar +++ modulSearchFailed()) |?> (fun tcrefs -> CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, rangeOfLid lid)))
 
 
 /// Resolve a long identifier representing a type and report it
