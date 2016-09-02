@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
     open System
     open System.Diagnostics
     open System.Collections.Generic
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
@@ -46,17 +45,17 @@ namespace Microsoft.FSharp.Collections
             else Some array.[array.Length-1]
 
         [<CompiledName("Initialize")>]
-        let inline init count f = Array.init count f
+        let inline init count f = Microsoft.FSharp.Primitives.Basics.Array.init count f
 
         [<CompiledName("ZeroCreate")>]
         let zeroCreate count    = 
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            Array.zeroCreateUnchecked count
+            Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
         [<CompiledName("Create")>]
         let create (count:int) (x:'T) =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            let array: 'T[] = Array.zeroCreateUnchecked count
+            let array: 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
             for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
                 array.[i] <- x
             array
@@ -76,7 +75,7 @@ namespace Microsoft.FSharp.Collections
         let tail (array : 'T[]) =
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))            
-            Array.subUnchecked 1 (array.Length - 1) array
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 1 (array.Length - 1) array
 
         [<CompiledName("Empty")>]
         let empty<'T> : 'T [] = [| |]
@@ -91,7 +90,7 @@ namespace Microsoft.FSharp.Collections
             for h in arrs do
                 acc <- acc + h.Length        
                 
-            let res = Array.zeroCreateUnchecked acc  
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked acc  
                 
             let mutable j = 0
             for i = 0 to arrs.Length-1 do     
@@ -111,7 +110,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Replicate")>]
         let replicate count x = 
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            let arr : 'T array = Array.zeroCreateUnchecked count
+            let arr : 'T array = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
             for i = 0 to arr.Length-1 do 
                 arr.[i] <- x
             arr
@@ -120,7 +119,7 @@ namespace Microsoft.FSharp.Collections
         let collect (f : 'T -> 'U[])  (array : 'T[]) : 'U[]=
             checkNonNull "array" array
             let len = array.Length
-            let result = Array.zeroCreateUnchecked<'U[]> len
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<'U[]> len
             for i = 0 to result.Length-1 do
                 result.[i] <- f array.[i]
             concatArrays result
@@ -131,14 +130,14 @@ namespace Microsoft.FSharp.Collections
             if index < 0 then invalidArgInputMustBeNonNegative "index" index
             if array.Length < index then raise <| InvalidOperationException (SR.GetString(SR.notEnoughElements))
             if index = 0 then
-                let right = Array.subUnchecked 0 array.Length array
+                let right = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 array.Length array
                 [||],right
             elif index = array.Length then
-                let left = Array.subUnchecked 0 array.Length array
+                let left = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 array.Length array
                 left,[||] 
             else
-                let res1 = Array.subUnchecked 0 index array
-                let res2 = Array.subUnchecked index (array.Length-index) array
+                let res1 = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 index array
+                let res2 = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked index (array.Length-index) array
 
                 res1,res2
 
@@ -152,7 +151,7 @@ namespace Microsoft.FSharp.Collections
                 if count > array.Length then
                     raise <| InvalidOperationException (SR.GetString(SR.notEnoughElements))
 
-                Array.subUnchecked 0 count array
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
         [<CompiledName("TakeWhile")>]
         let takeWhile predicate (array: 'T[]) = 
@@ -164,7 +163,7 @@ namespace Microsoft.FSharp.Collections
                 while count < array.Length && predicate array.[count] do
                     count <- count + 1
 
-                Array.subUnchecked 0 count array
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
         let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
             let dict = Dictionary comparer
@@ -175,7 +174,7 @@ namespace Microsoft.FSharp.Collections
                 let mutable prev = Unchecked.defaultof<_>
                 if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
 
-            let res = Array.zeroCreateUnchecked dict.Count
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
             let mutable i = 0
             for group in dict do
                 res.[i] <- getKey group.Key, group.Value
@@ -205,7 +204,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let n1 = array1.Length 
             let n2 = array2.Length 
-            let res : 'T[] = Array.zeroCreateUnchecked (n1 + n2)
+            let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (n1 + n2)
             Array.Copy(array1, 0, res, 0, n1)
             Array.Copy(array2, 0, res, n1, n2)
             res   
@@ -238,7 +237,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Indexed")>]
         let indexed (array: 'T[]) =
             checkNonNull "array" array            
-            let res = Array.zeroCreateUnchecked array.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             for i = 0 to res.Length-1 do
                 res.[i] <- (i,array.[i])
             res
@@ -252,7 +251,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         let distinct (array:'T[]) =
             checkNonNull "array" array
-            let temp = Array.zeroCreateUnchecked array.Length
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             let mutable i = 0
 
             let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
@@ -261,12 +260,12 @@ namespace Microsoft.FSharp.Collections
                     temp.[i] <- v
                     i <- i + 1
 
-            Array.subUnchecked 0 i temp
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 i temp
 
         [<CompiledName("Map")>]
         let inline map (f: 'T -> 'U) (array:'T[]) =
             checkNonNull "array" array            
-            let res : 'U[] = Array.zeroCreateUnchecked array.Length
+            let res : 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             for i = 0 to res.Length-1 do 
                 res.[i] <- f array.[i]
             res
@@ -283,7 +282,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf (array:'T[]) =
             checkNonNull "array" array
-            let temp = Array.zeroCreateUnchecked array.Length
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             let mutable i = 0 
             let hashSet = HashSet<_>(HashIdentity.Structural<_>)
             for v in array do
@@ -291,7 +290,7 @@ namespace Microsoft.FSharp.Collections
                     temp.[i] <- v
                     i <- i + 1
 
-            Array.subUnchecked 0 i temp
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 i temp
 
         [<CompiledName("Map2")>]
         let map2 f (array1: 'T[]) (array2: 'U[]) = 
@@ -299,7 +298,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
-            let res = Array.zeroCreateUnchecked array1.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array1.Length
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
             res
@@ -313,7 +312,7 @@ namespace Microsoft.FSharp.Collections
             let len1 = array1.Length
             if len1 <> array2.Length || len1 <> array3.Length then invalidArg3ArraysDifferent "array1" "array2" "array3" len1 array2.Length array3.Length
             
-            let res = Array.zeroCreateUnchecked len1
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
             for i = 0 to res.Length-1 do
                 res.[i] <- f.Invoke(array1.[i], array2.[i], array3.[i])
             res
@@ -324,7 +323,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             if array1.Length <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
-            let res = Array.zeroCreateUnchecked array1.Length 
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array1.Length 
             for i = 0 to res.Length-1 do 
                 res.[i] <- f.Invoke(i,array1.[i], array2.[i])
             res
@@ -349,7 +348,7 @@ namespace Microsoft.FSharp.Collections
         let mapi (f : int -> 'T -> 'U) (array: 'T[]) =
             checkNonNull "array" array
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)            
-            let res = Array.zeroCreateUnchecked array.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             for i = 0 to array.Length-1 do 
                 res.[i] <- f.Invoke(i,array.[i])
             res
@@ -357,12 +356,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f : 'State -> 'T -> 'Result * 'State) acc array =
             checkNonNull "array" array
-            Array.mapFold f acc array
+            Microsoft.FSharp.Primitives.Basics.Array.mapFold f acc array
 
         [<CompiledName("MapFoldBack")>]
         let mapFoldBack<'T,'State,'Result> (f : 'T -> 'State -> 'Result * 'State) array acc =
             checkNonNull "array" array
-            Array.mapFoldBack f array acc
+            Microsoft.FSharp.Primitives.Basics.Array.mapFoldBack f array acc
 
         [<CompiledName("Exists")>]
         let exists (f: 'T -> bool) (array:'T[]) =
@@ -424,7 +423,7 @@ namespace Microsoft.FSharp.Collections
                     prev.Add v
                      
             // Return the array-of-arrays.
-            let result = Array.zeroCreateUnchecked dict.Count
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
             let mutable i = 0
             for group in dict do
                 result.[i] <- getKey group.Key, group.Value.ToArray()
@@ -486,7 +485,7 @@ namespace Microsoft.FSharp.Collections
                 
             if i <> array.Length then
 
-                let chunk1 : 'U[] = Array.zeroCreateUnchecked ((array.Length >>> 2) + 1)
+                let chunk1 : 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked ((array.Length >>> 2) + 1)
                 chunk1.[0] <- first
                 let mutable count = 1            
                 i <- i + 1                                
@@ -499,7 +498,7 @@ namespace Microsoft.FSharp.Collections
                     i <- i + 1
                 
                 if i < array.Length then                            
-                    let chunk2 : 'U[] = Array.zeroCreateUnchecked (array.Length-i)                        
+                    let chunk2 : 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length-i)                        
                     count <- 0
                     while i < array.Length do
                         let element = array.[i]                                
@@ -509,12 +508,12 @@ namespace Microsoft.FSharp.Collections
                                     count <- count + 1                            
                         i <- i + 1
 
-                    let res : 'U[] = Array.zeroCreateUnchecked (chunk1.Length + count)
+                    let res : 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (chunk1.Length + count)
                     Array.Copy(chunk1,res,chunk1.Length)
                     Array.Copy(chunk2,0,res,chunk1.Length,count)
                     res
                 else
-                    Array.subUnchecked 0 count chunk1                
+                    Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count chunk1                
             else
                 empty
 
@@ -573,7 +572,7 @@ namespace Microsoft.FSharp.Collections
                 // null when there are less than 32 items in src array.
                 let maskArray =
                     if maskArrayLength = 0 then Unchecked.defaultof<_>
-                    else Array.zeroCreateUnchecked<uint32> maskArrayLength
+                    else Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<uint32> maskArrayLength
 
                 let mutable count =
                     match maskArray with
@@ -654,7 +653,7 @@ namespace Microsoft.FSharp.Collections
                 dstIdx
 
             let private filterViaMask (maskArray:array<uint32>) (leftoverMask:uint32) (count:int) (src:array<_>) =
-                let dst = Array.zeroCreateUnchecked count
+                let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
                 let mutable dstIdx = 0
                 let srcIdx =
@@ -700,7 +699,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 
             checkNonNull "array" array
-            let res = Array.zeroCreateUnchecked array.Length        
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length        
             let mutable upCount = 0
             let mutable downCount = array.Length-1    
             for x in array do                
@@ -711,8 +710,8 @@ namespace Microsoft.FSharp.Collections
                     res.[downCount] <- x
                     downCount <- downCount - 1
                 
-            let res1 = Array.subUnchecked 0 upCount res
-            let res2 = Array.zeroCreateUnchecked (array.Length - upCount)    
+            let res1 = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 upCount res
+            let res2 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length - upCount)    
         
             downCount <- array.Length-1
             for i = 0 to res2.Length-1 do
@@ -745,7 +744,7 @@ namespace Microsoft.FSharp.Collections
                 empty
             else
                 let count = max count 0
-                Array.subUnchecked count (array.Length - count) array
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked count (array.Length - count) array
 
         [<CompiledName("SkipWhile")>]
         let skipWhile p (array: 'T[]) =        
@@ -755,27 +754,27 @@ namespace Microsoft.FSharp.Collections
 
             match array.Length - i with
             | 0 -> empty
-            | resLen -> Array.subUnchecked i resLen array
+            | resLen -> Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i resLen array
 
         [<CompiledName("FindBack")>]
         let findBack f (array: _[]) =
             checkNonNull "array" array
-            Array.findBack f array
+            Microsoft.FSharp.Primitives.Basics.Array.findBack f array
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (array: _[]) =
             checkNonNull "array" array
-            Array.tryFindBack f array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindBack f array
 
         [<CompiledName("FindIndexBack")>]
         let findIndexBack f (array : _[]) =
             checkNonNull "array" array
-            Array.findIndexBack f array
+            Microsoft.FSharp.Primitives.Basics.Array.findIndexBack f array
 
         [<CompiledName("TryFindIndexBack")>]
         let tryFindIndexBack f (array : _[]) =
             checkNonNull "array" array
-            Array.tryFindIndexBack f array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack f array
 
         [<CompiledName("Windowed")>]
         let windowed windowSize (array:'T[]) =
@@ -785,9 +784,9 @@ namespace Microsoft.FSharp.Collections
             if windowSize > len then
                 empty
             else
-                let res : 'T[][] = Array.zeroCreateUnchecked (len - windowSize + 1) 
+                let res : 'T[][] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len - windowSize + 1) 
                 for i = 0 to len - windowSize do
-                    res.[i] <- Array.subUnchecked i windowSize array
+                    res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i windowSize array
                 res
 
         [<CompiledName("ChunkBySize")>]
@@ -801,18 +800,18 @@ namespace Microsoft.FSharp.Collections
                 [| copy array |]
             else
                 let chunkCount = (len - 1) / chunkSize + 1
-                let res = Array.zeroCreateUnchecked chunkCount : 'T[][]
+                let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunkCount : 'T[][]
                 for i = 0 to len / chunkSize - 1 do
-                    res.[i] <- Array.subUnchecked (i * chunkSize) chunkSize array
+                    res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked (i * chunkSize) chunkSize array
                 if len % chunkSize <> 0 then
-                    res.[chunkCount - 1] <- Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
+                    res.[chunkCount - 1] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
                 res
 
         [<CompiledName("SplitInto")>]
         let splitInto count (array:_[]) =
             checkNonNull "array" array
             if count <= 0 then invalidArgInputMustBePositive "count" count
-            Array.splitInto count array
+            Microsoft.FSharp.Primitives.Basics.Array.splitInto count array
 
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
@@ -820,7 +819,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let len1 = array1.Length 
             if len1 <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
-            let res = Array.zeroCreateUnchecked len1 
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1 
             for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i])
             res
@@ -832,7 +831,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array3" array3
             let len1 = array1.Length
             if len1 <> array2.Length || len1 <> array3.Length then invalidArg3ArraysDifferent "array1" "array2" "array3" len1 array2.Length array3.Length
-            let res = Array.zeroCreateUnchecked len1 
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1 
             for i = 0 to res.Length-1 do 
                 res.[i] <- (array1.[i],array2.[i],array3.[i])
             res
@@ -843,7 +842,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array2" array2
             let len1 = array1.Length
             let len2 = array2.Length
-            let res = Array.zeroCreateUnchecked (len1 * len2)
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len1 * len2)
             for i = 0 to array1.Length-1 do
                 for j = 0 to array2.Length-1 do
                     res.[i * len2 + j] <- (array1.[i],array2.[j])
@@ -865,8 +864,8 @@ namespace Microsoft.FSharp.Collections
         let unzip (array: _[]) = 
             checkNonNull "array" array
             let len = array.Length 
-            let res1 = Array.zeroCreateUnchecked len 
-            let res2 = Array.zeroCreateUnchecked len 
+            let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len 
+            let res2 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len 
             for i = 0 to array.Length-1 do 
                 let x,y = array.[i] 
                 res1.[i] <- x
@@ -877,9 +876,9 @@ namespace Microsoft.FSharp.Collections
         let unzip3 (array: _[]) = 
             checkNonNull "array" array
             let len = array.Length 
-            let res1 = Array.zeroCreateUnchecked len 
-            let res2 = Array.zeroCreateUnchecked len 
-            let res3 = Array.zeroCreateUnchecked len 
+            let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len 
+            let res2 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len 
+            let res3 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len 
             for i = 0 to array.Length-1 do 
                 let x,y,z = array.[i] 
                 res1.[i] <- x
@@ -890,7 +889,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev (array: _[]) = 
             checkNonNull "array" array        
-            let res = Array.zeroCreateUnchecked array.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             let mutable j = array.Length-1
             for i = 0 to array.Length-1 do 
                 res.[j] <- array.[i]
@@ -967,7 +966,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ScanBack")>]
         let scanBack<'T,'State> f (array : 'T[]) (acc:'State) = 
             checkNonNull "array" array
-            Array.scanSubRight f array 0 (array.Length - 1) acc
+            Microsoft.FSharp.Primitives.Basics.Array.scanSubRight f array 0 (array.Length - 1) acc
 
         [<CompiledName("Singleton")>]
         let inline singleton value = [|value|]
@@ -1015,12 +1014,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortInPlaceBy")>]
         let sortInPlaceBy (f: 'T -> 'U) (array : 'T[]) = 
             checkNonNull "array" array
-            Array.unstableSortInPlaceBy f array
+            Microsoft.FSharp.Primitives.Basics.Array.unstableSortInPlaceBy f array
 
         [<CompiledName("SortInPlace")>]
         let sortInPlace (array : 'T[]) = 
             checkNonNull "array" array
-            Array.unstableSortInPlace array
+            Microsoft.FSharp.Primitives.Basics.Array.unstableSortInPlace array
 
         [<CompiledName("SortWith")>]
         let sortWith (f: 'T -> 'T -> int) (array : 'T[]) =
@@ -1087,7 +1086,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Permute")>]
         let permute p (array : _[]) =  
             checkNonNull "array" array
-            Array.permute p array
+            Microsoft.FSharp.Primitives.Basics.Array.permute p array
 
         [<CompiledName("Sum")>]
         let inline sum (array: ^T[] ) : ^T = 
@@ -1204,7 +1203,7 @@ namespace Microsoft.FSharp.Collections
             if startIndex < 0 then invalidArgInputMustBeNonNegative "startIndex" startIndex
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             if startIndex + count > array.Length then invalidArgOutOfRange "count" count "array.Length" array.Length
-            Array.subUnchecked startIndex count array
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked startIndex count array
 
         [<CompiledName("Item")>]
         let item n (array:_[]) =
@@ -1246,7 +1245,7 @@ namespace Microsoft.FSharp.Collections
             else
                 let len = array.Length
                 let count' = Operators.min count len
-                Array.subUnchecked 0 count' array
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count' array
 
 #if FX_NO_TPL_PARALLEL
 #else
@@ -1258,8 +1257,8 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "array" array
                 let inputLength = array.Length                      
 
-                let isChosen : bool [] = Array.zeroCreateUnchecked inputLength
-                let results : 'U [] = Array.zeroCreateUnchecked inputLength                
+                let isChosen : bool [] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
+                let results : 'U [] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength                
                 let mutable outputLength = 0        
                 Parallel.For(0, 
                              inputLength, 
@@ -1274,7 +1273,7 @@ namespace Microsoft.FSharp.Collections
                              Action<int> (fun x -> System.Threading.Interlocked.Add(&outputLength,x) |> ignore )
                              ) |> ignore         
                                                                                                                                                       
-                let output = Array.zeroCreateUnchecked outputLength
+                let output = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked outputLength
                 let mutable curr = 0
                 for i = 0 to isChosen.Length-1 do 
                     if isChosen.[i] then 
@@ -1286,7 +1285,7 @@ namespace Microsoft.FSharp.Collections
             let collect (f : 'T -> 'U[])  (array : 'T[]) : 'U[]=
                 checkNonNull "array" array
                 let inputLength = array.Length
-                let result = Array.zeroCreateUnchecked inputLength
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
                 Parallel.For(0, inputLength, 
                     (fun i -> result.[i] <- f array.[i])) |> ignore
                 concatArrays result
@@ -1295,7 +1294,7 @@ namespace Microsoft.FSharp.Collections
             let map (f: 'T -> 'U) (array : 'T[]) : 'U[]=
                 checkNonNull "array" array
                 let inputLength = array.Length
-                let result = Array.zeroCreateUnchecked inputLength
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
                 Parallel.For(0, inputLength, fun i ->
                     result.[i] <- f array.[i]) |> ignore
                 result
@@ -1305,7 +1304,7 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "array" array
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let inputLength = array.Length
-                let result = Array.zeroCreateUnchecked inputLength 
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength 
                 Parallel.For(0, inputLength, fun i ->
                     result.[i] <- f.Invoke (i, array.[i])) |> ignore
                 result
@@ -1323,7 +1322,7 @@ namespace Microsoft.FSharp.Collections
                 
             [<CompiledName("Initialize")>]
             let init count f =
-                let result = Array.zeroCreateUnchecked count
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
                 Parallel.For (0, count, fun i -> result.[i] <- f i) |> ignore
                 result
                 
@@ -1332,7 +1331,7 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "array" array
                 let inputLength = array.Length                
                
-                let isTrue = Array.zeroCreateUnchecked inputLength                
+                let isTrue = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength                
                 let mutable trueLength = 0                                                
                 Parallel.For(0, 
                              inputLength, 
@@ -1345,8 +1344,8 @@ namespace Microsoft.FSharp.Collections
                                     trueCount),                        
                              Action<int> (fun x -> System.Threading.Interlocked.Add(&trueLength,x) |> ignore) ) |> ignore
                                 
-                let res1 = Array.zeroCreateUnchecked trueLength
-                let res2 = Array.zeroCreateUnchecked (inputLength - trueLength)
+                let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
+                let res2 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (inputLength - trueLength)
 
                 let mutable iTrue = 0
                 let mutable iFalse = 0
