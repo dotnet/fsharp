@@ -2001,6 +2001,10 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                         |> CollectResults (fun (resInfo,typ) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad typ) 
                         |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
 
+            match tyconSearch with
+            | Result (res :: _) -> success res
+            | _ ->
+
             // Something in a discriminated union?
             let unionSearch,showDeprecated =
                 match TryFindTypeWithUnionCase modref id with

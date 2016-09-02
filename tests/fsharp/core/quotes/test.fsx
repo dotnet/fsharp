@@ -676,26 +676,26 @@ module ErrorEstimateTest =
             (fun xv yv -> errorEstimateAux t (Map.ofSeq [(x.Name,xv); (y.Name,yv)]))
         | _ -> failwithf "unrecognized term: %A - expected a lambda of two args" t
 
-    let (±) x = Err(x)
-    //fsi.AddPrinter (fun (x,Err(v)) -> sprintf "%g±%g" x v)
+    let (Â±) x = Err(x)
+    //fsi.AddPrinter (fun (x,Err(v)) -> sprintf "%gÂ±%g" x v)
 
-    errorEstimate <@ fun x -> x @> (1.0,±0.1)
-    errorEstimate <@ fun x -> 2.0*x @> (1.0,±0.1)
-    errorEstimate <@ fun x -> x*x @> (1.0,±0.1)
-    errorEstimate <@ fun x -> 1.0/x @> (0.5,±0.1)
+    errorEstimate <@ fun x -> x @> (1.0,Â±0.1)
+    errorEstimate <@ fun x -> 2.0*x @> (1.0,Â±0.1)
+    errorEstimate <@ fun x -> x*x @> (1.0,Â±0.1)
+    errorEstimate <@ fun x -> 1.0/x @> (0.5,Â±0.1)
 
     errorEstimate <@ fun x -> let y = x + x 
-                              y*y + 2.0 @> (1.0,±0.1)
+                              y*y + 2.0 @> (1.0,Â±0.1)
 
-    errorEstimate <@ fun x -> x+2.0*x+3.0*x*x @> (1.0,±0.1)
+    errorEstimate <@ fun x -> x+2.0*x+3.0*x*x @> (1.0,Â±0.1)
 
-    errorEstimate <@ fun x -> x+2.0*x+3.0/(x*x) @> (0.3,±0.1)
+    errorEstimate <@ fun x -> x+2.0*x+3.0/(x*x) @> (0.3,Â±0.1)
 
     [<ReflectedDefinition>]
     let poly x = x+2.0*x+3.0/(x*x)
 
-    errorEstimate <@ poly @> (0.3,±0.1)
-    errorEstimate <@ poly @> (30271.3,±0.0001)
+    errorEstimate <@ poly @> (0.3,Â±0.1)
+    errorEstimate <@ poly @> (30271.3,Â±0.0001)
 *)
 module Test72594 =
     let effect (i:int) = ()
@@ -2071,8 +2071,8 @@ module QuotationsOfLocalFunctions_FSharp_1_0_6403 =
 
         // Note for the cases below: We still get temporaries introduced in some quotations, 
         // e.g. Q5 and Q6. The introduction of temporaries is OK according to our V2.0 specification, 
-        // where compilation of some calls, pattern matching etc. may introduce temporaries. It’s not 
-        // totally ideal: we would prefer if Q5 and Q6 reported “call”  quotations, and would be willing 
+        // where compilation of some calls, pattern matching etc. may introduce temporaries. Itâ€™s not 
+        // totally ideal: we would prefer if Q5 and Q6 reported â€œcallâ€  quotations, and would be willing 
         // to make that breaking change at a later date.
         test "cejnewoui5" (match c.Q5 with Let(_, (Int32 1), Call (Some (Value _),_, [_])) -> true | _ -> false)
         test "cejnewoui6" (match c.Q6 with Let(_, (Int32 2), Call (Some (Value _),_, [_])) -> true | _ -> false)
@@ -2089,8 +2089,8 @@ module QuotationsOfLocalFunctions_FSharp_1_0_6403 =
 
         // Note for the cases below: We still get temporaries introduced in some quotations, 
         // e.g. Q5 and Q6. The introduction of temporaries is OK according to our V2.0 specification, 
-        // where compilation of some calls, pattern matching etc. may introduce temporaries. It’s not 
-        // totally ideal: we would prefer if Q5 and Q6 reported “call”  quotations, and would be willing 
+        // where compilation of some calls, pattern matching etc. may introduce temporaries. Itâ€™s not 
+        // totally ideal: we would prefer if Q5 and Q6 reported â€œcallâ€  quotations, and would be willing 
         // to make that breaking change at a later date.
         test "scejnewoui5" (match C.SQ5 with Let(_, (Int32 1), Call (None,_, [_])) -> true | _ -> false)
         test "scejnewoui6" (match C.SQ6 with Let(_, (Int32 2), Call (None,_, [_])) -> true | _ -> false)
@@ -2166,7 +2166,7 @@ module OverloadsInTypeExtensions =
     
     open Overloads
 
-    check "OverloadsInTypeExtensions" (try A.X.TestOverloads() with _ -> false) true
+    check "OverloadsInTypeExtensions" (try A.X.X.TestOverloads() with _ -> false) true
 
 module ArrayQuoteTests = 
     check "cenwkjen" (match <@ [| 2.0;3.0;4.0 |] @> with NewArray (ty, [Double 2.0; Double 3.0; Double 4.0]) -> true  | _ -> false) true
