@@ -92,6 +92,7 @@ namespace Microsoft.FSharp.Core
        | ModuleSuffix = 4  // append 'Module' to the end of a non-unique module
        | UseNullAsTrueValue = 8  // Note if you change this then change CompilationRepresentationFlags_PermitNull further below
        | Event = 16
+       | UseVirtualTag = 32
 
 #if FX_NO_ICLONEABLE
     module ICloneableExtensions =

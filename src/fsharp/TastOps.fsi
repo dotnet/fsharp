@@ -1036,6 +1036,9 @@ val (|ByrefTy|_|)   : TcGlobals -> TType -> TType option
 val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
 val TyconHasUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
 val CanHaveUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
+val IsUnionTypeWithUseVirtualTag: TcGlobals -> Tycon -> bool
+val TyconHasUseVirtualTagAttribute : TcGlobals -> Tycon -> bool
+val CanHaveUseVirtualTagAttribute : TcGlobals -> Tycon -> bool
 val MemberIsCompiledAsInstance : TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
 val ValSpecIsCompiledAsInstance : TcGlobals -> Val -> bool
 val ValRefIsCompiledAsInstanceMember : TcGlobals -> ValRef -> bool

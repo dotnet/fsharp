@@ -38,6 +38,7 @@ type DiscriminationTechnique =
    // where at most one case is non-nullary.  These can be represented using a single
    // class (no subclasses), but an integer tag is stored to discriminate between the objects.
    | IntegerTag
+   | VirtualTag
 
 // A potentially useful additional representation trades an extra integer tag in the root type
 // for faster discrimination, and in the important single-non-nullary constructor case
@@ -54,9 +55,11 @@ type DiscriminationTechnique =
 // accessors would be needed to access these fields directly, akin to HeadOrDefault and TailOrNull.
 
 // This functor helps us make representation decisions for F# union type compilation
+
 type UnionReprDecisions<'Union,'Alt,'Type>
           (getAlternatives: 'Union->'Alt[],
            nullPermitted:'Union->bool,
+           useVirtualTag:'Union->bool,
            isNullary:'Alt->bool,
            isList:'Union->bool,
            isStruct:'Union->bool,
@@ -76,7 +79,9 @@ type UnionReprDecisions<'Union,'Alt,'Type>
             let alts = getAlternatives cu
             if alts.Length = 1 then 
                 SingleCase
-            elif 
+            elif useVirtualTag cu then
+                VirtualTag
+            elif
                 not (isStruct cu) &&
                 alts.Length < TaggingThresholdFixedConstant &&
                 not (repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu)  then 
@@ -163,6 +168,7 @@ let cuspecRepr =
     UnionReprDecisions
         ((fun (cuspec:IlxUnionSpec) -> cuspec.AlternativesArray),
          (fun (cuspec:IlxUnionSpec) -> cuspec.IsNullPermitted), 
+         (fun (cuspec:IlxUnionSpec) -> cuspec.VirtualTag), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun cuspec -> cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
@@ -175,6 +181,7 @@ let cudefRepr =
     UnionReprDecisions
         ((fun (_td,cud) -> cud.cudAlternatives),
          (fun (_td,cud) -> cud.cudNullPermitted), 
+         (fun (_td,cud) -> cud.cudVirtualTag), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun (td,_cud) -> match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false),
@@ -366,6 +373,7 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
         | SingleCase -> [ mkLdcInt32 1 ] 
         | RuntimeTypes -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName  altTy
         | IntegerTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
+        | VirtualTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | TailOrNull -> 
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @  [ AI_ldnull; AI_ceq ]
@@ -413,6 +421,7 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
         | SingleCase -> [ ]
         | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (pos,tg))
         | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
+        | VirtualTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
         | TailOrNull -> 
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
@@ -435,6 +444,10 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs (mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un])
         | IntegerTag -> 
+            let baseTy = baseTyOfUnionSpec cuspec
+            ldOpt |> Option.iter cg.EmitInstr 
+            cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
+        | VirtualTag ->
             let baseTy = baseTyOfUnionSpec cuspec
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
@@ -541,6 +554,24 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
                 
 
     | IntegerTag -> 
+        match cases with 
+        | [] -> cg.EmitInstrs  [ AI_pop ]
+        | _ ->
+        // Use a dictionary to avoid quadratic lookup in case list
+        let dict = System.Collections.Generic.Dictionary<int,_>()
+        for (i,case) in cases do dict.[i] <- case
+        let failLab = cg.GenerateDelayMark ()
+        let emitCase i _ = 
+            let mutable res = Unchecked.defaultof<_>
+            let ok = dict.TryGetValue(i, &res)
+            if ok then res else cg.CodeLabel failLab
+
+        let dests = Array.mapi emitCase cuspec.AlternativesArray
+        cg.EmitInstrs (mkGetTag ilg cuspec)
+        cg.EmitInstr (I_switch (Array.toList dests))
+        cg.SetMarkToHere failLab
+
+    | VirtualTag -> 
         match cases with 
         | [] -> cg.EmitInstrs  [ AI_pop ]
         | _ ->
@@ -751,10 +782,11 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                   []
 
           let typeDefs, altDebugTypeDefs = 
-              if repr.OptimizeAlternativeToRootClass (info,alt) then [], [] else
+              if repr.OptimizeAlternativeToRootClass (info,alt) then [], []
+              else
                 
               let altDebugTypeDefs, debugAttrs = 
-                  if not cud.cudDebugProxies then  [],  []
+                  if not cud.cudDebugProxies then [], []
                   else
                     
                     let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
@@ -848,6 +880,9 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                             | IntegerTag -> 
                                 yield mkLdcInt32 num
                                 yield mkNormalCall (mkILCtorMethSpecForTy (baseTy,[mkTagFieldType ilg cuspec])) 
+                            | VirtualTag ->
+                                yield mkLdcInt32 num
+                                yield mkNormalCall (mkILCtorMethSpecForTy (baseTy,[mkTagFieldType ilg cuspec])) 
                             | SingleCase 
                             | RuntimeTypes ->
                                 yield mkNormalCall (mkILCtorMethSpecForTy (baseTy,[])) 
@@ -885,7 +920,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
 let mkClassUnionDef ilg tref td cud = 
     let boxity = match td.tdKind with ILTypeDefKind.ValueType -> ILBoxity.AsValue | _ -> ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
-    let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
+    let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers, cud.cudVirtualTag), baseTy.GenericArgs)
     let info = (td,cud)
     let repr = cudefRepr 
     let isTotallyImmutable = (cud.cudHasHelpers <> SpecialFSharpListHelpers)
@@ -906,6 +941,7 @@ let mkClassUnionDef ilg tref td cud =
         match repr.DiscriminationTechnique info with 
         | SingleCase | RuntimeTypes | TailOrNull -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
+        | VirtualTag -> [ mkTagFieldId ilg cuspec ] 
 
     let isStruct = match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false
 
@@ -970,6 +1006,12 @@ let mkClassUnionDef ilg tref td cud =
                   | TailOrNull ->
                       yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy,[])) 
                   | IntegerTag -> 
+                      if inRootClass then
+                          yield mkLdcInt32 fidx 
+                          yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy,[mkTagFieldType ilg cuspec] ))
+                      else
+                          yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy,[])) 
+                  | VirtualTag ->
                       if inRootClass then
                           yield mkLdcInt32 fidx 
                           yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy,[mkTagFieldType ilg cuspec] ))

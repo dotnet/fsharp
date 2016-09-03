@@ -95,6 +95,8 @@ namespace Microsoft.FSharp.Core
        | UseNullAsTrueValue = 8
        /// <summary>Compile a property as a CLI event.</summary>
        | Event = 16
+       /// <summary>Rather than storing Tag:int for every discriminated union element (or GetType() comparison) use a virtual Tag property</summary>
+       | UseVirtualTag = 32
 
 #if FX_NO_ICLONEABLE
     module ICloneableExtensions =
