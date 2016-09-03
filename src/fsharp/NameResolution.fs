@@ -2103,18 +2103,24 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           match envSearch with 
           | Some res -> res
           | None ->
-              // Check if it's a type name, e.g. a constructor call or a type instantiation 
-              let ctorSearch = 
-                  let tcrefs = LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
-                  ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
+              let search =
+                  // Check if it's a type name, e.g. a constructor call or a type instantiation
+                  let ctorSearch = 
+                      let tcrefs = LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
+                      ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
 
-              let implicitOpSearch = 
-                  if IsMangledOpName id.idText then 
-                      success [(resInfo,Item.ImplicitOp(id, ref None),[])] 
-                  else NoResultsOrUsefulErrors
+                  match ctorSearch with
+                  | Result res when not (List.isEmpty res) -> ctorSearch
+                  | _ -> 
 
-              let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,NoPredictions))
-              let search = ctorSearch +++ implicitOpSearch +++ failingCase 
+                  let implicitOpSearch = 
+                      if IsMangledOpName id.idText then 
+                          success [(resInfo,Item.ImplicitOp(id, ref None),[])] 
+                      else NoResultsOrUsefulErrors
+
+                  let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,NoPredictions))
+                  ctorSearch +++ implicitOpSearch +++ failingCase
+
               let resInfo,item,rest = ForceRaise (AtMostOneResult m search) 
               ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
               item,rest
