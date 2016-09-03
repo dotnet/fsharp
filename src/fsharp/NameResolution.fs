@@ -1847,7 +1847,7 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
-let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKind (resInfo:ResolutionInfo) depth m ad (lid:Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) typ =
+let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo:ResolutionInfo) depth m ad (lid:Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) typ =
     let g = ncenv.g
     match lid with 
     | [] -> error(InternalError("ResolveLongIdentInTypePrim",m))
@@ -1907,7 +1907,7 @@ let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKin
            |> OneResult
 
         match contentsSearchAccessible with
-        | Result res when atMostOne && not (List.isEmpty res) -> contentsSearchAccessible
+        | Result res when not (List.isEmpty res) -> contentsSearchAccessible
         | _ -> 
               
         let nestedSearchAccessible = 
@@ -1931,13 +1931,13 @@ let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKin
 and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad lid findFlag typeNameResInfo typs = 
     typs |> CollectResults (fun typ -> 
         let resInfo = if isAppTy ncenv.g typ then resInfo.AddEntity(id.idRange,tcrefOfAppTy ncenv.g typ) else resInfo
-        ResolveLongIdentInTypePrim true ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typ 
+        ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typ 
         |> AtMostOneResult m) 
 
 /// Resolve a long identifier using type-qualified name resolution.
 let ResolveLongIdentInType sink ncenv nenv lookupKind m ad lid findFlag typeNameResInfo typ =
     let resInfo,item,rest = 
-        ResolveLongIdentInTypePrim true (ncenv:NameResolver) nenv lookupKind ResolutionInfo.Empty 0 m ad lid findFlag typeNameResInfo typ
+        ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind ResolutionInfo.Empty 0 m ad lid findFlag typeNameResInfo typ
         |> AtMostOneResult m
         |> ForceRaise
     ResolutionInfo.SendToSink (sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
@@ -1949,7 +1949,7 @@ let private ResolveLongIdentInTyconRef (ncenv:NameResolver) nenv lookupKind resI
     CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #endif
     let typ = FreshenTycon ncenv m tcref
-    typ |> ResolveLongIdentInTypePrim false ncenv nenv lookupKind resInfo depth m ad lid IgnoreOverrides typeNameResInfo  
+    typ |> ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid IgnoreOverrides typeNameResInfo  
 
 let private ResolveLongIdentInTyconRefs (ncenv:NameResolver) nenv lookupKind depth m ad lid typeNameResInfo idRange tcrefs = 
     tcrefs |> CollectResults (fun (resInfo:ResolutionInfo,tcref) -> 
@@ -2709,7 +2709,7 @@ let FreshenRecdFieldRef (ncenv:NameResolver) m (rfref:RecdFieldRef) =
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here. 
 let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findFlag =
     let typeNameResInfo = TypeNameResolutionInfo.Default
-    let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim true ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad lid findFlag typeNameResInfo typ)
+    let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad lid findFlag typeNameResInfo typ)
     match adhoctDotSearchAccessible with 
     | Exception _ ->
         // If the dot is not resolved by adhoc overloading then look for a record field 
@@ -2731,7 +2731,7 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
         match AtMostOneResult m search with 
         | Result _ as res -> ForceRaise res
         | _ -> 
-            let adhocDotSearchAll = ResolveLongIdentInTypePrim true ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode lid findFlag typeNameResInfo typ 
+            let adhocDotSearchAll = ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode lid findFlag typeNameResInfo typ 
             ForceRaise (AtMostOneResult m (search +++ adhocDotSearchAll))
 
     | Result _ -> 
