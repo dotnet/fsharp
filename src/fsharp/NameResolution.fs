@@ -2156,28 +2156,57 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           let tyconSearch ad = 
               let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
               let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo,tcref))
-              let tcrefs  = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.Indefinite), PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
+              let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.Indefinite), PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
               ResolveLongIdentInTyconRefs ncenv nenv LookupKind.Expr 1 m ad rest typeNameResInfo id.idRange tcrefs
 
-          let envSearch = 
-              match fullyQualified with 
-              | FullyQualified -> 
-                  NoResultsOrUsefulErrors
-              | OpenQualified -> 
-                  match nenv.eUnqualifiedItems.TryFind id.idText with
-                  | Some (Item.UnqualifiedType _) 
-                  | None -> NoResultsOrUsefulErrors
-                  | Some res -> OneSuccess (resInfo,FreshenUnqualifiedItem ncenv m res,rest)
+          let search =
+              let moduleSearch = moduleSearch ad 
+              
+              match moduleSearch with
+              | Result res when not (List.isEmpty res) -> moduleSearch
+              | _ ->
 
-          let search = moduleSearch ad +++ tyconSearch ad +++ envSearch
+              let tyconSearch = tyconSearch ad
+
+              match tyconSearch with
+              | Result res when not (List.isEmpty res) -> tyconSearch
+              | _ ->
+
+              let envSearch = 
+                  match fullyQualified with 
+                  | FullyQualified -> 
+                      NoResultsOrUsefulErrors
+                  | OpenQualified -> 
+                      match nenv.eUnqualifiedItems.TryFind id.idText with
+                      | Some (Item.UnqualifiedType _) 
+                      | None -> NoResultsOrUsefulErrors
+                      | Some res -> OneSuccess (resInfo,FreshenUnqualifiedItem ncenv m res,rest)
+
+              moduleSearch +++ tyconSearch +++ envSearch
 
           let resInfo,item,rest = 
               match AtMostOneResult m search with 
               | Result _ as res -> 
                   ForceRaise res
-              | _ ->  
-                  let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,NoPredictions))               
-                  ForceRaise (AtMostOneResult m (search +++ moduleSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode +++ failingCase))
+              | _ ->
+                  let innerSearch =
+                      let moduleSearch = moduleSearch AccessibleFromSomeFSharpCode
+              
+                      match moduleSearch with
+                      | Result res when not (List.isEmpty res) -> moduleSearch
+                      | _ ->
+
+                      let tyconSearch = tyconSearch AccessibleFromSomeFSharpCode
+
+                      match tyconSearch with
+                      | Result res when not (List.isEmpty res) -> tyconSearch
+                      | _ ->
+
+                      let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,NoPredictions))
+
+                      search +++ moduleSearch +++ tyconSearch +++ failingCase
+
+                  ForceRaise (AtMostOneResult m innerSearch)
           ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
           item,rest
 
