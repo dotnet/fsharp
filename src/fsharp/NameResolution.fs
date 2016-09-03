@@ -1857,17 +1857,18 @@ let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKin
         let optFilter = Some nm // used to filter the searches of the tables 
         let contentsSearchAccessible = 
            let unionCaseSearch = 
-               if (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) then 
-                   TryFindUnionCaseOfType g typ nm 
-               else 
-                   None
+               match lookupKind with 
+               | LookupKind.Expr | LookupKind.Pattern -> TryFindUnionCaseOfType g typ nm  
+               | _ -> None
+
            // Lookup: datatype constructors take precedence 
            match unionCaseSearch with 
            | Some ucase -> 
                success(resInfo,Item.UnionCase(ucase,false),rest)
            | None -> 
+                let isLookUpExpr = match lookupKind with LookupKind.Expr  -> true | _ -> false
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
-                | Some (PropertyItem psets) when (match lookupKind with LookupKind.Expr  -> true | _ -> false) -> 
+                | Some (PropertyItem psets) when isLookUpExpr -> 
                     let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
                     
                     // fold the available extension members into the overload resolution
@@ -1876,9 +1877,9 @@ let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKin
                     // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                     // since later on this logic is used when giving preference to intrinsic definitions
                     match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
-                    | Some x ->  success (resInfo, x, rest)
-                    | None ->  raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
-                | Some(MethodItem msets) when (match lookupKind with LookupKind.Expr  -> true | _ -> false) -> 
+                    | Some x -> success (resInfo, x, rest)
+                    | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoPredictions))
+                | Some(MethodItem msets) when isLookUpExpr -> 
                     let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
                     
                     // fold the available extension members into the overload resolution
@@ -1888,16 +1889,16 @@ let rec ResolveLongIdentInTypePrim atMostOne (ncenv:NameResolver) nenv lookupKin
                 | Some (ILFieldItem (finfo:: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) -> 
                     success (resInfo,Item.ILField finfo,rest)
 
-                | Some (EventItem (einfo :: _)) when (match lookupKind with LookupKind.Expr -> true | _ -> false)  -> 
+                | Some (EventItem (einfo :: _)) when isLookUpExpr -> 
                     success (resInfo,Item.Event einfo,rest)
                 | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) -> 
                     success(resInfo,Item.RecdField(rfinfo),rest)
                 | _ ->
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
-                if not (List.isEmpty pinfos) && (match lookupKind with LookupKind.Expr -> true | _ -> false) then 
+                if not (List.isEmpty pinfos) && isLookUpExpr then 
                     success (resInfo,Item.Property (nm,pinfos),rest) else
                 let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
-                if not (List.isEmpty minfos) && (match lookupKind with LookupKind.Expr -> true | _ -> false) then 
+                if not (List.isEmpty minfos) && isLookUpExpr then 
                     success (resInfo,Item.MakeMethGroup (nm,minfos),rest) 
                                 
                 elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
