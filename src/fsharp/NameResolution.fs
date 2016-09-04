@@ -1866,7 +1866,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
            | Some ucase -> 
                success(resInfo,Item.UnionCase(ucase,false),rest)
            | None -> 
-                let isLookUpExpr = match lookupKind with LookupKind.Expr  -> true | _ -> false
+                let isLookUpExpr = lookupKind = LookupKind.Expr
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
                 | Some (PropertyItem psets) when isLookUpExpr -> 
                     let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
@@ -2283,13 +2283,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
              else NoResultsOrUsefulErrors
 
         match tyconSearch +++ ctorSearch +++ moduleSearch with
-        | Result [] -> 
-            let predictedPossibleTypes =
-                modref.ModuleOrNamespaceType.AllEntities
-                |> Seq.map (fun e -> e.DisplayName)
-                |> Set.ofSeq
-
-            raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,predictedPossibleTypes))
+        | Result [] -> raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,NoPredictions))
         | results -> AtMostOneResult id.idRange results
         
 /// Used to report a warning condition for the use of upper-case identifiers in patterns
