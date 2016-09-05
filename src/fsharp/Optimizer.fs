@@ -2034,7 +2034,7 @@ and OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) =
 //------------------------------------------------------------------------- 
 
 and OptimizeLetRec cenv env (binds,bodyExpr,m) =
-    let vs = binds |> FlatList.map (fun v -> v.Var) in 
+    let vs = binds |> FlatList.map (fun v -> v.Var) 
     let env = BindInternalValsToUnknown cenv vs env 
     let binds',env = OptimizeBindings cenv true env binds 
     let bodyExpr',einfo = OptimizeExpr cenv env bodyExpr 
@@ -2042,8 +2042,7 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
     // Eliminate any unused bindings, as in let case 
     let binds'',bindinfos = 
         let fvs0 = freeInExpr CollectLocals bodyExpr' 
-        let fvsN = FlatList.map (fst >> freeInBindingRhs CollectLocals) binds' 
-        let fvs  = FlatList.fold unionFreeVars fvs0 fvsN 
+        let fvs = FlatList.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) binds'
     // Trim out any optimization info that involves escaping values 
     let evalue' = AbstractExprInfoByVars (FlatList.toList vs,[]) einfo.Info 
@@ -2208,7 +2207,7 @@ and TryOptimizeVal cenv env (mustInline,valInfoForVal,m) =
     | SizeValue (_,detail) -> TryOptimizeVal cenv env (mustInline,detail,m) 
     | ValValue (v',detail) -> 
          // Inline values bound to other values immediately 
-         match  TryOptimizeVal cenv env (mustInline,detail,m) with 
+         match TryOptimizeVal cenv env (mustInline,detail,m) with 
           // Prefer to inline using the more specific info if possible 
           | Some e -> Some e
           //If the more specific info didn't reveal an inline then use the value 
@@ -2302,9 +2301,9 @@ and TakeAddressOfStructArgumentIfNeeded cenv (vref:ValRef) ty args m =
             wrap, (objArgAddress::rest)
         | _ -> 
             // no wrapper, args stay the same 
-            (fun x -> x), args
+            id, args
     else
-        (fun x -> x), args
+        id, args
 
 and DevirtualizeApplication cenv env (vref:ValRef) ty tyargs args m =
     let wrap,args = TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
@@ -2398,89 +2397,65 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_inner_vref && isRefTupleTy cenv.g ty ->
         let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_compare_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_compare_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_compare_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_compare_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericComparer cenv.g m :: args) m)            
-        | None -> None
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple2_vref ty tyargs (mkCallGetGenericComparer cenv.g m :: args) m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple3_vref ty tyargs (mkCallGetGenericComparer cenv.g m :: args) m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple4_vref ty tyargs (mkCallGetGenericComparer cenv.g m :: args) m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple5_vref ty tyargs (mkCallGetGenericComparer cenv.g m :: args) m)
+        | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_inner_vref && isRefTupleTy cenv.g ty ->
         let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_hash_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_hash_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_hash_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_hash_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericEREqualityComparer cenv.g m :: args) m)            
-        | None -> None
-
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple2_vref ty tyargs (mkCallGetGenericEREqualityComparer cenv.g m :: args) m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple3_vref ty tyargs (mkCallGetGenericEREqualityComparer cenv.g m :: args) m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple4_vref ty tyargs (mkCallGetGenericEREqualityComparer cenv.g m :: args) m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple5_vref ty tyargs (mkCallGetGenericEREqualityComparer cenv.g m :: args) m)
+        | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic for tuple types
     //  REVIEW (5537): GenericEqualityIntrinsic implements PER semantics, and we are replacing it to something also
     //                 implementing PER semantics. However GenericEqualityIntrinsic should implement ER semantics.
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_per_inner_vref && isRefTupleTy cenv.g ty ->
         let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_equals_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_equals_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_equals_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_equals_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)            
-        | None -> None
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple2_vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple3_vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple4_vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple5_vref ty tyargs (mkCallGetGenericPEREqualityComparer cenv.g m :: args) m)
+        | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_comparison_withc_inner_vref && isRefTupleTy cenv.g ty ->
-        let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_compare_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_compare_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_compare_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_compare_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        let tyargs = destRefTupleTy cenv.g ty
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple2_vref ty tyargs args m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple3_vref ty tyargs args m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple4_vref ty tyargs args m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_compare_withc_tuple5_vref ty tyargs args m)
+        | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_hash_withc_inner_vref && isRefTupleTy cenv.g ty ->
         let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_hash_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_hash_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_hash_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_hash_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple2_vref ty tyargs args m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple3_vref ty tyargs args m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple4_vref ty tyargs args m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_hash_withc_tuple5_vref ty tyargs args m)
+        | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic for tuple types
     | Expr.Val(v,_,_),[ty],_ when  valRefEq cenv.g v cenv.g.generic_equality_withc_inner_vref && isRefTupleTy cenv.g ty ->
-        let tyargs = destRefTupleTy cenv.g ty 
-        let vref = 
-            match tyargs.Length with 
-            | 2 -> Some cenv.g.generic_equals_withc_tuple2_vref 
-            | 3 -> Some cenv.g.generic_equals_withc_tuple3_vref 
-            | 4 -> Some cenv.g.generic_equals_withc_tuple4_vref 
-            | 5 -> Some cenv.g.generic_equals_withc_tuple5_vref 
-            | _ -> None
-        match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        let tyargs = destRefTupleTy cenv.g ty         
+        match tyargs.Length with 
+        | 2 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple2_vref ty tyargs args m)
+        | 3 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple3_vref ty tyargs args m)
+        | 4 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple4_vref ty tyargs args m)
+        | 5 -> Some (DevirtualizeApplication cenv env cenv.g.generic_equals_withc_tuple5_vref ty tyargs args m)
+        | _ -> None
         
 
     // Calls to LanguagePrimitives.IntrinsicFunctions.UnboxGeneric can be optimized to calls to UnboxFast when we know that the 
@@ -2710,7 +2685,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals body'
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
-                 UnknownValue
+                  UnknownValue
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (body',bodyty)
                   CurriedLambdaValue (lambdaId,arities,bsize,expr2,ety) 
