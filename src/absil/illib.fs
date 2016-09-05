@@ -780,6 +780,7 @@ module NameMap =
     let exists f m = Map.foldBack (fun x y sofar -> sofar || f x y) m false
     let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
     let ofList l : NameMap<'T> = Map.ofList l
+    let ofSeq l : NameMap<'T> = Map.ofSeq l
     let ofFlatList (l:FlatList<_>) : NameMap<'T> = FlatList.toMap l
     let toList (l: NameMap<'T>) = Map.toList l
     let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2

@@ -467,18 +467,20 @@ let rec BindValsInModuleOrNamespace cenv (mval:LazyModuleInfo) env =
     let env = (env, mval.ValInfos.Entries) ||> Seq.fold (fun env (v:ValRef, vval) -> BindExternalLocalVal cenv v.Deref vval env) 
     env
 
-let BindInternalValToUnknown cenv v env = 
+let inline BindInternalValToUnknown cenv v env = 
 #if CHECKED
     BindInternalLocalVal cenv v UnknownValue env
 #else
-    ignore (cenv,v)
+    ignore cenv 
+    ignore v
     env
 #endif
-let BindInternalValsToUnknown cenv vs env = 
+let inline BindInternalValsToUnknown cenv vs env = 
 #if CHECKED
     List.foldBack (BindInternalValToUnknown cenv) vs env
 #else
-    ignore (cenv,vs)
+    ignore cenv
+    ignore vs
     env
 #endif
 
@@ -2661,7 +2663,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
     match e with 
     | Expr.Lambda (lambdaId,_,_,_,_,m,_)  
     | Expr.TyLambda(lambdaId,_,_,m,_) ->
-        let isTopLevel = Option.isSome vspec && vspec.Value.IsCompiledAsTopLevel
         let tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo e
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v,topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
@@ -2715,7 +2716,12 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                   CurriedLambdaValue (lambdaId,arities,bsize,expr2,ety) 
                   
 
-        expr', { TotalSize=bsize + (if isTopLevel then methodDefnTotalSize else closureTotalSize) (* estimate size of new syntactic closure - expensive, in contrast to a method *)
+        let estimatedSize = 
+            match vspec with
+            | Some v when v.IsCompiledAsTopLevel -> methodDefnTotalSize
+            | _ -> closureTotalSize
+
+        expr', { TotalSize=bsize + estimatedSize (* estimate size of new syntactic closure - expensive, in contrast to a method *)
                  FunctionSize=1 
                  HasEffect=false
                  MightMakeCriticalTailcall = false
@@ -2739,9 +2745,10 @@ and OptimizeExprsThenConsiderSplits cenv env exprs =
     | [] -> NoExprs 
     | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
-and OptimizeFlatExprsThenConsiderSplits cenv env (exprs:FlatExprs) = 
-    if FlatList.isEmpty exprs then NoFlatExprs
-    else OptimizeFlatList (OptimizeExprThenConsiderSplit cenv env) exprs
+and OptimizeFlatExprsThenConsiderSplits cenv env exprs = 
+    match exprs with 
+    | [] -> NoFlatExprs
+    | _ -> OptimizeFlatList (OptimizeExprThenConsiderSplit cenv env) exprs
 
 and OptimizeExprThenReshapeAndConsiderSplit cenv env (shape,e) = 
     OptimizeExprThenConsiderSplit cenv env (ReshapeExpr cenv (shape,e))
@@ -3072,7 +3079,7 @@ and OptimizeModuleExpr cenv env x =
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)),
                                               entities= mtyp.AllEntities)
-                mtyp.ModuleAndNamespaceDefinitions |> List.iter (fun mspec -> elimModSpec  mspec)
+                mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
@@ -3112,16 +3119,22 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
     | TMDefRec(isRec,tycons,mbinds,m) -> 
         let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
         let mbindInfos,(env,bindInfosColl) = OptimizeModuleBindings cenv (env,bindInfosColl) mbinds
-        let mbinds,minfos = List.unzip mbindInfos
-        let binds = minfos |> List.choose (function Choice1Of2 (x,_) -> Some x | _ -> None)
-        let binfos = minfos |> List.choose (function Choice1Of2 (_,x) -> Some x | _ -> None)
-        let minfos = minfos |> List.choose (function Choice2Of2 x -> Some x | _ -> None)
-
+        let mbinds = List<_>()
+        let results = List<_>()
+        let minfos = List<_>()
+        for mbind,minfo in mbindInfos do
+            mbinds.Add mbind |> ignore
+            match minfo with
+            | Choice1Of2 (bind,binfo) ->
+                mkValBind bind (mkValInfo binfo bind.Var)
+                |> results.Add
+                |> ignore
+            | Choice2Of2 x -> minfos.Add x |> ignore
         
           (* REVIEW: Eliminate let bindings on the way back up *)
-        (TMDefRec(isRec,tycons,mbinds,m),
-         notlazy { ValInfos= ValInfos(FlatList.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
-                   ModuleOrNamespaceInfos = NameMap.ofList minfos}),
+        (TMDefRec(isRec,tycons,Seq.toList mbinds,m),
+         notlazy { ValInfos = ValInfos(results) 
+                   ModuleOrNamespaceInfos = NameMap.ofSeq minfos}),
          (env,bindInfosColl)
     | TMAbstract(mexpr) -> 
         let mexpr,info = OptimizeModuleExpr cenv env mexpr
@@ -3132,7 +3145,7 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
           (* REVIEW: Eliminate unused let bindings from modules *)
         (TMDefLet(bind',m),
          notlazy { ValInfos=ValInfos [mkValBind bind (mkValInfo binfo bind.Var)] 
-                   ModuleOrNamespaceInfos = NameMap.ofList []}),
+                   ModuleOrNamespaceInfos = NameMap.empty }),
         (env ,([bindInfo]::bindInfosColl))
 
     | TMDefDo(e,m)  ->
