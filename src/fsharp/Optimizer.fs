@@ -2760,7 +2760,8 @@ and ReshapeExpr cenv (shape,e) =
   match shape,e with 
   | TupleValue(subshapes), Expr.Val(_vref,_vFlags,m) ->
       let tinst = destRefTupleTy cenv.g (tyOfExpr cenv.g e)
-      mkRefTupled cenv.g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet cenv.g (tupInfoRef,e,tinst,i,m))) (Array.toList subshapes)) tinst
+      let subshapes = Array.toList subshapes
+      mkRefTupled cenv.g m (List.mapi (fun i subshape -> ReshapeExpr cenv (subshape,mkTupleFieldGet cenv.g (tupInfoRef,e,tinst,i,m))) subshapes) tinst
   | _ ->  
       e
 
