@@ -2875,8 +2875,7 @@ and OptimizeDecisionTree cenv env m x =
             let info = CombineValueInfosUnknown [rinfo;binfo]
             // try to fold the let-binding into a single result expression
             match rest with 
-            | TDSuccess(es,n) when es.Length = 1 -> 
-                let e = es.[0]
+            | TDSuccess([e],n) ->
                 let e,_adjust = TryEliminateLet cenv env bind e m 
                 TDSuccess(FlatList.one e,n),info
             | _ -> 
