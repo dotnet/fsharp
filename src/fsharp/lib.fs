@@ -178,14 +178,11 @@ module ListAssoc =
 //------------------------------------------------------------------------
 
 module ListSet = 
-    (* NOTE: O(n)! *)
-    let rec contains f x l = 
-        match l with 
-        | [] -> false
-        | x'::t -> f x x' || contains f x t
+    let inline contains f x l = List.exists (f x) l
 
     (* NOTE: O(n)! *)
     let insert f x l = if contains f x l then l else x::l
+
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
         | _, [] -> l1
