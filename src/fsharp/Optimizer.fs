@@ -570,9 +570,11 @@ let GetInfoForNonLocalVal cenv env (vref:ValRef) =
 
 let GetInfoForVal cenv env m (vref:ValRef) =  
     let res = 
-        match vref.IsLocalRef with 
-        | true -> GetInfoForLocalValue cenv env vref.binding m
-        | false -> GetInfoForNonLocalVal cenv env vref
+        if vref.IsLocalRef then
+            GetInfoForLocalValue cenv env vref.binding m
+        else
+            GetInfoForNonLocalVal cenv env vref
+
     check (* "its stored value was incomplete" m *) vref res |> ignore
     res
 
@@ -2640,7 +2642,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
                     | None -> 
                     match env.functionVal with 
                     | Some (_v,i) ->  numArgs > i.NumCurriedArgs
-                    | None -> true // over-applicaiton of a known function, which presumably returns a function. This counts as an indirect call
+                    | None -> true // over-application of a known function, which presumably returns a function. This counts as an indirect call
                  else
                     true // application of a function that may make a critical tailcall
                 
