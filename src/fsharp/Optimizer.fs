@@ -2582,22 +2582,21 @@ and TryInlineApplication cenv env (_f0',finfo) (tyargs: TType list,args: Expr li
 //------------------------------------------------------------------------- 
 
 and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
-    let f0',finfo = OptimizeExpr cenv env f0 
     // trying to devirtualize
     match TryDevirtualizeApplication cenv env (f0,tyargs,args,m) with 
     | Some res -> 
         // devirtualized
         res
     | None -> 
-
-    match TryInlineApplication cenv env (f0',finfo) (tyargs,args,m) with 
+    let newf0,finfo = OptimizeExpr cenv env f0
+    match TryInlineApplication cenv env (newf0,finfo) (tyargs,args,m) with 
     | Some res -> 
         // inlined
         res
     | None -> 
 
     let shapes = 
-        match f0' with 
+        match newf0 with 
         | Expr.Val(vref,_,_) ->
             match vref.ValReprInfo with
             | Some(ValReprInfo(_,detupArgsL,_)) ->
@@ -2614,20 +2613,20 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
             | _ -> args |> List.map (fun arg -> UnknownValue,arg)     
         | _ -> args |> List.map (fun arg -> UnknownValue,arg) 
 
-    let args',arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
+    let newArgs,arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
     // beta reducing
-    let expr' = MakeApplicationAndBetaReduce cenv.g (f0',f0ty, [tyargs],args',m) 
+    let newExpr = MakeApplicationAndBetaReduce cenv.g (newf0,f0ty, [tyargs],newArgs,m) 
     
-    match f0', expr' with 
+    match newf0, newExpr with 
     | (Expr.Lambda _ | Expr.TyLambda _), Expr.Let _ -> 
        // we beta-reduced, hence reoptimize 
-        OptimizeExpr cenv env expr'
+        OptimizeExpr cenv env newExpr
     | _ -> 
         // regular
 
         // Determine if this application is a critical tailcall
         let mayBeCriticalTailcall = 
-            match f0' with 
+            match newf0 with 
             | KnownValApp(vref,_typeArgs,otherArgs)   ->
 
                  // Check if this is a call to a function of known arity that has been inferred to not be a critical tailcall when used as a direct call
@@ -2638,7 +2637,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
                      (let valInfoForVal = GetInfoForVal cenv env m vref  in valInfoForVal.ValMakesNoCriticalTailcalls) ||
                      (match env.functionVal with | None -> false | Some (v,_) -> valEq vref.Deref v)
                  if doesNotMakeCriticalTailcall then
-                    let numArgs = otherArgs.Length + args'.Length
+                    let numArgs = otherArgs.Length + newArgs.Length
                     match vref.ValReprInfo with 
                     | Some i -> numArgs > i.NumCurriedArgs 
                     | None -> 
@@ -2652,11 +2651,11 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
                 // All indirect calls (calls to unknown functions) are assumed to be critical tailcalls 
                 true
 
-        expr', { TotalSize=finfo.TotalSize + AddTotalSizes arginfos
-                 FunctionSize=finfo.FunctionSize + AddFunctionSizes arginfos
-                 HasEffect=true
-                 MightMakeCriticalTailcall = mayBeCriticalTailcall
-                 Info=ValueOfExpr expr' }
+        newExpr, { TotalSize=finfo.TotalSize + AddTotalSizes arginfos
+                   FunctionSize=finfo.FunctionSize + AddFunctionSizes arginfos
+                   HasEffect=true
+                   MightMakeCriticalTailcall = mayBeCriticalTailcall
+                   Info=ValueOfExpr newExpr }
 
 //-------------------------------------------------------------------------
 // Optimize/analyze a lambda expression
@@ -3122,23 +3121,16 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
     | TMDefRec(isRec,tycons,mbinds,m) -> 
         let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
         let mbindInfos,(env,bindInfosColl) = OptimizeModuleBindings cenv (env,bindInfosColl) mbinds
-        let mbinds = List<_>()
-        let results = List<_>()
-        let minfos = List<_>()
-        for mbind,minfo in mbindInfos do
-            mbinds.Add mbind |> ignore
-            match minfo with
-            | Choice1Of2 (bind,binfo) ->
-                mkValBind bind (mkValInfo binfo bind.Var)
-                |> results.Add
-                |> ignore
-            | Choice2Of2 x -> minfos.Add x |> ignore
+        let mbinds,minfos = List.unzip mbindInfos
+        let binds = minfos |> List.choose (function Choice1Of2 (x,_) -> Some x | _ -> None)
+        let binfos = minfos |> List.choose (function Choice1Of2 (_,x) -> Some x | _ -> None)
+        let minfos = minfos |> List.choose (function Choice2Of2 x -> Some x | _ -> None)
         
-          (* REVIEW: Eliminate let bindings on the way back up *)
-        (TMDefRec(isRec,tycons,Seq.toList mbinds,m),
-         notlazy { ValInfos = ValInfos(results) 
-                   ModuleOrNamespaceInfos = NameMap.ofSeq minfos}),
-         (env,bindInfosColl)
+        (* REVIEW: Eliminate let bindings on the way back up *)
+        (TMDefRec(isRec,tycons,mbinds,m),
+         notlazy { ValInfos = ValInfos(FlatList.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
+                   ModuleOrNamespaceInfos = NameMap.ofList minfos}),
+        (env,bindInfosColl)
     | TMAbstract(mexpr) -> 
         let mexpr,info = OptimizeModuleExpr cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
