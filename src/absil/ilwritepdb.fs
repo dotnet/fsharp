@@ -249,6 +249,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
             index.Add(doc.File, handle)
         index
 
+    let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
     metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
     info.Methods |> Array.iteri (fun _i minfo ->
         let docHandle, sequencePointBlob =
@@ -272,26 +273,28 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
             // If part of the method body is in another document returns nil handle.
             let tryGetSingleDocumentIndex =
                 let mutable singleDocumentIndex = 0
-                for i in 1 .. sps.Length - 1 do
+                for i in 0 .. sps.Length - 1 do
                     let index = sps.[i].Document
                     if index <> singleDocumentIndex then 
                         singleDocumentIndex <- index
                 singleDocumentIndex
 
-            if sps.Length = 0 then 
+            // Filter out feefee (Hidden) sequence points
+            let sps = sps |> Array.filter(fun sp -> sp.Line <> 0xfeefee && sp.EndLine <> 0xfeefee)
+
+            if sps.Length = 0 then
                 Unchecked.defaultof<DocumentHandle>, Unchecked.defaultof<BlobHandle>
             else
-                let builder = new BlobBuilder()
-                builder.WriteCompressedInteger(minfo.LocalSignatureToken)
-
                 let mutable previousNonHiddenStartLine = -1
                 let mutable previousNonHiddenStartColumn = -1
                 let mutable previousDocumentIndex = -1
                 let mutable singleDocumentIndex = tryGetSingleDocumentIndex
                 let mutable currentDocumentIndex = previousDocumentIndex
 
-                for i in 0 .. (sps.Length - 1) do
+                let builder = new BlobBuilder()
+                builder.WriteCompressedInteger(minfo.LocalSignatureToken)
 
+                for i in 0 .. (sps.Length - 1) do
                     if previousDocumentIndex <> currentDocumentIndex then
                         // optional document in header or document record:
                         if previousDocumentIndex <> -1   then
@@ -306,16 +309,9 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
                     else
                         builder.WriteCompressedInteger(sps.[i].Offset)
 
-                        // F# does not support hidden sequence points yet !!!
-                        // if (sequencePoints[i].IsHidden)
-                        // {
-                        //     builder.WriteInt16(0);
-                        //     continue;
-                        // }
-
-                    let deltaLines = sps.[i].EndLine - sps.[i].Line;
-                    let deltaColumns = sps.[i].EndColumn - sps.[i].Column;
-                    builder.WriteCompressedInteger(deltaLines);
+                    let deltaLines = sps.[i].EndLine - sps.[i].Line
+                    let deltaColumns = sps.[i].EndColumn - sps.[i].Column
+                    builder.WriteCompressedInteger(deltaLines)
 
                     if deltaLines = 0 then 
                         builder.WriteCompressedInteger(deltaColumns)
@@ -335,23 +331,30 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
 
-        // Write the scopes 
-        let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
+        // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
-        let rec writePdbScope top scope =
-            if top || scope.Locals.Length <> 0 || scope.Children.Length <> 0 then 
-                lastLocalVariableHandle <- nextHandle lastLocalVariableHandle
+        let rec writePdbScope scope =   
+            if scope.Children.Length = 0 then
                 metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
-                                       Unchecked.defaultof<ImportScopeHandle>, 
-                                       lastLocalVariableHandle, 
-                                       Unchecked.defaultof<LocalConstantHandle>, 
-                                       scope.StartOffset, 
-                                       scope.EndOffset - scope.StartOffset) |>ignore
+                                        Unchecked.defaultof<ImportScopeHandle>, 
+                                        nextHandle lastLocalVariableHandle, 
+                                        Unchecked.defaultof<LocalConstantHandle>, 
+                                        0, 
+                                        scope.EndOffset - scope.StartOffset) |>ignore
+            else
+                metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
+                                        Unchecked.defaultof<ImportScopeHandle>, 
+                                        nextHandle lastLocalVariableHandle, 
+                                        Unchecked.defaultof<LocalConstantHandle>, 
+                                        scope.StartOffset, 
+                                        scope.EndOffset - scope.StartOffset) |>ignore
+
                 for localVariable in scope.Locals do
                     lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
-                scope.Children |> Array.iter (writePdbScope false)
 
-        writePdbScope true minfo.RootScope
+                scope.Children |> Array.iter (writePdbScope)
+
+        writePdbScope minfo.RootScope
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore)
 
     let entryPoint =
