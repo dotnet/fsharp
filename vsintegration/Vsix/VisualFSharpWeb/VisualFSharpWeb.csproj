@@ -82,6 +82,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
+  <ImportGroup>
+    <Import Project="..\FSharpSnippets.targets" />
+  </ImportGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
       <Visible>False</Visible>

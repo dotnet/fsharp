@@ -270,6 +270,7 @@ module internal VsConstants =
 
     let cmdidGotoDecl = 936u // "Go To Declaration"
     let cmdidGotoRef = 1107u // "Go To Reference"
+    let cmdidInsertSnippet = 0x143u // "Insert Snippet"
     
     let IDM_VS_EDITOR_CSCD_OUTLINING_MENU = 773u // "Outlining"
     let ECMD_OUTLN_HIDE_SELECTION = 128u // "Hide Selection" - 
@@ -305,12 +306,16 @@ type internal FSharpViewFilter(mgr:CodeWindowManager,view:IVsTextView) =
                                                                    cmd = VsConstants.ECMD_OUTLN_STOP_HIDING_CURRENT) then false
             else true
 
-    override this.QueryCommandStatus(guidCmdGroup:byref<Guid>,cmd:uint32) =        
-        if this.IsSupportedCommand(&guidCmdGroup,cmd) then
-            base.QueryCommandStatus(&guidCmdGroup,cmd)
+    override this.QueryCommandStatus(guidCmdGroup:byref<Guid>,cmd:uint32) =
+        if guidCmdGroup = VsMenus.guidStandardCommandSet2K && cmd = VsConstants.cmdidInsertSnippet then
+            // snippets are explicitly allowed
+            QueryStatusResult.SUPPORTED ||| QueryStatusResult.ENABLED |> int
         else
-            // Hide the menu item. Just returning QueryStatusResult.NOTSUPPORTED does not work
-            QueryStatusResult.INVISIBLE ||| QueryStatusResult.SUPPORTED |> int
+            if this.IsSupportedCommand(&guidCmdGroup,cmd) then
+                base.QueryCommandStatus(&guidCmdGroup,cmd)
+            else
+                // Hide the menu item. Just returning QueryStatusResult.NOTSUPPORTED does not work
+                QueryStatusResult.INVISIBLE ||| QueryStatusResult.SUPPORTED |> int
 
         
 [<Guid(FSharpConstants.languageServiceGuidString)>]

@@ -537,6 +537,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                         this.source.OutliningEnabled = true;
                         break;
 
+                    case VsCommands2K.INSERTSNIPPET:
+                        var ep = GetExpansionProvider();
+                        if (ep != null)
+                        {
+                            ep.DisplayExpansionBrowser(TextView, SR.GetString(SR.InsertSnippet), new[] { "Expansion", "SurroundsWith" }, true, null, false);
+                        }
+
+                        break;
+
                 }
             }
             else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)

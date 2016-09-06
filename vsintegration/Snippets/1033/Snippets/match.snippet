@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets  xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>match</Title>
+			<Shortcut>match</Shortcut>
+			<Description>Code snippet for 'match' expression</Description>
+			<Author>Microsoft Corporation</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+				<SnippetType>SurroundsWith</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal>
+					<ID>expression</ID>
+					<Default>expr</Default>
+					<ToolTip>Expression</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>value</ID>
+					<Default>value</Default>
+					<ToolTip>Value</ToolTip>
+				</Literal>
+			</Declarations>
+			<Code Language="fsharp"><![CDATA[match $expression$ with
+| $value$ -> $end$]]>
+			</Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>

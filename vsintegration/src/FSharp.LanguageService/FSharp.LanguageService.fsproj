@@ -54,6 +54,7 @@
     <Compile Include="Intellisense.fs" />
     <Compile Include="BackgroundRequests.fs" />
     <Compile Include="FSharpLanguageService.fs" />
+    <Compile Include="ProvideCodeExpansionsAttribute.fs" />
     <Compile Include="FSharpPackage.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,15 @@
+use vs
+
+package name=Microsoft.FSharp.VSIX.$(VSSku)
+        version=4.1
+        vs.package.language=$(LocaleRegion)
+
+#
+# This file should be kept in sync with the "$(RepoRoot)\vsintegration\Vsix\FSharpSnippets.targets" file
+# and the "$(RepoRoot)\vsintegration\Snippets\1033\" directory.
+#
+
+folder "InstallDir:FSharp\Snippets\$(LocaleId)"
+  file source="$(SnippetsDir)\SnippetsIndex.xml"
+  folder "Snippets"
+    file source="$(SnippetsDir)\Snippets\match.snippet"

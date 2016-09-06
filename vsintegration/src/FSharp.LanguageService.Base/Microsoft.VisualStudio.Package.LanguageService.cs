@@ -55,6 +55,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService.Resources {
     internal const string TemplateNotPrepared = "TemplateNotPrepared";
     internal const string UnknownBuffer = "UnknownBuffer";
     internal const string UnrecognizedFilterFormat = "UnrecognizedFilterFormat";
+    internal const string InsertSnippet = "InsertSnippet";
 
         static SR loader = null;
         ResourceManager resources;

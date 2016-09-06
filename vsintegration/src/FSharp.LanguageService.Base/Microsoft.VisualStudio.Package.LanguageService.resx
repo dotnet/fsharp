@@ -175,4 +175,8 @@
     <value>Unrecognized filter format: {0}</value>
     <comment>ArgumentException</comment>
   </data>
+  <data name="InsertSnippet">
+    <value>Insert Snippet</value>
+    <comment>Shown as the prompt when inserting a code snippet.</comment>
+  </data>
 </root>

@@ -11,13 +11,14 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
 
-
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
 [<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
 type internal SVsSettingsPersistenceManager = class end
 
 [<Guid(FSharpConstants.packageGuidString)>]
+[<ProvideCodeExpansions(FSharpCommonConstants.languageServiceGuidString, false, 106s, "FSharp", @"Snippets\%LCID%\SnippetsIndex.xml")>]
+[<ProvideCodeExpansionPath("FSharp", "Description", @"Snippets\%LCID%\Snippets\")>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                          strLanguageName = FSharpConstants.fsharpLanguageName,
                          languageResourceID = 100,
