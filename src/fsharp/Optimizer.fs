@@ -2598,21 +2598,23 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
 
     let shapes = 
         match f0' with 
-        | Expr.Val(vref,_,_) when Option.isSome vref.ValReprInfo -> 
-            let (ValReprInfo(_kinds,detupArgsL,_)) = Option.get vref.ValReprInfo 
-            let nargs = (args.Length) 
-            let nDetupArgsL = detupArgsL.Length
-            let nShapes = min nargs nDetupArgsL 
-            let detupArgsShapesL = 
-                List.take  nShapes detupArgsL |> List.map (fun detupArgs -> 
-                    match detupArgs with 
-                    | [] | [_] -> UnknownValue
-                    | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
-            detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue
-            
-        | _ -> args |> List.map (fun _ -> UnknownValue) 
+        | Expr.Val(vref,_,_) ->
+            match vref.ValReprInfo with
+            | Some(ValReprInfo(_,detupArgsL,_)) ->
+                let nargs = args.Length
+                let nDetupArgsL = detupArgsL.Length
+                let nShapes = min nargs nDetupArgsL 
+                let detupArgsShapesL = 
+                    List.take nShapes detupArgsL 
+                    |> List.map (fun detupArgs -> 
+                        match detupArgs with 
+                        | [] | [_] -> UnknownValue
+                        | _ -> TupleValue(Array.ofList (List.map (fun _ -> UnknownValue) detupArgs))) 
+                List.zip (detupArgsShapesL @ List.replicate (nargs - nShapes) UnknownValue) args
+            | _ -> args |> List.map (fun arg -> UnknownValue,arg)     
+        | _ -> args |> List.map (fun arg -> UnknownValue,arg) 
 
-    let args',arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env (List.zip shapes args) 
+    let args',arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
     // beta reducing
     let expr' = MakeApplicationAndBetaReduce cenv.g (f0',f0ty, [tyargs],args',m) 
     
