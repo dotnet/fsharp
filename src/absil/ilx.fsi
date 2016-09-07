@@ -40,27 +40,21 @@ type IlxUnionHasHelpers =
    | SpecialFSharpOptionHelpers 
    
 type IlxUnionRef = 
-    | IlxUnionRef
-         of boxity: ILBoxity
-          * ILTypeRef
-          * IlxUnionAlternative[]
-          * bool (* cudNullPermitted *)
-          * IlxUnionHasHelpers (* cudHasHelpers *)
-          * bool (* cudVirtualTag *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *) * bool (* cudVirtualTag *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member EnclosingType     : ILType
-    member GenericArgs       : ILGenericArgs
-    member Alternatives      : IlxUnionAlternative list
+    member EnclosingType : ILType
+    member GenericArgs : ILGenericArgs
+    member Alternatives : IlxUnionAlternative list
     member AlternativesArray : IlxUnionAlternative[]
-    member Boxity            : ILBoxity
-    member TypeRef           : ILTypeRef 
-    member IsNullPermitted   : bool
-    member HasHelpers        : IlxUnionHasHelpers
-    member VirtualTag        : bool
-    member Alternative       : int -> IlxUnionAlternative
-    member FieldDef          : int -> int -> IlxUnionField
+    member Boxity : ILBoxity
+    member TypeRef : ILTypeRef 
+    member IsNullPermitted : bool
+    member HasHelpers : IlxUnionHasHelpers
+    member VirtualTag : bool
+    member Alternative : int -> IlxUnionAlternative
+    member FieldDef : int -> int -> IlxUnionField
 
 // -------------------------------------------------------------------- 
 // Closure references 

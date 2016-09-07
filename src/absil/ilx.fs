@@ -49,16 +49,16 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member x.EnclosingType     = let (IlxUnionSpec(IlxUnionRef(bx,tref,_,_,_,_),inst)) = x in mkILNamedTy bx tref inst
-    member x.Boxity            = let (IlxUnionSpec(IlxUnionRef(bx,_,_,_,_,_),_))       = x in bx 
-    member x.TypeRef           = let (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_,_),_))     = x in tref
-    member x.GenericArgs       = let (IlxUnionSpec(_,inst))                            = x in inst
-    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_,_,alts,_,_,_),_))     = x in alts
-    member x.IsNullPermitted   = let (IlxUnionSpec(IlxUnionRef(_,_,_,np,_,_),_))       = x in np
-    member x.HasHelpers        = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,b,_),_))        = x in b
-    member x.VirtualTag        = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,_,vt),_))       = x in vt
-    member x.Alternatives      = Array.toList x.AlternativesArray
-    member x.Alternative idx   = x.AlternativesArray.[idx]
+    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx,tref,_,_,_,_),inst)) = x in mkILNamedTy bx tref inst
+    member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx,_,_,_,_,_),_)) = x in bx 
+    member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_,_),_)) = x in tref
+    member x.GenericArgs = let (IlxUnionSpec(_,inst)) = x in inst
+    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_,_,alts,_,_,_),_)) = x in alts
+    member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_,_,_,np,_,_),_)) = x in np
+    member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,b,_),_)) = x in b
+    member x.VirtualTag = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,_,vt),_)) = x in vt
+    member x.Alternatives = Array.toList x.AlternativesArray
+    member x.Alternative idx = x.AlternativesArray.[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
 
 type IlxClosureLambdas = 

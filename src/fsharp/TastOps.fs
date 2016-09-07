@@ -7014,28 +7014,31 @@ let HasUseVirtualTagAttribute      g attribs = enum_CompilationRepresentationAtt
 let TyconHasUseNullAsTrueValueAttribute g (tycon:Tycon) = HasUseNullAsTrueValueAttribute g tycon.Attribs 
 let TyconHasUseVirtualTagAttribute      g (tycon:Tycon) = HasUseVirtualTagAttribute      g tycon.Attribs 
 
-let checkUseNullAsTrueValue (g:TcGlobals) (tycon:Tycon) additionalCheck =
+// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
+let CanHaveUseNullAsTrueValueAttribute (_g:TcGlobals) (tycon:Tycon) =
   (tycon.IsUnionTycon && 
    let ucs = tycon.UnionCasesArray
    (ucs.Length = 0 ||
-     (additionalCheck g tycon &&
+     (ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
+      ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+
+// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
+let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
+  (tycon.IsUnionTycon && 
+   let ucs = tycon.UnionCasesArray
+   (ucs.Length = 0 ||
+     (TyconHasUseNullAsTrueValueAttribute g tycon &&
       ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
       ucs |> Array.exists (fun uc -> not uc.IsNullary))))
 
-let checkUseVirtualTag (g:TcGlobals) (tycon:Tycon) additionalCheck =
-  // TODO: maybe there should be some conditions around use of virtual tag??
-  (tycon.IsUnionTycon && 
-     (additionalCheck g tycon))
+// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
+let CanHaveUseVirtualTagAttribute (_g:TcGlobals) (tycon:Tycon) =
+    tycon.IsUnionTycon
 
 // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-let CanHaveUseNullAsTrueValueAttribute (g:TcGlobals) (tycon:Tycon) = checkUseNullAsTrueValue g tycon (fun _ _ -> true)
-// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon)     = checkUseNullAsTrueValue g tycon TyconHasUseNullAsTrueValueAttribute
-
-// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-let CanHaveUseVirtualTagAttribute (g:TcGlobals) (tycon:Tycon) = checkUseVirtualTag g tycon (fun _ _ -> true)
-// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
-let IsUnionTypeWithUseVirtualTag (g:TcGlobals) (tycon:Tycon)  = checkUseVirtualTag g tycon TyconHasUseVirtualTagAttribute
+let IsUnionTypeWithUseVirtualTag (g:TcGlobals) (tycon:Tycon) =
+    tycon.IsUnionTycon &&
+    TyconHasUseVirtualTagAttribute g tycon
 
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
