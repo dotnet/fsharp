@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.LanguageService
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
@@ -9,6 +9,7 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Editor.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -17,6 +18,7 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
 open Microsoft.VisualStudio.LanguageServices.Implementation
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.FSharp.LanguageService
 
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
@@ -26,6 +28,13 @@ type internal SVsSettingsPersistenceManager = class end
 [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService, FSharpProjectSite>(package)
+
+    static let optionsCache = Dictionary<ProjectId, FSharpProjectOptions>()
+    static member GetOptions(projectId: ProjectId) =
+        if optionsCache.ContainsKey(projectId) then
+            Some(optionsCache.[projectId])
+        else
+            None
 
     override this.ContentTypeName = FSharpCommonConstants.FSharpContentTypeName
     override this.LanguageName = FSharpCommonConstants.FSharpLanguageName
@@ -40,6 +49,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         base.SetupNewTextView(view)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
 
+        // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
+        workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
+
         // Ensure that we have a project in the workspace for this document.
         let (_, buffer) = view.GetBuffer()
         let filename = VsTextLines.GetFilename buffer
@@ -51,6 +63,11 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 let site = siteProvider.GetProjectSite()
                 let projectFileName = site.ProjectFileName()
                 let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectFileName)
+
+                let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName())
+                if not (optionsCache.ContainsKey(projectId)) then
+                    optionsCache.Add(projectId, options)
+
                 if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
                     let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, projectFileName);
                     projectSite.Initialize(hier, site)                    
@@ -63,10 +80,6 @@ and [<Guid(FSharpCommonConstants.packageGuidString)>]
     
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
-    override this.Initialize() = 
-        base.Initialize()
-        this.EstablishDefaultSettingsIfMissing()
-
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
     
     override this.CreateLanguageService() = new FSharpLanguageService(this)
@@ -74,28 +87,3 @@ and [<Guid(FSharpCommonConstants.packageGuidString)>]
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
-    
-    /// ISettingsManager only implemented for VS 14.0+
-    /// In case custom VS profile settings for F# are not applied, explicitly set them here.
-    /// e.g. 'keep tabs' is the text editor default, but F# requires 'insert spaces'.
-    /// We specify our customizations in the General profile for VS, but we have found that in some cases,
-    /// those customizations are incorrectly ignored. So we take action if the setting has no current custom value.
-    member private this.EstablishDefaultSettingsIfMissing() =
-        #if !VS_VERSION_DEV12
-
-        let fsharpSpecificProfileSettings = [|
-            "TextEditor.F#.Insert Tabs", box false
-            "TextEditor.F#.Brace Completion", box true
-            "TextEditor.F#.Make URLs Hot", box false
-            "TextEditor.F#.Indent Style", box 1u |]
-
-        match this.GetService(typeof<SVsSettingsPersistenceManager>) with
-        | :? Microsoft.VisualStudio.Settings.ISettingsManager as settingsManager ->
-            for settingName,defaultValue in fsharpSpecificProfileSettings do
-                match settingsManager.TryGetValue(settingName) with
-                | Microsoft.VisualStudio.Settings.GetValueResult.Missing, _ ->
-                    settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
-                | _ -> ()
-        | _ -> ()
-
-        #endif

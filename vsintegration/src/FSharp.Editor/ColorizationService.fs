@@ -130,17 +130,18 @@ type internal FSharpColorizationService() =
 
     interface IEditorClassificationService with
         
-        member this.AddLexicalClassifications(text: SourceText, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            result.AddRange(FSharpColorizationService.GetColorizationData(text, textSpan, None, [], cancellationToken))
+        // Do not perform classification if we don't have project options (#defines matter)
+        member this.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
         member this.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             document.GetTextAsync(cancellationToken).ContinueWith(
                 fun (sourceTextTask: Task<SourceText>) ->
-                    let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-
-                    if sourceTextTask.Status = TaskStatus.RanToCompletion then
-                        result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, defines, cancellationToken))
+                    match FSharpLanguageService.GetOptions(document.Project.Id) with
+                    | Some(options) ->
+                        let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+                        if sourceTextTask.Status = TaskStatus.RanToCompletion then
+                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, defines, cancellationToken))
+                    | None -> ()
                 , cancellationToken)
 
         // FSROSLYNTODO: Due to issue 12732 on Roslyn side, semantic classification is tied to C#/VB only.
@@ -168,10 +169,6 @@ type internal FSharpColorizationService() =
             Task.Run(fun () -> Async.RunSynchronously(computation, cancellationToken = cancellationToken))
             *)
             Task.CompletedTask
-
-        member this.AdjustStaleClassification(text: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan =
-            let tokens = FSharpColorizationService.GetColorizationData(text, classifiedSpan.TextSpan, None, [], CancellationToken.None)
-            if tokens.Any() then
-                tokens.First()
-            else
-                new ClassifiedSpan(ClassificationTypeNames.WhiteSpace, classifiedSpan.TextSpan)
+            
+        // Do not perform classification if we don't have project options (#defines matter)
+        member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

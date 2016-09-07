@@ -63,16 +63,16 @@ type internal FSharpLanguageDebugInfoService() =
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
             let computation = async {
-                let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let textSpan = TextSpan.FromBounds(0, sourceText.Length)
-                let tokens = FSharpColorizationService.GetColorizationData(sourceText, textSpan, Some(document.Name), defines, cancellationToken)
-
-                return match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
-                       | None -> Unchecked.defaultof<DebugDataTipInfo>
-                       | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
+                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                | Some(options) ->
+                    let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let textSpan = TextSpan.FromBounds(0, sourceText.Length)
+                    let tokens = FSharpColorizationService.GetColorizationData(sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                    return match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, tokens) with
+                           | None -> Unchecked.defaultof<DebugDataTipInfo>
+                           | Some(textSpan) -> new DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
+                | None -> return Unchecked.defaultof<DebugDataTipInfo>
             }
             
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)

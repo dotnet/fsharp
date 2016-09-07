@@ -16,7 +16,7 @@ module ParamInfoStandardSettings =
     let standard40AssemblyRefs  = [| "System"; "System.Core"; "System.Numerics" |]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -2245,6 +2245,6 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
 
 // Context project system
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>] 
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
