@@ -80,7 +80,7 @@ tastTypeHasAssemblyCodeRepresentation,"The type '%s' has an inline assembly code
 255,tastUnexpectedByRef,"Unexpected use of a byref-typed variable"
 256,tastValueMustBeLocalAndMutable,"A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'"
 257,tastInvalidMutationOfConstant,"Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'."
-tastValueHasBeenCopied,"The value has been copied to ensure the original is not mutated by this operation"
+tastValueHasBeenCopied,"The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
 259,tastRecursiveValuesMayNotBeInConstructionOfTuple,"Recursively defined values cannot appear directly as part of the construction of a tuple value within a recursive binding"
 260,tastRecursiveValuesMayNotAppearInConstructionOfType,"Recursive values cannot appear directly as a construction of the type '%s' within a recursive binding. This feature has been removed from the F# language. Consider using a record instead."
 261,tastRecursiveValuesMayNotBeAssignedToNonMutableField,"Recursive values cannot be directly assigned to the non-mutable field '%s' of the type '%s' within a recursive binding. Consider using a mutable field instead."
@@ -1319,3 +1319,4 @@ tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a referenc
 3207,tcFixedNotAllowed,"Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'"
 3208,tcCouldNotFindOffsetToStringData,"Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression."
 3209,chkNoByrefReturnOfLocal,"The address of the variable '%s' cannot be used at this point. A method or function may not return the address of this local value."
+3210,tcNamedActivePattern,"%s is an active pattern and cannot be treated as a discriminated union case with named fields."

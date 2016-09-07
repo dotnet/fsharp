@@ -954,7 +954,7 @@ let unionCaseRefOrder =
 let mkFunTy d r = TType_fun (d,r)
 let (-->) d r = mkFunTy d r
 let mkForallTy d r = TType_forall (d,r)
-let tryMkForallTy d r = if isNil d then r else mkForallTy d r
+let tryMkForallTy d r = if List.isEmpty d then r else mkForallTy d r
 let (+->) d r = tryMkForallTy d r
 let mkIteratedFunTy dl r = List.foldBack (-->) dl r
 
@@ -1376,7 +1376,7 @@ let applyTys g functy (tyargs,argtys) =
 
 let formalApplyTys g functy (tyargs,args) = 
     reduceIteratedFunTy g
-      (if isNil tyargs then functy else snd (destForallTy g functy))
+      (if List.isEmpty tyargs then functy else snd (destForallTy g functy))
       args
 
 let rec stripFunTyN g n ty = 
@@ -1411,7 +1411,7 @@ let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     argtysl,rty
 
 let destTopForallTy g (ValReprInfo (ntps,_,_)) ty =
-    let tps,tau = (if isNil ntps then [],ty else tryDestForallTy g ty)
+    let tps,tau = (if List.isEmpty ntps then [],ty else tryDestForallTy g ty)
 #if CHECKED
     if tps.Length <> kinds.Length then failwith (sprintf "destTopForallTy: internal error, #tps = %d, #ntps = %d" (List.length tps) ntps);
 #endif
@@ -1426,7 +1426,7 @@ let GetTopValTypeInFSharpForm g (ValReprInfo(_,argInfos,retInfo) as topValInfo) 
 
 
 let IsCompiledAsStaticProperty g (v:Val) = 
-    (isSome v.ValReprInfo &&
+    (Option.isSome v.ValReprInfo &&
      match GetTopValTypeInFSharpForm g v.ValReprInfo.Value v.Type v.Range with 
      | [],[], _,_ when not v.IsMember -> true
      | _ -> false) 
@@ -1650,7 +1650,7 @@ let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_,_,parentFormalTy
     Option.map (instType (parentTyInst @ methTyInst)) formalRetTy
 
 let slotSigHasVoidReturnTy (TSlotSig(_,_,_,_,_,formalRetTy)) = 
-    isNone formalRetTy 
+    Option.isNone formalRetTy 
 
 let returnTyOfMethod g (TObjExprMethod((TSlotSig(_,parentTy,_,_,_,_) as ss),_,methFormalTypars,_,_,_)) =
     let tinst = argsOfAppTy g parentTy
@@ -2547,7 +2547,7 @@ let trimPathByDisplayEnv denv path =
         else None
     match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
     | Some s -> s
-    | None ->  if isNil path then "" else textOfPath path + "."
+    | None ->  if List.isEmpty path then "" else textOfPath path + "."
 
 
 let superOfTycon g (tycon:Tycon) = 
@@ -3163,14 +3163,14 @@ module DebugPrint = begin
                     |> List.filter (fun v -> not v.IsDispatchSlot)
                     |> List.filter (fun v -> not v.Deref.IsClassConstructor) 
                     // Don't print individual methods forming interface implementations - these are currently never exported 
-                    |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
+                    |> List.filter (fun v -> List.isEmpty (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
                 | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
             // if TTyconInterface, the iimpls should be printed as inheritted interfaces 
-            if (isNil adhoc && isNil iimpls) 
+            if List.isEmpty adhoc && List.isEmpty iimpls
             then emptyL 
             else 
                 let iimplsLs = iimpls |> List.map (fun (ty,_,_) -> wordL "interface" --- typeL ty)
@@ -3224,7 +3224,7 @@ module DebugPrint = begin
                             |> List.map (fun vref -> vspecAtBindL vref.Deref)
                     let vals  = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL "static" else emptyL) ^^ wordL "val" ^^ layoutRecdField f)
                     let alldecls = inherits @ vsprs @ vals
-                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
+                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> List.isEmpty alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL start @@-- aboveListL alldecls) @@ wordL "end"
             | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _                      -> wordL "(# ... #)"
@@ -3934,7 +3934,7 @@ let accFreevarsInTyconCache =  CheckCachability("accFreevarsInTycon", (fun opts 
 
 let accFreeVarsInTy opts ty fvs = accFreeVarsInTy_cache.Apply(opts,ty,fvs)
 let accFreeVarsInTys opts tys fvs = 
-    if isNil tys then fvs else accFreeVarsInTys_cache.Apply(opts,tys,fvs)
+    if List.isEmpty tys then fvs else accFreeVarsInTys_cache.Apply(opts,tys,fvs)
 let accFreevarsInTycon opts (tcr:TyconRef) acc = 
     match tcr.IsLocalRef with 
     | true -> accFreevarsInTyconCache.Apply(opts,tcr,acc)
@@ -3943,7 +3943,7 @@ let accFreevarsInVal opts v fvs = accFreevarsInValCache.Apply(opts,v,fvs)
 #else
 
 let accFreeVarsInTy  opts ty    acc = accFreeTyvars opts accFreeInType ty acc
-let accFreeVarsInTys opts tys   acc = if isNil tys then acc else accFreeTyvars opts accFreeInTypes tys acc
+let accFreeVarsInTys opts tys   acc = if List.isEmpty tys then acc else accFreeTyvars opts accFreeInTypes tys acc
 let accFreevarsInTycon opts tcref acc = accFreeTyvars opts accFreeTycon tcref acc
 let accFreevarsInVal   opts v     acc = accFreeTyvars opts accFreeInVal v acc
 #endif
@@ -4263,8 +4263,8 @@ let freeInModuleOrNamespace opts mdef = accFreeInModuleOrNamespace opts mdef emp
 let rec stripLambda (e,ty) = 
     match e with 
     | Expr.Lambda (_,ctorThisValOpt,baseValOpt,v,b,_,rty) -> 
-        if isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
-        if isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
+        if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
+        if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
         let (vs',b',rty') = stripLambda (b,rty)
         (v :: vs', b', rty') 
     | _ -> ([],e,ty)
@@ -4273,8 +4273,8 @@ let rec stripLambdaN n e =
     assert (n >= 0)
     match e with 
     | Expr.Lambda (_,ctorThisValOpt,baseValOpt,v,body,_,_) when n > 0 -> 
-        if isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
-        if isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
+        if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", e.Range));
+        if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", e.Range));
         let (vs,body',remaining) = stripLambdaN (n-1) body
         (v :: vs, body', remaining) 
     | _ -> ([],e,n)
@@ -4815,7 +4815,7 @@ and remapTyconExnInfo g tmenv inp =
 and remapMemberInfo g m topValInfo ty ty' tmenv x = 
     // The slotsig in the ImplementedSlotSigs is w.r.t. the type variables in the value's type. 
     // REVIEW: this is a bit gross. It would be nice if the slotsig was standalone 
-    assert (isSome topValInfo);
+    assert (Option.isSome topValInfo)
     let tpsOrig,_,_,_ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty m
     let tps,_,_,_ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty' m
     let renaming,_ = mkTyparToTyparRenaming tpsOrig tps 
@@ -5100,7 +5100,7 @@ let isExnFieldMutable ecref n =
     (recdFieldOfExnDefRefByIdx ecref n).IsMutable
 
 let useGenuineField (tycon:Tycon) (f:RecdField) = 
-    isSome f.LiteralValue || tycon.IsEnumTycon || f.rfield_secret || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
+    Option.isSome f.LiteralValue || tycon.IsEnumTycon || f.rfield_secret || (not f.IsStatic && f.rfield_mutable && not tycon.IsRecordTycon)
 
 let ComputeFieldName tycon f = 
     if useGenuineField tycon f then f.rfield_id.idText
@@ -5215,7 +5215,7 @@ let rec mkExprApplAux g f fty argsl m =
       match f with 
       | Expr.App(f',fty',tyargs,pargs,m2) 
              when
-                 (isNil pargs ||
+                 (List.isEmpty pargs ||
                   (match stripExpr f' with 
                    | Expr.Val(v,_,_) -> 
                        match v.ValReprInfo with 
@@ -5298,7 +5298,7 @@ let rec decisionTreeHasNonTrivialBindings tree =
         edges |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
-    | TDBind (_,t) -> isNone (targetOfSuccessDecisionTree t)
+    | TDBind (_,t) -> Option.isNone (targetOfSuccessDecisionTree t)
 
 // If a target has assignments and can only be reached through one 
 // branch (i.e. is "linear"), then transfer the assignments to the r.h.s. to be a "let". 
@@ -5315,7 +5315,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
         let rec accumulateTipsOfDecisionTree accBinds tree  =
             match tree with 
             | TDSwitch (_,edges,dflt,_) -> 
-                assert (isNil accBinds)  // No switches under bindings
+                assert (List.isEmpty accBinds)  // No switches under bindings
                 for edge in edges do accumulateTipsOfDecisionTree accBinds edge.CaseTree
                 match dflt with 
                 | None -> ()
@@ -6173,7 +6173,7 @@ let mkThrow m ty e = mkAsmExpr ([ IL.I_throw ],[], [e],[ty],m)
 let destThrow = function
     | Expr.Op (TOp.ILAsm([IL.I_throw],[ty2]),[],[e],m) -> Some (m,ty2,e)
     | _ -> None
-let isThrow x = isSome (destThrow x)
+let isThrow x = Option.isSome (destThrow x)
 
 // rethrow - parsed as library call - internally represented as op form.
 let mkReraiseLibCall g ty m = let ve,vt = typedExprForIntrinsic g m g.reraise_info in Expr.App(ve,vt,[ty],[mkUnit g m],m)
@@ -6691,7 +6691,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
 
             let exprForAllArgs = 
 
-                if isNil argTysWithNiceNames then 
+                if List.isEmpty argTysWithNiceNames then 
                     mkInvisibleLet appm cloVar exprWithActualTy exprForOtherArgs
                 else
                     let lambdaBuilders,binderBuilders,inpsAsArgs = 
@@ -6784,7 +6784,7 @@ let NormalizeAndAdjustPossibleSubsumptionExprs g inputExpr =
 // polymorphic things bound in complex matches at top level require eta expansion of the 
 // type function to ensure the r.h.s. of the binding is indeed a type function 
 let etaExpandTypeLambda g m tps (tm,ty) = 
-  if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm,ty),[(List.map mkTyparTy tps)],[],m),ty)
+  if List.isEmpty tps then tm else mkTypeLambda m tps (mkApps g ((tm,ty),[(List.map mkTyparTy tps)],[],m),ty)
 
 let AdjustValToTopVal (tmp:Val) parent valData =
         tmp.SetValReprInfo (Some valData);  
@@ -6925,7 +6925,7 @@ and tyargsEnc g (gtpsType,gtpsMethod) args =
      | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType,gtpsMethod)) args)) 
 
 let XmlDocArgsEnc g (gtpsType,gtpsMethod) argTs =
-  if isNil argTs then "" 
+  if List.isEmpty argTs then "" 
   else "(" + String.concat "," (List.map (typeEnc g (gtpsType,gtpsMethod)) argTs) + ")"
 
 let buildAccessPath (cp : CompilationPath option) =
@@ -6967,7 +6967,7 @@ let XmlDocSigOfVal g path (v:Val) =
         let tps,argInfos,_,_ = GetTopValTypeInCompiledForm g w v.Type v.Range
         let name = v.CompiledName
         let prefix =
-          if  w.NumCurriedArgs = 0 && isNil tps then "P:"
+          if  w.NumCurriedArgs = 0 && List.isEmpty tps then "P:"
           else "M:"
         [],tps,argInfos,prefix,path,name
   let argTs = argInfos |> List.concat |> List.map fst
@@ -7171,7 +7171,7 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo:ValMemberInf
     if isExtensionMember then false
     // Anything implementing a dispatch slot is compiled as an instance member
     elif membInfo.MemberFlags.IsOverrideOrExplicitImpl then true
-    elif nonNil membInfo.ImplementedSlotSigs then true
+    elif not (List.isEmpty membInfo.ImplementedSlotSigs) then true
     else 
         // Otherwise check attributes to see if there is an explicit instance or explicit static flag
         let explicitInstance,explicitStatic = 

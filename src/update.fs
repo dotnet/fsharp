@@ -59,36 +59,53 @@ let updateCmd envVars args = attempt {
     let processorArchitecture = WindowsPlatform.processorArchitecture envVars
     let x86_ProgramFiles = WindowsPlatform.x86ProgramFilesDirectory envVars processorArchitecture
 
-    let! windir = env "windir"
+    // if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64=%WindowsSDK_ExecutablePath_x64%
+    // if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86=%WindowsSDK_ExecutablePath_x86%
 
-    let REGEXE32BIT path value =
-        let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-        match hklm32 |> regQuery path value with
-        | Some (:? string as d) -> Some d
-        | Some _ | None -> None
+    let WINSDKNETFXTOOLS_X86, WINSDKNETFXTOOLS_X64 =
+        let EnvironmentPath var =
+            match env var () with
+            | Success x -> if Directory.Exists(x) then x else ""
+            | _ -> ""
+        let WindowsSDK_ExecutablePath_x64 = EnvironmentPath "WindowsSDK_ExecutablePath_x64"
+        let WindowsSDK_ExecutablePath_x86 = EnvironmentPath "WindowsSDK_ExecutablePath_x86"
+        if WindowsSDK_ExecutablePath_x86 <> "" || WindowsSDK_ExecutablePath_x64 <> "" then
+            WindowsSDK_ExecutablePath_x86,WindowsSDK_ExecutablePath_x64
+        else
+            let allWINSDKNETFXTOOLS = 
+                let REGEXE32BIT path value =
+                    let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
+                    match hklm32 |> regQuery path value with
+                    | Some (:? string as d) -> Some d
+                    | Some _ | None -> None
+                seq {
+                    //                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools"   "InstallationFolder"
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools"   "InstallationFolder"
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools"     "InstallationFolder"
 
-    let allWINSDKNETFXTOOLS = seq {
-    //                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
-    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
-    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
-    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
-    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" "InstallationFolder"
-        }
+                    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
+                    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
+                    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
+                    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+                    yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" "InstallationFolder"
+                }
 
-    let WINSDKNETFXTOOLS = match allWINSDKNETFXTOOLS |> Seq.tryPick id with Some sdk -> sdk | None -> ""
+            match allWINSDKNETFXTOOLS |> Seq.tryPick id with 
+            | Some sdk -> sdk, sdk + @"x64\"
+            | None -> "", ""
 
-    // set SN32="%WINSDKNETFXTOOLS%sn.exe"
-    let SN32 = WINSDKNETFXTOOLS/"sn.exe"
-    // set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
-    let SN64 = WINSDKNETFXTOOLS/"x64"/"sn.exe"
+    let SN32 = WINSDKNETFXTOOLS_X86+"sn.exe"
+    let SN64 = WINSDKNETFXTOOLS_X64+"sn.exe"
+
+
     // set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
-    let NGEN32 = windir/"Microsoft.NET"/"Framework"/"v4.0.30319"/"ngen.exe"
     // set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+    let! windir = env "windir"
+    let NGEN32 = windir/"Microsoft.NET"/"Framework"/"v4.0.30319"/"ngen.exe"
     let NGEN64 = windir/"Microsoft.NET"/"Framework64"/"v4.0.30319"/"ngen.exe"
 
     let checkResult = function CmdResult.ErrorLevel (msg, err) -> Failure (sprintf "%s. ERRORLEVEL %d" msg err) | CmdResult.Success -> Success ()
@@ -119,22 +136,28 @@ let updateCmd envVars args = attempt {
     let strongName (snExe: string -> Result<_,_>) = attempt {
         let all = 
             [ "FSharp.Core";
-            "FSharp.Build";
-            "FSharp.Compiler.Interactive.Settings";"FSharp.Compiler.Hosted";
-            "FSharp.Compiler";"FSharp.Compiler.Server.Shared";
-            "FSharp.Editor";
-            "FSharp.LanguageService";"FSharp.LanguageService.Base";"FSharp.LanguageService.Compiler";
-            "FSharp.ProjectSystem.Base";"FSharp.ProjectSystem.FSharp";"FSharp.ProjectSystem.PropertyPages";
-            "FSharp.VS.FSI";
-            "VisualFSharp.Unittests";
-            "VisualFSharp.Salsa" ]
+              "FSharp.Build";
+              "FSharp.Compiler.Interactive.Settings";
+              "FSharp.Compiler.Hosted";
+              "FSharp.Compiler";
+              "FSharp.Compiler.Server.Shared";
+              "FSharp.Editor";
+              "FSharp.LanguageService";
+              "FSharp.LanguageService.Base";
+              "FSharp.LanguageService.Compiler";
+              "FSharp.ProjectSystem.Base";
+              "FSharp.ProjectSystem.FSharp";
+              "FSharp.ProjectSystem.PropertyPages";
+              "FSharp.VS.FSI";
+              "VisualFSharp.Unittests";
+              "VisualFSharp.Salsa" ]
         for a in all do
             snExe (sprintf " -Vr %s,b03f5f7f11d50a3a" a)   |> ignore // ignore result - SN is not needed for tests to pass, and this fails without admin rights
 
         }
 
     do! strongName sn32
-        
+
     //if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     do! if processorArchitecture = AMD64 then
             //  %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a

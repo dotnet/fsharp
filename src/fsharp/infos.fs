@@ -369,7 +369,7 @@ type ValRef with
     member vref.IsDefiniteFSharpOverrideMember = 
         let membInfo = vref.MemberInfo.Value   
         let flags = membInfo.MemberFlags
-        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || nonNil membInfo.ImplementedSlotSigs)
+        not flags.IsDispatchSlot && (flags.IsOverrideOrExplicitImpl || not (List.isEmpty membInfo.ImplementedSlotSigs))
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
     member vref.IsFSharpExplicitInterfaceImplementation g = 
@@ -561,24 +561,26 @@ type ParamData =
 type ILFieldInit with 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
     static member FromProvidedObj m (v:obj) = 
-        if v = null then ILFieldInit.Null else
-        let objTy = v.GetType()
-        let v = if objTy.IsEnum then objTy.GetField("value__").GetValue(v) else v
-        match v with 
-        | :? single as i -> ILFieldInit.Single i
-        | :? double as i -> ILFieldInit.Double i
-        | :? bool as i -> ILFieldInit.Bool i
-        | :? char as i -> ILFieldInit.Char (uint16 i)
-        | :? string as i -> ILFieldInit.String i
-        | :? sbyte as i -> ILFieldInit.Int8 i
-        | :? byte as i -> ILFieldInit.UInt8 i
-        | :? int16 as i -> ILFieldInit.Int16 i
-        | :? uint16 as i -> ILFieldInit.UInt16 i
-        | :? int as i -> ILFieldInit.Int32 i
-        | :? uint32 as i -> ILFieldInit.UInt32 i
-        | :? int64 as i -> ILFieldInit.Int64 i
-        | :? uint64 as i -> ILFieldInit.UInt64 i
-        | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"),m))
+        match v with
+        | null -> ILFieldInit.Null
+        | _ ->
+            let objTy = v.GetType()
+            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue(v) else v
+            match v with 
+            | :? single as i -> ILFieldInit.Single i
+            | :? double as i -> ILFieldInit.Double i
+            | :? bool as i -> ILFieldInit.Bool i
+            | :? char as i -> ILFieldInit.Char (uint16 i)
+            | :? string as i -> ILFieldInit.String i
+            | :? sbyte as i -> ILFieldInit.Int8 i
+            | :? byte as i -> ILFieldInit.UInt8 i
+            | :? int16 as i -> ILFieldInit.Int16 i
+            | :? uint16 as i -> ILFieldInit.UInt16 i
+            | :? int as i -> ILFieldInit.Int32 i
+            | :? uint32 as i -> ILFieldInit.UInt32 i
+            | :? int64 as i -> ILFieldInit.Int64 i
+            | :? uint64 as i -> ILFieldInit.UInt64 i
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"),m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter. 
@@ -785,7 +787,7 @@ type ILMethInfo =
     member x.IsDllImport g = 
         match g.attrib_DllImportAttribute with
         | None -> false
-        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref  |> isSome
+        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref |> Option.isSome
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method. 
     /// An instance extension method returns one object argument.
@@ -1689,10 +1691,10 @@ type ILPropInfo =
         ILMethInfo(g,x.ILTypeInfo.ToType,None,mdef,[]) 
           
     /// Indicates if the IL property has a 'get' method
-    member x.HasGetter = isSome x.RawMetadata.GetMethod 
+    member x.HasGetter = Option.isSome x.RawMetadata.GetMethod 
 
     /// Indicates if the IL property has a 'set' method
-    member x.HasSetter = isSome x.RawMetadata.SetMethod 
+    member x.HasSetter = Option.isSome x.RawMetadata.SetMethod 
 
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static) 
@@ -1771,7 +1773,7 @@ type PropInfo =
     member x.HasGetter = 
         match x with
         | ILProp(_,x) -> x.HasGetter
-        | FSProp(_,_,x,_) -> isSome x 
+        | FSProp(_,_,x,_) -> Option.isSome x 
 #if EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanRead),m)
 #endif
@@ -1780,7 +1782,7 @@ type PropInfo =
     member x.HasSetter = 
         match x with
         | ILProp(_,x) -> x.HasSetter
-        | FSProp(_,_,_,x) -> isSome x 
+        | FSProp(_,_,_,x) -> Option.isSome x 
 #if EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanWrite),m)
 #endif
@@ -2218,7 +2220,7 @@ type EventInfo =
         | ILEvent(_,ILEventInfo(tinfo,edef)) -> 
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
             // declaring type.
-            if isNone edef.Type then error (nonStandardEventError x.EventName m)
+            if Option.isNone edef.Type then error (nonStandardEventError x.EventName m)
             ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] edef.Type.Value
 
         | FSEvent(g,p,_,_) -> 

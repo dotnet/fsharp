@@ -22,6 +22,7 @@
 //    - Booleans
 //    - Strings
 //    - Tuples
+//      struct Tuples
 //    - Lists and list processing
 //    - Classes
 //    - Generic classes
@@ -149,7 +150,29 @@ module Tuples =
     let tuple2 = (1, "fred", 3.1415)
 
     printfn "tuple1: %A    tuple2: %A" tuple1 tuple2
-    
+
+
+
+// ---------------------------------------------------------------
+//         Tuples (ordered sets of values)
+// ---------------------------------------------------------------
+
+module StructTuples = 
+
+    /// A simple tuple of integers
+    let tuple1 = struct (1, 2, 3)
+
+    /// A function that swaps the order of two values in a tuple. 
+    /// QuickInfo shows that the function is inferred to have a generic type.
+    let swapElems struct (a, b) = struct (b, a)
+
+    printfn "The result of swapping struct (1, 2) is %A" (swapElems struct (1,2))
+
+    /// A tuple consisting of an integer, a string, and a double-precision floating point number
+    let tuple2 = struct (1, "fred", 3.1415)
+
+    printfn "tuple1: %A    tuple2: %A" tuple1 tuple2
+
 
 
 // ---------------------------------------------------------------
@@ -598,7 +621,6 @@ module Events =
 
     // trigger event (note that sender argument should be set)
     eventForDelegateType.Trigger(null, EventArgs.Empty)
-
 
 
 

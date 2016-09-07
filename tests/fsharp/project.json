@@ -33,6 +33,7 @@
     "System.Threading.Thread": "4.0.0",
     "System.Threading.ThreadPool": "4.0.10",
     "System.Threading.Timer": "4.0.1",
+    "System.ValueTuple": "4.0.0-rc3-24212-01",
 
     "Microsoft.DiaSymReader.PortablePdb": "1.1.0",
     "Microsoft.DiaSymReader": "1.0.8",
