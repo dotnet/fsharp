@@ -38,8 +38,6 @@ let runningOnMono =
 
 let _ = if logging then dprintn "* warning: Il.logging is on"
 
-let isNil x = match x with [] -> true | _ -> false
-let nonNil x = match x with [] -> false | _ -> true
 let int_order = LanguagePrimitives.FastGenericComparer<int>
 
 let notlazy v = Lazy.CreateFromValue v
@@ -2639,7 +2637,7 @@ let rec rescopeILTypeSpecQuick scoref (tspec:ILTypeSpec) =
     let tref = tspec.TypeRef
     let tinst = tspec.GenericArgs
     let qtref = qrescope_tref scoref tref
-    if ILList.isEmpty tinst && isNone qtref then 
+    if ILList.isEmpty tinst && Option.isNone qtref then 
         None (* avoid reallocation in the common case *)
     else
         match qtref with 
@@ -4267,14 +4265,14 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
     let nargs = args.Length
     let nm = mref.Name
     let possibles = td.Methods.FindByNameAndArity (nm,nargs)
-    if isNil possibles then failwith ("no method named "+nm+" found in type "+td.Name);
+    if List.isEmpty possibles then failwith ("no method named " + nm + " found in type " + td.Name)
     match 
       possibles |> List.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
-          (md.Parameters,mref.ArgTypes) ||>  ILList.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
+          (md.Parameters,mref.ArgTypes) ||> ILList.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
-          r md.Return.Type = mref.ReturnType)  with 
+          r md.Return.Type = mref.ReturnType) with 
     | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)
     | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)

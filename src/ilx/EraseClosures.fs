@@ -179,7 +179,7 @@ let mkCallBlockForMultiValueApp cenv doTailCall (args',rty') =
 
 let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) = 
     let tyargsl,argtys,rstruct = stripSupportedAbstraction clospec.FormalLambdas
-    if nonNil tyargsl then failwith "mkMethSpecForClosureCall: internal error";
+    if not (List.isEmpty tyargsl) then failwith "mkMethSpecForClosureCall: internal error";
     let rty' = mkTyOfLambdas cenv rstruct
     let argtys' = typesOfILParamsList argtys
     let minst' = clospec.GenericArgs
@@ -237,7 +237,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                 // direct calls. 
                 match stripSupportedIndirectCall apps with 
                 // Type applications: REVIEW: get rid of curried tyapps - just tuple them 
-                | tyargs,[],_ when nonNil tyargs ->
+                | tyargs,[],_ when not (List.isEmpty tyargs) ->
                     // strip again, instantiating as we go.  we could do this while we count. 
                     let (revInstTyArgs, rest') = 
                         (([],apps), tyargs) ||> List.fold (fun (revArgsSoFar,cs) _  -> 
@@ -260,7 +260,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                     else instrs1 @ buildApp false loaders' rest' 
 
               // Term applications 
-                | [],args,rest when nonNil args -> 
+                | [],args,rest when not (List.isEmpty args) -> 
                     let precall,loaders' = computePreCall fst args.Length rest loaders
                     let isLast = (match rest with Apps_done _ -> true | _ -> false)
                     let rty  = mkTyOfApps cenv rest

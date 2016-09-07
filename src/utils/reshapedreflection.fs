@@ -83,7 +83,7 @@ module internal ReflectionAdapters =
         | _ -> raise (AmbiguousMatchException())
 
     let canUseAccessor (accessor : MethodInfo) nonPublic = 
-        box accessor <> null && (accessor.IsPublic || nonPublic)
+        isNotNull(box accessor) && (accessor.IsPublic || nonPublic)
 
     type System.Type with
         member this.GetTypeInfo() = IntrospectionExtensions.GetTypeInfo(this)
@@ -124,7 +124,7 @@ module internal ReflectionAdapters =
             let bindingFlags = defaultArg bindingFlags publicFlags
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredProperties else this.GetRuntimeProperties())
             |> Seq.filter (fun pi-> 
-                let mi = if pi.GetMethod <> null then pi.GetMethod else pi.SetMethod
+                let mi = match pi.GetMethod with | null -> pi.SetMethod | _ -> pi.GetMethod
                 if mi = null then false
                 else isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
@@ -179,8 +179,9 @@ module internal ReflectionAdapters =
 #if FX_RESHAPED_REFLECTION_CORECLR
         member this.InvokeMember(memberName, bindingFlags, _binder, target:obj, arguments:obj[], _cultureInfo) =
             let m = this.GetMethod(memberName, (arguments |> Seq.map(fun x -> x.GetType()) |> Seq.toArray), bindingFlags)
-            if m <> null then m.Invoke(target, arguments)
-            else raise <| System.MissingMethodException(String.Format("Method '{0}.{1}' not found.", this.FullName, memberName))
+            match m with
+            | null -> raise <| System.MissingMethodException(String.Format("Method '{0}.{1}' not found.", this.FullName, memberName))
+            | _ -> m.Invoke(target, arguments)
 #endif
         member this.IsGenericType = this.GetTypeInfo().IsGenericType
         member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition

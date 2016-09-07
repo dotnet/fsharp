@@ -559,34 +559,13 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+    // 'CustomMarshalers' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
         let fileContent = """
             #light
-            #r "mscorcfg"
+            #r "CustomMarshalers"
             """
         this.VerifyFSXNoErrorList(fileContent)
-
-    [<Test>]
-    [<Category("fsx closure")>]
-
-    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """
-            #light
-            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
-            """
-        this.VerifyFSXNoErrorList(fileContent)
-
-    [<Test>]
-    [<Category("fsx closure")>]
-    // Can be any assembly that is in AssemblyFolders but not AssemblyFoldersEx
-    member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFolders``() = 
-        let fileContent = """
-            #light
-            #r "Microsoft.SqlServer.SString"
-            """
-        this.VerifyFSXNoErrorList(fileContent) 
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -974,8 +953,8 @@ type UsingMSBuild() as this =
     [<Category("fsx closure")>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromGAC``() = 
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
-            """#r "mscorcfg" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
-            "#r \"mscor" "Global Assembly Cache"
+            """#r "CustomMarshalers" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
+            "#r \"Custo" ".NET Framework"
 
     [<Test>]
     [<Category("fsx closure")>]

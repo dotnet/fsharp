@@ -259,7 +259,20 @@ type AsyncType() =
             with :? System.OperationCanceledException -> return true
         }
 
-        Async.RunSynchronously(test()) |> Assert.IsTrue      
+        Async.RunSynchronously(test()) |> Assert.IsTrue   
+        
+    [<Test>]
+    member this.AwaitTaskCancellationUntyped () =
+        let test() = async {
+            let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
+            tcs.SetCanceled()
+            try 
+                do! Async.AwaitTask (tcs.Task :> Task)
+                return false
+            with :? System.OperationCanceledException -> return true
+        }
+
+        Async.RunSynchronously(test()) |> Assert.IsTrue    
         
     [<Test>]
     member this.TaskAsyncValueException () =

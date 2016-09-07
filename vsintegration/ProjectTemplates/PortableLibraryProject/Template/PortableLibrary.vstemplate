@@ -18,6 +18,7 @@
       <ProjectItem ReplaceParameters="true">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true">PortableLibrary1.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
+      <ProjectItem ReplaceParameters="false">packages.config</ProjectItem>
     </Project>
   </TemplateContent>
 </VSTemplate>

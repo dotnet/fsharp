@@ -135,8 +135,11 @@ let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
     let getMsbuildPath =
         // rem first see if we have got msbuild installed
         let mutable MSBuildToolsPath = envVars |> Map.tryFind "MSBuildToolsPath"
+        let VS150COMNTOOLS = match envVars |> Map.tryFind "VS150COMNTOOLS" with | Some x -> x | None -> ""
 
         // if exist "%X86_PROGRAMFILES%\MSBuild\15.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\15.0\Bin\
+        if VS150COMNTOOLS/".."/".."/"MSBuild"/"15.0"/"Bin"/"MSBuild.exe" |> fileExists then
+            MSBuildToolsPath <- Some (VS150COMNTOOLS/".."/".."/"MSBuild"/"15.0"/"Bin" |> Commands.pathAddBackslash)
         if x86_ProgramFiles/"MSBuild"/"15.0"/"Bin"/"MSBuild.exe" |> fileExists then
             MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"15.0"/"Bin" |> Commands.pathAddBackslash)
         if x86_ProgramFiles/"MSBuild"/"14.0"/"Bin"/"MSBuild.exe" |> fileExists then
@@ -329,8 +332,6 @@ let config envVars =
     match PROCESSOR_ARCHITECTURE with 
     | X86 -> () 
     | _ -> CORDIR <- CORDIR.Replace("Framework", "Framework64")
-
-
 
     let regQueryREG_SOFTWARE path value =
         let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)

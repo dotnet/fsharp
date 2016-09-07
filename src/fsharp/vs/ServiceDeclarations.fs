@@ -663,7 +663,7 @@ module internal ItemDescriptionsImpl =
                     NicePrint.outputTyconRef denv os ucinfo.TyconRef
                     bprintf os ".%s: "  
                         (DecompileOpName uc.Id.idText) 
-                    if not (isNil recd) then
+                    if not (List.isEmpty recd) then
                         NicePrint.outputUnionCases denv os recd
                         os.Append (" -> ") |> ignore
                     NicePrint.outputTy denv os rty )
@@ -864,7 +864,7 @@ module internal ItemDescriptionsImpl =
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i,x) 
                     |> Seq.toList
-                if nonNil namesToAdd then 
+                if not (List.isEmpty namesToAdd) then 
                     bprintf os "\n"
                 for i, txt in namesToAdd do
                     bprintf os "\n%s" ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt)
@@ -1243,7 +1243,7 @@ type FSharpDeclarationListItem(name, glyph:int, info) =
 
                 // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
                 // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
-                if task = null then
+                if isNull task then
                     // kick off the actual (non-cooperative) work
                     task <- System.Threading.Tasks.Task.Factory.StartNew(fun() -> 
                         let text = decl.DescriptionTextAsync |> Async.RunSynchronously

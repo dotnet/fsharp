@@ -1251,6 +1251,6 @@ module internal ExtensionTyping =
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
     let IsGeneratedTypeDirectReference (st: Tainted<ProvidedType>, m) =
-        st.PUntaint((fun st -> st.TryGetTyconRef() |> isNone), m)
+        st.PUntaint((fun st -> st.TryGetTyconRef() |> Option.isNone), m)
 
 #endif

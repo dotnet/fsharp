@@ -490,7 +490,10 @@ module internal PrintfImpl =
     let invariantCulture = System.Globalization.CultureInfo.InvariantCulture 
 
     let inline boolToString v = if v then "true" else "false"
-    let inline stringToSafeString v = if v = null then "" else v
+    let inline stringToSafeString v = 
+        match v with
+        | null -> ""
+        | _ -> v
 
     [<Literal>]
     let DefaultPrecision = 6
@@ -933,10 +936,7 @@ module internal PrintfImpl =
                 System.Diagnostics.Debug.Assert((i = n), "i = n")
                 buf.[i] <- ty
                 buf           
-        go ty 0
-    
-    [<Literal>]
-    let ContinuationOnStack = -1
+        go ty 0    
     
     type private PrintfBuilderStack() = 
         let args = Stack(10)
@@ -948,7 +948,7 @@ module internal PrintfImpl =
                 arr.[start + i] <- s.Pop()
             arr
         
-        member this.GetArgumentAndTypesAsArrays
+        member __.GetArgumentAndTypesAsArrays
             (
                 argsArraySize, argsArrayStartPos, argsArrayTotalCount, 
                 typesArraySize, typesArrayStartPos, typesArrayTotalCount 
@@ -957,7 +957,7 @@ module internal PrintfImpl =
             let typesArray = stackToArray typesArraySize typesArrayStartPos typesArrayTotalCount types
             argsArray, typesArray
 
-        member this.PopContinuationWithType() = 
+        member __.PopContinuationWithType() = 
             System.Diagnostics.Debug.Assert(args.Count = 1, "args.Count = 1")
             System.Diagnostics.Debug.Assert(types.Count = 1, "types.Count = 1")
             
@@ -966,7 +966,7 @@ module internal PrintfImpl =
 
             cont, contTy
 
-        member this.PopValueUnsafe() = args.Pop()
+        member __.PopValueUnsafe() = args.Pop()
 
         member this.PushContinuationWithType (cont : obj, contTy : Type) = 
             System.Diagnostics.Debug.Assert(this.IsEmpty, "this.IsEmpty")
@@ -980,17 +980,17 @@ module internal PrintfImpl =
 
             this.PushArgumentWithType(cont, contTy)
 
-        member this.PushArgument(value : obj) =
+        member __.PushArgument(value : obj) =
             args.Push value
 
-        member this.PushArgumentWithType(value : obj, ty) =
+        member __.PushArgumentWithType(value : obj, ty) =
             args.Push value
             types.Push ty
 
-        member this.HasContinuationOnStack(expectedNumberOfArguments) = 
+        member __.HasContinuationOnStack(expectedNumberOfArguments) = 
             types.Count = expectedNumberOfArguments + 1
 
-        member this.IsEmpty = 
+        member __.IsEmpty = 
             System.Diagnostics.Debug.Assert(args.Count = types.Count, "args.Count = types.Count")
             args.Count = 0
 
@@ -1001,25 +1001,30 @@ module internal PrintfImpl =
     type private PrintfBuilder<'S, 'Re, 'Res>() =
     
         let mutable count = 0
-
-        let verifyMethodInfoWasTaken (_mi : System.Reflection.MemberInfo) =
 #if DEBUG
-            if _mi = null then 
+        let verifyMethodInfoWasTaken (mi : System.Reflection.MemberInfo) =
+            if isNull mi then 
                 ignore (System.Diagnostics.Debugger.Launch())
 #else
-            ()
 #endif
             
         let buildSpecialChained(spec : FormatSpecifier, argTys : Type[], prefix : string, tail : obj, retTy) = 
             if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
+
                 let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
                 let args = [| box prefix; tail   |]
                 mi.Invoke(null, args)
             elif spec.TypeChar = 't' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let mi = mi.MakeGenericMethod([| retTy |])
                 let args = [| box prefix; tail |]
                 mi.Invoke(null, args)
@@ -1031,9 +1036,10 @@ module internal PrintfImpl =
                     let prefix = if spec.TypeChar = '%' then "PercentStarChained" else "StarChained"
                     let name = prefix + (string n)
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-                
+#if DEBUG                
                 verifyMethodInfoWasTaken mi
-                
+#else
+#endif                
                 let argTypes, args =
                     if spec.TypeChar = '%' then
                         [| retTy |], [| box prefix; tail |]
@@ -1048,13 +1054,19 @@ module internal PrintfImpl =
         let buildSpecialFinal(spec : FormatSpecifier, argTys : Type[], prefix : string, suffix : string) =
             if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let mi = mi.MakeGenericMethod(argTys.[1] : Type)
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
             elif spec.TypeChar = 't' then
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
             else
@@ -1065,8 +1077,10 @@ module internal PrintfImpl =
                     let prefix = if spec.TypeChar = '%' then "PercentStarFinal" else "StarFinal"
                     let name = prefix + (string n)
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-               
+#if DEBUG
                 verifyMethodInfoWasTaken mi
+#else
+#endif
 
                 let mi, args = 
                     if spec.TypeChar = '%' then 
@@ -1081,13 +1095,19 @@ module internal PrintfImpl =
 
         let buildPlainFinal(args : obj[], argTypes : Type[]) = 
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + (argTypes.Length.ToString()), NonPublicStatics)
+#if DEBUG
             verifyMethodInfoWasTaken mi
+#else
+#endif
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + ((argTypes.Length - 1).ToString()), NonPublicStatics)
+#if DEBUG
             verifyMethodInfoWasTaken mi
+#else
+#endif
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)   
 
@@ -1224,7 +1244,7 @@ module internal PrintfImpl =
                 else
                     buildPlain n prefix
                             
-        member this.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
+        member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
             parseFormatString s typeof<'T> :?> _, (2 * count + 1) // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
@@ -1288,23 +1308,23 @@ module internal PrintfImpl =
         let buf : string[] = Array.zeroCreate n
         let mutable ptr = 0
 
-        override this.Finalize() : 'Result = k (String.Concat(buf))
-        override this.Write(s : string) = 
+        override __.Finalize() : 'Result = k (String.Concat(buf))
+        override __.Write(s : string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
         override this.WriteT(s) = this.Write s
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
-        override this.Finalize() : 'Result = k ()
-        override this.Write(s : string) = ignore(buf.Append(s))
-        override this.WriteT(()) = ()
+        override __.Finalize() : 'Result = k ()
+        override __.Write(s : string) = ignore(buf.Append(s))
+        override __.WriteT(()) = ()
 
     type TextWriterPrintfEnv<'Result>(k, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        override this.Finalize() : 'Result = k()
-        override this.Write(s : string) = tw.Write s
-        override this.WriteT(()) = ()
+        override __.Finalize() : 'Result = k()
+        override __.Write(s : string) = tw.Write s
+        override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
         let formatter, n = Cache<_, _, _, _>.Get fmt
