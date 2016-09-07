@@ -524,6 +524,7 @@ let TypeTestUnnecessaryE() = DeclareResourceString("TypeTestUnnecessary","")
 let OverrideDoesntOverride1E() = DeclareResourceString("OverrideDoesntOverride1","%s")
 let OverrideDoesntOverride2E() = DeclareResourceString("OverrideDoesntOverride2","%s")
 let OverrideDoesntOverride3E() = DeclareResourceString("OverrideDoesntOverride3","%s")
+let OverrideDoesntOverride4E() = DeclareResourceString("OverrideDoesntOverride4","%s")
 let UnionCaseWrongArgumentsE() = DeclareResourceString("UnionCaseWrongArguments","%d%d")
 let UnionPatternsBindDifferentNamesE() = DeclareResourceString("UnionPatternsBindDifferentNames","")
 let RequiredButNotSpecifiedE() = DeclareResourceString("RequiredButNotSpecified","%s%s%s")
@@ -1144,15 +1145,32 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           Printf.bprintf os "%s" msg
       | OverrideDoesntOverride(denv,impl,minfoVirtOpt,g,amap,m) ->
           let sig1 = DispatchSlotChecking.FormatOverride denv impl
-          begin match minfoVirtOpt with 
+          match minfoVirtOpt with 
           | None -> 
               os.Append(OverrideDoesntOverride1E().Format sig1) |> ignore
-          | Some minfoVirt -> 
-              os.Append(OverrideDoesntOverride2E().Format sig1) |> ignore
-              let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
-              if sig1 <> sig2 then 
-                  os.Append(OverrideDoesntOverride3E().Format  sig2) |> ignore
-          end
+          | Some minfoVirt ->
+              // https://github.com/Microsoft/visualfsharp/issues/35 
+              // Improve error message when attempting to override generic return type with unit:
+              // we need to check if unit was used as a type argument
+              let rec hasUnitTType_app (types: TType list) =
+                  match types with
+                  | TType_app (maybeUnit, []) :: ts -> 
+                      match maybeUnit.TypeAbbrev with
+                      | Some ttype when Tastops.isUnitTy g ttype -> true
+                      | _ -> hasUnitTType_app ts
+                  | _ :: ts -> hasUnitTType_app ts
+                  | [] -> false
+
+              match minfoVirt.EnclosingType with
+              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+                  // match abstract member with 'unit' passed as generic argument
+                  os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
+              | _ -> 
+                  os.Append(OverrideDoesntOverride2E().Format sig1) |> ignore
+                  let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
+                  if sig1 <> sig2 then 
+                      os.Append(OverrideDoesntOverride3E().Format  sig2) |> ignore
+
       | UnionCaseWrongArguments (_,n1,n2,_) ->
           os.Append(UnionCaseWrongArgumentsE().Format n2 n1) |> ignore
       | UnionPatternsBindDifferentNames _ -> 
@@ -2565,8 +2583,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     clrRoot, (int v1, sprintf "v%d.%d" v1 v2), (v1=5us && v2=0us && v3=5us) // SL5 mscorlib is 5.0.5.0
                 | _ -> 
                     failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
-            with _ -> 
-                error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
+            with e ->
+                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
@@ -2626,8 +2644,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
                 let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
                 fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
-            with _ -> 
-                error(Error(FSComp.SR.buildCannotReadAssembly(filename),rangeStartup))
+            with e -> 
+                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
         | _ ->
             data.defaultFSharpBinariesDir
 
@@ -3252,7 +3270,7 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
             | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
 
-        let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespace(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedImplFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -3280,7 +3298,7 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
             | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
 
-        let modname = ComputeAnonModuleName (nonNil defs) defaultNamespace filename (trimRangeToLine m)
+        let modname = ComputeAnonModuleName (not (List.isEmpty defs)) defaultNamespace filename (trimRangeToLine m)
         SynModuleOrNamespaceSig(modname,false,true,defs,PreXmlDoc.Empty,[],None,m)
 
     | ParsedSigFileFragment.NamespaceFragment (lid,a,b,c,d,e,m)-> 
@@ -4969,7 +4987,7 @@ module private ScriptPreprocessClosure =
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
-            if isNil closureFiles  then  
+            if List.isEmpty closureFiles then  
                 closureFiles 
             else 
                 match List.frontAndBack closureFiles with
@@ -5232,7 +5250,7 @@ let TypeCheckOneInputEventually
                 // Check if we've got an interface for this fragment 
                 let rootSigOpt = rootSigs.TryFind(qualNameOfFile)
 
-                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (isSome rootSigOpt)
+                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (Option.isSome rootSigOpt)
 
                 // Check if we've already seen an implementation for this fragment 
                 if Zset.contains qualNameOfFile rootImpls then 
@@ -5244,7 +5262,7 @@ let TypeCheckOneInputEventually
                 let! topAttrs,implFile,tcEnvAtEnd = 
                     TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
-                let hadSig = isSome rootSigOpt
+                let hadSig = Option.isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
 
                 if verbose then  dprintf "done TypeCheckOneImplFile...\n"

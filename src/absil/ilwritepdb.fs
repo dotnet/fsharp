@@ -95,31 +95,34 @@ type idd =
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
+      iddTimestamp: int32;
       iddData: byte[];}
 
 let magicNumber = 0x53445352L
-let pdbGetDebugInfo (mvid:byte[]) (filepath:string) = 
+let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) = 
     let iddDataBuffer = 
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
 
-        let offset, size = 0, sizeof<int32>                                     // Magic Number RSDS dword: 0x53445352L
+        let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
         Buffer.BlockCopy(BitConverter.GetBytes(magicNumber), 0, buffer, offset, size)
 
-        let offset, size = offset + size, mvid.Length                           // mvid Guid
+        let struct (offset, size) = struct (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
 
-        let offset, size = offset + size, sizeof<int32>                         // # of pdb files generated (1)
+        let struct (offset, size) = struct (offset + size, sizeof<int32>)       // # of pdb files generated (1)
         Buffer.BlockCopy(BitConverter.GetBytes(1), 0, buffer, offset, size)
 
-        let offset = offset + size                                              // Path to pdb string
-        Buffer.BlockCopy(path, 0, buffer, offset, path.Length)
+        let struct (offset, size) = struct (offset + size, path.Length)         // Path to pdb string
+        Buffer.BlockCopy(path, 0, buffer, offset, size)
+
         buffer
 
     { iddCharacteristics = 0x0;                                                 // Reserved
       iddMajorVersion = 0x0;                                                    // VersionMajor should be 0
       iddMinorVersion = 0x0;                                                    // VersionMinor should be 0
       iddType = 0x2;                                                            // IMAGE_DEBUG_TYPE_CODEVIEW
+      iddTimestamp = timestamp;
       iddData = iddDataBuffer }                                                 // Path name to the pdb file when built
 
 // Document checksum algorithms
@@ -205,10 +208,9 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
-        if info.Documents = null then 
-            Array.empty<PdbDocumentData>
-        else
-            info.Documents
+        match info.Documents with
+        | null -> Array.empty<PdbDocumentData>
+        | _ -> info.Documents
 
     let metadata = MetadataBuilder()
     let serializeDocumentName (name:string) =
@@ -216,7 +218,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
- 
+
         let writer = new BlobBuilder()
         writer.WriteByte(byte(separator))
 
@@ -224,7 +226,7 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
             let partIndex = MetadataTokens.GetHeapOffset(BlobHandle.op_Implicit(metadata.GetOrAddBlobUTF8(part)))
             writer.WriteCompressedInteger(int(partIndex))
 
-        metadata.GetOrAddBlob(writer);
+        metadata.GetOrAddBlob(writer)
 
     let corSymLanguageTypeFSharp = System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
     let documentIndex =
@@ -247,13 +249,14 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
             index.Add(doc.File, handle)
         index
 
+    let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
     metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
     info.Methods |> Array.iteri (fun _i minfo ->
         let docHandle, sequencePointBlob =
             let sps =
-                if minfo.SequencePoints = null then
-                    Array.empty<PdbSequencePoint>
-                else 
+                match minfo.SequencePoints with
+                | null -> Array.empty<PdbSequencePoint>
+                | _ ->
                     match minfo.Range with
                     | None -> Array.empty<PdbSequencePoint>
                     | Some (_,_) -> minfo.SequencePoints
@@ -266,30 +269,32 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
                     | false, _ -> Unchecked.defaultof<DocumentHandle>
                     | true, f  -> f
 
-            // Return a document that the entire method body is declared within. 
+            // Return a document that the entire method body is declared within.
             // If part of the method body is in another document returns nil handle.
             let tryGetSingleDocumentIndex =
                 let mutable singleDocumentIndex = 0
-                for i in 1 .. sps.Length - 1 do
+                for i in 0 .. sps.Length - 1 do
                     let index = sps.[i].Document
                     if index <> singleDocumentIndex then 
                         singleDocumentIndex <- index
                 singleDocumentIndex
 
-            if sps.Length = 0 then 
+            // Filter out feefee (Hidden) sequence points
+            let sps = sps |> Array.filter(fun sp -> sp.Line <> 0xfeefee && sp.EndLine <> 0xfeefee)
+
+            if sps.Length = 0 then
                 Unchecked.defaultof<DocumentHandle>, Unchecked.defaultof<BlobHandle>
             else
-                let builder = new BlobBuilder()
-                builder.WriteCompressedInteger(minfo.LocalSignatureToken)
-
                 let mutable previousNonHiddenStartLine = -1
                 let mutable previousNonHiddenStartColumn = -1
                 let mutable previousDocumentIndex = -1
                 let mutable singleDocumentIndex = tryGetSingleDocumentIndex
                 let mutable currentDocumentIndex = previousDocumentIndex
 
-                for i in 0 .. (sps.Length - 1) do
+                let builder = new BlobBuilder()
+                builder.WriteCompressedInteger(minfo.LocalSignatureToken)
 
+                for i in 0 .. (sps.Length - 1) do
                     if previousDocumentIndex <> currentDocumentIndex then
                         // optional document in header or document record:
                         if previousDocumentIndex <> -1   then
@@ -304,16 +309,9 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
                     else
                         builder.WriteCompressedInteger(sps.[i].Offset)
 
-                        // F# does not support hidden sequence points yet !!!
-                        // if (sequencePoints[i].IsHidden)
-                        // {
-                        //     builder.WriteInt16(0);
-                        //     continue;
-                        // }
-
-                    let deltaLines = sps.[i].EndLine - sps.[i].Line;
-                    let deltaColumns = sps.[i].EndColumn - sps.[i].Column;
-                    builder.WriteCompressedInteger(deltaLines);
+                    let deltaLines = sps.[i].EndLine - sps.[i].Line
+                    let deltaColumns = sps.[i].EndColumn - sps.[i].Column
+                    builder.WriteCompressedInteger(deltaLines)
 
                     if deltaLines = 0 then 
                         builder.WriteCompressedInteger(deltaColumns)
@@ -333,23 +331,30 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
 
-        // Write the scopes 
-        let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
+        // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
-        let rec writePdbScope top scope =
-            if top || scope.Locals.Length <> 0 || scope.Children.Length <> 0 then 
-                lastLocalVariableHandle <- nextHandle lastLocalVariableHandle
+        let rec writePdbScope scope =   
+            if scope.Children.Length = 0 then
                 metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
-                                       Unchecked.defaultof<ImportScopeHandle>, 
-                                       lastLocalVariableHandle, 
-                                       Unchecked.defaultof<LocalConstantHandle>, 
-                                       scope.StartOffset, 
-                                       scope.EndOffset - scope.StartOffset) |>ignore
+                                        Unchecked.defaultof<ImportScopeHandle>, 
+                                        nextHandle lastLocalVariableHandle, 
+                                        Unchecked.defaultof<LocalConstantHandle>, 
+                                        0, 
+                                        scope.EndOffset - scope.StartOffset) |>ignore
+            else
+                metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
+                                        Unchecked.defaultof<ImportScopeHandle>, 
+                                        nextHandle lastLocalVariableHandle, 
+                                        Unchecked.defaultof<LocalConstantHandle>, 
+                                        scope.StartOffset, 
+                                        scope.EndOffset - scope.StartOffset) |>ignore
+
                 for localVariable in scope.Locals do
                     lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
-                scope.Children |> Array.iter (writePdbScope false)
 
-        writePdbScope true minfo.RootScope
+                scope.Children |> Array.iter (writePdbScope)
+
+        writePdbScope minfo.RootScope
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore)
 
     let entryPoint =
@@ -357,15 +362,15 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
         | None -> MetadataTokens.MethodDefinitionHandle(0)
         | Some x -> MetadataTokens.MethodDefinitionHandle(x) 
 
-    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null )
+    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null)
     let blobBuilder = new BlobBuilder()
-    serializer.Serialize(blobBuilder) |> ignore
+    let contentId= serializer.Serialize(blobBuilder)
 
     reportTime showTimes "PDB: Created"
     use portablePdbStream = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     blobBuilder.WriteContentTo(portablePdbStream)
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo info.ModuleID fpdb
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32(contentId.Stamp)) fpdb
 
 #if FX_NO_PDB_WRITER
 #else
@@ -486,6 +491,7 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
       iddMajorVersion = res.iddMajorVersion;
       iddMinorVersion = res.iddMinorVersion;
       iddType = res.iddType;
+      iddTimestamp = info.Timestamp;
       iddData = res.iddData}
 #endif
 

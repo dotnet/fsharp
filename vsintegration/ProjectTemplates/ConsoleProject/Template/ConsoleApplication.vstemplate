@@ -17,6 +17,7 @@
     <Project File="ConsoleApplication.fsproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true">Program.fs</ProjectItem>
+      <ProjectItem ReplaceParameters="false">packages.config</ProjectItem>
       <ProjectItem ReplaceParameters="true">App.config</ProjectItem>
     </Project>
   </TemplateContent>

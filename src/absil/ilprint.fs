@@ -285,7 +285,7 @@ and goutput_gparam env os (gf: ILGenericParameterDef) =
   output_parens (output_seq "," (goutput_typ env)) os gf.Constraints
 
 and goutput_gparams env os b = 
-  if nonNil b then 
+  if not (List.isEmpty b) then 
      output_string os "<"; output_seq "," (goutput_gparam env) os b;  output_string os ">"; () 
 
 and output_bcc os bcc =

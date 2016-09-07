@@ -17,6 +17,7 @@
     <Project File="PortableLibrary.fsproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" TargetFileName="AssemblyInfo.fs">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="PortableLibrary1.fs">PortableLibrary1.fs</ProjectItem>
+      <ProjectItem ReplaceParameters="false">packages.config</ProjectItem>
       <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
     </Project>
   </TemplateContent>

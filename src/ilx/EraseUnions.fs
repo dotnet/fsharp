@@ -941,7 +941,7 @@ let mkClassUnionDef ilg tref td cud =
               yield { fdef with IsInitOnly= (not isStruct && isTotallyImmutable) } ]
 
     let ctorMeths =
-        if (isNil selfFields && isNil tagFieldsInObject && nonNil selfMeths)
+        if (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
             ||  cud.cudAlternatives |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt))  then 
 
             [] (* no need for a second ctor in these cases *)
@@ -957,7 +957,7 @@ let mkClassUnionDef ilg tref td cud =
 
     // Now initialize the constant fields wherever they are stored... 
     let addConstFieldInit cd = 
-        if isNil altNullaryFields then 
+        if List.isEmpty altNullaryFields then 
            cd 
         else 
            prependInstrsToClassCtor 

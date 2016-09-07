@@ -43,6 +43,7 @@ let tup4 = (2,3,4,5)
 
 
 type OptionalParameterTests =
+    static member MethodWithOptionalParam<'T>(?value : 'T) = value
     static member MethodWithOptionalParams<'T>(?value1 : 'T, ?value2 : int) = (value1, value2)
 
     static member FSharpMethodThatConsumesOptionalParams() = 
