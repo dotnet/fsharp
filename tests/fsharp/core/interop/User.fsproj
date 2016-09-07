@@ -11,7 +11,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <RootNamespace>User</RootNamespace>
     <AssemblyName>User</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <Name>User</Name>
     <FscToolPath>$(FSCBINPATH)</FscToolPath>
   </PropertyGroup>
