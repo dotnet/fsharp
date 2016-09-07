@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
-[<ExportLanguageService(typeof<IIndentationService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpIndentationService() =
 
     static member GetDesiredIndentation(sourceText: SourceText, lineNumber: int, tabSize: int): Option<int> =
@@ -46,14 +46,14 @@ type internal FSharpIndentationService() =
                      | _ -> spaces
             Some(loop 0 0)
 
-    // FSROSLYNTODO: post beta5, update implementation to use ISynchronousIndentationService instead to guarentee Indentation is UI-blocking
-    interface IIndentationService with
-        member this.GetDesiredIndentationAsync(document: Document, lineNumber: int, cancellationToken: CancellationToken): Task<Nullable<IndentationResult>> =
-            document.GetTextAsync(cancellationToken).ContinueWith(fun (sourceTextTask: Task<SourceText>) ->
-                let sourceText = CommonRoslynHelpers.GetCompletedTaskResult(sourceTextTask)
-                // FSROSLYNTODO: post beta5, update to use document.Options.GetOption() instead
-                let tabSize = document.Project.Solution.Workspace.Options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-                match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
-                | None -> Nullable<IndentationResult>()
-                | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
-            , cancellationToken)
+    interface ISynchronousIndentationService with
+        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
+            let sourceTextTask= document.GetTextAsync(cancellationToken)
+            sourceTextTask.Wait(cancellationToken)
+
+            let sourceText = CommonRoslynHelpers.GetCompletedTaskResult(sourceTextTask)
+            let tabSize = document.Options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+
+            match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
+            | None -> Nullable<IndentationResult>()
+            | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))

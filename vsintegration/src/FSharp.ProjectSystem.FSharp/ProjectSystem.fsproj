@@ -79,7 +79,9 @@
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
@@ -94,7 +96,6 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(RoslynVSBinariesVersion)" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Framework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
@@ -150,6 +151,11 @@
     <ProjectReference Include="..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.Editor\FSharp.Editor.fsproj">
+      <Name>FSharp.Editor</Name>
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

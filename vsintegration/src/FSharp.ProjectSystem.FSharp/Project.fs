@@ -35,6 +35,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.LanguageService
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
+    open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     

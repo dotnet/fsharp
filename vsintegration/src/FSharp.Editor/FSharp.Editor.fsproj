@@ -30,22 +30,31 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="CommonConstants.fs" />
+    <Compile Include="CommonRoslynHelpers.fs" />
+    <Compile Include="ProjectSite.fs" />
+    <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
-        <Link>Classification\ColorizationService.fs</Link>
+      <Link>Classification\ColorizationService.fs</Link>
     </Compile>
     <Compile Include="BraceMatchingService.fs">
-        <Link>Utilities\BraceMatchingService.fs</Link>
+      <Link>Utilities\BraceMatchingService.fs</Link>
     </Compile>
     <Compile Include="IndentationService.fs">
-        <Link>Utilities\IndentationService.fs</Link>
+      <Link>Utilities\IndentationService.fs</Link>
     </Compile>
     <Compile Include="BreakpointResolutionService.fs">
-        <Link>Debugging\BreakpointResolutionService.fs</Link>
+      <Link>Debugging\BreakpointResolutionService.fs</Link>
     </Compile>
     <Compile Include="LanguageDebugInfoService.fs">
-        <Link>Debugging\LanguageDebugInfoService.fs</Link>
+      <Link>Debugging\LanguageDebugInfoService.fs</Link>
     </Compile>
-    <Compile Include="ProjectSiteService.fs" />
+    <Compile Include="DocumentDifferenceService.fs">
+      <Link>Diagnostics\DocumentDifferenceService.fs</Link>
+    </Compile>
+    <Compile Include="DocumentDiagnosticAnalyzer.fs">
+      <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +122,7 @@
     <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Roslyn.Microsoft.VisualStudio.ComponentModelHost.0.0.2\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
@@ -123,6 +133,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0" />
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -152,7 +163,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0-rc3-23805\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>

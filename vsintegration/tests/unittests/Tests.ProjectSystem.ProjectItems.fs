@@ -10,7 +10,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
 type ProjectItems() = 
     inherit TheTests()
     

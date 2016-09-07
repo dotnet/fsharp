@@ -23,7 +23,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
 type UpToDate() = 
     inherit TheTests()
 
@@ -380,7 +380,7 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-[<Ignore("Not ported to Roslyn yet")>][<TestFixture>]
+[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
 type ``UpToDate PreserveNewest`` () = 
 
     [<Test>]

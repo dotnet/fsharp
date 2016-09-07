@@ -44,13 +44,14 @@ type internal FSharpBreakpointResolutionService() =
     interface IBreakpointResolutionService with
         member this.ResolveBreakpointAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken): Task<BreakpointResolutionResult> =
             let computation = async {
-                let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, document.Name, textSpan, options)
-                
-                return match location with
-                       | None -> null
-                       | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                | Some(options) ->
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! location = FSharpBreakpointResolutionService.GetBreakpointLocation(sourceText, document.Name, textSpan, options)
+                    return match location with
+                           | None -> null
+                           | Some(range) -> BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                | None -> return null
             }
 
             Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)

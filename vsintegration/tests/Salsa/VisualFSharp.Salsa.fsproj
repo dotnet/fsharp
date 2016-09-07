@@ -62,7 +62,9 @@
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Text.Internal.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
@@ -106,6 +108,11 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
       <Name>FSharp.LanguageService.Compiler</Name>
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
+      <Name>FSharp.Editor</Name>
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
