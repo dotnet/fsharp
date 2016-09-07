@@ -3,3 +3,4 @@ FSharpQA_*
 CoreUnit_*
 TestResults
 *.il
+dont.run.peverify

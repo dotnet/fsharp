@@ -334,7 +334,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 
     static member Create(infoReader:InfoReader,m,denv,items:Item list) = 
         let g = infoReader.g
-        if isNil items then new FSharpMethodGroup("", [| |]) else
+        if List.isEmpty items then new FSharpMethodGroup("", [| |]) else
         let name = items.Head.DisplayName 
         let getOverloadsForItem item =
 #if FX_ATLEAST_40
@@ -357,7 +357,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                     | Item.UnionCase(ucr,_) -> 
                         if not ucr.UnionCase.IsNullary then [item] else []
                     | Item.ExnCase(ecr) -> 
-                        if recdFieldsOfExnDefRef ecr |> nonNil then [item] else []
+                        if List.isEmpty (recdFieldsOfExnDefRef ecr) then [] else [item]
                     | Item.Property(_,pinfos) -> 
                         let pinfo = List.head pinfos 
                         if pinfo.IsIndexer then [item] else []
@@ -568,7 +568,7 @@ type TypeCheckInfo
             |> RemoveExplicitlySuppressed g
             |> FilterItemsForCtors filterCtors
 
-        if nonNil items then
+        if not (List.isEmpty items) then
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
                 NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
             else
@@ -821,9 +821,9 @@ type TypeCheckInfo
         let safeCheck item = try check item with _ -> false
                                                 
         // Are we looking for items with precisely the given name?
-        if nonNil items && exactMatchResidueOpt.IsSome then
+        if not (List.isEmpty items) && exactMatchResidueOpt.IsSome then
             let items = items |> FilterDeclItemsByResidue exactMatchResidueOpt.Value |> List.filter safeCheck 
-            if nonNil items then Some(items, denv, m) else None        
+            if not (List.isEmpty items) then Some(items, denv, m) else None        
         else 
             // When (items = []) we must returns Some([],..) and not None
             // because this value is used if we want to stop further processing (e.g. let x.$ = ...)
@@ -888,7 +888,7 @@ type TypeCheckInfo
                 | None, _ -> [], None
                 | Some(origLongIdent), Some _ -> origLongIdent, None
                 | Some(origLongIdent), None ->
-                    assert (nonNil origLongIdent)
+                    assert (not (List.isEmpty origLongIdent))
                     // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue
@@ -954,13 +954,13 @@ type TypeCheckInfo
                 match nameResItems, envItems, qualItems with            
             
                 // First, use unfiltered name resolution items, if they're not empty
-                | NameResResult.Members(items, denv, m), _, _ when nonNil items -> 
+                | NameResResult.Members(items, denv, m), _, _ when not (List.isEmpty items) -> 
                     // lookup based on name resolution results successful
                     Some(items, denv, m)                
             
                 // If we have nonempty items from environment that were resolved from a type, then use them... 
                 // (that's better than the next case - here we'd return 'int' as a type)
-                | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when nonNil items ->
+                | _, FilterRelevantItems exactMatchResidueOpt (items, denv, m), _ when not (List.isEmpty items) ->
                     // lookup based on name and environment successful
                     Some(items, denv, m)
 
@@ -1315,7 +1315,7 @@ type TypeCheckInfo
                     | Item.RecdField(rfinfo) -> if isFunction g rfinfo.FieldType then [item] else []
                     | Item.Value v -> if isFunction g v.Type then [item] else []
                     | Item.UnionCase(ucr,_) -> if not ucr.UnionCase.IsNullary then [item] else []
-                    | Item.ExnCase(ecr) -> if recdFieldsOfExnDefRef ecr |> nonNil then [item] else []
+                    | Item.ExnCase(ecr) -> if List.isEmpty (recdFieldsOfExnDefRef ecr) then [] else [item]
                     | Item.Property(_,pinfos) -> 
                         let pinfo = List.head pinfos 
                         if pinfo.IsIndexer then [item] else []

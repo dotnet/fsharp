@@ -626,7 +626,7 @@ let rec CheckNamesOfModuleOrNamespaceContents denv (implModRef:ModuleOrNamespace
                     let fx = fxs.Head
                     errorR(RequiredButNotSpecified(denv,implModRef,"value",(fun os -> 
                        // In the case of missing members show the full required enclosing type and signature 
-                       if isSome fx.MemberInfo then 
+                       if Option.isSome fx.MemberInfo then 
                            NicePrint.outputQualifiedValOrMember denv os fx
                        else
                            Printf.bprintf os "%s" fx.DisplayName),m)); false)

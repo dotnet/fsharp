@@ -149,7 +149,7 @@ let BindTypar env (tp:Typar) =
 
 let BindTypars g env (tps:Typar list) = 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
-    if isNil tps then env else
+    if List.isEmpty tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
@@ -951,13 +951,13 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         | Some membInfo -> testHookMemberBody membInfo body
         
         // Check escapes in the body.  Allow access to protected things within members.
-        let freesOpt = CheckEscapes cenv (isSome memInfo) m syntacticArgs body
+        let freesOpt = CheckEscapes cenv (Option.isSome memInfo) m syntacticArgs body
 
         //  no reraise under lambda expression
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if (nonNil tps || nonNil vsl) && isTop && not cenv.g.compilingFslib && isByrefTy cenv.g bodyty then
+        if (not (List.isEmpty tps) || not (List.isEmpty vsl)) && isTop && not cenv.g.compilingFslib && isByrefTy cenv.g bodyty then
             // allow byref to occur as return position for byref-typed top level function or method 
             CheckExprPermitByrefReturn cenv env body
         else
@@ -965,7 +965,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         // Check byref return types
         if cenv.reportErrors then 
-            if (not inlined && (isNil tps && isNil vsl)) || not isTop then
+            if (not inlined && (List.isEmpty tps && List.isEmpty vsl)) || not isTop then
                 CheckForByrefLikeType cenv env bodyty (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 
@@ -1091,7 +1091,7 @@ and CheckAttribArgExpr cenv env expr =
            errorR (Error (FSComp.SR.chkInvalidCustAttrVal(), expr.Range))
   
 and CheckAttribs cenv env (attribs: Attribs) = 
-    if isNil attribs then () else
+    if List.isEmpty attribs then () else
     let tcrefs = [ for (Attrib(tcref,_,_,_,_,_,m)) in attribs -> (tcref,m) ]
 
     // Check for violations of allowMultiple = false
@@ -1133,7 +1133,7 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         access
 
 and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
-    let isTop = isSome bind.Var.ValReprInfo
+    let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
 
     // Check that active patterns don't have free type variables in their result
@@ -1169,7 +1169,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
               CheckForByrefLikeType cenv env v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(),v.Range)))
           | _ -> ()
 
-        if isSome v.PublicPath then 
+        if Option.isSome v.PublicPath then 
             if 
               // Don't support implicit [<ReflectedDefinition>] on generated members, except the implicit members
               // for 'let' bound functions in classes.
@@ -1206,7 +1206,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
                     let qscope = QuotationTranslator.QuotationGenerationScope.Create (cenv.g,cenv.amap,cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
                     QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
                     let _,_,argExprs = qscope.Close()
-                    if nonNil argExprs then 
+                    if not (List.isEmpty argExprs) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
                     QuotationTranslator.ConvMethodBase qscope env (v.CompiledName, v) |> ignore
                 with 

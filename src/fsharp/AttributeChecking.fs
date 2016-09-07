@@ -271,7 +271,7 @@ let private CheckILAttributes g cattrs m =
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
 let CheckFSharpAttributes g attribs m = 
-    if isNil attribs then CompleteD 
+    if List.isEmpty attribs then CompleteD 
     else 
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_,_,[ AttribStringArg s ],_,_,_,_)) ->
@@ -338,12 +338,12 @@ let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAtt
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckILAttributesForUnseen g cattrs _m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-    isSome (TryDecodeILAttribute g tref cattrs)
+    Option.isSome (TryDecodeILAttribute g tref cattrs)
 
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
 let CheckFSharpAttributesForHidden g attribs = 
-    nonNil attribs &&         
+    not (List.isEmpty attribs) &&         
     (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
         | Some(Attrib(_,_,[AttribStringArg _; AttribInt32Arg messageNumber],
                     ExtractAttribNamedArg "IsHidden" (AttribBoolArg v),_,_,_)) -> 
@@ -354,13 +354,13 @@ let CheckFSharpAttributesForHidden g attribs =
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckFSharpAttributesForObsolete g attribs = 
-    nonNil attribs && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
+    not (List.isEmpty attribs) && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
 let CheckFSharpAttributesForUnseen g attribs _m = 
-    nonNil attribs &&         
+    not (List.isEmpty attribs) &&         
     (CheckFSharpAttributesForObsolete g attribs ||
         CheckFSharpAttributesForHidden g attribs)
       
@@ -402,7 +402,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
             (fun fsAttribs -> 
                 let res = 
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
-                        if isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
+                        if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                             ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName),m))
                         else
                             CompleteD)

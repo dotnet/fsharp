@@ -23,6 +23,18 @@ neg17b.fs(17,19,17,47): typecheck error FS0072: Lookup on object of indeterminat
 
 neg17b.fs(21,31,21,77): typecheck error FS0039: The value, constructor, namespace or type 'DefaultTagOfUnionTypeWithPrivateRepresentation' is not defined
 
+Maybe you want one of the following:
+
+   UnionTypeWithPrivateRepresentation
+
+   RecordTypeWithPrivateRepresentation
+
+   InternalUnionType
+
+   PrivateUnionType
+
+   PrivateRecordType
+
 neg17b.fs(29,31,29,61): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg17b.fs(30,31,30,84): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.

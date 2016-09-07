@@ -3804,6 +3804,12 @@ namespace Microsoft.FSharp.Core
             | null -> true 
             | _ -> false
 
+        [<CompiledName("IsNotNull")>]
+        let inline isNotNull (value : 'T) = 
+            match value with 
+            | null -> false 
+            | _ -> true
+
         [<CompiledName("Raise")>]
         let raise (e: exn) = (# "throw" e : 'T #)
 
@@ -4122,7 +4128,7 @@ namespace Microsoft.FSharp.Core
 #if FX_NO_CHAR_PARSE
         // replace System.Char.Parse
         let inline charParse (s: string) =
-            if s = null then raise (System.ArgumentNullException())
+            if isNull s then raise (System.ArgumentNullException())
             elif s.Length = 1 then s.[0]
             else raise (System.FormatException "String must be exactly one character long.")
 #endif

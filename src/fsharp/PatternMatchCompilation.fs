@@ -102,7 +102,7 @@ type SubExprOfInput =
 
 let BindSubExprOfInput g amap gtps (PBind(v,tyscheme)) m (SubExpr(accessf,(ve2,v2))) =
     let e' = 
-        if isNil gtps then 
+        if List.isEmpty gtps then 
             accessf [] ve2 
         else 
             let tyargs = 
@@ -126,7 +126,7 @@ let BindSubExprOfInput g amap gtps (PBind(v,tyscheme)) m (SubExpr(accessf,(ve2,v
     v,mkGenericBindRhs g m [] tyscheme e'
 
 let GetSubExprOfInput g (gtps,tyargs,tinst) (SubExpr(accessf,(ve2,v2))) =
-    if isNil gtps then accessf [] ve2 else
+    if List.isEmpty gtps then accessf [] ve2 else
     accessf tinst (mkApps g ((ve2,v2.Type),[tyargs],[],v2.Range))
 
 //---------------------------------------------------------------------------
@@ -505,7 +505,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // 'isinst' tests where we have stored the result of the 'isinst' in a variable 
     // In this case the 'expr' already holds the result of the 'isinst' test. 
 
-    | (TCase(Test.IsInst _,success)):: edges, dflt  when isSome inpExprOpt -> 
+    | (TCase(Test.IsInst _,success)):: edges, dflt  when Option.isSome inpExprOpt -> 
         TDSwitch(expr,[TCase(Test.IsNull,BuildSwitch None g expr edges dflt m)],Some success,m)    
         
     // isnull and isinst tests
@@ -519,7 +519,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     | [TCase(ListEmptyDiscrim g tinst, emptyCase)], Some consCase 
     | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
     | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
-                     when isSome inpExprOpt -> 
+                     when Option.isSome inpExprOpt -> 
         TDSwitch(expr, [TCase(Test.IsNull, emptyCase)], Some consCase, m)    
 #endif
                 
@@ -792,7 +792,7 @@ let CompilePatternBasic
                     // For each case, recursively compile the residue decision trees that result if that case successfully matches 
                     let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt 
                           
-                    assert (nonNil(simulSetOfCases))
+                    assert (not (List.isEmpty simulSetOfCases))
 
                     // Work out what the default/fall-through tree looks like, is any 
                     // Check if match is complete, if so optimize the default case away. 
@@ -873,7 +873,7 @@ let CompilePatternBasic
           
          | EdgeDiscrim(_i',(Test.IsInst (_srcty,tgty)),m) :: _rest 
                     (* check we can use a simple 'isinst' instruction *)
-                    when canUseTypeTestFast g tgty && isNil topgtvs ->
+                    when canUseTypeTestFast g tgty && List.isEmpty topgtvs ->
 
              let v,vexp = mkCompGenLocal m "typeTestResult" tgty
              if topv.IsMemberOrModuleBinding then 
@@ -884,7 +884,7 @@ let CompilePatternBasic
 
           // Any match on a struct union must take the address of its input
          | EdgeDiscrim(_i',(Test.UnionCase (ucref, _)),_) :: _rest 
-                 when (isNil topgtvs && ucref.Tycon.IsStructRecordOrUnionTycon) ->
+                 when List.isEmpty topgtvs && ucref.Tycon.IsStructRecordOrUnionTycon ->
 
              let argexp = GetSubExprOfInput subexpr
              let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
@@ -903,7 +903,7 @@ let CompilePatternBasic
          | [EdgeDiscrim(_, ListConsDiscrim g tinst, m)]
          | [EdgeDiscrim(_, ListEmptyDiscrim g tinst, m)]
                     (* check we can use a simple 'isinst' instruction *)
-                    when isNil topgtvs ->
+                    when List.isEmpty topgtvs ->
 
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v,vexp = mkCompGenLocal m "unionTestResult" ucaseTy
@@ -917,7 +917,7 @@ let CompilePatternBasic
          // Active pattern matches: create a variable to hold the results of executing the active pattern. 
          | (EdgeDiscrim(_,(Test.ActivePatternCase(pexp,resTys,_,_,apinfo)),m) :: _) ->
              
-             if nonNil topgtvs then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
+             if not (List.isEmpty topgtvs) then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m resTys
              let v,vexp = mkCompGenLocal m "activePatternResult" rty
              if topv.IsMemberOrModuleBinding then 
@@ -954,7 +954,7 @@ let CompilePatternBasic
 #if OPTIMIZE_LIST_MATCHING
                                                            isNone inpExprOpt &&
 #endif
-                                                          (isNil topgtvs && 
+                                                          (List.isEmpty topgtvs && 
                                                            not topv.IsMemberOrModuleBinding && 
                                                            not ucref.Tycon.IsStructRecordOrUnionTycon  &&
                                                            ucref.UnionCase.RecdFields.Length >= 1 && 

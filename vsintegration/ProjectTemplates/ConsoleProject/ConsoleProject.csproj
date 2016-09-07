@@ -51,6 +51,7 @@
     <TemplateFiles Include="Template\ConsoleApplication.fsproj" />
     <TemplateFiles Include="Template\AssemblyInfo.fs" />
     <TemplateFiles Include="Template\Program.fs" />
+    <TemplateFiles Include="Template\packages.config" />
     <TemplateFiles Include="Template\ConsoleApplication.vstemplate" />
   </ItemGroup>
   

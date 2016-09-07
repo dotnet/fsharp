@@ -65,6 +65,7 @@ For F# 4.1 development
 - [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
 - [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
+- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
 ####Contributing
 
