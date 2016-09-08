@@ -13,7 +13,7 @@ type SeqFusionTestsModule() =
     member this.FuseTwoMapsWithSameType() =
         let data = [3; 1; 2]
         let result = Seq.map (fun x -> x * 2) (Seq.map (fun x -> x + 2) data)
-        Assert.areEqual [12; 6; 8] (Seq.toList result)
+        Assert.areEqual [10; 6; 8] (Seq.toList result)
 
     [<Test>]
     member this.FuseTwoMapsWithSameType_String() =
