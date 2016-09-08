@@ -1690,7 +1690,6 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
 //------------------------------------------------------------------------- 
 
 let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
-
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
     let expr = NormalizeAndAdjustPossibleSubsumptionExprs cenv.g expr
@@ -1699,7 +1698,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
-    | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr (fun x -> x)
+    | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr id
 
     | Expr.Const (c,m,ty) -> OptimizeConst cenv env expr (c,m,ty)
     | Expr.Val (v,_vFlags,m) -> OptimizeVal cenv env expr (v,m)
@@ -2618,6 +2617,25 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
        // we beta-reduced, hence reoptimize 
         OptimizeExpr cenv env expr'
     | _ -> 
+        match expr' with
+        | Expr.App(Expr.Val(valRef,flag1,range1),ttype1,tinst1,
+                    [(Expr.Lambda(_,None,None,_l14,_,m1,rty1) as outerL)
+                     Expr.App(Expr.Val(valRef2,_,_),_,_,
+                                [Expr.Lambda(_,None,None,l24,l25,_,rty2)
+                                 rest],_)],r1) when
+            valRefEq cenv.g valRef cenv.g.seq_map_vref &&
+            valRefEq cenv.g valRef2 cenv.g.seq_map_vref 
+            -> 
+            let newApp = Expr.App(outerL,TType_fun(rty2, rty1),[],[l25],r1)
+            
+            let reduced =
+               Expr.App(Expr.Val(valRef,flag1,range1),ttype1,tinst1,
+                         [Expr.Lambda (newUnique(), None, None, l24, newApp, m1, rty2)
+                          rest],r1)
+
+            OptimizeExpr cenv env reduced
+        | _ ->
+
         // regular
 
         // Determine if this application is a critical tailcall
