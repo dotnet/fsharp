@@ -178,10 +178,10 @@ module ListAssoc =
 //------------------------------------------------------------------------
 
 module ListSet = 
-    let inline contains f x l = List.exists (f x) l
+    let inline exists f l = List.exists f l
 
     (* NOTE: O(n)! *)
-    let insert f x l = if contains f x l then l else x::l
+    let insert f x l = if exists (f x) l then l else x::l
 
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
@@ -205,12 +205,12 @@ module ListSet =
     (* NOTE: quadratic! *)
     let rec subtract f l1 l2 = 
       match l2 with 
-      | (h::t) -> subtract f (remove (fun y2 y1 ->  f y1 y2) h l1) t
+      | (h::t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
-    let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
+    let isSubsetOf f l1 l2 = List.forall (fun x1 -> exists (f x1) l2) l1
     (* nb. preserve orders here: f must be applied to elements of l1 then elements of l2*)
-    let isSupersetOf f l1 l2 = List.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
+    let isSupersetOf f l1 l2 = List.forall (fun x2 -> exists ((fun y2 y1 -> f y1 y2) x2) l1) l2
     let equals f l1 l2 = isSubsetOf f l1 l2 && isSupersetOf f l1 l2
 
     let unionFavourLeft f l1 l2 = 
@@ -223,7 +223,7 @@ module ListSet =
     (* NOTE: not tail recursive! *)
     let rec intersect f l1 l2 = 
         match l2 with 
-        | (h::t) -> if contains f h l1 then h::intersect f l1 t else intersect f l1 t
+        | (h::t) -> if exists (f h) l1 then h::intersect f l1 t else intersect f l1 t
         | [] -> []
 
     (* NOTE: quadratic! *)

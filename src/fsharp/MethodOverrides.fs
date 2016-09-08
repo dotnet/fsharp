@@ -448,7 +448,7 @@ module DispatchSlotChecking =
                           // If so, you do not have to implement all the methods - each
                           // specific method is "optionally" implemented.
                           let isOptional = 
-                              ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
+                              ListSet.exists ((typeEquiv g) impliedTy) availImpliedInterfaces
                           for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
                               yield RequiredSlot(reqdSlot, isOptional)
                   else

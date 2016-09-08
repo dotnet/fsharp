@@ -17,13 +17,13 @@ open Microsoft.FSharp.Compiler.TypeRelations
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
 type cenv = 
-    { g: TcGlobals; 
+    { g: TcGlobals
       amap: Import.ImportMap }
 
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
     let cantBeFree v = 
-        let passedIn = ListSet.contains valEq v syntacticArgs 
+        let passedIn = ListSet.exists (valEq v) syntacticArgs 
         not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
 
     let frees = freeInExpr CollectLocals body
