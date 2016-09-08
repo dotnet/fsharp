@@ -630,7 +630,7 @@ type CompilationRepresentationFlagsEnum() =
 
     [<Test>]
     member this.Getvalue() =
-        let names = [| "None";"Static";"Instance";"ModuleSuffix";"UseNullAsTrueValue";"Event" |]
+        let names = [| "None";"Static";"Instance";"ModuleSuffix";"UseNullAsTrueValue";"Event";"UseVirtualTag" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<CompilationRepresentationFlags>))
 #endif
 
