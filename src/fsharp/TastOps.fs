@@ -1170,7 +1170,7 @@ let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr 
 
 let isBeingGeneralized tp typeScheme = 
     let (TypeScheme(generalizedTypars,_)) = typeScheme
-    ListSet.exists (typarRefEq tp) generalizedTypars
+    ListSet.contains typarRefEq tp generalizedTypars
 
 //-------------------------------------------------------------------------
 // Build conditional expressions...
@@ -1985,7 +1985,7 @@ and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs,_,_,argtys,rty,
     acc
 
 and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) = 
-    if ListSet.exists (typarEq tp) acc 
+    if ListSet.contains typarEq tp acc 
     then acc
     else 
         let acc = (ListSet.insert typarEq tp acc)

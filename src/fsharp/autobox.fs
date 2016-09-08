@@ -23,7 +23,7 @@ type cenv =
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
     let cantBeFree v = 
-        let passedIn = ListSet.exists (valEq v) syntacticArgs 
+        let passedIn = ListSet.contains valEq v syntacticArgs 
         not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
 
     let frees = freeInExpr CollectLocals body

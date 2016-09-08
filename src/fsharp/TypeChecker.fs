@@ -1593,7 +1593,7 @@ let ChooseCanonicalValSchemeAfterInference g denv valscheme m =
     valscheme
 
 let PlaceTyparsInDeclarationOrder declaredTypars generalizedTypars  =
-    declaredTypars @ (generalizedTypars |> List.filter (fun tp -> not (ListSet.exists (typarEq tp) declaredTypars)))
+    declaredTypars @ (generalizedTypars |> List.filter (fun tp -> not (ListSet.contains typarEq tp declaredTypars)))
 
 let SetTyparRigid _g denv m (tp:Typar) = 
     match tp.Solution with 
@@ -1621,7 +1621,7 @@ let GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTyparsForThisBind
     // of the r.h.s. , e.g. let x,y = None,[] 
     let computeRelevantTypars thruFlag = 
         let ftps = (freeInTypeLeftToRight cenv.g thruFlag ty)
-        let generalizedTypars = generalizedTyparsForThisBinding |> List.filter (fun tp -> ListSet.exists (typarEq tp) ftps)
+        let generalizedTypars = generalizedTyparsForThisBinding |> List.filter (fun tp -> ListSet.contains typarEq tp ftps)
         // Put declared typars first 
         let generalizedTypars = PlaceTyparsInDeclarationOrder allDeclaredTypars generalizedTypars  
         generalizedTypars
@@ -2163,12 +2163,12 @@ module GeneralizationHelpers =
             // A condensation typar must have a single constraint "'a :> A"
             (Option.isSome (relevantUniqueSubtypeConstraint tp)) &&
             // This is type variable is not used on the r.h.s. of the type
-            not (ListSet.exists (typarEq tp) returnTypeFreeTypars) &&
+            not (ListSet.contains typarEq tp returnTypeFreeTypars) &&
             // A condensation typar can't be used in the constraints of any candidate condensation typars
-            not (ListSet.exists (typarEq tp) lhsConstraintTypars) &&
+            not (ListSet.contains typarEq tp lhsConstraintTypars) &&
             // A condensation typar must occur precisely once in tyIJ, and must not occur free in any other tyIJ
             (match allUntupledArgTysWithFreeVars |> List.partition (fun (ty,_) -> isTyparTy cenv.g ty && typarEq (destTyparTy cenv.g ty) tp) with
-             | [_], rest -> not (rest |> List.exists (fun (_,fvs) -> ListSet.exists (typarEq tp) fvs))
+             | [_], rest -> not (rest |> List.exists (fun (_,fvs) -> ListSet.contains typarEq tp fvs))
              | _ -> false)
              
         let condensationTypars, generalizedTypars = generalizedTypars |> List.partition IsCondensationTypar
@@ -2216,7 +2216,7 @@ module GeneralizationHelpers =
 
         let generalizedTypars =  
             if canInferTypars then generalizedTypars 
-            else generalizedTypars |> List.filter (fun tp -> ListSet.exists (typarEq tp) allDeclaredTypars)
+            else generalizedTypars |> List.filter (fun tp -> ListSet.contains typarEq tp allDeclaredTypars)
 
         let allConstraints = List.collect (fun (tp:Typar) -> tp.Constraints) generalizedTypars 
         let generalizedTypars = ConstraintSolver.SimplifyMeasuresInTypeScheme cenv.g resultFirst generalizedTypars tauTy allConstraints
@@ -15026,7 +15026,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     let vfld = NewRecdField false None (ident("value__",m))  fieldTy false false [] [] XmlDoc.Empty taccessPublic true
                     
-                    if not (ListSet.exists ((typeEquiv cenv.g) fieldTy) [ cenv.g.int32_ty; cenv.g.int16_ty; cenv.g.sbyte_ty; cenv.g.int64_ty; cenv.g.char_ty; cenv.g.bool_ty; cenv.g.uint32_ty; cenv.g.uint16_ty; cenv.g.byte_ty; cenv.g.uint64_ty ]) then 
+                    if not (ListSet.contains (typeEquiv cenv.g) fieldTy [ cenv.g.int32_ty; cenv.g.int16_ty; cenv.g.sbyte_ty; cenv.g.int64_ty; cenv.g.char_ty; cenv.g.bool_ty; cenv.g.uint32_ty; cenv.g.uint16_ty; cenv.g.byte_ty; cenv.g.uint64_ty ]) then 
                         errorR(Error(FSComp.SR.tcInvalidTypeForLiteralEnumeration(),m))
 
                     writeFakeRecordFieldsToSink fields' 
@@ -15067,7 +15067,7 @@ module EstablishTypeDefinitionCores =
                     let tycon2 = tc.Deref
                     let acc = accInAbbrevTypes tinst acc
                     // Record immediate recursive references 
-                    if ListSet.exists ((===) tycon2) tycons  then 
+                    if ListSet.contains (===) tycon2 tycons  then 
                         (tycon,tycon2) :: acc 
                     // Expand the representation of abbreviations 
                     elif tc.IsTypeAbbrev then
@@ -15087,7 +15087,7 @@ module EstablishTypeDefinitionCores =
 
             and accInMeasure ms acc =
                 match stripUnitEqns ms with
-                | Measure.Con tc when ListSet.exists ((===) tc.Deref) tycons  ->  
+                | Measure.Con tc when ListSet.contains (===) tc.Deref tycons  ->  
                     (tycon, tc.Deref) :: acc
                 | Measure.Con tc when tc.IsTypeAbbrev  ->              
                     accInMeasure (reduceTyconRefAbbrevMeasureable tc) acc
@@ -15152,7 +15152,7 @@ module EstablishTypeDefinitionCores =
         let edgesFrom (tycon:Tycon) =
             // Record edge (tycon,tycon2), only when tycon2 is an "initial" tycon.
             let insertEdgeToTycon tycon2 acc = 
-                if ListSet.exists ((===) tycon2) tycons && // note: only add if tycon2 is initial
+                if ListSet.contains (===) tycon2 tycons && // note: only add if tycon2 is initial
                     not (List.exists (fun (tc,tc2) -> tc === tycon && tc2 === tycon2) acc)  // note: only add if (tycon,tycon2) not already an edge
                 then
                     (tycon,tycon2)::acc

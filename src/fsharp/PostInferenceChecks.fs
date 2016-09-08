@@ -299,7 +299,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
            // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
-           let passedIn = ListSet.exists (valEq v) syntacticArgs 
+           let passedIn = ListSet.contains valEq v syntacticArgs 
            if passedIn then
                false
            else
