@@ -5641,8 +5641,8 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
 let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
     let optBind, addre = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
     match optBind with 
-    | None -> (fun x -> x), addre
-    | Some (tmp,rval) -> (fun x -> mkCompGenLet m tmp rval x), addre
+    | None -> id, addre
+    | Some (tmp,rval) -> mkCompGenLet m tmp rval, addre
 
 let mkTupleFieldGet g (tupInfo,e,tinst,i,m) = 
     let wrap,e' = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
