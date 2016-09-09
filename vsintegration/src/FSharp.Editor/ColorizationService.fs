@@ -140,7 +140,7 @@ type internal FSharpColorizationService() =
                     | Some(options) ->
                         let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                         if sourceTextTask.Status = TaskStatus.RanToCompletion then
-                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, defines, cancellationToken))
+                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, Some(document.FilePath), defines, cancellationToken))
                     | None -> ()
                 , cancellationToken)
 
