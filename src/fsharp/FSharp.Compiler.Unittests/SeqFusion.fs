@@ -40,3 +40,14 @@ type SeqFusionTestsModule() =
         Assert.areEqual [15; 15; 3] (Seq.toList result)
 
         Assert.areEqual  ["hello"; "5"; "world"; "5"; "!"; "1"] (Seq.toList list)
+
+    [<Test>]
+    member this.FusisonOfMapIntoIterKeepsSideEffectOrder() =
+        let list = List<string>()
+        let data = ["hello"; "world"; "!"]
+        let results = List<int>()
+            
+        Seq.iter (fun x -> results.Add x) (Seq.map (fun x -> list.Add(x.ToString()); x * 3) (Seq.map (fun y -> list.Add y; y.Length) data))
+
+        Assert.areEqual [15; 15; 3] (Seq.toList results)
+        Assert.areEqual  ["hello"; "5"; "world"; "5"; "!"; "1"] (Seq.toList list)
