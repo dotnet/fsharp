@@ -3590,7 +3590,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
         try 
 
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
@@ -3683,7 +3683,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let importLookupTableChunk,next = chunk 0x14 next
           let importNameHintTableChunk,next = chunk 0x0e next
           let mscoreeStringChunk,next = chunk 0x0c next
-          
+
           let next = align 0x10 (next + 0x05) - 0x05
           let importTableChunk = { addr=importTableChunk.addr; size = next - importTableChunk.addr}
           let importTableChunkPadding = importTableChunk.size - (0x28 + 0x14 + 0x0e + 0x0c)
@@ -3691,8 +3691,20 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let next = next + 0x03
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
-          
-          let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
+
+          let pdbOpt =
+            match portablePDB with
+            | true  -> Some (generatePortablePdb fixupOverlappingSequencePoints showTimes pdbData)
+            | _ -> None
+
+          let debugDirectoryChunk,next = 
+            chunk (if pdbfile = None then 
+                       0x0
+                   else if embeddedPDB && portablePDB then
+                       sizeof_IMAGE_DEBUG_DIRECTORY * 2
+                   else
+                       sizeof_IMAGE_DEBUG_DIRECTORY
+                  ) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
           // this in after we've written the binary. We approximate the size according 
@@ -3705,6 +3717,12 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                                             + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
                                             + debugDataJustInCase))) next
 
+//          let debugEmbeddedPdbChunk,next = 
+//              chunk (align 0x4 (match embeddedPDB with 
+//                                | None -> 0x0 
+//                                | Some f -> (24 
+//                                            + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
+//                                            + debugDataJustInCase))) next
 
           let textSectionSize = next - textSectionAddr
           let nextPhys = align alignPhys (textSectionPhysLoc + textSectionSize)
@@ -4145,7 +4163,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               FileSystemUtilites.setExecutablePermission outfile
           with _ -> 
               ()
-          pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
+          pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,textV2P,mappings
 
         // Looks like a finally
         with e ->   
@@ -4169,15 +4187,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
     | Some fpdb -> 
         try 
             let idd = 
-#if FX_NO_PDB_WRITER
-                ignore portablePDB
-                writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
-#else
-                if portablePDB then 
-                    writePortablePdbInfo fixupOverlappingSequencePoints showTimes fpdb pdbData
-                else
+                match pdbOpt with 
+                | Some struct(contentId, stream) ->
+                    writePortablePdbInfo contentId stream showTimes fpdb
+                | None ->
                     writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
-#endif
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image 

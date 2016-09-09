@@ -200,9 +200,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) = 
-
-    try FileSystem.FileDelete fpdb with _ -> ()
+let generatePortablePdb (fixupSPs:bool) showTimes (info:PdbData) = 
 
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
@@ -362,10 +360,15 @@ let writePortablePdbInfo (fixupSPs:bool) showTimes fpdb (info:PdbData) =
     let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null)
     let blobBuilder = new BlobBuilder()
     let contentId= serializer.Serialize(blobBuilder)
-
-    reportTime showTimes "PDB: Created"
-    use portablePdbStream = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
+    use portablePdbStream = new MemoryStream()
     blobBuilder.WriteContentTo(portablePdbStream)
+    reportTime showTimes "PDB: Created"
+    struct (contentId,  portablePdbStream)
+
+let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb =
+    try FileSystem.FileDelete fpdb with _ -> ()
+    use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
+    stream.WriteTo(pdbFile)
     reportTime showTimes "PDB: Closed"
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32(contentId.Stamp)) fpdb
 

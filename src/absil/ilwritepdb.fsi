@@ -7,6 +7,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open System.Collections.Generic 
+open System.IO
+open System.Reflection.Metadata
 
 type PdbDocumentData = ILSourceDocument
 
@@ -75,7 +77,8 @@ type idd =
       iddTimestamp: int32;
       iddData: byte[]; }
 
-val writePortablePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> fpdb:string -> info:PdbData -> idd
+val generatePortablePdb : fixupSPs:bool -> showTimes:bool -> info:PdbData -> struct (BlobContentId * MemoryStream) 
+val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> idd
 
 #if !FX_NO_PDB_WRITER
 val writePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> idd
