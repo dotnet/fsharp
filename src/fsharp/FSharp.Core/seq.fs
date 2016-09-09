@@ -107,18 +107,28 @@ namespace Microsoft.FSharp.Collections
               member this.Reset() = noReset()
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
+      
+      [<AbstractClass>]
+      type MapSingleAbstractEnumerator<'T> () =
+          inherit MapEnumerator<'T> ()
+          abstract member Map: ('T -> 'TResult) -> IEnumerator<'TResult>
 
-      let map f (e : IEnumerator<_>) : IEnumerator<_>=
-          upcast
-              { new MapEnumerator<_>() with
-                    member this.DoMoveNext (curr : byref<_>) =
-                        if e.MoveNext() then
-                            curr <- (f e.Current)
-                            true
-                        else
-                            false
-                    member this.Dispose() = e.Dispose()
-              }
+      type MapSingleEnumerator<'T0, 'T1> (e: IEnumerator<'T0>, f: 'T0 -> 'T1) = 
+          inherit MapSingleAbstractEnumerator<'T1> ()
+          override this.DoMoveNext (curr : byref<_>) =
+                if e.MoveNext() then
+                    curr <- f e.Current
+                    true
+                else
+                    false
+          override this.Dispose() = e.Dispose()
+          override this.Map (g: 'T1 -> 'T2) = new MapSingleEnumerator<'T0, 'T2>(e, f >> g) :> IEnumerator<'T2>
+      
+      let map f (e : IEnumerator<_>) : IEnumerator<_> =
+          match e with
+          | :? MapSingleAbstractEnumerator<'TSource> as i -> 
+                    i.Map(f)
+          | _ -> new MapSingleEnumerator<'TSource, 'TResult>(e, f) :> IEnumerator<'TResult>
 
       let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
           let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
