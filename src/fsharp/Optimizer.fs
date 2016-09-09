@@ -2619,9 +2619,9 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
     | _ -> 
         match expr' with
         // Rewrite Seq.map f (Seq.map g) xs into Seq.map (fun x -> f(g x)) xs
-        | Expr.App(Expr.Val(valRef,_,_) as outerSeqMap,ttype1,[_;t12],
+        | Expr.App(Expr.Val(valRef,_,_) as outerSeqMap,ttype1,[_;fOutType],
                     [(Expr.Lambda(_,None,None,_,_,m1,fRetType) as f)
-                     Expr.App(Expr.Val(valRef2,_,_),_,[t21;_],
+                     Expr.App(Expr.Val(valRef2,_,_),_,[gInType;_],
                                 [Expr.Lambda(_,None,None,gVals,g,_,gRetType)
                                  rest],_)],m2) when
             valRefEq cenv.g valRef cenv.g.seq_map_vref &&
@@ -2630,7 +2630,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
             let newApp = Expr.App(f,TType_fun(gRetType, fRetType),[],[g],m2)
             
             let reduced =
-               Expr.App(outerSeqMap,ttype1,[t21;t12],
+               Expr.App(outerSeqMap,ttype1,[gInType;fOutType],
                          [Expr.Lambda (newUnique(), None, None, gVals, newApp, m1, gRetType)
                           rest],m2)
 

@@ -31,7 +31,7 @@ type SeqFusionTestsModule() =
     member this.FusisonOfTwoMapsKeepsSideEffectOrder() =
         let list = List<string>()
         let data = ["hello"; "world"; "!"]
-        let result = Seq.map (fun x -> x * 3) (Seq.map (fun y -> list.Add y; y.Length) data)
+        let result = Seq.map (fun x -> list.Add(x.ToString()); x * 3) (Seq.map (fun y -> list.Add y; y.Length) data)
         
         // seq is not evaluated yet
         Assert.areEqual 0 list.Count
@@ -39,4 +39,4 @@ type SeqFusionTestsModule() =
         // evaluate it
         Assert.areEqual [15; 15; 3] (Seq.toList result)
 
-        Assert.areEqual data (Seq.toList list)
+        Assert.areEqual  ["hello"; "5"; "world"; "5"; "!"; "1"] (Seq.toList list)
