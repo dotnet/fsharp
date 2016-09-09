@@ -55,6 +55,15 @@
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
     </Compile>
+    <Compile Include="CompletionProvider.fs">
+      <Link>Completion\CompletionProvider.fs</Link>
+    </Compile>
+    <Compile Include="CompletionService.fs">
+      <Link>Completion\CompletionService.fs</Link>
+    </Compile>
+    <Compile Include="CompletionServiceFactory.fs">
+      <Link>Completion\CompletionServiceFactory.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
