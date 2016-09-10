@@ -24,15 +24,16 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Shell
 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-type internal FSharpCompletionService(workspace: Workspace) =
+type internal FSharpCompletionService(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionServiceWithProviders(workspace)
 
-    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace))
+    let builtInProviders = ImmutableArray.Create<CompletionProvider>(FSharpCompletionProvider(workspace, serviceProvider))
     let completionRules = CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(EnterKeyRule.Never)
 
     override this.Language = FSharpCommonConstants.FSharpLanguageName

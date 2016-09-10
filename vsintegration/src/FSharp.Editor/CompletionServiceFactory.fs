@@ -24,6 +24,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Shell
 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -31,7 +32,7 @@ open Microsoft.FSharp.Compiler.Range
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory() =
+type internal FSharpCompletionServiceFactory [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
     interface ILanguageServiceFactory with
         member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider)
