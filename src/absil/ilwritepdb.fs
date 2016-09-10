@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic 
 open System.Collections.Immutable
 open System.IO
+open System.IO.Compression
 open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
@@ -86,9 +87,9 @@ type PdbData =
       Methods: PdbMethodData[] 
       TableRowCounts: int[] }
 
-//---------------------------------------------------------------------
-// Portable PDB Writer
-//---------------------------------------------------------------------
+type BinaryChunk = 
+    { size: int32 
+      addr: int32 }
 
 type idd =
     { iddCharacteristics: int32;
@@ -96,34 +97,60 @@ type idd =
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddTimestamp: int32;
-      iddData: byte[];}
+      iddData: byte[];
+      iddChunk: BinaryChunk }
 
-let magicNumber = 0x53445352L
-let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) = 
-    let iddDataBuffer = 
+//---------------------------------------------------------------------
+// Portable PDB Writer
+//---------------------------------------------------------------------
+let cvMagicNumber = 0x53445352L
+let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) = 
+    let iddCvBuffer =
+        // Debug directory entry
         let path = (System.Text.Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
-
         let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
-        Buffer.BlockCopy(BitConverter.GetBytes(magicNumber), 0, buffer, offset, size)
-
+        Buffer.BlockCopy(BitConverter.GetBytes(cvMagicNumber), 0, buffer, offset, size)
         let struct (offset, size) = struct (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
-
         let struct (offset, size) = struct (offset + size, sizeof<int32>)       // # of pdb files generated (1)
         Buffer.BlockCopy(BitConverter.GetBytes(1), 0, buffer, offset, size)
-
         let struct (offset, size) = struct (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
-
         buffer
-
-    { iddCharacteristics = 0x0;                                                 // Reserved
-      iddMajorVersion = 0x0;                                                    // VersionMajor should be 0
-      iddMinorVersion = 0x0;                                                    // VersionMinor should be 0
-      iddType = 0x2;                                                            // IMAGE_DEBUG_TYPE_CODEVIEW
+    { iddCharacteristics = 0;                                                   // Reserved
+      iddMajorVersion = 0;                                                      // VersionMajor should be 0
+      iddMinorVersion = 0;                                                      // VersionMinor should be 0
+      iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
       iddTimestamp = timestamp;
-      iddData = iddDataBuffer }                                                 // Path name to the pdb file when built
+      iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
+      iddChunk = cvChunk;
+    }
+
+let pdbMagicNumber= 0x4244504dL
+let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64) (stream:MemoryStream) =
+    let iddPdbBuffer =
+        let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
+        let struct (offset, size) = struct(0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
+        Buffer.BlockCopy(BitConverter.GetBytes(pdbMagicNumber), 0, buffer, offset, size)
+        let struct (offset, size) = struct(offset + size, sizeof<int32>)        // Uncompressed size
+        Buffer.BlockCopy(BitConverter.GetBytes((int uncompressedLength)), 0, buffer, offset, size)
+        let struct (offset, size) = struct(offset + size, int(stream.Length))   // Uncompressed size
+        Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
+        buffer
+    { iddCharacteristics = 0;                                                   // Reserved
+      iddMajorVersion = 0;                                                      // VersionMajor should be 0
+      iddMinorVersion = 0x0100;                                                 // VersionMinor should be 0
+      iddType = 17;                                                             // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
+      iddTimestamp = 0;
+      iddData = iddPdbBuffer;                                                   // Path name to the pdb file when built
+      iddChunk = embeddedPDBChunk;
+    }
+
+let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) (embeddedPDBChunk:BinaryChunk option) (uncompressedLength:int64) (stream:MemoryStream option)= 
+    match stream, embeddedPDBChunk with
+    | None, _  | _,None ->  [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
+    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s; |]
 
 // Document checksum algorithms
 let guidSourceHashMD5 = System.Guid(0x406ea660u, 0x64cfus, 0x4c82us, 0xb6uy, 0xf0uy, 0x42uy, 0xd4uy, 0x81uy, 0x72uy, 0xa7uy, 0x99uy) //406ea660-64cf-4c82-b6f0-42d48172a799
@@ -201,7 +228,6 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
     spCounts, allSps
 
 let generatePortablePdb (fixupSPs:bool) showTimes (info:PdbData) = 
-
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
@@ -363,17 +389,28 @@ let generatePortablePdb (fixupSPs:bool) showTimes (info:PdbData) =
     let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null)
     let blobBuilder = new BlobBuilder()
     let contentId= serializer.Serialize(blobBuilder)
-    use portablePdbStream = new MemoryStream()
+    let portablePdbStream = new MemoryStream()
     blobBuilder.WriteContentTo(portablePdbStream)
     reportTime showTimes "PDB: Created"
-    struct (contentId,  portablePdbStream)
+    struct (portablePdbStream.Length, contentId, portablePdbStream)
 
-let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb =
+let compressPortablePdbStream (uncompressedLength:int64) (contentId:BlobContentId) (stream:MemoryStream) =
+    let compressedStream = new MemoryStream()
+    use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
+    stream.WriteTo(compressionStream)
+    struct (uncompressedLength, contentId, compressedStream)
+
+let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     stream.WriteTo(pdbFile)
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32(contentId.Stamp)) fpdb
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fpdb cvChunk None 0L None
+
+let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (stream:MemoryStream) showTimes fpdb cvChunk pdbChunk =
+    reportTime showTimes "PDB: Closed"
+    let fn = Path.GetFileName(fpdb)
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
 
 #if FX_NO_PDB_WRITER
 #else
@@ -381,7 +418,7 @@ let writePortablePdbInfo (contentId:BlobContentId) (stream:MemoryStream) showTim
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
-let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
+let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
 
     try FileSystem.FileDelete fpdb with _ -> ()
 
@@ -490,12 +527,13 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
     pdbClose !pdbw f fpdb;
 
     reportTime showTimes "PDB: Closed"
-    { iddCharacteristics = res.iddCharacteristics;
-      iddMajorVersion = res.iddMajorVersion;
-      iddMinorVersion = res.iddMinorVersion;
-      iddType = res.iddType;
-      iddTimestamp = info.Timestamp;
-      iddData = res.iddData}
+    [| { iddCharacteristics = res.iddCharacteristics;
+         iddMajorVersion = res.iddMajorVersion;
+         iddMinorVersion = res.iddMinorVersion;
+         iddType = res.iddType;
+         iddTimestamp = info.Timestamp;
+         iddData = res.iddData
+         iddChunk = cvChunk } |]
 #endif
 
 #if ENABLE_MONO_SUPPORT

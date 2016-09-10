@@ -3054,10 +3054,6 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
 //=====================================================================
 // TABLES+BLOBS --> PHYSICAL METADATA+BLOBS
 //=====================================================================
-type BinaryChunk = 
-    { size: int32 
-      addr: int32 }
-
 let chunk sz next = ({addr=next; size=sz},next + sz) 
 let nochunk next = ({addr= 0x0;size= 0x0; } ,next)
 
@@ -3590,7 +3586,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,debugEmbeddedPdbChunk,textV2P,mappings =
         try 
 
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
@@ -3694,9 +3690,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
           let pdbOpt =
             match portablePDB with
-            | true  -> Some (generatePortablePdb fixupOverlappingSequencePoints showTimes pdbData)
+            | true  -> 
+                let struct (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints showTimes pdbData
+                if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
+                else Some (pdbStream)
             | _ -> None
-
           let debugDirectoryChunk,next = 
             chunk (if pdbfile = None then 
                        0x0
@@ -3712,17 +3710,19 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let debugDataJustInCase = 40
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
-                                | None -> 0x0 
+                                | None -> 0
                                 | Some f -> (24 
                                             + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
                                             + debugDataJustInCase))) next
 
-//          let debugEmbeddedPdbChunk,next = 
-//              chunk (align 0x4 (match embeddedPDB with 
-//                                | None -> 0x0 
-//                                | Some f -> (24 
-//                                            + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
-//                                            + debugDataJustInCase))) next
+          let debugEmbeddedPdbChunk,next = 
+              let streamLength = 
+                    match pdbOpt with
+                    | Some struct (_,_,stream) -> int(stream.Length)
+                    | None -> 0
+              chunk (align 0x4 (match embeddedPDB with 
+                                | true -> 8 + streamLength
+                                | _ -> 0 )) next
 
           let textSectionSize = next - textSectionAddr
           let nextPhys = align alignPhys (textSectionPhysLoc + textSectionSize)
@@ -4112,11 +4112,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           if isItanium then 
               write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
                    [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
-          
+
           if pdbfile.IsSome then 
-              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy)
+              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create debugDirectoryChunk.size 0x0uy)
               write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
-          
+
+          if embeddedPDB then
+              write (Some (textV2P debugEmbeddedPdbChunk.addr)) os "debug data" (Array.create debugEmbeddedPdbChunk.size 0x0uy)
+
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
@@ -4163,7 +4166,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               FileSystemUtilites.setExecutablePermission outfile
           with _ -> 
               ()
-          pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,textV2P,mappings
+          pdbData,pdbOpt,debugDirectoryChunk,debugDataChunk,debugEmbeddedPdbChunk,textV2P,mappings
 
         // Looks like a finally
         with e ->   
@@ -4188,10 +4191,15 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         try 
             let idd = 
                 match pdbOpt with 
-                | Some struct(contentId, stream) ->
-                    writePortablePdbInfo contentId stream showTimes fpdb
+                | Some struct(originalLength, contentId, stream) ->
+                    if embeddedPDB then
+                        printfn "Embedded"
+                        embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
+                    else
+                        printfn "Portable"
+                        writePortablePdbInfo contentId stream showTimes fpdb debugDataChunk
                 | None ->
-                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
+                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData debugDataChunk
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image 
@@ -4200,19 +4208,22 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                writeInt32 os2 idd.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
-                writeInt32 os2 idd.iddTimestamp
-                writeInt32AsUInt16 os2 idd.iddMajorVersion
-                writeInt32AsUInt16 os2 idd.iddMinorVersion
-                writeInt32 os2 idd.iddType
-                writeInt32 os2 idd.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 debugDataChunk.addr              // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (textV2P debugDataChunk.addr)    // IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                for i in idd do
+                    writeInt32 os2 i.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
+                    writeInt32 os2 i.iddTimestamp
+                    writeInt32AsUInt16 os2 i.iddMajorVersion
+                    writeInt32AsUInt16 os2 i.iddMinorVersion
+                    writeInt32 os2 i.iddType
+                    writeInt32 os2 i.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData 
+                    writeInt32 os2 i.iddChunk.addr                // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                    writeInt32 os2 (textV2P i.iddChunk.addr)      // IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
-                // write the debug raw data as given us by the PDB writer 
-                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
-                if debugDataChunk.size < idd.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
-                writeBytes os2 idd.iddData
+                // Write the Debug Data
+                for i in idd do
+                    // write the debug raw data as given us by the PDB writer 
+                    os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
+                    if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough.  Debug info may not be usable"
+                    writeBytes os2 i.iddData
                 os2.Dispose()
             with e -> 
                 failwith ("Error while writing debug directory entry: "+e.Message)
@@ -4223,6 +4234,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     end      
     ignore debugDataChunk
+    ignore debugEmbeddedPdbChunk
     reportTime showTimes "Finalize PDB"
 
     /// Sign the binary.  No further changes to binary allowed past this point! 
@@ -4242,7 +4254,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
     //Finished writing and signing the binary and debug info...
     mappings
 
-
 type options =
    { ilg: ILGlobals;
      pdbfile: string option
@@ -4253,7 +4264,6 @@ type options =
      emitTailcalls : bool
      showTimes: bool
      dumpDebugInfo:bool }
-
 
 let WriteILBinary (outfile, (args: options), modul, noDebugData) =
     ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB,
