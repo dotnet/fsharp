@@ -4199,7 +4199,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                         printfn "Portable"
                         writePortablePdbInfo contentId stream showTimes fpdb debugDataChunk
                 | None ->
+#if FX_NO_PDB_WRITER
+                    Array.empty<idd>
+#else
                     writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData debugDataChunk
+#endif
             reportTime showTimes "Generate PDB Info"
 
             // Now we have the debug data we can go back and fill in the debug directory in the image 
