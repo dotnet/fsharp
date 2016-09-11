@@ -1237,7 +1237,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                           Some(CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false,None)))
 
               let methOverloadResult,errors = 
-                  CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep true (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
+                  CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
 
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
@@ -1249,7 +1249,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   // OK, the constraint is solved. 
                   // Re-run without undo to commit the inference equations. Throw errors away 
                   let minfo = calledMeth.Method
-                  let _,errors = ResolveOverloading csenv trace nm ndeep true (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)
+                  let _,errors = ResolveOverloading csenv trace nm ndeep (Some traitInfo) (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty)
 
                   errors ++ (fun () -> 
                       let isInstance = minfo.IsInstance
@@ -2098,7 +2098,7 @@ and ResolveOverloading
          trace           // The undo trace, if any
          methodName      // The name of the method being called, for error reporting
          ndeep           // Depth of inference
-         isConstraint    // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
+         cx              // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
          callerArgCounts // How many named/unnamed args id the caller provide? 
          ad              // The access domain of the caller, e.g. a module, type etc. 
          calledMethGroup // The set of methods being called 
@@ -2136,31 +2136,39 @@ and ResolveOverloading
           // See what candidates we have based on current inferred type information 
           // and _exact_ matches of argument types. 
           match candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
+                match cx with 
+                | None -> ResultD true
+                | Some traitInfo -> RecordMemberConstraintSolution csenv.SolverState m (WithTrace newTrace) traitInfo (TTraitSolved (calledMeth.Method, calledMeth.CalledTyArgs))                
+                ++ (fun _ ->
                      CanMemberSigsMatchUpToCheck 
                          csenv 
                          permitOptArgs 
                          alwaysCheckReturn
                          (MustUnifyInsideUndo csenv ndeep newTrace) 
                          (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) m)
-                         (ArgsEquivInsideUndo csenv Trace.New isConstraint) 
+                         (ArgsEquivInsideUndo csenv Trace.New cx.IsSome) 
                          reqdRetTyOpt 
-                         calledMeth) with
+                         calledMeth)) with
           | [(calledMeth,_)] -> 
               Some calledMeth, CompleteD
 
           | _ -> 
             // Now determine the applicable methods.
             // Subsumption on arguments is allowed.
-            let applicable = candidates |> FilterEachThenUndo (fun newTrace candidate -> 
+            let applicable = candidates |> FilterEachThenUndo (fun newTrace candidate ->
+                        match cx with 
+                        | None -> ResultD true
+                        | Some traitInfo -> RecordMemberConstraintSolution csenv.SolverState m (WithTrace newTrace) traitInfo (TTraitSolved (candidate.Method, candidate.CalledTyArgs))                
+                        ++ (fun _ -> 
                                CanMemberSigsMatchUpToCheck 
                                    csenv 
                                    permitOptArgs
                                    alwaysCheckReturn
                                    (MustUnifyInsideUndo csenv ndeep newTrace) 
                                    (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) m)
-                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace isConstraint) 
+                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cx.IsSome) 
                                    reqdRetTyOpt 
-                                   candidate) 
+                                   candidate))
 
             let failOverloading (msg : string) errors = 
                 // Try to extract information to give better error for ambiguous op_Explicit and op_Implicit 
@@ -2188,16 +2196,20 @@ and ResolveOverloading
                 // OK, we failed. Collect up the errors from overload resolution and the possible overloads
                 let errors = 
                     (candidates |> List.choose (fun calledMeth -> 
-                            match CollectThenUndo (fun newTrace -> 
+                            match CollectThenUndo (fun newTrace ->
+                                match cx with 
+                                | None -> ResultD true
+                                | Some traitInfo -> RecordMemberConstraintSolution csenv.SolverState m (WithTrace newTrace) traitInfo (TTraitSolved (calledMeth.Method, calledMeth.CalledTyArgs))                
+                                ++ (fun _ -> 
                                          CanMemberSigsMatchUpToCheck 
                                              csenv 
                                              permitOptArgs
                                              alwaysCheckReturn
                                              (MustUnifyInsideUndo csenv ndeep newTrace) 
                                              (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) m)
-                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace isConstraint) 
+                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cx.IsSome) 
                                              reqdRetTyOpt 
-                                             calledMeth) with 
+                                             calledMeth)) with 
                             | OkResult _ -> None
                             | ErrorResult(_,exn) -> Some (calledMeth, exn)))
 
@@ -2360,15 +2372,20 @@ and ResolveOverloading
     match calledMethOpt with 
     | Some(calledMeth) -> 
         calledMethOpt,
-        errors ++ (fun () -> CanMemberSigsMatchUpToCheck 
+        errors ++ (fun () -> 
+                match cx with 
+                | None -> ResultD true
+                | Some traitInfo -> RecordMemberConstraintSolution csenv.SolverState m trace traitInfo (TTraitSolved (calledMeth.Method, calledMeth.CalledTyArgs))
+                ++ (fun _ -> 
+                            CanMemberSigsMatchUpToCheck 
                                  csenv 
                                  permitOptArgs
                                  true
                                  (MustUnify csenv ndeep trace) 
                                  (TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace m)// REVIEW: this should not be an "InsideUndo" operation
-                                 (ArgsMustSubsumeOrConvert csenv ndeep trace isConstraint) 
+                                 (ArgsMustSubsumeOrConvert csenv ndeep trace cx.IsSome) 
                                  reqdRetTyOpt 
-                                 calledMeth)
+                                 calledMeth))
 
     | None -> 
         None, errors        
