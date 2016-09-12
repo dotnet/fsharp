@@ -4193,10 +4193,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                 match pdbOpt with 
                 | Some struct(originalLength, contentId, stream) ->
                     if embeddedPDB then
-                        printfn "Embedded"
                         embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk
                     else
-                        printfn "Portable"
                         writePortablePdbInfo contentId stream showTimes fpdb debugDataChunk
                 | None ->
 #if FX_NO_PDB_WRITER

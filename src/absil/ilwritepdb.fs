@@ -140,7 +140,7 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
       iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0x0100;                                                 // VersionMinor should be 0
+      iddMinorVersion = 0x0100;                                                 // VersionMinor should be 0x0100
       iddType = 17;                                                             // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
       iddTimestamp = 0;
       iddData = iddPdbBuffer;                                                   // Path name to the pdb file when built
@@ -149,7 +149,7 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk:BinaryChunk) (uncompressedLength:int64)
 
 let pdbGetDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk:BinaryChunk) (embeddedPDBChunk:BinaryChunk option) (uncompressedLength:int64) (stream:MemoryStream option)= 
     match stream, embeddedPDBChunk with
-    | None, _  | _,None ->  [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
+    | None, _  | _, None -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
     | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s; |]
 
 // Document checksum algorithms
@@ -227,7 +227,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let generatePortablePdb (fixupSPs:bool) showTimes (info:PdbData) = 
+let generatePortablePdb fixupSPs showTimes (info:PdbData) = 
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
@@ -360,18 +360,18 @@ let generatePortablePdb (fixupSPs:bool) showTimes (info:PdbData) =
         let rec writePdbScope scope =   
             if scope.Children.Length = 0 then
                 metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
-                                        Unchecked.defaultof<ImportScopeHandle>, 
-                                        nextHandle lastLocalVariableHandle, 
-                                        Unchecked.defaultof<LocalConstantHandle>, 
-                                        0, 
-                                        scope.EndOffset - scope.StartOffset) |>ignore
+                                       Unchecked.defaultof<ImportScopeHandle>, 
+                                       nextHandle lastLocalVariableHandle, 
+                                       Unchecked.defaultof<LocalConstantHandle>, 
+                                       0, 
+                                       scope.EndOffset - scope.StartOffset) |>ignore
             else
                 metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken), 
-                                        Unchecked.defaultof<ImportScopeHandle>, 
-                                        nextHandle lastLocalVariableHandle, 
-                                        Unchecked.defaultof<LocalConstantHandle>, 
-                                        scope.StartOffset, 
-                                        scope.EndOffset - scope.StartOffset) |>ignore
+                                       Unchecked.defaultof<ImportScopeHandle>, 
+                                       nextHandle lastLocalVariableHandle, 
+                                       Unchecked.defaultof<LocalConstantHandle>, 
+                                       scope.StartOffset, 
+                                       scope.EndOffset - scope.StartOffset) |>ignore
 
                 for localVariable in scope.Locals do
                     lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
