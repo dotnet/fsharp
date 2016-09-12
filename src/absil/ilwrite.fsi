@@ -26,9 +26,5 @@ type options =
    showTimes : bool
    dumpDebugInfo : bool }
 
-type BinaryChunk = 
-    { size: int32 
-      addr: int32 }
-
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
 val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit

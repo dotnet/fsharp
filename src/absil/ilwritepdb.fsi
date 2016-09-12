@@ -69,6 +69,10 @@ val logDebugInfo : string -> PdbData -> unit
 val writeMdbInfo<'a> : string -> string -> PdbData -> 'a
 #endif
 
+type BinaryChunk = 
+    { size: int32 
+      addr: int32 }
+
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
