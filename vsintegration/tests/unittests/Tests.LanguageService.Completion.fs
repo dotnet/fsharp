@@ -24,7 +24,7 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
@@ -7701,7 +7701,7 @@ let rec f l =
 
 
 // Context project system
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 
