@@ -36,19 +36,19 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SVsServiceProvider) =
     inherit CompletionProvider()
 
-    let completionTriggers = [ '.' ]
-    let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    static let completionTriggers = [ '.' ]
+    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+    static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, filePath: string, defines: string list) =
         // Skip if we are at the start of a document
         if caretPosition = 0 then
             false
 
         // Skip if it was triggered by an operation other than insertion
-        else if not (trigger.Kind = CompletionTriggerKind.Insertion) then
+        else if not (trigger = CompletionTriggerKind.Insertion) then
             false
 
         // Skip if we are not on a completion trigger
@@ -57,51 +57,62 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
         // Trigger completion if we are on a valid classification type
         else
-            let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
-            let document = workspace.CurrentSolution.GetDocument(documentId)
-        
-            match FSharpLanguageService.GetOptions(document.Project.Id) with
-            | Some(options) ->
-        
-                let triggerPosition = caretPosition - 1
-                let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                let classifiedSpanOption =
-                    FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(document.FilePath), defines, CancellationToken.None)
-                    |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
+            let triggerPosition = caretPosition - 1
+            let textLine = sourceText.Lines.GetLineFromPosition(triggerPosition)
+            let classifiedSpanOption =
+                FSharpColorizationService.GetColorizationData(sourceText, textLine.Span, Some(filePath), defines, CancellationToken.None)
+                |> Seq.tryFind(fun classifiedSpan -> classifiedSpan.TextSpan.Contains(triggerPosition))
 
-                match classifiedSpanOption with
-                | None -> false
-                | Some(classifiedSpan) ->
-                    match classifiedSpan.ClassificationType with
-                    | ClassificationTypeNames.Comment -> false
-                    | ClassificationTypeNames.StringLiteral -> false
-                    | ClassificationTypeNames.ExcludedCode -> false
-                    | _ -> true // anything else is a valid classification type
-
+            match classifiedSpanOption with
             | None -> false
+            | Some(classifiedSpan) ->
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.Comment -> false
+                | ClassificationTypeNames.StringLiteral -> false
+                | ClassificationTypeNames.ExcludedCode -> false
+                | _ -> true // anything else is a valid classification type
+
+    static member ProvideCompletionsAsyncAux(sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, textVersionHash: int) = async {
+        let! parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options)
+        let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options)
+        let checkFileResults = match checkFileAnswer with
+                                | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
+                                | FSharpCheckFileAnswer.Succeeded(results) -> results
+
+        let textLine = sourceText.Lines.GetLineFromPosition(caretPosition)
+        let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
+        let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), caretPosition - textLine.Start - 1) 
+        let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), textLineNumber, caretPosition, textLine.ToString(), qualifyingNames, partialName)
+
+        let results = List<CompletionItem>()
+
+        for declarationItem in declarations.Items do
+            let completionItem = CompletionItem.Create(declarationItem.Name)
+            declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
+            results.Add(completionItem)
+
+        return results
+    }
+
+
+    override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+        let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
+        let document = workspace.CurrentSolution.GetDocument(documentId)
+        
+        match FSharpLanguageService.GetOptions(document.Project.Id) with
+        | None -> false
+        | Some(options) ->
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, document.FilePath, defines)
     
     override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
         let computation = async {
             match FSharpLanguageService.GetOptions(context.Document.Project.Id) with
             | Some(options) ->
                 let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-                let! parseResults = FSharpChecker.Instance.ParseFileInProject(context.Document.FilePath, sourceText.ToString(), options)
                 let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
-                let! checkFileAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, context.Document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options)
-                let checkFileResults = match checkFileAnswer with
-                                       | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
-                                       | FSharpCheckFileAnswer.Succeeded(results) -> results
-
-                let textLine = sourceText.Lines.GetLineFromPosition(context.Position)
-                let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-                let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(textLine.ToString(), context.Position - textLine.Start - 1) 
-                let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), textLineNumber, context.Position, textLine.ToString(), qualifyingNames, partialName)
-
-                for declarationItem in declarations.Items do
-                    let completionItem = CompletionItem.Create(declarationItem.Name)
-                    declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
-                    context.AddItem(completionItem)
+                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(sourceText, context.Position, options, context.Document.FilePath, textVersion.GetHashCode())
+                context.AddItems(results)
             | None -> ()
         }
         
