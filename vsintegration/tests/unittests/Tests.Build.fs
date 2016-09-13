@@ -53,7 +53,7 @@ type FauxHostObject() =
     interface ITaskHost
         // no members
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type Build() = 
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqual expected actual =

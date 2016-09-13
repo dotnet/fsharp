@@ -12,7 +12,7 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests()
 
@@ -910,6 +910,6 @@ but here has type
         Assert.AreEqual(1,warnList.Length) 
         
 // Context project system
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

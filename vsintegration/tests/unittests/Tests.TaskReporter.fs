@@ -19,7 +19,7 @@ open Salsa.VsMocks
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type TaskReporter() = 
     static let err(line) : 'a = 
         printfn "err() called on line %s with %s" line System.Environment.StackTrace 

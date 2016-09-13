@@ -19,7 +19,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.Win32
 open System.Xml.Linq
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type References() = 
     inherit TheTests()
 

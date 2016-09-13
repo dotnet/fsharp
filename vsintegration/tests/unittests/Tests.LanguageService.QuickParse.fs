@@ -7,7 +7,7 @@ open System.IO
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 [<Category("LanguageService.MSBuild")>]
 [<Category("LanguageService.ProjectSystem")>]
 type QuickParse() = 
