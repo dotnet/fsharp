@@ -79,7 +79,8 @@ type UnionReprDecisions<'Union,'Alt,'Type>
             let alts = getAlternatives cu
             if alts.Length = 1 then 
                 SingleCase
-            elif useVirtualTag cu then
+            elif useVirtualTag cu &&
+                (not (nullPermitted cu && alts.Length = 2 && isNullary alts.[0] <> isNullary alts.[1])) then
                 VirtualTag
             elif
                 not (isStruct cu) &&
@@ -93,7 +94,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
     member repr.RepresentAlternativeAsNull (cu,alt) = 
         let alts = getAlternatives cu
         nullPermitted cu &&
-        (repr.DiscriminationTechnique cu  = RuntimeTypes) && (* don't use null for tags, lists or single-case  *)
+        (match repr.DiscriminationTechnique cu with RuntimeTypes | VirtualTag -> true | _ -> false) && (* don't use null for tags, lists or single-case  *)
         Array.existsOne isNullary alts  &&
         Array.exists (isNullary >> not) alts  &&
         isNullary alt  (* is this the one? *)
@@ -380,8 +381,8 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
         match cuspecRepr.DiscriminationTechnique cuspec with 
         | SingleCase -> [ mkLdcInt32 1 ] 
         | RuntimeTypes -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName  altTy
+        | VirtualTag
         | IntegerTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
-        | VirtualTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | TailOrNull -> 
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @  [ AI_ldnull; AI_ceq ]
@@ -428,8 +429,8 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
         match cuspecRepr.DiscriminationTechnique cuspec  with 
         | SingleCase -> [ ]
         | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (pos,tg))
+        | VirtualTag
         | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
-        | VirtualTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
         | TailOrNull -> 
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
@@ -457,9 +458,32 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
             cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
         | VirtualTag ->
             let baseTy = baseTyOfUnionSpec cuspec
-            ldOpt |> Option.iter cg.EmitInstr
             let get_Tag = mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec)
-            cg.EmitInstr (mkNormalCallvirt get_Tag)
+
+            if cuspecRepr.RepresentOneAlternativeAsNull cuspec then
+                let nullAltIdx, _ =
+                    alts
+                    |> Seq.mapi (fun i a -> i, a)
+                    |> Seq.find (fun (_,a) -> cuspecRepr.RepresentAlternativeAsNull (cuspec, a))
+
+                let ld = 
+                    match ldOpt with 
+                    | None -> 
+                        let locn = cg.GenLocal baseTy 
+                        cg.EmitInstr (mkStloc locn)
+                        mkLdloc locn 
+                    | Some i -> i
+
+                let ifNullLab = cg.GenerateDelayMark ()
+                let outLab = cg.GenerateDelayMark()
+                cg.EmitInstrs [ld; I_brcmp (BI_brfalse, cg.CodeLabel ifNullLab)]
+                cg.EmitInstrs [ld; mkNormalCallvirt get_Tag; I_br (cg.CodeLabel outLab) ]
+                cg.SetMarkToHere ifNullLab
+                cg.EmitInstrs [mkLdcInt32 nullAltIdx]
+                cg.SetMarkToHere outLab
+            else 
+                ldOpt |> Option.iter cg.EmitInstr
+                cg.EmitInstr (mkNormalCallvirt get_Tag)
         | SingleCase -> 
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ] 
@@ -584,19 +608,57 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         match cases with 
         | [] -> cg.EmitInstrs  [ AI_pop ]
         | _ ->
-        // Use a dictionary to avoid quadratic lookup in case list
-        let dict = System.Collections.Generic.Dictionary<int,_>()
-        for (i,case) in cases do dict.[i] <- case
-        let failLab = cg.GenerateDelayMark ()
-        let emitCase i _ = 
-            let mutable res = Unchecked.defaultof<_>
-            let ok = dict.TryGetValue(i, &res)
-            if ok then res else cg.CodeLabel failLab
+            let failLab = cg.GenerateDelayMark ()
 
-        let dests = Array.mapi emitCase cuspec.AlternativesArray
-        cg.EmitInstrs (mkGetTag ilg cuspec)
-        cg.EmitInstr (I_switch (Array.toList dests))
-        cg.SetMarkToHere failLab
+            let indexedAlts =
+                cuspec.AlternativesArray
+                |> Array.mapi (fun i a -> i, a)
+
+            let getCase =
+                let casesDict = cases |> dict // Use a dictionary to avoid quadratic lookup in case list
+                fun i maybeNullAltIdx ->
+                    match casesDict.TryGetValue i, maybeNullAltIdx with
+                    | (true, res), None -> res
+                    | (true, res), Some nullAltIdx when nullAltIdx <> i -> res
+                    | _ -> cg.CodeLabel failLab
+
+            let locn = cg.GenLocal baseTy 
+            cg.EmitInstr (mkStloc locn)
+
+            let maybeNullAltIdx = 
+                if not (cuspecRepr.RepresentOneAlternativeAsNull cuspec) then None
+                else
+                    let nullAltIdx, _ =
+                        indexedAlts
+                        |> Seq.find (fun (_,a) -> cuspecRepr.RepresentAlternativeAsNull (cuspec, a))
+
+                    cg.EmitInstr (mkLdloc locn)
+                    cg.EmitInstr (I_brcmp (BI_brfalse, getCase nullAltIdx None))
+                    Some nullAltIdx
+
+            cg.EmitInstr (mkLdloc locn)
+            cg.EmitInstr (mkNormalCallvirt (mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec)))
+
+            let maybeTwoChoices =
+                match indexedAlts, maybeNullAltIdx with
+                | [|(idxA,_); (idxB,_)|],           None                             -> Some (idxA, idxB)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxA -> Some (idxB, idxC)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxB -> Some (idxA, idxC)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxC -> Some (idxA, idxB)
+                | _ -> None
+
+            match maybeTwoChoices with
+            | Some (idxA, idxB) ->
+                 cg.EmitInstrs [mkLdcInt32 idxA; (I_brcmp (BI_beq, getCase idxA None)); I_br (getCase idxB None)]
+            | None->
+                let dests =
+                    indexedAlts
+                    |> Array.map (fun (i,_) -> getCase i maybeNullAltIdx)
+                    |> Array.toList
+
+                cg.EmitInstr (I_switch dests)
+
+            cg.SetMarkToHere failLab
 
     | SingleCase ->
         match cases with 
@@ -1095,9 +1157,13 @@ let mkClassUnionDef ilg tref td cud =
           | false, false -> [mkTagGetter ()],                              [mkTagProperty ()]
 
         tagMeths, tagProps, tagEnumFields
-
-    // The class can be abstract if each alternative is represented by a derived type
-    let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
+    
+    let isAbstract = 
+        match repr.DiscriminationTechnique info with 
+        | VirtualTag -> true
+        | _ ->
+            // The class can be abstract if each alternative is represented by a derived type
+            altTypeDefs.Length = cud.cudAlternatives.Length
 
     let existingMeths = td.Methods.AsList 
     let existingProps = td.Properties.AsList
