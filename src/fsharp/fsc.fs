@@ -1741,6 +1741,7 @@ module FileWriter =
                     emitTailcalls = tcConfig.emitTailcalls
                     showTimes = tcConfig.showTimes
                     portablePDB = tcConfig.portablePDB
+                    embeddedPDB = tcConfig.embeddedPDB
                     signer = GetSigner signingInfo
                     fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo },

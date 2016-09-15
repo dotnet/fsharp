@@ -17,8 +17,8 @@ let f2 = File2List fn2
 
 let mutable i = 0
 let compare (f1:string list) (f2:string list) = List.forall2 (fun (a:string) (b:string) ->
-                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Compiler version .+", "F# 3.0 Compiler version")
-                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Compiler version .+", "F# 3.0 Compiler version")
+                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Compiler version .+", "F# Compiler")
+                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Compiler version .+", "F# Compiler")
 
                                                                          i <- i+1
                                                                          if (aa = bb) then
@@ -30,4 +30,4 @@ let compare (f1:string list) (f2:string list) = List.forall2 (fun (a:string) (b:
                                                                             false
                                                                        ) f1 f2
 
-exit (if (f1.Length = f2.Length && compare f1 f2) then 0 else 1)
+exit (if (f1.Length = f2.Length && compare f1 f2) then 0 else printfn "File lengths differ"; 1)
