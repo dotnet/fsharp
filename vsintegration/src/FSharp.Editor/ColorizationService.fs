@@ -140,7 +140,7 @@ type internal FSharpColorizationService() =
                     | Some(options) ->
                         let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
                         if sourceTextTask.Status = TaskStatus.RanToCompletion then
-                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, None, defines, cancellationToken))
+                            result.AddRange(FSharpColorizationService.GetColorizationData(sourceTextTask.Result, textSpan, Some(document.FilePath), defines, cancellationToken))
                     | None -> ()
                 , cancellationToken)
 
@@ -153,7 +153,8 @@ type internal FSharpColorizationService() =
                     let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! parseResults = FSharpChecker.Instance.ParseFileInProject(document.Name, sourceText.ToString(), options)
-                    let! checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, document.Name, 0, textSpan.ToString(), options)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                    let! checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, document.Name, textVersion.GetHashCode(), textSpan.ToString(), options)
 
                     let extraColorizationData = match checkResultsAnswer with
                                                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"

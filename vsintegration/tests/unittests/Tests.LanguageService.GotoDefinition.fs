@@ -14,7 +14,7 @@ open System.Text.RegularExpressions
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -1449,6 +1449,6 @@ type UsingMSBuild()  =
 
 
 // Context project system
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

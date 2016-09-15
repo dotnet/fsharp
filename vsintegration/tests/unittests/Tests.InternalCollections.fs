@@ -8,7 +8,7 @@ open NUnit.Framework
 open Internal.Utilities.Collections
        
                 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type MruCache = 
     new() = { }        
 
@@ -113,7 +113,7 @@ type MruCache =
         Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
 #endif
             
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type AgedLookup() = 
     let mutable hold197 : byte [] = null
     let mutable hold198 : byte [] = null

@@ -11,7 +11,7 @@ open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -325,6 +325,6 @@ open NUnit.Framework
 open Salsa.Salsa
 
 // Context project system
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>] 
+[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
