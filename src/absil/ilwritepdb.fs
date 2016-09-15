@@ -470,13 +470,13 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
                       pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
 
               // Write the scopes 
-              let rec writePdbScope top sco = 
-                  if top || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then 
+              let rec writePdbScope level sco = 
+                  if level = 0 || (level < 450 && (sco.Locals.Length <> 0 || sco.Children.Length <> 0)) then 
                       pdbOpenScope !pdbw sco.StartOffset
                       sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
-                      sco.Children |> Array.iter (writePdbScope false)
+                      sco.Children |> Array.iter (writePdbScope (level + 1))
                       pdbCloseScope !pdbw sco.EndOffset
-              writePdbScope true minfo.RootScope 
+              writePdbScope 0 minfo.RootScope
 
               pdbCloseMethod !pdbw
           end)
