@@ -306,6 +306,7 @@ type TcConfigBuilder =
       mutable useSignatureDataFile : bool
       mutable jitTracking : bool
       mutable portablePDB : bool
+      mutable embeddedPDB : bool
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -459,6 +460,7 @@ type TcConfig =
     member useSignatureDataFile : bool
     member jitTracking : bool
     member portablePDB : bool
+    member embeddedPDB : bool
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
     member extraOptimizationIterations : int

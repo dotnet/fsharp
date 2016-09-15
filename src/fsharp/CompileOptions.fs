@@ -119,7 +119,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
     assert(flagWidth = 30)
-    printf "%-30s" (compilerOptionUsage compilerOption)
+    printf "%-40s" (compilerOptionUsage compilerOption)
     let printWord column (word:string) =
         // Have printed upto column.
         // Now print the next word including any preceeding whitespace.
@@ -127,7 +127,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
           printfn "" (* newline *)
           assert(flagWidth = 30)
-          printf  "%-30s %s" ""(*<--flags*) word
+          printf  "%-40s %s" ""(*<--flags*) word
           flagWidth + 1 + word.Length
         else
           printf  " %s" word
@@ -474,11 +474,12 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "portable" -> tcConfigB.portablePDB <- true ; tcConfigB.jitTracking <- true
-       | "pdbonly" ->  tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- false
-       | "full" ->     tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- true
+       | "portable" ->  tcConfigB.portablePDB <- true ; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
+       | "pdbonly" ->   tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- false
+       | "embedded" ->  tcConfigB.portablePDB <- true;  tcConfigB.embeddedPDB <- true;  tcConfigB.jitTracking <- true
+       | "full" ->      tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
-    | None -> tcConfigB.portablePDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;
+    | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let setOutFileName tcConfigB s = 
@@ -499,7 +500,7 @@ let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
 let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
-let tagFullPDBOnlyPortable = "{full|pdbonly|portable}"
+let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
@@ -522,6 +523,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
     printfn "  jitTracking  . . . . . : %+A" tcConfigB.jitTracking
     printfn "  portablePDB. . . . . . : %+A" tcConfigB.portablePDB
+    printfn "  embeddedPDB. . . . . . : %+A" tcConfigB.embeddedPDB
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
