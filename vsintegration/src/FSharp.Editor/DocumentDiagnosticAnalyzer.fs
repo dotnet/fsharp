@@ -39,11 +39,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
         Diagnostic.Create(descriptor, Location.Create(filePath, correctedTextSpan , linePositionSpan))
 
-    static member GetDiagnostics(filePath: string, sourceText: SourceText, options: FSharpProjectOptions, addSemanticErrors: bool) =
+    static member GetDiagnostics(filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, addSemanticErrors: bool) =
         let parseResults = FSharpChecker.Instance.ParseFileInProject(filePath, sourceText.ToString(), options) |> Async.RunSynchronously
         let errors =
             if addSemanticErrors then
-                let checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, 0, sourceText.ToString(), options) |> Async.RunSynchronously
+                let checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) |> Async.RunSynchronously
                 match checkResultsAnswer with
                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
                 | FSharpCheckFileAnswer.Succeeded(results) -> results.Errors
@@ -65,7 +65,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             match FSharpLanguageService.GetOptions(document.Project.Id) with
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, false)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, false)
             | None -> return ImmutableArray<Diagnostic>.Empty
         }
 
@@ -78,7 +79,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             match FSharpLanguageService.GetOptions(document.Project.Id) with
             | Some(options) ->
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, options, true)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
+                return FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document.FilePath, sourceText, textVersion.GetHashCode(), options, true)
             | None -> return ImmutableArray<Diagnostic>.Empty
         }
 

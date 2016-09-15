@@ -55,6 +55,15 @@
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
     </Compile>
+    <Compile Include="CompletionProvider.fs">
+      <Link>Completion\CompletionProvider.fs</Link>
+    </Compile>
+    <Compile Include="CompletionService.fs">
+      <Link>Completion\CompletionService.fs</Link>
+    </Compile>
+    <Compile Include="CompletionServiceFactory.fs">
+      <Link>Completion\CompletionServiceFactory.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +92,8 @@
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="EnvDTE.dll" />
+    <Reference Include="EnvDTE80.dll" />
     <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>

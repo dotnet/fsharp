@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<Ignore("FSROSLYNTODO: Not ported to Roslyn yet")>][<TestFixture>]
+[<TestFixture>]
 type Project() = 
     inherit TheTests()
 
