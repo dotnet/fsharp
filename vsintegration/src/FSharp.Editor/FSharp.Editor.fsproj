@@ -64,6 +64,9 @@
     <Compile Include="CompletionServiceFactory.fs">
       <Link>Completion\CompletionServiceFactory.fs</Link>
     </Compile>
+    <Compile Include="GoToDefinitionService.fs">
+      <Link>GoToDefinition\GoToDefinitionService.fs</Link>
+    </Compile>
     <Compile Include="ContentType.fs" />
   </ItemGroup>
   <ItemGroup>
