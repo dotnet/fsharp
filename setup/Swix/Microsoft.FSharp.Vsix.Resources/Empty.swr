@@ -2,4 +2,4 @@ use vs
 
 package name=Microsoft.FSharp.VSIX.$(VSSku).Resources
         version=$(FSharpPackageVersion)
-        vs.package.language=$(LocaleRegion)
+        vs.package.language=$(LocaleSpecificCulture)
