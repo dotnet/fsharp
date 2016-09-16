@@ -81,19 +81,19 @@
         <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
         <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleParentCulture=%(SetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SetupProjects.LocaleSpecificCulture);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
     </Target>
     
     <Target Name="Rebuild" DependsOnTargets="CollectSetupProjects">
         <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Rebuild"
-                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleParentCulture=%(SetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SetupProjects.LocaleSpecificCulture);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
     </Target>
     
     <Target Name="Clean" DependsOnTargets="CollectSetupProjects">
         <MSBuild Projects="%(SetupProjects.ProjectPath)"
                  Targets="Clean"
-                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleRegion=%(SetupProjects.LocaleRegion);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
+                 Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleParentCulture=%(SetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SetupProjects.LocaleSpecificCulture);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
     </Target>
     
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">
