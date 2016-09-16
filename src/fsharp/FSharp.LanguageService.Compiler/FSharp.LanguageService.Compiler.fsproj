@@ -562,7 +562,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" Condition="'$(VSCMD_VER)' &lt; '15.0.25714.1'" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" Condition="!Exists('$(VS150COMNTOOLS)..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll')" />
     <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />

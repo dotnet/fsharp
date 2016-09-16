@@ -81,7 +81,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Package.LanguageService.$(VisualStudioVersion)" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" Condition="'$(VSCMD_VER)' &lt; '15.0.25714.1'" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" Condition="!Exists('$(VS150COMNTOOLS)..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll')" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
