@@ -502,22 +502,27 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
                   if spset.Length > 0 then 
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
                     let sps = 
-                      spset |> Array.map (fun sp -> 
-                           // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset 
-                           (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn)) 
+                        spset |> Array.map (fun sp -> 
+                            // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset 
+                            (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn)) 
                   // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here 
                     if sps.Length < 5000 then 
-                      pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
+                        pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
 
               // Write the scopes 
-              let rec writePdbScope level sco = 
-                  if level = 0 || (level < 450 && (sco.Locals.Length <> 0 || sco.Children.Length <> 0)) then 
-                      pdbOpenScope !pdbw sco.StartOffset
+              let rec writePdbScope parent sco = 
+                  if sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
+                      // Only nest scopes if the child scope is a different size from 
+                      let nested =
+                          match parent with
+                          | Some p -> sco.StartOffset <> p.StartOffset && sco.EndOffset <> p.EndOffset
+                          | None -> true
+                      if nested then pdbOpenScope !pdbw sco.StartOffset
                       sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
-                      sco.Children |> Array.iter (writePdbScope (level + 1))
-                      pdbCloseScope !pdbw sco.EndOffset
-              writePdbScope 0 minfo.RootScope
+                      sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
+                      if nested then pdbCloseScope !pdbw sco.EndOffset
 
+              writePdbScope None minfo.RootScope 
               pdbCloseMethod !pdbw
           end)
     reportTime showTimes "PDB: Wrote methods"
