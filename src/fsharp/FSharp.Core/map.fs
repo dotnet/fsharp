@@ -8,7 +8,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue ||| CompilationRepresentationFlags.UseVirtualTag)>]
     [<NoEquality; NoComparison>]
     type MapTree<'Key,'Value when 'Key : comparison > = 
         | MapEmpty 

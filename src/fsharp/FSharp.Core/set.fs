@@ -13,7 +13,7 @@ namespace Microsoft.FSharp.Collections
 
     (* A classic functional language implementation of binary trees *)
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue ||| CompilationRepresentationFlags.UseVirtualTag)>]
     [<NoEquality; NoComparison>]
     type SetTree<'T> when 'T : comparison = 
         | SetEmpty                                          // height = 0   
