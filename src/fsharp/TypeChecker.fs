@@ -5293,7 +5293,7 @@ and TcPatterns warnOnUpper cenv env vFlags s argtys args =
 and solveTypAsError cenv denv m ty =
     let ty2 = NewErrorType ()
     assert((destTyparTy cenv.g ty2).IsFromError)
-    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
+    SolveTypEqualsTypKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace None ty ty2 |> ignore
 
 and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
     // This function is motivated by cases like
