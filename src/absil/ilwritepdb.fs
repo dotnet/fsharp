@@ -493,7 +493,7 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
                   match Map.tryFind k res with
                     | Some xsR -> xsR := sp :: !xsR; res
                     | None     -> Map.add k (ref [sp]) res
-               
+
                 let res = Array.fold add res sps
                 let res = Map.toList res  // ordering may not be stable 
                 List.map (fun (_,x) -> Array.ofList !x) res
@@ -504,8 +504,8 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
                     let sps = 
                         spset |> Array.map (fun sp -> 
                             // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset 
-                            (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn)) 
-                  // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here 
+                            (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn))
+                    // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here 
                     if sps.Length < 5000 then 
                         pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
 
