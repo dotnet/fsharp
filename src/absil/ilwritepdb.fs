@@ -511,11 +511,11 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
 
               // Write the scopes 
               let rec writePdbScope parent sco = 
-                  if sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
+                  if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
                       // Only nest scopes if the child scope is a different size from 
                       let nested =
                           match parent with
-                          | Some p -> sco.StartOffset <> p.StartOffset && sco.EndOffset <> p.EndOffset
+                          | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                           | None -> true
                       if nested then pdbOpenScope !pdbw sco.StartOffset
                       sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
