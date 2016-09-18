@@ -90,7 +90,15 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
                 canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath
 
-            (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo
+            let accessibleByFamilyAndAssembly =
+                access = ILMemberAccess.FamilyAndAssembly &&
+                canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath &&
+                match tcrefViewedFromOption with 
+                | None -> false
+                | Some tcrefViewedFrom ->
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
+
+            (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 
     | AccessibleFromSomewhere -> 
             true
