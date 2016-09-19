@@ -738,7 +738,9 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
 
     match cxsln with
-    | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> TransactMemberConstraintSolution traitInfo trace traitSln
+    | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
+        // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
+        TransactMemberConstraintSolution traitInfo trace traitSln
     | _ -> ()
 
     match sty1, sty2 with 
