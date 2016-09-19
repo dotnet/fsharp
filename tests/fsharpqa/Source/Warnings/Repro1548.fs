@@ -1,6 +1,7 @@
 // #Warnings
-//<Expects status="Error" id="FS0001">This expression was expected to have type</Expects>
-//<Expects status="success">The '!' operator is used to dereference a ref cell. Consider using 'not expr' here.</Expects>
+//<Expects status="Error" span="(7,15)" id="FS0039">The type 'Type' is not defined in 'B'.</Expects>
+//<Expects>Maybe you want one of the following:</Expects>
+//<Expects>PublicType</Expects>
 
 type E() =
     inherit B.Type()

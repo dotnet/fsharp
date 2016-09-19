@@ -37,11 +37,11 @@ Maybe you want one of the following:
 
    InternalRecordType
 
-   PrivateUnionType
-
-   PrivateRecordType
-
    PublicRecordType
+
+   Type
+
+   UnionTypeWithPrivateRepresentation
 
 neg15.fs(128,31,128,61): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
@@ -53,11 +53,11 @@ Maybe you want one of the following:
 
    InternalRecordType
 
-   PrivateUnionType
-
-   PrivateRecordType
-
    PublicRecordType
+
+   Type
+
+   UnionTypeWithPrivateRepresentation
 
 neg15.fs(141,30,141,60): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
