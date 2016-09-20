@@ -18,7 +18,7 @@ if not exist "%~dp0..\packages\NUnit.Console.3.0.0\tools\" (
 SET NUNIT3_CONSOLE=%~dp0..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 SET FSI_TOOL=%~dp0..\%FLAVOR%\net40\bin\Fsi.exe
 
-set link_exe=%~dp0..\packages\VisualCppTools.14.0.24516-Pre\lib\native\bin\link.exe
+set link_exe=%~dp0..\packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
 if not exist "%link_exe%" (
     set saved_errorlevel=1
     echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
