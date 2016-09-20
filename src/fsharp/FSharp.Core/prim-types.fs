@@ -5324,12 +5324,13 @@ namespace Microsoft.FSharp.Core
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
                             // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
                             // so we should be able to just return value here, which would be faster
-                            if !value < n then
+                            let derefValue = !value
+                            if derefValue < n then
                                 notStarted ()
-                            elif !value > m then
+                            elif derefValue > m then
                                 alreadyFinished ()
                             else 
-                                !value
+                                derefValue
 
                         { new IEnumerator<'T> with
                             member __.Dispose () = ()
@@ -5339,11 +5340,12 @@ namespace Microsoft.FSharp.Core
                             member __.Current = box (current ())
                             member __.Reset () = value := n - LanguagePrimitives.GenericOne
                             member __.MoveNext () =
-                                if !value < m then
-                                    value := !value + LanguagePrimitives.GenericOne
+                                let derefValue = !value
+                                if derefValue < m then
+                                    value := derefValue + LanguagePrimitives.GenericOne
                                     true
-                                elif !value = m then 
-                                    value := m + LanguagePrimitives.GenericOne
+                                elif derefValue = m then 
+                                    value := derefValue + LanguagePrimitives.GenericOne
                                     false
                                 else false }
 
