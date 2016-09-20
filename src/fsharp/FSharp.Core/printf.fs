@@ -1094,7 +1094,7 @@ module internal PrintfImpl =
                 mi.Invoke(null, args)
 
         let buildPlainFinal(args : obj[], argTypes : Type[]) = 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + (argTypes.Length.ToString()), NonPublicStatics)
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + (let x = argTypes.Length in x.ToString()), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #else
@@ -1103,7 +1103,7 @@ module internal PrintfImpl =
             mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + ((argTypes.Length - 1).ToString()), NonPublicStatics)
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #else
