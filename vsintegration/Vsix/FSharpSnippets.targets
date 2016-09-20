@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  This is a hack to make snippets work in the F5 scenario while developing.
+
+  This file should be kept in sync with the "$(RepoRoot)\setup\Swix\Microsoft.FSharp.vsix\snippets.swr" file
+  and the "$(RepoRoot)\vsintegration\Snippets\1033\" directory.
+  -->
+  <PropertyGroup>
+    <SnippetIndexLocation>$(MSBuildThisFileDirectory)..\Snippets\1033</SnippetIndexLocation>
+    <SnippetsLocation>$(SnippetIndexLocation)\Snippets</SnippetsLocation>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(SnippetIndexLocation)\SnippetsIndex.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>Snippets\1033\SnippetsIndex.xml</Link>
+    </Content>
+    <Content Include="$(SnippetsLocation)\match.snippet">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>Snippets\1033\Snippets\match.snippet</Link>
+    </Content>
+  </ItemGroup>
+</Project>

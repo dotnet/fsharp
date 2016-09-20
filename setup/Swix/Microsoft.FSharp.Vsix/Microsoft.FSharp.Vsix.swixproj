@@ -11,11 +11,11 @@
     <OutputName>Microsoft.FSharp.VSIX.$(VSSku).$(LocaleCode)</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(IsLangPack)' == 'false'">
     <OutputType>manifest</OutputType>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(IsLangPack)' == 'true'">
     <OutputType>vsix</OutputType>
   </PropertyGroup>
@@ -29,21 +29,26 @@
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);SnippetsDir=$(FSharpSourcesRoot)\..\vsintegration\Snippets\1033</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsLangPack)' == 'false'">
     <Package Include="Core.Files.swr" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(IsLangPack)' == 'true'">
     <Package Include="LangPack.Files.swr" />
     <Package Include="LangPack.$(VSSku).Templates.swr" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <Package Include="snippets.swr" />
+  </ItemGroup>
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- SWIX plugin adds the built vsix to signing automatically -->
   </Target>
-  
+
   <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
     <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
