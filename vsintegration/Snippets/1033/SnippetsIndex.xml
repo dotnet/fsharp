@@ -5,7 +5,7 @@
             <OnOff>On</OnOff>
             <Installed>true</Installed>
             <Locale>1033</Locale>
-            <DirPath>%InstallRoot%\FSharp\Snippets\%LCID%\Snippets\</DirPath>	
+            <DirPath>%InstallRoot%\FSharp\Snippets\1033\Snippets\</DirPath>
             <LocalizedName>F# snippets</LocalizedName>
         </SnippetDir>
     </Language>

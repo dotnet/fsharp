@@ -17,8 +17,8 @@ open Microsoft.VisualStudio.OLE.Interop
 type internal SVsSettingsPersistenceManager = class end
 
 [<Guid(FSharpConstants.packageGuidString)>]
-[<ProvideCodeExpansions(FSharpCommonConstants.languageServiceGuidString, false, 106s, "FSharp", @"Snippets\%LCID%\SnippetsIndex.xml")>]
-[<ProvideCodeExpansionPath("FSharp", "Description", @"Snippets\%LCID%\Snippets\")>]
+[<ProvideCodeExpansions(FSharpCommonConstants.languageServiceGuidString, false, 106s, "FSharp", @"Snippets\1033\SnippetsIndex.xml")>]
+[<ProvideCodeExpansionPath("FSharp", "Description", @"Snippets\1033\Snippets\")>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                          strLanguageName = FSharpConstants.fsharpLanguageName,
                          languageResourceID = 100,
