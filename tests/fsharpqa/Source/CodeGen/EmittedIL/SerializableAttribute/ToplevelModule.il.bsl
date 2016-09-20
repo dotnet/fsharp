@@ -1720,20 +1720,18 @@
   {
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] string V_0,
-             [1] string greeting)
-    .line 12,12 : 9,31
+    .locals init ([0] string greeting,
+             [1] string V_1)
+    .line 12,12 : 9,31 ''
     IL_0000:  nop
     IL_0001:  call       string ABC::get_greeting()
     IL_0006:  stloc.0
-    .line 22,22 : 13,35
+    .line 22,22 : 13,35 ''
     IL_0007:  call       string ABC/ABC::get_greeting()
     IL_000c:  stloc.1
     IL_000d:  ret
   } // end of method $ABC::.cctor
-
 } // end of class '<StartupCode$TopLevelModule>'.$ABC
-
 
 // =============================================================
 
