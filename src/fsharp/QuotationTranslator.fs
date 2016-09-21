@@ -561,7 +561,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
              let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
              let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
-             let methArgTypesR = List.map (ConvILType cenv env m) (ILList.toList ilMethRef.ArgTypes)
+             let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
              let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
@@ -945,7 +945,7 @@ and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tc
 
 and ConvILType cenv env m ty = 
     match ty with 
-    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tspec.TypeRef, List.map (ConvILType cenv env m) (ILList.toList tspec.GenericArgs))
+    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tspec.TypeRef, List.map (ConvILType cenv env m) tspec.GenericArgs)
     | ILType.Array (shape,ty) -> QP.mkArrayTy(shape.Rank,ConvILType cenv env m ty)
     | ILType.TypeVar idx -> QP.mkVarTy(int idx)
     | ILType.Void -> ConvVoidType cenv m

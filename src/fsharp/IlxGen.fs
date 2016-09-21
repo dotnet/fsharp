@@ -62,9 +62,9 @@ let mkLdfldMethodDef (ilMethName,reprAccess,isStatic,ilTy,ilFieldName,ilPropType
    let ilReturn = mkILReturn ilPropType
    let ilMethodDef = 
        if isStatic then 
-           mkILNonGenericStaticMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec],None))
+           mkILNonGenericStaticMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody(true,[],2,nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec],None))
        else 
-           mkILNonGenericInstanceMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody (true,emptyILLocals,2,nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec],None))
+           mkILNonGenericInstanceMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody (true,[],2,nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec],None))
    ilMethodDef |> AddSpecialNameFlag
 
 let ChooseParamNames fieldNamesAndTypes = 
@@ -399,7 +399,7 @@ and GenTyAppAux amap m g tyenv repr tinst =
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
         let ilTypeInst = GenTypeArgsAux amap m g tyenv tinst
-        let ty = IL.instILType (ILList.ofList ilTypeInst) ty
+        let ty = IL.instILType ilTypeInst ty
         ty
     | CompiledTypeRepr.ILAsmNamed (tref, boxity, ilTypeOpt) -> 
         match ilTypeOpt with 
@@ -1129,7 +1129,7 @@ type TypeDefBuilder(tdef, tdefDiscards) =
     member b.PrependInstructionsToSpecificMethodDef(cond,instrs,tag) = 
         match ResizeArray.tryFindIndex cond gmethods with
         | Some idx -> gmethods.[idx] <-  prependInstrsToMethod instrs gmethods.[idx]
-        | None -> gmethods.Add(mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode instrs,tag)))
+        | None -> gmethods.Add(mkILClassCtor (mkMethodBody (false,[],1,nonBranchingInstrsToCode instrs,tag)))
 
 
 and TypeDefsBuilder() = 
@@ -1619,7 +1619,7 @@ let CodeGenMethod cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,
     let maxStack = maxStack + 2
 
     // Build an Abstract IL method     
-    instrs, mkILMethodBody (true,mkILLocals locals,maxStack,code, sourceRange)
+    instrs, mkILMethodBody (true,locals,maxStack,code, sourceRange)
 
 let StartDelayedLocalScope nm cgbuf =
     let startScope = CG.GenerateDelayMark cgbuf ("start_" + nm) 
@@ -2579,7 +2579,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           let isTailCall = 
               if List.isEmpty laterArgs && not isSelfInit then 
                   let isDllImport = IsValRefIsDllImport cenv.g vref
-                  let hasByrefArg = mspec.FormalArgTypes |> ILList.exists (function ILType.Byref _ -> true | _ -> false)
+                  let hasByrefArg = mspec.FormalArgTypes |> List.exists (function ILType.Byref _ -> true | _ -> false)
                   let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls 
                   CanTailcall((boxity=AsValue),ccallInfo,eenv.withinSEH,hasByrefArg,mustGenerateUnitAfterCall,isDllImport,isSelfInit,makesNoCriticalTailcalls,sequel)
               else Normalcall
@@ -3242,7 +3242,7 @@ and GenQuotation cenv cgbuf eenv (ast,conv,m,ety) sequel =
 //-------------------------------------------------------------------------- 
 
 and GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRef:ILMethodRef,enclArgTys,methArgTys,argExprs,returnTys,m) sequel =
-    let hasByrefArg  =  ilMethRef.ArgTypes |> ILList.exists IsILTypeByref
+    let hasByrefArg  =  ilMethRef.ArgTypes |> List.exists IsILTypeByref
     let isSuperInit = match valUseFlags with CtorValUsedAsSuperInit -> true | _ -> false
     let isBaseCall = match valUseFlags with VSlotDirectCall -> true | _ -> false
     let ccallInfo = match valUseFlags with PossibleConstrainedCall ty -> Some ty | _ -> None
@@ -3763,7 +3763,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       HasSecurity=false } 
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
-                let ilCtorBody =  mkILMethodBody (true,emptyILLocals,8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
+                let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
                 let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,cloinfo.localTypeFuncDirectILGenericParams,[],mkILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
                 let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef,cloinfo.cloILGenericParams,[],cloinfo.cloILFreeVars,cloinfo.ilCloLambdas,ilCtorBody,cloMethods,[],ilContractTy,[])
                 cloTypeDefs
@@ -4067,7 +4067,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
                 let _,_,tdef = tcref.ILTyconInfo
                 match tdef.Methods.FindByName ".ctor" with 
                 | [ctorMDef] -> 
-                    match ctorMDef.Parameters |> ILList.toList with 
+                    match ctorMDef.Parameters with 
                     | [ _;p2 ] -> (p2.Type.TypeSpec.Name = "System.UIntPtr")
                     | _ -> false
                 | _ -> false
@@ -4769,13 +4769,13 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
 
             let getterMethod = 
                 mkILStaticMethod([],ilGetterMethRef.Name,access,[],mkILReturn fty,
-                               mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode [ mkNormalLdsfld fspec ],None)) 
+                               mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkNormalLdsfld fspec ],None)) 
                 |> AddSpecialNameFlag
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,getterMethod) 
             if mut || cenv.opts.isInteractiveItExpr then 
                 let setterMethod = 
                     mkILStaticMethod([],ilSetterMethRef.Name,access,[mkILParamNamed("value",fty)],mkILReturn ILType.Void,
-                                   mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec],None))
+                                   mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec],None))
                     |> AddSpecialNameFlag
                 cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,setterMethod)
 
@@ -4937,10 +4937,10 @@ and GenParamAttribs cenv attribs =
     inFlag,outFlag,optionalFlag,Marshal,attribs
 
 and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implValsOpt: Val list option) =
-    let ilArgTys = mspec.FormalArgTypes |> ILList.toList
+    let ilArgTys = mspec.FormalArgTypes
     let argInfosAndTypes = 
-        if attribs.Length = ilArgTys.Length then List.zip ilArgTys attribs
-        else ilArgTys  |> List.map (fun ilArgTy -> ilArgTy,ValReprInfo.unnamedTopArg1) 
+        if List.length attribs = List.length ilArgTys then List.zip ilArgTys attribs
+        else ilArgTys |> List.map (fun ilArgTy -> ilArgTy,ValReprInfo.unnamedTopArg1) 
 
     let argInfosAndTypes = 
         match implValsOpt with 
@@ -5689,7 +5689,7 @@ and GenAttr amap g eenv (Attrib(_,k,args,props,_,_,_)) =
              assert(vref.IsMember) 
              let mspec,_,_,_,_ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
-    let ilArgs = List.map2 (fun (AttribExpr(_,vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args (ILList.toList mspec.FormalArgTypes)
+    let ilArgs = List.map2 (fun (AttribExpr(_,vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec,ilArgs, props)
     
 and GenAttrs cenv eenv attrs = List.map (GenAttr cenv.amap cenv.g eenv) attrs
@@ -5986,7 +5986,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref:TyconRef, ilThisTy, _ilThatT
         ("Equals",ILMemberAccess.Public,
          [mkILParamNamed ("obj",cenv.g.ilg.typ_Object)], 
          mkILReturn cenv.g.ilg.typ_bool,
-         mkMethodBody(true,emptyILLocals,2,
+         mkMethodBody(true,[],2,
                          nonBranchingInstrsToCode
                             [ yield mkLdarg0
                               yield mkLdarg 1us 
@@ -6351,11 +6351,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                          if isStatic then 
                              mkILNonGenericStaticMethod
                                (ilMethName,iLAccess,ilParams,ilReturn,
-                                  mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode ([ mkLdarg0;mkNormalStsfld ilFieldSpec]),None))
+                                  mkMethodBody(true,[],2,nonBranchingInstrsToCode ([ mkLdarg0;mkNormalStsfld ilFieldSpec]),None))
                          else 
                              mkILNonGenericInstanceMethod
                                (ilMethName,iLAccess,ilParams,ilReturn,
-                                  mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode ([ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec]),None))
+                                  mkMethodBody(true,[],2,nonBranchingInstrsToCode ([ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec]),None))
                     yield ilMethodDef |> AddSpecialNameFlag 
 
               if generateDebugDisplayAttribute then 
@@ -6381,7 +6381,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName,ILMemberAccess.Assembly,[],
                                                    mkILReturn cenv.g.ilg.typ_Object,
                                                    mkMethodBody 
-                                                         (true,emptyILLocals,2,
+                                                         (true,[],2,
                                                           nonBranchingInstrsToCode 
                                                             ([ // load the hardwired format string
                                                                yield I_ldstr "%+0.8A"  
@@ -6712,7 +6712,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context",cenv.g.ilg.typ_StreamingContext)],
                         mkMethodBody
-                          (false,emptyILLocals,8,
+                          (false,[],8,
                            nonBranchingInstrsToCode
                               [ mkLdarg0 
                                 mkLdarg 1us
@@ -6737,7 +6737,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                                 mkLdarg 2us
                                 mkNormalCall (mkILNonGenericInstanceMethSpecInTy (cenv.g.ilg.typ_Exception, "GetObjectData", [serializationInfoType; cenv.g.ilg.typ_StreamingContext], ILType.Void))
                               ]
-                          mkMethodBody(true,emptyILLocals,8,code,None)))
+                          mkMethodBody(true,[],8,code,None)))
                 // Here we must encode: [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
                 // In ILDASM this is: .permissionset demand = {[mscorlib]System.Security.Permissions.SecurityPermissionAttribute = {property bool 'SerializationFormatter' = bool(true)}}
                 match cenv.g.ilg.tref_SecurityPermissionAttribute with

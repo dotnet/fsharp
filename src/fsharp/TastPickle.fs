@@ -860,7 +860,7 @@ let rec p_ILType ty st =
     | ILType.TypeVar n                -> p_byte 7 st; p_uint16 n st
     | ILType.Modified (req,tref,ty) -> p_byte 8 st; p_tup3 p_bool p_ILTypeRef p_ILType (req,tref,ty) st
 
-and p_ILTypes tys = p_list p_ILType (ILList.toList tys)
+and p_ILTypes tys = p_list p_ILType tys
 
 and p_ILBasicCallConv x st = 
     p_byte (match x with 
@@ -915,7 +915,7 @@ let rec u_ILType st =
     | 7 -> u_uint16 st                            |> mkILTyvarTy
     | 8 -> u_tup3 u_bool u_ILTypeRef u_ILType  st |> ILType.Modified 
     | _ -> ufailwith st "u_ILType"
-and u_ILTypes st = ILList.ofList (u_list u_ILType st)
+and u_ILTypes st = u_list u_ILType st
 and u_ILCallSig = u_wrap (fun (a,b,c) -> {CallingConv=a; ArgTypes=b; ReturnType=c}) (u_tup3 u_ILCallConv u_ILTypes u_ILType)
 and u_ILTypeSpec st = let a,b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a,b)
 
