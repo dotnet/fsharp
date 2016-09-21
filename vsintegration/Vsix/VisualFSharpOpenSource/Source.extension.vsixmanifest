@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="VisualFSharp" Version="15.4.1.9055" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <DisplayName>Visual F# Tools</DisplayName>
+    <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
+    <ShortcutPath>..\CommonExtensions\Microsoft\FSharp</ShortcutPath>
+  </Metadata>
+  <Installation Experimental="true">
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
+  </Installation>
+  <Installer>
+    <Actions>
+      <Action Type="Ngen" Path="FsiAnyCPU.exe" />
+      <Action Type="Ngen" Path="Fsi.exe" />
+      <Action Type="Ngen" Path="FSharp.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
+      <Action Type="Ngen" Path="FSharp.Core.dll" />
+      <Action Type="Ngen" Path="FSharp.Editor.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.Base.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.LanguageService.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.Base.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
+      <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
+      <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
+    </Actions>
+  </Installer>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="RegisterFsharpPackage.pkgdef" />
+
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.FSharp.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.Base.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.VS.FSI.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.Base.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.LanguageService.Compiler.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Editor.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.ProjectSystem.PropertyPages.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="'FSharp.Compiler.Server.Shared.pkgdef" />
+
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCoreProject;TemplateProjectOutputGroup|" d:ProjectName="NetCoreProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore78Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore78Project" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore259Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore259Project" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|PortableLibraryProject;TemplateProjectOutputGroup|" d:ProjectName="PortableLibraryProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|TutorialProject;TemplateProjectOutputGroup|" d:ProjectName="TutorialProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|ConsoleProject;TemplateProjectOutputGroup|" d:ProjectName="ConsoleProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
+    
+    
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|AppConfig;TemplateProjectOutputGroup|" d:ProjectName="AppConfig" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|CodeFile;TemplateProjectOutputGroup|" d:ProjectName="CodeFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|ScriptFile;TemplateProjectOutputGroup|" d:ProjectName="ScriptFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|SignatureFile;TemplateProjectOutputGroup|" d:ProjectName="SignatureFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|TextFile;TemplateProjectOutputGroup|" d:ProjectName="TextFile" d:VsixSubPath="ItemTemplates" />
+    <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|XMLFile;TemplateProjectOutputGroup|" d:ProjectName="XMLFile" d:VsixSubPath="ItemTemplates" />
+  </Assets>
+</PackageManifest>
