@@ -15,10 +15,19 @@
   
     <Target Name="IncludeManifests" BeforeTargets="MergeManifests">
         <ItemGroup>
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.%(SetupLanguages.LocaleCode).json" />
-            <!-- TODO: Add Other SKUs for Microsoft.FSharp.Vsix and Microsoft.FSharp.Dependencies -->
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.%(SetupLanguages.LocaleCode).json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.Full.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Core.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Resources.%(SetupLanguages.LocaleCode).json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Core.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Desktop.Resources.%(SetupLanguages.LocaleCode).json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Core.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Web.Resources.%(SetupLanguages.LocaleCode).json" />
+            
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
         </ItemGroup>
     </Target>
 </Project>

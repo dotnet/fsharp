@@ -4,7 +4,7 @@
 
   <Fragment>
     <?define LangLCID = $(var.LocaleId) ?>
-    <?define LangCulture = $(var.LocaleRegion) ?>
+    <?define LangCulture = $(var.LocaleSpecificCulture) ?>
 
     <ComponentGroup Id="Runtime_LangPack">
 
