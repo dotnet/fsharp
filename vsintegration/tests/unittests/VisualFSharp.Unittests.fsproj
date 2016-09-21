@@ -55,6 +55,9 @@
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\Completion\CompletionProviderTests.fs</Link>
     </Compile>
+    <Compile Include="GoToDefinitionServiceTests.fs">
+      <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
+    </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
