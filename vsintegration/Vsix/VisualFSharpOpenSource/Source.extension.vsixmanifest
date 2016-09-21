@@ -59,5 +59,8 @@
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|SignatureFile;TemplateProjectOutputGroup|" d:ProjectName="SignatureFile" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|TextFile;TemplateProjectOutputGroup|" d:ProjectName="TextFile" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|XMLFile;TemplateProjectOutputGroup|" d:ProjectName="XMLFile" d:VsixSubPath="ItemTemplates" />
+    
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
   </Assets>
 </PackageManifest>
