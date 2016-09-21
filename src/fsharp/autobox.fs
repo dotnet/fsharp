@@ -17,7 +17,7 @@ open Microsoft.FSharp.Compiler.TypeRelations
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
 type cenv = 
-    { g: TcGlobals; 
+    { g: TcGlobals
       amap: Import.ImportMap }
 
 /// Find all the mutable locals that escape a method, function or lambda expression
