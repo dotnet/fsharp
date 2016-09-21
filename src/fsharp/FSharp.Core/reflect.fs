@@ -128,9 +128,9 @@ module internal Impl =
                     let args = a.ConstructorArguments
                     let flags = 
                          match args.Count  with 
-                         | 1 -> ((args.[0].Value :?> SourceConstructFlags), 0, 0)
-                         | 2 -> ((args.[0].Value :?> SourceConstructFlags), (args.[1].Value :?> int), 0)
-                         | 3 -> ((args.[0].Value :?> SourceConstructFlags), (args.[1].Value :?> int), (args.[2].Value :?> int))
+                         | 1 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), 0, 0)
+                         | 2 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), 0)
+                         | 3 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), (let x = args.[2] in x.Value :?> int))
                          | _ -> (enum 0, 0, 0)
                     res <- Some flags
             res

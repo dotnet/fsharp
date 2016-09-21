@@ -4,6 +4,7 @@
     <PropertyGroup>
         <SchemaVersion>2.0</SchemaVersion>
         <ProductVersion>3.10</ProductVersion>
+        <FSharpPackageVersion>4.1</FSharpPackageVersion>
         <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
         <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
         <NugetPackagesDir>$(SetupRootFolder)\..\packages</NugetPackagesDir>
@@ -26,85 +27,99 @@
         <SetupLanguages Include="ENU">
             <LocaleCode>ENU</LocaleCode>
             <LocaleId>1033</LocaleId>
-            <LocaleRegion>en-us</LocaleRegion>
+            <LocaleParentCulture>en</LocaleParentCulture>
+            <LocaleSpecificCulture>en-US</LocaleSpecificCulture>
             <IsLangPack>false</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="CHT" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>CHT</LocaleCode>
             <LocaleId>1028</LocaleId>
-            <LocaleRegion>zh-tw</LocaleRegion>
+            <LocaleParentCulture>zh-Hant</LocaleParentCulture>
+            <LocaleSpecificCulture>zh-TW</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="CSY" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>CSY</LocaleCode>
             <LocaleId>1029</LocaleId>
-            <LocaleRegion>cs-cz</LocaleRegion>
+            <LocaleParentCulture>cs</LocaleParentCulture>
+            <LocaleSpecificCulture>cs-CZ</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="DEU" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>DEU</LocaleCode>
             <LocaleId>1031</LocaleId>
-            <LocaleRegion>de-de</LocaleRegion>
+            <LocaleParentCulture>de</LocaleParentCulture>
+            <LocaleSpecificCulture>de-DE</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="FRA" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>FRA</LocaleCode>
             <LocaleId>1036</LocaleId>
-            <LocaleRegion>fr-fr</LocaleRegion>
+            <LocaleParentCulture>fr</LocaleParentCulture>
+            <LocaleSpecificCulture>fr-FR</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="ITA" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>ITA</LocaleCode>
             <LocaleId>1040</LocaleId>
-            <LocaleRegion>it-it</LocaleRegion>
+            <LocaleParentCulture>it</LocaleParentCulture>
+            <LocaleSpecificCulture>it-IT</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="JPN" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>JPN</LocaleCode>
             <LocaleId>1041</LocaleId>
-            <LocaleRegion>ja-jp</LocaleRegion>
+            <LocaleParentCulture>ja</LocaleParentCulture>
+            <LocaleSpecificCulture>ja-JP</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="KOR" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>KOR</LocaleCode>
             <LocaleId>1042</LocaleId>
-            <LocaleRegion>ko-kr</LocaleRegion>
+            <LocaleParentCulture>ko</LocaleParentCulture>
+            <LocaleSpecificCulture>ko-KR</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="PLK" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>PLK</LocaleCode>
             <LocaleId>1045</LocaleId>
-            <LocaleRegion>pl-pl</LocaleRegion>
+            <LocaleParentCulture>pl</LocaleParentCulture>
+            <LocaleSpecificCulture>pl-PL</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="PTB" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>PTB</LocaleCode>
             <LocaleId>1046</LocaleId>
-            <LocaleRegion>pt-br</LocaleRegion>
+            <LocaleParentCulture>pt-BR</LocaleParentCulture>
+            <LocaleSpecificCulture>pt-BR</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="RUS" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>RUS</LocaleCode>
             <LocaleId>1049</LocaleId>
-            <LocaleRegion>ru-ru</LocaleRegion>
+            <LocaleParentCulture>ru</LocaleParentCulture>
+            <LocaleSpecificCulture>ru-RU</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="TRK" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>TRK</LocaleCode>
             <LocaleId>1055</LocaleId>
-            <LocaleRegion>tr-tr</LocaleRegion>
+            <LocaleParentCulture>tr</LocaleParentCulture>
+            <LocaleSpecificCulture>tr-TR</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="CHS" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>CHS</LocaleCode>
             <LocaleId>2052</LocaleId>
-            <LocaleRegion>zh-cn</LocaleRegion>
+            <LocaleParentCulture>zh-Hans</LocaleParentCulture>
+            <LocaleSpecificCulture>zh-CN</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
         <SetupLanguages Include="ESN" Condition="'$(LocLanguages)' != ''">
             <LocaleCode>ESN</LocaleCode>
             <LocaleId>3082</LocaleId>
-            <LocaleRegion>es-es</LocaleRegion>
+            <LocaleParentCulture>es</LocaleParentCulture>
+            <LocaleSpecificCulture>es-ES</LocaleSpecificCulture>
             <IsLangPack>true</IsLangPack>
         </SetupLanguages>
     </ItemGroup>
