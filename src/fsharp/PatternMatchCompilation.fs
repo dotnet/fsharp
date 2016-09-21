@@ -734,7 +734,7 @@ let CompilePatternBasic
                 // targets of filters since if the exception is filtered successfully then we 
                 // will run the handler and hit the sequence point there.
                 // That sequence point will have the pattern variables bound, which is exactly what we want.
-                let tg = TTarget(FlatList.empty,throwExpr,SuppressSequencePointAtTarget  )
+                let tg = TTarget(List.empty,throwExpr,SuppressSequencePointAtTarget  )
                 mbuilder.AddTarget tg |> ignore
                 let clause = TClause(TPat_wild matchm,None,tg,matchm)
                 incompleteMatchClauseOnce := Some(clause)
@@ -813,7 +813,7 @@ let CompilePatternBasic
 
         let vs2 = GetValsBoundByClause i refuted
         let es2 = 
-            vs2 |> FlatList.map (fun v -> 
+            vs2 |> List.map (fun v -> 
                 match valMap.TryFind v with 
                 | None -> error(Error(FSComp.SR.patcMissingVariable(v.DisplayName),v.Range)) 
                 | Some res -> res)
@@ -1276,7 +1276,7 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (t
                 else SequencePointAtTarget
 
             // Make the clause that represents the remaining cases of the pattern match
-            let clauseForRestOfMatch = TClause(TPat_wild matchm,None,TTarget(FlatList.empty,expr,spTarget),matchm)
+            let clauseForRestOfMatch = TClause(TPat_wild matchm,None,TTarget(List.empty,expr,spTarget),matchm)
             
             CompilePatternBasic 
                  g denv amap exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (topv,topgtvs) 

@@ -425,19 +425,7 @@ let p_array f (x: 'T[]) st =
  
 let p_list f x st = p_array f (Array.ofList x) st
 
-
-#if FLAT_LIST_AS_LIST
-#else
-let p_FlatList f (x: FlatList<'T>) st = p_list f x st 
-#endif
-#if FLAT_LIST_AS_ARRAY_STRUCT
-//#else
-let p_FlatList f (x: FlatList<'T>) st = p_array f (match x.array with null -> [| |] | _ -> x.array) st
-#endif
-#if FLAT_LIST_AS_ARRAY
-//#else
-let p_FlatList f (x: FlatList<'T>) st = p_array f x st
-#endif
+let p_List f (x: 'T list) st = p_list f x st 
 
 let p_wrap (f: 'T -> 'U) (p : 'U pickler) : 'T pickler = (fun x st -> p (f x) st)
 let p_option f x st =
@@ -503,15 +491,15 @@ let u_list f st = Array.toList (u_array f st)
 
 #if FLAT_LIST_AS_LIST
 #else
-let u_FlatList f st = u_list f st // new FlatList<_> (u_array f st)
+let u_List f st = u_list f st // new List<_> (u_array f st)
 #endif
 #if FLAT_LIST_AS_ARRAY_STRUCT
 //#else
-let u_FlatList f st = FlatList(u_array f st)
+let u_List f st = List(u_array f st)
 #endif
 #if FLAT_LIST_AS_ARRAY
 //#else
-let u_FlatList f st = u_array f st
+let u_List f st = u_array f st
 #endif
 
 let u_array_revi f st =
@@ -2535,26 +2523,26 @@ and u_intf st = u_tup2 u_typ u_methods st
 and u_intfs st = u_list u_intf st
 
 #if INCLUDE_METADATA_WRITER
-let _ = fill_p_binds (p_FlatList p_bind)
+let _ = fill_p_binds (p_List p_bind)
 let _ = fill_p_targets (p_array p_target)
 let _ = fill_p_constraints (p_list p_static_optimization_constraint)
 let _ = fill_p_Exprs (p_list p_expr)
 let _ = fill_p_expr_fwd p_expr
-let _ = fill_p_FlatExprs (p_FlatList p_expr)
+let _ = fill_p_FlatExprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
 let _ = fill_p_Vals (p_list p_Val)
-let _ = fill_p_FlatVals (p_FlatList p_Val)
+let _ = fill_p_FlatVals (p_List p_Val)
 #endif
 
-let _ = fill_u_binds (u_FlatList u_bind)
+let _ = fill_u_binds (u_List u_bind)
 let _ = fill_u_targets (u_array u_target)
 let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
 let _ = fill_u_expr_fwd u_expr
-let _ = fill_u_FlatExprs (u_FlatList u_expr)
+let _ = fill_u_FlatExprs (u_List u_expr)
 let _ = fill_u_attribs (u_list u_attrib)
 let _ = fill_u_Vals (u_list u_Val)
-let _ = fill_u_FlatVals (u_FlatList u_Val)
+let _ = fill_u_FlatVals (u_List u_Val)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data 

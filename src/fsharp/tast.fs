@@ -3661,7 +3661,7 @@ and
 and DecisionTreeTarget = 
     | TTarget of FlatVals * Expr * SequencePointInfoForTarget
 
-and Bindings = FlatList<Binding>
+and Bindings = Binding list
 
 and Binding = 
     | TBind of Val * Expr * SequencePointInfoForBinding
@@ -3721,9 +3721,9 @@ and TyparReprInfo = TyparReprInfo of Ident * TyparKind
 and Typars = Typar list
  
 and Exprs = Expr list
-and FlatExprs = FlatList<Expr>
+and FlatExprs = Expr list
 and Vals = Val list
-and FlatVals = FlatList<Val>
+and FlatVals = Val list
 
 /// The big type of expressions.  
 and 

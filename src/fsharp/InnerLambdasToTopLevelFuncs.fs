@@ -210,7 +210,7 @@ module Pass1_DetermineTLRAndArities =
 
         let hasDelayedRepr f = isDelayedRepr f (Zmap.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
         let isRecursive,mudefs = Zmap.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
-        not isRecursive || FlatList.forall hasDelayedRepr mudefs
+        not isRecursive || List.forall hasDelayedRepr mudefs
 
     let DumpArity arityM =
         let dump f n = dprintf "tlr: arity %50s = %d\n" (showL (valL f)) n
@@ -304,19 +304,19 @@ module Pass1_DetermineTLRAndArities =
 /// [Each fclass has an env, the fclass are the handles to envs.]
 type BindingGroupSharingSameReqdItems(bindings: Bindings) =
     let vals = valsOfBinds bindings
-    let vset = Zset.addFlatList vals (Zset.empty valOrder)
+    let vset = Zset.addList vals (Zset.empty valOrder)
 
     member fclass.Vals = vals
 
     member fclass.Contains (v: Val) = vset.Contains v
 
-    member fclass.IsEmpty = FlatList.isEmpty vals
+    member fclass.IsEmpty = List.isEmpty vals
 
-    member fclass.Pairs = vals |> FlatList.map (fun f -> (f,fclass)) 
+    member fclass.Pairs = vals |> List.map (fun f -> (f,fclass)) 
 
-    override fclass.ToString() = "+" + String.concat "+" (FlatList.map nameOfVal vals)
+    override fclass.ToString() = "+" + String.concat "+" (List.map nameOfVal vals)
 
-let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (FlatList.order valOrder)
+let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.Vals) (List.order valOrder)
 
 /// It is required to make the TLR closed wrt it's freevars (the env reqdVals0).
 /// For gv a generator,
@@ -462,7 +462,7 @@ module Pass2_DetermineReqdItems =
                 {state with
                    stack        = stack
                    reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
-                   fclassM      = FlatList.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
+                   fclassM      = List.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
 
     /// Log requirements for gv in the relevant stack frames 
     let LogRequiredFrom gv items state =
@@ -486,7 +486,7 @@ module Pass2_DetermineReqdItems =
           if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName
           state
 
-    let FreeInBindings bs = FlatList.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
+    let FreeInBindings bs = List.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
 
     /// Intercepts selected exprs.
     ///   "letrec f1,f2,... = fBody1,fBody2,... in rest" - 
@@ -516,7 +516,7 @@ module Pass2_DetermineReqdItems =
                  LogRequiredFrom f [ReqdVal f] z                    
         
          let accBinds m z (binds: Bindings) =
-             let tlrBs,nonTlrBs = binds |> FlatList.partition (fun b -> Zset.contains b.Var tlrS) 
+             let tlrBs,nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var tlrS) 
              // For bindings marked TLR, collect implied env 
              let fclass = BindingGroupSharingSameReqdItems tlrBs
              // what determines env? 
@@ -529,10 +529,10 @@ module Pass2_DetermineReqdItems =
              let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
              // collect into env over bodies 
              let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
-             let z          = (z,tlrBs) ||> FlatList.fold (foldOn (fun b -> b.Expr) exprF) 
+             let z          = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
              let z          = SaveFrame     fclass z
              (* for bindings not marked TRL, collect *)
-             let z          = (z,nonTlrBs) ||> FlatList.fold (foldOn (fun b -> b.Expr) exprF) 
+             let z          = (z,nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
              z
         
          match expr with
@@ -559,7 +559,7 @@ module Pass2_DetermineReqdItems =
              let z = exprF z body
              Some z
          | Expr.Let    (bind,body,m,_) -> 
-             let z = accBinds m z (FlatList.one bind)
+             let z = accBinds m z [bind]
              let z = exprF z body
              Some z
          | _ -> None (* NO: no intercept *)
@@ -627,7 +627,7 @@ module Pass2_DetermineReqdItems =
         // close the reqdTypars under the subEnv reln 
         let reqdItemsMap    = CloseReqdTypars fclassM reqdItemsMap
         // filter out trivial fclass - with no TLR defns 
-        let reqdItemsMap    = Zmap.remove (BindingGroupSharingSameReqdItems FlatList.empty) reqdItemsMap
+        let reqdItemsMap    = Zmap.remove (BindingGroupSharingSameReqdItems List.empty) reqdItemsMap
         // restrict declist to those with reqdItemsMap bindings (the non-trivial ones) 
         let declist = List.filter (Zmap.memberOf reqdItemsMap) declist
 #if DEBUG
@@ -705,11 +705,10 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // determine vals(env) - transclosure 
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats 
-       let vals = List.noRepeats valOrder vals                        // noRepeats 
-       let vals = vals |> FlatList.ofList
+       let vals = List.noRepeats valOrder vals                        // noRepeats
 
        // Remove genuinely toplevel, no need to close over these
-       let vals = vals |> FlatList.filter (IsMandatoryTopLevel >> not) 
+       let vals = vals |> List.filter (IsMandatoryTopLevel >> not) 
        // Remove byrefs, no need to close over these, and would be invalid to do so since their values can change.
        //
        // Note that it is normally not OK to skip closing over values, since values given (method) TLR must have implementations
@@ -740,26 +739,26 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //        temp
 
 
-       let vals = vals |> FlatList.filter (fun v -> not (isByrefLikeTy g v.Type))
+       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Type))
        // Remove values which have been labelled TLR, no need to close over these
-       let vals = vals |> FlatList.filter (Zset.memberOf topValS >> not) 
+       let vals = vals |> List.filter (Zset.memberOf topValS >> not) 
        
        // Carrier sets cannot include constrained polymorphic values. We can't just take such a value out, so for the moment 
        // we'll just abandon TLR altogether and give a warning about this condition. 
-       match vals |> FlatList.tryFind (IsGenericValWithGenericContraints g) with 
+       match vals |> List.tryFind (IsGenericValWithGenericContraints g) with 
        | None -> () 
        | Some v -> raise (AbortTLR v.Range)
 
        // build cmap for env 
-       let cmapPairs = vals |> FlatList.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
-       let cmap      = Zmap.ofFlatList valOrder cmapPairs
+       let cmapPairs = vals |> List.map (fun v -> (v,(mkCompGenLocal env.m v.LogicalName v.Type |> fst))) 
+       let cmap      = Zmap.ofList valOrder cmapPairs
        let aenvFor     v = Zmap.force v cmap ("aenvFor",nameOfVal)
        let aenvExprFor v = exprForVal env.m (aenvFor v)
 
        // build PackedReqdItems 
        let reqdTypars   = env.reqdTypars
        let aenvs  = Zmap.values cmap
-       let pack   = cmapPairs |> FlatList.map (fun (v,aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
+       let pack   = cmapPairs |> List.map (fun (v,aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack = 
            let unpackCarrier (v,aenv) = mkInvisibleBind (setValHasNoArity v) (exprForVal env.m aenv)
            let unpackSubenv f = 
@@ -774,18 +773,18 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // dump 
        if verboseTLR then
-           dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL  env.ReqdVals))
-           dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL  env.ReqdSubEnvs))
-           dprintf "tlr: packEnv vals    =%s\n" (showL (listL valL (FlatList.toList vals)))
+           dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL env.ReqdVals))
+           dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL env.ReqdSubEnvs))
+           dprintf "tlr: packEnv vals    =%s\n" (showL (listL valL vals))
            dprintf "tlr: packEnv aenvs   =%s\n" (showL (listL valL aenvs))
-           dprintf "tlr: packEnv pack    =%s\n" (showL (listL bindingL  (FlatList.toList pack)))
-           dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL  unpack))
+           dprintf "tlr: packEnv pack    =%s\n" (showL (listL bindingL pack))
+           dprintf "tlr: packEnv unpack  =%s\n" (showL (listL bindingL unpack))
 
        // result 
        (fc, { ep_etps   = Zset.elements reqdTypars
               ep_aenvs  = aenvs
               ep_pack   = pack
-              ep_unpack = FlatList.ofList unpack}),carrierMaps
+              ep_unpack = unpack}),carrierMaps
   
    let carriedMaps = Zmap.empty fclassOrder
    let envPacks,_carriedMaps = List.mapFold packEnv carriedMaps declist   (* List.mapFold in dec order *)
@@ -803,8 +802,8 @@ let DumpEnvPackM envPackM =
         dprintf "packedReqdItems: fc     = %A\n" fc
         dprintf "         reqdTypars   = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
         dprintf "         aenvs  = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)))
-        dprintf "         pack   = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_pack))))
-        dprintf "         unpack = %s\n" (showL (semiListL (FlatList.toList (FlatList.map bindingL packedReqdItems.ep_unpack))))
+        dprintf "         pack   = %s\n" (showL (semiListL (List.toList (List.map bindingL packedReqdItems.ep_pack))))
+        dprintf "         unpack = %s\n" (showL (semiListL (List.toList (List.map bindingL packedReqdItems.ep_unpack))))
         dprintf "\n"
 #endif
 
@@ -936,12 +935,12 @@ module Pass4_RewriteAssembly =
 #if TLR_LIFT
     let LiftTopBinds isRec _penv z binds =
         let isTopBind (bind: Binding) = Option.isSome bind.Var.ValReprInfo
-        let topBinds,otherBinds = FlatList.partition isTopBind binds
+        let topBinds,otherBinds = List.partition isTopBind binds
         let liftTheseBindings =
             !liftTLR &&             // lifting enabled 
             not z.rws_mustinline &&   // can't lift bindings in a mustinline context - they would become private an not inlined 
             z.rws_innerLevel>0 &&   // only collect Top* bindings when at inner levels (else will drop them!) 
-            not (FlatList.isEmpty topBinds) // only collect topBinds if there are some! 
+            not (List.isEmpty topBinds) // only collect topBinds if there are some! 
         if liftTheseBindings then
             let LiftedDeclaration = isRec,topBinds                                           // LiftedDeclaration Top* decs 
             let z = {z with rws_preDecs = TreeNode [z.rws_preDecs;LeafNode LiftedDeclaration]}   // logged at end 
@@ -964,9 +963,8 @@ module Pass4_RewriteAssembly =
 
     let RecursivePreDecs pdsA pdsB =
         let pds = fringeTR (TreeNode[pdsA;pdsB])
-        let decs = pds |> List.collect (fun (_,x) -> FlatList.toList x)  |> FlatList.ofList
+        let decs = pds |> List.collect snd
         LeafNode (IsRec,decs)
-
 
     //-------------------------------------------------------------------------
     // pass4: lowertop - convert_vterm_bind on TopLevel binds
@@ -989,7 +987,7 @@ module Pass4_RewriteAssembly =
     //   let f<tps> vss = fHat<f_freeTypars> f_freeVars vss
     //   let fHat<tps> f_freeVars vss = f_body[<f_freeTypars>,f_freeVars]
     let TransTLRBindings penv (binds:Bindings) = 
-        if FlatList.isEmpty binds then FlatList.empty,FlatList.empty else
+        if List.isEmpty binds then List.empty,List.empty else
         let fc   = BindingGroupSharingSameReqdItems binds
         let envp = Zmap.force fc penv.envPackM ("TransTLRBindings",string)
         
@@ -1030,18 +1028,18 @@ module Pass4_RewriteAssembly =
             // fHat binding, f rebinding 
             let fHatBind   = mkMultiLambdaBind fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body,rty)
             fHatBind
-        let rebinds = binds |> FlatList.map fRebinding 
-        let shortRecBinds = rebinds |> FlatList.filter (fun b -> penv.recShortCallS.Contains(b.Var)) 
-        let newBinds      = binds |> FlatList.map (fHatNewBinding shortRecBinds) 
+        let rebinds = binds |> List.map fRebinding 
+        let shortRecBinds = rebinds |> List.filter (fun b -> penv.recShortCallS.Contains(b.Var)) 
+        let newBinds      = binds |> List.map (fHatNewBinding shortRecBinds) 
         newBinds,rebinds
 
     let GetAEnvBindings penv fc =
         match Zmap.tryFind fc penv.envPackM with
-        | None      -> FlatList.empty           // no env for this mutual binding 
+        | None      -> List.empty           // no env for this mutual binding 
         | Some envp -> envp.ep_pack // environment pack bindings 
 
     let TransBindings xisRec penv (binds:Bindings) =
-        let tlrBs,nonTlrBs = binds |> FlatList.partition (fun b -> Zset.contains b.Var penv.tlrS) 
+        let tlrBs,nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS) 
         let fclass = BindingGroupSharingSameReqdItems tlrBs
         // Trans each TLR f binding into fHat and f rebind 
         let newTlrBinds,tlrRebinds = TransTLRBindings penv tlrBs
@@ -1054,14 +1052,14 @@ module Pass4_RewriteAssembly =
             if penv.topValS.Contains(bind.Var) then ConvertBind penv.g bind 
             else bind
 
-        let nonTlrBs = nonTlrBs |> FlatList.map forceTopBindToHaveArity 
-        let tlrRebinds = tlrRebinds |> FlatList.map forceTopBindToHaveArity 
+        let nonTlrBs = nonTlrBs |> List.map forceTopBindToHaveArity 
+        let tlrRebinds = tlrRebinds |> List.map forceTopBindToHaveArity 
         // assemble into replacement bindings 
         let bindAs,rebinds = 
             match xisRec with
-            | IsRec  -> FlatList.toList newTlrBinds @ FlatList.toList tlrRebinds @ FlatList.toList nonTlrBs @ FlatList.toList aenvBinds,[]    (* note: aenv last, order matters in letrec! *)
-            | NotRec -> FlatList.toList aenvBinds @ FlatList.toList newTlrBinds, FlatList.toList tlrRebinds @ FlatList.toList nonTlrBs (* note: aenv go first, they may be used *)
-        FlatList.ofList bindAs, FlatList.ofList rebinds
+            | IsRec  -> newTlrBinds @ tlrRebinds @ nonTlrBs @ aenvBinds,[]    (* note: aenv last, order matters in letrec! *)
+            | NotRec -> aenvBinds @ newTlrBinds, tlrRebinds @ nonTlrBs (* note: aenv go first, they may be used *)
+        bindAs, rebinds
 
 
     //-------------------------------------------------------------------------
@@ -1201,7 +1199,7 @@ module Pass4_RewriteAssembly =
              let z = EnterInner z
              // For letrec, preDecs from RHS must mutually recurse with those from the bindings 
              let z,pdsPrior    = PopPreDecs z
-             let binds,z       = FlatList.mapFold (TransBindingRhs penv) z binds
+             let binds,z       = List.mapFold (TransBindingRhs penv) z binds
              let z,pdsRhs      = PopPreDecs z
              let binds,rebinds = TransBindings   IsRec penv binds
              let z,binds       = LiftTopBinds IsRec penv z   binds (* factor Top* repr binds *)
@@ -1220,7 +1218,7 @@ module Pass4_RewriteAssembly =
 
              // For let, preDecs from RHS go before those of bindings, which is collection order 
              let bind,z       = TransBindingRhs penv z bind
-             let binds,rebinds = TransBindings   NotRec penv (FlatList.one bind)
+             let binds,rebinds = TransBindings   NotRec penv [bind]
              // factor Top* repr binds 
              let z,binds       = LiftTopBinds NotRec penv z   binds  
              let z,rebinds     = LiftTopBinds NotRec penv z rebinds
@@ -1255,7 +1253,7 @@ module Pass4_RewriteAssembly =
     and TransDecisionTree penv z x : DecisionTree * RewriteState =
        match x with 
        | TDSuccess (es,n) -> 
-           let es,z = FlatList.mapFold (TransExpr penv) z es
+           let es,z = List.mapFold (TransExpr penv) z es
            TDSuccess(es,n),z
        | TDBind (bind,rest) -> 
            let bind,z       = TransBindingRhs penv z bind
@@ -1278,7 +1276,7 @@ module Pass4_RewriteAssembly =
         TTarget(vs,e,spTarget),z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind 
-    and TransValBindings penv z binds = FlatList.mapFold (TransValBinding penv) z  binds
+    and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
     and TransModuleExpr penv z x = 
         match x with  
         | ModuleOrNamespaceExprWithSig(mty,def,m) ->  

@@ -296,7 +296,7 @@ let sha1HashBytes s = SHA1.sha1HashBytes s
 
 // This #if starts isolating the representation for "ILTypes", "ILGenericArgs", "ILParameters" and "ILLocals"
 // with the aim of making it possible to easily switch between using arrays and lists as representations for these.
-// THis is because many allocations of these small lists appear in memory logs.
+// This is because many allocations of these small lists appear in memory logs.
 //
 // The "obviouos" step is to use arrays instead of lists. However, this is routinely and surprisingly disappointing.  
 // As a result, we haven't enabled the use of arrays: we had expected this change to give a perf gain, 
@@ -323,7 +323,7 @@ let sha1HashBytes s = SHA1.sha1HashBytes s
 // the use of lists in the tast.fs nodes of the compiler, but that also didn't give perf gains.
 //
 // If it turns out that we just eventually completely abandon these exercises then we can eliminate this code and 
-// universally replace "ILList" and "FlatList" by "List".
+// universally replace "ILList" by "List".
 
 #if ABSIL_USES_ARRAY_FOR_ILLIST
 type ILList<'T> = 'T[]
