@@ -1626,17 +1626,6 @@ module internal VsActual =
             else
                 failwith("could not find " + fullPath)
 
-        // copy this private assembly next to unit tests, otherwise assembly loader cannot find it
-        let neededLocalAssem = Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll")
-
-#if NUNIT_2
-        let curDir = Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").EscapedCodeBase)).LocalPath)
-#else
-        let curDir = Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.framework").EscapedCodeBase)).LocalPath)
-#endif
-        let localCopy = Path.Combine(curDir, System.IO.Path.GetFileName(neededLocalAssem))
-        System.IO.File.Copy(neededLocalAssem, localCopy, true)
-        
         let list = new ResizeArray<ComposablePartCatalog>()
         list.Add(CreateAssemblyCatalog(root, "Microsoft.VisualStudio.Platform.VSEditor.dll"))
 
