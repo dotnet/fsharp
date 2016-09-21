@@ -363,8 +363,8 @@ if '%RestorePackages%' == 'true' (
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
@@ -372,7 +372,6 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 

@@ -576,7 +576,7 @@ namespace Microsoft.FSharp.Collections
                 let rec loop () = 
                     let m1 = e1.MoveNext() 
                     let m2 = e2.MoveNext()
-                    (m1 = m2) && (not m1 || ((e1.Current.Key = e2.Current.Key) && (Unchecked.equals e1.Current.Value e2.Current.Value) && loop()))
+                    (m1 = m2) && (not m1 || let e1c, e2c = e1.Current, e2.Current in ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop()))
                 loop()
             | _ -> false
 

@@ -21,13 +21,6 @@ Make sure each method works on:
 [<TestFixture>]
 type ArrayModule() =
 
-    let rec IsNaN (x : obj) =
-        match x with
-        | :? float   as x -> Double.IsNaN(x)
-        | :? float32 as x -> Single.IsNaN(x)
-        | :? decimal as x -> Decimal.ToDouble(x) |> box |> IsNaN
-        | _ -> failwith "Invalid input. Please provide a numeric type which could possibly be NaN"
-
     [<Test>]
     member this.Empty() =
         let emptyArray = Array.empty
@@ -400,7 +393,7 @@ type ArrayModule() =
         if intChoosed.[1] <> 10 then Assert.Fail()
         
         // string array
-        let stringSrc: string [] = "Lists are a commonly used data structure. They are not mutable, i.e., you can't delete an element of a list – instead you create a new list with the element deleted. List values often share storage under the hood, i.e., a list value only allocate more memory when you actually execute construction operations.".Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
+        let stringSrc: string [] = "Lists are a commonly used data structure. They are not mutable, i.e., you can't delete an element of a list Â– instead you create a new list with the element deleted. List values often share storage under the hood, i.e., a list value only allocate more memory when you actually execute construction operations.".Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
         let funcString x = match x with
                            | "list"-> Some x
                            | "List" -> Some x
