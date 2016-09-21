@@ -802,8 +802,8 @@ let DumpEnvPackM envPackM =
         dprintf "packedReqdItems: fc     = %A\n" fc
         dprintf "         reqdTypars   = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
         dprintf "         aenvs  = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)))
-        dprintf "         pack   = %s\n" (showL (semiListL (List.toList (List.map bindingL packedReqdItems.ep_pack))))
-        dprintf "         unpack = %s\n" (showL (semiListL (List.toList (List.map bindingL packedReqdItems.ep_unpack))))
+        dprintf "         pack   = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_pack)))
+        dprintf "         unpack = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_unpack)))
         dprintf "\n"
 #endif
 
