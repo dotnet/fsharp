@@ -498,7 +498,7 @@ and ComputeUnionHasHelpers g (tcref : TyconRef) =
 and GenUnionSpec amap m g tyenv tcref tyargs = 
     let curef = GenUnionRef amap m g tcref
     let tinst = GenTypeArgs amap m g tyenv tyargs
-    IlxUnionSpec(curef,mkILGenericArgs tinst) 
+    IlxUnionSpec(curef,tinst) 
 
 and GenUnionCaseSpec amap m g tyenv (ucref:UnionCaseRef) tyargs = 
     let cuspec = GenUnionSpec amap m g tyenv ucref.TyconRef tyargs
@@ -3406,7 +3406,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           else 
                nm 
 
-      Constraints=mkILTypes subTypeConstraints
+      Constraints = subTypeConstraints
       Variance=NonVariant
       CustomAttrs = mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)
       HasReferenceTypeConstraint=refTypeConstraint
@@ -3458,12 +3458,12 @@ and GenMethodImpl cenv eenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,_,_,_
     nameOfOverridingMethod, 
     (fun (ilTyForOverriding,methTyparsOfOverridingMethod) -> 
         let ilOverrideTyRef = ilOverrideTy.TypeRef
-        let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methTyparsOfOverridingMethod), (typesOfILParamsList ilOverrideParams), ilOverrideRet.Type)
+        let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methTyparsOfOverridingMethod), (typesOfILParams ilOverrideParams), ilOverrideRet.Type)
         let eenvForOverrideBy = AddTyparsToEnv methTyparsOfOverridingMethod eenv 
         let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvForOverrideBy slotsig methTyparsOfOverridingMethod
         let ilOverrideMethGenericParams = GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod 
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs ilOverrideMethGenericParams
-        let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParamsList ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+        let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
         { Overrides = OverridesSpec(ilOverrideMethRef,ilOverrideTy)
           OverrideBy = ilOverrideBy })
 
@@ -3546,7 +3546,7 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType,baseValOpt,basecall,overri
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
     let ilCloRetTy = cloinfo.cloILFormalRetTy
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-    let ilTyForOverriding = mkILBoxedTyRaw ilCloTypeRef ilCloGenericActuals
+    let ilTyForOverriding = mkILBoxedTy ilCloTypeRef ilCloGenericActuals
 
     let eenvinner = bindBaseOrThisVarOpt cenv eenvinner baseValOpt
     let ilCtorBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways,[],cloName,eenvinner,1,0,basecall,discardAndReturnVoid)
@@ -3606,8 +3606,8 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
     let ilCloTyInner = mkILFormalBoxedTy ilCloTypeRef ilCloGenericParams
     let ilCloLambdas = Lambdas_return ilCloRetTyInner 
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloFreeVars)
-    let ilxCloSpec = IlxClosureSpec.Create(cloref, mkILGenericArgs ( GenGenericArgs m eenvouter.tyenv cloFreeTyvars))
-    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgsRaw ilCloGenericParams)
+    let ilxCloSpec = IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars)
+    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgs ilCloGenericParams)
 
     let getFreshMethod = 
         let _,mbody =
@@ -3701,7 +3701,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
       IsSpecialName= true
       NestedTypes=emptyILTypeDefs
       Encoding= ILDefaultPInvokeEncoding.Auto
-      Implements= mkILTypes ilIntfTys  
+      Implements = ilIntfTys  
       Extends= Some ext
       SecurityDecls= emptyILSecurityDecls
       HasSecurity=false } 
@@ -3757,7 +3757,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       IsSpecialName= true
                       NestedTypes=emptyILTypeDefs
                       Encoding= ILDefaultPInvokeEncoding.Auto
-                      Implements= mkILTypes []  
+                      Implements = []  
                       Extends= Some cenv.g.ilg.typ_Object
                       SecurityDecls= emptyILSecurityDecls
                       HasSecurity=false } 
@@ -4010,7 +4010,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc  selfv eenvouter expr =
             [],ilReturnTy,ilCloLambdas
         
 
-    let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloFreeVars), mkILGenericArgs ilCloGenericActuals)
+    let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloFreeVars), ilCloGenericActuals)
     let cloinfo = 
         { cloExpr=expr
           cloName=ilCloTypeRef.Name
@@ -4112,12 +4112,12 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
     CountClosure()
 
     let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
-    let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloFreeVars), mkILGenericArgs ctxtGenericArgsForDelegee)
+    let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloFreeVars), ctxtGenericArgsForDelegee)
     GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
     CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas cenv.g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor,None))
 
     let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
-    let ilDelegeeInvokeMethOuter = mkILNonGenericInstanceMethSpecInTy (ilDelegeeTyOuter,"Invoke",typesOfILParamsList ilDelegeeParams, ilDelegeeRet.Type)
+    let ilDelegeeInvokeMethOuter = mkILNonGenericInstanceMethSpecInTy (ilDelegeeTyOuter,"Invoke",typesOfILParams ilDelegeeParams, ilDelegeeRet.Type)
     let ilDelegeeCtorMethOuter = mkCtorMethSpecForDelegate cenv.g.ilg (ilCtxtDelTy,useUIntPtrForDelegateCtor)
     CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_IntPtr]) (I_ldftn ilDelegeeInvokeMethOuter)
     CG.EmitInstr cgbuf (pop 2) (Push [ilCtxtDelTy]) (I_newobj(ilDelegeeCtorMethOuter,None))
@@ -4685,7 +4685,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
               CallingConv = ILThisConvention.Static
               Type = ilTy          
               Init = None
-              Args = mkILTypes []
+              Args = []
               CustomAttrs = mkILCustomAttrs ilAttribs }
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.EnclosingTypeRef, ilPropDef,m)
 
@@ -4763,7 +4763,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
                   CallingConv=ILThisConvention.Static
                   Type=fty          
                   Init=None
-                  Args= mkILTypes []
+                  Args = []
                   CustomAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)]) }
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty,ilPropDef,m)
 
@@ -4997,7 +4997,7 @@ and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValM
       CallingConv=(if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static)
       Type=ilPropTy          
       Init=None
-      Args= mkILTypes ilArgTys
+      Args = ilArgTys
       CustomAttrs=ilAttrs }  
 
 and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsThatGoOnPrimaryItem m returnTy =
@@ -6325,7 +6325,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                          CallingConv     = ilCallingConv.ThisConv
                          Type            = ilPropType          
                          Init            = None
-                         Args            = mkILTypes []
+                         Args            = []
                          CustomAttrs     = mkILCustomAttrs ilFieldAttrs } ] 
          
         let methodDefs = 
@@ -6618,7 +6618,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      IsSpecialName= false
                      NestedTypes=emptyILTypeDefs
                      Encoding= ILDefaultPInvokeEncoding.Auto
-                     Implements= mkILTypes ilIntfTys
+                     Implements = ilIntfTys
                      Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.ilg.typ_ValueType else cenv.g.ilg.typ_Object)
                      SecurityDecls= emptyILSecurityDecls
                      HasSecurity=false }
@@ -6686,7 +6686,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                        CallingConv=ILThisConvention.Instance
                        Type=ilPropType          
                        Init=None
-                       Args=mkILTypes []
+                       Args = []
                        CustomAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]) }
                yield (ilMethodDef,ilFieldDef,ilPropDef,(ilPropName,ilFieldName,ilPropType)) ] 
              |> List.unzip4

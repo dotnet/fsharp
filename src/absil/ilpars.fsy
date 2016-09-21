@@ -46,7 +46,7 @@ let resolveMethodSpecScopeThen (ResolvedAtMethodSpecScope f) g =
 let resolveFormalMethodSpecScope tspeco obj = 
   match tspeco with 
     None ->  resolveMethodSpecScope obj mkILEmptyGenericParams
-  | Some (tspec:ILTypeSpec) -> resolveMethodSpecScope obj (mkILFormalTyparsRaw tspec.GenericArgs)
+  | Some (tspec:ILTypeSpec) -> resolveMethodSpecScope obj (mkILFormalTypars tspec.GenericArgs)
 
 let resolveCurrentMethodSpecScope obj = 
     resolveMethodSpecScope obj mkILEmptyGenericParams

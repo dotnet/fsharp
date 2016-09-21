@@ -1310,7 +1310,7 @@ let GetMethodRefInfoAsMemberRefIdx cenv env  ((_,typ,_,_,_,_,_) as minfo) =
 let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm,typ:ILType,cc,args,ret,varargs,genarity) as minfo) =
     if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
         if not typ.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-typ"
-        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRefRaw(typ.TypeRef, cc, nm, genarity, args,ret)))
+        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRef (typ.TypeRef, cc, nm, genarity, args,ret)))
         with MethodDefNotFound -> (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
     else (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
 
@@ -2028,21 +2028,21 @@ module Codebuf =
                 emitTypeInstr cenv codebuf env i_newarr ty
             else
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_stelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_stelem_any ty  
             else 
                 let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_int32 else ty)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_ldelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelem_any ty  
             else 
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,emptyILGenericArgs)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,[])
 
         | I_ldelema  (ro,_isNativePtr,shape,ty) -> 
             if (ro = ReadonlyAddress) then
@@ -2051,7 +2051,7 @@ module Codebuf =
                 emitTypeInstr cenv codebuf env i_ldelema ty
             else 
                 let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,emptyILGenericArgs)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,[])
 
         | I_castclass  ty -> emitTypeInstr cenv codebuf env i_castclass ty
         | I_isinst  ty -> emitTypeInstr cenv codebuf env i_isinst ty

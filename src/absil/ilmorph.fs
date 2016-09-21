@@ -65,7 +65,7 @@ let rec typ_tref2tref f x  =
     | ILType.Modified (req,tref,ty) ->  ILType.Modified (req, f tref, typ_tref2tref f ty) 
     | ILType.Void -> ILType.Void
 and tspec_tref2tref f (x:ILTypeSpec) = 
-    mkILTySpecRaw(f x.TypeRef, List.map (typ_tref2tref f) x.GenericArgs)
+    mkILTySpec(f x.TypeRef, List.map (typ_tref2tref f) x.GenericArgs)
 
 let rec typ_scoref2scoref_tyvar2typ ((_fscope,ftyvar) as fs)x  = 
     match x with 
@@ -110,9 +110,9 @@ let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) =
 type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
 let mspec_typ2typ (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
-    mkILMethSpecForMethRefInTyRaw(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
-                                  factualty x.EnclosingType, 
-                                  typs_typ2typ factualty  x.GenericArgs)
+    mkILMethSpecForMethRefInTy(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
+                               factualty x.EnclosingType, 
+                               typs_typ2typ factualty  x.GenericArgs)
 
 let fref_typ2typ (f: ILType -> ILType) x = 
     { x with EnclosingTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.EnclosingTypeRef))).TypeRef;

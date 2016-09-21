@@ -181,7 +181,7 @@ let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) =
     let tyargsl,argtys,rstruct = stripSupportedAbstraction clospec.FormalLambdas
     if not (List.isEmpty tyargsl) then failwith "mkMethSpecForClosureCall: internal error";
     let rty' = mkTyOfLambdas cenv rstruct
-    let argtys' = typesOfILParamsList argtys
+    let argtys' = typesOfILParams argtys
     let minst' = clospec.GenericArgs
     (mkILInstanceMethSpecInTy(clospec.ILType,"Invoke",argtys',rty',minst'))
 
@@ -560,7 +560,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 // CASE 2b - Build an Term Application Apply method 
                 // CASE 2b2. Build a term application as a virtual method. 
                 
-                let nowEnvParentClass = typ_Func cenv (typesOfILParamsList nowParams) nowReturnTy 
+                let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy 
 
                 let cloTypeDef = 
                     let nowApplyMethDef =
@@ -582,7 +582,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     { Name = td.Name;
                       GenericParams= td.GenericParams;
                       Access = td.Access;
-                      Implements = mkILTypes [];
+                      Implements = []
                       IsAbstract = false;
                       IsSealed = false;
                       IsSerializable=td.IsSerializable; 

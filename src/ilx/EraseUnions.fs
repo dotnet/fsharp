@@ -148,7 +148,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
 
 
 let baseTyOfUnionSpec (cuspec : IlxUnionSpec) = 
-    mkILNamedTyRaw cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
+    mkILNamedTy cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
 
 let mkMakerName (cuspec: IlxUnionSpec) nm = 
     match cuspec.HasHelpers with
@@ -168,7 +168,7 @@ let cuspecRepr =
          (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
          (fun cuspec -> cuspec.EnclosingType),
-         (fun (cuspec,nm) -> mkILNamedTyRaw cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
+         (fun (cuspec,nm) -> mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
 
 type NoTypesGeneratedViaThisReprDecider = NoTypesGeneratedViaThisReprDecider
 let cudefRepr = 
@@ -195,7 +195,7 @@ let refToFieldInTy ty (nm, fldTy) = mkILFieldSpecInTy (ty, nm, fldTy)
 let formalTypeArgs (baseTy:ILType) = List.mapi (fun i _ -> mkILTyvarTy (uint16 i)) baseTy.GenericArgs
 let constFieldName nm = "_unique_" + nm 
 let constFormalFieldTy (baseTy:ILType) = 
-    mkILNamedTyRaw baseTy.Boxity baseTy.TypeRef (formalTypeArgs baseTy)
+    mkILNamedTy baseTy.Boxity baseTy.TypeRef (formalTypeArgs baseTy)
 
 let mkConstFieldSpecFromId (baseTy:ILType) constFieldId = 
     refToFieldInTy baseTy constFieldId
@@ -595,7 +595,7 @@ let mkMethodsAndPropertiesForFields ilg access attr hasHelpers (typ: ILType) (fi
               CallingConv=ILThisConvention.Instance
               Type=field.Type          
               Init=None
-              Args=mkILTypes []
+              Args = []
               CustomAttrs= field.ILField.CustomAttrs }
             |> addPropertyGeneratedAttrs ilg
         )
@@ -680,7 +680,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                         CallingConv=ILThisConvention.Instance
                         Type=ilg.typ_bool          
                         Init=None
-                        Args=mkILTypes []
+                        Args = []
                         CustomAttrs=emptyILCustomAttrs }
                       |> addPropertyGeneratedAttrs ilg
                       |> addPropertyNeverAttrs ilg ]
@@ -709,7 +709,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                           CallingConv=ILThisConvention.Static
                           Type=baseTy          
                           Init=None
-                          Args=mkILTypes []
+                          Args = []
                           CustomAttrs=emptyILCustomAttrs }
                         |> addPropertyGeneratedAttrs ilg
                         |> addPropertyNeverAttrs ilg
@@ -758,7 +758,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                   else
                     
                     let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
-                    let debugProxyTy = mkILBoxedTyRaw (mkILNestedTyRef(altTy.TypeSpec.Scope,altTy.TypeSpec.Enclosing, debugProxyTypeName)) altTy.GenericArgs
+                    let debugProxyTy = mkILBoxedTy (mkILNestedTyRef(altTy.TypeSpec.Scope,altTy.TypeSpec.Enclosing, debugProxyTypeName)) altTy.GenericArgs
                     let debugProxyFieldName = "_obj"
                     
                     let debugProxyFields = 
@@ -806,7 +806,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                               CallingConv=ILThisConvention.Instance
                               Type=fdef.Type          
                               Init=None
-                              Args=mkILTypes []
+                              Args = []
                               CustomAttrs= fdef.ILField.CustomAttrs }
                             |> addPropertyGeneratedAttrs ilg)
                         |> Array.toList
@@ -1009,7 +1009,7 @@ let mkClassUnionDef ilg tref td cud =
                   CallingConv=ILThisConvention.Instance
                   Type=tagFieldType          
                   Init=None
-                  Args=mkILTypes []
+                  Args = []
                   CustomAttrs=emptyILCustomAttrs }
                 |> addPropertyGeneratedAttrs ilg 
                 |> addPropertyNeverAttrs ilg  ]
@@ -1040,7 +1040,7 @@ let mkClassUnionDef ilg tref td cud =
                   Layout=ILTypeDefLayout.Auto 
                   IsSpecialName=false
                   Encoding=ILDefaultPInvokeEncoding.Ansi
-                  Implements = mkILTypes []
+                  Implements = []
                   Extends= Some ilg.typ_Object 
                   Methods= emptyILMethods
                   SecurityDecls=emptyILSecurityDecls

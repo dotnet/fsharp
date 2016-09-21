@@ -858,8 +858,7 @@ type ILParameter =
 
 type ILParameters = list<ILParameter>
 
-val typesOfILParamsRaw : ILParameters -> ILTypes
-val typesOfILParamsList : ILParameter list -> ILType list
+val typesOfILParams : ILParameters -> ILType list
 
 /// Method return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1623,7 +1622,6 @@ val decodeILAttribData:
 val mkSimpleAssRef: string -> ILAssemblyRef
 val mkSimpleModRef: string -> ILModuleRef
 
-val emptyILGenericArgs: ILGenericArgs
 val mkILTyvarTy: uint16 -> ILType
 
 /// Make type refs.
@@ -1632,18 +1630,15 @@ val mkILTyRef: ILScopeRef * string -> ILTypeRef
 val mkILTyRefInTyRef: ILTypeRef * string -> ILTypeRef
 
 type ILGenericArgsList = ILType list
-val mkILGenericArgs : ILGenericArgsList -> ILGenericArgs
+
 /// Make type specs.
 val mkILNonGenericTySpec: ILTypeRef -> ILTypeSpec
 val mkILTySpec: ILTypeRef * ILGenericArgsList -> ILTypeSpec
-val mkILTySpecRaw: ILTypeRef * ILGenericArgs -> ILTypeSpec
 
 /// Make types.
 val mkILTy: ILBoxity -> ILTypeSpec -> ILType
 val mkILNamedTy: ILBoxity -> ILTypeRef -> ILGenericArgsList -> ILType
-val mkILNamedTyRaw: ILBoxity -> ILTypeRef -> ILGenericArgs -> ILType
 val mkILBoxedTy: ILTypeRef -> ILGenericArgsList -> ILType
-val mkILBoxedTyRaw: ILTypeRef -> ILGenericArgs -> ILType
 val mkILValueTy: ILTypeRef -> ILGenericArgsList -> ILType
 val mkILNonGenericBoxedTy: ILTypeRef -> ILType
 val mkILNonGenericValueTy: ILTypeRef -> ILType
@@ -1653,16 +1648,11 @@ val isILArrTy: ILType -> bool
 val destILArrTy: ILType -> ILArrayShape * ILType 
 val mkILBoxedType : ILTypeSpec -> ILType
 
-val mkILTypes : ILType list -> ILTypes
-
 /// Make method references and specs.
-val mkILMethRefRaw: ILTypeRef * ILCallingConv * string * int * ILTypes * ILType -> ILMethodRef
 val mkILMethRef: ILTypeRef * ILCallingConv * string * int * ILType list * ILType -> ILMethodRef
 val mkILMethSpec: ILMethodRef * ILBoxity * ILGenericArgsList * ILGenericArgsList -> ILMethodSpec
-val mkILMethSpecForMethRefInTyRaw: ILMethodRef * ILType * ILGenericArgs -> ILMethodSpec
 val mkILMethSpecForMethRefInTy: ILMethodRef * ILType * ILGenericArgsList -> ILMethodSpec
 val mkILMethSpecInTy: ILType * ILCallingConv * string * ILType list * ILType * ILGenericArgsList -> ILMethodSpec
-val mkILMethSpecInTyRaw: ILType * ILCallingConv * string * ILTypes * ILType * ILGenericArgs -> ILMethodSpec
 
 /// Construct references to methods on a given type .
 val mkILNonGenericMethSpecInTy: ILType * ILCallingConv * string * ILType list * ILType -> ILMethodSpec
@@ -1687,7 +1677,6 @@ val mkILFieldRef: ILTypeRef * string * ILType -> ILFieldRef
 val mkILFieldSpec: ILFieldRef * ILType -> ILFieldSpec
 val mkILFieldSpecInTy: ILType * string * ILType -> ILFieldSpec
 
-val mkILCallSigRaw: ILCallingConv * ILTypes * ILType -> ILCallingSignature
 val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 
 /// Make generalized verions of possibly-generic types,
@@ -1695,9 +1684,7 @@ val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
 val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
 
-val mkILFormalTyparsRaw: ILTypes -> ILGenericParameterDefs
 val mkILFormalTypars: ILType list -> ILGenericParameterDefs
-val mkILFormalGenericArgsRaw: ILGenericParameterDefs -> ILGenericArgs
 val mkILFormalGenericArgs: ILGenericParameterDefs -> ILGenericArgsList
 val mkILSimpleTypar : string -> ILGenericParameterDef
 /// Make custom attributes.
