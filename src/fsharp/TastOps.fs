@@ -7001,13 +7001,18 @@ let enum_CompilationRepresentationAttribute_Instance           = 0b0000000000000
 let enum_CompilationRepresentationAttribute_StaticInstanceMask = 0b0000000000000011
 let enum_CompilationRepresentationAttribute_ModuleSuffix       = 0b0000000000000100
 let enum_CompilationRepresentationAttribute_PermitNull         = 0b0000000000001000
+let enum_CompilationRepresentationAttribute_UseVirtualTag      = 0b0000000000100000
 
-let HasUseNullAsTrueValueAttribute g attribs =
-     match TryFindFSharpInt32Attribute  g g.attrib_CompilationRepresentationAttribute attribs with
-     | Some(flags) -> ((flags &&& enum_CompilationRepresentationAttribute_PermitNull) <> 0)
-     | _ -> false 
+let hasCompilationRepresentationAttribute g attribs enumAttribute =
+     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attribs with
+     | Some flags -> (flags &&& enumAttribute) = enumAttribute
+     | None -> false 
+
+let HasUseNullAsTrueValueAttribute g attribs = enum_CompilationRepresentationAttribute_PermitNull    |> hasCompilationRepresentationAttribute g attribs
+let HasUseVirtualTagAttribute      g attribs = enum_CompilationRepresentationAttribute_UseVirtualTag |> hasCompilationRepresentationAttribute g attribs
 
 let TyconHasUseNullAsTrueValueAttribute g (tycon:Tycon) = HasUseNullAsTrueValueAttribute g tycon.Attribs 
+let TyconHasUseVirtualTagAttribute      g (tycon:Tycon) = HasUseVirtualTagAttribute      g tycon.Attribs 
 
 // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
 let CanHaveUseNullAsTrueValueAttribute (_g:TcGlobals) (tycon:Tycon) =
@@ -7025,6 +7030,15 @@ let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
      (TyconHasUseNullAsTrueValueAttribute g tycon &&
       ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
       ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+
+// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
+let CanHaveUseVirtualTagAttribute (_g:TcGlobals) (tycon:Tycon) =
+    tycon.IsUnionTycon
+
+// WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
+let IsUnionTypeWithUseVirtualTag (g:TcGlobals) (tycon:Tycon) =
+    tycon.IsUnionTycon &&
+    TyconHasUseVirtualTagAttribute g tycon
 
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref

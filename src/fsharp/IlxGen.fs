@@ -479,7 +479,8 @@ and GenUnionRef amap m g (tcref: TyconRef) =
               let nullPermitted = IsUnionTypeWithNullAsTrueValue g tycon
               let hasHelpers = ComputeUnionHasHelpers g tcref
               let boxity = (if tcref.IsStructOrEnumTycon then ILBoxity.AsValue else ILBoxity.AsObject)
-              IlxUnionRef(boxity, tref,alternatives,nullPermitted,hasHelpers))
+              let useVirtualTag = IsUnionTypeWithUseVirtualTag g tycon
+              IlxUnionRef(boxity, tref,alternatives,nullPermitted,hasHelpers,useVirtualTag))
 
 and ComputeUnionHasHelpers g (tcref : TyconRef) = 
     if tyconRefEq g tcref g.unit_tcr_canon then NoHelpers
@@ -6588,6 +6589,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                let cuinfo =
                   { cudReprAccess=reprAccess
                     cudNullPermitted=IsUnionTypeWithNullAsTrueValue cenv.g tycon
+                    cudVirtualTag=IsUnionTypeWithUseVirtualTag cenv.g tycon
                     cudHelpersAccess=reprAccess
                     cudHasHelpers=ComputeUnionHasHelpers cenv.g tcref
                     cudDebugProxies= generateDebugProxies

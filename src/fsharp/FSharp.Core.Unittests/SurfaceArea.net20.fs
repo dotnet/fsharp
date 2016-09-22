@@ -833,6 +833,7 @@ Microsoft.FSharp.Core.CompilationRepresentationFlags: Microsoft.FSharp.Core.Comp
 Microsoft.FSharp.Core.CompilationRepresentationFlags: Microsoft.FSharp.Core.CompilationRepresentationFlags None
 Microsoft.FSharp.Core.CompilationRepresentationFlags: Microsoft.FSharp.Core.CompilationRepresentationFlags Static
 Microsoft.FSharp.Core.CompilationRepresentationFlags: Microsoft.FSharp.Core.CompilationRepresentationFlags UseNullAsTrueValue
+Microsoft.FSharp.Core.CompilationRepresentationFlags: Microsoft.FSharp.Core.CompilationRepresentationFlags UseVirtualTag
 Microsoft.FSharp.Core.CompilationRepresentationFlags: System.String ToString()
 Microsoft.FSharp.Core.CompilationRepresentationFlags: System.String ToString(System.IFormatProvider)
 Microsoft.FSharp.Core.CompilationRepresentationFlags: System.String ToString(System.String)

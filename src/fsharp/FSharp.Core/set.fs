@@ -13,7 +13,7 @@ namespace Microsoft.FSharp.Collections
 
     (* A classic functional language implementation of binary trees *)
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue ||| CompilationRepresentationFlags.UseVirtualTag)>]
     [<NoEquality; NoComparison>]
     type SetTree<'T> when 'T : comparison = 
         | SetEmpty                                          // height = 0   
@@ -70,7 +70,7 @@ namespace Microsoft.FSharp.Collections
     #endif
     
 
-        let height t = 
+        let inline height t = 
             match t with 
             | SetEmpty -> 0
             | SetOne _ -> 1
@@ -90,7 +90,7 @@ namespace Microsoft.FSharp.Collections
 
         let tolerance = 2
 
-        let mk l k r = 
+        let inline mk l k r = 
             match l,r with 
             | SetEmpty,SetEmpty -> SetOne (k)
             | _ -> 

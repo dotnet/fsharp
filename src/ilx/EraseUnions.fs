@@ -38,6 +38,7 @@ type DiscriminationTechnique =
    // where at most one case is non-nullary.  These can be represented using a single
    // class (no subclasses), but an integer tag is stored to discriminate between the objects.
    | IntegerTag
+   | VirtualTag
 
 // A potentially useful additional representation trades an extra integer tag in the root type
 // for faster discrimination, and in the important single-non-nullary constructor case
@@ -54,9 +55,11 @@ type DiscriminationTechnique =
 // accessors would be needed to access these fields directly, akin to HeadOrDefault and TailOrNull.
 
 // This functor helps us make representation decisions for F# union type compilation
+
 type UnionReprDecisions<'Union,'Alt,'Type>
           (getAlternatives: 'Union->'Alt[],
            nullPermitted:'Union->bool,
+           useVirtualTag:'Union->bool,
            isNullary:'Alt->bool,
            isList:'Union->bool,
            isStruct:'Union->bool,
@@ -76,7 +79,10 @@ type UnionReprDecisions<'Union,'Alt,'Type>
             let alts = getAlternatives cu
             if alts.Length = 1 then 
                 SingleCase
-            elif 
+            elif useVirtualTag cu &&
+                (not (nullPermitted cu && alts.Length = 2 && isNullary alts.[0] <> isNullary alts.[1])) then
+                VirtualTag
+            elif
                 not (isStruct cu) &&
                 alts.Length < TaggingThresholdFixedConstant &&
                 not (repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu)  then 
@@ -88,10 +94,13 @@ type UnionReprDecisions<'Union,'Alt,'Type>
     member repr.RepresentAlternativeAsNull (cu,alt) = 
         let alts = getAlternatives cu
         nullPermitted cu &&
-        (repr.DiscriminationTechnique cu  = RuntimeTypes) && (* don't use null for tags, lists or single-case  *)
+        (match repr.DiscriminationTechnique cu with RuntimeTypes | VirtualTag -> true | _ -> false) && (* don't use null for tags, lists or single-case  *)
         Array.existsOne isNullary alts  &&
         Array.exists (isNullary >> not) alts  &&
         isNullary alt  (* is this the one? *)
+
+    member repr.IsVirtual cu =
+        match repr.DiscriminationTechnique cu with VirtualTag -> true | _ -> false
 
     member repr.RepresentOneAlternativeAsNull cu = 
         let alts = getAlternatives cu
@@ -124,13 +133,14 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         isStruct cu
 
     member repr.OptimizeAlternativeToRootClass (cu,alt) = 
-        // The list type always collapses to the root class 
-        isList cu ||
-        // Structs are always flattened
-        repr.Flatten cu ||
-        repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu ||
-        repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) ||
-        repr.RepresentAlternativeAsFreshInstancesOfRootClass(cu,alt)
+        (not (repr.IsVirtual cu)) &&
+        (   // The list type always collapses to the root class 
+            isList cu ||
+            // Structs are always flattened
+            repr.Flatten cu ||
+            repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu ||
+            repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) ||
+            repr.RepresentAlternativeAsFreshInstancesOfRootClass(cu,alt))
       
     member repr.MaintainPossiblyUniqueConstantFieldForAlternative(cu,alt) = 
         not (isStruct cu) && 
@@ -163,6 +173,7 @@ let cuspecRepr =
     UnionReprDecisions
         ((fun (cuspec:IlxUnionSpec) -> cuspec.AlternativesArray),
          (fun (cuspec:IlxUnionSpec) -> cuspec.IsNullPermitted), 
+         (fun (cuspec:IlxUnionSpec) -> cuspec.VirtualTag), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun cuspec -> cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
@@ -175,6 +186,7 @@ let cudefRepr =
     UnionReprDecisions
         ((fun (_td,cud) -> cud.cudAlternatives),
          (fun (_td,cud) -> cud.cudNullPermitted), 
+         (fun (_td,cud) -> cud.cudVirtualTag), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun (td,_cud) -> match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false),
@@ -280,7 +292,11 @@ let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
     if cuspecRepr.RepresentOneAlternativeAsNull cuspec then
         mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "Get" + tagPropertyName, [baseTy], mkTagFieldFormalType ilg cuspec))  
     else
-        mkNormalCall (mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec))  
+        let getTagMethod = mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec)
+        if cuspecRepr.IsVirtual cuspec then
+            mkNormalCallvirt getTagMethod
+        else
+            mkNormalCall getTagMethod
 
 let mkGetTag ilg (cuspec: IlxUnionSpec) = 
     match cuspec.HasHelpers with
@@ -365,6 +381,7 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
         match cuspecRepr.DiscriminationTechnique cuspec with 
         | SingleCase -> [ mkLdcInt32 1 ] 
         | RuntimeTypes -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName  altTy
+        | VirtualTag
         | IntegerTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | TailOrNull -> 
             match cidx with 
@@ -412,6 +429,7 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
         match cuspecRepr.DiscriminationTechnique cuspec  with 
         | SingleCase -> [ ]
         | RuntimeTypes ->  mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy (I_brcmp (pos,tg))
+        | VirtualTag
         | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
         | TailOrNull -> 
             match cidx with 
@@ -438,6 +456,34 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
             let baseTy = baseTyOfUnionSpec cuspec
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
+        | VirtualTag ->
+            let baseTy = baseTyOfUnionSpec cuspec
+            let get_Tag = mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec)
+
+            if cuspecRepr.RepresentOneAlternativeAsNull cuspec then
+                let nullAltIdx, _ =
+                    alts
+                    |> Seq.mapi (fun i a -> i, a)
+                    |> Seq.find (fun (_,a) -> cuspecRepr.RepresentAlternativeAsNull (cuspec, a))
+
+                let ld = 
+                    match ldOpt with 
+                    | None -> 
+                        let locn = cg.GenLocal baseTy 
+                        cg.EmitInstr (mkStloc locn)
+                        mkLdloc locn 
+                    | Some i -> i
+
+                let ifNullLab = cg.GenerateDelayMark ()
+                let outLab = cg.GenerateDelayMark()
+                cg.EmitInstrs [ld; I_brcmp (BI_brfalse, cg.CodeLabel ifNullLab)]
+                cg.EmitInstrs [ld; mkNormalCallvirt get_Tag; I_br (cg.CodeLabel outLab) ]
+                cg.SetMarkToHere ifNullLab
+                cg.EmitInstrs [mkLdcInt32 nullAltIdx]
+                cg.SetMarkToHere outLab
+            else 
+                ldOpt |> Option.iter cg.EmitInstr
+                cg.EmitInstr (mkNormalCallvirt get_Tag)
         | SingleCase -> 
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ] 
@@ -557,6 +603,62 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         cg.EmitInstrs (mkGetTag ilg cuspec)
         cg.EmitInstr (I_switch (Array.toList dests))
         cg.SetMarkToHere failLab
+
+    | VirtualTag -> 
+        match cases with 
+        | [] -> cg.EmitInstrs  [ AI_pop ]
+        | _ ->
+            let failLab = cg.GenerateDelayMark ()
+
+            let indexedAlts =
+                cuspec.AlternativesArray
+                |> Array.mapi (fun i a -> i, a)
+
+            let getCase =
+                let casesDict = cases |> dict // Use a dictionary to avoid quadratic lookup in case list
+                fun i maybeNullAltIdx ->
+                    match casesDict.TryGetValue i, maybeNullAltIdx with
+                    | (true, res), None -> res
+                    | (true, res), Some nullAltIdx when nullAltIdx <> i -> res
+                    | _ -> cg.CodeLabel failLab
+
+            let locn = cg.GenLocal baseTy 
+            cg.EmitInstr (mkStloc locn)
+
+            let maybeNullAltIdx = 
+                if not (cuspecRepr.RepresentOneAlternativeAsNull cuspec) then None
+                else
+                    let nullAltIdx, _ =
+                        indexedAlts
+                        |> Seq.find (fun (_,a) -> cuspecRepr.RepresentAlternativeAsNull (cuspec, a))
+
+                    cg.EmitInstr (mkLdloc locn)
+                    cg.EmitInstr (I_brcmp (BI_brfalse, getCase nullAltIdx None))
+                    Some nullAltIdx
+
+            cg.EmitInstr (mkLdloc locn)
+            cg.EmitInstr (mkNormalCallvirt (mkILNonGenericInstanceMethSpecInTy(baseTy, "get_" + tagPropertyName, [], mkTagFieldFormalType ilg cuspec)))
+
+            let maybeTwoChoices =
+                match indexedAlts, maybeNullAltIdx with
+                | [|(idxA,_); (idxB,_)|],           None                             -> Some (idxA, idxB)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxA -> Some (idxB, idxC)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxB -> Some (idxA, idxC)
+                | [|(idxA,_); (idxB,_); (idxC,_)|], Some nullIdx when nullIdx = idxC -> Some (idxA, idxB)
+                | _ -> None
+
+            match maybeTwoChoices with
+            | Some (idxA, idxB) ->
+                 cg.EmitInstrs [mkLdcInt32 idxA; (I_brcmp (BI_beq, getCase idxA None)); I_br (getCase idxB None)]
+            | None->
+                let dests =
+                    indexedAlts
+                    |> Array.map (fun (i,_) -> getCase i maybeNullAltIdx)
+                    |> Array.toList
+
+                cg.EmitInstr (I_switch dests)
+
+            cg.SetMarkToHere failLab
 
     | SingleCase ->
         match cases with 
@@ -751,10 +853,11 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                   []
 
           let typeDefs, altDebugTypeDefs = 
-              if repr.OptimizeAlternativeToRootClass (info,alt) then [], [] else
+              if repr.OptimizeAlternativeToRootClass (info,alt) then [], []
+              else
                 
               let altDebugTypeDefs, debugAttrs = 
-                  if not cud.cudDebugProxies then  [],  []
+                  if not cud.cudDebugProxies then [], []
                   else
                     
                     let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
@@ -837,8 +940,35 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                       |> Array.toList
 
 
-                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields ilg cud.cudReprAccess attr cud.cudHasHelpers altTy fields 
+                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields ilg cud.cudReprAccess attr cud.cudHasHelpers altTy fields
+                  
+                  let tagProp, tagMethod =
+                    match repr.DiscriminationTechnique info with
+                    | VirtualTag ->
+                        let tagFieldType = mkTagFieldType ilg cuspec
 
+                        let prop =
+                          { Name            = tagPropertyName
+                            IsRTSpecialName = false
+                            IsSpecialName   = false
+                            SetMethod       = None
+                            GetMethod       = Some (mkILMethRef (altTy.TypeRef, ILCallingConv.Instance, "get_" + tagPropertyName, 0, [], tagFieldType))
+                            CallingConv     = ILThisConvention.Instance
+                            Type            = tagFieldType          
+                            Init            = None
+                            Args            = mkILTypes []
+                            CustomAttrs     = emptyILCustomAttrs }
+                          |> addPropertyGeneratedAttrs ilg
+                          |> addPropertyNeverAttrs ilg
+
+                        let meth =
+                            let loadTagNumber = genWith (fun cg -> cg.EmitInstrs [ mkLdcInt32 num; I_ret ])
+                            let body = mkMethodBody (true, emptyILLocals, 2, loadTagNumber, cud.cudWhere)
+                            mkILNonGenericVirtualMethod ("get_" + tagPropertyName, cud.cudHelpersAccess, [], mkILReturn tagFieldType,body) 
+                            |> addMethodGeneratedAttrs ilg
+
+                        [prop], [meth]
+                    | _ -> [], []
                   
                   let basicCtorMeth = 
                       mkILStorageCtor 
@@ -848,6 +978,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                             | IntegerTag -> 
                                 yield mkLdcInt32 num
                                 yield mkNormalCall (mkILCtorMethSpecForTy (baseTy,[mkTagFieldType ilg cuspec])) 
+                            | VirtualTag
                             | SingleCase 
                             | RuntimeTypes ->
                                 yield mkNormalCall (mkILCtorMethSpecForTy (baseTy,[])) 
@@ -864,10 +995,10 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                                         ILTypeDefAccess.Nested (if alt.IsNullary && cud.cudHasHelpers = IlxUnionHasHelpers.AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess), 
                                         td.GenericParams, 
                                         baseTy, [], 
-                                        mkILMethods ([basicCtorMeth] @ basicMethods), 
+                                        mkILMethods ([basicCtorMeth] @ tagMethod @ basicMethods), 
                                         mkILFields basicFields,
                                         emptyILTypeDefs,
-                                        mkILProperties basicProps,
+                                        mkILProperties (tagProp @ basicProps),
                                         emptyILEvents,
                                         mkILCustomAttrs debugAttrs,
                                         ILTypeInit.BeforeField)
@@ -885,7 +1016,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
 let mkClassUnionDef ilg tref td cud = 
     let boxity = match td.tdKind with ILTypeDefKind.ValueType -> ILBoxity.AsValue | _ -> ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
-    let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
+    let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers, cud.cudVirtualTag), baseTy.GenericArgs)
     let info = (td,cud)
     let repr = cudefRepr 
     let isTotallyImmutable = (cud.cudHasHelpers <> SpecialFSharpListHelpers)
@@ -904,7 +1035,7 @@ let mkClassUnionDef ilg tref td cud =
        
     let tagFieldsInObject = 
         match repr.DiscriminationTechnique info with 
-        | SingleCase | RuntimeTypes | TailOrNull -> []
+        | SingleCase | RuntimeTypes | TailOrNull | VirtualTag -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
 
     let isStruct = match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false
@@ -967,7 +1098,8 @@ let mkClassUnionDef ilg tref td cud =
                   match repr.DiscriminationTechnique info with 
                   | SingleCase  
                   | RuntimeTypes  
-                  | TailOrNull ->
+                  | TailOrNull
+                  | VirtualTag ->
                       yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy,[])) 
                   | IntegerTag -> 
                       if inRootClass then
@@ -987,37 +1119,51 @@ let mkClassUnionDef ilg tref td cud =
             |> Array.toList
 
         
-        let tagMeths,tagProps = 
+        let tagMeths,tagProps =
+          let mkTagProperty () =
+              {   Name            = tagPropertyName
+                  IsRTSpecialName = false
+                  IsSpecialName   = false
+                  SetMethod       = None
+                  GetMethod       = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + tagPropertyName, 0, [], tagFieldType))
+                  CallingConv     = ILThisConvention.Instance
+                  Type            = tagFieldType          
+                  Init            = None
+                  Args            = mkILTypes []
+                  CustomAttrs     = emptyILCustomAttrs }
+                |> addPropertyGeneratedAttrs ilg 
+                |> addPropertyNeverAttrs ilg
 
           let body = mkMethodBody(true,emptyILLocals,2,genWith (fun cg -> emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec); cg.EmitInstr I_ret), cud.cudWhere)
-          // // If we are using NULL as a representation for an element of this type then we cannot 
-          // // use an instance method 
-          if (repr.RepresentOneAlternativeAsNull info) then
-              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
-                |> addMethodGeneratedAttrs ilg ], 
-              [] 
 
-          else
-              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
-                |> addMethodGeneratedAttrs ilg ], 
-          
-              [ { Name=tagPropertyName
-                  IsRTSpecialName=false
-                  IsSpecialName=false
-                  SetMethod=None
-                  GetMethod=Some(mkILMethRef(baseTy.TypeRef,ILCallingConv.Instance,"get_" + tagPropertyName,0,[], tagFieldType))
-                  CallingConv=ILThisConvention.Instance
-                  Type=tagFieldType          
-                  Init=None
-                  Args=mkILTypes []
-                  CustomAttrs=emptyILCustomAttrs }
-                |> addPropertyGeneratedAttrs ilg 
-                |> addPropertyNeverAttrs ilg  ]
+          let mkTagStaticGetter () =
+              // If we are using NULL as a representation for an element of this type then we cannot 
+              // use an instance method
+              mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
+              |> addMethodGeneratedAttrs ilg
+
+          let mkVirtualTagGetter () =
+              mkILNonGenericVirtualMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,MethodBody.Abstract) 
+              |> addMethodGeneratedAttrs ilg
+
+          let mkTagGetter () =
+              mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
+              |> addMethodGeneratedAttrs ilg
+
+          match repr.IsVirtual info, repr.RepresentOneAlternativeAsNull info with
+          | true,  true  -> [mkVirtualTagGetter (); mkTagStaticGetter ()], [mkTagProperty ()]
+          | true,  false -> [mkVirtualTagGetter ()],                       [mkTagProperty ()]
+          | false, true  -> [mkTagStaticGetter ()],                        []
+          | false, false -> [mkTagGetter ()],                              [mkTagProperty ()]
 
         tagMeths, tagProps, tagEnumFields
-
-    // The class can be abstract if each alternative is represented by a derived type
-    let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
+    
+    let isAbstract = 
+        match repr.DiscriminationTechnique info with 
+        | VirtualTag -> true
+        | _ ->
+            // The class can be abstract if each alternative is represented by a derived type
+            altTypeDefs.Length = cud.cudAlternatives.Length
 
     let existingMeths = td.Methods.AsList 
     let existingProps = td.Properties.AsList

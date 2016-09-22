@@ -8,7 +8,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue ||| CompilationRepresentationFlags.UseVirtualTag)>]
     [<NoEquality; NoComparison>]
     type MapTree<'Key,'Value when 'Key : comparison > = 
         | MapEmpty 
@@ -64,7 +64,8 @@ namespace Microsoft.FSharp.Collections
 
         let empty = MapEmpty 
 
-        let height  = function
+        let inline height x =
+          match x with
           | MapEmpty -> 0
           | MapOne _ -> 1
           | MapNode(_,_,_,_,h) -> h
@@ -74,7 +75,7 @@ namespace Microsoft.FSharp.Collections
             | MapEmpty -> true
             | _ -> false
 
-        let mk l k v r = 
+        let inline mk l k v r = 
             match l,r with 
             | MapEmpty,MapEmpty -> MapOne(k,v)
             | _ -> 

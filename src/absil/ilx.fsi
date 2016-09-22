@@ -40,7 +40,7 @@ type IlxUnionHasHelpers =
    | SpecialFSharpOptionHelpers 
    
 type IlxUnionRef = 
-    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *) * bool (* cudVirtualTag *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -52,6 +52,7 @@ type IlxUnionSpec =
     member TypeRef : ILTypeRef 
     member IsNullPermitted : bool
     member HasHelpers : IlxUnionHasHelpers
+    member VirtualTag : bool
     member Alternative : int -> IlxUnionAlternative
     member FieldDef : int -> int -> IlxUnionField
 
@@ -110,6 +111,7 @@ type IlxUnionInfo =
       cudDebugDisplayAttributes: ILAttribute list
       cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
+      cudVirtualTag: bool
       /// Debug info for generated code for classunions.
       cudWhere: ILSourceMarker option  
     }
