@@ -181,9 +181,9 @@ let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) =
     let tyargsl,argtys,rstruct = stripSupportedAbstraction clospec.FormalLambdas
     if not (List.isEmpty tyargsl) then failwith "mkMethSpecForClosureCall: internal error";
     let rty' = mkTyOfLambdas cenv rstruct
-    let argtys' = typesOfILParamsList argtys
+    let argtys' = typesOfILParams argtys
     let minst' = clospec.GenericArgs
-    (mkILInstanceMethSpecInTy(clospec.ILType,"Invoke",argtys',rty',ILList.toList minst'))
+    (mkILInstanceMethSpecInTy(clospec.ILType,"Invoke",argtys',rty',minst'))
 
 
 // -------------------------------------------------------------------- 
@@ -211,7 +211,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let rec unwind apps = 
                 match apps with 
                 | Apps_tyapp (actual,rest) -> 
-                    let rest = instAppsAux varCount (ILList.ofList [ actual ]) rest
+                    let rest = instAppsAux varCount [ actual ] rest
                     let storers,loaders = unwind rest
                     [] :: storers, [] :: loaders 
                 | Apps_app (arg,rest) -> 
@@ -242,7 +242,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                     let (revInstTyArgs, rest') = 
                         (([],apps), tyargs) ||> List.fold (fun (revArgsSoFar,cs) _  -> 
                               let actual,rest' = destTyFuncApp cs
-                              let rest'' = instAppsAux varCount (ILList.ofList [ actual ]) rest'
+                              let rest'' = instAppsAux varCount [ actual ] rest'
                               ((actual :: revArgsSoFar),rest''))
                     let instTyargs = List.rev revInstTyArgs
                     let precall,loaders' = computePreCall fst 0 rest' loaders
@@ -395,7 +395,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
           
           {il with 
                Code=code;
-               Locals=ILList.ofList (ILList.toList il.Locals @ (List.map (snd >> mkILLocalForFreeVar) argToFreeVarMap)); 
+               Locals= il.Locals @ (List.map (snd >> mkILLocalForFreeVar) argToFreeVarMap)
                             (* maxstack may increase by 1 due to environment loads *)
                MaxStack=il.MaxStack+1 }
 
@@ -438,7 +438,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             // that it is the code for a closure... 
               let nowCode = 
                 mkILMethodBody
-                  (false,emptyILLocals,nowFields.Length + 1,
+                  (false,[],nowFields.Length + 1,
                    nonBranchingInstrsToCode
                      begin 
                        // Load up the environment, including self... 
@@ -481,7 +481,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 { Name = td.Name;
                   GenericParams= td.GenericParams;
                   Access=td.Access;
-                  Implements = ILList.empty;
+                  Implements = List.empty;
                   IsAbstract = false;
                   NestedTypes = emptyILTypeDefs;
                   IsSealed = false;
@@ -524,7 +524,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               // This is the code which will first get called. 
               let nowCode = 
                   mkILMethodBody
-                    (false,emptyILLocals,argToFreeVarMap.Length + nowFields.Length,
+                    (false,[],argToFreeVarMap.Length + nowFields.Length,
                      nonBranchingInstrsToCode
                        begin 
                          // Load up the environment 
@@ -560,7 +560,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 // CASE 2b - Build an Term Application Apply method 
                 // CASE 2b2. Build a term application as a virtual method. 
                 
-                let nowEnvParentClass = typ_Func cenv (typesOfILParamsList nowParams) nowReturnTy 
+                let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy 
 
                 let cloTypeDef = 
                     let nowApplyMethDef =
@@ -582,7 +582,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     { Name = td.Name;
                       GenericParams= td.GenericParams;
                       Access = td.Access;
-                      Implements = mkILTypes [];
+                      Implements = []
                       IsAbstract = false;
                       IsSealed = false;
                       IsSerializable=td.IsSerializable; 
