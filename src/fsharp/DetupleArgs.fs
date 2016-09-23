@@ -226,15 +226,15 @@ module GlobalUsageAnalysis =
     /// Log the definition of a non-recursive binding
     let logNonRecBinding z (bind:Binding) =
         let v = bind.Var
-        let vs = FlatList.one v
+        let vs = [v]
         {z with RecursiveBindings = Zmap.add v (false,vs) z.RecursiveBindings
                 Defns = Zmap.add v bind.Expr z.Defns } 
 
     /// Log the definition of a recursive binding
     let logRecBindings z binds =
         let vs = valsOfBinds binds
-        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> FlatList.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
-                Defns    = (z.Defns,binds) ||> FlatList.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
+        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> List.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
+                Defns    = (z.Defns,binds) ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
     let foldUnderLambda f z x =
@@ -810,7 +810,7 @@ let passBind penv (TBind(fOrig,repr,letSeqPtOpt) as bind) =
          // result 
          bind
 
-let passBinds penv binds = binds |> FlatList.map (passBind penv) 
+let passBinds penv binds = binds |> List.map (passBind penv) 
 
 //-------------------------------------------------------------------------
 // pass - passBindRhs
@@ -828,7 +828,7 @@ let passBindRhs conv (TBind (v,repr,letSeqPtOpt)) = TBind(v,conv repr,letSeqPtOp
 let preInterceptExpr (penv:penv) conv expr =
   match expr with
   | Expr.LetRec (binds,e,m,_) ->
-     let binds = FlatList.map (passBindRhs conv) binds
+     let binds = List.map (passBindRhs conv) binds
      let binds = passBinds penv binds
      Some (mkLetRecBinds m binds (conv e))
   | Expr.Let (bind,e,m,_) ->  

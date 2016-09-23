@@ -118,7 +118,7 @@ let BindSubstVal env v e =
 
 
 let BindVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
-let BindFlatVals env vs = FlatList.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
+let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
@@ -365,11 +365,11 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         
     | Expr.LetRec(binds,body,_,_) -> 
          let vs = valsOfBinds binds
-         let vsR = vs |> FlatList.map (ConvVal cenv env) 
+         let vsR = vs |> List.map (ConvVal cenv env) 
          let env = BindFlatVals env vs
          let bodyR = ConvExpr cenv env body 
-         let bindsR = FlatList.zip vsR (binds |> FlatList.map (fun b -> b.Expr |> ConvExpr cenv env))
-         QP.mkLetRec(FlatList.toList bindsR,bodyR)
+         let bindsR = List.zip vsR (binds |> List.map (fun b -> b.Expr |> ConvExpr cenv env))
+         QP.mkLetRec(bindsR,bodyR)
 
     | Expr.Lambda(_,_,_,vs,b,_,_) -> 
         let v,b = MultiLambdaToTupledLambda cenv.g vs b 
@@ -561,7 +561,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
              let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
              let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
-             let methArgTypesR = List.map (ConvILType cenv env m) (ILList.toList ilMethRef.ArgTypes)
+             let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
              let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
@@ -883,8 +883,8 @@ and ConvDecisionTree cenv env tgs typR x =
           let (TTarget(vars,rhs,_)) = tgs.[n] 
           // TAST stores pattern bindings in reverse order for some reason
           // Reverse them here to give a good presentation to the user
-          let args = List.rev (FlatList.toList args)
-          let vars = List.rev (FlatList.toList vars)
+          let args = List.rev args
+          let vars = List.rev vars
           
           let varsR = vars |> List.map (ConvVal cenv env) 
           let targetR = ConvExpr cenv (BindVals env vars) rhs
@@ -945,7 +945,7 @@ and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tc
 
 and ConvILType cenv env m ty = 
     match ty with 
-    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tspec.TypeRef, List.map (ConvILType cenv env m) (ILList.toList tspec.GenericArgs))
+    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tspec.TypeRef, List.map (ConvILType cenv env m) tspec.GenericArgs)
     | ILType.Array (shape,ty) -> QP.mkArrayTy(shape.Rank,ConvILType cenv env m ty)
     | ILType.TypeVar idx -> QP.mkVarTy(int idx)
     | ILType.Void -> ConvVoidType cenv m

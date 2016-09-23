@@ -55,7 +55,7 @@ let rec typ_tref2tref f x  =
     | ILType.FunctionPointer x -> 
         ILType.FunctionPointer
           { x with 
-                ArgTypes=ILList.map (typ_tref2tref f) x.ArgTypes;
+                ArgTypes=List.map (typ_tref2tref f) x.ArgTypes;
                 ReturnType=typ_tref2tref f x.ReturnType}
     | ILType.Byref t -> ILType.Byref (typ_tref2tref f t)
     | ILType.Boxed cr -> mkILBoxedType (tspec_tref2tref f cr)
@@ -65,7 +65,7 @@ let rec typ_tref2tref f x  =
     | ILType.Modified (req,tref,ty) ->  ILType.Modified (req, f tref, typ_tref2tref f ty) 
     | ILType.Void -> ILType.Void
 and tspec_tref2tref f (x:ILTypeSpec) = 
-    mkILTySpecRaw(f x.TypeRef, ILList.map (typ_tref2tref f) x.GenericArgs)
+    mkILTySpec(f x.TypeRef, List.map (typ_tref2tref f) x.GenericArgs)
 
 let rec typ_scoref2scoref_tyvar2typ ((_fscope,ftyvar) as fs)x  = 
     match x with 
@@ -81,9 +81,9 @@ and tspec_scoref2scoref_tyvar2typ fs (x:ILTypeSpec) =
     ILTypeSpec.Create(morphILScopeRefsInILTypeRef (fst fs) x.TypeRef,typs_scoref2scoref_tyvar2typ fs x.GenericArgs)
 and callsig_scoref2scoref_tyvar2typ f x = 
     { x with 
-          ArgTypes=ILList.map (typ_scoref2scoref_tyvar2typ f) x.ArgTypes;
+          ArgTypes=List.map (typ_scoref2scoref_tyvar2typ f) x.ArgTypes;
           ReturnType=typ_scoref2scoref_tyvar2typ f x.ReturnType}
-and typs_scoref2scoref_tyvar2typ f i = ILList.map (typ_scoref2scoref_tyvar2typ f) i
+and typs_scoref2scoref_tyvar2typ f i = List.map (typ_scoref2scoref_tyvar2typ f) i
 and gparams_scoref2scoref_tyvar2typ f i = List.map (gparam_scoref2scoref_tyvar2typ f) i
 and gparam_scoref2scoref_tyvar2typ _f i = i
 and morphILScopeRefsInILTypeRef fscope (x:ILTypeRef) = 
@@ -92,27 +92,27 @@ and morphILScopeRefsInILTypeRef fscope (x:ILTypeRef) =
 
 let callsig_typ2typ f (x: ILCallingSignature) = 
     { CallingConv=x.CallingConv;
-      ArgTypes=ILList.map f x.ArgTypes;
+      ArgTypes=List.map f x.ArgTypes;
       ReturnType=f x.ReturnType}
 
-let gparam_typ2typ f gf = {gf with Constraints = ILList.map f gf.Constraints}
+let gparam_typ2typ f gf = {gf with Constraints = List.map f gf.Constraints}
 let gparams_typ2typ f gfs = List.map (gparam_typ2typ f) gfs
-let typs_typ2typ (f: ILType -> ILType)  x = ILList.map f x
+let typs_typ2typ (f: ILType -> ILType)  x = List.map f x
 let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) = 
     ILMethodRef.Create(enclosingTypeRef= (f (mkILBoxedType (mkILNonGenericTySpec x.EnclosingTypeRef))).TypeRef,
                        callingConv=x.CallingConv,
                        name=x.Name,
                        genericArity=x.GenericArity,
-                       argTypes= ILList.map f x.ArgTypes,
+                       argTypes= List.map f x.ArgTypes,
                        returnType= f x.ReturnType)
 
 
 type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
 let mspec_typ2typ (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
-    mkILMethSpecForMethRefInTyRaw(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
-                                  factualty x.EnclosingType, 
-                                  typs_typ2typ factualty  x.GenericArgs)
+    mkILMethSpecForMethRefInTy(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
+                               factualty x.EnclosingType, 
+                               typs_typ2typ factualty  x.GenericArgs)
 
 let fref_typ2typ (f: ILType -> ILType) x = 
     { x with EnclosingTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.EnclosingTypeRef))).TypeRef;
@@ -155,7 +155,7 @@ let fdef_typ2typ ilg ftype (fd: ILFieldDef) =
              CustomAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs}
 
 let local_typ2typ f (l: ILLocal) = {l with Type = f l.Type}
-let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (ILList.map f) varargs
+let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (List.map f) varargs
 (* REVIEW: convert varargs *)
 let morphILTypesInILInstr ((factualty,fformalty)) i = 
     let factualty = factualty (Some i) 
@@ -205,7 +205,7 @@ let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 (* use this when the conversion produces just one type... *)
 let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
 
-let locals_typ2typ f ls = ILList.map (local_typ2typ f) ls
+let locals_typ2typ f ls = List.map (local_typ2typ f) ls
 
 let ilmbody_instr2instr_typ2typ fs (il: ILMethodBody) = 
     let (finstr,ftype) = fs 
@@ -228,7 +228,7 @@ let mdef_typ2typ_ilmbody2ilmbody ilg fs md  =
     {md with 
       GenericParams=gparams_typ2typ ftype' md.GenericParams;
       mdBody= body';
-      Parameters = ILList.map (param_typ2typ ilg ftype') md.Parameters;
+      Parameters = List.map (param_typ2typ ilg ftype') md.Parameters;
       Return = return_typ2typ ilg ftype' md.Return;
       CustomAttrs=cattrs_typ2typ ilg ftype' md.CustomAttrs }
 
@@ -254,7 +254,7 @@ let pdef_typ2typ ilg f p =
         SetMethod = Option.map (mref_typ2typ f) p.SetMethod;
         GetMethod = Option.map (mref_typ2typ f) p.GetMethod;
         Type = f p.Type;
-        Args = ILList.map f p.Args;
+        Args = List.map f p.Args;
         CustomAttrs = cattrs_typ2typ ilg f p.CustomAttrs }
 
 let pdefs_typ2typ ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
@@ -267,7 +267,7 @@ let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td =
    let ftype' = ftype (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
    let fdefs' = fdefs_typ2typ ilg ftype' td.Fields 
-   {td with Implements= ILList.map ftype' td.Implements;
+   {td with Implements= List.map ftype' td.Implements;
             GenericParams= gparams_typ2typ ftype' td.GenericParams; 
             Extends = Option.map ftype' td.Extends;
             Methods=mdefs';

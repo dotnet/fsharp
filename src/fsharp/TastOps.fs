@@ -1035,7 +1035,7 @@ type MatchBuilder(spBind,inpRange: Range.range) =
         targets.Add(tg);
         n
 
-    member x.AddResultTarget(e,spTarget) = TDSuccess(FlatList.empty, x.AddTarget(TTarget(FlatList.empty,e,spTarget)))
+    member x.AddResultTarget(e,spTarget) = TDSuccess([], x.AddTarget(TTarget([],e,spTarget)))
 
     member x.CloseTargets() = targets |> ResizeArray.toList
 
@@ -1107,12 +1107,12 @@ let mkCompGenBind v e = TBind(v,e,NoSequencePointAtStickyBinding)
 /// Make bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
 let mkCompGenBinds vs es = 
     if List.length vs <> List.length es then failwith "mkCompGenBinds: invalid argument";
-    List.map2 mkCompGenBind vs es |> FlatList.ofList
+    List.map2 mkCompGenBind vs es
 
 // n.b. type gives type of body 
 let mkLetBind m bind body = Expr.Let(bind,body, m, NewFreeVarsCache())
 let mkLetsBind m binds body = List.foldBack (mkLetBind m) binds body 
-let mkLetsFromBindings m binds body = FlatList.foldBack (mkLetBind m) binds body 
+let mkLetsFromBindings m binds body = List.foldBack (mkLetBind m) binds body 
 let mkLet seqPtOpt m v x body = mkLetBind m (mkBind seqPtOpt v x) body
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
 
@@ -1123,13 +1123,13 @@ let mkInvisibleBinds (vs: Val list) (es: Expr list) =
     List.map2 mkInvisibleBind vs es
 
 let mkInvisibleFlatBindings vs es = 
-    if FlatList.length vs <> FlatList.length es then failwith "mkInvisibleFlatBindings: invalid argument";
-    FlatList.map2 mkInvisibleBind vs es
+    if List.length vs <> List.length es then failwith "mkInvisibleFlatBindings: invalid argument";
+    List.map2 mkInvisibleBind vs es
 
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
 let mkInvisibleLetsFromBindings m vs xs body = mkLetsFromBindings m (mkInvisibleFlatBindings vs xs) body
 
-let mkLetRecBinds m binds body = if FlatList.isEmpty binds then body else Expr.LetRec(binds,body, m, NewFreeVarsCache())
+let mkLetRecBinds m binds body = if List.isEmpty binds then body else Expr.LetRec(binds,body, m, NewFreeVarsCache())
 
 //-------------------------------------------------------------------------
 // Type schemes...
@@ -2021,7 +2021,7 @@ let freeInTypesLeftToRight g thruFlag ty = accFreeInTypesLeftToRight g true thru
 let freeInTypesLeftToRightSkippingConstraints g ty = accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
 
 let valOfBind (b:Binding) = b.Var
-let valsOfBinds (binds:Bindings) = binds |> FlatList.map (fun b -> b.Var)
+let valsOfBinds (binds:Bindings) = binds |> List.map (fun b -> b.Var)
 
 //--------------------------------------------------------------------------
 // Values representing member functions on F# types
@@ -3259,8 +3259,7 @@ module DebugPrint = begin
 
     and letRecL binds bodyL = 
         let eqnsL = 
-            binds 
-               |>  FlatList.toList 
+            binds
                |> List.mapHeadTail (fun bind -> wordL "rec" ^^ bindingL bind ^^ wordL "in")
                               (fun bind -> wordL "and" ^^ bindingL bind ^^ wordL "in") 
         (aboveListL eqnsL @@ bodyL) 
@@ -3447,7 +3446,7 @@ module DebugPrint = begin
     and decisionTreeL x = 
         match x with 
         | TDBind (bind,body)            -> let bind = wordL "let" ^^ bindingL bind ^^ wordL "in" in (bind @@ decisionTreeL body) 
-        | TDSuccess (args,n)            -> wordL "Success" ^^ leftL "T" ^^ intL n ^^ tupleL (args |> FlatList.toList |> List.map exprL)
+        | TDSuccess (args,n)            -> wordL "Success" ^^ leftL "T" ^^ intL n ^^ tupleL (args |> List.map exprL)
         | TDSwitch (test,dcases,dflt,_) -> (wordL "Switch" --- exprL test) @@--
                                             (aboveListL (List.map dcaseL dcases) @@
                                              match dflt with
@@ -3466,7 +3465,7 @@ module DebugPrint = begin
         |  (Test.ActivePatternCase (exp,_,_,_,_)) -> wordL "query" ^^ exprL exp
             
     and targetL i (TTarget (argvs,body,_)) = leftL "T" ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL ":" --- exprL body
-    and flatValsL vs = vs |> FlatList.toList |> List.map valL
+    and flatValsL vs = vs |> List.map valL
 
     and tmethodL (TObjExprMethod(TSlotSig(nm,_,_,_,_,_), _, tps, vs, e, _)) =
         (wordL "TObjExprMethod" --- (wordL nm) ^^ wordL "=") --
@@ -4097,7 +4096,7 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.TyChoose (vs,b,_) ->
         unionFreeVars (accFreeTyvars opts boundTypars vs (freeInExpr opts b)) acc
     | Expr.LetRec (binds,e,_,cache) ->
-        unionFreeVars (freeVarsCacheCompute opts cache (fun () -> FlatList.foldBack (bindLhs opts) binds (FlatList.foldBack (accBindRhs opts) binds (freeInExpr opts e)))) acc
+        unionFreeVars (freeVarsCacheCompute opts cache (fun () -> List.foldBack (bindLhs opts) binds (List.foldBack (accBindRhs opts) binds (freeInExpr opts e)))) acc
     | Expr.Let _ -> 
         failwith "unreachable - linear expr"
     | Expr.Obj (_,typ,basev,basecall,overrides,iimpls,_)   ->  
@@ -4219,9 +4218,9 @@ and accFreeInTargets opts targets acc =
     Array.foldBack (accFreeInTarget opts) targets acc
 
 and accFreeInTarget opts (TTarget(vs,e,_)) acc = 
-    FlatList.foldBack (boundLocalVal opts) vs (accFreeInExpr opts e acc)
+    List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts e acc)
 
-and accFreeInFlatExprs opts (es:FlatExprs) acc = FlatList.foldBack (accFreeInExpr opts) es acc
+and accFreeInFlatExprs opts (es:FlatExprs) acc = List.foldBack (accFreeInExpr opts) es acc
 
 and accFreeInExprs opts (es: Exprs) acc = 
     match es with 
@@ -4701,7 +4700,7 @@ and remapValFlags tmenv x =
     | _ -> x
 
 and remapExprs g compgen tmenv es = List.mapq (remapExpr g compgen tmenv) es
-and remapFlatExprs g compgen tmenv es = FlatList.mapq (remapExpr g compgen tmenv) es
+and remapFlatExprs g compgen tmenv es = List.mapq (remapExpr g compgen tmenv) es
 
 and remapDecisionTree g compgen tmenv x =
     match x with 
@@ -4734,7 +4733,7 @@ and copyAndRemapAndBindBindings g compgen tmenv binds =
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv (valsOfBinds binds)
     remapAndRenameBinds g compgen tmenvinner binds vs',tmenvinner
 
-and remapAndRenameBinds g compgen tmenvinner binds vs' = FlatList.map2 (remapAndRenameBind g compgen tmenvinner) binds vs'
+and remapAndRenameBinds g compgen tmenvinner binds vs' = List.map2 (remapAndRenameBind g compgen tmenvinner) binds vs'
 and remapAndRenameBind g compgen tmenvinner (TBind(_,repr,letSeqPtOpt)) v' = TBind(v', remapExpr g compgen tmenvinner repr,letSeqPtOpt)
 
 and remapMethod g compgen tmenv (TObjExprMethod(slotsig,attribs,tps,vs,e,m))  =
@@ -5047,7 +5046,7 @@ and remarkInterfaceImpl m (ty,overrides) =
 
 and remarkExprs m es = es |> List.map (remarkExpr m) 
 
-and remarkFlatExprs m es = es |> FlatList.map (remarkExpr m) 
+and remarkFlatExprs m es = es |> List.map (remarkExpr m) 
 
 and remarkDecisionTree m x =
     match x with 
@@ -5055,7 +5054,7 @@ and remarkDecisionTree m x =
     | TDSuccess (es,n) -> TDSuccess (remarkFlatExprs m es,n)
     | TDBind (bind,rest) -> TDBind(remarkBind m bind,remarkDecisionTree m rest)
 
-and remarkBinds m binds = FlatList.map (remarkBind m) binds
+and remarkBinds m binds = List.map (remarkBind m) binds
 
 // This very deliberately drops the sequence points since this is used when adjusting the marks for inlined expressions 
 and remarkBind m (TBind(v,repr,_)) = 
@@ -5343,7 +5342,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                 
                 // Check if this is a bind-then-success tree
                 match targetOfSuccessDecisionTree tree with
-                | Some i when isLinearTgtIdx i -> TDSuccess(FlatList.empty,i)
+                | Some i when isLinearTgtIdx i -> TDSuccess([],i)
                 | _ -> 
                     match tree with 
                     | TDSwitch (e,edges,dflt,m) -> TDSwitch (e,List.map rebuildDecisionTreeEdge edges,Option.map rebuildDecisionTree dflt,m)
@@ -5363,8 +5362,8 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                         // The value bindings are moved to become part of the target.
                         // Hence the expressions in the value bindings can be remarked with the range of the target.
                         let mTarget = exprTarget.Range
-                        let es = es |> FlatList.map (remarkExpr mTarget)
-                        TTarget(FlatList.empty,mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget),spTarget)
+                        let es = es |> List.map (remarkExpr mTarget)
+                        TTarget(List.empty,mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget),spTarget)
                     else tg )
      
             tree',targets'
@@ -5684,7 +5683,7 @@ let mkFolders (folders : _ ExprFolder) =
          targetIntercept           = targetIntercept;
          tmethodIntercept          = tmethodIntercept} = folders
     let rec exprsF z xs = List.fold exprF z xs
-    and flatExprsF z xs = FlatList.fold exprF z xs
+    and flatExprsF z xs = List.fold exprF z xs
     and exprF z x =
         match exprIntercept exprF z x with // fold this node, then recurse 
         | Some z -> z // intercepted 
@@ -5737,7 +5736,7 @@ let mkFolders (folders : _ ExprFolder) =
 
     and valBindsF dtree z binds =
         let z = recBindingsIntercept z binds
-        FlatList.fold (bindF dtree) z binds 
+        List.fold (bindF dtree) z binds 
 
     and bindF dtree z (bind:Binding) =
         let z = valBindingSiteIntercept z (dtree,bind.Var)
@@ -6814,14 +6813,14 @@ let LinearizeTopMatchAux g parent  (spBind,m,tree,targets,m2,ty) =
         (* Have failing targets and ONE successful one, so linearize *)
         let (TTarget (vs,rhs,spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
         (* note - old code here used copy value to generate locals - this was not right *)
-        let fvs      = vs |> FlatList.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
-        let vtys     = vs |> FlatList.map (fun v -> v.Type) 
-        let tmpTy    = mkRefTupledVarsTy g (FlatList.toList vs)
+        let fvs      = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
+        let vtys     = vs |> List.map (fun v -> v.Type) 
+        let tmpTy    = mkRefTupledVarsTy g vs
         let tmp,tmpe = mkCompGenLocal m "matchResultHolder" tmpTy
 
         AdjustValToTopVal tmp parent ValReprInfo.emptyValData;  
 
-        let newTg    = TTarget (fvs,mkRefTupledVars g m (FlatList.toList fvs),spTarget)
+        let newTg    = TTarget (fvs,mkRefTupledVars g m fvs,spTarget)
         let fixup (TTarget (tvs,tx,spTarget)) = 
            match destThrow tx with
            | Some (m,_,e) -> let tx = mkThrow m tmpTy e
@@ -6830,9 +6829,9 @@ let LinearizeTopMatchAux g parent  (spBind,m,tree,targets,m2,ty) =
        
         let targets  = Array.map fixup targets
         let binds    = 
-            vs |> FlatList.mapi (fun i v -> 
+            vs |> List.mapi (fun i v -> 
                 let ty = v.Type
-                let rhs =  etaExpandTypeLambda g m  v.Typars (itemsProj (FlatList.toList vtys) i tmpe, ty)
+                let rhs =  etaExpandTypeLambda g m  v.Typars (itemsProj vtys i tmpe, ty)
                 (* update the arity of the value *)
                 v.SetValReprInfo (Some (InferArityOfExpr g ty [] [] rhs))
                 mkInvisibleBind v rhs)  in (* vi = proj tmp *)
@@ -7135,7 +7134,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 
     else
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m)
-        let tg2 = TDSuccess(FlatList.one (mkCallUnbox g m tgty vinpe), mbuilder.AddTarget(TTarget(FlatList.one v,e2,SuppressSequencePointAtTarget)))
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v],e2,SuppressSequencePointAtTarget)))
         let tg3 = mbuilder.AddResultTarget(e3,SuppressSequencePointAtTarget)
         let dtree = TDSwitch(vinpe,[TCase(Test.IsInst(tyOfExpr g vinpe,tgty),tg2)],Some tg3,m)
         let expr = mbuilder.Close(dtree,m,tyOfExpr g e2)
@@ -7340,7 +7339,7 @@ let rec rewriteBind env bind =
 and rewriteBindStructure env (TBind(v,e,letSeqPtOpt)) = 
      TBind(v,RewriteExpr env e,letSeqPtOpt) 
 
-and rewriteBinds env binds = FlatList.map (rewriteBind env) binds
+and rewriteBinds env binds = List.map (rewriteBind env) binds
 
 and RewriteExpr env expr =
   match expr with 
@@ -7447,13 +7446,13 @@ and rewriteLinearExpr env expr contf =
             contf (RewriteExpr env expr) 
 
 and rewriteExprs env exprs = List.mapq (RewriteExpr env) exprs
-and rewriteFlatExprs env exprs = FlatList.mapq (RewriteExpr env) exprs
+and rewriteFlatExprs env exprs = List.mapq (RewriteExpr env) exprs
 
 and rewriteDecisionTree env x =
   match x with 
   | TDSuccess (es,n) -> 
       let es' = rewriteFlatExprs env es
-      if FlatList.physicalEquality es es' then x 
+      if LanguagePrimitives.PhysicalEquality es es' then x 
       else TDSuccess(es',n)
 
   | TDSwitch (e,cases,dflt,m) ->
@@ -7665,13 +7664,13 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
 
     and checkDecisionTree vrefs x = 
         match x with 
-        | TDSuccess (es,_n) -> es |> FlatList.forall (checkExpr vrefs)
+        | TDSuccess (es,_n) -> es |> List.forall (checkExpr vrefs)
         | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind,body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
     and checkDecisionTreeCase vrefs (TCase(discrim,dtree)) = 
        (match discrim with Test.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
     and checkDecisionTreeTarget vrefs (TTarget(vs,e,_)) = 
-       let vrefs = ((vrefs, vs) ||> FlatList.fold (fun s v -> s.Add v.Stamp)) 
+       let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
 
     checkExpr Set.empty inputExpr    

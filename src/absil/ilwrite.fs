@@ -507,7 +507,7 @@ type MethodDefKey(tidx:int,garity:int,nm:string,rty:ILType,argtys:ILTypes,isStat
             nm = y.Name && 
             // note: these next two use structural equality on AbstractIL ILType values
             rty = y.ReturnType && 
-            ILList.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
+            List.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -828,7 +828,7 @@ let callconvToByte ntypars (Callconv (hasthis,bcc)) =
 
 // REVIEW: write into an accumuating buffer
 let rec EmitTypeSpec cenv env (bb: ByteBuffer) (et,tspec:ILTypeSpec) = 
-    if ILList.isEmpty tspec.GenericArgs then 
+    if List.isEmpty tspec.GenericArgs then 
         bb.EmitByte et
         emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tspec.Scope,tspec.Enclosing,tspec.Name)
     else  
@@ -842,7 +842,7 @@ and GetTypeAsTypeDefOrRef cenv env (ty:ILType) =
     if isTypeLocal ty then 
         let tref = ty.TypeRef
         (tdor_TypeDef, GetIdxForTypeDef cenv (TdKey(tref.Enclosing,tref.Name)))
-    elif ty.IsNominal && ILList.isEmpty ty.GenericArgs then
+    elif ty.IsNominal && List.isEmpty ty.GenericArgs then
         (tdor_TypeRef, GetTypeRefAsTypeRefIdx cenv ty.TypeRef)
     else 
         (tdor_TypeSpec, GetTypeAsTypeSpecIdx cenv env ty)
@@ -925,20 +925,20 @@ and EmitCallsig cenv env bb (callconv,args:ILTypes,ret,varargs:ILVarArgs,genarit
     if genarity > 0 then bb.EmitZ32 genarity
     bb.EmitZ32 ((args.Length + (match varargs with None -> 0 | Some l -> l.Length)))
     EmitType cenv env bb ret
-    args |> ILList.iter (EmitType cenv env bb)
+    args |> List.iter (EmitType cenv env bb)
     match varargs with 
      | None -> ()// no extra arg = no sentinel 
      | Some tys -> 
-         if ILList.isEmpty tys then () // no extra arg = no sentinel 
+         if List.isEmpty tys then () // no extra arg = no sentinel 
          else 
             bb.EmitByte et_SENTINEL
-            ILList.iter (EmitType cenv env bb) tys
+            List.iter (EmitType cenv env bb) tys
 
 and GetCallsigAsBytes cenv env x = emitBytesViaBuffer (fun bb -> EmitCallsig cenv env bb x)
 
 // REVIEW: write into an accumuating buffer
 and EmitTypes cenv env bb (inst: ILTypes) = 
-    inst |> ILList.iter (EmitType cenv env bb) 
+    inst |> List.iter (EmitType cenv env bb) 
 
 let GetTypeAsMemberRefParent cenv env ty =
     match GetTypeAsTypeDefOrRef cenv env ty with 
@@ -1220,7 +1220,7 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
       // Now generate or assign index numbers for tables referenced by the maps. 
       // Don't yet generate contents of these tables - leave that to pass3, as 
       // code may need to embed these entries. 
-      td.Implements |> ILList.iter (GenImplementsPass2 cenv env tidx)
+      td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
       props |> List.iter (GenPropertyDefPass2 cenv tidx)
       events |> List.iter (GenEventDefPass2 cenv tidx)
       td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
@@ -1310,7 +1310,7 @@ let GetMethodRefInfoAsMemberRefIdx cenv env  ((_,typ,_,_,_,_,_) as minfo) =
 let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env ((nm,typ:ILType,cc,args,ret,varargs,genarity) as minfo) =
     if Option.isNone varargs && (isAlwaysMethodDef || isTypeLocal typ) then
         if not typ.IsNominal then failwith "GetMethodRefInfoAsMethodRefOrDef: unexpected local tref-typ"
-        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRefRaw(typ.TypeRef, cc, nm, genarity, args,ret)))
+        try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv (mkILMethRef (typ.TypeRef, cc, nm, genarity, args,ret)))
         with MethodDefNotFound -> (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
     else (mdor_MemberRef, GetMethodRefInfoAsMemberRefIdx cenv env minfo)
 
@@ -1325,7 +1325,7 @@ let rec GetMethodSpecInfoAsMethodSpecIdx cenv env (nm,typ,cc,args,ret,varargs,mi
         emitBytesViaBuffer (fun bb -> 
             bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_GENERICINST
             bb.EmitZ32 minst.Length
-            minst |> ILList.iter (EmitType cenv env bb))
+            minst |> List.iter (EmitType cenv env bb))
     FindOrAddSharedRow cenv TableNames.MethodSpec 
       (SharedRow 
           [| MethodDefOrRef (mdorTag,mdorRow)
@@ -1502,7 +1502,7 @@ let GetCallsigAsStandAloneSigIdx cenv env info =
 let EmitLocalSig cenv env (bb: ByteBuffer) (locals: ILLocals) = 
     bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG
     bb.EmitZ32 locals.Length
-    locals |> ILList.iter (EmitLocalInfo cenv env bb)
+    locals |> List.iter (EmitLocalInfo cenv env bb)
 
 let GetLocalSigAsBlobHeapIdx cenv env locals = 
     GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> EmitLocalSig cenv env bb locals))
@@ -2027,22 +2027,22 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_newarr ty
             else
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_newobj (".ctor",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_stelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_stelem_any ty  
             else 
-                let args = ILList.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_int32 else ty)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,emptyILGenericArgs)
+                let args = List.init (shape.Rank+1) (fun i -> if i < shape.Rank then  cenv.ilg.typ_int32 else ty)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Set",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Void,None,[])
 
         | I_ldelem_any (shape,ty) -> 
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelem_any ty  
             else 
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Get",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ty,None,[])
 
         | I_ldelema  (ro,_isNativePtr,shape,ty) -> 
             if (ro = ReadonlyAddress) then
@@ -2050,8 +2050,8 @@ module Codebuf =
             if (shape = ILArrayShape.SingleDimensional) then   
                 emitTypeInstr cenv codebuf env i_ldelema ty
             else 
-                let args = ILList.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
-                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,emptyILGenericArgs)
+                let args = List.init shape.Rank (fun _ -> cenv.ilg.typ_int32)
+                emitMethodSpecInfoInstr cenv codebuf env i_call ("Address",mkILArrTy(ty,shape),ILCallingConv.Instance,args,ILType.Byref ty,None,[])
 
         | I_castclass  ty -> emitTypeInstr cenv codebuf env i_castclass ty
         | I_isinst  ty -> emitTypeInstr cenv codebuf env i_isinst ty
@@ -2241,7 +2241,7 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
 let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let localSigs = 
       if cenv.generatePdb then 
-        il.Locals |> ILList.toArray |> Array.map (fun l -> 
+        il.Locals |> List.toArray |> Array.map (fun l -> 
             // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
             ignore (FindOrAddSharedRow cenv TableNames.StandAloneSig (SharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
             // Now write the type
@@ -2253,7 +2253,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let codeSize = code.Length
     let methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format? 
-    if ILList.isEmpty il.Locals && il.MaxStack <= 8 && List.isEmpty seh && codeSize < 64 then
+    if List.isEmpty il.Locals && il.MaxStack <= 8 && List.isEmpty seh && codeSize < 64 then
         // Use Tiny format 
         let alignedCodeSize = align 4 (codeSize + 1)
         let codePadding =  (alignedCodeSize - (codeSize + 1))
@@ -2270,7 +2270,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             (if il.IsZeroInit then e_CorILMethod_InitLocals else 0x0uy)
 
         let localToken = 
-            if ILList.isEmpty il.Locals then 0x0 else 
+            if List.isEmpty il.Locals then 0x0 else 
             getUncodedToken TableNames.StandAloneSig
               (FindOrAddSharedRow cenv TableNames.StandAloneSig (GetLocalSigAsStandAloneSigIdx cenv env il.Locals))
 
@@ -2443,7 +2443,7 @@ and GenGenericParamPass3 cenv env idx owner gp =
 and GenGenericParamPass4 cenv env idx owner gp = 
     let gpidx = FindOrAddSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp)
     GenCustomAttrsPass3Or4 cenv (hca_GenericParam, gpidx) gp.CustomAttrs
-    gp.Constraints |> ILList.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
+    gp.Constraints |> List.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
 
 // -------------------------------------------------------------------- 
 // param and return --> Param Row
@@ -2504,7 +2504,7 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
       if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length
       bb.EmitZ32 mdef.Parameters.Length
       EmitType cenv env bb mdef.Return.Type
-      mdef.ParameterTypes |> ILList.iter (EmitType cenv env bb))
+      mdef.ParameterTypes |> List.iter (EmitType cenv env bb))
 
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
@@ -2603,7 +2603,7 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
     GenReturnPass3 cenv md.Return  
-    md.Parameters |> ILList.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
+    md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx)
     md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
@@ -2666,7 +2666,7 @@ and GetPropertySigAsBytes cenv env prop =
         bb.EmitByte b
         bb.EmitZ32 prop.Args.Length
         EmitType cenv env bb prop.Type
-        prop.Args |> ILList.iter (EmitType cenv env bb))
+        prop.Args |> List.iter (EmitType cenv env bb))
 
 and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
     let flags = 
