@@ -475,31 +475,71 @@ module internal List =
             allPairsToFreshConsTail xs ys cons
             cons.Tail
 
-    // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-    // tail cons cells is permitted in carefully written library code.
-    let rec filterToFreshConsTail cons f l = 
-        match l with 
-        | [] -> 
-            setFreshConsTail cons l // note, l = nil
-        | h::t -> 
-            if f h then 
-                let cons2 = freshConsNoTail h 
-                setFreshConsTail cons cons2
-                filterToFreshConsTail cons2 f t
-            else 
-                filterToFreshConsTail cons f t
-      
-    let rec filter f l = 
-        match l with 
-        | [] -> l
-        | h :: ([] as nil) -> if f h then l else nil
-        | h::t -> 
-            if f h then   
-                let cons = freshConsNoTail h 
-                filterToFreshConsTail cons f t
-                cons
-            else 
-                filter f t
+    // The Filter module provides functions to enable the reuse of the tail of the input list
+    // This is an optimized mutation-based implementation. This code is only valid in fslib,
+    // where mutation of private tail cons cells is permitted in carefully written library code.
+    module Filter =
+        let inline head l = l.(::).0
+        let inline tail l = l.(::).1
+
+        // do "standard" filtering, copying elements as we go, but remember the start of 
+        // concurrent true elements, so that when we hit the end of the list we can attach
+        // this to our list, thus reusing the tail. The tail we had created is abandoned,
+        // and can thus be cleaned up early by the garbage collector.
+        let rec private filterWithTailAbandonment<'T> (candidateForTail:'T list) (cons:'T list) (f:'T->bool) (l:'T list) (potentialTail:'T list) : unit = 
+            match l with 
+            | [] ->
+                match potentialTail :> obj with
+                | null -> setFreshConsTail cons []
+                | _    -> setFreshConsTail candidateForTail potentialTail
+            | h::t -> 
+                if f h then
+                    let newCons = freshConsNoTail h
+                    setFreshConsTail cons newCons
+                    match potentialTail :> obj with
+                    | null -> filterWithTailAbandonment candidateForTail newCons f t l
+                    | _    -> filterWithTailAbandonment candidateForTail newCons f t potentialTail
+                else
+                    filterWithTailAbandonment cons cons f t Unchecked.defaultof<_>
+
+        // forward copy within a bounded range of a list onto cons
+        // 'current' and 'finish' must be in the same list
+        // 'current' must occur before 'finish'
+        let private copy<'T> (cons:'T list) (finish:'T list) (current:'T list) : 'T list=
+            let mutable current = current
+            let mutable cons = cons
+            while not (obj.ReferenceEquals (current, finish)) do
+                let consNew = freshConsNoTail (head current)
+                setFreshConsTail cons consNew
+                cons <- consNew
+                current <- tail current
+            cons
+
+        // attempt to read to the end of the list, and if we do, use 'first' as return value,
+        // which means that we don't need to copy any elements, otherwise we create a new list,
+        // copy initial elements, and hand control 
+        let rec private whileTrue<'T> (first:'T list) (f:'T->bool) (l:'T list) =
+            match l with 
+            | [] -> first
+            | h::t -> 
+                if f h then   
+                    whileTrue first f t
+                else
+                    let root = freshConsNoTail (head first)
+                    let consNew = copy root l (tail first)
+                    filterWithTailAbandonment consNew consNew f t Unchecked.defaultof<_>
+                    root
+
+        // This filter entry point fully handles the case where no matches are found, otherwise functionality
+        // is deferred 
+        let rec whileFalse<'T> (f:'T->bool) (l:'T list) : 'T list = 
+            match l with 
+            | [] -> []
+            | h::t -> 
+                if f h then
+                    whileTrue l f t 
+                else
+                    whileFalse f t
 
     let iteri f x = 
         let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)

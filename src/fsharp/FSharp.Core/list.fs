@@ -408,7 +408,7 @@ namespace Microsoft.FSharp.Collections
                 | Some r -> r
 
         [<CompiledName("Filter")>]
-        let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
+        let filter f x = Microsoft.FSharp.Primitives.Basics.List.Filter.whileFalse f x
 
         [<CompiledName("Except")>]
         let except itemsToExclude list =
@@ -423,7 +423,7 @@ namespace Microsoft.FSharp.Collections
                 list |> filter cached.Add
 
         [<CompiledName("Where")>]
-        let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
+        let where f x = Microsoft.FSharp.Primitives.Basics.List.Filter.whileFalse f x
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
             Microsoft.FSharp.Primitives.Basics.List.groupBy comparer keyf getKey list
