@@ -18,13 +18,6 @@
       <ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
       <ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
 
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.Engine.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.Framework.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" />
-
       <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.dll" />
       <ComponentRef Id="Compiler_Redist_System.Reflection.Metadata.dll" />
@@ -120,30 +113,6 @@
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\Setup\F#" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Conversion.Core.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.Conversion.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Conversion.Core.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.Engine.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Engine.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.Engine.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Engine.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.Framework.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Framework.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.Framework.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Tasks.Core.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Utilities.Core.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll" />
       </Component>
 
       <Component Id="Compiler_Redist_System.Collections.Immutable.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Collections.Immutable.dll, $(var.LocaleCode)))">

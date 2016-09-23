@@ -19,7 +19,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Wix.Extensions</AssemblyName>
     <ProjectGuid>{321E6C2C-9E1C-4506-B1C0-1F81DCAEF207}</ProjectGuid>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
   </PropertyGroup>
   
