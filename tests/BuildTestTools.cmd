@@ -11,39 +11,26 @@ exit /b 1
 
 :ok
 
-:: Check prerequisites
-if not '%VisualStudioVersion%' == '' goto vsversionset
-
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 15.0\common7\ide\devenv.exe" set VisualStudioVersion=15.0
-if exist "%VS150COMNTOOLS%" set VisualStudioVersion=15.0
-if not '%VisualStudioVersion%' == '' goto vsversionset
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%VS140COMNTOOLS%" set VisualStudioVersion=14.0
-if not '%VisualStudioVersion%' == '' goto vsversionset
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%VS120COMNTOOLS%" set VisualStudioVersion=12.0
-
-:vsversionset
-if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
-
-if exist "%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe" (
-    set _msbuildexe="%VS150COMNTOOLS%..\..\MSBuild\15.0\Bin\MSBuild.exe"
+if exist "%VS150COMNTOOLS%\VsMSBuildCmd.bat" (
+    call "%VS150COMNTOOLS%\VsMSBuildCmd.bat"
     goto :havemsbuild
 )
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+
+if exist "%VS140COMNTOOLS%\VsMSBuildCmd.bat" (
+    call "%VS140COMNTOOLS%\VsMSBuildCmd.bat"
     goto :havemsbuild
 )
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+
+if exist "%VS120COMNTOOLS%\VsMSBuildCmd.bat" (
+    call "%VS120COMNTOOLS%\VsMSBuildCmd.bat"
     goto :havemsbuild
 )
-echo Error: Could not find MSBuild.exe. && goto :failure
+
+echo Error: Could not find VS installation. Will not be able to locate msbuild.
 goto :eof
+
 :havemsbuild
+set _msbuildexe=msbuild
 
 if not exist "%~dp0fsharpqa\testenv\bin" mkdir "%~dp0fsharpqa\testenv\bin"  || goto :error
 %_msbuildexe% %~dp0fsharpqa\testenv\src\ILComparer\ILComparer.fsproj /p:Configuration=%1 /t:Build  || goto :error
