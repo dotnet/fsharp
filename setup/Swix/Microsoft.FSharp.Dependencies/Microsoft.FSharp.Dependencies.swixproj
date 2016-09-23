@@ -10,7 +10,7 @@
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <PackagesFolder>$(FSharpSourcesRoot)\..\packages</PackagesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.Dependencies.$(VSSku)</OutputName>
+    <OutputName>Microsoft.FSharp.Dependencies</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -19,18 +19,15 @@
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
     <Package Include="Files.swr" />
+    <Package Include="Dependencies.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- SWIX plugin adds the built vsix to signing automatically -->
-  </Target>
-  
-  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
-    <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
   </Target>
 </Project>

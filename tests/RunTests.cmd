@@ -18,6 +18,13 @@ if not exist "%~dp0..\packages\NUnit.Console.3.0.0\tools\" (
 SET NUNIT3_CONSOLE=%~dp0..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 SET FSI_TOOL=%~dp0..\%FLAVOR%\net40\bin\Fsi.exe
 
+set link_exe=%~dp0..\packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+if not exist "%link_exe%" (
+    set saved_errorlevel=1
+    echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
+    goto :FINISHED
+)
+
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
 SET TTAGS=
@@ -382,7 +389,8 @@ echo powershell -File Upload-Results.ps1 "%~1"
      powershell -File Upload-Results.ps1 "%~1"
 
 :SKIP_APPVEYOR_UPLOAD
-	 
+:FINISHED
+
 if NOT %saved_errorlevel% == 0 exit /b 1
 goto :EOF
 

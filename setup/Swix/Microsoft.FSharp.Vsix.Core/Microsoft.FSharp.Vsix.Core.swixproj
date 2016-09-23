@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <OutputArchitecture>neutral</OutputArchitecture>
+    <OutputLocalized>false</OutputLocalized>
+    <IsPackage>true</IsPackage>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
+    <OutputPath>$(BinariesFolder)\insertion</OutputPath>
+    <OutputName>Microsoft.FSharp.VSIX.$(VSSku).Core</OutputName>
+    <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
+    <OutputType>manifest</OutputType>
+  </PropertyGroup>
+  
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <PropertyGroup>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Package Include="Files.swr" />
+  </ItemGroup>
+  
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+    <!-- SWIX plugin adds the built vsix to signing automatically -->
+  </Target>
+  
+  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
+    <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
+  </Target>
+</Project>
