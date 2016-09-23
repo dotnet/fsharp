@@ -69,7 +69,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     optionsCache.Add(projectId, options)
 
                 if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
-                    let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, projectFileName);
+                    let projectSite = new FSharpProjectSite(hier, this.SystemServiceProvider, workspace, projectFileName, projectId.Id);
                     projectSite.Initialize(hier, site)                    
             | _ -> ()
         | _ -> ()

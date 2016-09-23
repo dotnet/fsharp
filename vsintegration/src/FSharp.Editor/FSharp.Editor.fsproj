@@ -49,9 +49,6 @@
     <Compile Include="LanguageDebugInfoService.fs">
       <Link>Debugging\LanguageDebugInfoService.fs</Link>
     </Compile>
-    <Compile Include="DocumentDifferenceService.fs">
-      <Link>Diagnostics\DocumentDifferenceService.fs</Link>
-    </Compile>
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>
     </Compile>
