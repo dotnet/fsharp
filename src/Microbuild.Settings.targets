@@ -286,7 +286,9 @@
     </ItemGroup>
   </Target>
   
-  <Target Name="PEVerifyBuiltAssembly" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(CHECK_PEVERIFY_ERRORS)'=='1'">
+  <Target Name="PEVerifyBuiltAssembly"
+          AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(CHECK_PEVERIFY_ERRORS)'=='1' and '$(ExcludeFromPEVerifyCheck)'!='true'">
     <PEVerifyBuiltAssemblyTask Assemblies="@(MainAssembly)" />
   </Target>
   
