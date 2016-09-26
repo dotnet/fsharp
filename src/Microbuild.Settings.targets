@@ -180,6 +180,7 @@
     
     <Task>
       <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.IO"/>
       
       <Code Type="Fragment" Language="cs">
         <![CDATA[
@@ -188,18 +189,19 @@
             throw new Exception("Cannot PEVerify assemblies. None passed to task.");
         }
         
-        var tool = Environment.ExpandEnvironmentVariables(@"%PROGRAMFILES(X86)%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\PEVerify.exe");
+        var tool = Environment.ExpandEnvironmentVariables(@"%PROGRAMFILES(X86)%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.2 Tools\PEVerify.exe");
         
         foreach(var assembly in Assemblies)
         {
-            Log.LogMessage("Verifying assembly: " + assembly, MessageImportance.High);
+            var fullAssemblyPath = Path.GetFullPath(assembly);
+            Log.LogMessage("Verifying assembly: " + fullAssemblyPath, MessageImportance.High);
             
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = tool,
-                    Arguments = assembly,
+                    Arguments = fullAssemblyPath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -218,13 +220,13 @@
             
             if (process.ExitCode == 0)
             {
-                Log.LogMessage("Assembly verified: " + assembly, MessageImportance.High);
+                Log.LogMessage("Assembly verified: " + fullAssemblyPath, MessageImportance.High);
             }
             else
             {
-                Log.LogMessage("Assembly verification failed: " + assembly, MessageImportance.High);
+                Log.LogMessage("Assembly verification failed: " + fullAssemblyPath, MessageImportance.High);
                 Log.LogMessage(processOutput.ToString(), MessageImportance.High);
-                throw new Exception("PEVerify failed. Check the target output for: " + assembly);
+                throw new Exception("PEVerify failed. Check the target output for: " + fullAssemblyPath);
             }
         }
         ]]>
