@@ -145,7 +145,7 @@ namespace Microsoft.FSharp.Collections
                 else
                     upcast (new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.NotStarted))
 #else
-            let getEnumerator (this:SeqDoNext<'T,'U>) : IEnumerator<'U> =
+            let getEnumerator (_this:SeqDoNext<'T,'U>) : IEnumerator<'U> =
                 upcast (new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.NotStarted))
 #endif
 
