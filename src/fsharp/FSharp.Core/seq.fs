@@ -15,13 +15,180 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
     module IEnumerator =
-
-
       let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
       let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
       let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
       let check started = if not started then notStarted()
       let dispose (r : System.IDisposable) = r.Dispose()
+
+      module SeqComposition =
+        module SeqAssistant =
+            let inline avoidTailCall x =
+                match x with
+                | true -> true
+                | false -> false
+
+        type ISeqDoNext<'T,'U> =
+            abstract DoNext : 'T * byref<'U> -> bool
+            abstract AddDoNext : ISeqDoNext<'U,'V> -> ISeqDoNext<'T,'V>
+
+        type Factory =
+            static member Filter f g = Filter (fun x -> f x && g x)
+            static member Map f g = Map (f >> g)
+
+        and Map<'T,'U> (map:'T->'U) =
+            interface ISeqDoNext<'T,'U> with
+                member this.AddDoNext (next:ISeqDoNext<'U,'V>) : ISeqDoNext<'T,'V> =
+                    match next with 
+                    | :? Map<'U,'V> as mapU2V -> upcast (Factory.Map this.Map mapU2V.Map)
+                    | :? Filter<'U> as filterU -> unbox (MapFilter (this, filterU))
+                    | _ -> upcast Composed (this, next)
+        
+                member __.DoNext (input:'T, output:byref<'U>) : bool = 
+                    output <- map input
+                    true
+
+            member __.Map = map
+
+        and Filter<'T> (filter:'T->bool) =
+            interface ISeqDoNext<'T,'T> with
+                member this.AddDoNext (next:ISeqDoNext<'T,'V>) : ISeqDoNext<'T,'V> = 
+                    match next with
+                    | :? Map<'T,'V> as mapTV -> upcast FilterMap (this, mapTV)
+                    | :? Filter<'T> as filterT2 -> unbox (Factory.Filter this.Filter filterT2.Filter)
+                    | _ -> upcast Composed (this, next)
+
+                member __.DoNext (input:'T, output:byref<'T>) : bool = 
+                    if filter input then
+                        output <- input
+                        true
+                    else
+                        false
+
+            member __.Filter = filter
+
+        and Composed<'T,'U,'V> (first:ISeqDoNext<'T,'U>, second:ISeqDoNext<'U,'V>) =
+            interface ISeqDoNext<'T,'V> with
+                member __.DoNext (input:'T, output:byref<'V>) :bool = 
+                    let mutable temp = Unchecked.defaultof<'U>
+                    if first.DoNext (input, &temp) then
+                        // tail calls add performance penalty, and these calls shouldn't be deep
+                        SeqAssistant.avoidTailCall (second.DoNext (temp, &output))
+                    else
+                        false
+
+                member __.AddDoNext (next:ISeqDoNext<'V,'W>):ISeqDoNext<'T,'W> = 
+                    upcast Composed (first, second.AddDoNext next)
+
+            member __.First = first
+            member __.Second = second
+
+        and MapFilter<'T,'U> (map:Map<'T,'U>, filter:Filter<'U>) =
+            inherit Composed<'T,'U,'U>(map, filter)
+
+            interface ISeqDoNext<'T,'U> with
+                member __.DoNext (input:'T, output:byref<'U>) :bool = 
+                    output <- map.Map input
+                    // tail calls add performance penalty, and these calls shouldn't be deep
+                    SeqAssistant.avoidTailCall (filter.Filter output)
+
+                member this.AddDoNext (next:ISeqDoNext<'U,'V>):ISeqDoNext<'T,'V> = 
+                    match next with
+                    | :? Filter<'U> as filterU -> unbox (MapFilter(map, Factory.Filter filter.Filter filterU.Filter))
+                    | _ -> upcast Composed (this, next)
+
+        and FilterMap<'T,'U> (filter:Filter<'T>, map:Map<'T,'U>) =
+            inherit Composed<'T,'T,'U>(filter, map)
+
+            interface ISeqDoNext<'T,'U> with
+                member __.DoNext (input:'T, output:byref<'U>) : bool = 
+                    if filter.Filter input then
+                        output <- map.Map input
+                        true
+                    else
+                        false
+
+                member this.AddDoNext (next:ISeqDoNext<'U,'V>) : ISeqDoNext<'T,'V> = 
+                    match next with
+                    | :? Map<'U,'V> as filterU -> upcast FilterMap(filter, Factory.Map map.Map filterU.Map)
+                    | _ -> upcast Composed(this, next)
+
+        [<AbstractClass>]
+        type SeqDoNextBase<'T> () =
+            abstract member AddSeqDoNext : (ISeqDoNext<'T,'U>) -> IEnumerable<'U>
+
+        type SeqDoNextStates =
+            | PreGetEnumerator = 0
+            | NotStarted = 1
+            | Finished = 2
+            | InProcess = 3
+
+        type SeqDoNext<'T,'U>(generator:IEnumerable<'T>, t2u:ISeqDoNext<'T,'U>, state:SeqDoNextStates) =
+            inherit SeqDoNextBase<'U>()
+
+            let initialThreadId = System.Environment.CurrentManagedThreadId
+            let mutable state = state
+
+            let mutable source =
+                match state with
+                | SeqDoNextStates.PreGetEnumerator -> Unchecked.defaultof<IEnumerator<'T>>
+                | SeqDoNextStates.NotStarted -> generator.GetEnumerator ()
+                | _ -> failwith "unexpected logic"
+            
+            let getEnumerator (this:SeqDoNext<'T,'U>) : IEnumerator<'U> =
+                // state management with InitialThreadId copied from c# generated code to avoid extra object
+                if state = SeqDoNextStates.PreGetEnumerator && initialThreadId = Environment.CurrentManagedThreadId then
+                    source <- generator.GetEnumerator ()
+                    state <- SeqDoNextStates.NotStarted
+                    upcast this
+                else
+                    upcast (new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.NotStarted))
+
+            let mutable current = Unchecked.defaultof<_>
+
+            let rec moveNext () =
+                if source.MoveNext () then
+                    if t2u.DoNext (source.Current, &current) then
+                        true
+                    else
+                        moveNext ()
+                else
+                    state <- SeqDoNextStates.Finished
+                    false
+
+            new (generator, t2u) = new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.PreGetEnumerator)
+
+            override __.AddSeqDoNext (u2v:ISeqDoNext<'U,'V>) =
+                new SeqDoNext<'T,'V>(generator, t2u.AddDoNext u2v, SeqDoNextStates.PreGetEnumerator) :> IEnumerable<'V>
+
+            interface IDisposable with
+                member x.Dispose():unit =
+                    match source with
+                    | null -> ()
+                    | _ ->
+                        source.Dispose ()
+                        source <- Unchecked.defaultof<_>
+
+            interface IEnumerator with
+                member this.Current : obj = box (this:>IEnumerator<'U>).Current
+                member __.MoveNext () =
+                    state <- SeqDoNextStates.InProcess
+                    moveNext ()
+                member __.Reset () : unit = noReset ()
+
+            interface IEnumerator<'U> with
+                member x.Current =
+                    match state with
+                    | SeqDoNextStates.NotStarted -> notStarted()
+                    | SeqDoNextStates.Finished -> alreadyFinished()
+                    | _ -> ()
+                    current
+
+            interface IEnumerable with
+                member this.GetEnumerator () : IEnumerator = upcast (getEnumerator this)
+        
+            interface IEnumerable<'U> with
+                member this.GetEnumerator () : IEnumerator<'U> = getEnumerator this
 
       let cast (e : IEnumerator) : IEnumerator<'T> =
           { new IEnumerator<'T> with
@@ -108,18 +275,6 @@ namespace Microsoft.FSharp.Collections
               member this.Reset() = noReset()
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
-
-      let map f (e : IEnumerator<_>) : IEnumerator<_>=
-          upcast
-              { new MapEnumerator<_>() with
-                    member this.DoMoveNext (curr : byref<_>) =
-                        if e.MoveNext() then
-                            curr <- (f e.Current)
-                            true
-                        else
-                            false
-                    member this.Dispose() = e.Dispose()
-              }
 
       let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
           let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
@@ -215,23 +370,6 @@ namespace Microsoft.FSharp.Collections
                 member x.Reset() = noReset()
             interface System.IDisposable with
                 member x.Dispose() = e.Dispose()  }
-
-      let filter f (e : IEnumerator<'T>) =
-          let started = ref false
-          let this =
-              { new IEnumerator<'T> with
-                    member x.Current = check !started; e.Current
-                interface IEnumerator with
-                    member x.Current = check !started; box e.Current
-                    member x.MoveNext() =
-                        let rec next() =
-                            if not !started then started := true
-                            e.MoveNext() && (f  e.Current || next())
-                        next()
-                    member x.Reset() = noReset()
-                interface System.IDisposable with
-                    member x.Dispose() = e.Dispose()  }
-          this
 
       let unfold f x : IEnumerator<_> =
           let state = ref x
@@ -964,17 +1102,21 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()) (source3.GetEnumerator()))
 
         [<CompiledName("Filter")>]
-        let filter f source      =
+        let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
             checkNonNull "source" source
-            revamp  (IEnumerator.filter f) source
+            match source with
+            | :? IEnumerator.SeqComposition.SeqDoNextBase<'T> as s -> s.AddSeqDoNext (IEnumerator.SeqComposition.Filter f)
+            | _ -> upcast (new IEnumerator.SeqComposition.SeqDoNext<_,_>(source, IEnumerator.SeqComposition.Filter f))
 
         [<CompiledName("Where")>]
         let where f source      = filter f source
 
         [<CompiledName("Map")>]
-        let map    f source      =
+        let map<'T,'U> (f:'T->'U) (source:seq<'T>) : seq<'U> =
             checkNonNull "source" source
-            revamp  (IEnumerator.map    f) source
+            match source with
+            | :? IEnumerator.SeqComposition.SeqDoNextBase<'T> as s -> s.AddSeqDoNext (IEnumerator.SeqComposition.Map f)
+            | _ -> upcast (new IEnumerator.SeqComposition.SeqDoNext<_,_>(source, IEnumerator.SeqComposition.Map f))
 
         [<CompiledName("MapIndexed")>]
         let mapi f source      =
