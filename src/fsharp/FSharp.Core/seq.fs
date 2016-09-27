@@ -126,7 +126,6 @@ namespace Microsoft.FSharp.Collections
         type SeqDoNext<'T,'U>(generator:IEnumerable<'T>, t2u:ISeqDoNext<'T,'U>, state:SeqDoNextStates) =
             inherit SeqDoNextBase<'U>()
 
-            let initialThreadId = System.Environment.CurrentManagedThreadId
             let mutable state = state
 
             let mutable source =
@@ -135,6 +134,8 @@ namespace Microsoft.FSharp.Collections
                 | SeqDoNextStates.NotStarted -> generator.GetEnumerator ()
                 | _ -> failwith "unexpected logic"
             
+#if FX_ATLEAST_45
+            let initialThreadId = System.Environment.CurrentManagedThreadId
             let getEnumerator (this:SeqDoNext<'T,'U>) : IEnumerator<'U> =
                 // state management with InitialThreadId copied from c# generated code to avoid extra object
                 if state = SeqDoNextStates.PreGetEnumerator && initialThreadId = Environment.CurrentManagedThreadId then
@@ -143,6 +144,10 @@ namespace Microsoft.FSharp.Collections
                     upcast this
                 else
                     upcast (new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.NotStarted))
+#else
+            let getEnumerator (this:SeqDoNext<'T,'U>) : IEnumerator<'U> =
+                upcast (new SeqDoNext<'T,'U>(generator, t2u, SeqDoNextStates.NotStarted))
+#endif
 
             let mutable current = Unchecked.defaultof<_>
 
