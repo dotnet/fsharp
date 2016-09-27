@@ -32,3 +32,6 @@ folder "InstallDir:Common7\IDE\NewFileItems"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\NewFSharpFileItems.vsdir"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\File.fs"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\Script.fsx"
+
+folder "InstallDir:Common7\Tools\VsDevCmd\Ext"
+  file source="fsharp.bat"
