@@ -32,7 +32,6 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CommonConstants.fs" />
     <Compile Include="CommonRoslynHelpers.fs" />
-    <Compile Include="ProjectSite.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
       <Link>Classification\ColorizationService.fs</Link>

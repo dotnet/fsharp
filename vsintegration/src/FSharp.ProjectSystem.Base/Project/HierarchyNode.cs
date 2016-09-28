@@ -3031,6 +3031,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return moniker;
         }
 
+        internal string GetProjectGuid()
+        {
+            string guid = projectMgr.GetProjectProperty(ProjectFileConstants.ProjectGuid) as String;
+            Debug.Assert(!String.IsNullOrEmpty(guid), "No project guid?");
+            return guid;
+        }
+
         internal uint GetTargetFrameworkVersion()
         {
             var version = new System.Runtime.Versioning.FrameworkName(GetTargetFrameworkMoniker()).Version;
