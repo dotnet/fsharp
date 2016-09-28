@@ -35,6 +35,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.AdviseProjectSiteClosed(_,_) = ()
         override this.IsIncompleteTypeCheckEnvironment = checkOptions.IsIncompleteTypeCheckEnvironment
         override this.TargetFrameworkMoniker = ""
+        override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
 
     interface IHaveCheckOptions with
@@ -66,6 +67,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.AdviseProjectSiteClosed(_,_) = ()
         override this.IsIncompleteTypeCheckEnvironment = true
         override this.TargetFrameworkMoniker = ""
+        override this.ProjectGuid = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
     
 /// Information about projects, open files and other active artifacts in visual studio.
