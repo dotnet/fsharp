@@ -812,8 +812,8 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
-        type ISeqEnumerable<'T> =
-            abstract member Fold<'State> : folder:('State->'T->'State) -> state:'State -> 'State
+//        type ISeqEnumerable<'T> =
+//            abstract member Fold<'State> : folder:('State->'T->'State) -> state:'State -> 'State
 
         module SeqComposer =
             open IEnumerator
@@ -1152,21 +1152,21 @@ namespace Microsoft.FSharp.Collections
                 override __.Compose (next:unit->SeqComponent<'U,'V>) : IEnumerable<'V> =
                     upcast new SeqEnumerable<'T,'V>(enumerable, fun () -> (current ()).Composer (next ()))
 
-                interface ISeqEnumerable<'U> with
-                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
-                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-                    
-                        let enumerator = enumerable.GetEnumerator ()
-                        let components = current ()
-                        let mutable output = Unchecked.defaultof<'U>
-                        let mutable halt = false
-
-                        let mutable state = initialState
-                        while (not halt) && enumerator.MoveNext () do
-                            if components.ProcessNext (enumerator.Current, &halt, &output) then
-                                state <- folder'.Invoke (state, output)
-
-                        state
+//                interface ISeqEnumerable<'U> with
+//                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+//                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+//                    
+//                        let enumerator = enumerable.GetEnumerator ()
+//                        let components = current ()
+//                        let mutable output = Unchecked.defaultof<'U>
+//                        let mutable halt = false
+//
+//                        let mutable state = initialState
+//                        while (not halt) && enumerator.MoveNext () do
+//                            if components.ProcessNext (enumerator.Current, &halt, &output) then
+//                                state <- folder'.Invoke (state, output)
+//
+//                        state
 
             type SeqArrayEnumerable<'T,'U>(array:array<'T>, current:unit->SeqComponent<'T,'U>) =
                 inherit ComposableEnumerable<'U>()
@@ -1183,22 +1183,22 @@ namespace Microsoft.FSharp.Collections
                 override __.Compose (next:unit->SeqComponent<'U,'V>) : IEnumerable<'V> =
                     upcast new SeqArrayEnumerable<'T,'V>(array, fun () -> (current ()).Composer (next ()))
 
-                interface ISeqEnumerable<'U> with
-                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
-                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-                    
-                        let mutable idx = 0
-                        let components = current ()
-                        let mutable current = Unchecked.defaultof<'U>
-                        let mutable halt = false
-
-                        let mutable state = initialState
-                        while (not halt) && idx < array.Length do
-                            if components.ProcessNext (array.[idx], &halt, &current) then
-                                state <- folder'.Invoke(state, current)
-                            idx <- idx + 1
-
-                        state
+//                interface ISeqEnumerable<'U> with
+//                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+//                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+//                    
+//                        let mutable idx = 0
+//                        let components = current ()
+//                        let mutable current = Unchecked.defaultof<'U>
+//                        let mutable halt = false
+//
+//                        let mutable state = initialState
+//                        while (not halt) && idx < array.Length do
+//                            if components.ProcessNext (array.[idx], &halt, &current) then
+//                                state <- folder'.Invoke(state, current)
+//                            idx <- idx + 1
+//
+//                        state
 
 
 
