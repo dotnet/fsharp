@@ -48,7 +48,7 @@ The F# tests are split as follows:
 
 ### FSharp Suite
 
-This is now compiled using [tests\fsharp\FSharp.Tests.fsproj] to a unit test DLL which acts as a driver script.
+This is now compiled using [tests\fsharp\FSharp.Tests.fsproj](tests/fsharp/FSharp.Tests.fsproj) to a unit test DLL which acts as a driver script.
 
 This compiles and executes the `test.fsx` file using some combination of compiler or FSI flags.  
 If the compilation and execution encounter no errors, the test is considered to have passed.
