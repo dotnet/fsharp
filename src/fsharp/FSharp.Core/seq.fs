@@ -855,7 +855,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T, halted:byref<bool>, output:byref<'V>) :bool = 
                     let mutable temp = Unchecked.defaultof<'U>
-                    if first.ProcessNext (input, &halted, &temp) && not halted then
+                    if first.ProcessNext (input, &halted, &temp) then
                          second.ProcessNext (temp, &halted, &output)
                     else
                         false
@@ -1013,6 +1013,7 @@ namespace Microsoft.FSharp.Collections
                     if count < takeCount then
                         count <- count + 1
                         output <- input
+                        halted <- count = takeCount
                         true
                     else
                         halted <- true
@@ -1038,6 +1039,7 @@ namespace Microsoft.FSharp.Collections
                     elif count < endIdx then
                         count <- count + 1
                         output <- input
+                        halted <- count = endIdx
                         true
                     else
                         halted <- true
