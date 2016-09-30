@@ -307,6 +307,8 @@ type TcConfigBuilder =
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
+      mutable embedAllSource : bool
+      mutable embedSourceList : string list
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -461,6 +463,8 @@ type TcConfig =
     member jitTracking : bool
     member portablePDB : bool
     member embeddedPDB : bool
+    member embedAllSource : bool
+    member embedSourceList : string list
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
     member extraOptimizationIterations : int
