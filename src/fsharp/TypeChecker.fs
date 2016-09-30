@@ -5323,18 +5323,15 @@ and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv e
             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv arg
             dummyCheckedDelayed otherDelayed
         | _ -> ()
-
     dummyCheckedDelayed delayed
 
-// Calls UnifyTypes, records name resolutions on failure, so that type information
-// can be collected for IntelliSense.
-and UnifyTypes_RecordNameResolutionsOnError cenv env m expectedTy actualTy tpenv delayed =
+// Calls UnifyTypes, but upon error only does the minimal error recovery
+// so that IntelliSense information can continue to be collected.
+and UnifyTypesAndRecover cenv env m expectedTy actualTy =
     try
         UnifyTypes cenv env m expectedTy actualTy
-    with
-        _ ->
-            RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-            reraise()
+    with e ->
+        errorRecovery e m
 
 and TcExprOfUnknownType cenv env tpenv expr =
     let exprty = NewInferenceType ()
@@ -8099,8 +8096,8 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
         match delayedList with 
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
-            if not (isNil delayed) then
-                UnifyTypes_RecordNameResolutionsOnError cenv env mExpr overallTy exprty tpenv delayed
+            if not (isNil delayed) then 
+                UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
@@ -8138,7 +8135,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     match delayed with 
     | []  
     | DelayedDot :: _ -> 
-        UnifyTypes_RecordNameResolutionsOnError cenv env mExpr overallTy exprty tpenv delayed
+        UnifyTypesAndRecover cenv env mExpr overallTy exprty
         expr.Expr,tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 

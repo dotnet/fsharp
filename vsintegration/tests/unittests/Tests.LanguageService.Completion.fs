@@ -474,13 +474,15 @@ type UsingMSBuild() as this  =
                 "type Foo = Foo"
                 "    with"
                 "        member __.Bar = 1"
-                "        member __.SomeMethodForIntellisense() = 2"
+                "        member __.PublicMethodForIntellisense() = 2"
+                "        member internal __.InternalMethod() = 3"
+                "        member private __.PrivateProperty = 4"
                 ""
                 "let u: Unit ="
                 "    [ Foo ]"
                 "    |> List.map (fun abcd -> abcd.)"
             ]
-        AssertCtrlSpaceCompleteContains code "abcd." ["GetType"; "ToString"] []
+        AssertCtrlSpaceCompleteContains code "abcd." ["Bar"; "Equals"; "GetHashCode"; "GetType"; "InternalMethod"; "PublicMethodForIntellisense"; "ToString"] []
 
     [<Test>]
     [<Category("RangeOperator")>]
@@ -5764,7 +5766,7 @@ let rec f l =
                 type IFoo =
                     abstract DoStuff  : unit -> string
                     abstract DoStuff2 : int * int -> string -> string
-                // Implement an interface in a class (This is kind of lame if you don’t want to actually declare a class)
+                // Implement an interface in a class (This is kind of lame if you don't want to actually declare a class)
                 type Foo() =
                     interface IFoo with
                         member this.DoStuff () = "Return a string"
