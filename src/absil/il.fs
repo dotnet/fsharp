@@ -1766,13 +1766,13 @@ type ILAssemblyManifest =
       AssemblyLongevity: ILAssemblyLongevity; 
       DisableJitOptimizations: bool;
       JitTracking: bool;
+      IgnoreSymbolStoreSequencePoints: bool;
       Retargetable: bool;
 
       /// Records the types impemented by other modules. 
       ExportedTypes: ILExportedTypesAndForwarders;
       /// Records whether the entrypoint resides in another module. 
       EntrypointElsewhere: ILModuleRef option; 
-               
     } 
 
 type ILModuleDef = 
@@ -3196,9 +3196,10 @@ let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs
                Locale=locale
                CustomAttrs=emptyILCustomAttrs;
                AssemblyLongevity=ILAssemblyLongevity.Unspecified;
-               DisableJitOptimizations= 0 <> (flags &&& 0x4000);
-               JitTracking=0 <> (flags &&& 0x8000); // always turn these on
-               Retargetable= 0 <> (flags &&& 0x100);
+               DisableJitOptimizations = 0 <> (flags &&& 0x4000);
+               JitTracking = (0 <> (flags &&& 0x8000)); // always turn these on
+               IgnoreSymbolStoreSequencePoints=  (0 <> (flags &&& 0x2000));
+               Retargetable = (0 <> (flags &&& 0x100));
                ExportedTypes=exportedTypes;
                EntrypointElsewhere=None
              };
@@ -3681,13 +3682,14 @@ type ILGlobals with
 
     member this.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let tref = mkSystemDiagnosticsDebuggableTypeRef this
+        let debuggingMode = (if jitTracking then 1 else 0) |||
+                            (if jitOptimizerDisabled then 256 else 0) |||  
+                            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
+                            (if enableEnC then 4 else 0)
         mkILCustomAttribute this 
           (tref,[mkILNonGenericValueTy (tref_DebuggableAttribute_DebuggingModes this)],
            (* See System.Diagnostics.DebuggableAttribute.DebuggingModes *)
-           [ILAttribElem.Int32( (if jitTracking then 1 else 0) |||
-                                (if jitOptimizerDisabled then 256 else 0) |||  
-                                (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                                (if enableEnC then 4 else 0))],[])
+           [ILAttribElem.Int32( debuggingMode )],[])
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 

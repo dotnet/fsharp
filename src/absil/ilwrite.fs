@@ -2862,17 +2862,18 @@ and GetManifsetAsAssemblyRow cenv m =
           UShort (match m.Version with None -> 0us | Some (_,_,_,w) -> w)
           ULong 
             ( (match m.AssemblyLongevity with 
-              | ILAssemblyLongevity.Unspecified -> 0x0000
-              | ILAssemblyLongevity.Library -> 0x0002 
+              | ILAssemblyLongevity.Unspecified ->       0x0000
+              | ILAssemblyLongevity.Library ->           0x0002 
               | ILAssemblyLongevity.PlatformAppDomain -> 0x0004
-              | ILAssemblyLongevity.PlatformProcess -> 0x0006
-              | ILAssemblyLongevity.PlatformSystem -> 0x0008) |||
+              | ILAssemblyLongevity.PlatformProcess ->   0x0006
+              | ILAssemblyLongevity.PlatformSystem ->    0x0008) |||
               (if m.Retargetable then 0x100 else 0x0) |||
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
               // Any debugging customattributes will automatically propagate
-              // REVIEW: No longer appears to be the case...
-              (if m.JitTracking then 0x8000 else 0x0) ||| 
-              (if m.DisableJitOptimizations then 0x4000 else 0x0) ||| 
+              // REVIEW: No longer appears to be the case
+              (if m.IgnoreSymbolStoreSequencePoints then 0x2000 else 0x0) ||| 
+              (if m.DisableJitOptimizations then         0x4000 else 0x0) ||| 
+              (if m.JitTracking then                     0x8000 else 0x0) ||| 
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
           (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
           StringE (GetStringHeapIdx cenv m.Name)

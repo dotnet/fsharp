@@ -275,7 +275,7 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
 
     let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
     metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
-    info.Methods |> Array.iteri (fun _i minfo ->
+    info.Methods |> Array.iter (fun minfo ->
         let docHandle, sequencePointBlob =
             let sps =
                 match minfo.SequencePoints with
@@ -361,7 +361,7 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
 
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
-        let writePdbScope scope =
+        let writeMethodScope scope =
             let scopeSorter (scope1:PdbMethodScope) (scope2:PdbMethodScope) =
                 if scope1.StartOffset > scope2.StartOffset then 1
                 elif scope1.StartOffset < scope2.StartOffset then -1
@@ -375,16 +375,15 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
                     list.Add scope
                     scope.Children |> Seq.iter(fun s -> toList s)
                 toList scope
-                list.ToArray()
+                list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
-            collectScopes scope |> Array.sortWith<PdbMethodScope> scopeSorter
-                                |> Seq.iter(fun s ->
-                                    if scope.Children.Length = 0 then
+            collectScopes scope |> Seq.iter(fun s ->
+                                    if s.Children.Length = 0 then
                                         metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
                                                                Unchecked.defaultof<ImportScopeHandle>,
                                                                nextHandle lastLocalVariableHandle,
                                                                Unchecked.defaultof<LocalConstantHandle>,
-                                                               0, s.EndOffset - s.StartOffset) |>ignore
+                                                               0, s.EndOffset - s.StartOffset ) |>ignore
                                     else
                                         metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
                                                                Unchecked.defaultof<ImportScopeHandle>,
@@ -392,10 +391,10 @@ let generatePortablePdb fixupSPs showTimes (info:PdbData) =
                                                                Unchecked.defaultof<LocalConstantHandle>,
                                                                s.StartOffset, s.EndOffset - s.StartOffset) |>ignore
 
-                                    for localVariable in scope.Locals do
+                                    for localVariable in s.Locals do
                                         lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
                                     )
-        writePdbScope minfo.RootScope )
+        writeMethodScope minfo.RootScope )
 
     let entryPoint =
         match info.EntryPoint with
