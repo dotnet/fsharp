@@ -1,70 +1,134 @@
 // #Regression #Conformance #TypeConstraints 
 // Regression test for CTP bug reported at http://cs.hubfs.net/forums/thread/9313.aspx
 // In CTP, this was a stack overflow in the compiler. Now we give 64 errors
-//<Expects id="FS0001" span="(208,23)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(209,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(210,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(211,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(212,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(213,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(214,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(215,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(216,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(217,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(218,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(219,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(220,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(221,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(222,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(223,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(225,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(226,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(227,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(228,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(229,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(230,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(231,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(232,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(233,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(234,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(235,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(236,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(237,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(238,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(239,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(240,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(242,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(243,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(244,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(245,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(246,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(247,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(248,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(249,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(250,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(251,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(252,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(253,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(254,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(255,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(256,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(257,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(259,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(260,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(261,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(262,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(263,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(264,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(265,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(266,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(267,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(268,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(269,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(270,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(271,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0001" span="(272,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0001" span="(272,23)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(272,27)" status="error">The value or constructor 'P1' is not defined</Expects>
 //<Expects id="FS0001" span="(273,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(273,25)" status="error">The value or constructor 'P1' is not defined</Expects>
 //<Expects id="FS0001" span="(274,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(274,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(275,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(275,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(276,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(276,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(277,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(277,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(278,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(278,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(279,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(279,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(280,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(280,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(281,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(281,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(282,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(282,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(283,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(283,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(284,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(284,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(285,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(285,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(286,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(286,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(287,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(287,25)" status="error">The value or constructor 'P1' is not defined</Expects>
+//<Expects id="FS0001" span="(289,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(289,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(290,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(290,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(291,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(291,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(292,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(292,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(293,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(293,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(294,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(294,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(295,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(295,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(296,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(296,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(297,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(297,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(298,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(298,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(299,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(299,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(300,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(300,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(301,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(301,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(302,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(302,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(303,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(303,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(304,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(304,25)" status="error">The value or constructor 'P2' is not defined</Expects>
+//<Expects id="FS0001" span="(306,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(306,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(307,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(307,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(308,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(308,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(309,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(309,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(310,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(310,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(311,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(311,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(312,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(312,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(313,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(313,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(314,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(314,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(315,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(315,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(316,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(316,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(317,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(317,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(318,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(318,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(319,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(319,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(320,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(320,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(321,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(321,25)" status="error">The value or constructor 'P3' is not defined</Expects>
+//<Expects id="FS0001" span="(323,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(323,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(324,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(324,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(325,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(325,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(326,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(326,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(327,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(327,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(328,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(328,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(329,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(329,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(330,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(330,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(331,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(331,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(332,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(332,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(333,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(333,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(334,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(334,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(335,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(335,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(336,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(336,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(337,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(337,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(338,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
+//<Expects id="FS0039" span="(338,25)" status="error">The value or constructor 'P4' is not defined</Expects>
 module SmartHashUtils =
     let ByteToUInt (array:byte[]) offset length endian =
 
