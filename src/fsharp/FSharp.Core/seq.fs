@@ -1096,8 +1096,7 @@ namespace Microsoft.FSharp.Collections
                         match state with
                         | SeqProcessNextStates.NotStarted -> notStarted()
                         | SeqProcessNextStates.Finished -> alreadyFinished()
-                        | _ -> ()
-                        current
+                        | _ -> current
 
             type SeqArrayEnumerator<'T,'U>(array:array<'T>, t2u:SeqComponent<'T,'U>) =
                 let mutable state = SeqProcessNextStates.NotStarted
@@ -1133,8 +1132,7 @@ namespace Microsoft.FSharp.Collections
                         match state with
                         | SeqProcessNextStates.NotStarted -> notStarted()
                         | SeqProcessNextStates.Finished -> alreadyFinished()
-                        | _ -> ()
-                        current
+                        | _ -> current
 
             [<AbstractClass>]
             type ComposableEnumerable<'T> () =
