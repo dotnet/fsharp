@@ -37,14 +37,6 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
 
 ####Development tools
 
-For F# 4.0 development
-
-- [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
-  - Select Visual C++ / Common Tools For Visual C++
-  - Visual F#
-  - Visual Studio Extensibility Tools
-- [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
-
 For F# 4.1 development
 
 - [Visual Studio 15](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx)
