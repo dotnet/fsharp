@@ -2871,8 +2871,6 @@ and GetManifsetAsAssemblyRow cenv m =
               // Setting these causes peverify errors. Hence both ilread and ilwrite ignore them and refuse to set them.
               // Any debugging customattributes will automatically propagate
               // REVIEW: No longer appears to be the case
-              (if m.IgnoreSymbolStoreSequencePoints then 0x2000 else 0x0) ||| 
-              (if m.DisableJitOptimizations then         0x4000 else 0x0) ||| 
               (if m.JitTracking then                     0x8000 else 0x0) ||| 
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 0x0000)
           (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
