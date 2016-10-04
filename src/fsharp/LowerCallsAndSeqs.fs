@@ -381,7 +381,7 @@ let LowerSeqExpr g amap overallExpr =
             | None -> 
                 None
 
-        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> FlatList.isEmpty vs) ->
+        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> List.isEmpty vs) ->
             // lower all the targets. abandon if any fail to lower
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
             // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be 
