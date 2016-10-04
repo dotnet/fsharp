@@ -72,7 +72,7 @@
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
   </Target>
 
-  <Target Name="CopyMsiToInsertionFolder" AfterTargets="SignFiles">
+  <Target Name="CopyMsiToInsertionFolder" AfterTargets="Build">
     <ItemGroup>
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
