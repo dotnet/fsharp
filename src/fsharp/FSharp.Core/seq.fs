@@ -828,6 +828,10 @@ namespace Microsoft.FSharp.Collections
 
                 let inline ComposeFilter f g x = f x && g x
 
+                let inline UpcastEnumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+                let inline UpcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
+                let inline UpcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
+
             type [<AbstractClass>] SeqComponent<'T,'U> () =
                 abstract ProcessNext : input:'T * halt:byref<bool> * output:byref<'U> -> bool
                 abstract OnComplete : unit -> unit
@@ -1094,7 +1098,7 @@ namespace Microsoft.FSharp.Collections
                         | _ -> source.Dispose (); source <- Unchecked.defaultof<_>
 
                 interface IEnumerator with
-                    member this.Current : obj = box (this:>IEnumerator<'U>).Current
+                    member this.Current : obj = box (Helpers.UpcastEnumerator this).Current
                     member __.MoveNext () =
                         state <- SeqProcessNextStates.InProcess
                         moveNext ()
@@ -1130,7 +1134,7 @@ namespace Microsoft.FSharp.Collections
                     member __.Dispose() : unit = ()
 
                 interface IEnumerator with
-                    member this.Current : obj = box (this:>IEnumerator<'U>).Current
+                    member this.Current : obj = box ((Helpers.UpcastEnumerator this)).Current
                     member __.MoveNext () =
                         state <- SeqProcessNextStates.InProcess
                         moveNext ()
@@ -1187,16 +1191,16 @@ namespace Microsoft.FSharp.Collections
                 inherit ComposableEnumerable<'U>()
 
                 let getEnumerator () : IEnumerator<'U> =
-                    upcast (new SeqComposedEnumerator<'T,'U>(enumerable.GetEnumerator(), current ()))
+                    Helpers.UpcastEnumerator (new SeqEnumeratorEnumerator<'T,'U>(enumerable.GetEnumerator(), current ()))
 
                 interface IEnumerable with
-                    member this.GetEnumerator () : IEnumerator = upcast (getEnumerator ())
+                    member this.GetEnumerator () : IEnumerator = Helpers.UpcastEnumeratorNonGeneric (getEnumerator ())
         
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> = getEnumerator ()
 
                 override __.Compose (next:unit->SeqComponent<'U,'V>) : IEnumerable<'V> =
-                    upcast new SeqEnumerable<'T,'V>(enumerable, fun () -> (current ()).Composer (next ()))
+                    Helpers.UpcastEnumerable (new SeqEnumerable<'T,'V>(enumerable, fun () -> (current ()).Composer (next ())))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
@@ -1218,16 +1222,16 @@ namespace Microsoft.FSharp.Collections
                 inherit ComposableEnumerable<'U>()
 
                 let getEnumerator () : IEnumerator<'U> =
-                    upcast (new ArrayComposedEnumerator<'T,'U>(array, current ()))
+                    Helpers.UpcastEnumerator (new SeqArrayEnumerator<'T,'U>(array, current ()))
 
                 interface IEnumerable with
-                    member this.GetEnumerator () : IEnumerator = upcast (getEnumerator ())
+                    member this.GetEnumerator () : IEnumerator = Helpers.UpcastEnumeratorNonGeneric (getEnumerator ())
         
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> = getEnumerator ()
 
                 override __.Compose (next:unit->SeqComponent<'U,'V>) : IEnumerable<'V> =
-                    upcast new SeqArrayEnumerable<'T,'V>(array, fun () -> (current ()).Composer (next ()))
+                    Helpers.UpcastEnumerable (new SeqArrayEnumerable<'T,'V>(array, fun () -> (current ()).Composer (next ())))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
@@ -1385,9 +1389,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? SeqComposer.ComposableEnumerable<'T> as s -> s.Compose createSeqComponent
-            | :? array<'T> as a -> upcast (new SeqComposer.SeqArrayEnumerable<_,_>(a, createSeqComponent))
-            | :? list<'T> as a -> upcast (new SeqComposer.SeqListEnumerable<_,_>(a, createSeqComponent))
-            | _ -> upcast (new SeqComposer.SeqEnumerable<_,_>(source, createSeqComponent))
+            | :? array<'T> as a -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.SeqArrayEnumerable<_,_>(a, createSeqComponent))
+            | :? list<'T> as a -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.SeqListEnumerable<_,_>(a, createSeqComponent))
+            | _ -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.SeqEnumerable<_,_>(source, createSeqComponent))
 
         let private seqFactoryForImmutable seqComponent (source:seq<'T>) =
             source |> seqFactory (fun () -> seqComponent)
