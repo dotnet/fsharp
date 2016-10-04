@@ -208,7 +208,7 @@ and goutput_ldtoken_info env os = function
   | ILToken.ILField x -> output_string os "field "; goutput_fspec env os x
 
 and goutput_typ_with_shortened_class_syntax env os = function
-    ILType.Boxed tspec when tspec.GenericArgs = emptyILGenericArgs -> 
+    ILType.Boxed tspec when tspec.GenericArgs = [] -> 
       goutput_tref env os tspec.TypeRef
   | typ2 -> goutput_typ env os typ2
 
@@ -339,7 +339,7 @@ and goutput_mref env os (mref:ILMethodRef) =
 and goutput_mspec env os (mspec:ILMethodSpec) = 
   let fenv = 
     ppenv_enter_method mspec.GenericArity
-      (ppenv_enter_tdef (mkILFormalTyparsRaw mspec.EnclosingType.GenericArgs) env) 
+      (ppenv_enter_tdef (mkILFormalTypars mspec.EnclosingType.GenericArgs) env) 
   output_callconv os mspec.CallingConv;
   output_string os " ";
   goutput_typ fenv os mspec.FormalReturnType;
@@ -357,7 +357,7 @@ and goutput_vararg_mspec env os (mspec, varargs) =
    | Some varargs' -> 
        let fenv = 
          ppenv_enter_method mspec.GenericArity
-           (ppenv_enter_tdef (mkILFormalTyparsRaw mspec.EnclosingType.GenericArgs) env) 
+           (ppenv_enter_tdef (mkILFormalTypars mspec.EnclosingType.GenericArgs) env) 
        output_callconv os mspec.CallingConv;
        output_string os " ";
        goutput_typ fenv os mspec.FormalReturnType;
@@ -386,7 +386,7 @@ and goutput_vararg_sig env os (csig:ILCallingSignature,varargs:ILVarArgs) =
        output_string os ")"; 
 
 and goutput_fspec env os (x:ILFieldSpec) =
-  let fenv = ppenv_enter_tdef (mkILFormalTyparsRaw x.EnclosingType.GenericArgs) env 
+  let fenv = ppenv_enter_tdef (mkILFormalTypars x.EnclosingType.GenericArgs) env 
   goutput_typ fenv os x.FormalType;
   output_string os " ";
   goutput_dlocref env os x.EnclosingType;

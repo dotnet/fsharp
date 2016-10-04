@@ -148,7 +148,7 @@ and accLambdas cenv env topValInfo e ety =
         accExpr cenv env e
 
 and accExprs            cenv env exprs = exprs |> List.iter (accExpr cenv env) 
-and accFlatExprs        cenv env exprs = exprs |> FlatList.iter (accExpr cenv env) 
+and accFlatExprs        cenv env exprs = exprs |> List.iter (accExpr cenv env) 
 and accTargets cenv env m ty targets = Array.iter (accTarget cenv env m ty) targets
 
 and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = accExpr cenv env e
@@ -198,7 +198,7 @@ and accBind cenv env (bind:Binding) =
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
     accLambdas cenv env topValInfo bind.Expr bind.Var.Type
 
-and accBinds cenv env xs = xs |> FlatList.iter (accBind cenv env) 
+and accBinds cenv env xs = xs |> List.iter (accBind cenv env) 
 
 //--------------------------------------------------------------------------
 // check tycons

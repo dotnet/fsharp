@@ -42,7 +42,6 @@ module internal Zmap =
       m.Fold (fun k v s -> match f k v with None -> s | Some x -> x::s) []
         
     let ofList m xs = List.fold (fun m (k,v) -> add k v m) (empty m) xs
-    let ofFlatList m xs = FlatList.fold (fun m (k,v) -> add k v m) (empty m) xs
 
     let keys   m = chooseL (fun k _ -> Some k) m 
     let values m = chooseL (fun _ v -> Some v) m

@@ -724,9 +724,9 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 
     let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
     let vrefs = 
-        mty.AllValsAndMembers.ToFlatList() 
-        |> FlatList.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
-        |> FlatList.toArray
+        mty.AllValsAndMembers.ToList() 
+        |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
+        |> List.toArray
     let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
     let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
     nenv

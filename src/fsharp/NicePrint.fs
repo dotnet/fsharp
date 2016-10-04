@@ -182,7 +182,7 @@ module private PrintIL =
         | ILType.Void               -> wordL "unit" // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t)      -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
         | ILType.Value t
-        | ILType.Boxed t            -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> ILList.toList |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
+        | ILType.Boxed t            -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
         | ILType.Ptr t
         | ILType.Byref t            -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t  -> layoutILCallingSignature denv ilTyparSubst None t
@@ -195,7 +195,7 @@ module private PrintIL =
         // constructors (Their return types are reported as `void`, but this is
         // incorrect; so if we're dealing with a constructor we require that the
         // return type be passed along as the `cons` parameter.)
-        let args = signatur.ArgTypes |> ILList.toList |> List.map (layoutILType denv ilTyparSubst) 
+        let args = signatur.ArgTypes |> List.map (layoutILType denv ilTyparSubst) 
         let res  = 
             match cons with
             | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
@@ -233,7 +233,7 @@ module private PrintIL =
             match cons with
             | Some className -> layoutILTypeRefName denv (SplitNamesForILPath (ungenericizeTypeName className)) ^^ (pruneParms className ilTyparSubst |> paramsL) // special case for constructor return-type (viz., the class itself)
             | None           -> retType |> layoutILType denv ilTyparSubst
-        match parameters |> ILList.toList  with
+        match parameters with
         | []   -> wordL "unit" ^^ wordL "->" ^^ res
         | [x]  -> layoutILParameter denv ilTyparSubst x ^^ wordL "->" ^^ res
         | args    -> sepListL (wordL "*") (List.map (layoutILParameter denv ilTyparSubst) args) ^^ wordL "->" ^^ res
@@ -284,13 +284,13 @@ module private PrintIL =
         let nameL   = wordL name 
             
         let layoutGetterType (getterRef:ILMethodRef) =
-            if ILList.isEmpty getterRef.ArgTypes then
+            if List.isEmpty getterRef.ArgTypes then
                 layoutILType denv ilTyparSubst getterRef.ReturnType
             else
                 layoutILCallingSignature denv ilTyparSubst None getterRef.CallingSignature
                 
         let layoutSetterType (setterRef:ILMethodRef) =
-            let argTypes = setterRef.ArgTypes |> ILList.toList 
+            let argTypes = setterRef.ArgTypes
             if List.isEmpty argTypes then
                 emptyL // shouldn't happen
             else

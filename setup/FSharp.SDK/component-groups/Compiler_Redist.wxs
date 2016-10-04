@@ -29,6 +29,7 @@
       <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.dll" />
       <ComponentRef Id="Compiler_Redist_System.Reflection.Metadata.dll" />
       <ComponentRef Id="Compiler_Redist_System.Collections.Immutable.dll" />
+      <ComponentRef Id="Compiler_Redist_System.ValueTuple.dll" />
 
       <ComponentRef Id="Compiler_Redist_OtherResources_Redist.txt" />
       <ComponentRef Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" />
@@ -160,6 +161,10 @@
 
       <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1\Microsoft.DiaSymReader.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

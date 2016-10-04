@@ -107,9 +107,6 @@
     <Compile Include="..\..\utils\TaggedCollections.fs">
       <Link>TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\FlatList.fs">
-      <Link>FlatList.fs</Link>
-    </Compile>
     <Compile Include="..\..\absil\ildiag.fsi">
       <Link>Utilities\ildiag.fsi</Link>
     </Compile>
