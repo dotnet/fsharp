@@ -38,7 +38,8 @@ let getBackgroundCheckResultsForScriptText (input) =
 
 let sysLib nm = 
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
-        @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
+        let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
     else
         let sysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
         let (++) a b = System.IO.Path.Combine(a,b)
@@ -53,7 +54,8 @@ module Helpers =
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
     // if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
-    //    @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll"  
+    //    let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+    //    programFilesx86Folder + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll"  
     //else 
     //    sysLib "FSharp.Core"
 
