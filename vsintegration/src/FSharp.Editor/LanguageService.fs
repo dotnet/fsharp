@@ -40,9 +40,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         else
             None
 
-    member this.SyncProject(projectContext: IWorkspaceProjectContext, site: IProjectSite) =
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite) =
         let updatedFiles = site.SourceFilesOnDisk()
-        let workspaceFiles = (projectContext :?> AbstractProject).GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath)
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath)
         
         for file in updatedFiles do if not(workspaceFiles.Contains(file)) then projectContext.AddSourceFile(file)
         for file in workspaceFiles do if not(updatedFiles.Contains(file)) then projectContext.RemoveSourceFile(file)
@@ -82,8 +82,11 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     let outputPath = if Path.IsPathRooted(outputFlag) then outputFlag else Path.Combine(Path.GetDirectoryName(projectFileName), outputFlag)
 
                     let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectFileName, projectFileName, projectGuid, hier, outputPath, errorReporter)
-                    this.SyncProject(projectContext, site)
-                    site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(projectContext, site)))
+                    let project = projectContext :?> AbstractProject
+
+                    this.SyncProject(project, projectContext, site)
+                    site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site)))
+                    site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> project.Disconnect()))
             | _ -> ()
         | _ -> ()
 
