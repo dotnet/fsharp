@@ -96,6 +96,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -142,6 +143,7 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -162,6 +164,7 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=0
