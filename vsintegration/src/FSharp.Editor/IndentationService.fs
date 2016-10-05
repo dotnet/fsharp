@@ -55,7 +55,6 @@ type internal FSharpIndentationService() =
             let optionsTask = document.GetOptionsAsync(cancellationToken)
             optionsTask.Wait(cancellationToken)
             let options = CommonRoslynHelpers.GetCompletedTaskResult(optionsTask)
-
             let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
 
             match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
