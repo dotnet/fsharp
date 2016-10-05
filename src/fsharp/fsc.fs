@@ -2044,7 +2044,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     AbortOnError(errorLogger, tcConfig, exiter)
 
     // Don't copy referenced fharp.core.dll if we are building fsharp.core.dll
-    if tcConfig.copyFSharpCore && not tcConfig.compilingFslib then
+    if tcConfig.copyFSharpCore && not tcConfig.compilingFslib && not tcConfig.standalone then
         copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
