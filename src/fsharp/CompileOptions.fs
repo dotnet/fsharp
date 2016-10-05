@@ -407,7 +407,6 @@ let SetOptimizeOff(tcConfigB : TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 0 }
-    tcConfigB.ignoreSymbolStoreSequencePoints <- false;
     tcConfigB.doDetuple <- false; 
     tcConfigB.doTLR <- false;
     tcConfigB.doFinalSimplify <- false;
@@ -417,8 +416,6 @@ let SetOptimizeOn(tcConfigB : TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
-
-    tcConfigB.ignoreSymbolStoreSequencePoints <- true;
     tcConfigB.doDetuple <- true;  
     tcConfigB.doTLR <- true;
     tcConfigB.doFinalSimplify <- true;
@@ -474,9 +471,9 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
     match dtype with
     | Some(s) ->
        match s with 
-       | "portable" ->  tcConfigB.portablePDB <- true ; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
+       | "portable" ->  tcConfigB.portablePDB <- true ; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true; tcConfigB.ignoreSymbolStoreSequencePoints <- true
        | "pdbonly" ->   tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- false
-       | "embedded" ->  tcConfigB.portablePDB <- true;  tcConfigB.embeddedPDB <- true;  tcConfigB.jitTracking <- true
+       | "embedded" ->  tcConfigB.portablePDB <- true;  tcConfigB.embeddedPDB <- true;  tcConfigB.jitTracking <- true; tcConfigB.ignoreSymbolStoreSequencePoints <- true
        | "full" ->      tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
     | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;

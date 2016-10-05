@@ -1053,7 +1053,7 @@ module MainModuleBuilder =
                                   [tcGlobals.ilg.typ_Int32],[ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
-                   if Option.isSome pdbfile then 
+                   if Option.isSome pdbfile then
                        yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
                    yield! reflectedDefinitionAttrs ]
 
@@ -1069,6 +1069,7 @@ module MainModuleBuilder =
                              CustomAttrs = manifestAttrs
                              DisableJitOptimizations=disableJitOptimizations
                              JitTracking= tcConfig.jitTracking
+                             IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
                              SecurityDecls=secDecls } 
 
         let resources = 
