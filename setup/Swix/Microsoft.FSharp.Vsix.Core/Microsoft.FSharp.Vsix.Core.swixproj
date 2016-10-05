@@ -30,6 +30,7 @@
   </Target>
   
   <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
     <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
   </Target>
 </Project>
