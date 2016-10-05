@@ -5,5 +5,8 @@ package name=Microsoft.FSharp.VSIX.$(VSSku).Core
         vs.package.type=vsix
         vs.package.vsixId=VisualFSharp
 
+vs.dependencies
+  vs.dependency id=Microsoft.VisualStudio.MinShell
+
 vs.payloads
   vs.payload source="$(BinariesFolder)\net40\bin\VisualFSharp$(VSSku).vsix"
