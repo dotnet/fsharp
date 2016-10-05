@@ -162,8 +162,8 @@ type internal FSharpColorizationService() =
                     result.AddRange(extraColorizationData)
                 | None -> ()
             }
-            
+
             Task.Run(CommonRoslynHelpers.GetTaskAction(computation), cancellationToken)
-            
+
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

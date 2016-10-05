@@ -59,7 +59,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.SetupNewTextView(view) =
         base.SetupNewTextView(view)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
-                    
+
         // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
 
