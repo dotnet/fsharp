@@ -24,7 +24,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildFlavor= '';
             if (configuration == "Debug") {
                 buildFlavor = "debug"
-                build_args = ""
+                build_args = "ci_debug"
             }
             else {
                 buildFlavor = "release"
