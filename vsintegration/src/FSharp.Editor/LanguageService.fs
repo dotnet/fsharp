@@ -52,8 +52,12 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.LanguageServiceId = new Guid(FSharpCommonConstants.languageServiceGuidString)
+    override this.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
+
+    override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
     override this.SetupNewTextView(view) =
+        base.SetupNewTextView(view)
         let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
                     
         // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
