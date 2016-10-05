@@ -108,21 +108,6 @@ namespace Microsoft.FSharp.Collections
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
 
-      let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
-          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-          let i = ref (-1)
-          upcast
-              {  new MapEnumerator<_>() with
-                     member this.DoMoveNext curr =
-                        i := !i + 1
-                        if e.MoveNext() then
-                           curr <- f.Invoke(!i, e.Current)
-                           true
-                        else
-                           false
-                     member this.Dispose() = e.Dispose()
-              }
-
       let map2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_>=
           let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
           upcast
