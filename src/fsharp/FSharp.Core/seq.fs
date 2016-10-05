@@ -1043,7 +1043,35 @@ namespace Microsoft.FSharp.Collections
                         let x = endIdx - count
                         invalidOpFmt "tried to take {0} {1} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                
+            
+            and SkipWhile<'T> (predicate: 'T -> bool) =
+                inherit SeqComponent<'T,'T>()
+
+                let mutable skip = true
+
+                override __.ProcessNext (input:'T, halted:byref<bool>, output:byref<'T>) : bool = 
+                    if skip then
+                        skip <- predicate input
+                        if skip then
+                            false
+                        else
+                            output <- input
+                            true
+                    else
+                        output <- input
+                        true
+
+            and TakeWhile<'T> (predicate: 'T -> bool) =
+                inherit SeqComponent<'T,'T>()
+
+                override __.ProcessNext (input:'T, halted:byref<bool>, output:byref<'T>) : bool = 
+                    if predicate input then
+                        output <- input
+                        true
+                    else
+                        halted <- true
+                        false
+
             and Choose<'T, 'U> (choose:'T->'U option) =
                 inherit SeqComponent<'T,'U>()
 
@@ -2091,11 +2119,7 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName("TakeWhile")>]
         let takeWhile p (source: seq<_>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  let latest = ref Unchecked.defaultof<_>
-                  while e.MoveNext() && (latest := e.Current; p !latest) do
-                      yield !latest }
+            source |> seqFactory (fun () -> upcast SeqComposer.TakeWhile p)
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
@@ -2103,15 +2127,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("SkipWhile")>]
         let skipWhile p (source: seq<_>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  let latest = ref (Unchecked.defaultof<_>)
-                  let ok = ref false
-                  while e.MoveNext() do
-                      if (latest := e.Current; (!ok || not (p !latest))) then
-                          ok := true
-                          yield !latest }
-
+            source |> seqFactory (fun () -> upcast SeqComposer.SkipWhile p)
 
         [<CompiledName("ForAll2")>]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
