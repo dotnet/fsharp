@@ -230,10 +230,6 @@ module ListSet =
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
     let setify f l = List.foldBack (insert f) (List.rev l) [] |> List.rev
 
-
-module FlatListSet = 
-    let remove f x l = FlatList.filter (fun y -> not (f x y)) l
-
 //-------------------------------------------------------------------------
 // Library: pairs
 //------------------------------------------------------------------------

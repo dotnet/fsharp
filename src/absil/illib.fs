@@ -483,64 +483,6 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
-
-//-------------------------------------------------------------------------
-// Library: extensions to flat list  (immutable arrays)
-//------------------------------------------------------------------------
-#if FLAT_LIST_AS_ARRAY_STRUCT
-//#else
-module FlatList =
-
-    let order (eltOrder: IComparer<_>) =
-        { new IComparer<FlatList<_>> with 
-            member __.Compare(xs,ys) =
-                  match xs.array,ys.array with 
-                  | null,null -> 0
-                  | _,null -> 1
-                  | null,_ -> -1
-                  | arr1,arr2 -> Array.order eltOrder arr1 arr2 }
-
-    let mapq f (x:FlatList<_>) = 
-        match x.array with 
-        | null -> x
-        | arr -> 
-            let arr' = Array.map f arr in 
-            let n = arr.Length in 
-            let rec check i = if i >= n then true else arr.[i] === arr'.[i] && check (i+1) 
-            if check 0 then x else FlatList(arr')
-
-    let mapFold f acc (x:FlatList<_>) = 
-        match x.array with
-        | null -> 
-            FlatList.Empty,acc
-        | arr -> 
-            let  arr,acc = Array.mapFold f acc x.array
-            FlatList(arr),acc
-
-#endif
-#if FLAT_LIST_AS_LIST
-
-#else
-
-module FlatList =
-    let toArray xs = List.toArray xs
-    let choose f xs = List.choose f xs
-    let order eltOrder = List.order eltOrder 
-    let mapq f (x:FlatList<_>) = List.mapq f x
-    let mapFold f acc (x:FlatList<_>) =  List.mapFold f acc x
-
-#endif
-
-#if FLAT_LIST_AS_ARRAY
-//#else
-module FlatList =
-    let order eltOrder = Array.order eltOrder 
-    let mapq f x = Array.mapq f x
-    let mapFold f acc x =  Array.mapFold f acc x
-#endif
-
-
-
 /// Computations that can cooperatively yield by returning a continuation
 ///
 ///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
@@ -781,7 +723,6 @@ module NameMap =
     let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
     let ofList l : NameMap<'T> = Map.ofList l
     let ofSeq l : NameMap<'T> = Map.ofSeq l
-    let ofFlatList (l:FlatList<_>) : NameMap<'T> = FlatList.toMap l
     let toList (l: NameMap<'T>) = Map.toList l
     let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2
 

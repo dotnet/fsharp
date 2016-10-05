@@ -909,7 +909,11 @@ namespace Microsoft.FSharp.Control
 
         /// Implement use/Dispose
         let usingA (r:'T :> IDisposable) (f:'T -> Async<'a>) : Async<'a> =
-            tryFinallyA (fun () -> Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose r) (callA f r)
+            let mutable x = 0
+            let disposeFunction _ =
+                if Interlocked.CompareExchange(&x, 1, 0) = 0 then
+                    Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose r
+            tryFinallyA disposeFunction (callA f r) |> whenCancelledA disposeFunction
 
         let ignoreA p = 
             bindA p (fun _ -> doneA)

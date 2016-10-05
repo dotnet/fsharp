@@ -940,31 +940,22 @@ let [<Literal>] localVarSize = 1
 let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
 let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
 
-let inline AddTotalSizesFlat l = l |> FlatList.sumBy (fun x -> x.TotalSize) 
-let inline AddFunctionSizesFlat l = l |> FlatList.sumBy (fun x -> x.FunctionSize) 
+let inline AddTotalSizesFlat l = l |> List.sumBy (fun x -> x.TotalSize) 
+let inline AddFunctionSizesFlat l = l |> List.sumBy (fun x -> x.FunctionSize) 
 
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
 let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
-let inline OrEffectsFlat l = FlatList.exists (fun x -> x.HasEffect) l
+let inline OrEffectsFlat l = List.exists (fun x -> x.HasEffect) l
 
 let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
-let inline OrTailcallsFlat l = FlatList.exists (fun x -> x.MightMakeCriticalTailcall) l
+let inline OrTailcallsFlat l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
         
-let rec OptimizeListAux f l acc1 acc2 = 
-    match l with 
-    | [] -> List.rev acc1, List.rev acc2
-    | (h ::t) -> 
-        let (x1,x2) = f h
-        OptimizeListAux f t (x1::acc1) (x2::acc2) 
-
-let OptimizeList f l = OptimizeListAux f l [] [] 
-
-let OptimizeFlatList f l = l |> FlatList.map f |> FlatList.unzip 
+let OptimizeList f l = l |> List.map f |> List.unzip 
 
 let NoExprs : (Expr list * list<Summary<ExprValueInfo>>) = [],[]
-let NoFlatExprs : (FlatExprs * FlatList<Summary<ExprValueInfo>>) = FlatList.empty, FlatList.empty
+let NoFlatExprs : (FlatExprs * list<Summary<ExprValueInfo>>) = [], []
 
 //-------------------------------------------------------------------------
 // Common ways of building new value infos
@@ -1235,7 +1226,7 @@ let ValueIsUsedOrHasEffect cenv fvs (b:Binding,binfo) =
     Zset.contains v (fvs())
 
 let rec SplitValuesByIsUsedOrHasEffect cenv fvs x = 
-    x |> FlatList.filter (ValueIsUsedOrHasEffect cenv fvs) |> FlatList.unzip
+    x |> List.filter (ValueIsUsedOrHasEffect cenv fvs) |> List.unzip
 
 //-------------------------------------------------------------------------
 // 
@@ -1278,7 +1269,7 @@ let rec ExprHasEffect g expr =
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
 and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
-and BindingsHaveEffect g binds = FlatList.exists (BindingHasEffect g) binds
+and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
@@ -2036,7 +2027,7 @@ and OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) =
 //------------------------------------------------------------------------- 
 
 and OptimizeLetRec cenv env (binds,bodyExpr,m) =
-    let vs = binds |> FlatList.map (fun v -> v.Var) 
+    let vs = binds |> List.map (fun v -> v.Var) 
     let env = BindInternalValsToUnknown cenv vs env 
     let binds',env = OptimizeBindings cenv true env binds 
     let bodyExpr',einfo = OptimizeExpr cenv env bodyExpr 
@@ -2044,13 +2035,13 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
     // Eliminate any unused bindings, as in let case 
     let binds'',bindinfos = 
         let fvs0 = freeInExpr CollectLocals bodyExpr' 
-        let fvs = FlatList.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
+        let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) binds'
     // Trim out any optimization info that involves escaping values 
-    let evalue' = AbstractExprInfoByVars (FlatList.toList vs,[]) einfo.Info 
+    let evalue' = AbstractExprInfoByVars (vs,[]) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
     let bodyExpr' = Expr.LetRec(binds'',bodyExpr',m,NewFreeVarsCache()) 
-    let info = CombineValueInfos (einfo :: FlatList.toList bindinfos) evalue' 
+    let info = CombineValueInfos (einfo :: bindinfos) evalue' 
     bodyExpr', info
 
 //-------------------------------------------------------------------------
@@ -2750,7 +2741,7 @@ and OptimizeExprsThenConsiderSplits cenv env exprs =
 and OptimizeFlatExprsThenConsiderSplits cenv env exprs = 
     match exprs with 
     | [] -> NoFlatExprs
-    | _ -> OptimizeFlatList (OptimizeExprThenConsiderSplit cenv env) exprs
+    | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
 and OptimizeExprThenReshapeAndConsiderSplit cenv env (shape,e) = 
     OptimizeExprThenConsiderSplit cenv env (ReshapeExpr cenv (shape,e))
@@ -2852,7 +2843,7 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs,e,spTarget)) =
     let env = BindInternalValsToUnknown cenv vs env 
     let e',einfo = OptimizeExpr cenv env e 
     let e',einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e',einfo) 
-    let evalue' = AbstractExprInfoByVars (FlatList.toList vs,[]) einfo.Info 
+    let evalue' = AbstractExprInfoByVars (vs,[]) einfo.Info 
     TTarget(vs,e',spTarget),
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
@@ -2880,7 +2871,7 @@ and OptimizeDecisionTree cenv env m x =
             match rest with 
             | TDSuccess([e],n) ->
                 let e,_adjust = TryEliminateLet cenv env bind e m 
-                TDSuccess(FlatList.one e,n),info
+                TDSuccess([e],n),info
             | _ -> 
                 TDBind(bind,rest),info
 
@@ -3034,7 +3025,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
         errorRecovery exn v.Range 
         raise (ReportedError (Some exn))
           
-and OptimizeBindings cenv isRec env xs = FlatList.mapFold (OptimizeBinding cenv isRec) env xs
+and OptimizeBindings cenv isRec env xs = List.mapFold (OptimizeBinding cenv isRec) env xs
     
 and OptimizeModuleExpr cenv env x = 
     match x with   
@@ -3128,7 +3119,7 @@ and OptimizeModuleDef cenv (env,bindInfosColl) x =
         
         (* REVIEW: Eliminate let bindings on the way back up *)
         (TMDefRec(isRec,tycons,mbinds,m),
-         notlazy { ValInfos = ValInfos(FlatList.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
+         notlazy { ValInfos = ValInfos(List.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}),
         (env,bindInfosColl)
     | TMAbstract(mexpr) -> 
