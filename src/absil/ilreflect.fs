@@ -519,9 +519,9 @@ let convCallConv (Callconv (hasThis,basic)) =
 
 let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
     let typT   = convTypeRef cenv emEnv preferCreated tspec.TypeRef 
-    let tyargs = ILList.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
-    match ILList.isEmpty tyargs,typT.IsGenericType with
-    | _   ,true  -> typT.MakeGenericType(ILList.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
+    let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
+    match List.isEmpty tyargs,typT.IsGenericType with
+    | _   ,true  -> typT.MakeGenericType(List.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
     | true,false -> typT                                          |> nonNull "convTypeSpec: non generic" 
     | _   ,false -> failwithf "- convTypeSpec: non-generic type '%O' has type instance of length %d?" typT tyargs.Length 
       
@@ -578,9 +578,9 @@ let convTypeOrTypeDef cenv emEnv typ =
     | ILType.Boxed tspec when tspec.GenericArgs.IsEmpty -> convTypeRef cenv emEnv false tspec.TypeRef 
     | _ -> convType cenv emEnv typ
 
-let convTypes cenv emEnv (typs:ILTypes) = ILList.map (convType cenv emEnv) typs
+let convTypes cenv emEnv (typs:ILTypes) = List.map (convType cenv emEnv) typs
 
-let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> ILList.toArray 
+let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> List.toArray 
 
 /// Uses the .CreateType() for emitted type if available.
 let convCreatedType cenv emEnv typ = convTypeAux cenv emEnv true typ 
@@ -692,7 +692,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             let haveResT  = methInfo.ReturnType
           (* check for match *)
             if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
-            let res = equalTypes resT haveResT && equalTypeLists (ILList.toList argTs) haveArgTs
+            let res = equalTypes resT haveResT && equalTypeLists argTs haveArgTs
             res
        
         match List.tryFind select methInfos with
@@ -1262,7 +1262,7 @@ let emitLocal cenv emEnv (ilG : ILGenerator) (local: ILLocal) =
     locBuilder
 
 let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) (ilmbody: ILMethodBody) =
-    let localBs = Array.map (emitLocal cenv emEnv ilG) (ILList.toArray ilmbody.Locals)
+    let localBs = Array.map (emitLocal cenv emEnv ilG) (List.toArray ilmbody.Locals)
     let emEnv = envSetLocals emEnv localBs
     emitCode cenv modB emEnv ilG ilmbody.Code 
 
@@ -1307,7 +1307,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
         let constraintTs = convTypes cenv emEnv gp.Constraints
-        let interfaceTs,baseTs = List.partition (fun (typ:System.Type) -> typ.IsInterface) (ILList.toList constraintTs)
+        let interfaceTs,baseTs = List.partition (fun (typ:System.Type) -> typ.IsInterface) constraintTs
         // set base type constraint
         (match baseTs with
             [ ]      -> () // Q: should a baseType be set? It is in some samples. Should this be a failure case?
@@ -1496,7 +1496,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           assert List.isEmpty mdef.GenericParams
           // Value parameters       
           let defineParameter (i,attr,name) = consB.DefineParameterAndLog(i+1,attr,name)
-          mdef.Parameters |> ILList.iteri (emitParameter cenv emEnv defineParameter);
+          mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter);
           // Body
           emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.mdBody;
           emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
@@ -1516,7 +1516,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
 
           // Value parameters
           let defineParameter (i,attr,name) = methB.DefineParameterAndLog(i+1,attr,name) 
-          mdef.Parameters |> ILList.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
+          mdef.Parameters |> List.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
           // Body
           if not isPInvoke then 
               emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.mdBody;
@@ -1757,7 +1757,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     let typB  = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
     // add interface impls
-    tdef.Implements |> convTypes cenv emEnv |> ILList.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
+    tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
     // add methods, properties
     let emEnv = List.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsList 
     let emEnv = List.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
@@ -1819,8 +1819,8 @@ let rec getTypeRefsInType valueTypesOnly typ acc =
     | ILType.Void | ILType.TypeVar _                              -> acc
     | ILType.Ptr eltType | ILType.Byref eltType -> getTypeRefsInType valueTypesOnly eltType acc
     | ILType.Array (_,eltType) -> if valueTypesOnly then acc else getTypeRefsInType valueTypesOnly eltType acc
-    | ILType.Value tspec -> tspec.TypeRef :: ILList.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
-    | ILType.Boxed tspec -> if valueTypesOnly then acc else tspec.TypeRef :: ILList.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
+    | ILType.Value tspec -> tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
+    | ILType.Boxed tspec -> if valueTypesOnly then acc else tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
     | ILType.FunctionPointer _callsig -> failwith "getTypeRefsInType: fptr"
     | ILType.Modified _   -> failwith "getTypeRefsInType: modified"
 
@@ -1836,9 +1836,9 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         // are resolved overly eagerly by reflection emit's CreateType. 
         if priority >= 1 then 
             if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
-            tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2));
+            tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2));
             if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2)));
+            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2)));
             
         // We absolutely need the parent type...
         if priority >= 1 then 
@@ -1848,13 +1848,13 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         // We absolutely need the interface types...
         if priority >= 1 then 
             if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
-            tdef.Implements |> ILList.iter (traverseType false priority);
+            tdef.Implements |> List.iter (traverseType false priority);
             
         // We have to define all struct types in all methods before a class is defined. This only has any effect when there is a struct type
         // being defined simultaneously with this type.
         if priority >= 1 then 
             if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s\n" tdef.Name  
-            tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> ILList.iter (fun p -> p.Type |> (traverseType true 1))
+            tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> List.iter (fun p -> p.Type |> (traverseType true 1))
                                                   md.Return.Type |> traverseType true 1);
         
         if priority >= 1 then 

@@ -109,7 +109,7 @@ type IlxClosureSpec =
     member x.GenericArgs = let (IlxClosureSpec(_,inst,_)) = x in inst
     static member Create (cloref, inst) = 
         let (IlxClosureRef(tref,_,_)) = cloref
-        IlxClosureSpec(cloref, inst, mkILBoxedType (mkILTySpecRaw(tref, inst)))
+        IlxClosureSpec(cloref, inst, mkILBoxedType (mkILTySpec (tref, inst)))
     member clospec.Constructor = 
         let cloTy = clospec.ILType
         let fields = clospec.FormalFreeVars
@@ -143,7 +143,7 @@ type IlxUnionInfo =
 
 let destTyFuncApp = function Apps_tyapp (b,c) -> b,c | _ -> failwith "destTyFuncApp"
 
-let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgsRaw gparams)
+let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgs gparams)
 
 let actualTypOfIlxUnionField (cuspec : IlxUnionSpec) idx fidx =
   instILType cuspec.GenericArgs (cuspec.FieldDef idx fidx).Type

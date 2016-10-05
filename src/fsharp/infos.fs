@@ -134,7 +134,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m typ =
                     // succeeded with more reported. There are pathological corner cases where this 
                     // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always 
                     // assume those are present. 
-                    [ for ity in tdef.Implements |> ILList.toList  do
+                    [ for ity in tdef.Implements do
                          if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then 
                              yield ImportILType scoref amap m tinst ity ]
 
@@ -717,7 +717,7 @@ type ILMethInfo =
     /// Get the Abstract IL metadata corresponding to the parameters of the method. 
     /// If this is an C#-style extension method then drop the object argument.
     member x.ParamMetadata = 
-        let ps = x.RawMetadata.Parameters |> ILList.toList
+        let ps = x.RawMetadata.Parameters
         if x.IsILExtensionMethod then List.tail ps else ps
 
     /// Get the number of parameters of the method
@@ -770,7 +770,7 @@ type ILMethInfo =
     /// Get all the argument types of the IL method. Include the object argument even if this is 
     /// an C#-style extension method.
     member x.GetRawArgTypes(amap,m,minst) = 
-        x.RawMetadata.Parameters |> ILList.toList |> List.map (fun p -> ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) 
+        x.RawMetadata.Parameters |> List.map (fun p -> ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) 
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then 
     /// drop the object argument.
@@ -1712,12 +1712,12 @@ type ILPropInfo =
     /// Get the names and types of the indexer arguments associated with the IL property.
     member x.GetParamNamesAndTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        pdef.Args |> ILList.toList |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
+        pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
 
     /// Get the types of the indexer arguments associated with the IL property.
     member x.GetParamTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        pdef.Args |> ILList.toList |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
+        pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
 
     /// Get the return type of the IL property.
     member x.GetPropertyType (amap,m) = 
