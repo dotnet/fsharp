@@ -26,6 +26,10 @@
     <Package Include="Files.swr" />
     <Package Include="Dependencies.swr" />
   </ItemGroup>
+
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Build">
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
+  </Target>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- SWIX plugin adds the built vsix to signing automatically -->

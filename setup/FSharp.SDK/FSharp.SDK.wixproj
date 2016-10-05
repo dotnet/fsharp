@@ -64,7 +64,7 @@
   <Import Project="$(WixInstallPath)\wix.targets" />
   <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
 
-  <Target Name="CheckLocaleIsPassed" BeforeTargets="Build">
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Compile">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
     <Error Condition="'$(LocaleParentCulture)' == ''" Text="A 'LocaleParentCulture' property must be passed to the project." />

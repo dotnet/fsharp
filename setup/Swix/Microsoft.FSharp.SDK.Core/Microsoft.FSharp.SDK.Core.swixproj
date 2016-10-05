@@ -23,6 +23,10 @@
   <ItemGroup>
     <Package Include="Files.swr" />
   </ItemGroup>
+
+  <Target Name="CheckLocaleIsPassed" BeforeTargets="Build">
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
+  </Target>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- MSI is already signed before wrapping it here -->
