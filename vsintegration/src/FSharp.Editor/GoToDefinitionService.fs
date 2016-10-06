@@ -16,7 +16,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Host
-open Microsoft.CodeAnalysis.Editor.Navigation
+open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
@@ -29,12 +29,15 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan, displayString: string) =
+    member this.DisplayString = displayString
+
     interface INavigableItem with
         member this.Glyph = Glyph.BasicFile
         member this.DisplayFileLocation = true
-        member this.DisplayString = displayString
+        member this.IsImplicitlyDeclared = false
         member this.Document = document
         member this.SourceSpan = textSpan
+        member this.DisplayTaggedParts = Unchecked.defaultof<ImmutableArray<TaggedText>>
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 [<Shared>]
@@ -124,7 +127,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] ([<ImportMany
             
             if definitionTask.Status = TaskStatus.RanToCompletion then
                 if definitionTask.Result.Any() then
-                    let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+                    let navigableItem = definitionTask.Result.First() :?> FSharpNavigableItem // F# API provides only one INavigableItem
                     for presenter in presenters do
                         presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
                     true

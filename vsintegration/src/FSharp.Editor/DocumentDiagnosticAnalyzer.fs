@@ -31,10 +31,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
                 
-        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLineAlternate - 1, error.StartColumn), LinePosition(error.EndLineAlternate - 1, error.EndColumn))
+        // F# compiler report errors at start/end of file if parsing fails. It should be corrected to match Roslyn boundaries
+        let linePositionSpan = LinePositionSpan(
+                                LinePosition(Math.Max(0, error.StartLineAlternate - 1), error.StartColumn),
+                                LinePosition(Math.Max(0, error.EndLineAlternate - 1), error.EndColumn))
         let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-
-        // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
         let correctedTextSpan = if textSpan.End < sourceText.Length then textSpan else TextSpan.FromBounds(sourceText.Length - 1, sourceText.Length)
 
         Diagnostic.Create(descriptor, Location.Create(filePath, correctedTextSpan , linePositionSpan))

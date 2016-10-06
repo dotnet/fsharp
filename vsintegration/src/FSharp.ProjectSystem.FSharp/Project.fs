@@ -96,6 +96,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ErrorListTaskProvider() = inner.ErrorListTaskProvider()
             member ips.ErrorListTaskReporter() = inner.ErrorListTaskReporter()
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
+            member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
 
@@ -1476,6 +1477,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         closeNotifier.Advise(callbackOwnerKey,callback)
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
+                    member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                 }
 
@@ -1506,6 +1508,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.AdviseProjectSiteClosed(_,_) = ()
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
+                    member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                 }
 
