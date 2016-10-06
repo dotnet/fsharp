@@ -42,9 +42,6 @@
     <Compile Include="IndentationService.fs">
       <Link>Utilities\IndentationService.fs</Link>
     </Compile>
-    <Compile Include="DocumentDifferenceService.fs">
-      <Link>Utilities\DocumentDifferenceService.fs</Link>
-    </Compile>
     <Compile Include="BreakpointResolutionService.fs">
       <Link>Debugging\BreakpointResolutionService.fs</Link>
     </Compile>
