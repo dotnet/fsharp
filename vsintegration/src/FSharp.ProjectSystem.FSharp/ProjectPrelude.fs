@@ -267,9 +267,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     // Some more constants
 
     module internal GuidList =
-        let guidEditorFactory = new Guid("{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}")
-        [<Literal>]
-        let guidEditorFactoryString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
         [<Literal>]
         let guidFSharpProjectPkgString = "91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C"
         [<Literal>]
