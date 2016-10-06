@@ -1586,8 +1586,9 @@ and seekReadAssemblyManifest ctxt idx =
       EntrypointElsewhere=(if fst ctxt.entryPointToken = TableNames.File then Some (seekReadFile ctxt (snd ctxt.entryPointToken)) else None)
       Retargetable = 0 <> (flags &&& 0x100)
       DisableJitOptimizations = 0 <> (flags &&& 0x4000)
-      JitTracking = 0 <> (flags &&& 0x8000) } 
-     
+      JitTracking = 0 <> (flags &&& 0x8000) 
+      IgnoreSymbolStoreSequencePoints = 0 <> (flags &&& 0x2000) } 
+
 and seekReadAssemblyRef ctxt idx = ctxt.seekReadAssemblyRef idx
 and seekReadAssemblyRefUncached ctxtH idx = 
     let ctxt = getHole ctxtH

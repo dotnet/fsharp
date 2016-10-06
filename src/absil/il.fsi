@@ -1392,6 +1392,7 @@ type ILAssemblyManifest =
       AssemblyLongevity: ILAssemblyLongevity; 
       DisableJitOptimizations: bool;
       JitTracking: bool;
+      IgnoreSymbolStoreSequencePoints: bool;
       Retargetable: bool;
       /// Records the types impemented by this asssembly in auxiliary 
       /// modules. 
