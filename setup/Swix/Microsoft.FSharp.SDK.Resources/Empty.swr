@@ -3,4 +3,4 @@ use vs
 package name=Microsoft.FSharp.SDK.Resources
         version=$(FSharpPackageVersion)
         vs.package.language=$(LocaleSpecificCulture)
-        vs.package.installSize=0
+        vs.package.installSize=1
