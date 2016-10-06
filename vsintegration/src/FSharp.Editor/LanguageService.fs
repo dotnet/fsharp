@@ -30,6 +30,12 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type internal SVsSettingsPersistenceManager = class end
 
 [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
 type internal FSharpLanguageService(package : FSharpPackage) = 
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
@@ -98,6 +104,12 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         | _ -> ()
 
 and [<Guid(FSharpCommonConstants.packageGuidString)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
+    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
     internal FSharpPackage() = 
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
