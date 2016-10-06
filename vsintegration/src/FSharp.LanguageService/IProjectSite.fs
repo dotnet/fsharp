@@ -43,6 +43,9 @@ type internal IProjectSite =
     /// target framework moniker
     abstract TargetFrameworkMoniker : string
 
+    /// Project Guid
+    abstract ProjectGuid : string
+
     /// timestamp the site was last loaded
     abstract LoadTime : System.DateTime 
 

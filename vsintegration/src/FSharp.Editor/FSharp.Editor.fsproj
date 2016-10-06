@@ -32,7 +32,6 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CommonConstants.fs" />
     <Compile Include="CommonRoslynHelpers.fs" />
-    <Compile Include="ProjectSite.fs" />
     <Compile Include="LanguageService.fs" />
     <Compile Include="ColorizationService.fs">
       <Link>Classification\ColorizationService.fs</Link>
@@ -48,9 +47,6 @@
     </Compile>
     <Compile Include="LanguageDebugInfoService.fs">
       <Link>Debugging\LanguageDebugInfoService.fs</Link>
-    </Compile>
-    <Compile Include="DocumentDifferenceService.fs">
-      <Link>Diagnostics\DocumentDifferenceService.fs</Link>
     </Compile>
     <Compile Include="DocumentDiagnosticAnalyzer.fs">
       <Link>Diagnostics\DocumentDiagnosticAnalyzer.fs</Link>

@@ -37,26 +37,26 @@ type private SourceTextData(lines: int) =
 type internal FSharpColorizationService() =
 
     static let DataCache = ConditionalWeakTable<SourceText, SourceTextData>()
+
+    static let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
+        match colorKind with
+        | FSharpTokenColorKind.Comment -> ClassificationTypeNames.Comment
+        | FSharpTokenColorKind.Identifier -> ClassificationTypeNames.Identifier
+        | FSharpTokenColorKind.Keyword -> ClassificationTypeNames.Keyword
+        | FSharpTokenColorKind.String -> ClassificationTypeNames.StringLiteral
+        | FSharpTokenColorKind.Text -> ClassificationTypeNames.Text
+        | FSharpTokenColorKind.UpperIdentifier -> ClassificationTypeNames.Identifier
+        | FSharpTokenColorKind.Number -> ClassificationTypeNames.NumericLiteral
+        | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
+        | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
+        | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
+        | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
+        | FSharpTokenColorKind.Default | _ -> ClassificationTypeNames.Text
     
     static let scanSourceLine(sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState) : SourceLineData =
     
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
-
-        let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
-            match colorKind with
-            | FSharpTokenColorKind.Comment -> ClassificationTypeNames.Comment
-            | FSharpTokenColorKind.Identifier -> ClassificationTypeNames.Identifier
-            | FSharpTokenColorKind.Keyword -> ClassificationTypeNames.Keyword
-            | FSharpTokenColorKind.String -> ClassificationTypeNames.StringLiteral
-            | FSharpTokenColorKind.Text -> ClassificationTypeNames.Text
-            | FSharpTokenColorKind.UpperIdentifier -> ClassificationTypeNames.Identifier
-            | FSharpTokenColorKind.Number -> ClassificationTypeNames.NumericLiteral
-            | FSharpTokenColorKind.InactiveCode -> ClassificationTypeNames.ExcludedCode 
-            | FSharpTokenColorKind.PreprocessorKeyword -> ClassificationTypeNames.PreprocessorKeyword 
-            | FSharpTokenColorKind.Operator -> ClassificationTypeNames.Operator
-            | FSharpTokenColorKind.TypeName  -> ClassificationTypeNames.ClassName
-            | FSharpTokenColorKind.Default | _ -> ClassificationTypeNames.Text
             
         let scanAndColorNextToken(lineTokenizer: FSharpLineTokenizer, lexState: Ref<FSharpTokenizerLexState>) : Option<FSharpTokenInfo> =
             let tokenInfoOption, nextLexState = lineTokenizer.ScanToken(lexState.Value)
@@ -144,17 +144,14 @@ type internal FSharpColorizationService() =
                     | None -> ()
                 , cancellationToken)
 
-        // FSROSLYNTODO: Due to issue 12732 on Roslyn side, semantic classification is tied to C#/VB only.
-        // Once that is exposed to F#, enable the below code path, and add tests accourdingly.
-        member this.AddSemanticClassificationsAsync(_, _, _, _) =
-            (*
+        member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             let computation = async {
-                try
-                    let options = CommonRoslynHelpers.GetFSharpProjectOptionsForRoslynProject(document.Project)
+                match FSharpLanguageService.GetOptions(document.Project.Id) with
+                | Some(options) ->
                     let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! parseResults = FSharpChecker.Instance.ParseFileInProject(document.Name, sourceText.ToString(), options)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-                    let! checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, document.Name, textVersion.GetHashCode(), textSpan.ToString(), options)
+                    let! checkResultsAnswer = FSharpChecker.Instance.CheckFileInProject(parseResults, document.FilePath, textVersion.GetHashCode(), textSpan.ToString(), options)
 
                     let extraColorizationData = match checkResultsAnswer with
                                                 | FSharpCheckFileAnswer.Aborted -> failwith "Compilation isn't complete yet"
@@ -163,13 +160,10 @@ type internal FSharpColorizationService() =
                                                 |> Seq.toList
 
                     result.AddRange(extraColorizationData)
-                with ex ->
-                    Assert.Exception(ex)
-                    raise(ex)
+                | None -> ()
             }
-            Task.Run(fun () -> Async.RunSynchronously(computation, cancellationToken = cancellationToken))
-            *)
-            Task.CompletedTask
-            
+
+            Task.Run(CommonRoslynHelpers.GetTaskAction(computation), cancellationToken)
+
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
