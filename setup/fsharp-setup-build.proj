@@ -78,9 +78,9 @@
     </Target>
 
     <Target Name="Build" DependsOnTargets="CollectSetupProjects">
-        <!-- Wix targets files doesn't handle localization parameters correctly. Rebuilding all to clean obj files between languages -->
+        <!-- Wix targets files doesn't handle localization parameters correctly. Cleaning before building files accross languages -->
         <MSBuild Projects="%(SetupProjects.ProjectPath)"
-                 Targets="Rebuild"
+                 Targets="Clean;Build"
                  Properties="LocaleCode=%(SetupProjects.LocaleCode);LocaleId=%(SetupProjects.LocaleId);LocaleParentCulture=%(SetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SetupProjects.LocaleSpecificCulture);IsLangPack=%(SetupProjects.IsLangPack);VSSku=%(SetupProjects.VSSku);FSharpPackageVersion=$(FSharpPackageVersion)"/>
     </Target>
     
