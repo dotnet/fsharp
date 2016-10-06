@@ -82,7 +82,10 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 if obj.ReferenceEquals(workspace.ProjectTracker.GetProject(projectId), null) then
                     let projectContextFactory = this.Package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                     let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-                    let outputFlag = (site.CompilerFlags() |> Seq.find(fun flag -> flag.StartsWith("-o:"))).Substring(3)
+                    let outputFlag = site.CompilerFlags() |> Seq.pick(fun flag ->
+                        if flag.StartsWith("-o:") then Some(flag.Substring(3))
+                        else if flag.StartsWith("--out:") then Some(flag.Substring(6))
+                        else None)
                     let outputPath = if Path.IsPathRooted(outputFlag) then outputFlag else Path.Combine(Path.GetDirectoryName(projectFileName), outputFlag)
 
                     let projectContext = projectContextFactory.CreateProjectContext(FSharpCommonConstants.FSharpLanguageName, projectFileName, projectFileName, projectGuid, hier, outputPath, errorReporter)
