@@ -3,6 +3,7 @@ use vs
 package name=Microsoft.FSharp.SDK.Core
         version=$(FSharpPackageVersion)
         vs.package.type=msi
+        vs.package.installSize=37223424
 
 vs.payloads
   vs.payload source="$(BinariesFolder)\msi\Microsoft.FSharp.SDK.Core.msi"
