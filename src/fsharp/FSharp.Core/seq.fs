@@ -890,7 +890,7 @@ namespace Microsoft.FSharp.Collections
             and Filter<'T,'V> (filter:'T->bool, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>()
 
-                default this.CreateMap<'S> (map:'S->'T) = upcast MapThenFilter<_,_,_> (map, filter, next) 
+                override this.CreateMap<'S> (map:'S->'T) = upcast MapThenFilter<_,_,_> (map, filter, next) 
 
                 override __.ProcessNext (input:'T) : bool = 
                     if filter input then
