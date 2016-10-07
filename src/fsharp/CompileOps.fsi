@@ -379,6 +379,7 @@ type TcConfigBuilder =
     member AddIncludePath : range * string * string -> unit
     member AddReferencedAssemblyByPath : range * string -> unit
     member RemoveReferencedAssemblyByPath : range * string -> unit
+    member AddEmbeddedSourceFile : string -> unit
     member AddEmbeddedResource : string -> unit
     
     static member SplitCommandLineResourceInfo : string -> string * string * ILResourceAccess

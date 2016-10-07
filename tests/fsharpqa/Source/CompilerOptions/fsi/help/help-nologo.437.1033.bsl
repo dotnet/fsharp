@@ -17,6 +17,9 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
                                specified and enables attaching a debugger to a
                                running program. 'portable' is a cross-platform
                                format).
+--embed[+|-]                             Embed all source files in the portable PDB file
+--embed:<file;...>                       Embed specific source files in the portable PDB
+file
 --optimize[+|-]                Enable optimizations (Short form: -O)
 --tailcalls[+|-]               Enable or disable tailcalls
 --crossoptimize[+|-]           Enable or disable cross-module optimizations

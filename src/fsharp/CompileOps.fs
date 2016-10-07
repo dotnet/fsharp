@@ -2376,7 +2376,7 @@ type TcConfigBuilder =
             | None -> false
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
-           
+
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
@@ -2389,7 +2389,9 @@ type TcConfigBuilder =
                     ComputeMakePathAbsolute pathLoadedFrom path
             if not (List.contains path (List.map snd tcConfigB.loadedSources)) then 
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,path)
-                
+
+    member tcConfigB.AddEmbeddedSourceFile (file) = 
+        tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename

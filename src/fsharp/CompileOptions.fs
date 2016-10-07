@@ -573,7 +573,7 @@ let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) =
            
         CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs,n)), None,
                             Some (FSComp.SR.optsNowarn())); 
-                            
+
         CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs,n)), None,
                             Some(FSComp.SR.optsWarnOn()));                             
         
@@ -669,10 +669,10 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
                            Some (FSComp.SR.optsDebug(if isFsi then "pdbonly" else "full")))
 
         CompilerOption("embed", tagNone, OptionSwitch (SetEmbedAllSourceSwitch tcConfigB) , None, 
-                           Some (FSComp.SR.optsOptimize()))
+                           Some (FSComp.SR.optsEmbedAllSource()))
 
-        CompilerOption("embed", tagFileList, OptionStringList (fun s ->SetEmbedListSwitch, None,
-                           Some (FSComp.SR.optsLib()))
+        CompilerOption("embed", tagFileList, OptionStringList (fun f -> tcConfigB.AddEmbeddedSourceFile f), None, 
+                           Some ( FSComp.SR.optsEmbedSource())); 
 
         CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 
                            Some (FSComp.SR.optsOptimize()))
