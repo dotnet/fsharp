@@ -819,8 +819,6 @@ namespace Microsoft.FSharp.Collections
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> () =
                 abstract Create<'V> : SeqComponent<'U,'V> -> SeqComponent<'T,'V>
-                
-                member __.Compose<'V> (next:SeqComponent<'U,'V>) = Unchecked.defaultof<_>
 
             and ComposedFactory<'T,'U,'V> (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>) =
                 inherit SeqComponentFactory<'T,'V> ()
