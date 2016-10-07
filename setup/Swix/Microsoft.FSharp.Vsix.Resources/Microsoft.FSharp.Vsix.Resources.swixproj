@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project InitialTargets="CheckPropertiesArePassed" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
@@ -8,47 +9,44 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.VSIX.$(VSSku).$(LocaleCode)</OutputName>
+    <OutputName>Microsoft.FSharp.VSIX.$(VSSku).Resources.$(LocaleCode)</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(IsLangPack)' == 'false'">
-    <OutputType>manifest</OutputType>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(IsLangPack)' == 'true'">
     <OutputType>vsix</OutputType>
   </PropertyGroup>
-
+  
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleRegion=$(LocaleRegion)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleParentCulture=$(LocaleParentCulture)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleSpecificCulture=$(LocaleSpecificCulture)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(IsLangPack)' == 'false'">
-    <Package Include="Core.Files.swr" />
+  
+  <ItemGroup Condition="'$(IsLangPack)' != 'true'">
+    <Package Include="Empty.swr" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(IsLangPack)' == 'true'">
-    <Package Include="LangPack.Files.swr" />
-    <Package Include="LangPack.$(VSSku).Templates.swr" />
+    <Package Include="Files.swr" />
+    <Package Include="$(VSSku).Templates.swr" />
   </ItemGroup>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- SWIX plugin adds the built vsix to signing automatically -->
   </Target>
   
-  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
+  <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
-    <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
+    <Error Condition="'$(LocaleParentCulture)' == ''" Text="A 'LocaleParentCulture' property must be passed to the project." />
+    <Error Condition="'$(LocaleSpecificCulture)' == ''" Text="A 'LocaleSpecificCulture' property must be passed to the project." />
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
   </Target>
 </Project>

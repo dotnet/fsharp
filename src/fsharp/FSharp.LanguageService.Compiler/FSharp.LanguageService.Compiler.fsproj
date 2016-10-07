@@ -97,9 +97,6 @@
     <Compile Include="..\..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\FlatList.fs">
-      <Link>Utilities\FlatList.fs</Link>
-    </Compile>
     <Compile Include="..\QueueList.fs">
       <Link>Utilities\QueueList.fs</Link>
     </Compile>

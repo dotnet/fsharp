@@ -5,13 +5,12 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
-    <OutputType>vsix</OutputType>
+    <OutputType>manifest</OutputType>
+    <OutputName>Microsoft.FSharp.SDK.Core</OutputName>
     <IsPackage>true</IsPackage>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
-    <PackagesFolder>$(FSharpSourcesRoot)\..\packages</PackagesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.Dependencies</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -19,13 +18,11 @@
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
     <Package Include="Files.swr" />
-    <Package Include="Dependencies.swr" />
   </ItemGroup>
 
   <Target Name="CheckPropertiesArePassed">
@@ -33,6 +30,6 @@
   </Target>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
-    <!-- SWIX plugin adds the built vsix to signing automatically -->
+    <!-- MSI is already signed before wrapping it here -->
   </Target>
 </Project>

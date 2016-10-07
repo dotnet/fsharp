@@ -1,0 +1,13 @@
+use vs
+
+package name=Microsoft.FSharp.VSIX.$(VSSku).Core
+        version=$(FSharpPackageVersion)
+        vs.package.type=vsix
+        vs.package.vsixId=VisualFSharp
+        vs.package.installSize=32108544
+
+vs.dependencies
+  vs.dependency id=Microsoft.VisualStudio.MinShell
+
+vs.payloads
+  vs.payload source="$(BinariesFolder)\net40\bin\VisualFSharp$(VSSku).vsix"

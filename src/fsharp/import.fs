@@ -158,7 +158,7 @@ let rec ImportILType (env:ImportMap) m tinst typ =
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
-        let inst = tspec.GenericArgs |> ILList.toList |> List.map (ImportILType env m tinst) 
+        let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
@@ -178,7 +178,7 @@ let rec CanImportILType (env:ImportMap) m typ =
     | ILType.Array(_bounds,ty) -> CanImportILType env m ty
     | ILType.Boxed  tspec | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
-        && tspec.GenericArgs |> ILList.toList |> List.forall (CanImportILType env m) 
+        && tspec.GenericArgs |> List.forall (CanImportILType env m) 
     | ILType.Byref ty -> CanImportILType env m ty
     | ILType.Ptr ty  -> CanImportILType env m ty
     | ILType.FunctionPointer _ -> true
@@ -387,7 +387,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps,gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> ILList.toList |> List.map (fun ilty -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilty),m) )
+            let constraints = gp.Constraints |> List.map (fun ilty -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilty),m) )
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m)::constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m)::constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m)::constraints) else constraints

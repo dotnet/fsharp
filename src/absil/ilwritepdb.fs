@@ -431,6 +431,8 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
+        metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
+
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
         let writeMethodScope scope =

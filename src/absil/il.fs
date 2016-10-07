@@ -288,115 +288,6 @@ module SHA1 =
 let sha1HashBytes s = SHA1.sha1HashBytes s
 
 // --------------------------------------------------------------------
-// ILList
-// -------------------------------------------------------------------- 
-
-/// ILList is the type used to store relatively small lists in the Abstract IL data structures, 
-/// i.e. for ILTypes, ILGenericArgs, ILParameters and ILLocals.
-
-// This #if starts isolating the representation for "ILTypes", "ILGenericArgs", "ILParameters" and "ILLocals"
-// with the aim of making it possible to easily switch between using arrays and lists as representations for these.
-// THis is because many allocations of these small lists appear in memory logs.
-//
-// The "obviouos" step is to use arrays instead of lists. However, this is routinely and surprisingly disappointing.  
-// As a result, we haven't enabled the use of arrays: we had expected this change to give a perf gain, 
-// but it does not!  It even gives a small perf loss. We've tried this approach on several other occasions 
-// for other data structures and each time been surprised that there's no perf gain. It's possible that
-// arrays-of-references are just not as fast as we expect here: either the runtime check on assignment 
-// into the array, or some kind of write barrier may be degrading performance. 
-//
-// However, There must surely be some better data structure here than allocating endless linked-list containing one item 
-// each. One option is to use a linked-list structure that stores multiple elements in each allocation, e.g. 
-//
-//    type ThreeList<'T> = T of 'T * 'T * 'T * ThreeList<'T>
-//
-// and a similar hack is used as the underlying representation fot List<'T>, where we store a "constant" value to indicate the end 
-// of the sequence. Some of the 'T values would be empty to indicate a partially-filled node. Storing an integer would of course
-// make things clearer, and allow values-with-null to be stored in the data structure:
-//
-//    type ThreeList<'T> = T of int * 'T * 'T * 'T * ThreeList<'T>
-//
-// Since we haven't quite given up on moving away from lists as yet, the #if below still feels useful 
-// as it isolates the representation of these data structures from the rest of the compiler.  
-// 
-// Note this is similar to the use of "Flat Lists" in the tast.fs data structures where we tried to eliminate 
-// the use of lists in the tast.fs nodes of the compiler, but that also didn't give perf gains.
-//
-// If it turns out that we just eventually completely abandon these exercises then we can eliminate this code and 
-// universally replace "ILList" and "FlatList" by "List".
-
-#if ABSIL_USES_ARRAY_FOR_ILLIST
-type ILList<'T> = 'T[]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ILList = 
-    let inline map f x = Array.map f x
-    let inline mapi f x = Array.mapi f x
-    let inline isEmpty (x:ILList<_>) = x.Length <> 0
-    let inline toArray (x:ILList<_>) =  x
-    let inline ofArray (x:'T[]) =  x
-    [<System.Obsolete("please use IList.item")>]
-    let inline nth n (x:'T[]) = x.[n]
-    let inline item n (x:'T[]) = x.[n]
-    let inline toList (x:ILList<_>) =  Array.toList x
-    let inline ofList (x:'T list)  = Array.ofList x
-    let inline lengthsEqAndForall2 f x1 x2 = Array.lengthsEqAndForall2 f x1 x2
-    let inline init n f = Array.init n f
-    let inline empty<'T> = ([| |]  :'T[])
-    let inline iter f (x:'T[]) =  Array.iter f x
-    let inline iteri f (x:'T[]) =  Array.iteri f x
-    let inline foldBack f (x:'T[]) z =  Array.foldBack f x z
-    let inline exists f x =  Array.exists f x 
-#endif
-
-//#if ABSIL_USES_LIST_FOR_ILLIST
-type ILList<'T> = 'T list
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ILList = 
-    let inline map f x = List.map f x
-    let inline mapi f x = List.mapi f x
-    let inline isEmpty x = match x with [] -> true | _ -> false
-    let inline toArray (x:ILList<_>) =  List.toArray x
-    let inline ofArray (x:'T[]) =  List.ofArray x
-    let inline iter f (x:'T list) =  List.iter f x
-    let inline iteri f (x:'T list) =  List.iteri f x
-    [<System.Obsolete("please use IList.item")>]
-    let inline nth (x:'T list) n =  List.item n x
-    let inline item n (x:'T list) =  List.item n x
-    let inline toList (x:ILList<_>) =  x
-    let inline ofList (x:'T list)  = x
-    let inline lengthsEqAndForall2 f x1 x2 = List.lengthsEqAndForall2 f x1 x2
-    let inline init n f = List.init n f
-    let inline empty<'T> = ([ ]  :'T list)
-    let inline foldBack f x z =  List.foldBack f x z
-    let inline exists f x =  List.exists f x 
-//#endif // ABSIL_USES_LIST_FOR_ILLIST
-
-#if ABSIL_USES_THREELIST_FOR_ILLIST
-type ILList<'T> = ThreeList<'T>
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ILList = 
-    let inline map f x = ThreeList.map f x
-    let inline mapi f x = ThreeList.mapi f x
-    let inline isEmpty x = ThreeList.isEmpty x
-    let inline toArray (x:ILList<_>) =  ThreeList.toArray x
-    let inline ofArray (x:'T[]) =  ThreeList.ofArray x
-    let inline iter f (x:ILList<'T>) =  ThreeList.iter f x
-    let inline iteri f (x:ILList<'T>) =  ThreeList.iteri f x
-    let inline toList (x:ILList<_>) =  ThreeList.toList x
-    [<System.Obsolete("please use IList.item")>]
-    let inline nth (x:ILList<'T>) n =  ThreeList.nth x n
-    let inline item n (x:ILList<'T>) =  ThreeList.nth n x
-    let inline ofList (x:'T list)  = ThreeList.ofList x
-    let inline lengthsEqAndForall2 f x1 x2 = ThreeList.lengthsEqAndForall2 f x1 x2
-    let inline init n f = ThreeList.init n f
-    let inline empty<'T> = ThreeList.empty<'T>
-    let inline foldBack f x z =  ThreeList.foldBack f x z
-    let inline exists f x =  ThreeList.exists f x 
-#endif
-
-// --------------------------------------------------------------------
 // 
 // -------------------------------------------------------------------- 
 
@@ -665,7 +556,7 @@ type ILTypeRef =
     member x.ApproxId = x.hashCode
 
     member x.AsBoxedType (tspec:ILTypeSpec) = 
-        match tspec.tspecInst.Length with 
+        match List.length tspec.tspecInst with 
         | 0 -> 
             let v = x.asBoxedType
             match box v with 
@@ -727,13 +618,13 @@ and
     member x.Name=x.TypeRef.Name
     member x.GenericArgs=x.tspecInst
     static member Create(tref,inst) = { tspecTypeRef =tref; tspecInst=inst }
-    override x.ToString() = x.TypeRef.ToString() + (if ILList.isEmpty x.GenericArgs then "" else "<...>")
+    override x.ToString() = x.TypeRef.ToString() + if List.isEmpty x.GenericArgs then "" else "<...>"
     member x.BasicQualifiedName = 
         let tc = x.TypeRef.BasicQualifiedName
-        if ILList.isEmpty x.GenericArgs then
+        if List.isEmpty x.GenericArgs then
             tc
         else 
-            tc + "[" + String.concat "," (x.GenericArgs |> ILList.map (fun arg -> "[" + arg.QualifiedNameWithNoShortPrimaryAssembly + "]")) + "]"
+            tc + "[" + String.concat "," (x.GenericArgs |> List.map (fun arg -> "[" + arg.QualifiedNameWithNoShortPrimaryAssembly + "]")) + "]"
 
     member x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
         x.TypeRef.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic)
@@ -783,18 +674,11 @@ and [<StructuralEquality; StructuralComparison>]
       ArgTypes: ILTypes;
       ReturnType: ILType }
 
-and ILGenericArgs = ILList<ILType>
-and ILTypes = ILList<ILType>
+and ILGenericArgs = list<ILType>
+and ILTypes = list<ILType>
 
 
-let emptyILTypes = (ILList.empty : ILTypes)
-let emptyILGenericArgs = (ILList.empty: ILGenericArgs)
-
-let mkILTypes xs = (match xs with [] -> emptyILTypes | _ -> ILList.ofList xs)
-let mkILGenericArgs xs = (match xs with [] -> emptyILGenericArgs | _ -> ILList.ofList xs)
-
-let mkILCallSigRaw (cc,args,ret) = { ArgTypes=args; CallingConv=cc; ReturnType=ret}
-let mkILCallSig (cc,args,ret) = mkILCallSigRaw(cc, mkILTypes args, ret)
+let mkILCallSig (cc,args,ret) = { ArgTypes=args; CallingConv=cc; ReturnType=ret}
 let mkILBoxedType (tspec:ILTypeSpec) = tspec.TypeRef.AsBoxedType tspec
 
 type ILMethodRef =
@@ -808,11 +692,11 @@ type ILMethodRef =
     member x.CallingConv = x.mrefCallconv
     member x.Name = x.mrefName
     member x.GenericArity = x.mrefGenericArity
-    member x.ArgCount = x.mrefArgs.Length
+    member x.ArgCount = List.length x.mrefArgs
     member x.ArgTypes = x.mrefArgs
     member x.ReturnType = x.mrefReturn
 
-    member x.CallingSignature = mkILCallSigRaw (x.CallingConv,x.ArgTypes,x.ReturnType)
+    member x.CallingSignature = mkILCallSig (x.CallingConv,x.ArgTypes,x.ReturnType)
     static member Create(a,b,c,d,e,f) = 
         { mrefParent= a;mrefCallconv=b;mrefName=c;mrefGenericArity=d; mrefArgs=e;mrefReturn=f }
     override x.ToString() = x.EnclosingTypeRef.ToString() + "::" + x.Name + "(...)"
@@ -1152,9 +1036,7 @@ type ILLocal =
       IsPinned: bool;
       DebugInfo: (string * int * int) option }
       
-type ILLocals = ILList<ILLocal>
-let emptyILLocals = (ILList.empty : ILLocals)
-let mkILLocals xs = (match xs with [] -> emptyILLocals | _ -> ILList.ofList xs)
+type ILLocals = list<ILLocal>
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILMethodBody = 
@@ -1369,10 +1251,7 @@ type ILParameter =
       IsOptional: bool;
       CustomAttrs: ILAttributes }
 
-type ILParameters = ILList<ILParameter>
-let emptyILParameters = (ILList.empty : ILParameters)
-
-let mkILParametersRaw x = (match x with [] -> emptyILParameters | _ -> ILList.ofList x)
+type ILParameters = list<ILParameter>
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILReturn = 
@@ -1418,8 +1297,7 @@ type MethodCodeKind =
 let mkMethBodyAux mb = ILLazyMethodBody (Lazy.CreateFromValue mb)
 let mkMethBodyLazyAux mb = ILLazyMethodBody mb
 
-let typesOfILParamsRaw (ps:ILParameters) : ILTypes = ps |> ILList.map (fun p -> p.Type) 
-let typesOfILParamsList (ps:ILParameter list) = ps |> List.map (fun p -> p.Type) 
+let typesOfILParams (ps:ILParameters) : ILTypes = ps |> List.map (fun p -> p.Type)
 
 [<StructuralEquality; StructuralComparison>]
 type ILGenericVariance =
@@ -1466,14 +1344,14 @@ type ILMethodDef =
       IsNoInline: bool;
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
-    member x.ParameterTypes = typesOfILParamsRaw x.Parameters
+    member x.ParameterTypes = typesOfILParams x.Parameters
     // Whidbey feature: SafeHandle finalizer must be run 
     member md.Code = 
           match md.mdBody.Contents with 
           | MethodBody.IL il-> Some il.Code
           | _ -> None
     member x.IsIL = match x.mdBody.Contents with | MethodBody.IL _ -> true | _ -> false
-    member x.Locals = match x.mdBody.Contents with | MethodBody.IL il -> il.Locals | _ -> emptyILLocals
+    member x.Locals = match x.mdBody.Contents with | MethodBody.IL il -> il.Locals | _ -> []
 
     member x.MethodBody = match x.mdBody.Contents with MethodBody.IL il -> il | _ -> failwith "not IL"
 
@@ -1492,7 +1370,7 @@ type ILMethodDef =
     member x.IsCheckAccessOnOverride= match x.mdKind with | MethodKind.Virtual v -> v.IsCheckAccessOnOverride   | _ -> invalidOp "not virtual"
     member x.IsAbstract             = match x.mdKind with | MethodKind.Virtual v -> v.IsAbstract | _ -> invalidOp "not virtual"
 
-    member md.CallingSignature =  mkILCallSigRaw (md.CallingConv,md.ParameterTypes,md.Return.Type)
+    member md.CallingSignature =  mkILCallSig (md.CallingConv,md.ParameterTypes,md.Return.Type)
 
 
 /// Index table by name and arity. 
@@ -1521,10 +1399,9 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
         member x.GetEnumerator() = (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
 
     member x.AsArray = array.Value
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsList = array.Value|> Array.toList
     member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
-    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> x.Parameters.Length = arity) 
-
+    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
 [<NoComparison; NoEquality>]
 type ILEventDef =
@@ -1837,7 +1714,7 @@ type ILType with
     member x.GenericArgs =
       match x with 
       | ILType.Boxed tspec | ILType.Value tspec -> tspec.GenericArgs
-      | _ -> emptyILGenericArgs
+      | _ -> []
     member x.IsTyvar =
       match x with 
       | ILType.TypeVar _ -> true | _ -> false
@@ -1853,8 +1730,7 @@ let mkILTyRef (scope,nm) =  mkILNestedTyRef (scope,[],nm)
 
 type ILGenericArgsList = ILType list
 
-let mkILTySpecRaw (tref,inst) =  ILTypeSpec.Create(tref, inst)
-let mkILTySpec (tref,inst) =  mkILTySpecRaw (tref, mkILGenericArgs inst)
+let mkILTySpec (tref,inst) =  ILTypeSpec.Create(tref, inst)
 
 let mkILNonGenericTySpec tref =  mkILTySpec (tref,[])
 
@@ -1864,12 +1740,10 @@ let mkILTyRefInTyRef (tref:ILTypeRef,nm) =
 let mkILTy boxed tspec = 
   match boxed with AsObject -> mkILBoxedType tspec | _ -> ILType.Value tspec
 
-let mkILNamedTy vc tref tinst = mkILTy vc (ILTypeSpec.Create(tref, mkILGenericArgs tinst))
-let mkILNamedTyRaw vc tref tinst = mkILTy vc (ILTypeSpec.Create(tref, tinst))
+let mkILNamedTy vc tref tinst = mkILTy vc (ILTypeSpec.Create(tref, tinst))
 
 let mkILValueTy tref tinst = mkILNamedTy AsValue tref tinst
 let mkILBoxedTy tref tinst = mkILNamedTy AsObject tref tinst
-let mkILBoxedTyRaw tref tinst = mkILNamedTyRaw AsObject tref tinst
 
 let mkILNonGenericValueTy tref = mkILNamedTy AsValue tref []
 let mkILNonGenericBoxedTy tref = mkILNamedTy AsObject tref []
@@ -1913,7 +1787,7 @@ let mkILTypeForGlobalFunctions scoref = mkILBoxedType (mkILNonGenericTySpec (ILT
 let isTypeNameForGlobalFunctions d = (d = typeNameForGlobalFunctions)
 
 
-let mkILMethRefRaw (tref,callconv,nm,gparams,args,rty) =
+let mkILMethRef (tref,callconv,nm,gparams,args,rty) =
     { mrefParent=tref; 
       mrefCallconv=callconv;
       mrefGenericArity=gparams;
@@ -1921,25 +1795,18 @@ let mkILMethRefRaw (tref,callconv,nm,gparams,args,rty) =
       mrefArgs=args;
       mrefReturn=rty}
 
-let mkILMethRef (tref,callconv,nm,gparams,args,rty) = mkILMethRefRaw (tref,callconv,nm,gparams,mkILTypes args,rty)
-
-let mkILMethSpecForMethRefInTyRaw (mref,typ,minst) = 
+let mkILMethSpecForMethRefInTy (mref,typ,minst) = 
     { mspecMethodRef=mref;
       mspecEnclosingType=typ;
       mspecMethodInst=minst }
-
-let mkILMethSpecForMethRefInTy (mref,typ,minst) = mkILMethSpecForMethRefInTyRaw (mref,typ,mkILGenericArgs minst)
 
 let mkILMethSpec (mref, vc, tinst, minst) = mkILMethSpecForMethRefInTy (mref,mkILNamedTy vc mref.EnclosingTypeRef tinst, minst)
 
 let mk_mspec_in_tref (tref,vc,cc,nm,args,rty,tinst,minst) =
   mkILMethSpec (mkILMethRef ( tref,cc,nm,List.length minst,args,rty),vc,tinst,minst)
 
-let mkILMethSpecInTyRaw (typ:ILType, cc, nm, args, rty, minst:ILGenericArgs) =
-  mkILMethSpecForMethRefInTyRaw (mkILMethRefRaw (typ.TypeRef,cc,nm,minst.Length,args,rty),typ,minst)
-
-let mkILMethSpecInTy (typ:ILType, cc, nm, args, rty, minst) =
-  mkILMethSpecForMethRefInTy (mkILMethRef (typ.TypeRef,cc,nm,List.length minst,args,rty),typ,minst)
+let mkILMethSpecInTy (typ:ILType, cc, nm, args, rty, minst:ILGenericArgs) =
+  mkILMethSpecForMethRefInTy (mkILMethRef (typ.TypeRef,cc,nm,minst.Length,args,rty),typ,minst)
 
 let mkILNonGenericMethSpecInTy (typ,cc,nm,args,rty) = 
   mkILMethSpecInTy (typ,cc,nm,args,rty,[])
@@ -2030,7 +1897,7 @@ let mkILTyvarTy tv = ILType.TypeVar tv
 
 let mkILSimpleTypar nm =
    { Name=nm;
-     Constraints=emptyILTypes;
+     Constraints = []
      Variance=NonVariant;
      HasReferenceTypeConstraint=false;
      HasNotNullableValueTypeConstraint=false;
@@ -2040,11 +1907,7 @@ let mkILSimpleTypar nm =
 let gparam_of_gactual (_ga:ILType) = mkILSimpleTypar "T"
 
 let mkILFormalTypars (x: ILGenericArgsList) = List.map gparam_of_gactual x
-let mkILFormalTyparsRaw (x: ILGenericArgs) = ILList.toList (ILList.map gparam_of_gactual x)
 
-let mkILFormalGenericArgsRaw (gparams:ILGenericParameterDefs)  =
-    ILList.ofList (List.mapi (fun n _gf -> mkILTyvarTy (uint16 n)) gparams)
- 
 let mkILFormalGenericArgs (gparams:ILGenericParameterDefs)  =
     List.mapi (fun n _gf -> mkILTyvarTy (uint16 n)) gparams
  
@@ -2637,7 +2500,7 @@ let rec rescopeILTypeSpecQuick scoref (tspec:ILTypeSpec) =
     let tref = tspec.TypeRef
     let tinst = tspec.GenericArgs
     let qtref = qrescope_tref scoref tref
-    if ILList.isEmpty tinst && Option.isNone qtref then 
+    if List.isEmpty tinst && Option.isNone qtref then 
         None (* avoid reallocation in the common case *)
     else
         match qtref with 
@@ -2667,11 +2530,11 @@ and rescopeILType scoref typ =
     | x -> x
 
 and rescopeILTypes scoref i = 
-    if ILList.isEmpty i then i
-    else ILList.map (rescopeILType scoref) i
+    if List.isEmpty i then i
+    else List.map (rescopeILType scoref) i
 
 and rescopeILCallSig scoref  csig = 
-    mkILCallSigRaw (csig.CallingConv,rescopeILTypes scoref csig.ArgTypes,rescopeILType scoref csig.ReturnType)
+    mkILCallSig (csig.CallingConv,rescopeILTypes scoref csig.ArgTypes,rescopeILType scoref csig.ReturnType)
 
 let rescopeILMethodRef scoref (x:ILMethodRef) =
     { mrefParent = rescopeILTypeRef scoref x.EnclosingTypeRef;
@@ -2708,13 +2571,13 @@ and instILTypeAux numFree (inst:ILGenericArgs) typ =
         if v - numFree >= top then 
             ILType.TypeVar (uint16 (v - top)) 
         else 
-            ILList.item (v - numFree) inst
+            List.item (v - numFree) inst
     | x -> x
     
-and instILGenericArgsAux numFree inst i = ILList.map (instILTypeAux numFree inst) i
+and instILGenericArgsAux numFree inst i = List.map (instILTypeAux numFree inst) i
 
 and instILCallSigAux numFree inst  csig = 
-  mkILCallSigRaw  (csig.CallingConv,ILList.map (instILTypeAux numFree inst) csig.ArgTypes,instILTypeAux numFree inst csig.ReturnType)
+  mkILCallSig  (csig.CallingConv,List.map (instILTypeAux numFree inst) csig.ArgTypes,instILTypeAux numFree inst csig.ReturnType)
 
 let instILType     i t = instILTypeAux 0 i t
 
@@ -2774,7 +2637,7 @@ let mkILCtor (access,args,impl) =
     { Name=".ctor";
       mdKind=MethodKind.Ctor;
       CallingConv=ILCallingConv.Instance;
-      Parameters=mkILParametersRaw args;
+      Parameters = args
       Return= mkILVoidReturn;
       Access=access;
       mdBody= mkMethBodyAux impl;
@@ -2827,7 +2690,7 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       Name=nm;
       CallingConv = ILCallingConv.Static;
       mdKind=MethodKind.Static;
-      Parameters=  mkILParametersRaw args;
+      Parameters = args
       Return= ret;
       Access=access;
       HasSecurity=false;
@@ -2856,7 +2719,7 @@ let mkILClassCtor impl =
       CallingConv=ILCallingConv.Static;
       GenericParams=mkILEmptyGenericParams;
       mdKind=MethodKind.Cctor;
-      Parameters=emptyILParameters;
+      Parameters = []
       Return=mkILVoidReturn;
       Access=ILMemberAccess.Private; 
       IsEntryPoint=false;
@@ -2896,7 +2759,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
           IsNewSlot = false;
           IsCheckAccessOnOverride=true;
           IsAbstract=(match impl with MethodBody.Abstract -> true | _ -> false) ; };
-    Parameters= mkILParametersRaw actual_args;
+    Parameters=actual_args;
     Return=actual_ret;
     Access=access;
     IsEntryPoint=false;
@@ -2925,7 +2788,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
     mdKind=MethodKind.NonVirtual;
-    Parameters= mkILParametersRaw actual_args;
+    Parameters=actual_args;
     Return=actual_ret;
     Access=access;
     IsEntryPoint=false;
@@ -2987,7 +2850,7 @@ let cdef_cctorCode2CodeOrCreate tag f cd =
     let cctor = 
         match mdefs.FindByName ".cctor" with 
         | [mdef] -> mdef
-        | [] -> mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode [ ],tag))
+        | [] -> mkILClassCtor (mkMethodBody (false,[],1,nonBranchingInstrsToCode [ ],tag))
         | _ -> failwith "bad method table: more than one .cctor found"
         
     let methods = ILMethodDefs (fun () -> [| yield f cctor; for md in mdefs do if md.Name <> ".cctor" then yield md |])
@@ -3000,7 +2863,7 @@ let code_of_mdef (md:ILMethodDef) =
     | None -> failwith "code_of_mdef: not IL" 
 
 let mkRefToILMethod (tref, md: ILMethodDef) =
-    mkILMethRefRaw (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
+    mkILMethRef (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
 
 let mkRefToILField (tref,fdef:ILFieldDef) =   mkILFieldRef (tref, fdef.Name, fdef.Type)
 
@@ -3093,7 +2956,7 @@ let mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access) =
     mkILCtor(access,
             flds |> List.map (fun (pnm,_,ty) -> mkILParamNamed (pnm,ty)),
             mkMethodBody
-              (false,emptyILLocals,2,
+              (false,[],2,
                nonBranchingInstrsToCode
                  begin 
                    (match tag with Some x -> [I_seqpoint x] | None -> []) @ 
@@ -3128,7 +2991,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     Name=nm;
     GenericParams= genparams;
     Access = access;
-    Implements = mkILTypes impl;
+    Implements = impl
     IsAbstract = false;
     IsSealed = false;
     IsSerializable = false;
@@ -3154,7 +3017,7 @@ let mkRawDataValueTypeDef ilg (nm,size,pack) =
     Name = nm;
     GenericParams= [];
     Access = ILTypeDefAccess.Private;
-    Implements = emptyILTypes;
+    Implements = []
     IsAbstract = false;
     IsSealed = true;
     Extends = Some ilg.typ_ValueType;
@@ -3848,7 +3711,7 @@ type ILTypeSigParser(tstring : string) =
         let tref = mkILTyRef(scope, typeName)
         let genericArgs = 
             match specializations with
-            | None -> emptyILGenericArgs
+            | None -> []
             | Some(genericArgs) -> genericArgs
         let tspec = ILTypeSpec.Create(tref,genericArgs)
         let ilty = 
@@ -3962,7 +3825,7 @@ let decodeILAttribData ilg (ca: ILAttribute) =
           let nh,sigptr = parseVal h sigptr
           let nt,sigptr = parseFixed t sigptr
           nh ::nt, sigptr
-    let fixedArgs,sigptr = parseFixed (ILList.toList ca.Method.FormalArgTypes) sigptr
+    let fixedArgs,sigptr = parseFixed ca.Method.FormalArgTypes sigptr
     let nnamed,sigptr = sigptr_get_u16 bytes sigptr
     let rec parseNamed acc n sigptr = 
       if n = 0 then List.rev acc else
@@ -4059,7 +3922,7 @@ and refs_of_fspec s x =
     refs_of_fref s x.FieldRef;
     refs_of_typ s x.EnclosingType
 
-and refs_of_typs s l = ILList.iter (refs_of_typ s) l
+and refs_of_typs s l = List.iter (refs_of_typ s) l
   
 and refs_of_token s x = 
     match x with
@@ -4112,7 +3975,7 @@ and refs_of_il_code s (c: ILCode)  =
         | _ -> ()))
 
 and refs_of_ilmbody s (il: ILMethodBody) = 
-    ILList.iter (refs_of_local s) il.Locals
+    List.iter (refs_of_local s) il.Locals
     refs_of_il_code s il.Code 
     
 and refs_of_local s loc = refs_of_typ s loc.Type
@@ -4124,7 +3987,7 @@ and refs_of_mbody s x =
     | _ -> ()
 
 and refs_of_mdef s md = 
-    ILList.iter (refs_of_param s) md.Parameters;
+    List.iter (refs_of_param s) md.Parameters;
     refs_of_return s md.Return;
     refs_of_mbody s  md.mdBody.Contents;
     refs_of_custom_attrs s  md.CustomAttrs;
@@ -4272,7 +4135,7 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
       possibles |> List.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
-          (md.Parameters,mref.ArgTypes) ||> ILList.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
+          (md.Parameters,mref.ArgTypes) ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
           r md.Return.Type = mref.ReturnType) with 
     | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)

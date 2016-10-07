@@ -96,6 +96,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -121,13 +122,13 @@ if /i '%ARG%' == 'microbuild' (
     set BUILD_VS=1
     set BUILD_SETUP=1
     
-    set TEST_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
+    set TEST_COMPILERUNIT=1
+    set TEST_NET40_COREUNIT=1
     set TEST_CORECLR=0
-    set TEST_PORTABLE_COREUNIT=0
-    set TEST_VS=0
-    set TEST_FSHARP_SUITE=0
-    set TEST_FSHARPQA_SUITE=0
+    set TEST_PORTABLE_COREUNIT=1
+    set TEST_VS=1
+    set TEST_FSHARP_SUITE=1
+    set TEST_FSHARPQA_SUITE=1
     set SKIP_EXPENSIVE_TESTS=1
 )
 
@@ -142,6 +143,7 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -162,6 +164,7 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=1
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=0
@@ -418,14 +421,12 @@ call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
     @if ERRORLEVEL 1 (
         type testresults\FSharpNunit_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
         goto :failed_tests
     )
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (

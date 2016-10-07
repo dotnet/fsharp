@@ -2065,7 +2065,7 @@ module GeneralizationHelpers =
             && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds,body,_,_)  ->
-            binds |> FlatList.forall (fun b -> IsGeneralizableValue g b.Expr) &&
+            binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
         | Expr.Let(bind,body,_,_) -> 
             IsGeneralizableValue g bind.Expr &&
@@ -3116,7 +3116,7 @@ let CompilePatternForMatchClauses cenv env mExpr matchm warnOnUnused actionOnFai
     // CLEANUP: avoid code duplication with code further below, i.e.all callers should call CompilePatternForMatch 
     match tclauses with 
     | [TClause(TPat_as (pat1,PBind (v,TypeScheme(generalizedTypars,_)),_),None,TTarget(vs,e,spTarget),m2)] ->
-        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (v,generalizedTypars) [TClause(pat1,None,TTarget(FlatListSet.remove valEq v vs,e,spTarget),m2)] inputTy resultTy
+        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (v,generalizedTypars) [TClause(pat1,None,TTarget(ListSet.remove valEq v vs,e,spTarget),m2)] inputTy resultTy
         v,expr
     | _ -> 
         let idv,_ = Tastops.mkCompGenLocal mExpr "matchValue" inputTy
@@ -3646,7 +3646,7 @@ let EliminateInitializationGraphs
               // Composite expressions 
             | Expr.Const _ -> ()
             | Expr.LetRec (binds,e,_,_)  ->
-                binds |> FlatList.iter (CheckBinding (strict st))  
+                binds |> List.iter (CheckBinding (strict st))  
                 CheckExpr (strict st) e
             | Expr.Let (bind,e,_,_) ->  
                 CheckBinding (strict st) bind 
@@ -3671,7 +3671,7 @@ let EliminateInitializationGraphs
         and CheckBinding st (TBind(_,e,_)) = CheckExpr st e 
         and CheckDecisionTree st = function
             | TDSwitch(e1,csl,dflt,_) -> CheckExpr st e1; List.iter (fun (TCase(_,d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
-            | TDSuccess (es,_) -> es |> FlatList.iter (CheckExpr st) 
+            | TDSuccess (es,_) -> es |> List.iter (CheckExpr st) 
             | TDBind(bind,e) -> CheckBinding st bind; CheckDecisionTree st e
         and CheckDecisionTreeTarget st (TTarget(_,e,_)) = CheckExpr st e
 
@@ -6801,7 +6801,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,bodySynExpr,mWholeEx
 
     // Add the pattern match compilation
     let bodyExpr = 
-        let valsDefinedByMatching = FlatListSet.remove valEq elemVar vspecs
+        let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
         CompilePatternForMatch 
             cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar,[]) 
             [TClause(pat,None,TTarget(valsDefinedByMatching,bodyExpr,SequencePointAtTarget),mForLoopStart)] 
@@ -7255,25 +7255,25 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
     let mkSynLambda p e m = SynExpr.Lambda(false,false,p,e,m)
 
-    let mkExprForVarSpace m (patvs:FlatList<Val>) = 
-        match FlatList.toList patvs with 
+    let mkExprForVarSpace m (patvs: Val list) = 
+        match patvs with 
         | [] -> SynExpr.Const(SynConst.Unit,m)
         | [v] -> SynExpr.Ident v.Id
         | vs -> SynExpr.Tuple((vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
 
-    let mkSimplePatForVarSpace m (patvs:FlatList<Val>) = 
+    let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
-            match FlatList.toList patvs with 
+            match patvs with 
             | [] -> []
             | [v] -> [mkSynSimplePatVar false v.Id]
             | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
         SynSimplePats.SimplePats (spats, m)
 
-    let mkPatForVarSpace m (patvs:FlatList<Val>) = 
-        match FlatList.toList patvs with 
+    let mkPatForVarSpace m (patvs: Val list) = 
+        match patvs with 
         | [] -> SynPat.Const (SynConst.Unit, m)
         | [v] -> mkSynPatVar None v.Id
-        | vs -> SynPat.Tuple((vs |> FlatList.toList |> List.map (fun x -> mkSynPatVar None x.Id)), m)
+        | vs -> SynPat.Tuple((vs |> List.map (fun x -> mkSynPatVar None x.Id)), m)
 
     let (|OptionalSequential|) e = 
         match e with 
@@ -7299,12 +7299,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | _ ->  
             false
                     
-    let addVarsToVarSpace (varSpace: LazyWithContext<FlatList<Val> * TcEnv, range>) f = 
+    let addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>) f = 
         LazyWithContext.Create
             ((fun m ->
-                  let (patvs: FlatList<Val>, env) = varSpace.Force m 
+                  let (patvs: Val list, env) = varSpace.Force m 
                   let vs, envinner = f m env 
-                  let patvs = FlatList.append patvs (vs |> FlatList.filter (fun v -> not (patvs |> FlatList.exists (fun v2 -> v.LogicalName = v2.LogicalName))))
+                  let patvs = List.append patvs (vs |> List.filter (fun v -> not (patvs |> List.exists (fun v2 -> v.LogicalName = v2.LogicalName))))
                   patvs, envinner), 
               id)
 
@@ -9787,7 +9787,7 @@ and TcNewDelegateThen cenv overallTy env tpenv mDelTy mExprAndArg delegateTy arg
 
 
 and bindLetRec (binds:Bindings) m e = 
-    if FlatList.isEmpty binds then 
+    if List.isEmpty binds then 
         e 
     else 
         Expr.LetRec (binds,e,m,NewFreeVarsCache()) 
@@ -9826,7 +9826,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             if isUse then errorR(Error(FSComp.SR.tcBindingCannotBeUseAndRec(),m))
             let binds,envinner,tpenv = TcLetrec ErrorOnOverrides cenv env tpenv (binds,m,m)
             let bodyExpr,tpenv = bodyChecker overallTy envinner tpenv body 
-            let bodyExpr = bindLetRec (FlatList.ofList binds) m bodyExpr
+            let bodyExpr = bindLetRec binds m bodyExpr
             cont (bodyExpr,tpenv)
         else 
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
@@ -9847,7 +9847,7 @@ and TcMatchPattern cenv inputTy env tpenv (pat:SynPat,optWhenExpr) =
     let patf',(tpenv,names,_) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional,permitInferTypars,noArgOrRetAttribs,false,None,false) (tpenv,Map.empty,Set.empty) inputTy pat
     let envinner,values,vspecMap = MakeAndPublishSimpleVals cenv env m names false
     let optWhenExpr',tpenv = Option.mapFold (TcExpr cenv cenv.g.bool_ty envinner) tpenv optWhenExpr
-    patf' (TcPatPhase2Input (values, true)),optWhenExpr',FlatList.ofList (NameMap.range vspecMap),envinner,tpenv
+    patf' (TcPatPhase2Input (values, true)),optWhenExpr', NameMap.range vspecMap,envinner,tpenv
 
 and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
     List.mapFold (TcMatchClause cenv inputTy resultTy env) tpenv clauses 
@@ -10458,16 +10458,16 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
             let letExpr = mkLet spBind m tmp rhsExpr bodyExpr
             letExpr,bodyExprTy
 
-        let allValsDefinedByPattern = (NameMap.range prelimRecValues |> FlatList.ofList)
+        let allValsDefinedByPattern = NameMap.range prelimRecValues
         let mkPatBind (bodyExpr,bodyExprTy) =
-            let valsDefinedByMatching = FlatListSet.remove valEq tmp allValsDefinedByPattern
+            let valsDefinedByMatching = ListSet.remove valEq tmp allValsDefinedByPattern
             let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (tmp,generalizedTypars) [TClause(pat'',None,TTarget(valsDefinedByMatching,bodyExpr,SuppressSequencePointAtTarget),m)] tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx,bodyExprTy
 
         let mkCleanup (bodyExpr,bodyExprTy) =
             if isUse && not isFixed then 
-                (allValsDefinedByPattern,(bodyExpr,bodyExprTy)) ||> FlatList.foldBack (fun v (bodyExpr,bodyExprTy) ->
+                (allValsDefinedByPattern,(bodyExpr,bodyExprTy)) ||> List.foldBack (fun v (bodyExpr,bodyExprTy) ->
                     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_typ v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
                     mkTryFinally cenv.g (bodyExpr,cleanupE,m,bodyExprTy,SequencePointInBodyOfTry,NoSequencePointAtFinally),bodyExprTy)

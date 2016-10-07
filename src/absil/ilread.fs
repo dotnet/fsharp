@@ -1746,7 +1746,7 @@ and seekReadTypeDef ctxt toponly (idx:int) =
              IsSpecialName= (flags &&& 0x00000400) <> 0x0
              Encoding=typeEncodingOfFlags flags
              NestedTypes= nested
-             Implements = mkILTypes impls  
+             Implements = impls  
              Extends = super 
              Methods = mdefs 
              SecurityDecls = sdecls
@@ -1782,7 +1782,7 @@ and seekReadInterfaceImpls ctxt numtypars tidx =
                             fst,
                             simpleIndexCompare tidx,
                             isSorted ctxt TableNames.InterfaceImpl,
-                            (snd >> seekReadTypeDefOrRef ctxt numtypars AsObject (*ok*) ILList.empty)) 
+                            (snd >> seekReadTypeDefOrRef ctxt numtypars AsObject (*ok*) List.empty)) 
 
 and seekReadGenericParams ctxt numtypars (a,b) : ILGenericParameterDefs = 
     ctxt.seekReadGenericParams (GenericParamsIdx(numtypars,a,b))
@@ -1806,7 +1806,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numtypars,a,b)) =
                  let constraints = seekReadGenericParamConstraintsUncached ctxt numtypars gpidx
                  let cas = seekReadCustomAttrs ctxt (TaggedIndex(hca_GenericParam,gpidx))
                  seq, {Name=readStringHeap ctxt nameIdx
-                       Constraints=mkILTypes constraints
+                       Constraints = constraints
                        Variance=variance  
                        CustomAttrs=cas
                        HasReferenceTypeConstraint= (flags &&& 0x0004) <> 0
@@ -1821,7 +1821,7 @@ and seekReadGenericParamConstraintsUncached ctxt numtypars gpidx =
          fst,
          simpleIndexCompare gpidx,
          isSorted ctxt TableNames.GenericParamConstraint,
-         (snd >>  seekReadTypeDefOrRef ctxt numtypars AsObject (*ok*) ILList.empty))
+         (snd >>  seekReadTypeDefOrRef ctxt numtypars AsObject (*ok*) List.empty))
 
 and seekReadTypeDefAsType ctxt boxity (ginst:ILTypes) idx =
       ctxt.seekReadTypeDefAsType (TypeDefAsTypIdx (boxity,ginst,idx))
@@ -1874,11 +1874,11 @@ and seekReadTypeDefOrRefAsTypeRef ctxt (TaggedIndex(tag,idx) ) =
 
 and seekReadMethodRefParent ctxt numtypars (TaggedIndex(tag,idx)) =
     match tag with 
-    | tag when tag = mrp_TypeRef -> seekReadTypeRefAsType ctxt AsObject (* not ok - no way to tell if a member ref parent ctxt.is a value type or not *) ILList.empty idx
+    | tag when tag = mrp_TypeRef -> seekReadTypeRefAsType ctxt AsObject (* not ok - no way to tell if a member ref parent ctxt.is a value type or not *) List.empty idx
     | tag when tag = mrp_ModuleRef -> mkILTypeForGlobalFunctions (ILScopeRef.Module (seekReadModuleRef ctxt idx))
     | tag when tag = mrp_MethodDef -> 
         let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
-        let mspec = mkILMethSpecInTyRaw(enclTyp, cc, nm, argtys, retty, minst)
+        let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
         mspec.EnclosingType
     | tag when tag = mrp_TypeSpec -> readBlobHeapAsType ctxt numtypars (seekReadTypeSpecRow ctxt idx)
     | _ -> failwith "seekReadMethodRefParent ctxt"
@@ -1901,10 +1901,10 @@ and seekReadCustomAttrType ctxt (TaggedIndex(tag,idx) ) =
     match tag with 
     | tag when tag = cat_MethodDef -> 
         let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
-        mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty, minst)
+        mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
     | tag when tag = cat_MemberRef -> 
         let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMemberRefAsMethDataNoVarArgs ctxt 0 idx
-        mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty, minst)
+        mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
     | _ -> failwith "seekReadCustomAttrType ctxt"
     
 and seekReadImplAsScopeRef ctxt (TaggedIndex(tag,idx) ) =
@@ -1928,7 +1928,7 @@ and seekReadTypeRefScope ctxt (TaggedIndex(tag,idx) ) =
 
 and seekReadOptionalTypeDefOrRef ctxt numtypars boxity idx = 
     if idx = TaggedIndex(tdor_TypeDef, 0) then None
-    else Some (seekReadTypeDefOrRef ctxt numtypars boxity ILList.empty idx)
+    else Some (seekReadTypeDefOrRef ctxt numtypars boxity List.empty idx)
 
 and seekReadField ctxt (numtypars, hasLayout) (idx:int) =
      let (flags,nameIdx,typeIdx) = seekReadFieldRow ctxt idx
@@ -2004,15 +2004,15 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let n, sigptr = sigptrGetZInt32 bytes sigptr
         let argtys,sigptr = sigptrFold (sigptrGetTy ctxt numtypars) n bytes sigptr
-        seekReadTypeDefOrRef ctxt numtypars (if b0 = et_CLASS then AsObject else AsValue) (mkILTypes argtys) tdorIdx,
+        seekReadTypeDefOrRef ctxt numtypars (if b0 = et_CLASS then AsObject else AsValue) argtys tdorIdx,
         sigptr
         
     elif b0 = et_CLASS then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
-        seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty tdorIdx, sigptr
+        seekReadTypeDefOrRef ctxt numtypars AsObject List.empty tdorIdx, sigptr
     elif b0 = et_VALUETYPE then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
-        seekReadTypeDefOrRef ctxt numtypars AsValue ILList.empty tdorIdx, sigptr
+        seekReadTypeDefOrRef ctxt numtypars AsValue List.empty tdorIdx, sigptr
     elif b0 = et_VAR then 
         let n, sigptr = sigptrGetZInt32 bytes sigptr
         ILType.TypeVar (uint16 n),sigptr
@@ -2060,7 +2060,7 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         let argtys,sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
         ILType.FunctionPointer
           { CallingConv=cc
-            ArgTypes=mkILTypes argtys
+            ArgTypes = argtys
             ReturnType=retty }
           ,sigptr
     elif b0 = et_SENTINEL then failwith "varargs NYI"
@@ -2070,12 +2070,12 @@ and sigptrGetVarArgTys ctxt n numtypars bytes sigptr =
     sigptrFold (sigptrGetTy ctxt numtypars) n bytes sigptr 
 
 and sigptrGetArgTys ctxt n numtypars bytes sigptr acc = 
-    if n <= 0 then (mkILTypes  (List.rev acc),None),sigptr 
+    if n <= 0 then (List.rev acc,None),sigptr 
     else
       let b0,sigptr2 = sigptrGetByte bytes sigptr
       if b0 = et_SENTINEL then 
         let varargs,sigptr = sigptrGetVarArgTys ctxt n numtypars bytes sigptr2
-        (mkILTypes  (List.rev acc),Some(mkILTypes varargs)),sigptr
+        (List.rev acc,Some(varargs)),sigptr
       else
         let x,sigptr = sigptrGetTy ctxt numtypars bytes sigptr
         sigptrGetArgTys ctxt (n-1) numtypars bytes sigptr (x::acc)
@@ -2137,7 +2137,7 @@ and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx (numtypars,blobIdx
     let numparams,sigptr = sigptrGetZInt32 bytes sigptr
     let retty,sigptr = sigptrGetTy ctxt numtypars bytes sigptr
     let argtys,_sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
-    hasthis,retty,mkILTypes argtys
+    hasthis,retty,argtys
       
 and readBlobHeapAsLocalsSig ctxt numtypars blobIdx  =
     ctxt.readBlobHeapAsLocalsSig (BlobAsLocalSigIdx (numtypars,blobIdx))
@@ -2178,7 +2178,7 @@ and seekReadMemberRefAsMethodDataUncached ctxtH (MemberRefAsMspecIdx (numtypars,
     let nm = readStringHeap ctxt nameIdx
     let enclTyp = seekReadMethodRefParent ctxt numtypars mrpIdx
     let _generic,genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt enclTyp.GenericArgs.Length typeIdx
-    let minst =  ILList.init genarity (fun n -> mkILTyvarTy (uint16 (numtypars+n))) 
+    let minst =  List.init genarity (fun n -> mkILTyvarTy (uint16 (numtypars+n))) 
     (VarArgMethodData(enclTyp, cc, nm, argtys, varargs,retty,minst))
 
 and seekReadMemberRefAsMethDataNoVarArgs ctxt numtypars idx : MethodData =
@@ -2199,7 +2199,7 @@ and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypar
         if ccByte <> e_IMAGE_CEE_CS_CALLCONV_GENERICINST then dprintn ("warning: method inst ILCallingConv was "+string ccByte+" instead of CC_GENERICINST")
         let numgpars,sigptr = sigptrGetZInt32 bytes sigptr
         let argtys,_sigptr = sigptrFold (sigptrGetTy ctxt numtypars) numgpars bytes sigptr
-        mkILTypes argtys
+        argtys
     VarArgMethodData(enclTyp, cc, nm, argtys, varargs,retty, minst)
 
 and seekReadMemberRefAsFieldSpec ctxt numtypars idx = 
@@ -2239,8 +2239,8 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
    let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt 0 typeIdx
    if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef token signature"
    // Create a formal instantiation if needed 
-   let finst = mkILFormalGenericArgsRaw (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
-   let minst = mkILFormalGenericArgsRaw (seekReadGenericParams ctxt finst.Length (tomd_MethodDef,idx))
+   let finst = mkILFormalGenericArgs (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
+   let minst = mkILFormalGenericArgs (seekReadGenericParams ctxt finst.Length (tomd_MethodDef,idx))
    // Read the method def parent. 
    let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
    // Return the constituent parts: put it together at the place where this is called. 
@@ -2267,7 +2267,7 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
    // Read the field signature. 
    let retty = readBlobHeapAsFieldSig ctxt 0 typeIdx
    // Create a formal instantiation if needed 
-   let finst = mkILFormalGenericArgsRaw (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
+   let finst = mkILFormalGenericArgs (seekReadGenericParams ctxt 0 (tomd_TypeDef,tidx))
    // Read the field def parent. 
    let enclTyp = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
    // Put it together. 
@@ -2361,7 +2361,7 @@ and seekReadParams ctxt (retty,argtys) pidx1 pidx2 =
     let retRes : ILReturn ref =  ref { Marshal=None; Type=retty; CustomAttrs=emptyILCustomAttrs }
     let paramsRes : ILParameter [] = 
         argtys 
-        |> ILList.toArray 
+        |> List.toArray 
         |> Array.map (fun ty ->  
             { Name=None
               Default=None
@@ -2373,7 +2373,7 @@ and seekReadParams ctxt (retty,argtys) pidx1 pidx2 =
               CustomAttrs=emptyILCustomAttrs })
     for i = pidx1 to pidx2 - 1 do
         seekReadParamExtras ctxt (retRes,paramsRes) i
-    !retRes, ILList.ofArray paramsRes
+    !retRes, List.ofArray paramsRes
 
 and seekReadParamExtras ctxt (retRes,paramsRes) (idx:int) =
    let (flags,seq,nameIdx) = seekReadParamRow ctxt idx
@@ -2405,10 +2405,10 @@ and seekReadMethodImpls ctxt numtypars tidx =
           mimpls |> List.map (fun (b,c) -> 
               { OverrideBy=
                   let (MethodData(enclTyp, cc, nm, argtys, retty,minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars b
-                  mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty,minst)
+                  mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty,minst)
                 Overrides=
                   let (MethodData(enclTyp, cc, nm, argtys, retty,minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars c
-                  let mspec = mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty,minst)
+                  let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty,minst)
                   OverridesSpec(mspec.MethodRef, mspec.EnclosingType) }))
 
 and seekReadMultipleMethodSemantics ctxt (flags,id) =
@@ -2420,7 +2420,7 @@ and seekReadMultipleMethodSemantics ctxt (flags,id) =
        isSorted ctxt TableNames.MethodSemantics,
        (fun (a,b,_c) -> 
            let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt b
-           a, (mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty, minst)).MethodRef))
+           a, (mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)).MethodRef))
     |> List.filter (fun (flags2,_) -> flags = flags2) 
     |> List.map snd 
 
@@ -2705,7 +2705,7 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
              elif !b = (i_constrained &&& 0xff) then 
                  let uncoded = seekReadUncodedToken ctxt.is (start + (!curr))
                  curr := !curr + 4
-                 let typ = seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty (uncodedTokenToTypeDefOrRefOrSpec uncoded)
+                 let typ = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
                  prefixes.constrained <- Some typ
              else prefixes.tl <- Tailcall
          end
@@ -2782,12 +2782,12 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
                | ".ctor" ->  I_newarr(shape,ty)
                | _ -> failwith "bad method on array type"
              | _ ->
-               let mspec = mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty, minst)
+               let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
                f prefixes (mspec,varargs)
          | I_type_instr f ->
              let uncoded = seekReadUncodedToken ctxt.is (start + (!curr))
              curr := !curr + 4
-             let typ = seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty (uncodedTokenToTypeDefOrRefOrSpec uncoded)
+             let typ = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
              f prefixes typ
          | I_string_instr f ->
              let (tab,idx) = seekReadUncodedToken ctxt.is (start + (!curr))
@@ -2825,11 +2825,11 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
              let token_info = 
                if tab = TableNames.Method || tab = TableNames.MemberRef (* REVIEW:generics or tab = TableNames.MethodSpec *) then 
                  let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars (uncodedTokenToMethodDefOrRef (tab,idx))
-                 ILToken.ILMethod (mkILMethSpecInTyRaw (enclTyp, cc, nm, argtys, retty, minst))
+                 ILToken.ILMethod (mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst))
                elif tab = TableNames.Field then 
                  ILToken.ILField (seekReadFieldDefAsFieldSpec ctxt idx)
                elif tab = TableNames.TypeDef || tab = TableNames.TypeRef || tab = TableNames.TypeSpec  then 
-                 ILToken.ILType (seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty (uncodedTokenToTypeDefOrRefOrSpec (tab,idx))) 
+                 ILToken.ILType (seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec (tab,idx))) 
                else failwith "bad token for ldtoken" 
              f prefixes token_info
          | I_sig_instr f ->  
@@ -2838,7 +2838,7 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
              if tab <> TableNames.StandAloneSig then dprintn "strange table for callsig token"
              let generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt numtypars (seekReadStandAloneSigRow ctxt idx)
              if generic then failwith "bad image: a generic method signature ctxt.is begin used at a calli instruction"
-             f prefixes (mkILCallSigRaw (cc,argtys,retty), varargs)
+             f prefixes (mkILCallSig (cc,argtys,retty), varargs)
          | I_switch_instr f ->  
              let n =  (seekReadInt32 ctxt.is (start + (!curr)))
              curr := !curr + 4
@@ -2960,7 +2960,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=false
                MaxStack= 8
                NoInlining=noinline
-               Locals=ILList.empty
+               Locals=List.empty
                SourceMarker=methRangePdbInfo 
                Code=code }
 
@@ -3048,7 +3048,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
                     let handlerFinish = rawToLabel (st2 + sz2)
                     let clause = 
                       if kind = e_COR_ILEXCEPTION_CLAUSE_EXCEPTION then 
-                        ILExceptionClause.TypeCatch(seekReadTypeDefOrRef ctxt numtypars AsObject ILList.empty (uncodedTokenToTypeDefOrRefOrSpec (i32ToUncodedToken extra)), (handlerStart, handlerFinish) )
+                        ILExceptionClause.TypeCatch(seekReadTypeDefOrRef ctxt numtypars AsObject List.empty (uncodedTokenToTypeDefOrRefOrSpec (i32ToUncodedToken extra)), (handlerStart, handlerFinish) )
                       elif kind = e_COR_ILEXCEPTION_CLAUSE_FILTER then 
                         let filterStart = rawToLabel extra
                         let filterFinish = handlerStart
@@ -3085,7 +3085,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=initlocals
                MaxStack= maxstack
                NoInlining=noinline
-               Locals=mkILLocals locals
+               Locals = locals
                Code=code
                SourceMarker=methRangePdbInfo}
        else 
