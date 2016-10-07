@@ -88,6 +88,7 @@ type internal FSharpCompletionProvider(workspace: Workspace, serviceProvider: SV
 
         for declarationItem in declarations.Items do
             let completionItem = CompletionItem.Create(declarationItem.Name)
+            declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
             declarationItemsCache.Add(completionItem.DisplayText, declarationItem)
             results.Add(completionItem)
 
