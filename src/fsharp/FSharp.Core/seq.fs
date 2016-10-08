@@ -878,11 +878,17 @@ namespace Microsoft.FSharp.Collections
             and [<AbstractClass>] SeqComponent<'T,'U> () =
                 abstract ProcessNext : input:'T -> bool
                 abstract OnComplete : unit -> unit
+                
+                // Seq.init(Infinite)? lazily uses Current. The only SeqComposer component that can do that is Skip
+                // and it can only do it at the start of a sequence
+                abstract Skipping : unit -> bool
 
                 abstract CreateMap<'S> : map:('S->'T)      -> SeqComponent<'S,'U>
                 abstract CreateFilter  : filter:('T->bool) -> SeqComponent<'T,'U>
 
                 default __.OnComplete () = ()
+
+                default __.Skipping () = false
 
                 default this.CreateMap<'S> (map:'S->'T)      = upcast Map<_,_,_> (map, this) 
                 default this.CreateFilter  (filter:'T->bool) = upcast Filter (filter, this) 
@@ -963,6 +969,13 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponent<'T,'V>()
 
                 let mutable count = 0
+
+                override __.Skipping () =
+                    if count < skipCount then
+                        count <- count + 1
+                        true
+                    else
+                        false
 
                 override __.ProcessNext (input:'T) : bool = 
                     if count < skipCount then
@@ -1204,6 +1217,79 @@ namespace Microsoft.FSharp.Collections
                 override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                     Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, this.FactoryCompose next))
 
+            // The original implementation of "init" delayed the calculation of Current, and so it was possible
+            // to do MoveNext without it's value being calculated.
+            // I can imagine only two scenerios where that is possibly sane, although a simple solution is readily
+            // at hand in both cases. The first is that of an expensive generator function, where you skip the
+            // first n elements. The simple solution would have just been to have a map ((+) n) as the first operation
+            // instead. The second case would be counting elements, but that is only of use if you're not filtering
+            // or mapping or doing anything else (as that would cause Current to be evaluated!) and
+            // so you already know what the count is!! Anyway, someone thought it was a good idea, so
+            // I have had to add an extra function that is used in Skip to determine if we are touching
+            // Current or not.
+            type InitComposedEnumerator<'T,'U>(count:Nullable<int>, f:int->'T, t2u:SeqComponent<'T,'U>, result:Result<'U>) =
+                inherit ComposedEnumerator<'U>(result)
+
+                // we are offset by 1 to allow for values going up to System.Int32.MaxValue
+                // System.Int32.MaxValue is an illegal value for the "infinite" sequence
+                let terminatingIdx =
+                    if count.HasValue then
+                        count.Value - 1
+                    else
+                        System.Int32.MaxValue
+
+                let mutable maybeSkipping = true
+                let mutable idx = -1
+
+                let rec moveNext () =
+                    if (not result.Halted) && idx < terminatingIdx then
+                        idx <- idx + 1
+
+                        if maybeSkipping then
+                            // Skip can only is only checked at the start of the sequence, so once
+                            // triggered, we stay triggered.
+                            maybeSkipping <- t2u.Skipping ()
+                    
+                        if maybeSkipping || t2u.ProcessNext (f idx) then
+                            true
+                        else
+                            moveNext ()
+                    elif (not result.Halted) && idx = System.Int32.MaxValue then
+                        raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
+                    else
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext ()
+
+            type InitComposingEnumerable<'T,'U>(count:Nullable<int>, f:int->'T, seqComponentFactory:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
+
+                interface IEnumerable<'U> with
+                    member this.GetEnumerator () : IEnumerator<'U> =
+                        let result, seqComponent = this.CreateSeqComponent () 
+                        Helpers.UpcastEnumerator (new InitComposedEnumerator<'T,'U>(count, f, seqComponent, result))
+
+                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new InitComposingEnumerable<'T,'V>(count, f, this.FactoryCompose next))
+
+            type InitEnumerable<'T>(count:Nullable<int>, f:int->'T) =
+                inherit ComposableEnumerable<'T>()
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () : IEnumerator<'T> =
+                        // we defer back to the original implementation as, as it's quite idiomatic in it's decision
+                        // to calculate Current in a lazy fashion. I doubt anyone is really using this functionality
+                        // in the way presented, but it's possible.
+                        upto (if count.HasValue then Some count.Value else None) f
+
+                override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
+                    Helpers.UpcastEnumerable (InitComposingEnumerable<'T,'V>(count, f, next))
+
 
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
@@ -1226,12 +1312,14 @@ namespace Microsoft.FSharp.Collections
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
-        let initInfinite f = mkSeq (fun () -> IEnumerator.upto None f)
+        let initInfinite<'T> (f:int->'T) : IEnumerable<'T> =
+            SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.InitEnumerable<'T>(Nullable (), f))
 
         [<CompiledName("Initialize")>]
         let init count f =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            mkSeq (fun () -> IEnumerator.upto (Some (count-1)) f)
+            elif count = 0 then empty else
+            SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.InitEnumerable<'T>(Nullable count, f))
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
