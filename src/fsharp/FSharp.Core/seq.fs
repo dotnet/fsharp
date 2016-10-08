@@ -1127,16 +1127,28 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> = failwith "library implementation error: derived class should implement (should be abstract)"
 
-            type SeqEnumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
+            [<AbstractClass>]
+            type ComposableEnumerableFactoryHelper<'T,'U> (seqComponentFactory:SeqComponentFactory<'T,'U>) =
                 inherit ComposableEnumerable<'U>()
+
+                member __.FactoryCompose next = 
+                    ComposedFactory (seqComponentFactory, next)
+
+                member __.CreateSeqComponent () =
+                        let result = Result<'U> ()
+                        let seqComponent = seqComponentFactory.Create result (Tail result)
+                        result, seqComponent
+
+            type SeqEnumerable<'T,'U>(enumerable:IEnumerable<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let result = Result<'U> ()
-                        Helpers.UpcastEnumerator (new SeqComposedEnumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail result), result))
+                        let result, seqComponent = this.CreateSeqComponent () 
+                        Helpers.UpcastEnumerator (new SeqComposedEnumerator<'T,'U>(enumerable.GetEnumerator(), seqComponent, result))
 
-                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqEnumerable<'T,'V>(enumerable, ComposedFactory (current, next)))
+                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqEnumerable<'T,'V>(enumerable, this.FactoryCompose next))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
@@ -1154,16 +1166,16 @@ namespace Microsoft.FSharp.Collections
 //
 //                        state
 
-            type SeqArrayEnumerable<'T,'U>(array:array<'T>, current:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerable<'U>()
+            type SeqArrayEnumerable<'T,'U>(array:array<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let result = Result<'U> ()
-                        Helpers.UpcastEnumerator (new ArrayComposedEnumerator<'T,'U>(array, current.Create result (Tail result), result))
+                        let result, seqComponent = this.CreateSeqComponent () 
+                        Helpers.UpcastEnumerator (new ArrayComposedEnumerator<'T,'U>(array, seqComponent, result))
 
-                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqArrayEnumerable<'T,'V>(array, ComposedFactory (current, next)))
+                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqArrayEnumerable<'T,'V>(array, this.FactoryCompose next))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
@@ -1181,16 +1193,16 @@ namespace Microsoft.FSharp.Collections
 //
 //                        state
 
-            type SeqListEnumerable<'T,'U>(alist:list<'T>, current:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerable<'U>()
+            type SeqListEnumerable<'T,'U>(alist:list<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let result = Result<'U> ()
-                        Helpers.UpcastEnumerator (new ListComposedEnumerator<'T,'U>(alist, current.Create result (Tail result), result))
+                        let result, seqComponent = this.CreateSeqComponent () 
+                        Helpers.UpcastEnumerator (new ListComposedEnumerator<'T,'U>(alist, seqComponent, result))
 
-                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, ComposedFactory (current, next)))
+                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, this.FactoryCompose next))
 
 
 #if FX_NO_ICLONEABLE
