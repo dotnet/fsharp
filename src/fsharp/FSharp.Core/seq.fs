@@ -817,72 +817,72 @@ namespace Microsoft.FSharp.Collections
                 let inline UpcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline UpcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
 
-            type SeqSignal () =
+            type SeqProcessNextStates =
+            | NotStarted = 1
+            | Finished   = 2
+            | InProcess  = 3
+
+            type Result<'T>() =
                 let mutable halted = false
+
+                member val SeqState = SeqProcessNextStates.NotStarted with get, set
+
                 member __.StopFurtherProcessing () = halted <- true
                 member __.Halted = halted
 
-            type TailSignal<'T> () =
-                inherit SeqSignal ()
                 member val Current = Unchecked.defaultof<'T> with get, set
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> () =
-                abstract Create<'V> : SeqSignal -> SeqComponent<'U,'V> -> SeqComponent<'T,'V>
+                abstract Create<'V> : Result<'V> -> SeqComponent<'U,'V> -> SeqComponent<'T,'V>
 
             and ComposedFactory<'T,'U,'V> (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>) =
                 inherit SeqComponentFactory<'T,'V> ()
-                override __.Create<'W> (signal:SeqSignal) (next:SeqComponent<'V,'W>) : SeqComponent<'T,'W> = first.Create signal (second.Create signal next)
+                override __.Create<'W> (result:Result<'W>) (next:SeqComponent<'V,'W>) : SeqComponent<'T,'W> = first.Create result (second.Create result next)
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Choose (filter, next) 
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Choose (filter, next) 
 
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = next.CreateFilter filter
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = next.CreateFilter filter
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = next.CreateMap map
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = next.CreateMap map
 
             and MapiFactory<'T,'U> (mapi:int->'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Mapi (mapi, next) 
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Mapi (mapi, next) 
 
             and PairwiseFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T*'T> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'T*'T,'V>) : SeqComponent<'T,'V> = upcast Pairwise next
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T*'T,'V>) : SeqComponent<'T,'V> = upcast Pairwise next
 
             and SkipFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Skip (count, next) 
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Skip (count, next) 
 
             and SkipWhileFactory<'T> (perdicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (_signal:SeqSignal) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast SkipWhile (perdicate, next) 
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast SkipWhile (perdicate, next) 
 
             and TakeWhileFactory<'T> (perdicate:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (signal:SeqSignal) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast TakeWhile (perdicate, signal, next) 
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast TakeWhile (perdicate, result, next) 
 
             and TakeFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (signal:SeqSignal) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Take (count, signal, next) 
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Take (count, result, next) 
 
             and [<AbstractClass>] SeqComponent<'T,'U> () =
                 abstract ProcessNext : input:'T -> bool
                 abstract OnComplete : unit -> unit
-                
-                // Seq.init(Infinite)? lazily uses Current. The only SeqComposer component that can do that is Skip
-                // and it can only do it at the start of a sequence
-                abstract Skipping : unit -> bool
 
                 abstract CreateMap<'S> : map:('S->'T)      -> SeqComponent<'S,'U>
                 abstract CreateFilter  : filter:('T->bool) -> SeqComponent<'T,'U>
 
                 default __.OnComplete () = ()
-
-                default __.Skipping () = false
 
                 default this.CreateMap<'S> (map:'S->'T)      = upcast Map<_,_,_> (map, this) 
                 default this.CreateFilter  (filter:'T->bool) = upcast Filter (filter, this) 
@@ -964,13 +964,6 @@ namespace Microsoft.FSharp.Collections
 
                 let mutable count = 0
 
-                override __.Skipping () =
-                    if count < skipCount then
-                        count <- count + 1
-                        true
-                    else
-                        false
-
                 override __.ProcessNext (input:'T) : bool = 
                     if count < skipCount then
                         count <- count + 1
@@ -999,7 +992,7 @@ namespace Microsoft.FSharp.Collections
                     else
                         Helpers.avoidTailCall (next.ProcessNext input)
 
-            and Take<'T,'V> (takeCount:int, signal:SeqSignal, next:SeqComponent<'T,'V>) =
+            and Take<'T,'V> (takeCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>()
 
                 let mutable count = 0
@@ -1008,10 +1001,10 @@ namespace Microsoft.FSharp.Collections
                     if count < takeCount then
                         count <- count + 1
                         if count = takeCount then
-                            signal.StopFurtherProcessing ()
+                            result.StopFurtherProcessing ()
                         next.ProcessNext input
                     else
-                        signal.StopFurtherProcessing ()
+                        result.StopFurtherProcessing ()
                         false
 
                 override __.OnComplete () =
@@ -1020,36 +1013,25 @@ namespace Microsoft.FSharp.Collections
                         invalidOpFmt "tried to take {0} {1} past the end of the seq"
                             [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
 
-            and TakeWhile<'T,'V> (predicate:'T->bool, signal:SeqSignal, next:SeqComponent<'T,'V>) =
+            and TakeWhile<'T,'V> (predicate:'T->bool, result:Result<'V>, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>()
 
                 override __.ProcessNext (input:'T) : bool = 
                     if predicate input then
                         next.ProcessNext input
                     else
-                        signal.StopFurtherProcessing ()
+                        result.StopFurtherProcessing ()
                         false
 
-            and Tail<'T> (signal:TailSignal<'T>) =
+            and Tail<'T> (result:Result<'T>) =
                 inherit SeqComponent<'T,'T>()
 
                 override __.ProcessNext (input:'T) : bool =
-                    signal.Current <- input
+                    result.Current <- input
                     true
 
-            type SeqEnumeratorState =
-            | NotStarted = 1
-            | Finished   = 2
-            | InProcess  = 3
-
-            type EnumeratorSignal<'T>() =
-                inherit TailSignal<'T>()
-                member val EnumeratorState = SeqEnumeratorState.NotStarted with get, set
-
-            // ----- base classes for enumerator/enumerable -----
-
             [<AbstractClass>]
-            type ComposedEnumerator<'T>(signal:EnumeratorSignal<'T>) =
+            type ComposedEnumerator<'T>(result:Result<'T>) =
                 interface IDisposable with
                     member __.Dispose() : unit = ()
 
@@ -1060,10 +1042,77 @@ namespace Microsoft.FSharp.Collections
 
                 interface IEnumerator<'T> with
                     member __.Current =
-                        match signal.EnumeratorState with
-                        | SeqEnumeratorState.NotStarted -> notStarted()
-                        | SeqEnumeratorState.Finished -> alreadyFinished()
-                        | _ -> signal.Current
+                        match result.SeqState with
+                        | SeqProcessNextStates.NotStarted -> notStarted()
+                        | SeqProcessNextStates.Finished -> alreadyFinished()
+                        | _ -> result.Current
+
+            type SeqComposedEnumerator<'T,'U>(source:IEnumerator<'T>, t2u:SeqComponent<'T,'U>, result:Result<'U>) =
+                inherit ComposedEnumerator<'U>(result)
+
+                let rec moveNext () =
+                    if (not result.Halted) && source.MoveNext () then
+                        if t2u.ProcessNext source.Current then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext ()
+
+                interface IDisposable with
+                    member __.Dispose() = source.Dispose ()
+
+            type ArrayComposedEnumerator<'T,'U>(array:array<'T>, t2u:SeqComponent<'T,'U>, result:Result<'U>) =
+                inherit ComposedEnumerator<'U>(result)
+
+                let mutable idx = 0
+
+                let rec moveNext () =
+                    if (not result.Halted) && idx < array.Length then
+                        idx <- idx+1
+                        if t2u.ProcessNext array.[idx-1] then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext ()
+
+            type ListComposedEnumerator<'T,'U>(alist:list<'T>, t2u:SeqComponent<'T,'U>, result:Result<'U>) =
+                inherit ComposedEnumerator<'U>(result)
+
+                let mutable list = alist
+
+                let rec moveNext current =
+                    match result.Halted, current with
+                    | false, head::tail -> 
+                        if t2u.ProcessNext head then
+                            list <- tail
+                            true
+                        else
+                            moveNext tail
+                    | _ ->
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext list
 
             [<AbstractClass>]
             type ComposableEnumerable<'T> () =
@@ -1078,232 +1127,70 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> = failwith "library implementation error: derived class should implement (should be abstract)"
 
-            [<AbstractClass>]
-            type ComposableEnumerableFactoryHelper<'T,'U> (seqComponentFactory:SeqComponentFactory<'T,'U>) =
+            type SeqEnumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
                 inherit ComposableEnumerable<'U>()
-
-                member __.FactoryCompose next = 
-                    ComposedFactory (seqComponentFactory, next)
-
-                member __.CreateSeqComponent () =
-                        let signal = EnumeratorSignal<'U> ()
-                        let seqComponent = seqComponentFactory.Create signal (Tail signal)
-                        signal, seqComponent
-
-            // ----- seq -----
-
-            type SeqComposedEnumerator<'T,'U>(source:IEnumerator<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let rec moveNext () =
-                    if (not signal.Halted) && source.MoveNext () then
-                        if t2u.ProcessNext source.Current then
-                            true
-                        else
-                            moveNext ()
-                    else
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext ()
-
-                interface IDisposable with
-                    member __.Dispose() = source.Dispose ()
-
-            type SeqEnumerable<'T,'U>(enumerable:IEnumerable<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let signal, seqComponent = this.CreateSeqComponent () 
-                        Helpers.UpcastEnumerator (new SeqComposedEnumerator<'T,'U>(enumerable.GetEnumerator(), seqComponent, signal))
+                        let result = Result<'U> ()
+                        Helpers.UpcastEnumerator (new SeqComposedEnumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail result), result))
 
-                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqEnumerable<'T,'V>(enumerable, this.FactoryCompose next))
+                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqEnumerable<'T,'V>(enumerable, ComposedFactory (current, next)))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let enumerator = enumerable.GetEnumerator ()
-//                        let signal = TailSignal<'U> ()
+//                        let result = Result<'U> ()
 //
-//                        let components = seqComponentFactory.Create signal (Tail signal)
+//                        let components = current.Create result (Tail result)
 //
 //                        let mutable state = initialState
-//                        while (not signal.Halted) && enumerator.MoveNext () do
+//                        while (not result.Halted) && enumerator.MoveNext () do
 //                            if components.ProcessNext (enumerator.Current) then
-//                                state <- folder'.Invoke (state, signal.Current)
+//                                state <- folder'.Invoke (state, result.Current)
 //
 //                        state
 
-            // ----- array -----
-
-            type ArrayComposedEnumerator<'T,'U>(array:array<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let mutable idx = 0
-
-                let rec moveNext () =
-                    if (not signal.Halted) && idx < array.Length then
-                        idx <- idx+1
-                        if t2u.ProcessNext array.[idx-1] then
-                            true
-                        else
-                            moveNext ()
-                    else
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext ()
-
-            type SeqArrayEnumerable<'T,'U>(array:array<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
+            type SeqArrayEnumerable<'T,'U>(array:array<'T>, current:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerable<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let signal, seqComponent = this.CreateSeqComponent () 
-                        Helpers.UpcastEnumerator (new ArrayComposedEnumerator<'T,'U>(array, seqComponent, signal))
+                        let result = Result<'U> ()
+                        Helpers.UpcastEnumerator (new ArrayComposedEnumerator<'T,'U>(array, current.Create result (Tail result), result))
 
-                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqArrayEnumerable<'T,'V>(array, this.FactoryCompose next))
+                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqArrayEnumerable<'T,'V>(array, ComposedFactory (current, next)))
 
 //                interface ISeqEnumerable<'U> with
 //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let mutable idx = 0
-//                        let signal = TailSignal<'U> ()
-//                        let components = seqComponentFactory.Create signal (Tail signal)
+//                        let result = Result<'U> ()
+//                        let components = current.Create result (Tail result)
 //
 //                        let mutable state = initialState
-//                        while (not signal.Halted) && idx < array.Length do
+//                        while (not result.Halted) && idx < array.Length do
 //                            if components.ProcessNext array.[idx] then
-//                                state <- folder'.Invoke(state, signal.Current)
+//                                state <- folder'.Invoke(state, result.Current)
 //                            idx <- idx + 1
 //
 //                        state
 
-            // ----- list -----
-
-            type ListComposedEnumerator<'T,'U>(alist:list<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let mutable list = alist
-
-                let rec moveNext current =
-                    match signal.Halted, current with
-                    | false, head::tail -> 
-                        if t2u.ProcessNext head then
-                            list <- tail
-                            true
-                        else
-                            moveNext tail
-                    | _ ->
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext list
-
-            type SeqListEnumerable<'T,'U>(alist:list<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
+            type SeqListEnumerable<'T,'U>(alist:list<'T>, current:SeqComponentFactory<'T,'U>) =
+                inherit ComposableEnumerable<'U>()
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
-                        let signal, seqComponent = this.CreateSeqComponent () 
-                        Helpers.UpcastEnumerator (new ListComposedEnumerator<'T,'U>(alist, seqComponent, signal))
+                        let result = Result<'U> ()
+                        Helpers.UpcastEnumerator (new ListComposedEnumerator<'T,'U>(alist, current.Create result (Tail result), result))
 
-                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, this.FactoryCompose next))
-
-            // ----- init ----- 
-
-            // The original implementation of "init" delayed the calculation of Current, and so it was possible
-            // to do MoveNext without it's value being calculated.
-            // I can imagine only two scenerios where that is possibly sane, although a simple solution is readily
-            // at hand in both cases. The first is that of an expensive generator function, where you skip the
-            // first n elements. The simple solution would have just been to have a map ((+) n) as the first operation
-            // instead. The second case would be counting elements, but that is only of use if you're not filtering
-            // or mapping or doing anything else (as that would cause Current to be evaluated!) and
-            // so you already know what the count is!! Anyway, someone thought it was a good idea, so
-            // I have had to add an extra function that is used in Skip to determine if we are touching
-            // Current or not.
-            type InitComposedEnumerator<'T,'U>(count:Nullable<int>, f:int->'T, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                // we are offset by 1 to allow for values going up to System.Int32.MaxValue
-                // System.Int32.MaxValue is an illegal value for the "infinite" sequence
-                let terminatingIdx =
-                    if count.HasValue then
-                        count.Value - 1
-                    else
-                        System.Int32.MaxValue
-
-                let mutable maybeSkipping = true
-                let mutable idx = -1
-
-                let rec moveNext () =
-                    if (not signal.Halted) && idx < terminatingIdx then
-                        idx <- idx + 1
-
-                        if maybeSkipping then
-                            // Skip can only is only checked at the start of the sequence, so once
-                            // triggered, we stay triggered.
-                            maybeSkipping <- t2u.Skipping ()
-                    
-                        if maybeSkipping then
-                            moveNext ()
-                        elif t2u.ProcessNext (f idx) then
-                            true
-                        else
-                            moveNext ()
-                    elif (not signal.Halted) && idx = System.Int32.MaxValue then
-                        raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
-                    else
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext ()
-
-            type InitComposingEnumerable<'T,'U>(count:Nullable<int>, f:int->'T, seqComponentFactory:SeqComponentFactory<'T,'U>) =
-                inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
-
-                interface IEnumerable<'U> with
-                    member this.GetEnumerator () : IEnumerator<'U> =
-                        let signal, seqComponent = this.CreateSeqComponent () 
-                        Helpers.UpcastEnumerator (new InitComposedEnumerator<'T,'U>(count, f, seqComponent, signal))
-
-                override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                    Helpers.UpcastEnumerable (new InitComposingEnumerable<'T,'V>(count, f, this.FactoryCompose next))
-
-            type InitEnumerable<'T>(count:Nullable<int>, f:int->'T) =
-                inherit ComposableEnumerable<'T>()
-
-                interface IEnumerable<'T> with
-                    member this.GetEnumerator () : IEnumerator<'T> =
-                        // we defer back to the original implementation as, as it's quite idiomatic in it's decision
-                        // to calculate Current in a lazy fashion. I doubt anyone is really using this functionality
-                        // in the way presented, but it's possible.
-                        upto (if count.HasValue then Some count.Value else None) f
-
-                override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
-                    Helpers.UpcastEnumerable (InitComposingEnumerable<'T,'V>(count, f, next))
+                override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                    Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, ComposedFactory (current, next)))
 
 
 #if FX_NO_ICLONEABLE
@@ -1327,14 +1214,12 @@ namespace Microsoft.FSharp.Collections
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
-        let initInfinite<'T> (f:int->'T) : IEnumerable<'T> =
-            SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.InitEnumerable<'T>(Nullable (), f))
+        let initInfinite f = mkSeq (fun () -> IEnumerator.upto None f)
 
         [<CompiledName("Initialize")>]
         let init count f =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            elif count = 0 then empty else
-            SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.InitEnumerable<'T>(Nullable count, f))
+            mkSeq (fun () -> IEnumerator.upto (Some (count-1)) f)
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
