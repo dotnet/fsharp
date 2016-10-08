@@ -1262,7 +1262,9 @@ namespace Microsoft.FSharp.Collections
                             // triggered, we stay triggered.
                             maybeSkipping <- t2u.Skipping ()
                     
-                        if maybeSkipping || t2u.ProcessNext (f idx) then
+                        if maybeSkipping then
+                            moveNext ()
+                        elif t2u.ProcessNext (f idx) then
                             true
                         else
                             moveNext ()
