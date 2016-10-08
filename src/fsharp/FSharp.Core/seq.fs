@@ -930,10 +930,11 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponent<'T,'V>()
 
                 let mutable idx = 0
+                let mapi' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapi
 
                 override __.ProcessNext (input:'T) : bool = 
                     idx <- idx + 1
-                    Helpers.avoidTailCall (next.ProcessNext (mapi (idx-1) input))
+                    Helpers.avoidTailCall (next.ProcessNext (mapi'.Invoke (idx-1, input)))
 
             and Pairwise<'T,'V> (next:SeqComponent<'T*'T,'V>) =
                 inherit SeqComponent<'T,'V>()
@@ -1156,14 +1157,14 @@ namespace Microsoft.FSharp.Collections
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let enumerator = enumerable.GetEnumerator ()
-//                        let components = current ()
-//                        let mutable output = Unchecked.defaultof<'U>
-//                        let mutable halt = false
+//                        let result = Result<'U> ()
+//
+//                        let components = current.Create result (Tail result)
 //
 //                        let mutable state = initialState
-//                        while (not halt) && enumerator.MoveNext () do
-//                            if components.ProcessNext (enumerator.Current, &halt, &output) then
-//                                state <- folder'.Invoke (state, output)
+//                        while (not result.Halted) && enumerator.MoveNext () do
+//                            if components.ProcessNext (enumerator.Current) then
+//                                state <- folder'.Invoke (state, result.Current)
 //
 //                        state
 
@@ -1188,14 +1189,13 @@ namespace Microsoft.FSharp.Collections
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let mutable idx = 0
-//                        let components = current ()
-//                        let mutable current = Unchecked.defaultof<'U>
-//                        let mutable halt = false
+//                        let result = Result<'U> ()
+//                        let components = current.Create result (Tail result)
 //
 //                        let mutable state = initialState
-//                        while (not halt) && idx < array.Length do
-//                            if components.ProcessNext (array.[idx], &halt, &current) then
-//                                state <- folder'.Invoke(state, current)
+//                        while (not result.Halted) && idx < array.Length do
+//                            if components.ProcessNext array.[idx] then
+//                                state <- folder'.Invoke(state, result.Current)
 //                            idx <- idx + 1
 //
 //                        state
