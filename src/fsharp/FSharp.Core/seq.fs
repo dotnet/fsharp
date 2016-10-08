@@ -1045,6 +1045,8 @@ namespace Microsoft.FSharp.Collections
                 inherit TailSignal<'T>()
                 member val EnumeratorState = SeqEnumeratorState.NotStarted with get, set
 
+            // ----- base classes for enumerator/enumerable -----
+
             [<AbstractClass>]
             type ComposedEnumerator<'T>(signal:EnumeratorSignal<'T>) =
                 interface IDisposable with
@@ -1061,73 +1063,6 @@ namespace Microsoft.FSharp.Collections
                         | SeqEnumeratorState.NotStarted -> notStarted()
                         | SeqEnumeratorState.Finished -> alreadyFinished()
                         | _ -> signal.Current
-
-            type SeqComposedEnumerator<'T,'U>(source:IEnumerator<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let rec moveNext () =
-                    if (not signal.Halted) && source.MoveNext () then
-                        if t2u.ProcessNext source.Current then
-                            true
-                        else
-                            moveNext ()
-                    else
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext ()
-
-                interface IDisposable with
-                    member __.Dispose() = source.Dispose ()
-
-            type ArrayComposedEnumerator<'T,'U>(array:array<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let mutable idx = 0
-
-                let rec moveNext () =
-                    if (not signal.Halted) && idx < array.Length then
-                        idx <- idx+1
-                        if t2u.ProcessNext array.[idx-1] then
-                            true
-                        else
-                            moveNext ()
-                    else
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext ()
-
-            type ListComposedEnumerator<'T,'U>(alist:list<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
-                inherit ComposedEnumerator<'U>(signal)
-
-                let mutable list = alist
-
-                let rec moveNext current =
-                    match signal.Halted, current with
-                    | false, head::tail -> 
-                        if t2u.ProcessNext head then
-                            list <- tail
-                            true
-                        else
-                            moveNext tail
-                    | _ ->
-                        signal.EnumeratorState <- SeqEnumeratorState.Finished
-                        t2u.OnComplete ()
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
-                        moveNext list
 
             [<AbstractClass>]
             type ComposableEnumerable<'T> () =
@@ -1154,6 +1089,30 @@ namespace Microsoft.FSharp.Collections
                         let seqComponent = seqComponentFactory.Create signal (Tail signal)
                         signal, seqComponent
 
+            // ----- seq -----
+
+            type SeqComposedEnumerator<'T,'U>(source:IEnumerator<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
+                inherit ComposedEnumerator<'U>(signal)
+
+                let rec moveNext () =
+                    if (not signal.Halted) && source.MoveNext () then
+                        if t2u.ProcessNext source.Current then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        signal.EnumeratorState <- SeqEnumeratorState.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
+                        moveNext ()
+
+                interface IDisposable with
+                    member __.Dispose() = source.Dispose ()
+
             type SeqEnumerable<'T,'U>(enumerable:IEnumerable<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
                 inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
 
@@ -1170,16 +1129,40 @@ namespace Microsoft.FSharp.Collections
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let enumerator = enumerable.GetEnumerator ()
-//                        let result = Result<'U> ()
+//                        let signal = TailSignal<'U> ()
 //
-//                        let components = current.Create result (Tail result)
+//                        let components = seqComponentFactory.Create signal (Tail signal)
 //
 //                        let mutable state = initialState
-//                        while (not result.Halted) && enumerator.MoveNext () do
+//                        while (not signal.Halted) && enumerator.MoveNext () do
 //                            if components.ProcessNext (enumerator.Current) then
-//                                state <- folder'.Invoke (state, result.Current)
+//                                state <- folder'.Invoke (state, signal.Current)
 //
 //                        state
+
+            // ----- array -----
+
+            type ArrayComposedEnumerator<'T,'U>(array:array<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
+                inherit ComposedEnumerator<'U>(signal)
+
+                let mutable idx = 0
+
+                let rec moveNext () =
+                    if (not signal.Halted) && idx < array.Length then
+                        idx <- idx+1
+                        if t2u.ProcessNext array.[idx-1] then
+                            true
+                        else
+                            moveNext ()
+                    else
+                        signal.EnumeratorState <- SeqEnumeratorState.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
+                        moveNext ()
 
             type SeqArrayEnumerable<'T,'U>(array:array<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
                 inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
@@ -1197,16 +1180,41 @@ namespace Microsoft.FSharp.Collections
 //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
 //                    
 //                        let mutable idx = 0
-//                        let result = Result<'U> ()
-//                        let components = current.Create result (Tail result)
+//                        let signal = TailSignal<'U> ()
+//                        let components = seqComponentFactory.Create signal (Tail signal)
 //
 //                        let mutable state = initialState
-//                        while (not result.Halted) && idx < array.Length do
+//                        while (not signal.Halted) && idx < array.Length do
 //                            if components.ProcessNext array.[idx] then
-//                                state <- folder'.Invoke(state, result.Current)
+//                                state <- folder'.Invoke(state, signal.Current)
 //                            idx <- idx + 1
 //
 //                        state
+
+            // ----- list -----
+
+            type ListComposedEnumerator<'T,'U>(alist:list<'T>, t2u:SeqComponent<'T,'U>, signal:EnumeratorSignal<'U>) =
+                inherit ComposedEnumerator<'U>(signal)
+
+                let mutable list = alist
+
+                let rec moveNext current =
+                    match signal.Halted, current with
+                    | false, head::tail -> 
+                        if t2u.ProcessNext head then
+                            list <- tail
+                            true
+                        else
+                            moveNext tail
+                    | _ ->
+                        signal.EnumeratorState <- SeqEnumeratorState.Finished
+                        t2u.OnComplete ()
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        signal.EnumeratorState <- SeqEnumeratorState.InProcess
+                        moveNext list
 
             type SeqListEnumerable<'T,'U>(alist:list<'T>, seqComponentFactory:SeqComponentFactory<'T,'U>) =
                 inherit ComposableEnumerableFactoryHelper<'T,'U>(seqComponentFactory)
@@ -1218,6 +1226,8 @@ namespace Microsoft.FSharp.Collections
 
                 override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                     Helpers.UpcastEnumerable (new SeqListEnumerable<'T,'V>(alist, this.FactoryCompose next))
+
+            // ----- init ----- 
 
             // The original implementation of "init" delayed the calculation of Current, and so it was possible
             // to do MoveNext without it's value being calculated.
