@@ -1276,7 +1276,7 @@ namespace Microsoft.FSharp.Collections
                         // we defer back to the original implementation as, as it's quite idiomatic in it's decision
                         // to calculate Current in a lazy fashion. I doubt anyone is really using this functionality
                         // in the way presented, but it's possible.
-                        upto (if count.HasValue then Some count.Value else None) f
+                        upto (if count.HasValue then Some (count.Value-1) else None) f
 
                 override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                     Helpers.UpcastEnumerable (InitComposingEnumerable<'T,'V>(count, f, next))
