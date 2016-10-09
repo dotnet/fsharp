@@ -108,25 +108,6 @@ namespace Microsoft.FSharp.Collections
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
 
-      let map2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_>=
-          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-          upcast
-              {  new MapEnumerator<_>() with
-                     member this.DoMoveNext curr =
-                        let n1 = e1.MoveNext()
-                        let n2 = e2.MoveNext()
-                        if n1 && n2 then
-                           curr <- f.Invoke(e1.Current, e2.Current)
-                           true
-                        else
-                           false
-                     member this.Dispose() =
-                        try
-                            e1.Dispose()
-                        finally
-                            e2.Dispose()
-              }
-
       let mapi2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_> =
           let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
           let i = ref (-1)
@@ -851,6 +832,14 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = next.CreateMap map
 
+            and Map2FirstFactory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
+                inherit SeqComponentFactory<'First,'U> ()
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'First,'V> = upcast Map2First (map, input2, result, next)
+
+            and Map2SecondFactory<'First,'Second,'U> (map:'First->'Second->'U, input1:IEnumerable<'First>) =
+                inherit SeqComponentFactory<'Second,'U> ()
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'Second,'V> = upcast Map2Second (map, input1, result, next)
+
             and MapiFactory<'T,'U> (mapi:int->'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Mapi (mapi, next) 
@@ -928,6 +917,38 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     Helpers.avoidTailCall (next.ProcessNext (map input))
+
+            and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:Result<'V>, next:SeqComponent<'U,'V>) =
+                inherit SeqComponent<'First,'V>()
+
+                let input2 = enumerable2.GetEnumerator ()
+                let map' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt map
+
+                override __.ProcessNext (input:'First) : bool =
+                    if input2.MoveNext () then
+                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input, input2.Current)))
+                    else
+                        result.StopFurtherProcessing ()
+                        false
+
+                override __.OnComplete () =
+                    input2.Dispose ()
+
+            and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, result:Result<'V>, next:SeqComponent<'U,'V>) =
+                inherit SeqComponent<'Second,'V>()
+
+                let input1 = enumerable1.GetEnumerator ()
+                let map' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt map
+
+                override __.ProcessNext (input:'Second) : bool =
+                    if input1.MoveNext () then
+                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input1.Current, input)))
+                    else
+                        result.StopFurtherProcessing ()
+                        false
+
+                override __.OnComplete () =
+                    input1.Dispose ()
 
             and MapThenFilter<'T,'U,'V> (map:'T->'U, filter:'U->bool, next:SeqComponent<'U,'V>) =
                 inherit SeqComponent<'T,'V>()
@@ -1438,10 +1459,12 @@ namespace Microsoft.FSharp.Collections
             revamp2 (IEnumerator.mapi2    f) source1 source2
 
         [<CompiledName("Map2")>]
-        let map2 f source1 source2 =
+        let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
-            revamp2 (IEnumerator.map2    f) source1 source2
+            match source1 with
+            | :? SeqComposer.Base.Enumerable<'T> as s -> s.Compose (SeqComposer.Map2FirstFactory (f, source2))
+            | _ -> source2 |> seqFactory (SeqComposer.Map2SecondFactory (f, source1))
 
         [<CompiledName("Map3")>]
         let map3 f source1 source2 source3 =
