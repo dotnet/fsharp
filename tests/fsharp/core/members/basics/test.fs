@@ -1104,6 +1104,28 @@ module OverrideIComparableOnUnionTest = begin
   do testc s4 s2 
 end
 
+module ToStringOnUnionTest = begin
+
+  type MyUnion = A of string | B
+
+  let a1 = A "FOO"
+  do test "union-tostring-def" (a1.ToString() = "A \"FOO\"")
+  do test "union-sprintfO-def" ((sprintf "%O" a1) = "A \"FOO\"")
+
+end
+
+module ToStringOnUnionTest = begin
+
+  type MyUnion = A of string | B
+    with
+      override x.ToString() = "MyUnion"
+
+  let a1 = A "FOO"
+  do test "union-tostring-with-override" (a1.ToString() = "MyUnion))")
+  do test "union-sprintfO-with-override" ((sprintf "%O" a1) = "MyUnion))")
+
+end
+
 module OverrideIStructuralComparableOnUnionTest = begin
 
   [<CustomEquality; CustomComparison>]
