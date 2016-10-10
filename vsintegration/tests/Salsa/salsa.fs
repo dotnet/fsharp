@@ -221,7 +221,8 @@ module internal Salsa =
 
             try        
                 try 
-                    GetFlagsAndSources(project,host)
+                    let flagsAndSources = GetFlagsAndSources(project,host)
+                    (project, flagsAndSources)
                 with e -> 
                     System.Diagnostics.Debug.Assert(false, sprintf "Bug seen in MSBuild CrackProject: %s %s %s\n" (e.GetType().Name) e.Message (e.StackTrace))
                     reraise()
@@ -257,7 +258,8 @@ module internal Salsa =
                 timestamp <- newtimestamp
                 prevConfig <- curConfig
                 prevPlatform <- curPlatform
-                flags <- Some(MSBuild.CrackProject(projectfile, prevConfig, prevPlatform))
+                let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, prevConfig, prevPlatform)
+                flags <- Some(projectObjFlags)
             match flags with
             | Some flags -> flags
             | _ -> raise Error.Bug
@@ -287,9 +289,13 @@ module internal Salsa =
           member this.ErrorListTaskReporter() = None
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
+          member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) = () // no unit testing support here
           member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = System.DateTime(2000,1,1)
+          member this.ProjectGuid = 
+                let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
+                projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
         
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 

@@ -27,7 +27,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio
     open Microsoft.VisualStudio.Shell
     open Microsoft.VisualStudio.Shell.Interop
-    open Microsoft.VisualStudio.Shell.Flavor
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.LanguageService

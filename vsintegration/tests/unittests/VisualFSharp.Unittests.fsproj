@@ -18,7 +18,7 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-	<DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -34,13 +34,36 @@
     <Compile Include="TestLib.Salsa.fs" />
     <Compile Include="TestLib.LanguageService.fs" />
     <Compile Include="TestLib.ProjectSystem.fs" />
+    <Compile Include="ColorizationServiceTests.fs">
+      <Link>Roslyn\Classification\ColorizationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="BraceMatchingServiceTests.fs">
+      <Link>Roslyn\Utilities\BraceMatchingServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="IndentationServiceTests.fs">
+      <Link>Roslyn\Utilities\IndentationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="BreakpointResolutionService.fs">
+      <Link>Roslyn\Debugging\BreakpointResolutionService.fs</Link>
+    </Compile>
+    <Compile Include="LanguageDebugInfoServiceTests.fs">
+      <Link>Roslyn\Debugging\LanguageDebugInfoServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
+      <Link>Roslyn\Diagnostics\DocumentDiagnosticAnalyzerTests.fs</Link>
+    </Compile>
+    <Compile Include="CompletionProviderTests.fs">
+      <Link>Roslyn\Completion\CompletionProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="GoToDefinitionServiceTests.fs">
+      <Link>Roslyn\GoToDefinition\GoToDefinitionServiceTests.fs</Link>
+    </Compile>
     <Compile Include="Tests.InternalCollections.fs" />
     <Compile Include="Tests.Build.fs" />
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.LanguageService.General.fs" />
-    <Compile Include="Tests.LanguageService.Colorizer.fs" />
     <Compile Include="Tests.LanguageService.Completion.fs" />
     <Compile Include="Tests.LanguageService.F1Keyword.fs" />
     <Compile Include="Tests.LanguageService.IncrementalBuild.fs" />
@@ -50,7 +73,6 @@
     <Compile Include="Tests.LanguageService.QuickInfo.fs" />
     <Compile Include="Tests.LanguageService.QuickParse.fs" />
     <Compile Include="Tests.LanguageService.Script.fs" />
-    <Compile Include="Tests.LanguageService.Squiggles.fs" />
     <Compile Include="Tests.LanguageService.TimeStamp.fs" />
     <Compile Include="Tests.LanguageService.ErrorList.fs" />
     <Compile Include="Tests.LanguageService.ErrorRecovery.fs" />
@@ -119,24 +141,93 @@
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
-    <Reference Include="Microsoft.VisualStudio.Threading" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design" />
-    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.Wpf.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Data.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Text.Internal.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Language.Intellisense.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Language.Intellisense.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.CoreUtility.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.CoreUtility.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-    <Reference Include="Microsoft.VisualStudio.CommonIDE" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="nunit.framework">
       <Private>True</Private>
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.EditorFeatures">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.EditorFeatures.$(RoslynVersion)\lib\net46\Microsoft.CodeAnalysis.EditorFeatures.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.EditorFeatures.Text">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.EditorFeatures.Text.$(RoslynVersion)\lib\net46\Microsoft.CodeAnalysis.EditorFeatures.Text.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Features">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Features.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Features.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Workspaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Workspaces.Common.$(RoslynVersion)\lib\net45\Microsoft.CodeAnalysis.Workspaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.LanguageServices">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.LanguageServices.$(RoslynVersion)\lib\net46\Microsoft.VisualStudio.LanguageServices.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Composition.AttributedModel">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Composition.1.0.27\lib\portable-net45+win8+wp8+wpa81\System.Composition.AttributedModel.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -175,6 +266,11 @@
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj">
       <Name>FSharp.ProjectSystem.FSharp</Name>
       <Project>{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
+      <Name>FSharp.Editor</Name>
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

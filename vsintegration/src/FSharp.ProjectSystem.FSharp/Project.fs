@@ -35,6 +35,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.LanguageService
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
+    open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
     
@@ -91,9 +92,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.ProjectFileName() = inner.ProjectFileName()
             member ips.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
             member ips.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
+            member ips.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
             member ips.ErrorListTaskProvider() = inner.ErrorListTaskProvider()
             member ips.ErrorListTaskReporter() = inner.ErrorListTaskReporter()
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
+            member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
 
@@ -397,6 +400,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             
             let sourcesAndFlagsNotifier = new Notifier()
             let cleanNotifier = new Notifier()
+            let closeNotifier = new Notifier()
             
             [<Microsoft.FSharp.Core.DefaultValue>]
             static val mutable private imageOffset : int 
@@ -563,6 +567,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | Some(libraryManager) -> 
                         libraryManager.UnregisterHierarchy(this.InteropSafeIVsHierarchy)
                     | _ -> ()
+
+                closeNotifier.Notify()
                 vsProject <- null
                 accessor <- null
                 base.Close()
@@ -1467,8 +1473,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
                     member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) =
                         cleanNotifier.Advise(callbackOwnerKey,callback)
+                    member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) =
+                        closeNotifier.Advise(callbackOwnerKey,callback)
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
+                    member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                 }
 
@@ -1496,8 +1505,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member ips.ErrorListTaskReporter() = taskReporter
                     member this.AdviseProjectSiteChanges(_,_) = ()
                     member this.AdviseProjectSiteCleaned(_,_) = ()
+                    member this.AdviseProjectSiteClosed(_,_) = ()
                     member this.IsIncompleteTypeCheckEnvironment = false
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
+                    member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                 }
 
@@ -1584,7 +1595,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- GuidList.guidEditorFactory
+                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1598,7 +1609,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- GuidList.guidEditorFactory
+                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
@@ -2249,14 +2260,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                       
                 match (cmd |> int32 |> enum) with 
                 //| VsCommands.Delete   // REVIEW needs work to implement: see e.g. RemoveFromProjectFile() RemoveItem() CanRemoveItems() CanDeleteItem() DeleteFromStorage()
-                | VsCommands.ViewCode when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
+                | VSConstants.VSStd97CmdID.ViewCode when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
                         
                         result <- result ||| QueryStatusResult.SUPPORTED
                         if noBuildInProgress then 
                             result <- result ||| QueryStatusResult.ENABLED
                         VSConstants.S_OK
                         
-                | VsCommands.ViewForm when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
+                | VSConstants.VSStd97CmdID.ViewForm when guidCmdGroup = VsMenus.guidStandardCommandSet97 -> 
                         if (x.IsFormSubType) then 
                             result <- result ||| QueryStatusResult.SUPPORTED
                         if noBuildInProgress then 

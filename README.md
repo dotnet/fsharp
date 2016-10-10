@@ -87,4 +87,3 @@ Although the primary focus of this repo is F# for Windows and the Visual Studio 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
 
 
-

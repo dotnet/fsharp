@@ -87,9 +87,7 @@ type FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
-#if COLORIZE_TYPES
     | TypeName = 11
-#endif
 
 /// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
@@ -475,7 +473,7 @@ type SingleLineTokenState =
 [<Sealed>]
 type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, 
                             maxLength: int option,
-                            filename : string, 
+                            filename : Option<string>, 
                             lexArgsLightOn : lexargs,
                             lexArgsLightOff : lexargs
                             ) = 
@@ -483,7 +481,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let skip = false   // don't skip whitespace in the lexer 
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
-    let fsx = CompileOps.IsScript(filename)
+    let fsx = match filename with
+              | None -> false
+              | Some(value) -> CompileOps.IsScript(value)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -550,8 +550,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
           
 
 
-    do resetLexbufPos filename lexbuf 
-    
+    do match filename with 
+        | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
+        | Some(value) -> resetLexbufPos value lexbuf
+     
     member x.ScanToken(lexintInitial) : Option<FSharpTokenInfo> * FSharpTokenizerLexState = 
         use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
@@ -732,7 +734,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         LexerStateEncoding.encodeLexCont colorState ncomments position ifdefStack light
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants : string list, filename : string) =     
+type FSharpSourceTokenizer(defineConstants : string list, filename : Option<string>) =     
     let lexResourceManager = new Lexhelp.LexResourceManager() 
 
     let lexArgsLightOn = mkLexargs(filename,defineConstants,LightSyntaxStatus(true,false),lexResourceManager, ref [],DiscardErrorsLogger) 
