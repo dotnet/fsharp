@@ -268,9 +268,12 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,a
         else
             inputFilesRef := name :: !inputFilesRef
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
-    
+
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    if (tcConfigB.embedAllSource || tcConfigB.embedSourceList |> List.length <> 0) && (not (tcConfigB.portablePDB || tcConfigB.embeddedPDB)) then
+        error(Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs(),rangeCmdArgs))
+
     let inputFiles = List.rev !inputFilesRef
 
 #if FX_LCIDFROMCODEPAGE
@@ -334,12 +337,12 @@ let GetTcImportsFromCommandLine
         // Rather than start processing, just collect names, then process them. 
         try 
             let sourceFiles = 
-                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, 
+                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals,
 #if FX_LCIDFROMCODEPAGE
                                                      lcidFromCodePage, 
 #endif
                                                      argv)
-                AdjustForScriptCompile(tcConfigB,files,lexResourceManager)                     
+                AdjustForScriptCompile(tcConfigB,files,lexResourceManager)
             sourceFiles
 
         with e -> 

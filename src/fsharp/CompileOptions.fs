@@ -661,29 +661,28 @@ let resourcesFlagsFsc (tcConfigB : TcConfigBuilder) =
 //-----------------------------
 
 let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
-    [
-        CompilerOption("debug", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None,
-                           Some (FSComp.SR.optsDebugPM()))
-
-        CompilerOption("debug", tagFullPDBOnlyPortable, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
-                           Some (FSComp.SR.optsDebug(if isFsi then "pdbonly" else "full")))
-
-        CompilerOption("embed", tagNone, OptionSwitch (SetEmbedAllSourceSwitch tcConfigB) , None, 
-                           Some (FSComp.SR.optsEmbedAllSource()))
-
-        CompilerOption("embed", tagFileList, OptionStringList (fun f -> tcConfigB.AddEmbeddedSourceFile f), None, 
-                           Some ( FSComp.SR.optsEmbedSource())); 
-
-        CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 
-                           Some (FSComp.SR.optsOptimize()))
-
-        CompilerOption("tailcalls", tagNone, OptionSwitch (SetTailcallSwitch tcConfigB), None,
-                           Some (FSComp.SR.optsTailcalls()))
-                           
-        CompilerOption("crossoptimize", tagNone, OptionSwitch (crossOptimizeSwitch tcConfigB), None,
-                           Some (FSComp.SR.optsCrossoptimize()))
-    ]
-
+    let debug =
+        [CompilerOption("debug", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None,
+                        Some (FSComp.SR.optsDebugPM()))
+         CompilerOption("debug", tagFullPDBOnlyPortable, OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
+                        Some (FSComp.SR.optsDebug(if isFsi then "pdbonly" else "full")))
+        ]
+    let embed =
+        [CompilerOption("embed", tagNone, OptionSwitch (SetEmbedAllSourceSwitch tcConfigB) , None, 
+                        Some (FSComp.SR.optsEmbedAllSource()))
+         CompilerOption("embed", tagFileList, OptionStringList (fun f -> tcConfigB.AddEmbeddedSourceFile f), None, 
+                        Some ( FSComp.SR.optsEmbedSource())); 
+        ]
+    let codegen =
+        [CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 
+                            Some (FSComp.SR.optsOptimize()))
+         CompilerOption("tailcalls", tagNone, OptionSwitch (SetTailcallSwitch tcConfigB), None,
+                            Some (FSComp.SR.optsTailcalls()))
+         CompilerOption("crossoptimize", tagNone, OptionSwitch (crossOptimizeSwitch tcConfigB), None,
+                            Some (FSComp.SR.optsCrossoptimize()))
+        ]
+    if isFsi then debug @ codegen
+    else debug @ embed @ codegen
 
 // OptionBlock: Language
 //----------------------
@@ -832,7 +831,6 @@ let vsSpecificFlags (tcConfigB: TcConfigBuilder) =
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None) 
     CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some(s)), None, None)
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None) ]
-
 
 let internalFlags (tcConfigB:TcConfigBuilder) =
   [

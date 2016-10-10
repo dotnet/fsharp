@@ -332,7 +332,6 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                     match includeSource doc.File with
                     | None -> ()
                     | Some blob ->
-                        printf "AddCustomDebugInformation : %A" doc.File
                         metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(h),
                                                            metadata.GetOrAddGuid(embeddedSource),
                                                            metadata.GetOrAddBlob(blob)) |> ignore
