@@ -318,149 +318,6 @@ namespace Microsoft.FSharp.Collections
                         f()
           }
 
-    // Use generators for some implementations of IEnumerables.
-    //
-    module Generator =
-
-        open System.Collections
-        open System.Collections.Generic
-
-        [<NoEquality; NoComparison>]
-        type Step<'T> =
-            | Stop
-            | Yield of 'T
-            | Goto of Generator<'T>
-
-        and Generator<'T> =
-            abstract Apply: (unit -> Step<'T>)
-            abstract Disposer: (unit -> unit) option
-
-        let disposeG (g:Generator<'T>) =
-            match g.Disposer with
-            | None -> ()
-            | Some f -> f()
-
-        let appG (g:Generator<_>) =
-            //System.Console.WriteLine("{0}.appG", box g)
-            let res = g.Apply()
-            match res with
-            | Goto(next) ->
-                Goto(next)
-            | Yield _ ->
-                res
-            | Stop ->
-                //System.Console.WriteLine("appG: Stop")
-                disposeG g
-                res
-
-        // Binding.
-        //
-        // We use a type definition to apply a local dynamic optimization.
-        // We automatically right-associate binding, i.e. push the continuations to the right.
-        // That is, bindG (bindG G1 cont1) cont2 --> bindG G1 (cont1 o cont2)
-        // This makes constructs such as the following linear rather than quadratic:
-        //
-        //  let rec rwalk n = { if n > 0 then
-        //                         yield! rwalk (n-1)
-        //                         yield n }
-
-        type GenerateThen<'T>(g:Generator<'T>, cont : unit -> Generator<'T>) =
-            member self.Generator = g
-            member self.Cont = cont
-            interface Generator<'T> with
-                 member x.Apply = (fun () ->
-                      match appG g with
-                      | Stop ->
-                          // OK, move onto the generator given by the continuation
-                          Goto(cont())
-
-                      | Yield _ as res ->
-                          res
-
-                      | Goto next ->
-                          Goto(GenerateThen<_>.Bind(next,cont)))
-                 member x.Disposer =
-                      g.Disposer
-
-
-            static member Bind (g:Generator<'T>, cont) =
-                match g with
-                | :? GenerateThen<'T> as g -> GenerateThen<_>.Bind(g.Generator,(fun () -> GenerateThen<_>.Bind (g.Cont(), cont)))
-                | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
-
-
-        let bindG g cont = GenerateThen<_>.Bind(g,cont)
-
-
-        // Internal type. Drive an underlying generator. Crucially when the generator returns
-        // a new generator we simply update our current generator and continue. Thus the enumerator
-        // effectively acts as a reference cell holding the current generator. This means that
-        // infinite or large generation chains (e.g. caused by long sequences of append's, including
-        // possible delay loops) can be referenced via a single enumerator.
-        //
-        // A classic case where this arises in this sort of sequence expression:
-        //    let rec data s = { yield s;
-        //                       yield! data (s + random()) }
-        //
-        // This translates to
-        //    let rec data s = Seq.delay (fun () -> Seq.append (Seq.singleton s) (Seq.delay (fun () -> data (s+random()))))
-        //
-        // When you unwind through all the Seq, IEnumerator and Generator objects created,
-        // you get (data s).GetEnumerator being an "GenerateFromEnumerator(EnumeratorWrappingLazyGenerator(...))" for the append.
-        // After one element is yielded, we move on to the generator for the inner delay, which in turn
-        // comes back to be a "GenerateFromEnumerator(EnumeratorWrappingLazyGenerator(...))".
-        //
-        // Defined as a type so we can optimize Enumerator/Generator chains in enumerateFromLazyGenerator
-        // and GenerateFromEnumerator.
-
-        [<Sealed>]
-        type EnumeratorWrappingLazyGenerator<'T>(g:Generator<'T>) =
-            let mutable g = g
-            let mutable curr = None
-            let mutable finished = false
-            member e.Generator = g
-            interface IEnumerator<'T> with
-                member x.Current= match curr with Some(v) -> v | None -> raise <| System.InvalidOperationException (SR.GetString(SR.moveNextNotCalledOrFinished))
-            interface System.Collections.IEnumerator with
-                member x.Current = box (x :> IEnumerator<_>).Current
-                member x.MoveNext() =
-                    not finished &&
-                    (match appG g with
-                     | Stop ->
-                        curr <- None
-                        finished <- true
-                        false
-                     | Yield(v) ->
-                        curr <- Some(v)
-                        true
-                     | Goto(next) ->
-                        (g <- next)
-                        (x :> IEnumerator).MoveNext())
-                member x.Reset() = IEnumerator.noReset()
-            interface System.IDisposable with
-                member x.Dispose() =
-                    if not finished then disposeG g
-
-        // Internal type, used to optimize Enumerator/Generator chains
-        type LazyGeneratorWrappingEnumerator<'T>(e:System.Collections.Generic.IEnumerator<'T>) =
-            member g.Enumerator = e
-            interface Generator<'T> with
-                member g.Apply = (fun () ->
-                    if e.MoveNext() then
-                        Yield(e.Current)
-                    else
-                        Stop)
-                member g.Disposer= Some(e.Dispose)
-
-        let EnumerateFromGenerator(g:Generator<'T>) =
-            match g with
-            | :? LazyGeneratorWrappingEnumerator<'T> as g -> g.Enumerator
-            | _ -> (new EnumeratorWrappingLazyGenerator<_>(g) :> System.Collections.Generic.IEnumerator<_>)
-
-        let GenerateFromEnumerator (e:System.Collections.Generic.IEnumerator<'T>) =
-            match e with
-            | :? EnumeratorWrappingLazyGenerator<'T> as e ->  e.Generator
-            | _ -> (new LazyGeneratorWrappingEnumerator<'T>(e) :> Generator<'T>)
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -1083,9 +940,9 @@ namespace Microsoft.FSharp.Collections
                     result.Current <- input
                     true
 
-            module Base =
+            module Enumerable =
                 [<AbstractClass>]
-                type Enumerator<'T>(result:Result<'T>, seqComponent:ISeqComponent) =
+                type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ISeqComponent) =
                     interface IDisposable with
                         member __.Dispose() : unit =
                             seqComponent.OnDispose ()
@@ -1102,10 +959,11 @@ namespace Microsoft.FSharp.Collections
                             | SeqProcessNextStates.Finished -> alreadyFinished()
                             | _ -> result.Current
 
-
-                [<AbstractClass>]
-                type Enumerable<'T> () =
+                and [<AbstractClass>] EnumerableBase<'T> () =
                     abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
+                    abstract member Append<'T>  : (seq<'T>) -> IEnumerable<'T>
+
+                    default this.Append source = Helpers.UpcastEnumerable (AppendEnumerable [this; source])
 
                     interface IEnumerable with
                         member this.GetEnumerator () : IEnumerator =
@@ -1116,9 +974,8 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> = failwith "library implementation error: derived class should implement (should be abstract)"
 
-            module Enumerable =
-                type Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
-                    inherit Base.Enumerator<'U>(result, seqComponent)
+                and Enumerator<'T,'U>(source:IEnumerator<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
+                    inherit EnumeratorBase<'U>(result, seqComponent)
 
                     let rec moveNext () =
                         if (not result.Halted) && source.MoveNext () then
@@ -1141,8 +998,8 @@ namespace Microsoft.FSharp.Collections
                             source.Dispose ()
                             (Helpers.UpcastISeqComponent seqComponent).OnDispose ()
 
-                type Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
-                    inherit Base.Enumerable<'U>()
+                and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
+                    inherit EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
@@ -1168,9 +1025,59 @@ namespace Microsoft.FSharp.Collections
     //
     //                        state
 
+                and AppendEnumerator<'T> (sources:list<seq<'T>>) =
+                    let sources = sources |> List.rev 
+
+                    let mutable state = SeqProcessNextStates.NotStarted
+                    let mutable remaining = sources.Tail
+                    let mutable active = sources.Head.GetEnumerator ()
+
+                    let rec moveNext () =
+                        if active.MoveNext () then true
+                        else
+                            match remaining with
+                            | [] -> false
+                            | hd :: tl ->
+                                active.Dispose ()
+                                active <- hd.GetEnumerator ()
+                                remaining <- tl
+                                
+                                moveNext ()
+
+                    interface IEnumerator<'T> with
+                        member __.Current =
+                            match state with
+                            | SeqProcessNextStates.NotStarted -> notStarted()
+                            | SeqProcessNextStates.Finished -> alreadyFinished()
+                            | _ -> active.Current
+
+                    interface IEnumerator with
+                        member __.Current = (Helpers.UpcastEnumeratorNonGeneric active).Current
+                        member __.MoveNext () =
+                            state <- SeqProcessNextStates.InProcess
+                            moveNext ()
+                        member __.Reset () = noReset ()
+
+                    interface IDisposable with
+                        member __.Dispose() =
+                            active.Dispose ()
+
+                and AppendEnumerable<'T> (sources:list<seq<'T>>) =
+                    inherit EnumerableBase<'T>()
+
+                    interface IEnumerable<'T> with
+                        member this.GetEnumerator () : IEnumerator<'T> =
+                            Helpers.UpcastEnumerator (new AppendEnumerator<_> (sources))
+
+                    override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
+                        Helpers.UpcastEnumerable (Enumerable<'T,'V>(this, next))
+
+                    override this.Append source =
+                        Helpers.UpcastEnumerable (AppendEnumerable (source :: sources))
+
             module Array =
                 type Enumerator<'T,'U>(array:array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
-                    inherit Base.Enumerator<'U>(result, seqComponent)
+                    inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable idx = 0
 
@@ -1192,7 +1099,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
 
                 type Enumerable<'T,'U>(array:array<'T>, current:SeqComponentFactory<'T,'U>) =
-                    inherit Base.Enumerable<'U>()
+                    inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
@@ -1220,7 +1127,7 @@ namespace Microsoft.FSharp.Collections
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
-                    inherit Base.Enumerator<'U>(result, seqComponent)
+                    inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable list = alist
 
@@ -1243,7 +1150,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext list
 
                 type Enumerable<'T,'U>(alist:list<'T>, current:SeqComponentFactory<'T,'U>) =
-                    inherit Base.Enumerable<'U>()
+                    inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
@@ -1265,7 +1172,7 @@ namespace Microsoft.FSharp.Collections
                 // I have had to add an extra function that is used in Skip to determine if we are touching
                 // Current or not.
                 type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
-                    inherit Base.Enumerator<'U>(signal, seqComponent)
+                    inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
 
                     // we are offset by 1 to allow for values going up to System.Int32.MaxValue
                     // System.Int32.MaxValue is an illegal value for the "infinite" sequence
@@ -1306,7 +1213,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
 
                 type Enumerable<'T,'U>(count:Nullable<int>, f:int->'T, current:SeqComponentFactory<'T,'U>) =
-                    inherit Base.Enumerable<'U>()
+                    inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
@@ -1317,7 +1224,7 @@ namespace Microsoft.FSharp.Collections
                         Helpers.UpcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory (current, next)))
 
                 type EnumerableDecider<'T>(count:Nullable<int>, f:int->'T) =
-                    inherit Base.Enumerable<'T>()
+                    inherit Enumerable.EnumerableBase<'T>()
 
                     interface IEnumerable<'T> with
                         member this.GetEnumerator () : IEnumerator<'T> =
@@ -1453,7 +1360,7 @@ namespace Microsoft.FSharp.Collections
         let private seqFactory createSeqComponent (source:seq<'T>) =
             checkNonNull "source" source
             match source with
-            | :? SeqComposer.Base.Enumerable<'T> as s -> s.Compose createSeqComponent
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose createSeqComponent
             | :? array<'T> as a -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.Array.Enumerable<_,_>(a, createSeqComponent))
             | :? list<'T> as a -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.List.Enumerable<_,_>(a, createSeqComponent))
             | _ -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.Enumerable.Enumerable<_,_>(source, createSeqComponent))
@@ -1484,7 +1391,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source1" source1
             checkNonNull "source2" source2
             match source1 with
-            | :? SeqComposer.Base.Enumerable<'T> as s -> s.Compose (SeqComposer.Map2FirstFactory (f, source2))
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose (SeqComposer.Map2FirstFactory (f, source2))
             | _ -> source2 |> seqFactory (SeqComposer.Map2SecondFactory (f, source1))
 
         [<CompiledName("Map3")>]
@@ -1629,9 +1536,6 @@ namespace Microsoft.FSharp.Collections
                 state <- f.Invoke(state, e.Current)
             state
 
-        let fromGenerator f = mkSeq(fun () -> Generator.EnumerateFromGenerator (f()))
-        let toGenerator (ie : seq<_>) = Generator.GenerateFromEnumerator (ie.GetEnumerator())
-
         [<CompiledName("Replicate")>]
         let replicate count x =
             System.Linq.Enumerable.Repeat(x,count)
@@ -1640,7 +1544,9 @@ namespace Microsoft.FSharp.Collections
         let append (source1: seq<'T>) (source2: seq<'T>) =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
-            fromGenerator(fun () -> Generator.bindG (toGenerator source1) (fun () -> toGenerator source2))
+            match source1 with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Append source2
+            | _ -> SeqComposer.Helpers.UpcastEnumerable (new SeqComposer.Enumerable.AppendEnumerable<_>([source2; source1]))
 
 
         [<CompiledName("Collect")>]
