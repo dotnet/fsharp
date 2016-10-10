@@ -981,23 +981,6 @@ namespace Microsoft.FSharp.Collections
                     result.Current <- input
                     true
 
-            and Truncate<'T,'V> (truncateCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
-                inherit SeqComponent<'T,'V>(next)
-
-                let mutable count = 0
-
-                member __.Count = count
-
-                override __.ProcessNext (input:'T) : bool = 
-                    if count < truncateCount then
-                        count <- count + 1
-                        if count = truncateCount then
-                            result.StopFurtherProcessing ()
-                        next.ProcessNext input
-                    else
-                        result.StopFurtherProcessing ()
-                        false
-
             module Enumerable =
                 [<AbstractClass>]
                 type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ISeqComponent) =
@@ -1022,7 +1005,6 @@ namespace Microsoft.FSharp.Collections
                 and [<AbstractClass>] EnumerableBase<'T> () =
                     abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
                     abstract member Append<'T>  : (seq<'T>) -> IEnumerable<'T>
-                    abstract member Fold<'State> : folder:('State->'T->'State) -> state:'State -> 'State
 
                     default this.Append source = Helpers.UpcastEnumerable (AppendEnumerable [this; source])
 
@@ -1108,15 +1090,13 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator<'T> with
                         member __.Current =
-                            if state = SeqProcessNextStates.InProcess then active.Current
-                            else
-                                match state with
-                                | SeqProcessNextStates.NotStarted -> notStarted()
-                                | SeqProcessNextStates.Finished -> alreadyFinished()
-                                | _ -> failwith "library implementation error: all states should have been handled"
+                            match state with
+                            | SeqProcessNextStates.NotStarted -> notStarted()
+                            | SeqProcessNextStates.Finished -> alreadyFinished()
+                            | _ -> active.Current
 
                     interface IEnumerator with
-                        member this.Current = box ((Helpers.UpcastEnumerator this)).Current
+                        member __.Current = (Helpers.UpcastEnumeratorNonGeneric active).Current
                         member __.MoveNext () =
                             state <- SeqProcessNextStates.InProcess
                             moveNext ()
@@ -1138,18 +1118,6 @@ namespace Microsoft.FSharp.Collections
 
                     override this.Append source =
                         Helpers.UpcastEnumerable (AppendEnumerable (source :: sources))
-
-                    override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
-                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-                        
-                        let enumerable = Helpers.UpcastEnumerable (AppendEnumerable sources)
-                        let enumerator = enumerable.GetEnumerator ()
-    
-                        let mutable state = initialState
-                        while enumerator.MoveNext () do
-                            state <- folder'.Invoke (state, enumerator.Current)
-    
-                        state
 
             module Array =
                 type Enumerator<'T,'U>(array:array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
@@ -1264,6 +1232,8 @@ namespace Microsoft.FSharp.Collections
                 // so you already know what the count is!! Anyway, someone thought it was a good idea, so
                 // I have had to add an extra function that is used in Skip to determine if we are touching
                 // Current or not.
+                type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
+                    inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
 
                 let getTerminatingIdx (count:Nullable<int>) =
                     // we are offset by 1 to allow for values going up to System.Int32.MaxValue
