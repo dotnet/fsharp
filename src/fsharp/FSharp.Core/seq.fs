@@ -1055,7 +1055,7 @@ namespace Microsoft.FSharp.Collections
                                 | _ -> failwith "library implementation error: all states should have been handled"
 
                     interface IEnumerator with
-                        member __.Current = (Helpers.UpcastEnumeratorNonGeneric active).Current
+                        member this.Current = box ((Helpers.UpcastEnumerator this)).Current
                         member __.MoveNext () =
                             state <- SeqProcessNextStates.InProcess
                             moveNext ()
