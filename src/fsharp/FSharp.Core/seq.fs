@@ -660,9 +660,9 @@ namespace Microsoft.FSharp.Collections
                 let inline UpcastISeqComponent (t:#ISeqComponent) : ISeqComponent = (# "" t : ISeqComponent #)
 
             type SeqProcessNextStates =
+            | InProcess  = 0
             | NotStarted = 1
             | Finished   = 2
-            | InProcess  = 3
 
             type Result<'T>() =
                 let mutable halted = false
@@ -953,10 +953,12 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator<'T> with
                         member __.Current =
-                            match result.SeqState with
-                            | SeqProcessNextStates.NotStarted -> notStarted()
-                            | SeqProcessNextStates.Finished -> alreadyFinished()
-                            | _ -> result.Current
+                            if result.SeqState = SeqProcessNextStates.InProcess then result.Current
+                            else
+                                match result.SeqState with
+                                | SeqProcessNextStates.NotStarted -> notStarted()
+                                | SeqProcessNextStates.Finished -> alreadyFinished()
+                                | _ -> failwith "library implementation error: all states should have been handled"
 
                 and [<AbstractClass>] EnumerableBase<'T> () =
                     abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
@@ -1045,10 +1047,12 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator<'T> with
                         member __.Current =
-                            match state with
-                            | SeqProcessNextStates.NotStarted -> notStarted()
-                            | SeqProcessNextStates.Finished -> alreadyFinished()
-                            | _ -> active.Current
+                            if state = SeqProcessNextStates.InProcess then active.Current
+                            else
+                                match state with
+                                | SeqProcessNextStates.NotStarted -> notStarted()
+                                | SeqProcessNextStates.Finished -> alreadyFinished()
+                                | _ -> failwith "library implementation error: all states should have been handled"
 
                     interface IEnumerator with
                         member __.Current = (Helpers.UpcastEnumeratorNonGeneric active).Current
