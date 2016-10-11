@@ -525,6 +525,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  embeddedPDB. . . . . . : %+A" tcConfigB.embeddedPDB
     printfn "  embedAllSource . . . . : %+A" tcConfigB.embedAllSource
     printfn "  embedSourceList. . . . : %+A" tcConfigB.embedSourceList
+    printfn "  sourceLink . . . . . . : %+A" tcConfigB.sourceLink
     printfn "  debuginfo  . . . . . . : %+A" tcConfigB.debuginfo
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
@@ -672,6 +673,8 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
                         Some (FSComp.SR.optsEmbedAllSource()))
          CompilerOption("embed", tagFileList, OptionStringList (fun f -> tcConfigB.AddEmbeddedSourceFile f), None, 
                         Some ( FSComp.SR.optsEmbedSource())); 
+         CompilerOption("sourcelink", tagFile, OptionString (fun f -> tcConfigB.sourceLink <- f), None, 
+                        Some ( FSComp.SR.optsSourceLink())); 
         ]
     let codegen =
         [CompilerOption("optimize", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB) , None, 

@@ -252,7 +252,7 @@ let fixupOverlappingSequencePoints fixupSPs showTimes methods =
         Array.sortInPlaceBy fst allSps
     spCounts, allSps
 
-let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string list) showTimes (info:PdbData) = 
+let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string list) (_sourceLink:string) showTimes (info:PdbData) = 
     sortMethods showTimes info
     let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
