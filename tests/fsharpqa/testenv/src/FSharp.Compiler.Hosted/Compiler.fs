@@ -37,7 +37,8 @@ type CompilationResult =
 
 /// in-proc version of fsc.exe
 type FscCompiler() =
-    let compiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler()
+    let referenceResolver = Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver 
+    let compiler = Microsoft.FSharp.Compiler.Driver.InProcCompiler(referenceResolver)
 
     let emptyLocation = 
         { 

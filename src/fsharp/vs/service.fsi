@@ -336,9 +336,6 @@ type internal FSharpChecker =
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool -> FSharpChecker
 
-    /// Create an instance of an FSharpChecker.
-    static member Create : unit -> FSharpChecker
-
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
     ///   Return an enumeration of the matching parenthetical tokens in the file.

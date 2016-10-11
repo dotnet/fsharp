@@ -2209,16 +2209,18 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
          System.AppDomain.CurrentDomain.BaseDirectory
 #endif
 
+    let referenceResolver = MSBuildReferenceResolver.Resolver 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, 
-                                                    true, // long running: optimizeForMemory 
-                                                    Directory.GetCurrentDirectory(),isInteractive=true, 
-                                                    isInvalidationSupported=false)
+        TcConfigBuilder.CreateNew(referenceResolver,
+                                  defaultFSharpBinariesDir, 
+                                  true, // long running: optimizeForMemory 
+                                  Directory.GetCurrentDirectory(),isInteractive=true, 
+                                  isInvalidationSupported=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
 #if FX_MSBUILDRESOLVER_RUNTIMELIKE
-    do tcConfigB.resolutionEnvironment <- MSBuildResolver.RuntimeLike // See Bug 3608
+    do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
 #else
-    do tcConfigB.resolutionEnvironment <- MSBuildResolver.DesigntimeLike
+    do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
 #endif
     do tcConfigB.useFsiAuxLib <- true
 
