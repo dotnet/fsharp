@@ -296,7 +296,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
             let isInList =
                 if embedSourceList |> List.length = 0 then false
                 else
-                    match embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.InvariantCulture) = 0) with
+                    match embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) with
                     | Some _ -> true
                     | None   -> false
 
@@ -428,7 +428,6 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                                 previousNonHiddenStartColumn <- sps.[i].Column
 
                 getDocumentHandle singleDocumentIndex, metadata.GetOrAddBlob(builder)
-        metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
