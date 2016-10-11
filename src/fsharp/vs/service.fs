@@ -25,7 +25,7 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.MSBuildResolver
+open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
@@ -1171,9 +1171,6 @@ type TypeCheckInfo
     /// Get the "reference resolution" tooltip for at a location
     member scope.GetReferenceResolutionToolTipText(line,col) = 
         let pos = mkPos line col
-        let lineIfExists(append) =
-            if not(String.IsNullOrEmpty(append)) then append.Trim([|' '|])+"\n"
-            else ""     
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
             let isRangeMatch = (Range.rangeContainsPos ar.Range pos) 
             let isNotSpecialRange = (ar.Range <> rangeStartup) && (ar.Range <> range0) && (ar.Range <> rangeCmdArgs)
@@ -1193,38 +1190,7 @@ type TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let originalReferenceName = resolved.originalReference.Text
-                let resolvedPath = // Don't show the resolved path if it is identical to what was referenced.
-                    if originalReferenceName = resolved.resolvedPath then String.Empty
-                    else resolved.resolvedPath
-                let tip =                 
-                    match resolved.resolvedFrom with 
-                    | AssemblyFolders ->
-                        lineIfExists(resolvedPath)
-                        + lineIfExists(resolved.fusionName)
-                        + (FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey())
-                    | AssemblyFoldersEx -> 
-                        lineIfExists(resolvedPath)
-                        + lineIfExists(resolved.fusionName)
-                        + (FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey())
-                    | TargetFrameworkDirectory -> 
-                        lineIfExists(resolvedPath)
-                        + lineIfExists(resolved.fusionName)
-                        + (FSComp.SR.assemblyResolutionNetFramework())
-                    | Unknown ->
-                        // Unknown when resolved by plain directory search without help from MSBuild resolver.
-                        lineIfExists(resolvedPath)
-                        + lineIfExists(resolved.fusionName)
-                    | RawFileName -> 
-                        lineIfExists(resolved.fusionName)
-                    | GlobalAssemblyCache -> 
-                        lineIfExists(resolved.fusionName)
-                        + (FSComp.SR.assemblyResolutionGAC())+ "\n"
-                        + lineIfExists(resolved.redist)
-                    | Path _ ->
-                        lineIfExists(resolvedPath)
-                        + lineIfExists(resolved.fusionName)  
-                                                  
+                let tip = resolved.prepareToolTip ()
                 FSharpToolTipText [FSharpToolTipElement.Single(tip.TrimEnd([|'\n'|]) ,FSharpXmlDoc.None)]
 
             | [] -> FSharpToolTipText []
@@ -2058,7 +2024,7 @@ module Helpers =
         && FSharpProjectOptions.AreSubsumable(o1,o2)
         
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
+type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string>()
@@ -2097,7 +2063,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
 
         let builderOpt, errorsAndWarnings = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
-                  (frameworkTcImportsCache, scriptClosureCache.TryGet options, Array.toList options.ProjectFileNames, 
+                  (referenceResolver, frameworkTcImportsCache, scriptClosureCache.TryGet options, Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, options.IsIncompleteTypeCheckEnvironment, keepAssemblyContents, keepAllBackgroundResolutions)
 
@@ -2472,7 +2438,7 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
                 let collect _name = ()
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (collect, fsiCompilerOptions, Array.toList otherFlags)
-            let fas = LoadClosure.ComputeClosureOfSourceText(filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
+            let fas = LoadClosure.ComputeClosureOfSourceText(referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 
@@ -2574,9 +2540,9 @@ type BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroun
 [<Sealed>]
 [<AutoSerializable(false)>]
 // There is typically only one instance of this type in a Visual Studio process.
-type FSharpChecker(projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) =
+type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) =
 
-    let backgroundCompiler = BackgroundCompiler(projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions)
+    let backgroundCompiler = BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions)
 
     static let globalInstance = FSharpChecker.Create()
         
@@ -2591,15 +2557,13 @@ type FSharpChecker(projectCacheSize, keepAssemblyContents, keepAllBackgroundReso
             areSame=AreSameForParsing3,
             areSameForSubsumption=AreSubsumable3) 
 
-    static member Create() = 
-        new FSharpChecker(projectCacheSizeDefault,false,true)
-
     /// Instantiate an interactive checker.    
     static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions) = 
+        let referenceResolver = MSBuildReferenceResolver.Resolver 
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
         let projectCacheSizeReal = defaultArg projectCacheSize projectCacheSizeDefault
-        new FSharpChecker(projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions)
+        new FSharpChecker(referenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions)
 
     member ic.MatchBracesAlternate(filename, source, options) =
         async { 

@@ -964,7 +964,7 @@ type UsingMSBuild() as this =
         let fileContent = "#r @\"" + fullyqualifiepathtoddll + "\""
         let marker = "#r @\"" + fullyqualifiepathtoddll.Substring(0,fullyqualifiepathtoddll.Length/2)       // somewhere in the middle of the string
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker expectedtooltip
-        this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
+        //this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
 
     [<Test>]
     member public this.``Fsx.InvalidHashReference.ShouldBeASquiggle.Bug3012``() =  

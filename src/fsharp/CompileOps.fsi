@@ -18,7 +18,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.MSBuildResolver
+open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
 #if EXTENSIONTYPING
@@ -183,12 +183,8 @@ type AssemblyResolution =
        originalReference : AssemblyReference
        /// Path to the resolvedFile
        resolvedPath : string    
-       /// Search path used to find this spot.
-       resolvedFrom : ResolvedFrom
-       /// The qualified name of the assembly
-       fusionName : string
-       /// Name of the redist, if any, that the assembly was found in.
-       redist : string 
+       /// Create the tooltip texxt for the assembly reference
+       prepareToolTip : unit -> string
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir : bool
        // Lazily populated ilAssemblyRef for this reference. 
@@ -241,7 +237,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment : Microsoft.FSharp.Compiler.MSBuildResolver.ResolutionEnvironment
+      mutable resolutionEnvironment : ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies : bool
       mutable addVersionSpecificFrameworkReferences : bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
@@ -268,9 +264,6 @@ type TcConfigBuilder =
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputFile : string option
-      mutable resolutionFrameworkRegistryBase : string
-      mutable resolutionAssemblyFoldersSuffix : string 
-      mutable resolutionAssemblyFoldersConditions : string          
       mutable platform : ILPlatform option
       mutable prefer32Bit : bool
       mutable useSimpleResolution : bool
@@ -314,6 +307,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
+      mutable referenceResolver: ReferenceResolver.Resolver 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
       mutable utf8output : bool
@@ -365,6 +359,7 @@ type TcConfigBuilder =
     }
 
     static member CreateNew : 
+        referenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
         implicitIncludeDir: string * 
@@ -422,9 +417,6 @@ type TcConfig =
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputFile : string option
-    member resolutionFrameworkRegistryBase : string
-    member resolutionAssemblyFoldersSuffix : string 
-    member resolutionAssemblyFoldersConditions : string          
     member platform : ILPlatform option
     member prefer32Bit : bool
     member useSimpleResolution : bool
@@ -776,7 +768,7 @@ type LoadClosure =
       RootWarnings : PhasedError list }
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
+    static member ComputeClosureOfSourceText : referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * useDefaultScriptingReferences : bool * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
