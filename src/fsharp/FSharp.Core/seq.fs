@@ -964,6 +964,7 @@ namespace Microsoft.FSharp.Collections
                 and [<AbstractClass>] EnumerableBase<'T> () =
                     abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
                     abstract member Append<'T>  : (seq<'T>) -> IEnumerable<'T>
+                    abstract member Fold<'State> : folder:('State->'T->'State) -> state:'State -> 'State
 
                     default this.Append source = Helpers.UpcastEnumerable (AppendEnumerable [this; source])
 
@@ -1011,21 +1012,20 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.UpcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory (current, next)))
 
-    //                interface ISeqEnumerable<'U> with
-    //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
-    //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-    //                    
-    //                        let enumerator = enumerable.GetEnumerator ()
-    //                        let result = Result<'U> ()
-    //
-    //                        let components = current.Create result (Tail result)
-    //
-    //                        let mutable state = initialState
-    //                        while (not result.Halted) && enumerator.MoveNext () do
-    //                            if components.ProcessNext (enumerator.Current) then
-    //                                state <- folder'.Invoke (state, result.Current)
-    //
-    //                        state
+                    override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let enumerator = enumerable.GetEnumerator ()
+                        let result = Result<'U> ()
+    
+                        let components = current.Create result (Tail result)
+    
+                        let mutable state = initialState
+                        while (not result.Halted) && (enumerator.MoveNext ()) do
+                            if components.ProcessNext (enumerator.Current) then
+                                state <- folder'.Invoke (state, result.Current)
+    
+                        state
 
                 and AppendEnumerator<'T> (sources:list<seq<'T>>) =
                     let sources = sources |> List.rev 
@@ -1079,6 +1079,18 @@ namespace Microsoft.FSharp.Collections
                     override this.Append source =
                         Helpers.UpcastEnumerable (AppendEnumerable (source :: sources))
 
+                    override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let enumerable = Helpers.UpcastEnumerable (AppendEnumerable sources)
+                        let enumerator = enumerable.GetEnumerator ()
+    
+                        let mutable state = initialState
+                        while enumerator.MoveNext () do
+                            state <- folder'.Invoke (state, enumerator.Current)
+    
+                        state
+
             module Array =
                 type Enumerator<'T,'U>(array:array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
@@ -1113,21 +1125,20 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.UpcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory (current, next)))
 
-    //                interface ISeqEnumerable<'U> with
-    //                    member this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
-    //                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-    //                    
-    //                        let mutable idx = 0
-    //                        let result = Result<'U> ()
-    //                        let components = current.Create result (Tail result)
-    //
-    //                        let mutable state = initialState
-    //                        while (not result.Halted) && idx < array.Length do
-    //                            if components.ProcessNext array.[idx] then
-    //                                state <- folder'.Invoke(state, result.Current)
-    //                            idx <- idx + 1
-    //
-    //                        state
+                    override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let mutable idx = 0
+                        let result = Result<'U> ()
+                        let components = current.Create result (Tail result)
+    
+                        let mutable state = initialState
+                        while (not result.Halted) && (idx < array.Length) do
+                            if components.ProcessNext array.[idx] then
+                                state <- folder'.Invoke (state, result.Current)
+                            idx <- idx + 1
+    
+                        state
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
@@ -1164,6 +1175,24 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.UpcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory (current, next)))
 
+                    override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let result = Result<'U> ()
+                        let components = current.Create result (Tail result)
+    
+                        let rec fold state lst =
+                            match result.Halted, lst with
+                            | true, _
+                            | false, [] -> state
+                            | false, hd :: tl ->
+                                if components.ProcessNext hd then
+                                    fold (folder'.Invoke (state, result.Current)) tl
+                                else
+                                    fold state tl
+    
+                        fold initialState alist
+
             module Init =
                 // The original implementation of "init" delayed the calculation of Current, and so it was possible
                 // to do MoveNext without it's value being calculated.
@@ -1175,16 +1204,20 @@ namespace Microsoft.FSharp.Collections
                 // so you already know what the count is!! Anyway, someone thought it was a good idea, so
                 // I have had to add an extra function that is used in Skip to determine if we are touching
                 // Current or not.
+
+                let getTerminatingIdx (count:Nullable<int>) =
+                    // we are offset by 1 to allow for values going up to System.Int32.MaxValue
+                    // System.Int32.MaxValue is an illegal value for the "infinite" sequence
+                    if count.HasValue then
+                        count.Value - 1
+                    else
+                        System.Int32.MaxValue
+
                 type Enumerator<'T,'U>(count:Nullable<int>, f:int->'T, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
 
-                    // we are offset by 1 to allow for values going up to System.Int32.MaxValue
-                    // System.Int32.MaxValue is an illegal value for the "infinite" sequence
                     let terminatingIdx =
-                        if count.HasValue then
-                            count.Value - 1
-                        else
-                            System.Int32.MaxValue
+                        getTerminatingIdx count
 
                     let mutable maybeSkipping = true
                     let mutable idx = -1
@@ -1227,6 +1260,29 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.UpcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory (current, next)))
 
+                    override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let result = Result<'U> ()
+                        let components = current.Create result (Tail result)
+    
+                        let mutable idx = -1
+                        let terminatingIdx = getTerminatingIdx count
+                        
+                        let mutable maybeSkipping = true
+
+                        let mutable state = initialState
+                        while (not result.Halted) && (idx < terminatingIdx) do
+                            if maybeSkipping then
+                                maybeSkipping <- components.Skipping ()
+
+                            if (not maybeSkipping) && (components.ProcessNext (f (idx+1))) then
+                                state <- folder'.Invoke (state, result.Current)
+
+                            idx <- idx + 1
+    
+                        state
+
                 type EnumerableDecider<'T>(count:Nullable<int>, f:int->'T) =
                     inherit Enumerable.EnumerableBase<'T>()
 
@@ -1239,6 +1295,17 @@ namespace Microsoft.FSharp.Collections
 
                     override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                         Helpers.UpcastEnumerable (Enumerable<'T,'V>(count, f, next))
+
+                    override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let enumerator = (Helpers.UpcastEnumerable this).GetEnumerator ()
+    
+                        let mutable state = initialState
+                        while enumerator.MoveNext () do
+                            state <- folder'.Invoke (state, enumerator.Current)
+    
+                        state
 
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
@@ -1504,14 +1571,17 @@ namespace Microsoft.FSharp.Collections
                 state
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State> f (x:'State) (source : seq<'T>)  =
+        let fold<'T,'State> f (x:'State) (source:seq<'T>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable state = x
-            while e.MoveNext() do
-                state <- f.Invoke(state, e.Current)
-            state
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Fold f x
+            | _ ->
+                use e = source.GetEnumerator()
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                let mutable state = x
+                while e.MoveNext() do
+                    state <- f.Invoke(state, e.Current)
+                state
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
