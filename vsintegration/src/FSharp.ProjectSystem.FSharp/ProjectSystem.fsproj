@@ -52,9 +52,6 @@
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
     </EmbeddedResource>
-    <VSCTCompile Include="..\FSharp.VS.FSI\fsiCommands.vsct">
-      <Link>fsiCommands.vsct</Link>
-    </VSCTCompile>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="MSBuildUtilities.fs" />
