@@ -626,7 +626,8 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
         CompilerOption("sig", tagFile, OptionString (setSignatureFile tcConfigB), None,
                            Some (FSComp.SR.optsSig()))    
                            
-        CompilerOption("nocopyfsharpcore", tagNone, OptionUnit (fun () -> tcConfigB.copyFSharpCore <- false), None, Some (FSComp.SR.optsNoCopyFsharpCore()))
+        CompilerOption("copyfsharpcore", tagNone, OptionSwitch (fun switch -> tcConfigB.copyFSharpCore <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsCopyFsharpCore()))
+        CompilerOption("copyreferences", tagNone, OptionSwitch (fun switch -> tcConfigB.copyReferences <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsCopyReferences()))
     ]
 
 

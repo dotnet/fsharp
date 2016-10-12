@@ -29,8 +29,12 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          containing F#-specific metadata
 --sig:<file>                             Print the inferred interface of the assembly to
                                          a file
---nocopyfsharpcore                       Don't copy FSharp.Core.dll along the produced
-                                         binaries
+--copyfsharpcore[+|-]                    Enable or disable copy of FSharp.Core.dll
+                                         alongside the the output binary. The default is
+                                         enabled.
+--copyreferences[+|-]                    Enable or disable copy of non-system references
+                                         alongside the output binary. The default is
+                                         disabled.
 
 
 		- INPUT FILES -
