@@ -23,12 +23,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNone")>]
         val inline isNone: option:'T option -> bool
 
-        /// <summary>Gets the value associated with the option, if None then returns the provided value.</summary>
-        /// <param name="value">The default value.</param>
-        /// <param name="option">The input option.</param>
-        /// <returns>The value within the option or hte default value.</returns>
+        /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise returns the specified default value.</summary>
+        /// <param name="defaultValue">The specified default value.</param>
+        /// <param name="value">The input option.</param>
+        /// <returns>The option if the option is Some, else the default value.</returns>
+        /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
         [<CompiledName("GetOrElse")>]
-        val getOrElse: value: 'T -> 'T option -> 'T
+        val getOrElse: defaultValue: 'T -> 'T option -> 'T
 
         /// <summary>Gets the value associated with the option.</summary>
         /// <param name="option">The input option.</param>
