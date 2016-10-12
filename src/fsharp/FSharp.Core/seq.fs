@@ -1731,6 +1731,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Truncate")>]
         let truncate n (source: seq<'T>) =
+            if n <= 0 then empty else
             source |> seqFactory (SeqComposer.TruncateFactory n)
 
         [<CompiledName("Pairwise")>]
