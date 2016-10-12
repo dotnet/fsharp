@@ -804,8 +804,10 @@ namespace Microsoft.FSharp.Collections
 
                 interface ISeqComponent with
                     override __.OnDispose () =
-                        input2.Dispose ()
-                        (Helpers.UpcastISeqComponent next).OnDispose ()
+                        try
+                            input2.Dispose ()
+                        finally
+                            (Helpers.UpcastISeqComponent next).OnDispose ()
 
             and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, result:Result<'V>, next:SeqComponent<'U,'V>) =
                 inherit SeqComponent<'Second,'V>(next)
@@ -822,8 +824,10 @@ namespace Microsoft.FSharp.Collections
 
                 interface ISeqComponent with
                     override __.OnDispose () =
-                        input1.Dispose ()
-                        (Helpers.UpcastISeqComponent next).OnDispose ()
+                        try
+                            input1.Dispose ()
+                        finally
+                            (Helpers.UpcastISeqComponent next).OnDispose ()
 
             and MapThenFilter<'T,'U,'V> (map:'T->'U, filter:'U->bool, next:SeqComponent<'U,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -1006,8 +1010,10 @@ namespace Microsoft.FSharp.Collections
 
                     interface IDisposable with
                         member __.Dispose() =
-                            source.Dispose ()
-                            (Helpers.UpcastISeqComponent seqComponent).OnDispose ()
+                            try
+                                source.Dispose ()
+                            finally
+                                (Helpers.UpcastISeqComponent seqComponent).OnDispose ()
 
                 and Enumerable<'T,'U>(enumerable:IEnumerable<'T>, current:SeqComponentFactory<'T,'U>) =
                     inherit EnumerableBase<'U>()
