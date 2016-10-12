@@ -48,7 +48,6 @@ module internal ReferenceResolver =
            targetFrameworkVersion:string *
            targetFrameworkDirectories:string list *
            targetProcessorArchitecture:string *
-           outputDirectory: string * 
            fsharpCoreDir:string *
            explicitIncludeDirs:string list *
            implicitIncludeDir:string *

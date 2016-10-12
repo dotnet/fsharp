@@ -3009,11 +3009,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     | Some(AMD64) -> "amd64"
                     | Some(IA64) -> "ia64"
 
-            let outputDirectory = 
-                match tcConfig.outputFile with 
-                | Some(outputFile) -> tcConfig.MakePathAbsolute outputFile
-                | None -> tcConfig.implicitIncludeDir
-
             let targetFrameworkDirectories = tcConfig.ClrRoot 
                              
             // First, try to resolve everything as a file using simple resolution
@@ -3034,7 +3029,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         targetFrameworkVersion,
                         targetFrameworkDirectories, 
                         targetProcessorArchitecture, 
-                        Path.GetDirectoryName(outputDirectory),
                         tcConfig.fsharpBinariesDir, // FSharp binaries directory
                         tcConfig.includes, // Explicit include directories
                         tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)

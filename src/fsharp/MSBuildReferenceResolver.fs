@@ -208,7 +208,6 @@ module internal MSBuildReferenceResolver =
                     targetFrameworkVersion: string, 
                     targetFrameworkDirectories: string list,
                     targetProcessorArchitecture: string,                
-                    outputDirectory: string, 
                     fsharpCoreDir: string,
                     explicitIncludeDirs: string list,
                     implicitIncludeDir: string,
@@ -289,7 +288,6 @@ module internal MSBuildReferenceResolver =
                     yield implicitIncludeDir   // Usually the project directory
                     yield registry
                     yield "{AssemblyFolders}"
-                    yield outputDirectory
                     yield "{GAC}"
                     // use path to implementation assemblies as the last resort
                     yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion 
@@ -356,7 +354,6 @@ module internal MSBuildReferenceResolver =
                 [implicitIncludeDir] @   // Usually the project directory
                 [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @ // Like {Registry:Software\Microsoft\.NETFramework,v2.0,AssemblyFoldersEx}
                 ["{AssemblyFolders}"] @
-                [outputDirectory] @
                 ["{GAC}"] @
                 // use path to implementation assemblies as the last resort
                 GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
@@ -383,7 +380,7 @@ module internal MSBuildReferenceResolver =
 
     /// Perform the resolution on rooted and unrooted paths, and then combine the results.
     let Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
+                fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
 
         // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
         // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set
@@ -405,9 +402,9 @@ module internal MSBuildReferenceResolver =
 
         let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 
-        let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logWarning, logError)
+        let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logWarning, logError)
 
-        let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logWarning, logError)
+        let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logWarning, logError)
 
         // now unify the two sets of results
         Array.concat [| rootedResults; unrootedResults |]
@@ -417,8 +414,8 @@ module internal MSBuildReferenceResolver =
            member __.HighestInstalledNetFrameworkVersion() = HighestInstalledNetFrameworkVersion()
            member __.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory
            member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                             outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
+                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
 
                Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) 
+                fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) 
        } 
