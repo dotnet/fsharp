@@ -319,48 +319,6 @@ module internal MSBuildReferenceResolver =
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif        
-        rar.Assemblies <- 
-#if RESHAPED_MSBUILD
-                          [||]
-#else
-                          [| for (referenceName,baggage) in references -> 
-                                let item = new Microsoft.Build.Utilities.TaskItem(referenceName)  :> ITaskItem
-                                item.SetMetadata("Baggage", baggage)
-                                item
-                          |]
-#endif
-        let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
-        let searchPaths = 
-            match resolutionEnvironment with
-            | DesignTimeLike
-            | RuntimeLike ->
-                logMessage("Using scripting resolution precedence.")
-                // These are search paths for runtime-like or scripting resolution. GAC searching is present.
-                rawFileNamePath @        // Quick-resolve straight to filename first 
-                explicitIncludeDirs @    // From -I, #I
-                [fsharpCoreDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                [implicitIncludeDir] @   // Usually the project directory
-                ["{TargetFrameworkDirectory}"] @
-                [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @
-                ["{AssemblyFolders}"] @
-                ["{GAC}"] 
-            | CompileTimeLike -> 
-                logMessage("Using compilation resolution precedence.")
-                // These are search paths for compile-like resolution. GAC searching is not present.
-                ["{TargetFrameworkDirectory}"] @
-                rawFileNamePath @        // Quick-resolve straight to filename first
-                explicitIncludeDirs @    // From -I, #I
-                [fsharpCoreDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                [implicitIncludeDir] @   // Usually the project directory
-                [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @ // Like {Registry:Software\Microsoft\.NETFramework,v2.0,AssemblyFoldersEx}
-                ["{AssemblyFolders}"] @
-                ["{GAC}"] @
-                // use path to implementation assemblies as the last resort
-                GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
-
-        rar.SearchPaths <- searchPaths |> Array.ofList
-                                  
-        rar.AllowedAssemblyExtensions <- [| ".dll" ; ".exe" |]     
         
         let succeeded = rar.Execute()
         
