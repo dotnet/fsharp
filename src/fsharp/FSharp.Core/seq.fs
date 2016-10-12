@@ -905,24 +905,12 @@ namespace Microsoft.FSharp.Collections
                         Helpers.avoidTailCall (next.ProcessNext input)
 
             and Take<'T,'V> (takeCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
-                inherit SeqComponent<'T,'V>(next)
-
-                let mutable count = 0
-
-                override __.ProcessNext (input:'T) : bool = 
-                    if count < takeCount then
-                        count <- count + 1
-                        if count = takeCount then
-                            result.StopFurtherProcessing ()
-                        next.ProcessNext input
-                    else
-                        result.StopFurtherProcessing ()
-                        false
+                inherit Truncate<'T, 'V>(takeCount, result, next)
 
                 interface ISeqComponent with
-                    override __.OnComplete () =
-                        if count < takeCount then
-                            let x = takeCount - count
+                    override this.OnComplete () =
+                        if this.Count < takeCount then
+                            let x = takeCount - this.Count
                             invalidOpFmt "tried to take {0} {1} past the end of the seq"
                                 [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
                         (Helpers.UpcastISeqComponent next).OnComplete ()
@@ -944,15 +932,17 @@ namespace Microsoft.FSharp.Collections
                     result.Current <- input
                     true
 
-            and Truncate<'T,'V> (takeCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
+            and Truncate<'T,'V> (truncateCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
 
                 let mutable count = 0
 
+                member __.Count = count
+
                 override __.ProcessNext (input:'T) : bool = 
-                    if count < takeCount then
+                    if count < truncateCount then
                         count <- count + 1
-                        if count = takeCount then
+                        if count = truncateCount then
                             result.StopFurtherProcessing ()
                         next.ProcessNext input
                     else
