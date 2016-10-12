@@ -582,7 +582,6 @@ type TcAssemblyResolutions =
 type TcImports =
     interface System.IDisposable
     //new : TcImports option -> TcImports
-    member SetBase : TcImports -> unit
     member DllTable : NameMap<ImportedBinary> with get
     member GetImportedAssemblies : unit -> ImportedAssembly list
     member GetCcusInDeclOrder : unit -> CcuThunk list
