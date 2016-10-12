@@ -1081,7 +1081,7 @@ type TypeCheckAccumulator =
 
       
 /// Global service state
-type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*ClrRoot*)string list* (*fsharpBinaries*)string
+type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list* (*fsharpBinaries*)string
 
 type FrameworkImportsCache(keepStrongly) = 
     let frameworkTcImportsCache = AgedLookup<FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSame=(fun (x,y) -> x = y)) 
@@ -1096,6 +1096,7 @@ type FrameworkImportsCache(keepStrongly) =
             frameworkDLLs 
             |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
             |> List.sort  // Sort to promote cache hits.
+
         let tcGlobals,frameworkTcImports = 
             // Prepare the frameworkTcImportsCache
             //
@@ -1104,7 +1105,7 @@ type FrameworkImportsCache(keepStrongly) =
             // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
             let key = (frameworkDLLsKey,
                         tcConfig.primaryAssembly.Name, 
-                        tcConfig.ClrRoot,
+                        tcConfig.TargetFrameworkDirectories,
                         tcConfig.fsharpBinariesDir)
             match frameworkTcImportsCache.TryGet key with 
             | Some res -> res

@@ -502,7 +502,7 @@ type TcConfig =
 
 
     member ComputeLightSyntaxInitialStatus : string -> bool
-    member ClrRoot : string list
+    member TargetFrameworkDirectories : string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
     member GetAvailableLoadedSources : unit -> (range*string) list
@@ -724,7 +724,7 @@ val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * Ty
 val TypeCheckClosedInputSet :(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
-val TypeCheckSingleInputAndFinishEventually :
+val TypeCheckOneInputAndFinishEventually :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
