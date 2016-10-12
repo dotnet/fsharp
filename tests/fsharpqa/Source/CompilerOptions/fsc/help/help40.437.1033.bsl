@@ -30,7 +30,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --sig:<file>                             Print the inferred interface of the assembly to
                                          a file
 --copyfsharpcore[+|-]                    Enable or disable copy of FSharp.Core.dll
-                                         alongside the the output binary. The default is
+                                         alongside the output binary. The default is
                                          enabled.
 --copyreferences[+|-]                    Enable or disable copy of non-system references
                                          alongside the output binary. The default is
