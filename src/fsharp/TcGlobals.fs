@@ -1336,25 +1336,35 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
             // the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
 
             // So this dictionary is indexed by names.
+            //
+            // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
+              lazy
                 entries 
                 |> List.map (fun (nm,tcref,builder) -> nm, (fun tcref2 tinst -> if tyconRefEq tcref tcref2 then Some(builder tinst) else None)) 
                 |> Dictionary.ofList  
             (fun tcref tinst -> 
-                 if dict.ContainsKey tcref.LogicalName then dict.[tcref.LogicalName] tcref tinst
+                 let dict = dict.Value
+                 let key = tcref.LogicalName
+                 if dict.ContainsKey key nm then dict.[key] tcref tinst
                  else None )  
         else
             // This map is for use in normal times (not building FSharp.Core.dll). It is indexed by tcref stamp which is 
             // faster than the indexing technique used in the case above.
             //
             // So this dictionary is indexed by integers.
+            //
+            // Make it lazy to avoid dereferencing while setting up the base imports. 
             let dict = 
+              lazy
                 entries  
                 |> List.filter (fun (_,tcref,_) -> tcref.CanDeref) 
                 |> List.map (fun (_,tcref,builder) -> tcref.Stamp, builder) 
                 |> Dictionary.ofList 
             (fun tcref2 tinst -> 
-                 if dict.ContainsKey tcref2.Stamp then Some(dict.[tcref2.Stamp] tinst)
+                 let dict = dict.Value
+                 let key = tcref2.Stamp
+                 if dict.ContainsKey key then Some(dict.[key] tinst)
                  else None)  
        end
            

@@ -3713,10 +3713,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 | None -> false
         | None -> false
   
-    member tcImports.SetBase(baseTcImports) =
-        CheckDisposed()
-        importsBase <- Some(baseTcImports)
-
     member private tcImports.Base  = 
             CheckDisposed()
             importsBase
