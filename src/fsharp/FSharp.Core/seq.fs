@@ -730,6 +730,10 @@ namespace Microsoft.FSharp.Collections
             and TakeFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Take (count, result, next) 
+            
+            and TruncateFactory<'T> (count:int) =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Truncate (count, result, next) 
 
             and [<AbstractClass>] SeqComponent<'T,'U> (next:ISeqComponent) =
                 abstract ProcessNext : input:'T -> bool
@@ -939,6 +943,21 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool =
                     result.Current <- input
                     true
+
+            and Truncate<'T,'V> (takeCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let mutable count = 0
+
+                override __.ProcessNext (input:'T) : bool = 
+                    if count < takeCount then
+                        count <- count + 1
+                        if count = takeCount then
+                            result.StopFurtherProcessing ()
+                        next.ProcessNext input
+                    else
+                        result.StopFurtherProcessing ()
+                        false
 
             module Enumerable =
                 [<AbstractClass>]
@@ -1711,12 +1730,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Truncate")>]
         let truncate n (source: seq<'T>) =
-            checkNonNull "source" source
-            seq { let i = ref 0
-                  use ie = source.GetEnumerator()
-                  while !i < n && ie.MoveNext() do
-                     i := !i + 1
-                     yield ie.Current }
+            source |> seqFactory (SeqComposer.TruncateFactory n)
 
         [<CompiledName("Pairwise")>]
         let pairwise<'T> (source:seq<'T>) : seq<'T*'T> =
