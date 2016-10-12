@@ -122,3 +122,8 @@ type OptionModule() =
         Assert.IsTrue( Option.ofObj<string> null = None)
         Assert.IsTrue( Option.ofObj<string[]> null = None)
         Assert.IsTrue( Option.ofObj<int[]> null = None)
+
+    [<Test>]
+    member this.GetOrElse() =
+        Assert.AreEqual(Option.getOrElse 3 None, 3)
+        Assert.AreEqual(Option.getOrElse 3 (Some 42), 42)

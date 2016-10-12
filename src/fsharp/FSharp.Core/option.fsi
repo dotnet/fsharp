@@ -23,6 +23,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNone")>]
         val inline isNone: option:'T option -> bool
 
+        [<CompiledName("GetOrElse")>]
+        val getOrElse: value: 'T -> 'T option -> 'T
+
         /// <summary>Gets the value associated with the option.</summary>
         /// <param name="option">The input option.</param>
         /// <returns>The value within the option.</returns>
@@ -84,6 +87,23 @@ namespace Microsoft.FSharp.Core
         /// <returns>An option of the input value after applying the mapping function, or None if the input is None.</returns>
         [<CompiledName("Map")>]
         val map: mapping:('T -> 'U) -> option:'T option -> 'U option
+
+        /// <summary><c>map f option1 option2</c> evaluates to <c>match option1, option2 with Some x, Some y -> Some (f x y) | _ -> None</c>.</summary>
+        /// <param name="mapping">A function to apply to the option values.</param>
+        /// <param name="option1">The first option.</param>
+        /// <param name="option2">The second option.</param>
+        /// <returns>An option of the input values after applying the mapping function, or None if either input is None.</returns>
+        [<CompiledName("Map2")>]
+        val map2: mapping:('T1 -> 'T2 -> 'U) -> 'T1 option -> 'T2 option -> 'U option
+
+        /// <summary><c>map f option1 option2 option3</c> evaluates to <c>match option1, option2, option3 with Some x, Some y, Some z -> Some (f x y z) | _ -> None</c>.</summary>
+        /// <param name="mapping">A function to apply to the option values.</param>
+        /// <param name="option1">The first option.</param>
+        /// <param name="option2">The second option.</param>
+        /// <param name="option3">The third option.</param>
+        /// <returns>An option of the input values after applying the mapping function, or None if any input is None.</returns>
+        [<CompiledName("Map3")>]
+        val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> 'T1 option -> 'T2 option -> 'T3 option -> 'U option
 
         /// <summary><c>bind f inp</c> evaluates to <c>match inp with None -> None | Some x -> f x</c></summary>
         /// <param name="binder">A function that takes the value of type T from an option and transforms it into
