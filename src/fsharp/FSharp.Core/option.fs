@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Core
         let inline isNone option = match option with None -> true | Some _ -> false
 
         [<CompiledName("GetOrElse")>]
-        let getOrElse value option = match option with None -> value | Some x -> x
+        let getOrElse value option = defaultArg option value
 
         [<CompiledName("Count")>]
         let count option = match option with None -> 0 | Some _ -> 1
