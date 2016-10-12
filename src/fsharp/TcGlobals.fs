@@ -1346,7 +1346,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
             (fun tcref tinst -> 
                  let dict = dict.Value
                  let key = tcref.LogicalName
-                 if dict.ContainsKey key nm then dict.[key] tcref tinst
+                 if dict.ContainsKey key then dict.[key] tcref tinst
                  else None )  
         else
             // This map is for use in normal times (not building FSharp.Core.dll). It is indexed by tcref stamp which is 
