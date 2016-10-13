@@ -21,7 +21,7 @@
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
-    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\fsharp.core.unittests</OutputPath>
+    <OutputPath Condition="'$(TargetFramework)' == 'coreclr'">$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSharp.Core.unittests</OutputPath>
     <CustomOutputPath Condition="'$(TargetFramework)' == 'coreclr'">true</CustomOutputPath>
   </PropertyGroup>
   <PropertyGroup>

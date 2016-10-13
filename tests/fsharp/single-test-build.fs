@@ -19,7 +19,7 @@ let singleTestBuild cfg testDir =
     let buildOkPath = testDir / "build.ok"
     do if fileExists "build.ok" then del "build.ok"
 
-    //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct fsharp.core.dll
+    //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct FSharp.Core.dll
     do if fileExists "FSharp.Core.dll" then del "FSharp.Core.dll"
 
 

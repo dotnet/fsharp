@@ -78,7 +78,7 @@ and Visual F# Tools then building the solution will be enough.
 The compiler is compiled as a set of .NET 4.0 components using a bootstrap process. 
 This uses a Last Known Good (LKG) compiler checked into this repository to build.  
 
-    msbuild src\fsharp-proto-build.proj
+    msbuild src/fsharp-proto-build.proj
     
 ### 2.  Building an F# (Debug) library and compiler
 
@@ -184,7 +184,7 @@ For **Release**:
 
 1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
 
-### Notes on the build
+### Notes on the .NET Framework build
 
 1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
@@ -194,6 +194,9 @@ For **Release**:
  - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+
+
 
 ## Resources
 
