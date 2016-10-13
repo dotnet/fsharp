@@ -698,6 +698,10 @@ namespace Microsoft.FSharp.Collections
             and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast DistinctBy (keyFunction, next) 
+            
+            and ExceptFactory<'T when 'T: equality> (itemsToExclude: seq<'T>) =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Except (itemsToExclude, next) 
 
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
@@ -788,6 +792,17 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if hashSet.Add(keyFunction input) then
+                        Helpers.avoidTailCall (next.ProcessNext input)
+                    else
+                        false
+
+            and Except<'T,'V when 'T: equality> (itemsToExclude: seq<'T>, next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let cached = lazy(HashSet(itemsToExclude, HashIdentity.Structural))
+
+                override __.ProcessNext (input:'T) : bool = 
+                    if cached.Value.Add input then
                         Helpers.avoidTailCall (next.ProcessNext input)
                     else
                         false
@@ -2306,17 +2321,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Except")>]
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
             checkNonNull "itemsToExclude" itemsToExclude
-            checkNonNull "source" source
-
-            seq {
-                use e = source.GetEnumerator()
-                if e.MoveNext() then
-                    let cached = HashSet(itemsToExclude, HashIdentity.Structural)
-                    let next = e.Current
-                    if (cached.Add next) then yield next
-                    while e.MoveNext() do
-                        let next = e.Current
-                        if (cached.Add next) then yield next }
+            source |> seqFactory (SeqComposer.ExceptFactory itemsToExclude)
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : seq<_>) =
