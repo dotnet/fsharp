@@ -332,7 +332,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                     match includeSource doc.File with
                     | None -> ()
                     | Some blob ->
-                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(h),
+                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(dbgInfo),
                                                            metadata.GetOrAddGuid(embeddedSourceId),
                                                            metadata.GetOrAddBlob(blob)) |> ignore
                     dbgInfo
@@ -342,7 +342,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                          metadata.GetOrAddGuid(System.Guid.Empty),
                          metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
                          metadata.GetOrAddGuid(corSymLanguageTypeId)) |> metadata.AddDocument
-                    h
+                    dbgInfo
             index.Add(doc.File, handle)
 
         if not (String.IsNullOrEmpty(sourceLink)) then
