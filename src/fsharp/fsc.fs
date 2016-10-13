@@ -356,7 +356,6 @@ let GetTcImportsFromCommandLine
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
     displayBannerIfNeeded tcConfigB
 
-    // Create tcGlobals and frameworkTcImports
     let outfile,pdbfile,assemblyName = 
         try 
             tcConfigB.DecideNames sourceFiles 
@@ -397,6 +396,12 @@ let GetTcImportsFromCommandLine
     let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
     let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
     let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
+    let tcAssemblyResolutions = sysRes @ otherRes
+
+    let metadataVersion = 
+        match tcConfig.metadataVersion with
+        | Some(v) -> v
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
 
     // register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
@@ -456,7 +461,7 @@ let GetTcImportsFromCommandLine
     AbortOnError(errorLogger, tcConfig, exiter)
     ReportTime tcConfig "Typechecked"
 
-    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
+    tcGlobals,tcImports,metadataVersion,tcAssemblyResolutions,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
 
 #if NO_COMPILER_BACKEND
 #else
@@ -1810,20 +1815,21 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
 type private TypeInThisAssembly (_dummy:obj) = class end
 #endif
 
-// If the --nocopyfsharpcore switch is not specified, this will:
+let copyFileIfDifferent src dest =
+    if not (File.Exists(dest)) || (File.GetCreationTimeUtc(src) <> File.GetCreationTimeUtc(dest)) then
+        File.Copy(src, dest, true)
+
+// If the --copyfsharpcore- switch is not specified, this will:
 // 1) Look into the referenced assemblies, if FSharp.Core.dll is specified, it will copy it to output directory.
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
 // 3) If not, it will produce an error.
-let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
+let copyFSharpCore(outFile: string, referencedDlls: AssemblyResolution list) =
     let outDir = Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
-    let copyFileIfDifferent src dest =
-        if not (File.Exists(dest)) || (File.GetCreationTimeUtc(src) <> File.GetCreationTimeUtc(dest)) then
-            File.Copy(src, dest, true)
 
-    match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
-    | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
+    match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.resolvedPath), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+    | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.resolvedPath fsharpCoreDestinationPath
     | None ->
         let executionLocation =
 #if FX_RESHAPED_REFLECTION
@@ -1836,7 +1842,16 @@ let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
         if File.Exists(compilerFsharpCoreDllPath) then
             copyFileIfDifferent compilerFsharpCoreDllPath fsharpCoreDestinationPath
         else
-            errorR(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+            warning(Error(FSComp.SR.fsharpCoreNotFoundToBeCopied(), rangeCmdArgs))
+
+// If the --copyreferences- switch is not specified, this will copy al 
+let copyReferences(outFile: string, referencedDlls: AssemblyResolution list) =
+    let outDir = Path.GetDirectoryName(outFile)
+    for dll in referencedDlls do
+       if not dll.sysdir then
+            let sourcePath = dll.resolvedPath
+            let destinationPath = Path.Combine(outDir, Path.GetFileName(dll.resolvedPath))
+            copyFileIfDifferent sourcePath destinationPath
 
 //----------------------------------------------------------------------------
 // main - split up to make sure that we can GC the
@@ -1861,7 +1876,7 @@ let main0(argv,referenceResolver,bannerAlreadyPrinted,exiter:Exiter, errorLogger
             None
 #endif
 
-    let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedImplFiles,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger = 
+    let tcGlobals,tcImports,metadataVersion,tcAssemblyResolutions,generatedCcu,typedImplFiles,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger = 
         GetTcImportsFromCommandLine(
             argv,referenceResolver,defaultFSharpBinariesDir,Directory.GetCurrentDirectory(),
 #if FX_LCIDFROMCODEPAGE
@@ -1890,9 +1905,9 @@ let main0(argv,referenceResolver,bannerAlreadyPrinted,exiter:Exiter, errorLogger
              errorLoggerProvider,
              disposables)
 
-    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedImplFiles,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger,exiter
+    tcGlobals,tcImports,metadataVersion,tcAssemblyResolutions,generatedCcu,typedImplFiles,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger,exiter
 
-let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter) =
+let main1(tcGlobals, tcImports: TcImports, metadataVersion, tcAssemblyResolutions, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
@@ -1938,10 +1953,10 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+    Args(tcConfig, tcImports, metadataVersion, tcAssemblyResolutions, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
   
-let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
+let main2(Args(tcConfig, tcImports: TcImports, metadataVersion, tcAssemblyResolutions, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     ReportTime tcConfig ("Encode Interface Data")
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -1962,10 +1977,6 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
    
     let importMap = tcImports.GetImportMap()
-    let metadataVersion = 
-        match tcConfig.metadataVersion with
-        | Some(v) -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some(ib) -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
     let optimizedImpls,optimizationData,_ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger,tcConfig,exiter)
@@ -1994,9 +2005,9 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
+    Args(tcConfig,tcImports,metadataVersion,tcAssemblyResolutions,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,exiter)
 
-let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
+let main2b(Args(tcConfig: TcConfig, tcImports, metadataVersion, tcAssemblyResolutions, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
   
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
@@ -2025,9 +2036,9 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
 
     AbortOnError(errorLogger,tcConfig,exiter)
     
-    Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxMainModule,signingInfo,exiter)
+    Args (tcConfig,tcAssemblyResolutions,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxMainModule,signingInfo,exiter)
 
-let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
+let main3(Args(tcConfig, tcAssemblyResolutions, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
     let ilxMainModule =  
         try  staticLinker ilxMainModule
@@ -2038,9 +2049,9 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outf
 
     AbortOnError(errorLogger,tcConfig,exiter)
         
-    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
+    Args (tcConfig,tcAssemblyResolutions,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
 
-let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)) = 
+let main4 (Args (tcConfig, tcAssemblyResolutions, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
     let outfile = tcConfig.MakePathAbsolute outfile
@@ -2050,9 +2061,13 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     AbortOnError(errorLogger, tcConfig, exiter)
 
-    // Don't copy referenced fharp.core.dll if we are building fsharp.core.dll
+    // Don't copy referenced fsharp.core.dll if we are building fsharp.core.dll
     if tcConfig.copyFSharpCore && not tcConfig.compilingFslib && not tcConfig.standalone then
-        copyFSharpCore(outfile, tcConfig.referencedDLLs)
+        copyFSharpCore(outfile, tcAssemblyResolutions)
+
+    // Don't copy referenced fsharp.core.dll if we are building fsharp.core.dll
+    if tcConfig.copyReferences then
+        copyReferences(outfile, tcAssemblyResolutions)
 
     SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
 
@@ -2063,7 +2078,6 @@ let typecheckAndCompile(argv,referenceResolver,bannerAlreadyPrinted,exiter:Exite
     use e = new SaveAndRestoreConsoleEncoding()
 
     main0(argv,referenceResolver,bannerAlreadyPrinted,exiter, errorLoggerProvider, d)
-
     |> main1
     |> main2
     |> main2b

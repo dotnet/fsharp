@@ -2148,6 +2148,9 @@ type TcConfigBuilder =
       // If true - the compiler will copy FSharp.Core.dll along the produced binaries
       mutable copyFSharpCore : bool
 
+      // If true - the compiler will copy non system references along the produced binaries
+      mutable copyReferences : bool
+
 #if SHADOW_COPY_REFERENCES
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences : bool
@@ -2296,6 +2299,7 @@ type TcConfigBuilder =
           emitDebugInfoInQuotations = false
           exename = None
           copyFSharpCore = true
+          copyReferences = false
 #if SHADOW_COPY_REFERENCES
           shadowCopyReferences = false
 #endif
@@ -2780,6 +2784,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
     member x.sqmSessionStartedTime = data.sqmSessionStartedTime
     member x.copyFSharpCore = data.copyFSharpCore
+    member x.copyReferences = data.copyReferences
 #if SHADOW_COPY_REFERENCES
     member x.shadowCopyReferences = data.shadowCopyReferences
 #endif
