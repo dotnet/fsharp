@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver 
 
-module internal MSBuildReferenceResolver = 
+    open System
+    open System.IO
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -14,11 +15,9 @@ module internal MSBuildReferenceResolver =
 
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
     open Microsoft.FSharp.Compiler.ReferenceResolver
-    open System
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
-    open System.IO
 
     /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectory = 
@@ -169,38 +168,41 @@ module internal MSBuildReferenceResolver =
     let TooltipForResolvedFrom(resolvedFrom, fusionName, redist) = 
       fun (originalReference,resolvedPath) -> 
         let originalReferenceName = originalReference
+
         let resolvedPath = // Don't show the resolved path if it is identical to what was referenced.
             if originalReferenceName = resolvedPath then String.Empty
             else resolvedPath
-        let lineIfExists(append) =
-            if not(String.IsNullOrEmpty(append)) then append.Trim([|' '|])+"\n"
-            else ""     
+
+        let lineIfExists text =
+            if String.IsNullOrEmpty text then ""
+            else text.Trim(' ')+"\n"
+
         match resolvedFrom with 
         | AssemblyFolders ->
-            lineIfExists(resolvedPath)
-            + lineIfExists(fusionName)
-            + (FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey())
+            lineIfExists resolvedPath
+            + lineIfExists fusionName
+            + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey()
         | AssemblyFoldersEx -> 
-            lineIfExists(resolvedPath)
-            + lineIfExists(fusionName)
-            + (FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey())
+            lineIfExists resolvedPath
+            + lineIfExists fusionName
+            + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey()
         | TargetFrameworkDirectory -> 
-            lineIfExists(resolvedPath)
-            + lineIfExists(fusionName)
-            + (FSComp.SR.assemblyResolutionNetFramework())
+            lineIfExists resolvedPath
+            + lineIfExists fusionName
+            + FSComp.SR.assemblyResolutionNetFramework()
         | Unknown ->
             // Unknown when resolved by plain directory search without help from MSBuild resolver.
-            lineIfExists(resolvedPath)
-            + lineIfExists(fusionName)
+            lineIfExists resolvedPath
+            + lineIfExists fusionName
         | RawFileName -> 
-            lineIfExists(fusionName)
+            lineIfExists fusionName
         | GlobalAssemblyCache -> 
-            lineIfExists(fusionName)
-            + (FSComp.SR.assemblyResolutionGAC())+ "\n"
-            + lineIfExists(redist)
+            lineIfExists fusionName
+            + lineIfExists (FSComp.SR.assemblyResolutionGAC())
+            + lineIfExists redist
         | Path _ ->
-            lineIfExists(resolvedPath)
-            + lineIfExists(fusionName)  
+            lineIfExists resolvedPath
+            + lineIfExists fusionName  
 
     /// Perform assembly resolution by instantiating the ResolveAssemblyReference task directly from the MSBuild SDK.
     let ResolveCore(resolutionEnvironment: ResolutionEnvironment,
@@ -208,14 +210,12 @@ module internal MSBuildReferenceResolver =
                     targetFrameworkVersion: string, 
                     targetFrameworkDirectories: string list,
                     targetProcessorArchitecture: string,                
-                    outputDirectory: string, 
                     fsharpCoreDir: string,
                     explicitIncludeDirs: string list,
                     implicitIncludeDir: string,
                     allowRawFileName: bool,
                     logMessage: (string -> unit), 
-                    logWarning: (string -> string -> unit), 
-                    logError: (string -> string -> unit)) =
+                    logErrorOrWarning: (bool -> string -> string -> unit)) =
                       
         let frameworkRegistryBase, assemblyFoldersSuffix, assemblyFoldersConditions = 
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
@@ -233,14 +233,14 @@ module internal MSBuildReferenceResolver =
               member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
 #if RESHAPED_MSBUILD 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogErrorEvent(e) =   protect (fun () -> logError ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
+              member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
               member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogWarningEvent(e) = protect (fun () -> logWarning ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
+              member __.LogWarningEvent(e) = protect (fun () -> logErrorOrWarning false ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
 #else 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage e.Message)
-              member __.LogErrorEvent(e) =   protect (fun () -> logError e.Code e.Message)
+              member __.LogErrorEvent(e) =   protect (fun () -> logErrorOrWarning true e.Code e.Message)
               member __.LogMessageEvent(e) = protect (fun () -> logMessage e.Message)
-              member __.LogWarningEvent(e) = protect (fun () -> logWarning e.Code e.Message)
+              member __.LogWarningEvent(e) = protect (fun () -> logErrorOrWarning false e.Code e.Message)
 #endif 
               member __.ColumnNumberOfTaskNode with get() = 1 
               member __.LineNumberOfTaskNode with get() = 1 
@@ -261,38 +261,30 @@ module internal MSBuildReferenceResolver =
 
             let explicitIncludeDirs = explicitIncludeDirs |> List.filter(String.IsNullOrEmpty >> not)
 
-            let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
-
             let registry = sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions
 
-            [|  match resolutionEnvironment with
-                | DesignTimeLike
-                | RuntimeLike ->
-                    logMessage("Using scripting resolution precedence.")
-                    // These are search paths for runtime-like or scripting resolution. GAC searching is present.
-                    yield! rawFileNamePath    // Quick-resolve straight to filename first 
-                    yield! explicitIncludeDirs     // From -I, #I
-                    yield fsharpCoreDir    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                    yield implicitIncludeDir   // Usually the project directory
-                    yield "{TargetFrameworkDirectory}"
-                    yield registry
-                    yield "{AssemblyFolders}"
-                    yield "{GAC}"
+            [|  // When compiling scripts, for some reason we have always historically put TargetFrameworkDirectory first
+                // It is unclear why.
+                match resolutionEnvironment with
+                | CompileTimeLike -> yield "{TargetFrameworkDirectory}"
+                | DesignTimeLike | RuntimeLike -> ()
 
-                | CompileTimeLike -> 
-                    logMessage("Using compilation resolution precedence.")                      
-                    // These are search paths for compile-like resolution. GAC searching is not present.
-                    yield "{TargetFrameworkDirectory}"
-                    yield! rawFileNamePath        // Quick-resolve straight to filename first
-                    yield! explicitIncludeDirs     // From -I, #I
-                    yield fsharpCoreDir    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                    yield implicitIncludeDir   // Usually the project directory
-                    yield registry
-                    yield "{AssemblyFolders}"
-                    yield outputDirectory
-                    yield "{GAC}"
-                    // use path to implementation assemblies as the last resort
-                    yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion 
+                // Quick-resolve straight to filename first 
+                if allowRawFileName then 
+                    yield "{RawFileName}"
+                yield! explicitIncludeDirs     // From -I, #I
+                yield fsharpCoreDir    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
+                yield implicitIncludeDir   // Usually the project directory
+
+                match resolutionEnvironment with
+                | DesignTimeLike | RuntimeLike -> yield "{TargetFrameworkDirectory}"
+                | CompileTimeLike -> ()
+
+                yield registry
+                yield "{AssemblyFolders}"
+                yield "{GAC}"
+                // use path to implementation assemblies as the last resort
+                yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion 
              |]    
             
         let assemblies = 
@@ -321,49 +313,6 @@ module internal MSBuildReferenceResolver =
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif        
-        rar.Assemblies <- 
-#if RESHAPED_MSBUILD
-                          [||]
-#else
-                          [| for (referenceName,baggage) in references -> 
-                                let item = new Microsoft.Build.Utilities.TaskItem(referenceName)  :> ITaskItem
-                                item.SetMetadata("Baggage", baggage)
-                                item
-                          |]
-#endif
-        let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
-        let searchPaths = 
-            match resolutionEnvironment with
-            | DesignTimeLike
-            | RuntimeLike ->
-                logMessage("Using scripting resolution precedence.")
-                // These are search paths for runtime-like or scripting resolution. GAC searching is present.
-                rawFileNamePath @        // Quick-resolve straight to filename first 
-                explicitIncludeDirs @    // From -I, #I
-                [fsharpCoreDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                [implicitIncludeDir] @   // Usually the project directory
-                ["{TargetFrameworkDirectory}"] @
-                [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @
-                ["{AssemblyFolders}"] @
-                ["{GAC}"] 
-            | CompileTimeLike -> 
-                logMessage("Using compilation resolution precedence.")
-                // These are search paths for compile-like resolution. GAC searching is not present.
-                ["{TargetFrameworkDirectory}"] @
-                rawFileNamePath @        // Quick-resolve straight to filename first
-                explicitIncludeDirs @    // From -I, #I
-                [fsharpCoreDir] @    // Location of explicit reference to FSharp.Core, otherwise location of fsc.exe
-                [implicitIncludeDir] @   // Usually the project directory
-                [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @ // Like {Registry:Software\Microsoft\.NETFramework,v2.0,AssemblyFoldersEx}
-                ["{AssemblyFolders}"] @
-                [outputDirectory] @
-                ["{GAC}"] @
-                // use path to implementation assemblies as the last resort
-                GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
-
-        rar.SearchPaths <- searchPaths |> Array.ofList
-                                  
-        rar.AllowedAssemblyExtensions <- [| ".dll" ; ".exe" |]     
         
         let succeeded = rar.Execute()
         
@@ -381,44 +330,39 @@ module internal MSBuildReferenceResolver =
 
         resolvedFiles
 
-    /// Perform the resolution on rooted and unrooted paths, and then combine the results.
-    let Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
-
-        // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
-        // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set
-        // (which contains e.g. C:\MyDir\MyAssem.dll) and "unrooted" (everything else).  We only allow "rooted" to use {RawFileName}.  Note that
-        // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
-        // assembly resolution.
-        let references = 
-            [| for ((file,baggage) as data) in references -> 
-                    // However, MSBuild will not resolve 'relative' paths, even when e.g. implicitIncludeDir is part of the search.  As a result,
-                    // if we have an unrooted path+filename, we'll assume this is relative to the project directory and root it.
-                    if FileSystem.IsPathRootedShim(file) then
-                        data  // fine, e.g. "C:\Dir\foo.dll"
-                    elif not(file.Contains("\\") || file.Contains("/")) then
-                        data  // fine, e.g. "System.Transactions.dll"
-                    else
-                        // we have a 'relative path', e.g. "bin/Debug/foo.exe" or "..\Yadda\bar.dll"
-                        // turn it into an absolute path based at implicitIncludeDir
-                        (Path.Combine(implicitIncludeDir, file), baggage) |]
-
-        let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
-
-        let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logWarning, logError)
-
-        let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logWarning, logError)
-
-        // now unify the two sets of results
-        Array.concat [| rootedResults; unrootedResults |]
-
     let Resolver =
        { new ReferenceResolver.Resolver with 
            member __.HighestInstalledNetFrameworkVersion() = HighestInstalledNetFrameworkVersion()
            member __.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory
-           member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                             outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) =
 
-               Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
-                outputDirectory, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarning, logError) 
+           /// Perform the resolution on rooted and unrooted paths, and then combine the results.
+           member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
+                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logErrorOrWarning) =
+
+                // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
+                // It is unreliable to use this mutable global state inside Visual Studio.  As a result, we partition all references into a "rooted" set
+                // (which contains e.g. C:\MyDir\MyAssem.dll) and "unrooted" (everything else).  We only allow "rooted" to use {RawFileName}.  Note that
+                // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
+                // assembly resolution.
+                let references = 
+                    [| for ((file,baggage) as data) in references -> 
+                            // However, MSBuild will not resolve 'relative' paths, even when e.g. implicitIncludeDir is part of the search.  As a result,
+                            // if we have an unrooted path+filename, we'll assume this is relative to the project directory and root it.
+                            if FileSystem.IsPathRootedShim(file) then
+                                data  // fine, e.g. "C:\Dir\foo.dll"
+                            elif not(file.Contains("\\") || file.Contains("/")) then
+                                data  // fine, e.g. "System.Transactions.dll"
+                            else
+                                // We have a 'relative path', e.g. "bin/Debug/foo.exe" or "..\Yadda\bar.dll"
+                                // turn it into an absolute path based at implicitIncludeDir
+                                (Path.Combine(implicitIncludeDir, file), baggage) |]
+
+                let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
+
+                let rootedResults = ResolveCore(resolutionEnvironment, rooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, true, logMessage, logErrorOrWarning)
+
+                let unrootedResults = ResolveCore(resolutionEnvironment, unrooted,  targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture, fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, false, logMessage, logErrorOrWarning)
+
+                // now unify the two sets of results
+                Array.concat [| rootedResults; unrootedResults |]
        } 

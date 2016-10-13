@@ -1665,7 +1665,7 @@ module internal Parser =
                     let checkForErrors() = (parseResults.ParseHadErrors || errHandler.ErrorCount > 0)
                     // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                     // for the client to claim the result as obsolete and have the typecheck abort.
-                    let computation = TypeCheckSingleInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
+                    let computation = TypeCheckOneInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
                     match computation |> Eventually.forceWhile (fun () -> not (isResultObsolete())) with
                     | Some((tcEnvAtEnd,_,typedImplFiles),tcState) -> Some (tcEnvAtEnd, typedImplFiles, tcState)
                     | None -> None // Means 'aborted'
