@@ -309,6 +309,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,a
 // A great deal of the logic of this function is repeated in fsi.fs, so maybe should refactor fsi.fs to call into this as well.
 let GetTcImportsFromCommandLine
         (argv : string[], 
+         referenceResolver,
          defaultFSharpBinariesDir : string, 
          directoryBuildingFrom : string, 
 #if FX_LCIDFROMCODEPAGE
@@ -321,7 +322,7 @@ let GetTcImportsFromCommandLine
          errorLoggerProvider : ErrorLoggerProvider,
          disposables : DisposablesTracker) =
 
-    let tcConfigB = TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false)
+    let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None OptionSwitch.Off
@@ -1851,7 +1852,7 @@ let copyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
 [<NoEquality; NoComparison>]
 type Args<'T> = Args  of 'T
 
-let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
+let main0(argv,referenceResolver,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
 #if FX_LCIDFROMCODEPAGE
     // See Bug 735819 
@@ -1867,7 +1868,7 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
 
     let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedImplFiles,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger = 
         GetTcImportsFromCommandLine(
-            argv,defaultFSharpBinariesDir,Directory.GetCurrentDirectory(),
+            argv,referenceResolver,defaultFSharpBinariesDir,Directory.GetCurrentDirectory(),
 #if FX_LCIDFROMCODEPAGE
              lcidFromCodePage, 
 #endif
@@ -2062,26 +2063,27 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     ReportTime tcConfig "Exiting"
 
-let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider) =
+let typecheckAndCompile(argv,referenceResolver,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider) =
     use d = new DisposablesTracker()
     use e = new SaveAndRestoreConsoleEncoding()
 
-    main0(argv,bannerAlreadyPrinted,exiter, errorLoggerProvider, d)
+    main0(argv,referenceResolver,bannerAlreadyPrinted,exiter, errorLoggerProvider, d)
+
     |> main1
     |> main2
     |> main2b
     |> main3 
     |> main4
 
-let mainCompile (argv, bannerAlreadyPrinted, exiter:Exiter) = 
-    typecheckAndCompile(argv, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
+let mainCompile (argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter) = 
+    typecheckAndCompile(argv, referenceResolver, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
 
 [<RequireQualifiedAccess>]
 type CompilationOutput = 
     { Errors : ErrorOrWarning[]
       Warnings : ErrorOrWarning[]  }
 
-type InProcCompiler() = 
+type InProcCompiler(referenceResolver) = 
     member this.Compile(argv) = 
 
         let errors = ResizeArray()
@@ -2103,7 +2105,7 @@ type InProcCompiler() =
             { new Exiter with
                  member this.Exit n = exitCode := n; raise StopProcessing }
         try 
-            typecheckAndCompile(argv, false, exiter, loggerProvider)
+            typecheckAndCompile(argv, referenceResolver, false, exiter, loggerProvider)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->

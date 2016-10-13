@@ -83,7 +83,7 @@ module FSharpResidentCompiler =
                               let exitCode = 
                                   try 
                                       Environment.CurrentDirectory <- pwd
-                                      mainCompile (argv, true, exiter); 
+                                      mainCompile (argv, MSBuildReferenceResolver.Resolver, true, exiter); 
                                       if !progress then printfn "server: finished compilation request, argv = %A" argv
                                       0
                                   with e -> 
@@ -290,7 +290,7 @@ module Driver =
             match exitCodeOpt with 
             | Some exitCode -> exitCode
             | None -> 
-                mainCompile (argv, true, quitProcessExiter)
+                mainCompile (argv, MSBuildReferenceResolver.Resolver, true, quitProcessExiter)
                 0
 
         elif runningOnMono && argv |> Array.exists  (fun x -> x = "/server" || x = "--server") then 
@@ -300,10 +300,10 @@ module Driver =
             0
         
         else
-            mainCompile (argv, false, quitProcessExiter)
+            mainCompile (argv, MSBuildReferenceResolver.Resolver, false, quitProcessExiter)
             0 
 #else
-        mainCompile (argv, false, quitProcessExiter)
+        mainCompile (argv, MSBuildReferenceResolver.Resolver, false, quitProcessExiter)
         0 
 #endif
 
