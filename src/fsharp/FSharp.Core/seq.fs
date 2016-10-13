@@ -690,6 +690,14 @@ namespace Microsoft.FSharp.Collections
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Choose (filter, next) 
+            
+            and DistinctFactory<'T when 'T: equality> () =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Distinct (next) 
+
+            and DistinctByFactory<'T,'Key when 'Key: equality> (keyFunction:'T-> 'Key) =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast DistinctBy (keyFunction, next) 
 
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
@@ -761,6 +769,28 @@ namespace Microsoft.FSharp.Collections
                     match choose input with
                     | Some value -> Helpers.avoidTailCall (next.ProcessNext value)
                     | None -> false
+
+            and Distinct<'T,'V when 'T: equality> (next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
+
+                override __.ProcessNext (input:'T) : bool = 
+                    if hashSet.Add input then
+                        Helpers.avoidTailCall (next.ProcessNext input)
+                    else
+                        false
+
+            and DistinctBy<'T,'Key,'V when 'Key: equality> (keyFunction: 'T -> 'Key, next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let hashSet = HashSet<'Key>(HashIdentity.Structural<'Key>)
+
+                override __.ProcessNext (input:'T) : bool = 
+                    if hashSet.Add(keyFunction input) then
+                        Helpers.avoidTailCall (next.ProcessNext input)
+                    else
+                        false
 
             and Filter<'T,'V> (filter:'T->bool, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -1939,19 +1969,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            checkNonNull "source" source
-            seq { let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
-                  for v in source do
-                      if hashSet.Add(v) then
-                          yield v }
+            source |> seqFactory (SeqComposer.DistinctFactory ())
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
-            checkNonNull "source" source
-            seq { let hashSet = HashSet<_>(HashIdentity.Structural<_>)
-                  for v in source do
-                    if hashSet.Add(keyf v) then
-                        yield v }
+            source |> seqFactory (SeqComposer.DistinctByFactory keyf)
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
