@@ -26,10 +26,10 @@ type BlobBuildingStream () =
     static let chunkSize = 32 * 1024
     let builder = new BlobBuilder(chunkSize)
 
-    override this.CanWrite  with get() = true
-    override this.CanRead   with get() = false
-    override this.CanSeek   with get() = false
-    override this.Length    with get() = int64(builder.Count)
+    override this.CanWrite = true
+    override this.CanRead  = false
+    override this.CanSeek  = false
+    override this.Length   = int64(builder.Count)
 
     override this.Write(buffer:byte array, offset:int, count:int) = builder.WriteBytes(buffer, offset, count)
     override this.WriteByte(value:byte) = builder.WriteByte(value)
@@ -294,11 +294,9 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
     let documentIndex =
         let includeSource file =
             let isInList =
-                if embedSourceList |> List.length = 0 then false
+                if embedSourceList.Length = 0 then false
                 else
-                    match embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) with
-                    | Some _ -> true
-                    | None   -> false
+                    embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
 
             if not embedAllSource && not isInList || not (File.Exists(file)) then
                 None
@@ -324,7 +322,7 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
             let handle =
                 match checkSum doc.File with
                 | Some (hashAlg, checkSum) ->
-                    let h = 
+                    let dbgInfo = 
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid(hashAlg),
                          metadata.GetOrAddBlob(checkSum.ToImmutableArray()),
@@ -332,17 +330,17 @@ let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string l
                     match includeSource doc.File with
                     | None -> ()
                     | Some blob ->
-                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(h),
+                        metadata.AddCustomDebugInformation(DocumentHandle.op_Implicit(dbgInfo),
                                                            metadata.GetOrAddGuid(embeddedSource),
                                                            metadata.GetOrAddBlob(blob)) |> ignore
-                    h
+                    dbgInfo
                 | None ->
-                    let h = 
+                    let dbgInfo = 
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid(System.Guid.Empty),
                          metadata.GetOrAddBlob(ImmutableArray<byte>.Empty),
                          metadata.GetOrAddGuid(corSymLanguageTypeFSharp)) |> metadata.AddDocument
-                    h
+                    dbgInfo
             index.Add(doc.File, handle)
         index
 
