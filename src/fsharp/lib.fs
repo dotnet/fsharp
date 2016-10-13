@@ -178,14 +178,11 @@ module ListAssoc =
 //------------------------------------------------------------------------
 
 module ListSet = 
-    (* NOTE: O(n)! *)
-    let rec contains f x l = 
-        match l with 
-        | [] -> false
-        | x'::t -> f x x' || contains f x t
+    let inline contains f x l = List.exists (f x) l
 
     (* NOTE: O(n)! *)
     let insert f x l = if contains f x l then l else x::l
+
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
         | _, [] -> l1
@@ -232,10 +229,6 @@ module ListSet =
     (* NOTE: quadratic! *)
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
     let setify f l = List.foldBack (insert f) (List.rev l) [] |> List.rev
-
-
-module FlatListSet = 
-    let remove f x l = FlatList.filter (fun y -> not (f x y)) l
 
 //-------------------------------------------------------------------------
 // Library: pairs

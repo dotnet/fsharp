@@ -107,9 +107,6 @@
     <Compile Include="..\..\utils\TaggedCollections.fs">
       <Link>TaggedCollections.fs</Link>
     </Compile>
-    <Compile Include="..\FlatList.fs">
-      <Link>FlatList.fs</Link>
-    </Compile>
     <Compile Include="..\..\absil\ildiag.fsi">
       <Link>Utilities\ildiag.fsi</Link>
     </Compile>
@@ -143,11 +140,8 @@
     <Compile Include="..\..\absil\bytes.fs">
       <Link>bytes.fs</Link>
     </Compile>
-    <Compile Include="..\ReferenceResolution.fsi">
-      <Link>ReferenceResolution.fsi</Link>
-    </Compile>
-    <Compile Include="..\ReferenceResolution.fs">
-      <Link>ReferenceResolution.fs</Link>
+    <Compile Include="..\ReferenceResolver.fs">
+      <Link>ReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\il.fsi">
       <Link>il.fsi</Link>
@@ -451,6 +445,9 @@
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>fsc.fs</Link>
+    </Compile>
+    <Compile Include="..\MSBuildReferenceResolver.fs">
+      <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

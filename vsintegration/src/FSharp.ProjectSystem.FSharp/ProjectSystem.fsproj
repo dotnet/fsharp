@@ -52,9 +52,6 @@
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
     </EmbeddedResource>
-    <VSCTCompile Include="..\FSharp.VS.FSI\fsiCommands.vsct">
-      <Link>fsiCommands.vsct</Link>
-    </VSCTCompile>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="MSBuildUtilities.fs" />
@@ -69,7 +66,6 @@
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
@@ -77,11 +73,12 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
+    <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
@@ -95,19 +92,7 @@
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
-      <HintPath Condition="Exists('$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll')">$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-        <HintPath Condition="Exists('$(VS150COMNTOOLS)\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll')">$(VS150COMNTOOLS)\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
-        <HintPath Condition="Exists('$(VS150COMNTOOLS)\..\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll')">$(VS150COMNTOOLS)\..\..\IDE\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion)">
-        <HintPath Condition="Exists('$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll')">$(VS150COMNTOOLS)\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll</HintPath>
-        <HintPath Condition="Exists('$(VS150COMNTOOLS)\..\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll')">$(VS150COMNTOOLS)\..\..\IDE\PublicAssemblies\Microsoft.VisualStudio.Shell.Immutable.$(VisualStudioVersion).dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(RoslynVSBinariesVersion)" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
@@ -121,6 +106,21 @@
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Utilities.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal.14.0.25420\lib\net45\Microsoft.VisualStudio.Shell.UI.Internal.dll</HintPath>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Name>FSharp.LanguageService.Compiler</Name>
@@ -148,6 +148,11 @@
     <ProjectReference Include="..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharp.Editor\FSharp.Editor.fsproj">
+      <Name>FSharp.Editor</Name>
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

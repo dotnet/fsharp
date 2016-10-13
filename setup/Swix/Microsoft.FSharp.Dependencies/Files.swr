@@ -1,17 +1,7 @@
 use vs
 
-package name=Microsoft.FSharp.Dependencies.$(VSSku)
-        version=4.1
-        vs.package.language=neutral
-
-vs.dependencies
-  vs.dependency id=Microsoft.FSharp.VSIX.$(VSSku)
-                version=4.1
-                type=Required
-  
-  vs.dependency id=Microsoft.FSharp.SDK
-                version=4.1
-                type=Required
+package name=Microsoft.FSharp.Dependencies
+        version=$(FSharpPackageVersion)
 
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
   file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
@@ -21,7 +11,7 @@ folder "InstallDir:Common7\IDE\PublicAssemblies"
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
-  
+
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Conversion.Core.dll"
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll"
@@ -29,12 +19,19 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll"
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll"
   file source="$(PackagesFolder)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll"
-  
+  file source="$(PackagesFolder)\System.Collections.Immutable.1.2.0\lib\netstandard1.0\System.Collections.Immutable.dll"
+  file source="$(PackagesFolder)\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\netstandard1.1\System.Reflection.Metadata.dll"
+  file source="$(PackagesFolder)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1\Microsoft.DiaSymReader.dll"
+  file source="$(PackagesFolder)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\netstandard1.1\Microsoft.DiaSymReader.PortablePdb.dll"
+
 folder "InstallDir:Common7\IDE\NewScriptItems"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\Script\NewFSharpScriptItems.vsdir"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\Script\Script.fsx"
-  
+
 folder "InstallDir:Common7\IDE\NewFileItems"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\NewFSharpFileItems.vsdir"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\File.fs"
   file source="$(BinariesFolder)\setup\resources\NewFileDialog\General\Script.fsx"
+
+folder "InstallDir:Common7\Tools\VsDevCmd\Ext"
+  file source="fsharp.bat"

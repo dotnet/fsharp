@@ -64,6 +64,8 @@ for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
 setlocal disableDelayedExpansion
 echo.
 
+rem disable setup build by setting FSC_BUILD_SETUP=0
+if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1) 
 goto :MAIN
 
 :SET_CONFIG
@@ -96,6 +98,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -119,15 +122,15 @@ if /i '%ARG%' == 'microbuild' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_SETUP=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
     
-    set TEST_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
+    set TEST_COMPILERUNIT=1
+    set TEST_NET40_COREUNIT=1
     set TEST_CORECLR=0
-    set TEST_PORTABLE_COREUNIT=0
-    set TEST_VS=0
-    set TEST_FSHARP_SUITE=0
-    set TEST_FSHARPQA_SUITE=0
+    set TEST_PORTABLE_COREUNIT=1
+    set TEST_VS=1
+    set TEST_FSHARP_SUITE=1
+    set TEST_FSHARPQA_SUITE=1
     set SKIP_EXPENSIVE_TESTS=1
 )
 
@@ -142,6 +145,7 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -162,6 +166,7 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=0
@@ -363,8 +368,8 @@ if '%RestorePackages%' == 'true' (
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 )
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
@@ -372,7 +377,6 @@ if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
-
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 
@@ -419,14 +423,12 @@ call BuildTestTools.cmd %BUILD_CONFIG_LOWERCASE%
 
 @echo on
 if '%TEST_FSHARP_SUITE%' == '1' (
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS% 
     @if ERRORLEVEL 1 (
         type testresults\FSharpNunit_Error.log
         echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWERCASE% fsharp %TEST_TAGS%' failed
         goto :failed_tests
     )
-    set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_FSHARPQA_SUITE%' == '1' (

@@ -22,7 +22,6 @@ module internal Zset =
     let contains x (s:Zset<_>) = s.Contains(x)
     let add x (s:Zset<_>) = s.Add(x)
     let addList xs a = List.fold (fun a x -> add x a) a xs
-    let addFlatList xs a = FlatList.fold (fun a x -> add x a) a xs
         
     let singleton ord x = add x (empty ord)
     let remove x (s:Zset<_>) = s.Remove(x)

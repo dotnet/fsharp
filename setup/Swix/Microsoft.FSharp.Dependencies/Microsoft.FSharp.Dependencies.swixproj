@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project InitialTargets="CheckPropertiesArePassed" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
@@ -10,7 +11,7 @@
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <PackagesFolder>$(FSharpSourcesRoot)\..\packages</PackagesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.Dependencies.$(VSSku)</OutputName>
+    <OutputName>Microsoft.FSharp.Dependencies</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -19,18 +20,19 @@
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);VSSku=$(VSSku)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
     <Package Include="Files.swr" />
+    <Package Include="Dependencies.swr" />
   </ItemGroup>
+
+  <Target Name="CheckPropertiesArePassed">
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
+  </Target>
   
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
     <!-- SWIX plugin adds the built vsix to signing automatically -->
-  </Target>
-  
-  <Target Name="CheckPropertiesArePassed" BeforeTargets="Build">
-    <Error Condition="'$(VSSku)' == ''" Text="A 'VSSku' property must be passed to the project." />
   </Target>
 </Project>

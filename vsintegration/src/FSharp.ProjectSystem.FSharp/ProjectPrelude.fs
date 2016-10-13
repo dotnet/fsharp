@@ -39,7 +39,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open Microsoft.VisualStudio.Shell
     open Microsoft.VisualStudio.Shell.Interop
-    open Microsoft.VisualStudio.Shell.Flavor
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     open Microsoft.VisualStudio
@@ -48,10 +47,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open System
 
     type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
-    type ErrorHandler = Microsoft.VisualStudio.ErrorHandler
-    type VSConstants = Microsoft.VisualStudio.VSConstants
-    type VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID
-    type VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID
 
     module internal FSharpSDKHelper = 
         [<Literal>]
@@ -272,9 +267,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     // Some more constants
 
     module internal GuidList =
-        let guidEditorFactory = new Guid("{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}")
-        [<Literal>]
-        let guidEditorFactoryString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
         [<Literal>]
         let guidFSharpProjectPkgString = "91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C"
         [<Literal>]

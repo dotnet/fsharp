@@ -180,6 +180,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
                 | "NONE"     -> null
                 | "PORTABLE" -> "portable"
                 | "PDBONLY"  -> "pdbonly"
+                | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
         // NoFramework

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+<Project InitialTargets="CheckPropertiesArePassed" ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
   <PropertyGroup>
     <FSharpTreeRoot>$(MSBuildProjectDirectory)\..\..</FSharpTreeRoot>
     <SetupRootFolder>$(FSharpTreeRoot)\setup</SetupRootFolder>
@@ -10,7 +10,8 @@
   <Import Project="$(SetupRootFolder)\FSharp.Setup.props" />
 
   <PropertyGroup>
-    <OutputName>Microsoft.FSharp.SDK</OutputName>
+    <OutputName Condition="'$(IsLangPack)' != 'true'">Microsoft.FSharp.SDK.Core</OutputName>
+    <OutputName Condition="'$(IsLangPack)' == 'true'">Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
     <ProjectGuid>da0da41f-0e00-4598-8eee-b29d31b0ca04</ProjectGuid>
     <OutputType>Package</OutputType>
     <Media>net</Media>
@@ -23,7 +24,8 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);LocaleCode=$(LocaleCode)</DefineConstants>
     <DefineConstants>$(DefineConstants);LocaleId=$(LocaleId)</DefineConstants>
-    <DefineConstants>$(DefineConstants);LocaleRegion=$(LocaleRegion)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleParentCulture=$(LocaleParentCulture)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleSpecificCulture=$(LocaleSpecificCulture)</DefineConstants>
     <DefineConstants>$(DefineConstants);IsLangPack=$(IsLangPack)</DefineConstants>
     
     <DefineConstants>$(DefineConstants);BinariesDir=$(BinariesDir)</DefineConstants>
@@ -62,18 +64,19 @@
   <Import Project="$(WixInstallPath)\wix.targets" />
   <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
 
-  <Target Name="CheckLocaleIsPassed" BeforeTargets="Build">
+  <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
-    <Error Condition="'$(LocaleRegion)' == ''" Text="A 'LocaleRegion' property must be passed to the project." />
+    <Error Condition="'$(LocaleParentCulture)' == ''" Text="A 'LocaleParentCulture' property must be passed to the project." />
+    <Error Condition="'$(LocaleSpecificCulture)' == ''" Text="A 'LocaleSpecificCulture' property must be passed to the project." />
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
   </Target>
 
-  <Target Name="CopyMsiToInsertionFolder" AfterTargets="SignFiles">
+  <Target Name="CopyMsiToInsertionFolder" AfterTargets="Build">
     <ItemGroup>
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
   
-    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename).$(LocaleCode)%(Extension)')" />
+    <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename)%(Extension)')" />
   </Target>
 </Project>

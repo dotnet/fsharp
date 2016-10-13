@@ -1,9 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.25302.0
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 15.0.25618.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler", "src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
@@ -130,6 +128,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpFull", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj", "{59ADCE46-9740-4079-834D-9A03A3494EBC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpWeb", "vsintegration\Vsix\VisualFSharpWeb\VisualFSharpWeb.csproj", "{58730C8B-16F5-4956-9291-BB68E17C9142}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpOpenSource", "vsintegration\Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj", "{E6A45CDF-B408-420F-B475-74611BEFC52B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -728,6 +728,18 @@ Global
 		{58730C8B-16F5-4956-9291-BB68E17C9142}.Release|Any CPU.Build.0 = Release|Any CPU
 		{58730C8B-16F5-4956-9291-BB68E17C9142}.Release|x86.ActiveCfg = Release|Any CPU
 		{58730C8B-16F5-4956-9291-BB68E17C9142}.Release|x86.Build.0 = Release|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Debug|x86.Build.0 = Debug|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Proto|x86.ActiveCfg = Proto|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Proto|x86.Build.0 = Proto|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|x86.ActiveCfg = Release|Any CPU
+		{E6A45CDF-B408-420F-B475-74611BEFC52B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -787,5 +799,6 @@ Global
 		{E7EC4A3E-9D57-45B8-83F5-EDDFD6CEF090} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
 		{59ADCE46-9740-4079-834D-9A03A3494EBC} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
 		{58730C8B-16F5-4956-9291-BB68E17C9142} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
+		{E6A45CDF-B408-420F-B475-74611BEFC52B} = {141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}
 	EndGlobalSection
 EndGlobal

@@ -148,7 +148,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
 
 
 let baseTyOfUnionSpec (cuspec : IlxUnionSpec) = 
-    mkILNamedTyRaw cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
+    mkILNamedTy cuspec.Boxity cuspec.TypeRef cuspec.GenericArgs
 
 let mkMakerName (cuspec: IlxUnionSpec) nm = 
     match cuspec.HasHelpers with
@@ -168,7 +168,7 @@ let cuspecRepr =
          (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
          (fun cuspec -> cuspec.EnclosingType),
-         (fun (cuspec,nm) -> mkILNamedTyRaw cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
+         (fun (cuspec,nm) -> mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
 
 type NoTypesGeneratedViaThisReprDecider = NoTypesGeneratedViaThisReprDecider
 let cudefRepr = 
@@ -192,10 +192,10 @@ let mkUnionCaseFieldId (fdef: IlxUnionField) =
 
 let refToFieldInTy ty (nm, fldTy) = mkILFieldSpecInTy (ty, nm, fldTy)
 
-let formalTypeArgs (baseTy:ILType) = ILList.mapi (fun i _ -> mkILTyvarTy (uint16 i)) baseTy.GenericArgs
+let formalTypeArgs (baseTy:ILType) = List.mapi (fun i _ -> mkILTyvarTy (uint16 i)) baseTy.GenericArgs
 let constFieldName nm = "_unique_" + nm 
 let constFormalFieldTy (baseTy:ILType) = 
-    mkILNamedTyRaw baseTy.Boxity baseTy.TypeRef (formalTypeArgs baseTy)
+    mkILNamedTy baseTy.Boxity baseTy.TypeRef (formalTypeArgs baseTy)
 
 let mkConstFieldSpecFromId (baseTy:ILType) constFieldId = 
     refToFieldInTy baseTy constFieldId
@@ -595,7 +595,7 @@ let mkMethodsAndPropertiesForFields ilg access attr hasHelpers (typ: ILType) (fi
               CallingConv=ILThisConvention.Instance
               Type=field.Type          
               Init=None
-              Args=mkILTypes []
+              Args = []
               CustomAttrs= field.ILField.CustomAttrs }
             |> addPropertyGeneratedAttrs ilg
         )
@@ -608,7 +608,7 @@ let mkMethodsAndPropertiesForFields ilg access attr hasHelpers (typ: ILType) (fi
                   mkILNonGenericInstanceMethod
                      ("get_" + adjustFieldName hasHelpers field.Name,
                       access, [], mkILReturn field.Type,
-                      mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode [ mkLdarg 0us; mkNormalLdfld fspec ], attr))
+                      mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg 0us; mkNormalLdfld fspec ], attr))
                   |> addMethodGeneratedAttrs ilg  ]
     
     basicProps, basicMethods
@@ -645,7 +645,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                      mkILNonGenericStaticMethod
                            (methName,
                             cud.cudReprAccess,[],mkILReturn(baseTy),
-                            mkMethodBody(true,emptyILLocals,fields.Length,
+                            mkMethodBody(true,[],fields.Length,
                                     nonBranchingInstrsToCode 
                                       [ I_ldsfld (Nonvolatile,mkConstFieldSpec altName baseTy) ], attr))
                          |> addMethodGeneratedAttrs ilg
@@ -669,7 +669,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                          ("get_" + mkTesterName altName,
                           cud.cudHelpersAccess,[],
                           mkILReturn ilg.typ_bool,
-                          mkMethodBody(true,emptyILLocals,2,nonBranchingInstrsToCode 
+                          mkMethodBody(true,[],2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
                       |> addMethodGeneratedAttrs ilg ],
                     [ { Name=mkTesterName altName
@@ -680,7 +680,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                         CallingConv=ILThisConvention.Instance
                         Type=ilg.typ_bool          
                         Init=None
-                        Args=mkILTypes []
+                        Args = []
                         CustomAttrs=emptyILCustomAttrs }
                       |> addPropertyGeneratedAttrs ilg
                       |> addPropertyNeverAttrs ilg ]
@@ -695,7 +695,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                         mkILNonGenericStaticMethod
                           ("get_" + altName,
                            cud.cudHelpersAccess, [], mkILReturn baseTy,
-                           mkMethodBody(true,emptyILLocals,fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num), attr))
+                           mkMethodBody(true,[],fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num), attr))
                         |> addMethodGeneratedAttrs ilg
                         |> addAltAttribs
 
@@ -709,7 +709,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                           CallingConv=ILThisConvention.Static
                           Type=baseTy          
                           Init=None
-                          Args=mkILTypes []
+                          Args = []
                           CustomAttrs=emptyILCustomAttrs }
                         |> addPropertyGeneratedAttrs ilg
                         |> addPropertyNeverAttrs ilg
@@ -723,7 +723,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                             cud.cudHelpersAccess,
                             fields |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type)) |> Array.toList,
                             mkILReturn baseTy,
-                            mkMethodBody(true,emptyILLocals,fields.Length,
+                            mkMethodBody(true,[],fields.Length,
                                     nonBranchingInstrsToCode 
                                       (Array.toList (Array.mapi (fun i _ -> mkLdarg (uint16 i)) fields) @
                                        (convNewDataInstrInternal ilg cuspec num)), attr))
@@ -758,7 +758,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                   else
                     
                     let debugProxyTypeName = altTy.TypeSpec.Name + "@DebugTypeProxy"
-                    let debugProxyTy = mkILBoxedTyRaw (mkILNestedTyRef(altTy.TypeSpec.Scope,altTy.TypeSpec.Enclosing, debugProxyTypeName)) altTy.GenericArgs
+                    let debugProxyTy = mkILBoxedTy (mkILNestedTyRef(altTy.TypeSpec.Scope,altTy.TypeSpec.Enclosing, debugProxyTypeName)) altTy.GenericArgs
                     let debugProxyFieldName = "_obj"
                     
                     let debugProxyFields = 
@@ -768,7 +768,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                         mkILCtor(ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *),
                                 [ mkILParamNamed ("obj",altTy) ],
                                 mkMethodBody
-                                  (false,emptyILLocals,3,
+                                  (false,[],3,
                                    nonBranchingInstrsToCode
                                      [ yield mkLdarg0 
                                        yield mkNormalCall (mkILCtorMethSpecForTy (ilg.typ_Object,[]))  
@@ -786,7 +786,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                                ("get_" + field.Name,
                                 ILMemberAccess.Public,[],
                                 mkILReturn field.Type,
-                                mkMethodBody(true,emptyILLocals,2,
+                                mkMethodBody(true,[],2,
                                         nonBranchingInstrsToCode 
                                           [ mkLdarg0
                                             (match td.tdKind with ILTypeDefKind.ValueType -> mkNormalLdflda | _ -> mkNormalLdfld)  
@@ -806,7 +806,7 @@ let convAlternativeDef ilg num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (a
                               CallingConv=ILThisConvention.Instance
                               Type=fdef.Type          
                               Init=None
-                              Args=mkILTypes []
+                              Args = []
                               CustomAttrs= fdef.ILField.CustomAttrs }
                             |> addPropertyGeneratedAttrs ilg)
                         |> Array.toList
@@ -989,7 +989,7 @@ let mkClassUnionDef ilg tref td cud =
         
         let tagMeths,tagProps = 
 
-          let body = mkMethodBody(true,emptyILLocals,2,genWith (fun cg -> emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec); cg.EmitInstr I_ret), cud.cudWhere)
+          let body = mkMethodBody(true,[],2,genWith (fun cg -> emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec); cg.EmitInstr I_ret), cud.cudWhere)
           // // If we are using NULL as a representation for an element of this type then we cannot 
           // // use an instance method 
           if (repr.RepresentOneAlternativeAsNull info) then
@@ -1009,7 +1009,7 @@ let mkClassUnionDef ilg tref td cud =
                   CallingConv=ILThisConvention.Instance
                   Type=tagFieldType          
                   Init=None
-                  Args=mkILTypes []
+                  Args = []
                   CustomAttrs=emptyILCustomAttrs }
                 |> addPropertyGeneratedAttrs ilg 
                 |> addPropertyNeverAttrs ilg  ]
@@ -1040,7 +1040,7 @@ let mkClassUnionDef ilg tref td cud =
                   Layout=ILTypeDefLayout.Auto 
                   IsSpecialName=false
                   Encoding=ILDefaultPInvokeEncoding.Ansi
-                  Implements = mkILTypes []
+                  Implements = []
                   Extends= Some ilg.typ_Object 
                   Methods= emptyILMethods
                   SecurityDecls=emptyILSecurityDecls

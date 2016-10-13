@@ -7,6 +7,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open System.Collections.Generic 
+open System.IO
+open System.Reflection.Metadata
 
 type PdbDocumentData = ILSourceDocument
 
@@ -67,15 +69,24 @@ val logDebugInfo : string -> PdbData -> unit
 val writeMdbInfo<'a> : string -> string -> PdbData -> 'a
 #endif
 
+type BinaryChunk = 
+    { size: int32 
+      addr: int32 }
+
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
-      iddData: byte[]; }
+      iddTimestamp: int32;
+      iddData: byte[];
+      iddChunk: BinaryChunk }
 
-val writePortablePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> fpdb:string -> info:PdbData -> idd
+val generatePortablePdb : fixupSPs:bool -> embedAllSource:bool -> embedSourceList:string list -> showTimes:bool -> info:PdbData -> struct (int64 * BlobContentId * MemoryStream) 
+val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> struct (int64 * BlobContentId * MemoryStream)
+val embedPortablePdbInfo : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> pdbChunk:BinaryChunk -> idd[]
+val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> idd[]
 
 #if !FX_NO_PDB_WRITER
-val writePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> idd
+val writePdbInfo : fixupOverlappingSequencePoints:bool -> showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
 #endif

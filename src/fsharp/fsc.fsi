@@ -39,7 +39,11 @@ val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe
 
-val mainCompile : argv : string[] * bannerAlreadyPrinted : bool * exiter : Exiter -> unit
+val mainCompile : 
+    argv : string[] * 
+    referenceResolver: ReferenceResolver.Resolver * 
+    bannerAlreadyPrinted : bool * 
+    exiter : Exiter -> unit
 
 //---------------------------------------------------------------------------
 // The micro API into the compiler used by the visualfsharp test infrastructure
@@ -50,7 +54,7 @@ type CompilationOutput =
       Warnings : ErrorOrWarning[] }
 
 type InProcCompiler = 
-    new : unit -> InProcCompiler
+    new : ReferenceResolver.Resolver -> InProcCompiler
     member Compile : args : string[] -> bool * CompilationOutput
 
 

@@ -1,0 +1,59 @@
+use vs
+
+package name=Microsoft.FSharp.VSIX.$(VSSku).Resources
+        version=$(FSharpPackageVersion)
+        vs.package.language=$(LocaleSpecificCulture)
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\ConsoleProject"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\App.config"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\ConsoleProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\ConsoleApplication.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\ConsoleProject\Program.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\ConsoleProject\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\LibraryProject"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\Library1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\LibraryProject\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\LibraryProject\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\NetCore259Project"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCore259Project\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore259Project\NETCore259PortableLibrary.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore259Project\PortableLibrary.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore259Project\PortableLibrary1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCore259Project\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore259Project\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\NetCore78Project"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCore78Project\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore78Project\NETCore78PortableLibrary.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore78Project\PortableLibrary.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore78Project\PortableLibrary1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCore78Project\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCore78Project\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\NetCoreProject"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCoreProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCoreProject\NETCore7PortableLibrary.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCoreProject\PortableLibrary.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCoreProject\PortableLibrary1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\NetCoreProject\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\NetCoreProject\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\PortableLibraryProject"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\PortableLibraryProject\AssemblyInfo.fs"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\PortableLibraryProject\PortableLibrary.fsproj"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\PortableLibraryProject\PortableLibrary.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\PortableLibraryProject\PortableLibrary1.fs"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\PortableLibraryProject\Script.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\PortableLibraryProject\packages.config"
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\ProjectTemplates\FSharp\$(LocaleId)\TutorialProject"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.fsproj"
+  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\ProjectTemplates\TutorialProject\Tutorial.fsx"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\Tutorial.vstemplate"
+  file source="$(BinariesFolder)\net40\bin\ProjectTemplates\TutorialProject\packages.config"

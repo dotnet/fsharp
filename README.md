@@ -8,7 +8,6 @@
 |            |Debug (Build only)|Release (Tests Part 1)|Release (Tests Part 2)|
 |:----------:|:----------------:|:------------------:|:-----------------------:|
 |**master**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|
-|**roslyn**  |[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/debug_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/debug_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/release_ci_part1_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/release_ci_part1_windows_nt/)|[![Build Status](http://dotnet-ci.cloudapp.net/buildStatus/icon?job=Microsoft_visualfsharp/roslyn/release_ci_part2_windows_nt)](http://dotnet-ci.cloudapp.net/job/Microsoft_visualfsharp/job/roslyn/job/release_ci_part2_windows_nt/)|
 
 ###Contributing to the F# Language, Library, and Tools
 
@@ -36,14 +35,6 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
 ###Required Tools for Windows Development and Testing
 
 ####Development tools
-
-For F# 4.0 development
-
-- [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
-  - Select Visual C++ / Common Tools For Visual C++
-  - Visual F#
-  - Visual Studio Extensibility Tools
-- [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
 
 For F# 4.1 development
 
@@ -93,6 +84,5 @@ Although the primary focus of this repo is F# for Windows and the Visual Studio 
 ###Get In Touch
 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
-
 
 

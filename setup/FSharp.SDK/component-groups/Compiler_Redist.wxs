@@ -25,6 +25,12 @@
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" />
 
+      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.dll" />
+      <ComponentRef Id="Compiler_Redist_System.Reflection.Metadata.dll" />
+      <ComponentRef Id="Compiler_Redist_System.Collections.Immutable.dll" />
+      <ComponentRef Id="Compiler_Redist_System.ValueTuple.dll" />
+
       <ComponentRef Id="Compiler_Redist_OtherResources_Redist.txt" />
       <ComponentRef Id="Compiler_Redist_OtherResources_ThirdPartyNotices.txt" />
       <ComponentRef Id="Compiler_Redist_OtherResources_FSharp_eula.$(var.LocaleCode).rtf" />
@@ -95,6 +101,7 @@
       <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.targets" />
       </Component>
+
       <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
       </Component>
@@ -104,6 +111,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
+        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" />
         <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
@@ -138,6 +146,26 @@
 
       <Component Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Build.Utilities.Core.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" Source="$(var.NugetPackagesDir)\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.Collections.Immutable.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Collections.Immutable.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.Collections.Immutable.dll" Source="$(var.NugetPackagesDir)\System.Collections.Immutable.1.2.0\lib\netstandard1.0\System.Collections.Immutable.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.Reflection.Metadata.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Reflection.Metadata.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.Reflection.Metadata.dll" Source="$(var.NugetPackagesDir)\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\netstandard1.1\System.Reflection.Metadata.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.0.8\lib\netstandard1.1\Microsoft.DiaSymReader.dll" />
+      </Component>
+
+      <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

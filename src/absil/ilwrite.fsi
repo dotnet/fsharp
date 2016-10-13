@@ -19,6 +19,9 @@ type options =
  { ilg: ILGlobals
    pdbfile: string option
    portablePDB: bool
+   embeddedPDB: bool
+   embedAllSource: bool
+   embedSourceList: string list
    signer : ILStrongNameSigner option
    fixupOverlappingSequencePoints : bool
    emitTailcalls: bool

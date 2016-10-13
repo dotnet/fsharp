@@ -26,10 +26,11 @@
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">embedded</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
+    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">$(OtherFlags) --no-jit-optimize</OtherFlags>
+    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">$(OtherFlags) --no-jit-optimize --embed</OtherFlags>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -90,6 +91,9 @@
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
+    <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>
+    <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
+    <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
   </PropertyGroup>
 
 </Project>
