@@ -64,6 +64,8 @@ for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
 setlocal disableDelayedExpansion
 echo.
 
+rem disable setup build by setting FSC_BUILD_SETUP=0
+if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1) 
 goto :MAIN
 
 :SET_CONFIG
@@ -96,7 +98,7 @@ if /i '%ARG%' == 'all' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_SETUP=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -120,7 +122,7 @@ if /i '%ARG%' == 'microbuild' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_SETUP=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
     
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -143,7 +145,7 @@ if /i '%ARG%' == 'ci' (
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_SETUP=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=1
@@ -164,7 +166,7 @@ if /i '%ARG%' == 'ci_part1' (
     set BUILD_CORECLR=0
     set BUILD_PORTABLE=1
     set BUILD_VS=1
-    set BUILD_SETUP=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
 
     set TEST_COMPILERUNIT=1
     set TEST_NET40_COREUNIT=0

@@ -300,6 +300,8 @@ type TcConfigBuilder =
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
+      mutable embedAllSource : bool
+      mutable embedSourceList : string list
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -372,6 +374,7 @@ type TcConfigBuilder =
     member AddIncludePath : range * string * string -> unit
     member AddReferencedAssemblyByPath : range * string -> unit
     member RemoveReferencedAssemblyByPath : range * string -> unit
+    member AddEmbeddedSourceFile : string -> unit
     member AddEmbeddedResource : string -> unit
     
     static member SplitCommandLineResourceInfo : string -> string * string * ILResourceAccess
@@ -453,6 +456,8 @@ type TcConfig =
     member jitTracking : bool
     member portablePDB : bool
     member embeddedPDB : bool
+    member embedAllSource : bool
+    member embedSourceList : string list
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
     member extraOptimizationIterations : int

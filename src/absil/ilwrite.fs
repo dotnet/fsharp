@@ -3536,7 +3536,7 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
                                   fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -3690,7 +3690,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let struct (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints showTimes pdbData
+                let struct (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList showTimes pdbData 
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -4260,6 +4260,8 @@ type options =
      pdbfile: string option
      portablePDB: bool
      embeddedPDB: bool
+     embedAllSource: bool
+     embedSourceList: string list
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
@@ -4267,6 +4269,6 @@ type options =
      dumpDebugInfo:bool }
 
 let WriteILBinary (outfile, (args: options), modul, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB,
-                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, 
-                                          args.dumpDebugInfo) modul noDebugData)
+    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
+                                          args.embedAllSource, args.embedSourceList, args.fixupOverlappingSequencePoints, 
+                                          args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul noDebugData)
