@@ -152,13 +152,11 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
         /// Memoize compilation of custom operators.
         /// They're typically used more than once so this avoids some CPU and GC overhead.
-        let compiledOperators = ConcurrentDictionary<_,_> (System.StringComparer.Ordinal)
+        let compiledOperators = ConcurrentDictionary<_,string> (System.StringComparer.Ordinal)
 
-        fun op ->
+        fun opp ->
             // Has this operator already been compiled?
-            match compiledOperators.TryGetValue op with
-            | true, opName -> opName
-            | false, _ ->
+            compiledOperators.GetOrAdd(opp, fun (op:string) ->
                 let opLength = op.Length
                 let sb = new System.Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
                 for i = 0 to opLength - 1 do
@@ -173,8 +171,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
                 let opName = sb.ToString ()
 
                 // Cache the compiled name so it can be reused.
-                compiledOperators.TryAdd (op, opName) |> ignore
-                opName
+                opName)
 
     // +++ GLOBAL STATE
     /// Compiles an operator into a mangled operator name.

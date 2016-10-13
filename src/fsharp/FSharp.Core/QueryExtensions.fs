@@ -57,10 +57,8 @@ module internal Adapters =
                 System.Threading.Monitor.Exit(d)
 
 #else    
-         let d = new System.Collections.Concurrent.ConcurrentDictionary<Type,_>(HashIdentity.Structural)        
-         fun x -> 
-             let mutable res = Unchecked.defaultof<_> 
-             if d.TryGetValue(x ,&res) then res else let res = f x in d.[x] <- res; res
+         let d = new System.Collections.Concurrent.ConcurrentDictionary<Type,'b>(HashIdentity.Structural)        
+         fun x -> d.GetOrAdd(x, fun r -> f r)
 #endif               
 
     let isPartiallyImmutableRecord : Type -> bool = 
