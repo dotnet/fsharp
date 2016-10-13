@@ -2070,6 +2070,9 @@ type TcConfigBuilder =
       mutable jitTracking : bool
       mutable portablePDB : bool
       mutable embeddedPDB : bool
+      mutable embedAllSource : bool
+      mutable embedSourceList : string list 
+
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -2237,7 +2240,9 @@ type TcConfigBuilder =
           useSignatureDataFile = false
           jitTracking = true
           portablePDB = true
-          embeddedPDB = true
+          embeddedPDB = false
+          embedAllSource = false
+          embedSourceList = []
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2367,7 +2372,7 @@ type TcConfigBuilder =
             | None -> false
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
-           
+
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
@@ -2380,7 +2385,9 @@ type TcConfigBuilder =
                     ComputeMakePathAbsolute pathLoadedFrom path
             if not (List.contains path (List.map snd tcConfigB.loadedSources)) then 
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,path)
-                
+
+    member tcConfigB.AddEmbeddedSourceFile (file) = 
+        tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
@@ -2723,6 +2730,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.jitTracking  = data.jitTracking
     member x.portablePDB  = data.portablePDB
     member x.embeddedPDB  = data.embeddedPDB
+    member x.embedAllSource  = data.embedAllSource
+    member x.embedSourceList  = data.embedSourceList
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations

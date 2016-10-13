@@ -56,6 +56,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          cross-platform format, 'embedded' is a
                                          cross-platform format embedded into the output
                                          file).
+--embed[+|-]                             Embed all source files in the portable PDB file
+--embed:<file;...>                       Embed specific source files in the portable PDB
+                                         file
 --optimize[+|-]                          Enable optimizations (Short form: -O)
 --tailcalls[+|-]                         Enable or disable tailcalls
 --crossoptimize[+|-]                     Enable or disable cross-module optimizations
