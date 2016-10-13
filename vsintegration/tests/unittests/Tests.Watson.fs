@@ -23,7 +23,7 @@ type Check =
                     File.Delete("watson-test.fs")
                 File.WriteAllText("watson-test.fs", "// Hello watson" )
                 let argv = [| "--simulateException:"+simulationCode; "watson-test.fs"|]
-                let _code = Microsoft.FSharp.Compiler.Driver.mainCompile (argv, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter)
+                let _code = Microsoft.FSharp.Compiler.Driver.mainCompile (argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter)
                 ()
             with 
             | :? 'TException as e -> 
