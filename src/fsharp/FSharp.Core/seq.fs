@@ -1537,8 +1537,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            checkNonNull "source" source
-            mapi (fun i x -> i,x) source
+            source |> seqFactory (SeqComposer.MapiFactory (fun i x -> i,x) )
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
