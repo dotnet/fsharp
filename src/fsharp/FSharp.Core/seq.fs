@@ -599,13 +599,9 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = next.CreateMap map
 
-            and Map2FirstFactory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
+            and Map2Factory<'First,'Second,'U> (map:'First->'Second->'U, input2:IEnumerable<'Second>) =
                 inherit SeqComponentFactory<'First,'U> ()
-                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'First,'V> = upcast Map2First (map, input2, result, next)
-
-            and Map2SecondFactory<'First,'Second,'U> (map:'First->'Second->'U, input1:IEnumerable<'First>) =
-                inherit SeqComponentFactory<'Second,'U> ()
-                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'Second,'V> = upcast Map2Second (map, input1, result, next)
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'First,'V> = upcast Map2 (map, input2, result, next)
 
             and Map3Factory<'First,'Second,'Third,'U> (map:'First->'Second->'Third->'U, input2:IEnumerable<'Second>, input3:IEnumerable<'Third>) =
                 inherit SeqComponentFactory<'First,'U> ()
@@ -731,7 +727,7 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool = 
                     Helpers.avoidTailCall (next.ProcessNext (map input))
 
-            and Map2First<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:Result<'V>, next:SeqComponent<'U,'V>) =
+            and Map2<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:Result<'V>, next:SeqComponent<'U,'V>) =
                 inherit SeqComponent<'First,'V>(next)
 
                 let input2 = enumerable2.GetEnumerator ()
@@ -748,26 +744,6 @@ namespace Microsoft.FSharp.Collections
                     override __.OnDispose () =
                         try
                             input2.Dispose ()
-                        finally
-                            (Helpers.upcastISeqComponent next).OnDispose ()
-
-            and Map2Second<'First,'Second,'U,'V> (map:'First->'Second->'U, enumerable1:IEnumerable<'First>, result:Result<'V>, next:SeqComponent<'U,'V>) =
-                inherit SeqComponent<'Second,'V>(next)
-
-                let input1 = enumerable1.GetEnumerator ()
-                let map' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt map
-
-                override __.ProcessNext (input:'Second) : bool =
-                    if input1.MoveNext () then
-                        Helpers.avoidTailCall (next.ProcessNext (map'.Invoke (input1.Current, input)))
-                    else
-                        result.StopFurtherProcessing ()
-                        false
-
-                interface ISeqComponent with
-                    override __.OnDispose () =
-                        try
-                            input1.Dispose ()
                         finally
                             (Helpers.upcastISeqComponent next).OnDispose ()
 
@@ -1513,9 +1489,7 @@ namespace Microsoft.FSharp.Collections
         let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
-            match source1 with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose (SeqComposer.Map2FirstFactory (f, source2))
-            | _ -> source2 |> seqFactory (SeqComposer.Map2SecondFactory (f, source1))
+            source1 |> seqFactory (SeqComposer.Map2Factory (f, source2))
 
         [<CompiledName("Map3")>]
         let map3 f source1 source2 source3 =
