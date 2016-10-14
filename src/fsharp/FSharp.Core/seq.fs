@@ -517,10 +517,23 @@ namespace Microsoft.FSharp.Collections
 
             type [<AbstractClass>] SeqComponentFactory<'T,'U> () =
                 abstract Create<'V> : Result<'V> -> SeqComponent<'U,'V> -> SeqComponent<'T,'V>
+                abstract IsIdentity : bool
 
-            and ComposedFactory<'T,'U,'V> (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>) =
+                default __.IsIdentity = false
+
+            and ComposedFactory<'T,'U,'V> private (first:SeqComponentFactory<'T,'U>, second:SeqComponentFactory<'U,'V>) =
                 inherit SeqComponentFactory<'T,'V> ()
                 override __.Create<'W> (result:Result<'W>) (next:SeqComponent<'V,'W>) : SeqComponent<'T,'W> = first.Create result (second.Create result next)
+
+                static member Combine (first:SeqComponentFactory<'T,'U>) (second:SeqComponentFactory<'U,'V>) : SeqComponentFactory<'T,'V> =
+                    let castToTV (factory:obj) = 
+                        match factory with
+                        | :? SeqComponentFactory<'T,'V> as result -> result
+                        | _ -> failwith "library implementation error: they types must match when paired with identity"
+
+                    if   first.IsIdentity  then castToTV second
+                    elif second.IsIdentity then castToTV first
+                    else upcast ComposedFactory(first, second)
 
             and ChooseFactory<'T,'U> (filter:'T->option<'U>) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -541,6 +554,11 @@ namespace Microsoft.FSharp.Collections
             and FilterFactory<'T> (filter:'T->bool) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = next.CreateFilter filter
+
+            and IdentityFactory<'T> () =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = next.CreateMap id
+                override __.IsIdentity = true
 
             and MapFactory<'T,'U> (map:'T->'U) =
                 inherit SeqComponentFactory<'T,'U> ()
@@ -935,7 +953,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory (current, next)))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1048,7 +1066,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(array, current.Create result (Tail result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory (current, next)))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1098,7 +1116,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result (Tail result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory (current, next)))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1148,7 +1166,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (Tail result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory (current, next)))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1233,7 +1251,7 @@ namespace Microsoft.FSharp.Collections
                             Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result (Tail result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory (current, next)))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1347,7 +1365,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Unfold.Enumerable<'T,'T,'State>(generator, state, SeqComposer.MapFactory id))
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Unfold.Enumerable<'T,'T,'State>(generator, state, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
