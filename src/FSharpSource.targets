@@ -182,7 +182,6 @@
     <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);I_DONT_KNOW_HOW_TO_DO_THIS_YET</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
     <TargetFrameworkProfile></TargetFrameworkProfile>                                   <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v5.0</TargetFrameworkVersion>
@@ -544,6 +543,5 @@
   </Target>
   <Target Name="BeforeBuild" BeforeTargets="Build" Condition="'$(RestorePackages)' == ''">
     <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
-    <Exec Command=".\.nuget\NuGet.exe restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.." Condition="'$(TargetFramework)' == 'coreclr'"/>
   </Target>
 </Project>

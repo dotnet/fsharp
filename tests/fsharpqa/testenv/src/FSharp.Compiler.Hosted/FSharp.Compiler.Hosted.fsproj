@@ -11,10 +11,8 @@
     <AssemblyName>FSharp.Compiler.Hosted</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OpenBuild Condition=" '$(OpenBuild)' == '' ">True</OpenBuild>
     <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
-    <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
-    <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
+    <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>FSharp.Compiler.Hosted</Name>
   </PropertyGroup>
@@ -55,14 +53,6 @@
       <Private>True</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(OpenBuild)' != 'True' ">
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="..\..\bin\FSharp.Compiler.dll"> 
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.fs" />
   </ItemGroup>
@@ -86,11 +76,15 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+
+  <Target Name="CopyFSharpCoreOptSigFiles" AfterTargets="Build">
+    <ItemGroup>
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.dll" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.optdata" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.sigdata" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.xml" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
