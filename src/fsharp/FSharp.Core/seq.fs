@@ -6,6 +6,594 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open System.Collections
     open System.Collections.Generic
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+    open Microsoft.FSharp.Core.Operators
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Collections
+
+    module IEnumerator =
+
+      let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
+      let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+      let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+      let check started = if not started then notStarted()
+      let dispose (r : System.IDisposable) = r.Dispose()
+
+      let cast (e : IEnumerator) : IEnumerator<'T> =
+          { new IEnumerator<'T> with
+                member x.Current = unbox<'T> e.Current
+            interface IEnumerator with
+                member x.Current = unbox<'T> e.Current :> obj
+                member x.MoveNext() = e.MoveNext()
+                member x.Reset() = noReset()
+            interface System.IDisposable with
+                member x.Dispose() =
+                    match e with
+                    | :? System.IDisposable as e -> e.Dispose()
+                    | _ -> ()   }
+
+      /// A concrete implementation of an enumerator that returns no values
+      [<Sealed>]
+      type EmptyEnumerator<'T>() =
+          let mutable started = false
+          interface IEnumerator<'T> with
+                member x.Current =
+                  check started
+                  (alreadyFinished() : 'T)
+
+          interface System.Collections.IEnumerator with
+              member x.Current =
+                  check started
+                  (alreadyFinished() : obj)
+              member x.MoveNext() =
+                  if not started then started <- true
+                  false
+              member x.Reset() = noReset()
+          interface System.IDisposable with
+                member x.Dispose() = ()
+
+      let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
+
+      let rec tryItem index (e : IEnumerator<'T>) =
+          if not (e.MoveNext()) then None
+          elif index = 0 then Some(e.Current)
+          else tryItem (index-1) e
+
+      let rec nth index (e : IEnumerator<'T>) =
+          if not (e.MoveNext()) then
+            let shortBy = index + 1
+            invalidArgFmt "index"
+                "{0}\nseq was short by {1} {2}"
+                [|SR.GetString SR.notEnoughElements; shortBy; (if shortBy = 1 then "element" else "elements")|]
+          if index = 0 then e.Current
+          else nth (index-1) e
+
+      [<NoEquality; NoComparison>]
+      type MapEnumeratorState =
+          | NotStarted
+          | InProcess
+          | Finished
+
+      [<AbstractClass>]
+      type MapEnumerator<'T> () =
+          let mutable state = NotStarted
+          [<DefaultValue(false)>]
+          val mutable private curr : 'T
+
+          member this.GetCurrent () =
+              match state with
+              |   NotStarted -> notStarted()
+              |   Finished -> alreadyFinished()
+              |   InProcess -> ()
+              this.curr
+
+          abstract DoMoveNext : byref<'T> -> bool
+          abstract Dispose : unit -> unit
+
+          interface IEnumerator<'T> with
+              member this.Current = this.GetCurrent()
+
+          interface IEnumerator with
+              member this.Current = box(this.GetCurrent())
+              member this.MoveNext () =
+                  state <- InProcess
+                  if this.DoMoveNext(&this.curr) then
+                      true
+                  else
+                      state <- Finished
+                      false
+              member this.Reset() = noReset()
+          interface System.IDisposable with
+              member this.Dispose() = this.Dispose()
+
+      let mapi2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_> =
+          let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+          let i = ref (-1)
+          upcast
+              {  new MapEnumerator<_>() with
+                     member this.DoMoveNext curr =
+                        i := !i + 1
+                        if (e1.MoveNext() && e2.MoveNext()) then
+                           curr <- f.Invoke(!i, e1.Current, e2.Current)
+                           true
+                        else
+                           false
+                     member this.Dispose() =
+                        try
+                            e1.Dispose()
+                        finally
+                            e2.Dispose()
+              }
+
+      let map3 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) (e3 : IEnumerator<_>) : IEnumerator<_> =
+        let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+        upcast
+            {  new MapEnumerator<_>() with
+                   member this.DoMoveNext curr =
+                      let n1 = e1.MoveNext()
+                      let n2 = e2.MoveNext()
+                      let n3 = e3.MoveNext()
+
+                      if n1 && n2 && n3 then
+                         curr <- f.Invoke(e1.Current, e2.Current, e3.Current)
+                         true
+                      else
+                         false
+                   member this.Dispose() =
+                      try
+                          e1.Dispose()
+                      finally
+                          try
+                              e2.Dispose()
+                          finally
+                              e3.Dispose()
+            }
+
+      let unfold f x : IEnumerator<_> =
+          let state = ref x
+          upcast
+              {  new MapEnumerator<_>() with
+                    member this.DoMoveNext curr =
+                        match f !state with
+                        |   None -> false
+                        |   Some(r,s) ->
+                                curr <- r
+                                state := s
+                                true
+                    member this.Dispose() = ()
+              }
+
+      let upto lastOption f =
+          match lastOption with
+          | Some b when b<0 -> Empty()    // a request for -ve length returns empty sequence
+          | _ ->
+              let unstarted   = -1  // index value means unstarted (and no valid index)
+              let completed   = -2  // index value means completed (and no valid index)
+              let unreachable = -3  // index is unreachable from 0,1,2,3,...
+              let finalIndex  = match lastOption with
+                                | Some b -> b             // here b>=0, a valid end value.
+                                | None   -> unreachable   // run "forever", well as far as Int32.MaxValue since indexing with a bounded type.
+              // The Current value for a valid index is "f i".
+              // Lazy<_> values are used as caches, to store either the result or an exception if thrown.
+              // These "Lazy<_>" caches are created only on the first call to current and forced immediately.
+              // The lazy creation of the cache nodes means enumerations that skip many Current values are not delayed by GC.
+              // For example, the full enumeration of Seq.initInfinite in the tests.
+              // state
+              let index   = ref unstarted
+              // a Lazy node to cache the result/exception
+              let current = ref (Unchecked.defaultof<_>)
+              let setIndex i = index := i; current := (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
+              let getCurrent() =
+                  if !index = unstarted then notStarted()
+                  if !index = completed then alreadyFinished()
+                  match box !current with
+                  | null -> current := Lazy<_>.Create(fun () -> f !index)
+                  | _ ->  ()
+                  // forced or re-forced immediately.
+                  (!current).Force()
+              { new IEnumerator<'U> with
+                    member x.Current = getCurrent()
+                interface IEnumerator with
+                    member x.Current = box (getCurrent())
+                    member x.MoveNext() =
+                        if !index = completed then
+                            false
+                        elif !index = unstarted then
+                            setIndex 0
+                            true
+                        else (
+                            if !index = System.Int32.MaxValue then raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
+                            if !index = finalIndex then
+                                false
+                            else
+                                setIndex (!index + 1)
+                                true
+                        )
+                    member self.Reset() = noReset()
+                interface System.IDisposable with
+                    member x.Dispose() = () }
+
+      let readAndClear r =
+          lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
+
+      let generateWhileSome openf compute closef : IEnumerator<'U> =
+          let started = ref false
+          let curr = ref None
+          let state = ref (Some(openf()))
+          let getCurr() =
+              check !started
+              match !curr with None -> alreadyFinished() | Some x -> x
+          let start() = if not !started then (started := true)
+
+          let dispose() = readAndClear state |> Option.iter closef
+          let finish() = (try dispose() finally curr := None)
+          {  new IEnumerator<'U> with
+                 member x.Current = getCurr()
+             interface IEnumerator with
+                 member x.Current = box (getCurr())
+                 member x.MoveNext() =
+                     start()
+                     match !state with
+                     | None -> false (* we started, then reached the end, then got another MoveNext *)
+                     | Some s ->
+                         match (try compute s with e -> finish(); reraise()) with
+                         | None -> finish(); false
+                         | Some _ as x -> curr := x; true
+
+                 member x.Reset() = noReset()
+             interface System.IDisposable with
+                 member x.Dispose() = dispose() }
+
+      [<Sealed>]
+      type ArrayEnumerator<'T>(arr: 'T array) =
+          let mutable curr = -1
+          let mutable len = arr.Length
+          member x.Get() =
+               if curr >= 0 then
+                 if curr >= len then alreadyFinished()
+                 else arr.[curr]
+               else
+                 notStarted()
+          interface IEnumerator<'T> with
+                member x.Current = x.Get()
+          interface System.Collections.IEnumerator with
+                member x.MoveNext() =
+                       if curr >= len then false
+                       else
+                         curr <- curr + 1
+                         (curr < len)
+                member x.Current = box(x.Get())
+                member x.Reset() = noReset()
+          interface System.IDisposable with
+                member x.Dispose() = ()
+
+      let ofArray arr = (new ArrayEnumerator<'T>(arr) :> IEnumerator<'T>)
+
+      [<Sealed>]
+      type Singleton<'T>(v:'T) =
+          let mutable started = false
+          interface IEnumerator<'T> with
+                member x.Current = v
+          interface IEnumerator with
+              member x.Current = box v
+              member x.MoveNext() = if started then false else (started <- true; true)
+              member x.Reset() = noReset()
+          interface System.IDisposable with
+              member x.Dispose() = ()
+
+      let Singleton x = (new Singleton<'T>(x) :> IEnumerator<'T>)
+
+      let EnumerateThenFinally f (e : IEnumerator<'T>) =
+          { new IEnumerator<'T> with
+                member x.Current = e.Current
+            interface IEnumerator with
+                member x.Current = (e :> IEnumerator).Current
+                member x.MoveNext() = e.MoveNext()
+                member x.Reset() = noReset()
+            interface System.IDisposable with
+                member x.Dispose() =
+                    try
+                        e.Dispose()
+                    finally
+                        f()
+          }
+
+
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open System
+    open System.Diagnostics
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+    open Microsoft.FSharp.Core.Operators
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Primitives.Basics
+    open System.Collections
+    open System.Collections.Generic
+
+    module RuntimeHelpers =
+
+        [<Struct; NoComparison; NoEquality>]
+        type internal StructBox<'T when 'T : equality>(value:'T) =
+            member x.Value = value
+            static member Comparer =
+                let gcomparer = HashIdentity.Structural<'T>
+                { new IEqualityComparer<StructBox<'T>> with
+                       member __.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
+                       member __.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
+
+        let inline checkNonNull argName arg =
+            match box arg with
+            | null -> nullArg argName
+            | _ -> ()
+
+        let mkSeq f =
+            { new IEnumerable<'U> with
+                member x.GetEnumerator() = f()
+              interface IEnumerable with
+                member x.GetEnumerator() = (f() :> IEnumerator) }
+
+        [<NoEquality; NoComparison>]
+        type EmptyEnumerable<'T> =
+            | EmptyEnumerable
+            interface IEnumerable<'T> with
+                member x.GetEnumerator() = IEnumerator.Empty<'T>()
+            interface IEnumerable with
+                member x.GetEnumerator() = (IEnumerator.Empty<'T>() :> IEnumerator)
+
+        let Generate openf compute closef =
+            mkSeq (fun () -> IEnumerator.generateWhileSome openf compute closef)
+
+        let GenerateUsing (openf : unit -> ('U :> System.IDisposable)) compute =
+            Generate openf compute (fun (s:'U) -> s.Dispose())
+
+        let EnumerateFromFunctions opener moveNext current =
+            Generate
+                opener
+                (fun x -> if moveNext x then Some(current x) else None)
+                (fun x -> match box(x) with :? System.IDisposable as id -> id.Dispose() | _ -> ())
+
+        // A family of enumerators that can have additional 'finally' actions added to the enumerator through
+        // the use of mutation. This is used to 'push' the disposal action for a 'use' into the next enumerator.
+        // For example,
+        //    seq { use x = ...
+        //          while ... }
+        // results in the 'while' loop giving an adjustable enumerator. This is then adjusted by adding the disposal action
+        // from the 'use' into the enumerator. This means that we avoid constructing a two-deep enumerator chain in this
+        // common case.
+        type IFinallyEnumerator =
+            abstract AppendFinallyAction : (unit -> unit) -> unit
+
+        /// A concrete implementation of IEnumerable that adds the given compensation to the "Dispose" chain of any
+        /// enumerators returned by the enumerable.
+        [<Sealed>]
+        type FinallyEnumerable<'T>(compensation: unit -> unit, restf: unit -> seq<'T>) =
+            interface IEnumerable<'T> with
+                member x.GetEnumerator() =
+                    try
+                        let ie = restf().GetEnumerator()
+                        match ie with
+                        | :? IFinallyEnumerator as a ->
+                            a.AppendFinallyAction(compensation)
+                            ie
+                        | _ ->
+                            IEnumerator.EnumerateThenFinally compensation ie
+                    with e ->
+                        compensation()
+                        reraise()
+            interface IEnumerable with
+                member x.GetEnumerator() = ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator)
+
+        /// An optimized object for concatenating a sequence of enumerables
+        [<Sealed>]
+        type ConcatEnumerator<'T,'U when 'U :> seq<'T>>(sources: seq<'U>) =
+            let mutable outerEnum = sources.GetEnumerator()
+            let mutable currInnerEnum = IEnumerator.Empty()
+
+            let mutable started = false
+            let mutable finished = false
+            let mutable compensations = []
+
+            [<DefaultValue(false)>] // false = unchecked
+            val mutable private currElement : 'T
+
+            member x.Finish() =
+                finished <- true
+                try
+                    match currInnerEnum with
+                    | null -> ()
+                    | _ ->
+                        try
+                            currInnerEnum.Dispose()
+                        finally
+                            currInnerEnum <- null
+                finally
+                    try
+                        match outerEnum with
+                        | null -> ()
+                        | _ ->
+                            try
+                                outerEnum.Dispose()
+                            finally
+                                outerEnum <- null
+                    finally
+                        let rec iter comps =
+                            match comps with
+                            |   [] -> ()
+                            |   h::t ->
+                                    try h() finally iter t
+                        try
+                            compensations |> List.rev |> iter
+                        finally
+                            compensations <- []
+
+            member x.GetCurrent() =
+                IEnumerator.check started
+                if finished then IEnumerator.alreadyFinished() else x.currElement
+
+            interface IFinallyEnumerator with
+                member x.AppendFinallyAction(f) =
+                    compensations <- f :: compensations
+
+            interface IEnumerator<'T> with
+                member x.Current = x.GetCurrent()
+
+            interface IEnumerator with
+                member x.Current = box (x.GetCurrent())
+
+                member x.MoveNext() =
+                   if not started then (started <- true)
+                   if finished then false
+                   else
+                      let rec takeInner () =
+                        // check the inner list
+                        if currInnerEnum.MoveNext() then
+                            x.currElement <- currInnerEnum.Current
+                            true
+                        else
+                            // check the outer list
+                            let rec takeOuter() =
+                                if outerEnum.MoveNext() then
+                                    let ie = outerEnum.Current
+                                    // Optimization to detect the statically-allocated empty IEnumerables
+                                    match box ie with
+                                    | :? EmptyEnumerable<'T> ->
+                                         // This one is empty, just skip, don't call GetEnumerator, try again
+                                         takeOuter()
+                                    | _ ->
+                                         // OK, this one may not be empty.
+                                         // Don't forget to dispose of the enumerator for the inner list now we're done with it
+                                         currInnerEnum.Dispose()
+                                         currInnerEnum <- ie.GetEnumerator()
+                                         takeInner ()
+                                else
+                                    // We're done
+                                    x.Finish()
+                                    false
+                            takeOuter()
+                      takeInner ()
+
+                member x.Reset() = IEnumerator.noReset()
+
+            interface System.IDisposable with
+                member x.Dispose() =
+                    if not finished then
+                        x.Finish()
+
+        let EnumerateUsing (resource : 'T :> System.IDisposable) (rest: 'T -> #seq<'U>) =
+            (FinallyEnumerable((fun () -> match box resource with null -> () | _ -> resource.Dispose()),
+                               (fun () -> rest resource :> seq<_>)) :> seq<_>)
+
+        let mkConcatSeq (sources: seq<'U :> seq<'T>>) =
+            mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
+
+        let EnumerateWhile (g : unit -> bool) (b: seq<'T>) : seq<'T> =
+            let started = ref false
+            let curr = ref None
+            let getCurr() =
+                IEnumerator.check !started
+                match !curr with None -> IEnumerator.alreadyFinished() | Some x -> x
+            let start() = if not !started then (started := true)
+
+            let finish() = (curr := None)
+            mkConcatSeq
+               (mkSeq (fun () ->
+                    { new IEnumerator<_> with
+                          member x.Current = getCurr()
+                       interface IEnumerator with
+                          member x.Current = box (getCurr())
+                          member x.MoveNext() =
+                               start()
+                               let keepGoing = (try g() with e -> finish (); reraise ()) in
+                               if keepGoing then
+                                   curr := Some(b); true
+                               else
+                                   finish(); false
+                          member x.Reset() = IEnumerator.noReset()
+                       interface System.IDisposable with
+                          member x.Dispose() = () }))
+
+        let EnumerateThenFinally (rest : seq<'T>) (compensation : unit -> unit)  =
+            (FinallyEnumerable(compensation, (fun () -> rest)) :> seq<_>)
+
+        let CreateEvent (add : 'Delegate -> unit) (remove : 'Delegate -> unit) (create : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
+            // Note, we implement each interface explicitly: this works around a bug in the CLR
+            // implementation on CompactFramework 3.7, used on Windows Phone 7
+            { new obj() with
+                  member x.ToString() = "<published event>"
+              interface IEvent<'Delegate,'Args>
+              interface IDelegateEvent<'Delegate> with
+                 member x.AddHandler(h) = add h
+                 member x.RemoveHandler(h) = remove h
+              interface System.IObservable<'Args> with
+                 member x.Subscribe(r:IObserver<'Args>) =
+                     let h = create (fun _ args -> r.OnNext(args))
+                     add h
+                     { new System.IDisposable with
+                          member x.Dispose() = remove h } }
+
+
+    [<AbstractClass>]
+    type GeneratedSequenceBase<'T>() =
+        let mutable redirectTo : GeneratedSequenceBase<'T> = Unchecked.defaultof<_>
+        let mutable redirect : bool = false
+
+        abstract GetFreshEnumerator : unit -> IEnumerator<'T>
+        abstract GenerateNext : next:byref<IEnumerable<'T>> -> int // 0 = Stop, 1 = Yield, 2 = Goto
+        abstract Close: unit -> unit
+        abstract CheckClose: bool
+        abstract LastGenerated : 'T
+
+        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
+        member x.MoveNextImpl() =
+             let active =
+                 if redirect then redirectTo
+                 else x
+             let mutable target = null
+             match active.GenerateNext(&target) with
+             | 1 ->
+                 true
+             | 2 ->
+                 match target.GetEnumerator() with
+                 | :? GeneratedSequenceBase<'T> as g when not active.CheckClose ->
+                     redirectTo <- g
+                 | e ->
+                     redirectTo <-
+                           { new GeneratedSequenceBase<'T>() with
+                                 member x.GetFreshEnumerator() = e
+                                 member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
+                                 member x.Close() = try e.Dispose() finally active.Close()
+                                 member x.CheckClose = true
+                                 member x.LastGenerated = e.Current }
+                 redirect <- true
+                 x.MoveNextImpl()
+             | _ (* 0 *)  ->
+                 false
+
+        interface IEnumerable<'T> with
+            member x.GetEnumerator() = x.GetFreshEnumerator()
+        interface IEnumerable with
+            member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
+        interface IEnumerator<'T> with
+            member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
+            member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
+        interface IEnumerator with
+            member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
+
+            //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
+            member x.MoveNext() = x.MoveNextImpl()
+
+            member x.Reset() = raise <| new System.NotSupportedException()
+
+
+namespace Microsoft.FSharp.Collections
+
+    open System
+    open System.Diagnostics
+    open System.Collections
+    open System.Collections.Generic
     open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
