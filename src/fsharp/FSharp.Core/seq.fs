@@ -1541,15 +1541,10 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
             map2 (fun x y -> x,y) source1 source2
 
         [<CompiledName("Zip3")>]
         let zip3 source1 source2  source3 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            checkNonNull "source3" source3
             map2 (fun x (y,z) -> x,y,z) source1 (zip source2 source3)
 
         [<CompiledName("Cast")>]
