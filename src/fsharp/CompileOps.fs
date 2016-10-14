@@ -1605,7 +1605,7 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     let fsCoreName = GetFSharpCoreLibraryName()
 #if FX_RESHAPED_REFLECTION
     // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
-    // So use the fsharp.core.dll from alongside the fsc compiler.
+    // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
     let fscCoreLocation = 
         let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
@@ -2560,7 +2560,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | _ -> res
     let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
-    // If either mscorlib.dll/System.Runtime.dll or fsharp.core.dll are explicitly specified then we require the --noframework flag.
+    // If either mscorlib.dll/System.Runtime.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
     // not have System.Web.dll.
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then

@@ -30,7 +30,7 @@ let configFile   = GetArgumentFromCommandLine       "--nugetConfig:"        @".n
 let ProjectJsonLock = GetArgumentFromCommandLine    "--projectJsonLock:"    @"tests\fsharp\project.lock.json"
 let PackagesDir  = GetArgumentFromCommandLine       "--packagesDir:"        @"packages"
 let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" @"DNXCore,Version=v5.0/win7-x64"
-let FSharpCore   = GetArgumentFromCommandLine       "--fsharpCore:"         @"Release\coreclr\bin\fsharp.core.dll"
+let FSharpCore   = GetArgumentFromCommandLine       "--fsharpCore:"         @"Release\coreclr\bin\FSharp.Core.dll"
 let Output       = GetArgumentFromCommandLine       "--output:"             @"."
 let NugetPath    = GetArgumentFromCommandLine       "--nugetPath:"          @".nuget\nuget.exe"
 let Verbosity    = GetArgumentFromCommandLine       "--v:"                  @"quiet"
@@ -41,8 +41,8 @@ let FSharpCompilerFiles =
     seq {
         yield Path.Combine(FSharpCoreDir, "fsc.exe")
         yield Path.Combine(FSharpCoreDir, "FSharp.Compiler.dll")
-        yield Path.Combine(FSharpCoreDir, "fsharp.core.sigdata")
-        yield Path.Combine(FSharpCoreDir, "fsharp.core.optdata")
+        yield Path.Combine(FSharpCoreDir, "FSharp.Core.sigdata")
+        yield Path.Combine(FSharpCoreDir, "FSharp.Core.optdata")
         yield Path.Combine(FSharpCoreDir, "default.win32manifest")
         yield Path.Combine(FSharpCoreDir, "fsi.exe")
         yield Path.Combine(FSharpCoreDir, "FSharp.Compiler.Interactive.Settings.dll")

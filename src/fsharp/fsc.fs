@@ -2050,7 +2050,7 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
 
     AbortOnError(errorLogger, tcConfig, exiter)
 
-    // Don't copy referenced fharp.core.dll if we are building fsharp.core.dll
+    // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
     if tcConfig.copyFSharpCore && not tcConfig.compilingFslib && not tcConfig.standalone then
         copyFSharpCore(outfile, tcConfig.referencedDLLs)
 
