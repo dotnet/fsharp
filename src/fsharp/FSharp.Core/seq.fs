@@ -151,24 +151,6 @@ namespace Microsoft.FSharp.Collections
                               e3.Dispose()
             }
 
-      let choose f (e : IEnumerator<'T>) =
-          let started = ref false
-          let curr = ref None
-          let get() =  check !started; (match !curr with None -> alreadyFinished() | Some x -> x)
-          { new IEnumerator<'U> with
-                member x.Current = get()
-            interface IEnumerator with
-                member x.Current = box (get())
-                member x.MoveNext() =
-                    if not !started then started := true
-                    curr := None
-                    while ((!curr).IsNone && e.MoveNext()) do
-                        curr := f e.Current
-                    Option.isSome !curr
-                member x.Reset() = noReset()
-            interface System.IDisposable with
-                member x.Dispose() = e.Dispose()  }
-
       let unfold f x : IEnumerator<_> =
           let state = ref x
           upcast
