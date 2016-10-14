@@ -2217,10 +2217,11 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                                   Directory.GetCurrentDirectory(),isInteractive=true, 
                                   isInvalidationSupported=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
-    do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
-#else
+#if TODO_REWORK_ASSEMBLY_LOAD
+    // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
     do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
+#else
+    do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
 #endif
     do tcConfigB.useFsiAuxLib <- true
 
