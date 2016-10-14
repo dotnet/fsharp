@@ -2811,7 +2811,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 #endif
                 try 
                     match tcConfig.resolutionEnvironment with
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
+#if TODO_REWORK_ASSEMBLY_LOAD
+                // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+#else
                     | ReferenceResolver.RuntimeLike ->
                         [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()] 
 #endif
@@ -4854,10 +4856,11 @@ module private ScriptPreprocessClosure =
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
             | CodeContext.Editing -> ReferenceResolver.DesignTimeLike
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
-            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
-#else
+#if TODO_REWORK_ASSEMBLY_LOAD
+            // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
             | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.CompileTimeLike
+#else
+            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
 #endif
         tcConfigB.framework <- false 
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
