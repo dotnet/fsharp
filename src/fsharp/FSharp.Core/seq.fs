@@ -165,55 +165,6 @@ namespace Microsoft.FSharp.Collections
                     member this.Dispose() = ()
               }
 
-      let upto lastOption f =
-          match lastOption with
-          | Some b when b<0 -> Empty()    // a request for -ve length returns empty sequence
-          | _ ->
-              let unstarted   = -1  // index value means unstarted (and no valid index)
-              let completed   = -2  // index value means completed (and no valid index)
-              let unreachable = -3  // index is unreachable from 0,1,2,3,...
-              let finalIndex  = match lastOption with
-                                | Some b -> b             // here b>=0, a valid end value.
-                                | None   -> unreachable   // run "forever", well as far as Int32.MaxValue since indexing with a bounded type.
-              // The Current value for a valid index is "f i".
-              // Lazy<_> values are used as caches, to store either the result or an exception if thrown.
-              // These "Lazy<_>" caches are created only on the first call to current and forced immediately.
-              // The lazy creation of the cache nodes means enumerations that skip many Current values are not delayed by GC.
-              // For example, the full enumeration of Seq.initInfinite in the tests.
-              // state
-              let index   = ref unstarted
-              // a Lazy node to cache the result/exception
-              let current = ref (Unchecked.defaultof<_>)
-              let setIndex i = index := i; current := (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
-              let getCurrent() =
-                  if !index = unstarted then notStarted()
-                  if !index = completed then alreadyFinished()
-                  match box !current with
-                  | null -> current := Lazy<_>.Create(fun () -> f !index)
-                  | _ ->  ()
-                  // forced or re-forced immediately.
-                  (!current).Force()
-              { new IEnumerator<'U> with
-                    member x.Current = getCurrent()
-                interface IEnumerator with
-                    member x.Current = box (getCurrent())
-                    member x.MoveNext() =
-                        if !index = completed then
-                            false
-                        elif !index = unstarted then
-                            setIndex 0
-                            true
-                        else (
-                            if !index = System.Int32.MaxValue then raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
-                            if !index = finalIndex then
-                                false
-                            else
-                                setIndex (!index + 1)
-                                true
-                        )
-                    member self.Reset() = noReset()
-                interface System.IDisposable with
-                    member x.Dispose() = () }
 
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
@@ -1324,6 +1275,56 @@ namespace Microsoft.FSharp.Collections
                             idx <- idx + 1
     
                         state
+
+                let upto lastOption f =
+                    match lastOption with
+                    | Some b when b<0 -> Empty()    // a request for -ve length returns empty sequence
+                    | _ ->
+                        let unstarted   = -1  // index value means unstarted (and no valid index)
+                        let completed   = -2  // index value means completed (and no valid index)
+                        let unreachable = -3  // index is unreachable from 0,1,2,3,...
+                        let finalIndex  = match lastOption with
+                                          | Some b -> b             // here b>=0, a valid end value.
+                                          | None   -> unreachable   // run "forever", well as far as Int32.MaxValue since indexing with a bounded type.
+                        // The Current value for a valid index is "f i".
+                        // Lazy<_> values are used as caches, to store either the result or an exception if thrown.
+                        // These "Lazy<_>" caches are created only on the first call to current and forced immediately.
+                        // The lazy creation of the cache nodes means enumerations that skip many Current values are not delayed by GC.
+                        // For example, the full enumeration of Seq.initInfinite in the tests.
+                        // state
+                        let index   = ref unstarted
+                        // a Lazy node to cache the result/exception
+                        let current = ref (Unchecked.defaultof<_>)
+                        let setIndex i = index := i; current := (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
+                        let getCurrent() =
+                            if !index = unstarted then notStarted()
+                            if !index = completed then alreadyFinished()
+                            match box !current with
+                            | null -> current := Lazy<_>.Create(fun () -> f !index)
+                            | _ ->  ()
+                            // forced or re-forced immediately.
+                            (!current).Force()
+                        { new IEnumerator<'U> with
+                              member x.Current = getCurrent()
+                          interface IEnumerator with
+                              member x.Current = box (getCurrent())
+                              member x.MoveNext() =
+                                  if !index = completed then
+                                      false
+                                  elif !index = unstarted then
+                                      setIndex 0
+                                      true
+                                  else (
+                                      if !index = System.Int32.MaxValue then raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
+                                      if !index = finalIndex then
+                                          false
+                                      else
+                                          setIndex (!index + 1)
+                                          true
+                                  )
+                              member self.Reset() = noReset()
+                          interface System.IDisposable with
+                              member x.Dispose() = () }
 
                 type EnumerableDecider<'T>(count:Nullable<int>, f:int->'T) =
                     inherit Enumerable.EnumerableBase<'T>()
