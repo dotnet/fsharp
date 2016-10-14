@@ -14,6 +14,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Options
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -63,24 +65,27 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
     override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
 
-    override this.SetupNewTextView(view) =
-        base.SetupNewTextView(view)
-        let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>();
+    override this.SetupNewTextView(textView) =
+        base.SetupNewTextView(textView)
+        let workspace = this.Package.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
         // FSROSLYNTODO: Hide navigation bars for now. Enable after adding tests
         workspace.Options <- workspace.Options.WithChangedOption(NavigationBarOptions.ShowNavigationBar, FSharpCommonConstants.FSharpLanguageName, false)
 
-        let (_, buffer) = view.GetBuffer()
-        let filename = VsTextLines.GetFilename buffer
-        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename)
-        match result with
-        | Some (hier, _) ->
-            if IsScript(filename) then
-                this.SetupStandAloneFile(filename, workspace, hier)
-            else
-                match hier with
-                | :? IProvideProjectSite as siteProvider -> this.SetupProjectFile(siteProvider, workspace)
-                | _ -> ()
+        match textView.GetBuffer() with
+        | (VSConstants.S_OK, textLines) ->
+            let filename = VsTextLines.GetFilename textLines
+            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
+            | Some (hier, _) ->
+                if IsScript(filename) then
+                    let editorAdapterFactoryService = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+                    let fileContents = VsTextLines.GetFileContents(textLines, editorAdapterFactoryService)
+                    this.SetupStandAloneFile(filename, fileContents, workspace, hier)
+                else
+                    match hier with
+                    | :? IProvideProjectSite as siteProvider -> this.SetupProjectFile(siteProvider, workspace)
+                    | _ -> ()
+            | _ -> ()
         | _ -> ()
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
@@ -106,9 +111,8 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             site.AdviseProjectSiteClosed(FSharpCommonConstants.FSharpLanguageServiceCallbackName, AdviseProjectSiteChanges(fun () -> project.Disconnect()))
         | _ -> ()
 
-    member this.SetupStandAloneFile(fileName: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-        let sourceText = File.ReadAllText(fileName)
-        let options = FSharpChecker.Instance.GetProjectOptionsFromScript(fileName, sourceText, DateTime.Now, [| |]) |> Async.RunSynchronously
+    member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
+        let options = FSharpChecker.Instance.GetProjectOptionsFromScript(fileName, fileContents, DateTime.Now, [| |]) |> Async.RunSynchronously
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(options.ProjectFileName, options.ProjectFileName)
 
         if not(optionsCache.ContainsKey(projectId)) then
