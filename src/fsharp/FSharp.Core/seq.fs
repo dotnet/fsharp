@@ -108,25 +108,6 @@ namespace Microsoft.FSharp.Collections
           interface System.IDisposable with
               member this.Dispose() = this.Dispose()
 
-      let mapi2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_> =
-          let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-          let i = ref (-1)
-          upcast
-              {  new MapEnumerator<_>() with
-                     member this.DoMoveNext curr =
-                        i := !i + 1
-                        if (e1.MoveNext() && e2.MoveNext()) then
-                           curr <- f.Invoke(!i, e1.Current, e2.Current)
-                           true
-                        else
-                           false
-                     member this.Dispose() =
-                        try
-                            e1.Dispose()
-                        finally
-                            e2.Dispose()
-              }
-
       let unfold f x : IEnumerator<_> =
           let state = ref x
           upcast
@@ -635,6 +616,10 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'U> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'T,'V> = upcast Mapi (mapi, next) 
 
+            and Mapi2Factory<'First,'Second,'U> (map:int->'First->'Second->'U, input2:IEnumerable<'Second>) =
+                inherit SeqComponentFactory<'First,'U> ()
+                override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'U,'V>) : SeqComponent<'First,'V> = upcast Mapi2 (map, input2, result, next)
+
             and PairwiseFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T*'T> ()
                 override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T*'T,'V>) : SeqComponent<'T,'V> = upcast Pairwise next
@@ -830,6 +815,28 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool = 
                     idx <- idx + 1
                     Helpers.avoidTailCall (next.ProcessNext (mapi'.Invoke (idx-1, input)))
+
+            and Mapi2<'First,'Second,'U,'V> (map:int->'First->'Second->'U, enumerable2:IEnumerable<'Second>, result:Result<'V>, next:SeqComponent<'U,'V>) =
+                inherit SeqComponent<'First,'V>(next)
+
+                let mutable idx = 0
+                let input2 = enumerable2.GetEnumerator ()
+                let mapi2' = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt map
+
+                override __.ProcessNext (input:'First) : bool =
+                    if input2.MoveNext () then
+                        idx <- idx + 1
+                        Helpers.avoidTailCall (next.ProcessNext (mapi2'.Invoke (idx-1, input, input2.Current)))
+                    else
+                        result.StopFurtherProcessing ()
+                        false
+
+                interface ISeqComponent with
+                    override __.OnDispose () =
+                        try
+                            input2.Dispose ()
+                        finally
+                            (Helpers.upcastISeqComponent next).OnDispose ()
 
             and Pairwise<'T,'V> (next:SeqComponent<'T*'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -1501,7 +1508,7 @@ namespace Microsoft.FSharp.Collections
         let mapi2 f source1 source2 =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
-            revamp2 (IEnumerator.mapi2    f) source1 source2
+            source1 |> seqFactory (SeqComposer.Mapi2Factory (f, source2))
 
         [<CompiledName("Map2")>]
         let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
