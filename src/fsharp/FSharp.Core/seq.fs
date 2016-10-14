@@ -70,59 +70,6 @@ namespace Microsoft.FSharp.Collections
           if index = 0 then e.Current
           else nth (index-1) e
 
-      [<NoEquality; NoComparison>]
-      type MapEnumeratorState =
-          | NotStarted
-          | InProcess
-          | Finished
-
-      [<AbstractClass>]
-      type MapEnumerator<'T> () =
-          let mutable state = NotStarted
-          [<DefaultValue(false)>]
-          val mutable private curr : 'T
-
-          member this.GetCurrent () =
-              match state with
-              |   NotStarted -> notStarted()
-              |   Finished -> alreadyFinished()
-              |   InProcess -> ()
-              this.curr
-
-          abstract DoMoveNext : byref<'T> -> bool
-          abstract Dispose : unit -> unit
-
-          interface IEnumerator<'T> with
-              member this.Current = this.GetCurrent()
-
-          interface IEnumerator with
-              member this.Current = box(this.GetCurrent())
-              member this.MoveNext () =
-                  state <- InProcess
-                  if this.DoMoveNext(&this.curr) then
-                      true
-                  else
-                      state <- Finished
-                      false
-              member this.Reset() = noReset()
-          interface System.IDisposable with
-              member this.Dispose() = this.Dispose()
-
-      let unfold f x : IEnumerator<_> =
-          let state = ref x
-          upcast
-              {  new MapEnumerator<_>() with
-                    member this.DoMoveNext curr =
-                        match f !state with
-                        |   None -> false
-                        |   Some(r,s) ->
-                                curr <- r
-                                state := s
-                                true
-                    member this.Dispose() = ()
-              }
-
-
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
 
@@ -1172,6 +1119,56 @@ namespace Microsoft.FSharp.Collections
     
                         fold initialState alist
 
+            module Unfold =
+                type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
+                    inherit Enumerable.EnumeratorBase<'U>(signal, seqComponent)
+
+                    let mutable current = state
+
+                    let rec moveNext () =
+                        match generator current with
+                        | None -> false
+                        | Some (item, nextState) ->
+                            current <- nextState
+                            if seqComponent.ProcessNext item then
+                                true
+                            else
+                                moveNext ()
+
+                    interface IEnumerator with
+                        member __.MoveNext () =
+                            signal.SeqState <- SeqProcessNextStates.InProcess
+                            moveNext ()
+
+                type Enumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, current:SeqComponentFactory<'T,'U>) =
+                    inherit Enumerable.EnumerableBase<'U>()
+
+                    interface IEnumerable<'U> with
+                        member this.GetEnumerator () : IEnumerator<'U> =
+                            let result = Result<'U> ()
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (Tail result), result))
+
+                    override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory (current, next)))
+
+                    override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
+                        let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                        
+                        let result = Result<'U> ()
+                        let components = current.Create result (Tail result)
+
+                        let rec fold state current =
+                            match result.Halted, generator current with
+                            | true, _
+                            | false, None -> state
+                            | false, Some (item, next) ->
+                                if components.ProcessNext item then
+                                    fold (folder'.Invoke (state, result.Current)) next
+                                else
+                                    fold state next
+    
+                        fold initialState state
+
             module Init =
                 // The original implementation of "init" delayed the calculation of Current, and so it was possible
                 // to do MoveNext without it's value being calculated.
@@ -1264,7 +1261,7 @@ namespace Microsoft.FSharp.Collections
 
                 let upto lastOption f =
                     match lastOption with
-                    | Some b when b<0 -> Empty()    // a request for -ve length returns empty sequence
+                    | Some b when b<0 -> failwith "library implementation error: upto can never be called with a negative value"
                     | _ ->
                         let unstarted   = -1  // index value means unstarted (and no valid index)
                         let completed   = -2  // index value means completed (and no valid index)
@@ -1344,14 +1341,14 @@ namespace Microsoft.FSharp.Collections
         open Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers
 
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
-        let mkUnfoldSeq f x = mkSeq (fun () -> IEnumerator.unfold f x)
         let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
 
         [<CompiledName("Unfold")>]
-        let unfold f x = mkUnfoldSeq f x
+        let unfold (generator:'State->option<'T * 'State>) (state:'State) : seq<'T> =
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Unfold.Enumerable<'T,'T,'State>(generator, state, SeqComposer.MapFactory id))
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
