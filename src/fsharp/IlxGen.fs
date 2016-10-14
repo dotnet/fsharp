@@ -6436,23 +6436,22 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   match (eenv.valsInScope.TryFind cenv.g.sprintf_vref.Deref,
                          eenv.valsInScope.TryFind cenv.g.new_format_vref.Deref) with
                   | Some(Lazy(Method(_,_,sprintfMethSpec,_,_,_))), Some(Lazy(Method(_,_,newFormatMethSpec,_,_,_))) ->
-                    // The type returned by the 'sprintf' call
-                    let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
-                    // Give the instantiation of the printf format object, i.e. a Format`3 object compatible with StringFormat<ilThisTy>
-                    let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef,AsObject,
-                                                    [// 'T -> string'
-                                                     funcTy 
-                                                     // rest follow from 'StringFormat<T>'
-                                                     GenUnitTy cenv eenv m 
-                                                     cenv.g.ilg.typ_String
-                                                     cenv.g.ilg.typ_String 
-                                                     cenv.g.ilg.typ_String 
-                                                    ],[])
-                    // Instantiate with our own type
-                    let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
-                    // Here's the body of the method. Call printf, then invoke the function it returns
-                    let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
-                    let ilMethodDef = mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
+                      // The type returned by the 'sprintf' call
+                      let funcTy = EraseClosures.mkILFuncTy cenv.g.ilxPubCloEnv ilThisTy cenv.g.ilg.typ_String
+                      // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
+                      let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef,AsObject,
+                                                      [// 'T -> string'
+                                                       funcTy 
+                                                       // rest follow from 'StringFormat<T>'
+                                                       GenUnitTy cenv eenv m  
+                                                       cenv.g.ilg.typ_String 
+                                                       cenv.g.ilg.typ_String 
+                                                       ilThisTy],[])
+                      // Instantiate with our own type
+                      let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef,AsObject,[],[funcTy])
+                      // Here's the body of the method. Call printf, then invoke the function it returns
+                      let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
+                      let ilMethodDef = mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
                                                    mkILReturn cenv.g.ilg.typ_String,
                                                    mkMethodBody 
                                                          (true,[],2,
@@ -6469,7 +6468,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                                   yield mkNormalLdobj ilThisTy  ] @
                                                              callInstrs),
                                                           None))
-                    yield ilMethodDef
+                      yield ilMethodDef
                   | None,_ ->
                       //printfn "sprintf not found"
                       ()
