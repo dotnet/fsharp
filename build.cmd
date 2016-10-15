@@ -14,7 +14,7 @@ echo.
 echo Usage:
 echo.
 echo build.cmd ^<all^|proto^|protofx^|build^|debug^|release^|diag^|compiler^|coreclr^|pcls^|vs^|ci^|ci_part1^|ci_part2^|microbuild^>
-echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^|publicsign^>
+echo           ^<test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^|publicsign^|sourceformat^>
 echo.
 echo No arguments default to 'build'
 echo.
@@ -52,6 +52,7 @@ set TEST_FSHARP_SUITE=0
 set TEST_FSHARPQA_SUITE=0
 set TEST_TAGS=
 set SKIP_EXPENSIVE_TESTS=1
+set TEST_SOURCEFORMAT=0
 
 setlocal enableDelayedExpansion
 set /a counter=0
@@ -109,6 +110,7 @@ if /i '%ARG%' == 'all' (
     set TEST_VS=1
 
     set SKIP_EXPENSIVE_TESTS=0
+    set TEST_SOURCEFORMAT=1
 )
 
 if /i '%ARG%' == 'protofx' (
@@ -194,7 +196,6 @@ if /i '%ARG%' == 'ci_part2' (
     set TEST_TAGS=
 )
 
-
 if /i '%ARG%' == 'coreclr' (
     set BUILD_CORECLR=1
     set TEST_CORECLR=1
@@ -270,6 +271,10 @@ if /i '%ARG%' == 'publicsign' (
     set BUILD_PUBLICSIGN=1
 )
 
+if /i '%ARG%' == 'sourceformat' (
+    set TEST_SOURCEFORMAT=1
+)
+
 goto :EOF
 
 :MAIN
@@ -297,6 +302,7 @@ echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
 echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo SKIP_EXPENSIVE_TESTS=%SKIP_EXPENSIVE_TESTS%
+echo TEST_SOURCEFORMAT=%TEST_SOURCEFORMAT%
 echo.
 
 if "%RestorePackages%"=="" ( 
@@ -304,6 +310,8 @@ if "%RestorePackages%"=="" (
 )
 
 @echo on
+
+set FSI_TOOL=%~dp0\%BUILD_CONFIG%\net40\bin\Fsi.exe
 
 call src\update.cmd signonly
 
@@ -494,6 +502,11 @@ if '%TEST_CORECLR%' == '1' (
 if '%TEST_VS%' == '1' (
     call RunTests.cmd %BUILD_CONFIG_LOWERCASE% ideunit %TEST_TAGS% 
     @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests
+)
+
+if '%TEST_SOURCEFORMAT%' == '1' (
+    %FSI_TOOL% %~dp0\tests\scripts\check-whitespace.fsx --exec --nologo
+    @if ERRORLEVEL 1 echo Error: whitespace found && goto :failure
 )
 
 :finished
