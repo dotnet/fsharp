@@ -2323,21 +2323,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
-            let reverseViaArray = lazy (
-                let array = source |> toArray
-                Array.Reverse array
-                array                
-            )
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(reverseViaArray, SeqComposer.IdentityFactory ()))
+            let lazyReverseViaArray = lazy (let array = source |> toArray in Array.Reverse array; array)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazyReverseViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
             checkNonNull "source" source
-            let delayedPermute () =
-                source
-                |> toArray
-                |> Array.permute f
-            Upcast.enumerable (Composer.Seq.Array.createDelayedId delayedPermute)
+            let lazyPermuteViaArray = lazy (source |> toArray |> Array.permute f)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazyPermuteViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
