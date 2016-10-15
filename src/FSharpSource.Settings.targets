@@ -31,8 +31,9 @@
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">embedded</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">$(OtherFlags) --no-jit-optimize</OtherFlags>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">$(OtherFlags) --no-jit-optimize --embed</OtherFlags>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
+    <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
+    <SourceLink     Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -41,6 +42,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+    <EmbedAllSource>false</EmbedAllSource>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
