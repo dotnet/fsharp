@@ -610,6 +610,10 @@ namespace Microsoft.FSharp.Collections
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Take (count, result, next) 
             
+            and TailFactory<'T> () =
+                inherit SeqComponentFactory<'T,'T> ()
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Tail<'T,'V> (next) 
+
             and TruncateFactory<'T> (count:int) =
                 inherit SeqComponentFactory<'T,'T> ()
                 override __.Create<'V> (result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Truncate (count, result, next) 
@@ -882,7 +886,7 @@ namespace Microsoft.FSharp.Collections
 
                 override __.ProcessNext (input:'T) : bool = 
                     if predicate input then
-                        next.ProcessNext input
+                        Helpers.avoidTailCall (next.ProcessNext input)
                     else
                         result.StopFurtherProcessing ()
                         false
@@ -893,6 +897,24 @@ namespace Microsoft.FSharp.Collections
                 override __.ProcessNext (input:'T) : bool =
                     result.Current <- input
                     true
+
+            and Tail<'T, 'V> (next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                let mutable first = true
+
+                override __.ProcessNext (input:'T) : bool =
+                    if first then
+                        first <- false
+                        false
+                    else
+                        Helpers.avoidTailCall (next.ProcessNext input)
+
+                interface ISeqComponent with
+                    override this.OnComplete () =
+                        if first then
+                            invalidArg "source" (SR.GetString(SR.notEnoughElements))
+                        (Helpers.upcastISeqComponent next).OnComplete ()
 
             and Truncate<'T,'V> (truncateCount:int, result:Result<'V>, next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
@@ -980,7 +1002,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
@@ -991,7 +1013,7 @@ namespace Microsoft.FSharp.Collections
                         let enumerator = enumerable.GetEnumerator ()
                         let result = Result<'U> ()
     
-                        let components = current.Create result (Tail result)
+                        let components = current.Create result (Tail<'U> result)
     
                         let mutable state = initialState
                         while (not result.Halted) && (enumerator.MoveNext ()) do
@@ -1093,7 +1115,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(array, current.Create result (Tail result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(array, current.Create result (Tail<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory.Combine current next))
@@ -1103,7 +1125,7 @@ namespace Microsoft.FSharp.Collections
                         
                         let mutable idx = 0
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail result)
+                        let components = current.Create result (Tail<'U> result)
     
                         let mutable state = initialState
                         while (not result.Halted) && (idx < array.Length) do
@@ -1143,7 +1165,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result (Tail result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result (Tail<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
@@ -1152,7 +1174,7 @@ namespace Microsoft.FSharp.Collections
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail result)
+                        let components = current.Create result (Tail<'U> result)
     
                         let rec fold state lst =
                             match result.Halted, lst with
@@ -1193,7 +1215,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (Tail result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (Tail<'U> result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
@@ -1202,7 +1224,7 @@ namespace Microsoft.FSharp.Collections
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail result)
+                        let components = current.Create result (Tail<'U> result)
 
                         let rec fold state current =
                             match result.Halted, generator current with
@@ -1278,7 +1300,7 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result (Tail result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result (Tail<'U> result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
@@ -1287,7 +1309,7 @@ namespace Microsoft.FSharp.Collections
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail result)
+                        let components = current.Create result (Tail<'U> result)
     
                         let mutable idx = -1
                         let terminatingIdx = getTerminatingIdx count
@@ -2281,23 +2303,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
-            source |> seqFactory (Composer.Seq.TailFactory ())
-        
-        [<CompiledName("TryLast")>]
-        let tryLast (source : seq<_>) =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'T, Composer.Core.Values<bool,'T>> (Composer.Core.Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
-                    override this.ProcessNext value =
-                        if this.Value._1 then
-                            this.Value._1 <- false
-                        this.Value._2 <- value
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *) })
-            |> fun tried -> 
-                if tried.Value._1 then
-                    None
-                else
-                    Some tried.Value._2
+            source |> seqFactory (SeqComposer.TailFactory ())
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
