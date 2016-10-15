@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Collections
                     inherit Enumerable.EnumerableBase<'U>()
 
                     new(array:array<'T>, current:SeqComponentFactory<'T,'U>) = 
-                        Enumerable<'T,'U>((Lazy.CreateFromValue array), current)
+                        Enumerable<'T,'U>((Lazy<_>.CreateFromValue array), current)
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
