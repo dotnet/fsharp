@@ -16,7 +16,6 @@
     <ToolsDir>$(MSBuildThisFileDirectory)..\Tools\</ToolsDir>
     <BuildToolsTaskDir>$(ToolsDir)net45\</BuildToolsTaskDir>
     <WarningsAsErrors />
-    <DeployExtension>false</DeployExtension>
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
   </PropertyGroup>
