@@ -102,3 +102,4 @@ tests/fsharp/core/array/dont.run.peverify
 tests/fsharp/core/innerpoly/dont.run.peverify
 tests/fsharp/typecheck/sigs/neg94-pre.dll
 times
+/tests/fsharpqa/testenv/bin/System.ValueTuple.dll
