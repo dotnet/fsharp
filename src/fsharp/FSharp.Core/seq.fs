@@ -102,31 +102,6 @@ namespace Microsoft.FSharp.Collections
                  member x.Dispose() = dispose() }
 
       [<Sealed>]
-      type ArrayEnumerator<'T>(arr: 'T array) =
-          let mutable curr = -1
-          let mutable len = arr.Length
-          member x.Get() =
-               if curr >= 0 then
-                 if curr >= len then alreadyFinished()
-                 else arr.[curr]
-               else
-                 notStarted()
-          interface IEnumerator<'T> with
-                member x.Current = x.Get()
-          interface System.Collections.IEnumerator with
-                member x.MoveNext() =
-                       if curr >= len then false
-                       else
-                         curr <- curr + 1
-                         (curr < len)
-                member x.Current = box(x.Get())
-                member x.Reset() = noReset()
-          interface System.IDisposable with
-                member x.Dispose() = ()
-
-      let ofArray arr = (new ArrayEnumerator<'T>(arr) :> IEnumerator<'T>)
-
-      [<Sealed>]
       type Singleton<'T>(v:'T) =
           let mutable started = false
           interface IEnumerator<'T> with
@@ -886,13 +861,6 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing ()
                         false
 
-            and Tail<'T> (result:Result<'T>) =
-                inherit SeqComponent<'T,'T>(seqComponentTail)
-
-                override __.ProcessNext (input:'T) : bool =
-                    result.Current <- input
-                    true
-
             and Tail<'T, 'V> (next:SeqComponent<'T,'V>) =
                 inherit SeqComponent<'T,'V>(next)
 
@@ -928,6 +896,14 @@ namespace Microsoft.FSharp.Collections
                         result.StopFurtherProcessing ()
                         false
 
+            // SetResult<> is used at the end of the chain of SeqComponents to assign the final value
+            type SetResult<'T> (result:Result<'T>) =
+                inherit SeqComponent<'T,'T>(seqComponentTail)
+
+                override __.ProcessNext (input:'T) : bool =
+                    result.Current <- input
+                    true
+
             module Enumerable =
                 [<AbstractClass>]
                 type EnumeratorBase<'T>(result:Result<'T>, seqComponent:ISeqComponent) =
@@ -950,8 +926,9 @@ namespace Microsoft.FSharp.Collections
                                 | _ -> failwith "library implementation error: all states should have been handled"
 
                 and [<AbstractClass>] EnumerableBase<'T> () =
-                    abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
-                    abstract member Append<'T>  : (seq<'T>) -> IEnumerable<'T>
+                    abstract member Compose<'U>  : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
+                    abstract member Append<'T>   : (seq<'T>) -> IEnumerable<'T>
+                    abstract member Iter         : f:('T->unit) -> unit
 
                     default this.Append source = Helpers.upcastEnumerable (AppendEnumerable [this; source])
 
@@ -996,10 +973,20 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(enumerable.GetEnumerator(), current.Create result (SetResult<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let enumerator = enumerable.GetEnumerator ()
+                        let result = Result<'U> ()
+    
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        while (not result.Halted) && (enumerator.MoveNext ()) do
+                            if components.ProcessNext (enumerator.Current) then
+                                f result.Current
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1007,7 +994,7 @@ namespace Microsoft.FSharp.Collections
                         let enumerator = enumerable.GetEnumerator ()
                         let result = Result<'U> ()
     
-                        let components = current.Create result (Tail<'U> result)
+                        let components = current.Create result (SetResult<'U> result)
     
                         let mutable state = initialState
                         while (not result.Halted) && (enumerator.MoveNext ()) do
@@ -1066,6 +1053,13 @@ namespace Microsoft.FSharp.Collections
                     override this.Append source =
                         Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
 
+                    override this.Iter (f:'T->unit) : unit =
+                        let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
+                        let enumerator = enumerable.GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            f enumerator.Current
+
                     override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1078,11 +1072,23 @@ namespace Microsoft.FSharp.Collections
     
                         state
 
+                let create enumerable current =
+                    Helpers.upcastEnumerable (Enumerable(enumerable, current))
+
             module Array =
-                type Enumerator<'T,'U>(array:array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
+                type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable idx = 0
+                    let mutable array = Unchecked.defaultof<_>
+
+                    let mutable initMoveNext = Unchecked.defaultof<_>
+                    do
+                        initMoveNext <-
+                            fun () ->
+                                result.SeqState <- SeqProcessNextStates.InProcess
+                                array <- delayedArray ()
+                                initMoveNext <- ignore
 
                     let rec moveNext () =
                         if (not result.Halted) && idx < array.Length then
@@ -1098,27 +1104,39 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator with
                         member __.MoveNext () =
-                            result.SeqState <- SeqProcessNextStates.InProcess
+                            initMoveNext ()
                             moveNext ()
 
-                type Enumerable<'T,'U>(array:array<'T>, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:SeqComponentFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(array, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(delayedArray, current.Create result (SetResult<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory.Combine current next))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let mutable idx = 0
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let array = delayedArray ()
+                        while (not result.Halted) && (idx < array.Length) do
+                            if components.ProcessNext array.[idx] then
+                                f result.Current
+                            idx <- idx + 1
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let mutable idx = 0
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail<'U> result)
+                        let components = current.Create result (SetResult<'U> result)
     
+                        let array = delayedArray ()
                         let mutable state = initialState
                         while (not result.Halted) && (idx < array.Length) do
                             if components.ProcessNext array.[idx] then
@@ -1126,6 +1144,18 @@ namespace Microsoft.FSharp.Collections
                             idx <- idx + 1
     
                         state
+
+                let createDelayed (delayedArray:unit->array<'T>) (current:SeqComponentFactory<'T,'U>) =
+                    Helpers.upcastEnumerable (Enumerable(delayedArray, current))
+
+                let create (array:array<'T>) (current:SeqComponentFactory<'T,'U>) =
+                    createDelayed (fun () -> array) current
+
+                let createDelayedId (delayedArray:unit -> array<'T>) =
+                    createDelayed delayedArray (IdentityFactory ())
+
+                let createId (array:array<'T>) =
+                    create array (IdentityFactory ())
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
@@ -1157,16 +1187,33 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(alist, current.Create result (SetResult<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let rec fold lst =
+                            match result.Halted, lst with
+                            | true, _
+                            | false, [] -> ()
+                            | false, hd :: tl ->
+                                if components.ProcessNext hd then
+                                    f result.Current
+                                    fold tl
+                                else
+                                    fold tl
+    
+                        fold alist
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail<'U> result)
+                        let components = current.Create result (SetResult<'U> result)
     
                         let rec fold state lst =
                             match result.Halted, lst with
@@ -1179,6 +1226,9 @@ namespace Microsoft.FSharp.Collections
                                     fold state tl
     
                         fold initialState alist
+
+                let create alist current =
+                    Helpers.upcastEnumerable (Enumerable(alist, current))
 
             module Unfold =
                 type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
@@ -1207,16 +1257,33 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U,'GeneratorState>(generator, state, current.Create result (SetResult<'U> result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+
+                        let rec fold current =
+                            match result.Halted, generator current with
+                            | true, _
+                            | false, None -> ()
+                            | false, Some (item, next) ->
+                                if components.ProcessNext item then
+                                    f result.Current
+                                    fold next
+                                else
+                                    fold next
+    
+                        fold state
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail<'U> result)
+                        let components = current.Create result (SetResult<'U> result)
 
                         let rec fold state current =
                             match result.Halted, generator current with
@@ -1294,16 +1361,34 @@ namespace Microsoft.FSharp.Collections
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(count, f, current.Create result (SetResult<'U> result), result))
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
+
+                    override this.Iter (iter:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let mutable idx = -1
+                        let terminatingIdx = getTerminatingIdx count
+                        
+                        let mutable maybeSkipping = true
+
+                        while (not result.Halted) && (idx < terminatingIdx) do
+                            if maybeSkipping then
+                                maybeSkipping <- components.Skipping ()
+
+                            if (not maybeSkipping) && (components.ProcessNext (f (idx+1))) then
+                                iter result.Current
+
+                            idx <- idx + 1
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
                         let result = Result<'U> ()
-                        let components = current.Create result (Tail<'U> result)
+                        let components = current.Create result (SetResult<'U> result)
     
                         let mutable idx = -1
                         let terminatingIdx = getTerminatingIdx count
@@ -1385,6 +1470,12 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                         Helpers.upcastEnumerable (Enumerable<'T,'V>(count, f, next))
 
+                    override this.Iter (f:'T->unit): unit =
+                        let enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            f enumerator.Current
+
                     override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1429,9 +1520,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            while e.MoveNext() do
-                f e.Current
+            checkNonNull "source" source
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Iter f
+            | _ ->
+                use e = source.GetEnumerator()
+                while e.MoveNext() do
+                    f e.Current
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
@@ -1521,9 +1616,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose createSeqComponent
-            | :? array<'T> as a -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<_,_>(a, createSeqComponent))
-            | :? list<'T> as a -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.List.Enumerable<_,_>(a, createSeqComponent))
-            | _ -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Enumerable.Enumerable<_,_>(source, createSeqComponent))
+            | :? array<'T> as a -> SeqComposer.Array.create a createSeqComponent
+            | :? list<'T> as a -> SeqComposer.List.create a createSeqComponent
+            | _ -> SeqComposer.Enumerable.create source createSeqComponent
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
@@ -1738,7 +1833,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            mkSeq (fun () -> IEnumerator.ofArray source)
+            SeqComposer.Array.createId source
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -2013,26 +2108,29 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
+            let delayedSort () =
                 let array = source |> toArray
                 Array.stableSortInPlaceBy keyf array
-                array :> seq<_>)
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("Sort")>]
         let sort source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
+            let delayedSort () =
                 let array = source |> toArray
                 Array.stableSortInPlace array
-                array :> seq<_>)
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
+            let delayedSort () =
                 let array = source |> toArray
                 Array.stableSortInPlaceWith f array
-                array :> seq<_>)
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -2098,12 +2196,11 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
             let mutable acc = LanguagePrimitives.GenericZero< ^a>
             let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
-                count <- count + 1
+            source |> iter (fun current ->
+                acc <- Checked.(+) acc current
+                count <- count + 1)
             if count = 0 then
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             LanguagePrimitives.DivideByInt< ^a> acc count
@@ -2309,16 +2406,20 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
+            let delayedReverse () = 
+                let array = source |> toArray 
                 Array.Reverse array
-                array :> seq<_>)
+                array
+            SeqComposer.Array.createDelayedId delayedReverse
 
         [<CompiledName("Permute")>]
-        let permute f (source : seq<_>) =
+        let permute f (source:seq<_>) =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                source |> toArray |> Array.permute f :> seq<_>)
+            let delayedPermute () =
+                source
+                |> toArray
+                |> Array.permute f
+            SeqComposer.Array.createDelayedId delayedPermute
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
