@@ -1057,10 +1057,19 @@ namespace Microsoft.FSharp.Collections
                         state
 
             module Array =
-                type Enumerator<'T,'U>(array:array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
+                type Enumerator<'T,'U>(lazyArray:Lazy<array<'T>>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable idx = 0
+                    let mutable array = Unchecked.defaultof<_>
+
+                    let mutable initMoveNext = Unchecked.defaultof<_>
+                    do
+                        initMoveNext <-
+                            fun () ->
+                                result.SeqState <- SeqProcessNextStates.InProcess
+                                array <- lazyArray.Value
+                                initMoveNext <- ignore
 
                     let rec moveNext () =
                         if (not result.Halted) && idx < array.Length then
@@ -1076,19 +1085,22 @@ namespace Microsoft.FSharp.Collections
 
                     interface IEnumerator with
                         member __.MoveNext () =
-                            result.SeqState <- SeqProcessNextStates.InProcess
+                            initMoveNext ()
                             moveNext ()
 
-                type Enumerable<'T,'U>(array:array<'T>, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(lazyArray:Lazy<array<'T>>, current:SeqComponentFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
+
+                    new(array:array<'T>, current:SeqComponentFactory<'T,'U>) = 
+                        Enumerable<'T,'U>((Lazy.CreateFromValue array), current)
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(array, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(lazyArray, current.Create result (Tail<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(array, ComposedFactory.Combine current next))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(lazyArray, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1097,6 +1109,7 @@ namespace Microsoft.FSharp.Collections
                         let result = Result<'U> ()
                         let components = current.Create result (Tail<'U> result)
     
+                        let array = lazyArray.Value
                         let mutable state = initialState
                         while (not result.Halted) && (idx < array.Length) do
                             if components.ProcessNext array.[idx] then
@@ -2285,10 +2298,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
+            let reverseViaArray = lazy (
                 let array = source |> toArray
                 Array.Reverse array
-                array :> seq<_>)
+                array                
+            )
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(reverseViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("Permute")>]
         let permute f (source : seq<_>) =
