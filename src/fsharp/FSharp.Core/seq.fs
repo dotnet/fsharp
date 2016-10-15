@@ -1525,7 +1525,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Map2")>]
         let map2<'T,'U,'V> (f:'T->'U->'V) (source1:seq<'T>) (source2:seq<'U>) : seq<'V> =
-            checkNonNull "source2" source2
+            checkNonNull "source1" source1
             match source1 with
             | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose (SeqComposer.Map2FirstFactory (f, source2))
             | _ -> source2 |> seqFactory (SeqComposer.Map2SecondFactory (f, source1))
