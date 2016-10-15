@@ -3,9 +3,11 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Immutable
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.LanguageService
@@ -34,3 +36,16 @@ module internal CommonRoslynHelpers =
         else
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
+
+    let SupportedDiagnostics() =
+        // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
+        let dummyDescriptor = DiagnosticDescriptor("0", String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null)
+        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
+
+    let ConvertError(error: FSharpErrorInfo, location: Location) =
+        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let emptyString = LocalizableString.op_Implicit("")
+        let description = LocalizableString.op_Implicit(error.Message)
+        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+        Diagnostic.Create(descriptor, location)
