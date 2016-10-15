@@ -2072,6 +2072,7 @@ type TcConfigBuilder =
       mutable embeddedPDB : bool
       mutable embedAllSource : bool
       mutable embedSourceList : string list 
+      mutable sourceLink : string
 
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
@@ -2243,6 +2244,7 @@ type TcConfigBuilder =
           embeddedPDB = false
           embedAllSource = false
           embedSourceList = []
+          sourceLink = ""
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2732,6 +2734,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.embeddedPDB  = data.embeddedPDB
     member x.embedAllSource  = data.embedAllSource
     member x.embedSourceList  = data.embedSourceList
+    member x.sourceLink  = data.sourceLink
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations

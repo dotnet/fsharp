@@ -19,6 +19,9 @@
     <DeployExtension>false</DeployExtension>
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+
+  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -29,11 +32,11 @@
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">embedded</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">$(OtherFlags) --no-jit-optimize</OtherFlags>
-    <OtherFlags Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">$(OtherFlags) --no-jit-optimize --embed</OtherFlags>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
+    <OtherFlags Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">$(OtherFlags) --embed --sourcelink:$(IntermediateOutputPath)source_link.json</OtherFlags>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -58,11 +61,6 @@
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
-
-  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
-  <PropertyGroup>
-    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
