@@ -2002,26 +2002,20 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlaceBy keyf array
-                array :> seq<_>)
+            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceBy keyf array; array)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("Sort")>]
         let sort source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlace array
-                array :> seq<_>)
+            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlace array; array)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
             checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlaceWith f array
-                array :> seq<_>)
+            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceWith f array; array)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
