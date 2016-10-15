@@ -533,7 +533,7 @@ namespace Microsoft.FSharp.Collections
 
             and IdentityFactory<'T> () =
                 inherit SeqComponentFactory<'T,'T> ()
-                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = next.CreateMap id
+                override __.Create<'V> (_result:Result<'V>) (next:SeqComponent<'T,'V>) : SeqComponent<'T,'V> = upcast Identity (next)
                 override __.IsIdentity = true
 
             and MapFactory<'T,'U> (map:'T->'U) =
@@ -667,6 +667,12 @@ namespace Microsoft.FSharp.Collections
                         Helpers.avoidTailCall (next.ProcessNext (map input))
                     else
                         false
+
+            and Identity<'T,'V> (next:SeqComponent<'T,'V>) =
+                inherit SeqComponent<'T,'V>(next)
+
+                override __.ProcessNext (input:'T) : bool = 
+                    Helpers.avoidTailCall (next.ProcessNext input)
 
             and Map<'T,'U,'V> (map:'T->'U, next:SeqComponent<'U,'V>) =
                 inherit SeqComponent<'T,'V>(next)
