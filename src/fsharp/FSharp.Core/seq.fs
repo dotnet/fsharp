@@ -1055,6 +1055,9 @@ namespace Microsoft.FSharp.Collections
     
                         state
 
+                let create enumerable current =
+                    Helpers.upcastEnumerable (Enumerable(enumerable, current))
+
             module Array =
                 type Enumerator<'T,'U>(lazyArray:Lazy<array<'T>>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
@@ -1090,9 +1093,6 @@ namespace Microsoft.FSharp.Collections
                 type Enumerable<'T,'U>(lazyArray:Lazy<array<'T>>, current:SeqComponentFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
-                    new(array:array<'T>, current:SeqComponentFactory<'T,'U>) = 
-                        Enumerable<'T,'U>((Lazy<_>.CreateFromValue array), current)
-
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
@@ -1116,6 +1116,18 @@ namespace Microsoft.FSharp.Collections
                             idx <- idx + 1
     
                         state
+
+                let createLazy (lazyArray:Lazy<array<'T>>) (current:SeqComponentFactory<'T,'U>) =
+                    Helpers.upcastEnumerable (Enumerable(lazyArray, current))
+
+                let create (array:array<'T>) (current:SeqComponentFactory<'T,'U>) =
+                    createLazy (Lazy<_>.CreateFromValue array) current
+
+                let createLazyId (lazyArray:Lazy<array<'T>>) =
+                    createLazy lazyArray (IdentityFactory ())
+
+                let createId (array:array<'T>) =
+                    create array (IdentityFactory ())
 
             module List =
                 type Enumerator<'T,'U>(alist:list<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
@@ -1169,6 +1181,9 @@ namespace Microsoft.FSharp.Collections
                                     fold state tl
     
                         fold initialState alist
+
+                let create alist current =
+                    Helpers.upcastEnumerable (Enumerable(alist, current))
 
             module Unfold =
                 type Enumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, seqComponent:SeqComponent<'T,'U>, signal:Result<'U>) =
@@ -1509,9 +1524,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Compose createSeqComponent
-            | :? array<'T> as a -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<_,_>(a, createSeqComponent))
-            | :? list<'T> as a -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.List.Enumerable<_,_>(a, createSeqComponent))
-            | _ -> SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Enumerable.Enumerable<_,_>(source, createSeqComponent))
+            | :? array<'T> as a -> SeqComposer.Array.create a createSeqComponent
+            | :? list<'T> as a -> SeqComposer.List.create a createSeqComponent
+            | _ -> SeqComposer.Enumerable.create source createSeqComponent
 
         [<CompiledName("Filter")>]
         let filter<'T> (f:'T->bool) (source:seq<'T>) : seq<'T> =
@@ -1732,7 +1747,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createId source
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -2008,19 +2023,19 @@ namespace Microsoft.FSharp.Collections
         let sortBy keyf source =
             checkNonNull "source" source
             let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceBy keyf array; array)
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createLazyId lazySortViaArray
 
         [<CompiledName("Sort")>]
         let sort source =
             checkNonNull "source" source
             let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlace array; array)
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createLazyId lazySortViaArray
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
             checkNonNull "source" source
             let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceWith f array; array)
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazySortViaArray, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createLazyId lazySortViaArray
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -2298,13 +2313,13 @@ namespace Microsoft.FSharp.Collections
         let rev source =
             checkNonNull "source" source
             let lazyReverseViaArray = lazy (let array = source |> toArray in Array.Reverse array; array)
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazyReverseViaArray, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createLazyId lazyReverseViaArray
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
             checkNonNull "source" source
             let lazyPermuteViaArray = lazy (source |> toArray |> Array.permute f)
-            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(lazyPermuteViaArray, SeqComposer.IdentityFactory ()))
+            SeqComposer.Array.createLazyId lazyPermuteViaArray
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
