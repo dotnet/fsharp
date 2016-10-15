@@ -101,31 +101,6 @@ namespace Microsoft.FSharp.Collections
                  member x.Dispose() = dispose() }
 
       [<Sealed>]
-      type ArrayEnumerator<'T>(arr: 'T array) =
-          let mutable curr = -1
-          let mutable len = arr.Length
-          member x.Get() =
-               if curr >= 0 then
-                 if curr >= len then alreadyFinished()
-                 else arr.[curr]
-               else
-                 notStarted()
-          interface IEnumerator<'T> with
-                member x.Current = x.Get()
-          interface System.Collections.IEnumerator with
-                member x.MoveNext() =
-                       if curr >= len then false
-                       else
-                         curr <- curr + 1
-                         (curr < len)
-                member x.Current = box(x.Get())
-                member x.Reset() = noReset()
-          interface System.IDisposable with
-                member x.Dispose() = ()
-
-      let ofArray arr = (new ArrayEnumerator<'T>(arr) :> IEnumerator<'T>)
-
-      [<Sealed>]
       type Singleton<'T>(v:'T) =
           let mutable started = false
           interface IEnumerator<'T> with
@@ -1744,7 +1719,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
             checkNonNull "source" source
-            mkSeq (fun () -> IEnumerator.ofArray source)
+            SeqComposer.Helpers.upcastEnumerable (new SeqComposer.Array.Enumerable<'T,'T>(source, SeqComposer.IdentityFactory ()))
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
