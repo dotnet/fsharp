@@ -1537,7 +1537,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            Composer.Seq.iter f (toComposer source)
+            checkNonNull "source" source
+            checkNonNull "source" source
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Iter f
+            | _ ->
+                use e = source.GetEnumerator()
+                while e.MoveNext() do
+                    f e.Current
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
@@ -2193,13 +2200,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
-            source
-            |> foreach (fun _ ->
-                { new Composer.Core.Folder<'a, Composer.Core.Values<'a, int>> (Composer.Core.Values<_,_>(LanguagePrimitives.GenericZero, 0)) with
-                    override this.ProcessNext value =
-                        this.Value._1 <- Checked.(+) this.Value._1 value
-                        this.Value._2 <- this.Value._2 + 1
-                        Unchecked.defaultof<_> (* return value unsed in ForEach context *)
+            checkNonNull "source" source
+            let mutable acc = LanguagePrimitives.GenericZero< ^a>
+            let mutable count = 0
+            source |> iter (fun current ->
+                acc <- Checked.(+) acc current
+                count <- count + 1)
+            if count = 0 then
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            LanguagePrimitives.DivideByInt< ^a> acc count
 
                     member this.OnComplete _ = 
                         if this.Value._2 = 0 then
