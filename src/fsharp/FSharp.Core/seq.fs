@@ -926,9 +926,10 @@ namespace Microsoft.FSharp.Collections
                                 | _ -> failwith "library implementation error: all states should have been handled"
 
                 and [<AbstractClass>] EnumerableBase<'T> () =
-                    abstract member Compose<'U> : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
-                    abstract member Append<'T>  : (seq<'T>) -> IEnumerable<'T>
+                    abstract member Compose<'U>  : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
+                    abstract member Append<'T>   : (seq<'T>) -> IEnumerable<'T>
                     abstract member Fold<'State> : folder:('State->'T->'State) -> state:'State -> 'State
+                    abstract member Iter         : f:('T->unit) -> unit
 
                     default this.Append source = Helpers.upcastEnumerable (AppendEnumerable [this; source])
 
@@ -977,6 +978,16 @@ namespace Microsoft.FSharp.Collections
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let enumerator = enumerable.GetEnumerator ()
+                        let result = Result<'U> ()
+    
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        while (not result.Halted) && (enumerator.MoveNext ()) do
+                            if components.ProcessNext (enumerator.Current) then
+                                f result.Current
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1045,6 +1056,13 @@ namespace Microsoft.FSharp.Collections
                     override this.Append source =
                         Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
 
+                    override this.Iter (f:'T->unit) : unit =
+                        let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
+                        let enumerator = enumerable.GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            f enumerator.Current
+
                     override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1102,6 +1120,17 @@ namespace Microsoft.FSharp.Collections
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let mutable idx = 0
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let array = delayedArray ()
+                        while (not result.Halted) && (idx < array.Length) do
+                            if components.ProcessNext array.[idx] then
+                                f result.Current
+                            idx <- idx + 1
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1166,6 +1195,23 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
+                    override this.Iter (f:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let rec fold lst =
+                            match result.Halted, lst with
+                            | true, _
+                            | false, [] -> ()
+                            | false, hd :: tl ->
+                                if components.ProcessNext hd then
+                                    f result.Current
+                                    fold tl
+                                else
+                                    fold tl
+    
+                        fold alist
+
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1218,6 +1264,23 @@ namespace Microsoft.FSharp.Collections
 
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
+
+                    override this.Iter (f:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+
+                        let rec fold current =
+                            match result.Halted, generator current with
+                            | true, _
+                            | false, None -> ()
+                            | false, Some (item, next) ->
+                                if components.ProcessNext item then
+                                    f result.Current
+                                    fold next
+                                else
+                                    fold next
+    
+                        fold state
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1304,6 +1367,24 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
+                    override this.Iter (iter:'U->unit) : unit =
+                        let result = Result<'U> ()
+                        let components = current.Create result (SetResult<'U> result)
+    
+                        let mutable idx = -1
+                        let terminatingIdx = getTerminatingIdx count
+                        
+                        let mutable maybeSkipping = true
+
+                        while (not result.Halted) && (idx < terminatingIdx) do
+                            if maybeSkipping then
+                                maybeSkipping <- components.Skipping ()
+
+                            if (not maybeSkipping) && (components.ProcessNext (f (idx+1))) then
+                                iter result.Current
+
+                            idx <- idx + 1
+
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1389,6 +1470,12 @@ namespace Microsoft.FSharp.Collections
 
                     override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                         Helpers.upcastEnumerable (Enumerable<'T,'V>(count, f, next))
+
+                    override this.Iter (f:'T->unit): unit =
+                        let enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            f enumerator.Current
 
                     override this.Fold<'State> (folder:'State->'T->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
