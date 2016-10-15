@@ -1060,7 +1060,7 @@ namespace Microsoft.FSharp.Collections
                     Helpers.upcastEnumerable (Enumerable(enumerable, current))
 
             module Array =
-                type Enumerator<'T,'U>(lazyArray:Lazy<array<'T>>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
+                type Enumerator<'T,'U>(delayedArray:unit->array<'T>, seqComponent:SeqComponent<'T,'U>, result:Result<'U>) =
                     inherit Enumerable.EnumeratorBase<'U>(result, seqComponent)
 
                     let mutable idx = 0
@@ -1071,7 +1071,7 @@ namespace Microsoft.FSharp.Collections
                         initMoveNext <-
                             fun () ->
                                 result.SeqState <- SeqProcessNextStates.InProcess
-                                array <- lazyArray.Value
+                                array <- delayedArray ()
                                 initMoveNext <- ignore
 
                     let rec moveNext () =
@@ -1091,16 +1091,16 @@ namespace Microsoft.FSharp.Collections
                             initMoveNext ()
                             moveNext ()
 
-                type Enumerable<'T,'U>(lazyArray:Lazy<array<'T>>, current:SeqComponentFactory<'T,'U>) =
+                type Enumerable<'T,'U>(delayedArray:unit->array<'T>, current:SeqComponentFactory<'T,'U>) =
                     inherit Enumerable.EnumerableBase<'U>()
 
                     interface IEnumerable<'U> with
                         member this.GetEnumerator () : IEnumerator<'U> =
                             let result = Result<'U> ()
-                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(lazyArray, current.Create result (Tail<'U> result), result))
+                            Helpers.upcastEnumerator (new Enumerator<'T,'U>(delayedArray, current.Create result (Tail<'U> result), result))
 
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
-                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(lazyArray, ComposedFactory.Combine current next))
+                        Helpers.upcastEnumerable (new Enumerable<'T,'V>(delayedArray, ComposedFactory.Combine current next))
 
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
@@ -1109,7 +1109,7 @@ namespace Microsoft.FSharp.Collections
                         let result = Result<'U> ()
                         let components = current.Create result (Tail<'U> result)
     
-                        let array = lazyArray.Value
+                        let array = delayedArray ()
                         let mutable state = initialState
                         while (not result.Halted) && (idx < array.Length) do
                             if components.ProcessNext array.[idx] then
@@ -1118,14 +1118,14 @@ namespace Microsoft.FSharp.Collections
     
                         state
 
-                let createLazy (lazyArray:Lazy<array<'T>>) (current:SeqComponentFactory<'T,'U>) =
-                    Helpers.upcastEnumerable (Enumerable(lazyArray, current))
+                let createDelayed (delayedArray:unit->array<'T>) (current:SeqComponentFactory<'T,'U>) =
+                    Helpers.upcastEnumerable (Enumerable(delayedArray, current))
 
                 let create (array:array<'T>) (current:SeqComponentFactory<'T,'U>) =
-                    createLazy (Lazy<_>.CreateFromValue array) current
+                    createDelayed (fun () -> array) current
 
-                let createLazyId (lazyArray:Lazy<array<'T>>) =
-                    createLazy lazyArray (IdentityFactory ())
+                let createDelayedId (delayedArray:unit -> array<'T>) =
+                    createDelayed delayedArray (IdentityFactory ())
 
                 let createId (array:array<'T>) =
                     create array (IdentityFactory ())
@@ -2017,20 +2017,29 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
             checkNonNull "source" source
-            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceBy keyf array; array)
-            SeqComposer.Array.createLazyId lazySortViaArray
+            let delayedSort () =
+                let array = source |> toArray
+                Array.stableSortInPlaceBy keyf array
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("Sort")>]
         let sort source =
             checkNonNull "source" source
-            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlace array; array)
-            SeqComposer.Array.createLazyId lazySortViaArray
+            let delayedSort () =
+                let array = source |> toArray
+                Array.stableSortInPlace array
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
             checkNonNull "source" source
-            let lazySortViaArray = lazy (let array = source |> toArray in Array.stableSortInPlaceWith f array; array)
-            SeqComposer.Array.createLazyId lazySortViaArray
+            let delayedSort () =
+                let array = source |> toArray
+                Array.stableSortInPlaceWith f array
+                array
+            SeqComposer.Array.createDelayedId delayedSort
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
@@ -2307,14 +2316,20 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let rev source =
             checkNonNull "source" source
-            let lazyReverseViaArray = lazy (let array = source |> toArray in Array.Reverse array; array)
-            SeqComposer.Array.createLazyId lazyReverseViaArray
+            let delayedReverse () = 
+                let array = source |> toArray 
+                Array.Reverse array
+                array
+            SeqComposer.Array.createDelayedId delayedReverse
 
         [<CompiledName("Permute")>]
         let permute f (source:seq<_>) =
             checkNonNull "source" source
-            let lazyPermuteViaArray = lazy (source |> toArray |> Array.permute f)
-            SeqComposer.Array.createLazyId lazyPermuteViaArray
+            let delayedPermute () =
+                source
+                |> toArray
+                |> Array.permute f
+            SeqComposer.Array.createDelayedId delayedPermute
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
