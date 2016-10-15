@@ -18,6 +18,9 @@
     <WarningsAsErrors />
 
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
+
+  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
@@ -28,7 +31,7 @@
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">embedded</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
@@ -59,11 +62,6 @@
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
-
-  <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
-  <PropertyGroup>
-    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -302,6 +302,7 @@ type TcConfigBuilder =
       mutable embeddedPDB : bool
       mutable embedAllSource : bool
       mutable embedSourceList : string list
+      mutable sourceLink : string
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
       mutable extraOptimizationIterations : int
@@ -458,6 +459,7 @@ type TcConfig =
     member embeddedPDB : bool
     member embedAllSource : bool
     member embedSourceList : string list
+    member sourceLink : string
     member ignoreSymbolStoreSequencePoints : bool
     member internConstantStrings : bool
     member extraOptimizationIterations : int

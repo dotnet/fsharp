@@ -541,8 +541,25 @@
         <CompileBefore Remove="@(CompileBefore)"/>   
     </ItemGroup>
   </Target>
+
   <Target Name="BeforeBuild" BeforeTargets="Build" Condition="'$(RestorePackages)' == ''">
     <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
     <Exec Command=".\.nuget\NuGet.exe restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.." Condition="'$(TargetFramework)' == 'coreclr'"/>
   </Target>
+
+  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <SrcRootDirectory>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory.TrimEnd("\"))))</SrcRootDirectory>
+    </PropertyGroup>
+    <Exec Command="git config --get remote.origin.url" ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RemoteUri" />
+    </Exec>
+
+    <!-- https://raw.githubusercontent.com/KevinRansom/visualfsharp/98e8c9a2ca09a36ebd024eb424fc050a831053cd/build.cmd  -->
+    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
+    </Exec>
+    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SrcRootDirectory)/*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+  </Target>
+
 </Project>
