@@ -1521,9 +1521,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            while e.MoveNext() do
-                f e.Current
+            checkNonNull "source" source
+            match source with
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Iter f
+            | _ ->
+                use e = source.GetEnumerator()
+                while e.MoveNext() do
+                    f e.Current
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
@@ -2193,12 +2197,11 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
             let mutable acc = LanguagePrimitives.GenericZero< ^a>
             let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
-                count <- count + 1
+            source |> iter (fun current ->
+                acc <- Checked.(+) acc current
+                count <- count + 1)
             if count = 0 then
                 invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             LanguagePrimitives.DivideByInt< ^a> acc count
