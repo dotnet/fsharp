@@ -63,7 +63,7 @@
     <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1'" >
+  <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/diff/diff.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
