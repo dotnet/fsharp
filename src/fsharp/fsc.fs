@@ -2029,6 +2029,8 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
 
 let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
+
     let ilxMainModule =  
         try  staticLinker ilxMainModule
         with e -> 

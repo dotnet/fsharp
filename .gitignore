@@ -49,13 +49,13 @@
 /tests/*FSharp_Failures.lst
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 /tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
-/tests/XFSharpQA_Failures.log.*
+/tests/Xnet40-fsharpqa-suite-failures.log.*
 /vsintegration/src/vs/FsPkgs/FSharp.Project/FS/FSharp.ProjectSystem.FSharp.fsi
 /vsintegration/src/vs/FsPkgs/FSharp.Project/FS/ctofiles/
 /tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 /tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
-/tests/fsharpqa/Source/*FSharpQA_Failures.env
-/tests/fsharpqa/Source/*FSharpQA_Failures.lst
+/tests/fsharpqa/Source/*net40-fsharpqa-suite-failures.env
+/tests/fsharpqa/Source/*net40-fsharpqa-suite-failures.lst
 /tests/**/FSharp.Core.dll
 lib/debug
 lib/release

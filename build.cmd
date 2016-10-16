@@ -18,23 +18,24 @@ echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
 echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|microbuild^>
 echo           ^<debug^|release^>
-echo           ^<diag^>
-echo           ^<publicsign^>
-echo           ^<notests^|test-coreunit^|test-corecompile^|test-smoke^|test-coreclr^|test-pcls^|test-fsharp^|test-fsharpqa^|test-vs^>
+echo           ^<diag^|publicsign^>
+echo           ^<test^|test-smoke^|test-net40-coreunit-suite^|test-coreclr-coreunit-suite^|test-compiler-unit-suite^|test-pcl-coreunit-suite^|test-net40-fsharp-suite^|test-net40-fsharpqa-suite^>
 echo.
 echo No arguments default to 'default', meaning this (no testing)
 echo.
-echo     build.cmd net40 pcls vs notests
+echo     build.cmd net40 
 echo.
 echo.Other examples:
 echo.
-echo.    build net40            (build)
-echo.    build test-net40       (build and test)
-echo.    build coreclr          (build)
-echo.    build test-coreclr     (build and test)
-echo.    build vs               (build)
-echo.    build test-vs          (build and test)
-echo.    build all              (build and test)
+echo.    build net40            (build compiler for .NET Framework)
+echo.    build coreclr          (build compiler for .NET Core)
+echo.    build vs               (build Visual Studio IDE Tools)
+echo.    build all              (build everything)
+echo.    build test             (build and test default targets)
+echo.    build net40 test       (build and test net40)
+echo.    build coreclr test     (build and test net40)
+echo.    build vs test          (build and test net40)
+echo.    build all test         (build and test net40)
 echo.
 echo The example below run pcls, vs and qa:
 echo.
@@ -43,7 +44,7 @@ exit /b 1
 
 :ARGUMENTS_OK
 
-set BUILD_PROTO_WITH_CORECLR_LKG=1
+set BUILD_PROTO_WITH_CORECLR_LKG=0
 
 set BUILD_PROTO=0
 set BUILD_NET40=0
@@ -55,17 +56,23 @@ set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
-set TEST_NET40_COMPILERUNIT=0
+set TEST_NET40_COMPILERUNIT_SUITE=0
 set TEST_NET40_COREUNIT=0
-set TEST_CORECLR_COREUNIT=0
+set TEST_NET40_FSHARP_SUITE=0
+set TEST_NET40_FSHARPQA_SUITE=0
+set TEST_CORECLR_COREUNIT_SUITE=0
+set TEST_CORECLR_FSHARP_SUITE=0
 set TEST_PORTABLE_COREUNIT=0
-set TEST_VS=0
-set TEST_FSHARP_SUITE=0
-set TEST_FSHARPQA_SUITE=0
+set TEST_VS_IDEUNIT_SUITE=0
 set TEST_TAGS=
 set SKIP_EXPENSIVE_TESTS=1
 
+REM ------------------ Parse all arguments -----------------------
+
 setlocal enableDelayedExpansion
+
+set _autoselect=1
+set _autoselect_tests=0
 set /a counter=0
 for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
@@ -73,12 +80,41 @@ for /l %%x in (1 1 9) do (
 )
 for %%i in (%BUILD_FSC_DEFAULT%) do ( call :SET_CONFIG %%i )
 
+REM apply defaults
+
+if /i '%_autoselect%' == '1' (
+    set BUILD_NET40=1
+)
+
+if /i '%_autoselect_tests%' == '1' (
+    if /i '%BUILD_NET40%' == '1' (
+        set TEST_NET40_COMPILERUNIT_SUITE=1
+        set TEST_NET40_COREUNIT=1
+        set TEST_NET40_FSHARP_SUITE=1
+        set TEST_NET40_FSHARPQA_SUITE=1
+    )
+
+    if /i '%BUILD_CORECLR%' == '1' (
+        set TEST_CORECLR_COREUNIT_SUITE=1
+    )
+
+    if /i '%BUILD_PORTABLE%' == '1' (
+        set TEST_PORTABLE_COREUNIT=1
+    )
+
+    if /i '%BUILD_VS%' == '1' (
+        set TEST_VS_IDEUNIT_SUITE=1
+    )
+)
+
 setlocal disableDelayedExpansion
 echo.
 
 rem disable setup build by setting FSC_BUILD_SETUP=0
 if /i '%FSC_BUILD_SETUP%' == '' (set FSC_BUILD_SETUP=1) 
 goto :MAIN
+
+REM ------------------ Procedure to parse one argument -----------------------
 
 :SET_CONFIG
 set ARG=%~1
@@ -88,27 +124,95 @@ if "%2" == "" if not "%ARG%" == "default" goto :EOF
 echo Parse argument %ARG%
 
 
-if /i '%ARG%' == 'default' (
-    set BUILD_NET40=1
-    set BUILD_PORTABLE=1
-    set BUILD_VS=1
-)
-
 if /i '%ARG%' == 'net40' (
+    set _autoselect=0
     set BUILD_NET40=1
 )
 
 if /i '%ARG%' == 'coreclr' (
+    set _autoselect=0
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
 )
 
 if /i '%ARG%' == 'pcls' (
+    set _autoselect=0
     set BUILD_PORTABLE=1
     set TEST_PORTABLE_COREUNIT=1
 )
 
 if /i '%ARG%' == 'vs' (
+    set _autoselect=0
+    set BUILD_NET40=1
     set BUILD_VS=1
+)
+
+if /i '%ARG%' == 'all' (
+    set _autoselect=0
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=1
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
+
+)
+
+if /i '%ARG%' == 'microbuild' (
+    set _autoselect=0
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_CORECLR=0
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
+    
+    set TEST_NET40_COMPILERUNIT_SUITE=1
+    set TEST_NET40_COREUNIT=1
+    set TEST_NET40_FSHARP_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
+    set TEST_CORECLR_COREUNIT_SUITE=0
+    set TEST_CORECLR_FSHARP_SUITE=0
+    set TEST_PORTABLE_COREUNIT=1
+    set TEST_VS_IDEUNIT_SUITE=1
+)
+
+
+REM These divide 'ci' into two chunks which can be done in parallel
+if /i '%ARG%' == 'ci_part1' (
+    set _autoselect=0
+
+    REM what we do
+    set BUILD_PROTO=1
+    set BUILD_NET40=1
+    set BUILD_PORTABLE=1
+    set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
+    set TEST_NET40_COMPILERUNIT_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
+    set TEST_VS_IDEUNIT_SUITE=1
+
+)
+
+if /i '%ARG%' == 'ci_part2' (
+    set _autoselect=0
+
+    REM what we do
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+	set BUILD_PROTO=1
+	set BUILD_NET40=1
+    set BUILD_CORECLR=1
+    set BUILD_PORTABLE=1
+
+    set TEST_NET40_COREUNIT=1
+    set TEST_NET40_FSHARP_SUITE=1
+    set TEST_PORTABLE_COREUNIT=1
+    set TEST_CORECLR_COREUNIT_SUITE=1
+
+)
+
+if /i '%ARG%' == 'proto' (
+    set BUILD_PROTO=1
 )
 
 if /i '%ARG%' == 'diag' (
@@ -124,7 +228,12 @@ if /i '%ARG%' == 'release' (
     set BUILD_CONFIG=release
 )
 
-if /i '%ARG%' == 'all' (
+if /i '%ARG%' == 'test' (
+    set _autoselect_tests=1
+)
+
+if /i '%ARG%' == 'test-all' (
+    set _autoselect=0
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
@@ -132,171 +241,69 @@ if /i '%ARG%' == 'all' (
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
 
-    set TEST_NET40_COMPILERUNIT=1
+    set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT=1
+    set TEST_NET40_FSHARP_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_PORTABLE_COREUNIT=1
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=1
-    set TEST_CORECLR_COREUNIT=1
-    set TEST_VS=1
+    set TEST_CORECLR_COREUNIT_SUITE=1
+    set TEST_VS_IDEUNIT_SUITE=1
 
     set SKIP_EXPENSIVE_TESTS=0
-)
-
-if /i '%ARG%' == 'protofx' (
-    set BUILD_PROTO_WITH_CORECLR_LKG=0
-    set BUILD_PROTO=1
-)
-
-if /i '%ARG%' == 'microbuild' (
-    set BUILD_PROTO=1
-    set BUILD_NET40=1
-    set BUILD_CORECLR=0
-    set BUILD_PORTABLE=1
-    set BUILD_VS=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
-    
-    set TEST_NET40_COMPILERUNIT=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_CORECLR_COREUNIT=0
-    set TEST_PORTABLE_COREUNIT=1
-    set TEST_VS=1
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=1
-    set SKIP_EXPENSIVE_TESTS=1
-)
-
-if /i '%ARG%' == 'proto' (
-    set BUILD_PROTO=1
-)
-
-REM Same as 'all' 
-if /i '%ARG%' == 'ci' (
-    set SKIP_EXPENSIVE_TESTS=1
-    set BUILD_NET40=1
-    set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
-    set BUILD_VS=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
-
-    set TEST_NET40_COMPILERUNIT=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE_COREUNIT=1
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=1
-    set TEST_CORECLR_COREUNIT=1
-    set TEST_VS=0
-    set TEST_TAGS=
-)
-
-
-REM These divide 'ci' into two chunks which can be done in parallel
-if /i '%ARG%' == 'ci_part1' (
-
-    REM what we do
-    set BUILD_PROTO=1
-    set BUILD_PORTABLE=1
-    set BUILD_VS=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
-    set TEST_NET40_COMPILERUNIT=1
-    set TEST_FSHARPQA_SUITE=1
-    set TEST_VS=1
-
-    REM what we don't do
-    set BUILD_CORECLR=0
-    set TEST_NET40_COREUNIT=0
-    set TEST_PORTABLE_COREUNIT=0
-    set TEST_CORECLR_COREUNIT=0
-    set TEST_FSHARP_SUITE=0
-    set TEST_TAGS=
-    set SKIP_EXPENSIVE_TESTS=1
-)
-
-if /i '%ARG%' == 'ci_part2' (
-
-    REM what we do
-	set BUILD_PROTO=1
-    set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_PORTABLE_COREUNIT=1
-    set TEST_CORECLR_COREUNIT=1
-    set TEST_FSHARP_SUITE=1
-
-    REM what we don't do
-    set TEST_NET40_COMPILERUNIT=0
-    set TEST_FSHARPQA_SUITE=0
-    set TEST_VS=0
-    set TEST_TAGS=
-    set SKIP_EXPENSIVE_TESTS=1
 )
 
 if /i '%ARG%' == 'test-smoke' (
     REM Smoke tests are a very small quick subset of tests
 
     REM what we do
-    set TEST_FSHARP_SUITE=1
+    set TEST_NET40_FSHARP_SUITE=1
     set TEST_TAGS=Smoke
 
-    REM what we don't do
-    set TEST_NET40_COMPILERUNIT=0
-    set TEST_NET40_COREUNIT=0
-    set TEST_FSHARPQA_SUITE=0
-    set SKIP_EXPENSIVE_TESTS=1
 )
 
-if /i '%ARG%' == 'test-fsharpqa' (
+if /i '%ARG%' == 'test-net40-fsharpqa-suite' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
-    set TEST_FSHARPQA_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
 )
 
-if /i '%ARG%' == 'test-compilerunit' (
+if /i '%ARG%' == 'test-compiler-unit-suite' (
     set BUILD_NET40=1
-    set TEST_NET40_COMPILERUNIT=1
+    set TEST_NET40_COMPILERUNIT_SUITE=1
 )
 
-if /i '%ARG%' == 'test-net40' (
-    set BUILD_NET40=1
-    set BUILD_PORTABLE=1
-    set TEST_NET40_COMPILERUNIT=1
-    set TEST_NET40_COREUNIT=1
-    set TEST_FSHARP_SUITE=1
-    set TEST_FSHARPQA_SUITE=1
-    set SKIP_EXPENSIVE_TESTS=1
-)
-
-if /i '%ARG%' == 'test-coreunit' (
+if /i '%ARG%' == 'test-net40-coreunit-suite' (
     set BUILD_NET40=1
     set TEST_NET40_COREUNIT=1
 )
 
-if /i '%ARG%' == 'test-coreclr' (
+
+if /i '%ARG%' == 'test-coreclr-coreunit-suite' (
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
-    set TEST_CORECLR_COREUNIT=1
-
+    set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
-if /i '%ARG%' == 'test-pcls' (
+
+if /i '%ARG%' == 'test-pcl-coreunit-suite' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
     set TEST_PORTABLE_COREUNIT=1
 )
 
-if /i '%ARG%' == 'test-vs' (
-    set BUILD_NET40=1
-    set BUILD_VS=1
-    set TEST_VS=1
-)
 
-if /i '%ARG%' == 'test-fsharp' (
+if /i '%ARG%' == 'test-net40-fsharp-suite' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
-    set TEST_FSHARP_SUITE=1
+    set TEST_NET40_FSHARP_SUITE=1
+)
+
+if /i '%ARG%' == 'test-coreclr-fsharp-suite' (
+    set BUILD_CORECLR=1
+    set TEST_CORECLR_FSHARP_SUITE=1
 )
 
 if /i '%ARG%' == 'publicsign' (
-    set BUILD_NET40=1
     set BUILD_PUBLICSIGN=1
 )
 
@@ -318,16 +325,19 @@ echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
-echo TEST_NET40_COMPILERUNIT=%TEST_NET40_COMPILERUNIT%
+echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT=%TEST_NET40_COREUNIT%
-echo TEST_CORECLR_COREUNIT=%TEST_CORECLR_COREUNIT%
+echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
+echo TEST_NET40_FSHARPQA_SUITE=%TEST_NET40_FSHARPQA_SUITE%
+echo TEST_CORECLR_COREUNIT_SUITE=%TEST_CORECLR_COREUNIT_SUITE%
+echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
 echo TEST_PORTABLE_COREUNIT=%TEST_PORTABLE_COREUNIT%
-echo TEST_VS=%TEST_VS%
-echo TEST_FSHARP_SUITE=%TEST_FSHARP_SUITE%
-echo TEST_FSHARPQA_SUITE=%TEST_FSHARPQA_SUITE%
+echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo SKIP_EXPENSIVE_TESTS=%SKIP_EXPENSIVE_TESTS%
 echo.
+
+echo ---------------- Done with arguments, starting preparation -----------------
 
 if "%RestorePackages%"=="" ( 
     set RestorePackages=true
@@ -335,7 +345,7 @@ if "%RestorePackages%"=="" (
 
 @echo on
 
-call src\update.cmd signonly
+@call src\update.cmd signonly
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
@@ -388,15 +398,28 @@ if defined APPVEYOR (
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
 )
-set msbuildflags=/maxcpucount %_nrswitch%
+set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
+
+echo ---------------- Done with prepare, starting package restore ----------------
 
 if '%RestorePackages%' == 'true' (
     %_ngenexe% install .\.nuget\NuGet.exe  /nologo 
 
     .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+
+    if '%BUILD_VS%' == '1' (
+        .\.nuget\NuGet.exe restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    )
+
+    if '%BUILD_SETUP%' == '1' (
+        .\.nuget\NuGet.exe restore setup\packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    )
+
 )
 
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
@@ -415,44 +438,67 @@ set _nugetconfig=".nuget\nuget.config"
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 %_ngenexe% install %_nugetexe% /nologo 
 
+echo ---------------- Done with package restore, starting proto ------------------------
+
+rem Decide if Proto need building
 if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
+  if NOT EXIST Tools\lkg\fsc.exe (
+    set BUILD_PROTO=1
+  )
+)
+
+if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+  if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+    set BUILD_PROTO=1
+  )
+)
+
+
+rem Build Proto
+if '%BUILD_PROTO%' == '1' (
+  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '1' (
 
     pushd .\lkg & %_dotnetexe% restore &popd
     @if ERRORLEVEL 1 echo Error: dotnet restore failed  && goto :failure
 
     pushd .\lkg & %_dotnetexe% publish project.json -o %~dp0\Tools\lkg -r win7-x64 &popd
     @if ERRORLEVEL 1 echo Error: dotnet publish failed  && goto :failure
-)
 
-if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
-    %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-    rmdir /s /q %~dp0\Tools\lkg
-)
-
-rem copy targestfile into tools directory ... temporary fix until packaging complete.
-copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
-copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
-
-:: Build Proto
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (set BUILD_PROTO=1)
-
-:: Build
-if '%BUILD_PROTO%' == '1' (
-    %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
-    %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+    rem copy targestfile into tools directory ... temporary fix until packaging complete.
+    echo copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.FSharp.targets tools\Microsoft.FSharp.targets
+
+    echo copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+         copy src\fsharp\FSharp.Build\Microsoft.Portable.FSharp.targets tools\Microsoft.Portable.FSharp.targets
+  )
+
+  if '%BUILD_PROTO_WITH_CORECLR_LKG%' == '0' (
+
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
+    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+
+    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
     @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
+
+    rmdir /s /q %~dp0\Tools\lkg
+  )
 )
 
 
-echo ---------------- Done with proto, starting build ------------------------------------------
+
+echo ---------------- Done with proto, starting build ------------------------
 
 %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 @if ERRORLEVEL 1 echo Error: '%_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG%  /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%' failed && goto :failure
 
 
-echo ---------------- Done with build, starting update/prepare ------------------------------------------
+echo ---------------- Done with build, starting update/prepare ---------------
 
 if 'BUILD_NET40' == '1' (
     call src\update.cmd %BUILD_CONFIG% -ngen
@@ -492,88 +538,97 @@ if '%BUILD_CORECLR%' == '1' (
 )
 
 
-if 'TEST_NET40_COMPILERUNIT' == '0' and 'TEST_PORTABLE_COREUNIT' == '0' and 'TEST_CORECLR_COREUNIT' == '0' and 'TEST_VS' == '0' and 'TEST_FSHARP_SUITE' == '0' and 'TEST_FSHARPQA_SUITE' == '0' goto :finished
+if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :finished
 
-echo ---------------- Done with update, starting tests ------------------------------------------
+echo ---------------- Done with update, starting tests -----------------------
 
 
 pushd tests
 
-if '%TEST_FSHARP_SUITE%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG% fsharp %TEST_TAGS% 
+if '%TEST_NET40_FSHARP_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% net40-fsharp-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% net40-fsharp-suite %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\FSharpNunit_Error.log
-        echo Error: 'RunTests.cmd %BUILD_CONFIG% fsharp %TEST_TAGS%' failed
+        type testresults\net40-fsharp-suite-errors.log
+        echo Error: 'Running tests net40-fsharp-suite %TEST_TAGS%' failed
         goto :failed_tests
     )
 )
 
-if '%TEST_FSHARPQA_SUITE%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG% fsharpqa %TEST_TAGS% 
+if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% net40-fsharpqa-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% net40-fsharpqa-suite %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\fsharpqa_failures.log
-        echo Error: 'RunTests.cmd %BUILD_CONFIG% fsharpqa %TEST_TAGS%' failed
+        echo type testresults\net40-fsharpqa-suite-results.log
+             type testresults\net40-fsharpqa-suite-results.log
+        echo type testresults\net40-fsharpqa-suite-errors.log
+             type testresults\net40-fsharpqa-suite-errors.log
+        echo Error: 'Running tests net40-fsharpqa-suite %TEST_TAGS%' failed
         goto :failed_tests
     )
 )
 
-if '%TEST_NET40_COMPILERUNIT%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG% compilerunit %TEST_TAGS% 
+if '%TEST_NET40_COMPILERUNIT_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% net40-compilerunit-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% net40-compilerunit-suite %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\CompilerUnit_net40_Error.log
-        echo Error: 'RunTests.cmd %BUILD_CONFIG% compilerunit' failed
+        type testresults\net40-compilerunit-suite-output.log
+        type testresults\net40-compilerunit-suite-errors.log
+        echo Error: 'Running tests net40-compilerunit-suite' failed
         goto :failed_tests
     )
 )
 if '%TEST_NET40_COREUNIT%' == '1' (
-    if '%TEST_PORTABLE_COREUNIT%' == '1' (
-        call RunTests.cmd %BUILD_CONFIG% coreunitall %TEST_TAGS% 
-        @if ERRORLEVEL 1 (
-        @echo "type testresults\CoreUnit_net40_Error.log "
-            type testresults\CoreUnit_net40_Error.log 
-            echo Error: 'RunTests.cmd %BUILD_CONFIG% coreunit' failed 
-            goto :failed_tests
-        )
-    )
-    if '%TEST_PORTABLE_COREUNIT%' == '0' (
-        call RunTests.cmd %BUILD_CONFIG% coreunit %TEST_TAGS% 
-        @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_Portable_Error.log
-            echo Error: 'RunTests.cmd %BUILD_CONFIG% coreunit' failed 
-            goto :failed_tests
-        )
-    )
-)
-if '%TEST_NET40_COREUNIT%' == '0' (
-    if '%TEST_PORTABLE_COREUNIT%' == '1' (
-        call RunTests.cmd %BUILD_CONFIG% coreunitall %TEST_TAGS% 
-        @if ERRORLEVEL 1 (
-            type testresults\CoreUnit_all_Error.log
-            echo Error: 'RunTests.cmd %BUILD_CONFIG% coreunitall %TEST_TAGS%' failed 
-            goto :failed_tests
-        )
-    )
-)
-
-if '%TEST_CORECLR_COREUNIT%' == '1' (
-
-
-    call RunTests.cmd %BUILD_CONFIG% coreunitcoreclr %TEST_TAGS% 
+    echo call RunTests.cmd %BUILD_CONFIG% net40-coreunit-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% net40-coreunit-suite %TEST_TAGS% 
     @if ERRORLEVEL 1 (
-        type testresults\CoreUnit_coreclr_Error.log
-        echo Error: 'RunTests.cmd %BUILD_CONFIG% coreunitcoreclr %TEST_TAGS%' failed 
-        goto :failed_tests
-    )
-    call RunTests.cmd %BUILD_CONFIG% fsharp coreclr
-    @if ERRORLEVEL 1 (
-        type testresults\FSharp_Failures.log
-        echo Error: 'RunTests.cmd %BUILD_CONFIG% coreunitcoreclr %TEST_TAGS%' failed 
+        type testresults\net40-coreunit-suite-output.log
+        type testresults\net40-coreunit-suite-errors.log
+        echo Error: 'Running tests net40-coreunit-suite' failed 
         goto :failed_tests
     )
 )
-if '%TEST_VS%' == '1' (
-    call RunTests.cmd %BUILD_CONFIG% ideunit %TEST_TAGS% 
-    @if ERRORLEVEL 1 echo Error: 'RunTests.cmd %BUILD_CONFIG_LOWER% ideunit  %TEST_TAGS%' failed && goto :failed_tests
+if '%TEST_PORTABLE_COREUNIT%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        @echo "type testresults\portable-coreunit-suite-output.log "
+        @echo "type testresults\portable-coreunit-suite-errors.log "
+        type testresults\portable-coreunit-suite-errors.log 
+        echo Error: 'Running tests portable-coreunit-suite' failed 
+        goto :failed_tests
+    )
+)
+
+if '%TEST_CORECLR_COREUNIT_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% coreclr-coreunit-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% coreclr-coreunit-suite %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\coreclr-coreunit-suite-output.log
+        type testresults\coreclr-coreunit-suite-errors.log
+        echo Error: 'Running tests coreclr-coreunit-suite %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+)
+if '%TEST_CORECLR_FSHARP_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% coreclr-fsharp-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% coreclr-fsharp-suite %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\coreclr-fsharp-suite-output.log
+        type testresults\coreclr-fsharp-suite-errors.log
+        echo Error: 'Running tests coreclr-fsharp-suite %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
+)
+if '%TEST_VS_IDEUNIT_SUITE%' == '1' (
+    echo call RunTests.cmd %BUILD_CONFIG% vs-ideunit-suite %TEST_TAGS% 
+         call RunTests.cmd %BUILD_CONFIG% vs-ideunit-suite %TEST_TAGS% 
+    @if ERRORLEVEL 1 (
+        type testresults\vs-ideunit-suite-output.log
+        type testresults\vs-ideunit-suite-errors.log
+        echo Error: 'Running tests vs-ideunit-suite %TEST_TAGS%' failed 
+        goto :failed_tests
+    )
 )
 
 

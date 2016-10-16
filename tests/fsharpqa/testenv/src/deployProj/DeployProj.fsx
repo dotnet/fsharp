@@ -1,6 +1,5 @@
 ﻿#load "../../../../../src/buildtools/scriptlib.fsx"
 #load "crackProjectJson.fsx"
-#r "../../../../../packages/FSharp.Data.2.2.5/lib/net40/FSharp.Data.dll"
 
 open System.IO
 open FSharp.Data

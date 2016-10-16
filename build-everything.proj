@@ -59,18 +59,18 @@
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Unittests/FSharp.Compiler.Unittests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_FSHARP_SUITE)'=='1'" >
+  <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_FSHARPQA_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="fsharpqa\testenv\src\ILComparer\ILComparer.fsproj" />
-    <ProjectsWithNet40 Include="fsharpqa\testenv\src\diff\diff.fsproj" />
-    <ProjectsWithNet40 Include="fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj" />
-    <ProjectsWithNet40 Include="fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj" />
+  <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1'" >
+    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/diff/diff.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/FSharp.Compiler.Hosted/FSharp.Compiler.Hosted.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_VS)'=='1'" >
+  <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj"/>
   </ItemGroup>
 

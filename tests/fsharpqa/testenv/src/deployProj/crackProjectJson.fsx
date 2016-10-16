@@ -1,11 +1,12 @@
 ﻿module CrackProjectJson
 
-#load @"..\..\..\..\..\src\buildtools\scriptlib.fsx"
-#r @"..\..\..\..\..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll"
+#load "../../../../../src/buildtools/scriptlib.fsx"
+#r "../../../../../packages/FSharp.Data.2.2.5/lib/net40/FSharp.Data.dll"
 
 open FSharp.Data
 open FSharp.Data.JsonExtensions 
 
+/// Collects references from project.json.lock
 let collectReferences (isVerbose, packagesDir, targetPlatformName, lockFile:string, isForExecute) = 
     let setPathSeperators (path:string) = path.Replace('/', '\\')
 
