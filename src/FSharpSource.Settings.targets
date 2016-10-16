@@ -86,7 +86,6 @@
   </PropertyGroup> 
 
   <PropertyGroup>
-    <FsiToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsiToolPath>
     <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
     <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
     <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
@@ -96,6 +95,10 @@
     <RoslynVersion>2.0.0-beta6-61005-05</RoslynVersion>
     <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
+
+    <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.10\tools</FsiToolPath>
   </PropertyGroup>
 
 </Project>

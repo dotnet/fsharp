@@ -1,24 +1,11 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <PropertyGroup>
-    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-  </PropertyGroup>
 
-  <!-- Compiler: .NET 2.0 and 4.0 only -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net20' or 
-                         '$(TargetFramework)' == 'net40' or
-                         '$(TargetFramework)' == 'coreclr' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net40'">
 
-    <ProjectFiles Include="fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectFiles Include="fsharp\FSharp.Compiler\FSharp.Compiler.fsproj" />
-    <ProjectFiles Include="fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
-    <ProjectFiles Include="fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectFiles Include="fsharp\Fsc\Fsc.fsproj" />
-    <ProjectFiles Include="fsharp\fsi\Fsi.fsproj" />
-    <ProjectFiles Include="fsharp\fsiAnyCpu\FsiAnyCpu.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
+  </ItemGroup>
 
-    <ProjectFiles Include="fsharp\FSharp.Compiler.netcore.nuget\FSharp.Compiler.nuget.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <ProjectFiles Include="fsharp\FSharp.Compiler.Host.netcore.nuget\FSharp.Compiler.Host.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'coreclr'">
   </ItemGroup>
 
   <Import Project="root.traversal.targets"/>
