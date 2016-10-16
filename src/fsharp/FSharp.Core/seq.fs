@@ -995,6 +995,9 @@ namespace Microsoft.FSharp.Collections
                             if components.ProcessNext (enumerator.Current) then
                                 f result.Current
 
+                        (Helpers.upcastISeqComponent components).OnComplete ()
+
+
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1007,6 +1010,8 @@ namespace Microsoft.FSharp.Collections
                         while (not result.Halted) && (enumerator.MoveNext ()) do
                             if components.ProcessNext (enumerator.Current) then
                                 state <- folder'.Invoke (state, result.Current)
+
+                        (Helpers.upcastISeqComponent components).OnComplete ()
     
                         state
 
@@ -1138,6 +1143,9 @@ namespace Microsoft.FSharp.Collections
                                 f result.Current
                             idx <- idx + 1
 
+                        (Helpers.upcastISeqComponent components).OnComplete ()
+
+
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1152,6 +1160,8 @@ namespace Microsoft.FSharp.Collections
                                 state <- folder'.Invoke (state, result.Current)
                             idx <- idx + 1
     
+                        (Helpers.upcastISeqComponent components).OnComplete ()
+
                         state
 
                 let createDelayed (delayedArray:unit->array<'T>) (current:SeqComponentFactory<'T,'U>) =
@@ -1208,7 +1218,7 @@ namespace Microsoft.FSharp.Collections
                         let rec fold lst =
                             match result.Halted, lst with
                             | true, _
-                            | false, [] -> ()
+                            | false, [] -> (Helpers.upcastISeqComponent components).OnComplete ()
                             | false, hd :: tl ->
                                 if components.ProcessNext hd then
                                     f result.Current
@@ -1227,7 +1237,9 @@ namespace Microsoft.FSharp.Collections
                         let rec fold state lst =
                             match result.Halted, lst with
                             | true, _
-                            | false, [] -> state
+                            | false, [] ->
+                                (Helpers.upcastISeqComponent components).OnComplete ()
+                                state
                             | false, hd :: tl ->
                                 if components.ProcessNext hd then
                                     fold (folder'.Invoke (state, result.Current)) tl
@@ -1278,7 +1290,7 @@ namespace Microsoft.FSharp.Collections
                         let rec fold current =
                             match result.Halted, generator current with
                             | true, _
-                            | false, None -> ()
+                            | false, None -> (Helpers.upcastISeqComponent components).OnComplete ()
                             | false, Some (item, next) ->
                                 if components.ProcessNext item then
                                     f result.Current
@@ -1297,7 +1309,9 @@ namespace Microsoft.FSharp.Collections
                         let rec fold state current =
                             match result.Halted, generator current with
                             | true, _
-                            | false, None -> state
+                            | false, None ->
+                                (Helpers.upcastISeqComponent components).OnComplete ()
+                                state
                             | false, Some (item, next) ->
                                 if components.ProcessNext item then
                                     fold (folder'.Invoke (state, result.Current)) next
@@ -1391,6 +1405,8 @@ namespace Microsoft.FSharp.Collections
 
                             idx <- idx + 1
 
+                        (Helpers.upcastISeqComponent components).OnComplete ()
+
                     override this.Fold<'State> (folder:'State->'U->'State) (initialState:'State) : 'State =
                         let folder' = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
                         
@@ -1411,6 +1427,8 @@ namespace Microsoft.FSharp.Collections
                                 state <- folder'.Invoke (state, result.Current)
 
                             idx <- idx + 1
+
+                        (Helpers.upcastISeqComponent components).OnComplete ()
     
                         state
 
