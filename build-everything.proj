@@ -43,19 +43,19 @@
 
   <!-- +++++++++++++++++++++++ Project selection for testing +++++++++++++++++++++++++++++++ -->
 
-  <ItemGroup Condition="'$(TEST_NET40_COREUNIT)'=='1'" >
+  <ItemGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT)'=='1'">
+  <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_PORTABLE_COREUNIT)'=='1'" >
+  <ItemGroup Condition="'$(TEST_PORTABLE_COREUNIT_SUITE)'=='1'" >
     <ProjectsWithPortableFrameworks Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT)'=='1'" >
+  <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Unittests/FSharp.Compiler.Unittests.fsproj"/>
   </ItemGroup>
 

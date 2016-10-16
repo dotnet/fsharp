@@ -62,7 +62,7 @@ set TEST_NET40_FSHARP_SUITE=0
 set TEST_NET40_FSHARPQA_SUITE=0
 set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
-set TEST_PORTABLE_COREUNIT=0
+set TEST_PORTABLE_COREUNIT_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
 set TEST_TAGS=
 set SKIP_EXPENSIVE_TESTS=1
@@ -99,7 +99,7 @@ if /i '%_autoselect_tests%' == '1' (
     )
 
     if /i '%BUILD_PORTABLE%' == '1' (
-        set TEST_PORTABLE_COREUNIT=1
+        set TEST_PORTABLE_COREUNIT_SUITE=1
     )
 
     if /i '%BUILD_VS%' == '1' (
@@ -138,7 +138,7 @@ if /i '%ARG%' == 'coreclr' (
 if /i '%ARG%' == 'pcls' (
     set _autoselect=0
     set BUILD_PORTABLE=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
 )
 
 if /i '%ARG%' == 'vs' (
@@ -173,7 +173,7 @@ if /i '%ARG%' == 'microbuild' (
     set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=0
     set TEST_CORECLR_FSHARP_SUITE=0
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
 )
 
@@ -206,7 +206,7 @@ if /i '%ARG%' == 'ci_part2' (
 
     set TEST_NET40_COREUNIT=1
     set TEST_NET40_FSHARP_SUITE=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 
 )
@@ -245,7 +245,7 @@ if /i '%ARG%' == 'test-all' (
     set TEST_NET40_COREUNIT=1
     set TEST_NET40_FSHARP_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
 
@@ -288,7 +288,7 @@ if /i '%ARG%' == 'test-coreclr-coreunit-suite' (
 if /i '%ARG%' == 'test-pcl-coreunit-suite' (
     set BUILD_NET40=1
     set BUILD_PORTABLE=1
-    set TEST_PORTABLE_COREUNIT=1
+    set TEST_PORTABLE_COREUNIT_SUITE=1
 )
 
 
@@ -331,7 +331,7 @@ echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
 echo TEST_NET40_FSHARPQA_SUITE=%TEST_NET40_FSHARPQA_SUITE%
 echo TEST_CORECLR_COREUNIT_SUITE=%TEST_CORECLR_COREUNIT_SUITE%
 echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
-echo TEST_PORTABLE_COREUNIT=%TEST_PORTABLE_COREUNIT%
+echo TEST_PORTABLE_COREUNIT_SUITE=%TEST_PORTABLE_COREUNIT_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo TEST_TAGS=%TEST_TAGS%
 echo SKIP_EXPENSIVE_TESTS=%SKIP_EXPENSIVE_TESTS%
@@ -538,7 +538,7 @@ if '%BUILD_CORECLR%' == '1' (
 )
 
 
-if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :finished
+if 'TEST_NET40_COMPILERUNIT_SUITE' == '0' and 'TEST_PORTABLE_COREUNIT_SUITE' == '0' and 'TEST_CORECLR_COREUNIT_SUITE' == '0' and 'TEST_VS_IDEUNIT_SUITE' == '0' and 'TEST_NET40_FSHARP_SUITE' == '0' and 'TEST_NET40_FSHARPQA_SUITE' == '0' goto :finished
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -588,7 +588,7 @@ if '%TEST_NET40_COREUNIT%' == '1' (
         goto :failed_tests
     )
 )
-if '%TEST_PORTABLE_COREUNIT%' == '1' (
+if '%TEST_PORTABLE_COREUNIT_SUITE%' == '1' (
     echo call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
          call RunTests.cmd %BUILD_CONFIG% portable-coreunit-suite %TEST_TAGS% 
     @if ERRORLEVEL 1 (
