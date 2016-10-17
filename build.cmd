@@ -547,7 +547,6 @@ set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
 if not exist "%link_exe%" (
-    set saved_errorlevel=1
     echo Error: failed to find '%link_exe%' use nuget to restore the VisualCppTools package
     goto :failed_tests
 )
@@ -560,13 +559,11 @@ if "%SKIP_EXPENSIVE_TESTS%" == "1" (
 )
 
 set FSCBINPATH=%~dp0%BUILD_CONFIG%\net40\bin
-set FSI_TOOL=%_fsiexe%
 set RESULTSDIR=%~dp0tests\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 ECHO FSCBINPATH=%FSCBINPATH%
 ECHO RESULTSDIR=%RESULTSDIR%
-ECHO FSI_TOOL=%FSI_TOOL%
 ECHO link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
@@ -662,7 +659,7 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 
 	where.exe perl > NUL 2> NUL
 	if errorlevel 1 (
-		echo Error: perl is not in the PATH
+		echo Error: perl is not in the PATH, it is required for the net40-fsharpqa test suite
 		goto :failed_tests
 	)
 

@@ -93,6 +93,8 @@ let singleTestBuild cfg testDir =
     let echo_tofile = Commands.echo_tofile testDir
     let copy_y f = Commands.copy_y testDir f >> checkResult
     let type_append_tofile = Commands.type_append_tofile testDir
+    let fsi = Printf.ksprintf (fun flags l -> Commands.fsi exec cfg.FSI flags l)
+    let fsi_flags = cfg.fsi_flags
     let fsc = Printf.ksprintf (fun flags -> Commands.fsc exec cfg.FSC flags)
     let fsc_flags = cfg.fsc_flags
     let peverify = Commands.peverify exec cfg.PEVERIFY "/nologo"
@@ -178,6 +180,19 @@ let singleTestBuild cfg testDir =
         //     "%PEVERIFY%" testX64.exe
         // )
         do! doPeverify "testX64.exe"
+        }
+
+    let doBasicCoreCLR () = attempt {
+        let platform = "win7-x64"
+        //let For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
+        do! fsi """%s --targetPlatformName:.NETStandard,Version=v1.6/%s --source:"coreclr_utilities.fs" --source:"%s" --packagesDir:..\..\packages --projectJsonLock:%s --fsharpCore:%s --define:CoreClr --define:NetCore --compilerPath:%s --copyCompiler:yes --verbose:verbose --exec """
+               fsi_flags
+               platform
+               (String.concat " " sources)
+               (__SOURCE_DIRECTORY__ ++ "project.lock.json")
+               (__SOURCE_DIRECTORY__ ++ sprintf @"..\testbin\%s\coreclr\fsc\%s\FSharp.Core.dll" cfg.BUILD_CONFIG platform)
+               (__SOURCE_DIRECTORY__ ++ sprintf @"..\testbin\%s\coreclr\fsc\%s" cfg.BUILD_CONFIG  platform)
+               [__SOURCE_DIRECTORY__ ++ "..\fsharpqa\testenv\src\deployProj\CompileProj.fsx"]
         }
 
 
@@ -328,6 +343,7 @@ let singleTestBuild cfg testDir =
         | FSI_STDIN_OPT -> doNOOP
         | FSI_STDIN_GUI -> doNOOP
         | SPANISH -> doBasic
+        | FSC_CORECLR -> doBasicCoreCLR
         | FSC_BASIC -> doBasic
         | FSC_BASIC_64 -> doBasic64
         | GENERATED_SIGNATURE -> doGeneratedSignature

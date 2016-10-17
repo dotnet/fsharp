@@ -8,7 +8,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>4239efea-e746-446a-bf7a-51fcbab13946</ProjectGuid>
+    <ProjectGuid>{2e60864a-e3ff-4bcc-810f-dc7c34e6b236}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>ILComparer</RootNamespace>
     <AssemblyName>ILComparer</AssemblyName>
@@ -46,6 +46,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>

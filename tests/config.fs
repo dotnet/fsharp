@@ -203,9 +203,6 @@ let config envVars =
         | Some p -> Some p
         | None -> where "fsc.exe" |> Option.map Path.GetDirectoryName
 
-    // SET CLIFLAVOUR=cli\4.5
-    let CLIFLAVOUR = @"cli\4.5"
-
     // if not exist "%FSCBinPath%\fsc.exe" call :SetFSCBinPath45
     if not (FSCBinPath |> Option.map (fun dir -> dir/"fsc.exe") |> Option.exists fileExists)
     then FSCBinPath <- SetFSCBinPath45 ()
@@ -238,10 +235,12 @@ let config envVars =
     let mutable ALINK = (envOrDefault "ALINK" "al.exe")
     // if not defined CSC    set CSC=csc.exe %csc_flags%
     let CSC = envOrDefault "CSC" "csc.exe"
+    let BUILD_CONFIG = envOrDefault "BUILD_CONFIG" "release"
 
     // REM SDK Dependencires.
     // if not defined ILDASM   set ILDASM=ildasm.exe
     let mutable ILDASM = envOrDefault "ILDASM" "ildasm.exe"
+    let mutable SN = envOrDefault "SN" "sn.exe"
     // if not defined GACUTIL   set GACUTIL=gacutil.exe
     let mutable GACUTIL = envOrDefault "GACUTIL" "gacutil.exe"
     // if not defined PEVERIFY set PEVERIFY=peverify.exe
@@ -442,6 +441,10 @@ let config envVars =
     | Some p when fileExists p -> ILDASM <- p
     | Some _ | None -> ()
         
+    match CORSDK |> Option.map (fun d -> d/"sn.exe") with
+    | Some p when fileExists p -> SN <- p
+    | Some _ | None -> ()
+        
     // IF NOT "%CORSDK%"=="" IF EXIST "%CORSDK%\gacutil.exe"         SET GACUTIL=%CORSDK%\gacutil.exe
     match CORSDK |> Option.map (fun d -> d/"gacutil.exe") with
     | Some p when fileExists p -> GACUTIL <- p
@@ -517,6 +520,7 @@ let config envVars =
       FSDIFF = FSDIFF;
       GACUTIL = GACUTIL;
       ILDASM = ILDASM;
+      SN = SN
       INSTALL_SKU = None;
       MSBUILDTOOLSPATH = None;
       MSBUILD = None;
@@ -524,6 +528,7 @@ let config envVars =
       PEVERIFY = PEVERIFY;
       RESGEN = RESGEN;
       CSC = CSC |> orBlank;
+      BUILD_CONFIG = BUILD_CONFIG;
       FSC = FSC;
       FSI = FSI;
       csc_flags = csc_flags;
@@ -551,6 +556,7 @@ let logConfig (cfg: TestConfig) =
     log "CORDIR              =%s" cfg.CORDIR
     log "CORSDK              =%s" cfg.CORSDK
     log "CSC                 =%s" cfg.CSC
+    log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
     log "csc_flags           =%s" cfg.csc_flags
     log "FSC                 =%s" cfg.FSC
     log "fsc_flags           =%s" cfg.fsc_flags

@@ -688,6 +688,58 @@ module Printing =
 
         })
 
+module SignedTests = 
+
+    [<Test>]
+    [<FSharpSuiteTestCase("","test-unsigned.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha1full.snk", "test-sha1-full-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha256full.snk", "test-sha256-full-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha512full.snk", "test-sha512-full-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha1024full.snk", "test-sha1024-full-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha1delay.snk --delaysign:yes", "test-sha1-delay-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha256delay.snk --delaysign:yes", "test-sha256-delay-cl.bsl")>]
+    [<FSharpSuiteTestCase("--keyfile:sha512delay.snk --delaysign:yes", "test-sha512-delay-cl.bsl")>]
+    // Test dumpbin with SHA 1024 bit key public signed CL
+    [<FSharpSuiteTestCase("--keyfile:sha1024delay.snk --delaysign:yes", "test-sha1024-delay-cl.bsl")>]
+    // Test SHA1 key full signed  Attributes
+    [<FSharpSuiteTestCase("--define:SHA1","test-sha1-full-attributes.bsl")>]
+    // Test SHA1 key delayl signed  Attributes
+    [<FSharpSuiteTestCase("--keyfile:sha1delay.snk true --define:SHA1 --define:DELAY", "test-sha1-delay-attributes.bsl")>]
+    [<FSharpSuiteTestCase("--define:SHA256", "test-sha256-full-attributes.bsl")>]
+    // Test SHA 256 bit key delay signed  Attributes
+    [<FSharpSuiteTestCase("--define:SHA256 --define:DELAY", "test-sha256-delay-attributes.bsl")>]
+    // Test SHA 512 bit key fully signed  Attributes
+    [<FSharpSuiteTestCase("--define:SHA512", "test-sha512-full-attributes.bsl")>]
+    // Test SHA 512 bit key delay signed Attributes
+    [<FSharpSuiteTestCase("--define:SHA512 --define:DELAY", "test-sha512-delay-attributes.bsl")>]
+    // Test SHA 1024 bit key fully signed  Attributes
+    [<FSharpSuiteTestCase("--define:SHA1024", "test-sha1024-full-attributes.bsl")>]
+    // Test dumpbin with SHA 1024 bit key public signed CL
+    [<FSharpSuiteTestCase("--keyfile:sha1024delay.snk true", "test-sha1024-public-cl.bsl")>]
+    let signedtest args bslfile = attempt {
+    
+        let { Directory = dir; Config = cfg } = testContext ()
+        let cfg = { cfg with fsc_flags=cfg.fsc_flags + " " + args }
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
+        let ``exec >>`` f p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Append(f)); Input = None} p 
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
+        let fsc_flags = cfg.fsc_flags
+        let ``sn >>`` outfile = ``exec >>`` outfile cfg.SN
+        let fsdiff a b = 
+            let diffFile = Path.ChangeExtension(a, ".diff")
+            Commands.fsdiff (``exec >>`` diffFile) cfg.FSDIFF a b
+
+        let outfile = Path.ChangeExtension(bslfile,"sn.out") 
+        let exefile = Path.ChangeExtension(bslfile,"exe") 
+        do File.WriteAllLines(outfile,["sn -q stops all output except error messages";
+                                       "if the output is a valid file no output is produced."
+                                       "delay-signed and unsigned produce error messages."])
+
+        do! fsc "%s -o:%s" fsc_flags exefile ["test.fs"]
+        do! ``sn >>`` outfile ("-q -vf "+exefile) |> (fun _ -> Success)
+        do! fsdiff outfile bslfile |> checkResult
+        }
+
 module Quotes = 
 
     let build cfg dir = attempt {
