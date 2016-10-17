@@ -18,15 +18,16 @@
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <ProjectGuid>{2FACEE44-48BD-40B5-A2EE-B54A0C9BB7C4}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
   </PropertyGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
-  
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx.lcl</TranslationFile>
@@ -35,23 +36,23 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  
+
   <ItemGroup>
     <VSTemplate Include="Template\Tutorial.vstemplate" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <TemplateFiles Include="Template\Tutorial.fsproj" />
     <TemplateFiles Include="Template\Tutorial.fsx" />
-    <TemplateFiles Include="Template\packages.config" />
+
     <TemplateFiles Include="Template\Tutorial.vstemplate" />
   </ItemGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
+
   <Target Name="CoreCompile" />
-  
+
   <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
     <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>

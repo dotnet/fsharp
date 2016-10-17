@@ -57,4 +57,7 @@
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
   </Assets>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
 </PackageManifest>

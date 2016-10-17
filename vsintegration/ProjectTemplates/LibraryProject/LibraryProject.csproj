@@ -18,13 +18,14 @@
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <ProjectGuid>{01678CDA-A11F-4DEE-9344-2EDF91CF1AE7}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
   </PropertyGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
   
   <ItemGroup>
@@ -45,21 +46,20 @@
   <ItemGroup>
     <VSTemplate Include="Template\Library.vstemplate" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <TemplateFiles Include="Template\AssemblyInfo.fs" />
     <TemplateFiles Include="Template\Library.fsproj" />
     <TemplateFiles Include="Template\Library.vstemplate" />
     <TemplateFiles Include="Template\Library1.fs" />
-    <TemplateFiles Include="Template\packages.config" />
     <TemplateFiles Include="Template\Script.fsx" />
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
+
   <Target Name="CoreCompile" />
-  
+
   <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
     <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>

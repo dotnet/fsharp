@@ -8,6 +8,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
@@ -177,6 +178,11 @@ module internal VsTextLines =
     let GetFilename(buffer : IVsTextLines) =
         let ud = (box buffer) :?> IVsUserData
         VsUserData.GetBufferMonker(ud)
+
+    /// Get the string contents of a given buffer (the current snapshot).
+    let GetFileContents(buffer: IVsTextBuffer, editorAdaptersFactoryService: IVsEditorAdaptersFactoryService) =
+        let dataBuffer = editorAdaptersFactoryService.GetDataBuffer(buffer)
+        dataBuffer.CurrentSnapshot.GetText()
     
 
 module internal VsRunningDocumentTable = 

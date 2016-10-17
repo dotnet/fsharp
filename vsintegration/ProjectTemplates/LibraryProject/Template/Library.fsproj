@@ -56,7 +56,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Library1.fs" />
-    <Content Include="packages.config" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>

@@ -161,6 +161,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
   <Import Project="$(VsSdkTargetsDir)\Microsoft.VsSDK.targets" />
   <PropertyGroup>
     <BuildingProject>true</BuildingProject>

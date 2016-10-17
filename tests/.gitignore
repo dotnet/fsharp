@@ -1,5 +1,5 @@
 FSharp_*
-FSharpQA_*
+net40-fsharpqa-suite-*
 CoreUnit_*
 TestResults
 *.il

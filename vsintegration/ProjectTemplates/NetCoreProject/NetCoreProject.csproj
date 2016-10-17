@@ -18,6 +18,7 @@
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <ProjectGuid>{5B739CF3-1116-4EB4-B598-6C16BEA81CE5}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -41,25 +42,25 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  
+
   <ItemGroup>
     <VSTemplate Include="Template\NETCore7PortableLibrary.vstemplate" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <TemplateFiles Include="Template\AssemblyInfo.fs" />
     <TemplateFiles Include="Template\NETCore7PortableLibrary.vstemplate" />
     <TemplateFiles Include="Template\PortableLibrary.fsproj" />
     <TemplateFiles Include="Template\PortableLibrary1.fs" />
     <TemplateFiles Include="Template\Script.fsx" />
-    <TemplateFiles Include="Template\packages.config" />
+
   </ItemGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
+
   <Target Name="CoreCompile" />
-  
+
   <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
     <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>

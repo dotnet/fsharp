@@ -22,6 +22,7 @@ type options =
    embeddedPDB: bool
    embedAllSource: bool
    embedSourceList: string list
+   sourceLink: string
    signer : ILStrongNameSigner option
    fixupOverlappingSequencePoints : bool
    emitTailcalls: bool

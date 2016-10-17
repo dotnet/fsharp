@@ -17,8 +17,16 @@
     <Project File="PortableLibrary.fsproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" TargetFileName="AssemblyInfo.fs">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="PortableLibrary1.fs">PortableLibrary1.fs</ProjectItem>
-      <ProjectItem ReplaceParameters="false">packages.config</ProjectItem>
       <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
     </Project>
   </TemplateContent>
+  <WizardExtension>
+    <Assembly>NuGet.VisualStudio.Interop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
+  </WizardExtension>
+  <WizardData>
+    <packages repository="extension" repositoryId="VisualFSharp">
+      <package id="System.ValueTuple" version="4.0.0-rc3-24212-01" targetFramework="net452" />
+     </packages>
+  </WizardData>
 </VSTemplate>

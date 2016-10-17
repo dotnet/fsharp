@@ -3,7 +3,7 @@
     <metadata>
         <id>Microsoft.FSharp.Core.netcore</id>
         <description>
-            .NET Core compatible version of the fsharp core library fsharp.core.dll
+            .NET Core compatible version of the fsharp core library FSharp.Core.dll
             Supported Platforms: - .NET Core (netstandard1.6)
         </description>
         <language>en-US</language>

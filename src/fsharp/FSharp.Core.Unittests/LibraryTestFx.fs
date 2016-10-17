@@ -77,7 +77,7 @@ module SurfaceArea =
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
     
-        // get current fsharp.core
+        // get current FSharp.Core
         let asm = 
             #if portable7 || portable78 || portable259 || coreclr
             typeof<int list>.GetTypeInfo().Assembly

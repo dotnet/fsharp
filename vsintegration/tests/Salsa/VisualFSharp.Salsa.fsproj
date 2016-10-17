@@ -77,7 +77,6 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Platform.VSEditor.$(RoslynVSPackagesVersion)\lib\net46\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Diagnostics.Measurement" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
@@ -148,4 +147,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
 </Project>

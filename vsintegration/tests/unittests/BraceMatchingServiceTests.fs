@@ -140,3 +140,16 @@ type BraceMatchingServiceTests()  =
             \" )endsInString <startsInString \" +
             + >startsInString"
         this.VerifyNoBraceMatch(code, startMarker)
+        
+    [<Test>]
+    member this.BraceMatchingAtEndOfLine_Bug1597() = 
+        // https://github.com/Microsoft/visualfsharp/issues/1597
+        let code = """
+[<EntryPoint>]
+let main argv = 
+    let arg1 = ""
+    let arg2 = ""
+    let arg3 = ""
+    (printfn "%A '%A' '%A'" (arg1) (arg2) (arg3))endBrace
+    0 // return an integer exit code"""
+        this.VerifyBraceMatch(code, "(printfn", ")endBrace")

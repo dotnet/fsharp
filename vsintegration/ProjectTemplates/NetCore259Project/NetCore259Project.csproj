@@ -18,15 +18,16 @@
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+    <ProjectGuid>{D9D95330-3626-4199-B7AF-17B8E4AF6D87}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
   </PropertyGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
-  
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\AssemblyInfo.fs.lcl</TranslationFile>
@@ -41,25 +42,26 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  
+
   <ItemGroup>
     <VSTemplate Include="Template\NETCore259PortableLibrary.vstemplate" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <TemplateFiles Include="Template\AssemblyInfo.fs" />
     <TemplateFiles Include="Template\NETCore259PortableLibrary.vstemplate" />
     <TemplateFiles Include="Template\PortableLibrary.fsproj" />
     <TemplateFiles Include="Template\PortableLibrary1.fs" />
-    <TemplateFiles Include="Template\packages.config" />
+
     <TemplateFiles Include="Template\Script.fsx" />
   </ItemGroup>
-  
+
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
-  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  
+
+	  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
   <Target Name="CoreCompile" />
-  
+
   <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
     <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
   </Target>

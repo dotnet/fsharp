@@ -14,7 +14,7 @@ type internal FSharpBraceMatchingService() =
     static member GetBraceMatchingResult(sourceText, fileName, options, position) = async {
         let isPositionInRange(range) =
             let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
-            span.Start <= position && position <= span.End
+            span.Start <= position && position < span.End
         let! matchedBraces = FSharpChecker.Instance.MatchBracesAlternate(fileName, sourceText.ToString(), options)
 
         return matchedBraces |> Seq.tryFind(fun(left, right) -> isPositionInRange(left) || isPositionInRange(right))

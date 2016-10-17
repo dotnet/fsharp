@@ -1,33 +1,21 @@
 # F# Compiler, Core Library and Visual F# Tools Tests
 
+## Quick start: Running Tests
+
+To run tests, use variations such as the following, depending on which test suite and build configuration you want:
+
+    build.cmd test
+    build.cmd net40 test
+    build.cmd coreclr test
+    build.cmd vs test
+    build.cmd all test
+
 ## Prerequisites
 
 In order to run the FSharpQA suite, you will need to install [Perl](http://www.perl.org/get.html) (ActiveState Perl 5.16.3 is known to work fine).
 Perl must be included in the `%PATH%` for the below steps to work. It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which require administrative privileges.
 
 The Perl requirement is gradually being removed.
-
-## Quick start: Running Tests
-
-To run tests, use variations such as the following, depending on which test suite and build configuration you want:
-
-    build.cmd compiler,smoke
-    build.cmd compiler
-    build.cmd ci
-    build.cmd all
-    build.cmd debug,compiler
-    build.cmd debug,ci
-    build.cmd debug,all
-
-Default is `ci`
-
-* ``ci`` = the build and tests done by continuous integration
-* ``compiler`` = build the compiler 
-* ``compiler,smoke`` = build the compiler and run some smoke tests
-* ``debug`` = use Debug configuration instead of Release
-* ``pcls`` = build and test the Portable PCL libraries for FSharp.Core
-* ``build_only`` = build, don't test
-* ``all`` = build and test everything
 
 ## Test Suites
 
@@ -68,23 +56,7 @@ extension or the command line via `nunit3-console.exe`.
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
 using the '--x86' flag to `nunit3-console.exe`
 
-### RunTests.cmd
-
-The script `tests\RunTests.cmd` is used to execute the suites. It's used like this:
-
-    RunTests.cmd <debug|release> fsharp [tags to run] [tags not to run]
-    RunTests.cmd <debug|release> fsharpqa [tags to run] [tags not to run]
-    RunTests.cmd <debug|release> compilerunit
-    RunTests.cmd <debug|release> coreunit
-    RunTests.cmd <debug|release> coreunitportable47
-    RunTests.cmd <debug|release> coreunitportable7
-    RunTests.cmd <debug|release> coreunitportable78
-    RunTests.cmd <debug|release> coreunitportable259
-    RunTests.cmd <debug|release> ideunit
-
-`RunTests.cmd` sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
-
-All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching `FSharp_*.*`, `FSharpQA_*.*`, `CompilerUnit_*.*`, `CoreUnit_*.*`, `IDEUnit_*.*`, e.g. `FSharpQA_Results.log` or `FSharp_Failures.log`.
+### Test lists
 
 For the FSharp and FSharpQA suites, the list of test areas and their associated "tags" is stored at
 
@@ -95,12 +67,15 @@ Tags are in the left column, paths to to corresponding test folders are in the r
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call `RunTests.cmd <debug|release> <fsharp|fsharpqa> RERUN`.
 
-If you want to specify multiple tags to run or not run, pass them comma-delimited and enclosed in double quotes, e.g. `RunTests.cmd debug fsharp "Core01,Core02"`. 
-From a Powershell environment, make sure the double quotes are passed literally, e.g. `.\RunTests.cmd debug fsharp '"Core01,Core02"'`
- or `.\RunTests.cmd --% debug fsharp "Core01,Core02"`.
+### Logs and output
 
-`RunTests.cmd` is mostly just a simple wrapper over `tests\fsharpqa\testenv\bin\RunAll.pl`, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking `RunAll.pl` directly.  
-Run `perl tests\fsharpqa\testenv\bin\RunAll.pl -?` to see a full list of flags and options.
+All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching
+
+    net40-fsharp-suite-*.*
+    net40-fsharpqa-suite-*.*
+    net40-compilerunit-suite-*.*
+    net40-coreunit-suite-*.*
+    vs-ideunit-suite-*.*
 
 ### Other Tips
 

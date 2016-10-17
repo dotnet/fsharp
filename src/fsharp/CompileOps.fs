@@ -1605,7 +1605,7 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     let fsCoreName = GetFSharpCoreLibraryName()
 #if FX_RESHAPED_REFLECTION
     // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
-    // So use the fsharp.core.dll from alongside the fsc compiler.
+    // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
     let fscCoreLocation = 
         let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
@@ -2072,6 +2072,7 @@ type TcConfigBuilder =
       mutable embeddedPDB : bool
       mutable embedAllSource : bool
       mutable embedSourceList : string list 
+      mutable sourceLink : string
 
       mutable ignoreSymbolStoreSequencePoints : bool
       mutable internConstantStrings : bool
@@ -2243,6 +2244,7 @@ type TcConfigBuilder =
           embeddedPDB = false
           embedAllSource = false
           embedSourceList = []
+          sourceLink = ""
           ignoreSymbolStoreSequencePoints = false
           internConstantStrings = true
           extraOptimizationIterations = 0
@@ -2560,7 +2562,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | _ -> res
     let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
-    // If either mscorlib.dll/System.Runtime.dll or fsharp.core.dll are explicitly specified then we require the --noframework flag.
+    // If either mscorlib.dll/System.Runtime.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
     // not have System.Web.dll.
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
@@ -2732,6 +2734,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.embeddedPDB  = data.embeddedPDB
     member x.embedAllSource  = data.embedAllSource
     member x.embedSourceList  = data.embedSourceList
+    member x.sourceLink  = data.sourceLink
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations
@@ -2811,7 +2814,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 #endif
                 try 
                     match tcConfig.resolutionEnvironment with
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
+#if TODO_REWORK_ASSEMBLY_LOAD
+                // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+#else
                     | ReferenceResolver.RuntimeLike ->
                         [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()] 
 #endif
@@ -4854,10 +4859,11 @@ module private ScriptPreprocessClosure =
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
             | CodeContext.Editing -> ReferenceResolver.DesignTimeLike
-#if FX_MSBUILDRESOLVER_RUNTIMELIKE
-            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
-#else
+#if TODO_REWORK_ASSEMBLY_LOAD
+            // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
             | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.CompileTimeLike
+#else
+            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
 #endif
         tcConfigB.framework <- false 
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should

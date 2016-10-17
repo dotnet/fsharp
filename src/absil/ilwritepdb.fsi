@@ -82,7 +82,7 @@ type idd =
       iddData: byte[];
       iddChunk: BinaryChunk }
 
-val generatePortablePdb : fixupSPs:bool -> embedAllSource:bool -> embedSourceList:string list -> showTimes:bool -> info:PdbData -> struct (int64 * BlobContentId * MemoryStream) 
+val generatePortablePdb : fixupSPs:bool -> embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> struct (int64 * BlobContentId * MemoryStream) 
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> struct (int64 * BlobContentId * MemoryStream)
 val embedPortablePdbInfo : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> pdbChunk:BinaryChunk -> idd[]
 val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> idd[]
