@@ -53,6 +53,7 @@
     <OutputPath>$(RootBinPath)</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
+    <DeployExtension>false</DeployExtension>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
@@ -79,6 +80,11 @@
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\System.ValueTuple.4.0.0-rc3-24212-01.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\System.ValueTuple.4.0.0-rc3-24212-01.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>

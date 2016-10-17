@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..\..\..\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -11,86 +14,62 @@
     <AssemblyName>FSharp.Compiler.Hosted</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OpenBuild Condition=" '$(OpenBuild)' == '' ">True</OpenBuild>
-    <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
-    <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
-    <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
+    <OpenDrop>$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin</OpenDrop>
+    <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>FSharp.Compiler.Hosted</Name>
+    <WarningLevel>3</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
+    <OutputPath>..\..\bin\</OutputPath>
+    <CustomOutputPath>true</CustomOutputPath>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\FSharp.Compiler.Hosted.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\FSharp.Compiler.Hosted.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Compiler.fs" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
+      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
+      <Name>FSharp.Compiler</Name>
+    </ProjectReference>
+    <Reference Include="Microsoft.DiaSymReader.PortablePdb"><HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath><Private>true</Private> </Reference>
+    <Reference Include="Microsoft.DiaSymReader"><HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Reflection.Metadata"><HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Collections.Immutable"><HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.ValueTuple"><HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\lib\netstandard1.1\System.ValueTuple.dll</HintPath><Private>true</Private></Reference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(OpenBuild)' == 'True' ">
-    <Reference Include="$(OpenDrop)\FSharp.Core.dll">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="$(OpenDrop)\FSharp.Compiler.dll">
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(OpenBuild)' != 'True' ">
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="..\..\bin\FSharp.Compiler.dll"> 
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Compiler.fs" />
-  </ItemGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(OpenBuild)' != 'True'">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets') AND '$(OpenBuild)' != 'True'">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-      <PropertyGroup Condition=" '$(OpenBuild)' == 'True' ">
-          <FscToolPath>$(OpenDrop)</FscToolPath>
-          <FSharpTargetsPath>$(OpenDrop)\Microsoft.FSharp.targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <Target Name="CopyFSharpCoreOptSigFiles" AfterTargets="Build">
+    <ItemGroup>
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.dll" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.optdata" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.sigdata" />
+      <FSharpCoreOptSigFiles Include="$(OpenDrop)\FSharp.Core.xml" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -81,6 +81,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.0.0-rc3-24212-01\System.ValueTuple.4.0.0-rc3-24212-01.nupkg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>packages\System.ValueTuple.4.0.0-rc3-24212-01.nupkg</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
