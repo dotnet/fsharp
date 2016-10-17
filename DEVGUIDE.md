@@ -7,6 +7,8 @@ To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.o
 
 The primary technical documents for the F# compiler code are
 
+* [The F# Language and Core Library RFC Process](http://fsharp.github.io/2016/09/26/fsharp-rfc-process.html)
+
 * [The F# Language Specification](http://fsharp.org/specs/language-spec/)
 
 * [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
@@ -34,7 +36,7 @@ There are various qualifiers:
     build.cmd release         -- build release (the default)
     build.cmd debug           -- build debug instead of release
 
-    build.cmd net40           -- build .NET Framework compiler 
+    build.cmd net40           -- build .NET Framework compiler (the default)
     build.cmd coreclr         -- build .NET Core compiler 
     build.cmd vs              -- build the Visual F# IDE Tools
     build.cmd pcls            -- build the PCL FSharp.Core libraries
@@ -49,11 +51,8 @@ There are various qualifiers:
     build.cmd all test        -- build all, run all tests
 
     build.cmd test-smoke      -- build, run smoke tests
-    build.cmd test-coreunit   -- build, run FSharp.Core tests
-    build.cmd test-coreclr    -- build, run .NET Core tests
-    build.cmd test-pcls       -- build, run PCL tests
-    build.cmd test-fsharp     -- build, run tests\fsharp suite
-    build.cmd test-fsharpqa   -- build, run tests\fsharpqa suite
+    build.cmd test-net40-fsharp-suite     -- build, run tests\fsharp suite for .NET Framework
+    build.cmd test-net40-fsharpqa-suite   -- build, run tests\fsharpqa suite for .NET Framework
 
 **Notes**
 To build and test Visual F# IDE Tools, you must use [Visual Studio "vNext" (aka "Dev15")](https://www.visualstudio.com/en-us/downloads/visual-studio-next-downloads-vs.aspx). This is the one after Visual Studio 2015 (aka "Dev 14").  You must also install Visual Studio SDK (also called _Visual Studio Extensibility SDK_ on the Visual Studio installer) before building Visual F# IDE Tools.
