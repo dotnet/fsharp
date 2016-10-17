@@ -84,7 +84,6 @@ let ngen exec (ngenExe: FilePath) assemblies =
     |> function None -> CmdResult.Success | Some res -> res
 
 let fsc exec (fscExe: FilePath) flags srcFiles =
-    // "%FSC%" %fsc_flags% --define:COMPILING_WITH_EMPTY_SIGNATURE -o:tmptest2.exe tmptest2.mli tmptest2.ml
     exec fscExe (sprintf "%s %s" flags (srcFiles |> Seq.ofList |> String.concat " "))
 
 let csc exec cscExe flags srcFiles =
@@ -93,11 +92,9 @@ let csc exec cscExe flags srcFiles =
 let fsi exec fsiExe flags sources =
     exec fsiExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
 
-// "%MSBUILDTOOLSPATH%\msbuild.exe" PCL.fsproj
 let msbuild exec msbuildExe flags srcFiles =
     exec msbuildExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
 
-// "%RESGEN%" /compile Resources.resx
 let resgen exec resgenExe flags sources =
     exec resgenExe (sprintf "%s %s" flags (sources |> Seq.ofList |> String.concat " "))
 

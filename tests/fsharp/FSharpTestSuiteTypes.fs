@@ -12,6 +12,7 @@ type Permutation =
     | FSI_STDIN
     | FSI_STDIN_OPT
     | FSI_STDIN_GUI
+    | FSC_CORECLR
     | FSC_BASIC
     | FSC_BASIC_64
     | GENERATED_SIGNATURE
@@ -28,6 +29,7 @@ type TestConfig =
       CORSDK : string
       CSC : string
       csc_flags : string
+      BUILD_CONFIG : string
       FSC : string
       fsc_flags : string
       FSCBinPath : string
@@ -44,6 +46,7 @@ type TestConfig =
       fsi_flags : string
       GACUTIL : string
       ILDASM : string
+      SN : string
       INSTALL_SKU : INSTALL_SKU option
       MSBUILDTOOLSPATH : string option
       NGEN : string

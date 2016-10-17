@@ -178,6 +178,22 @@ let private singleTestRun' cfg testDir =
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
+    let runFSC_CORECLR () = attempt {
+        use testOkFile = createTestOkFile () 
+(*
+:FSC_CORECLR
+@echo do :FSC_CORECLR
+  set platform=win7-x64
+  set packagesDir=%~d0%~p0..\..\packages
+  For %%A in ("%cd%") do ( Set TestCaseName=%%~nxA)
+  echo   %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe > coreclr.run.cmd
+  %CLIX% %~d0%~p0..\testbin\%flavor%\coreclr\%platform%\corerun.exe %~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
+  )
+*)
+        do! testOkFile |> NUnitConf.checkGuardExists
+        return ()
+        }
+
     // :FSC_BASIC_64
     // @echo do :FSC_BASIC_64
     let runFSC_BASIC_64 () = attempt {
@@ -294,6 +310,7 @@ let private singleTestRun' cfg testDir =
         | FSI_STDIN_OPT -> runFSI_STDIN_OPT
         | FSI_STDIN_GUI -> runFSI_STDIN_GUI
         | SPANISH -> runSPANISH
+        | FSC_CORECLR -> runFSC_CORECLR
         | FSC_BASIC -> runFSC_BASIC
         | FSC_BASIC_64 -> runFSC_BASIC_64
         | GENERATED_SIGNATURE -> runGENERATED_SIGNATURE

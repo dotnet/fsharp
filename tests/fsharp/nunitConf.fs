@@ -142,6 +142,8 @@ type public InitializeSuiteAttribute () =
 
 module FSharpTestSuite =
 
+    /// Get the tags from the first few lines of a file, e.g. the line
+    ///    #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
     let getTagsOfFile path =
         match File.ReadLines(path) |> Seq.truncate 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
         | None -> []
@@ -152,6 +154,7 @@ module FSharpTestSuite =
             |> Seq.distinct
             |> Seq.toList
 
+    /// Get the tags from a directory of files
     let getTestFileMetadata dir =
         Directory.EnumerateFiles(dir, "*.fs*")
         |> Seq.toList
@@ -175,6 +178,7 @@ module FSharpTestSuite =
         parseTestLst ( __SOURCE_DIRECTORY__/".."/"test.lst" ) 
         )
 
+    /// Get the tags from a test.lst file
     let getTestLstTags db dir =
         let normalizePath path =
             Uri(path).LocalPath
@@ -220,25 +224,17 @@ type FSharpSuiteTestAttribute(dir: string) =
                 test.Properties.Set(NUnit.Framework.Internal.PropertyNames.SkipReason, NUnit.Framework.Internal.ExceptionHelper.BuildMessage(ex))
                 test.Properties.Set(NUnit.Framework.Internal.PropertyNames.ProviderStackTrace, NUnit.Framework.Internal.ExceptionHelper.BuildStackTrace(ex))
 
-type FSharpSuiteTestCaseData =
-    inherit TestCaseData
-
-    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
-        { inherit TestCaseData(arguments) }
-        then
-            this.Properties |> FSharpTestSuite.setProps dir
-            arguments
+type FSharpSuiteTestCaseData (dir: string, [<ParamArray>] arguments: Object[]) as this = 
+     inherit TestCaseData(arguments) 
+     do this.Properties |> FSharpTestSuite.setProps dir
+        arguments
             |> Array.choose (fun a -> match a with :? Permutation as p -> Some p | _ -> None)
             |> Array.iter (fun p -> this.SetCategory(sprintf "%A" p) |> ignore)
 
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)>]
-type FSharpSuiteTestCaseAttribute =
-    inherit TestCaseAttribute
-
-    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
-        { inherit TestCaseAttribute(arguments) }
-        then
-            this.Properties |> FSharpTestSuite.setProps dir
+type FSharpSuiteTestCaseAttribute(dir: string, [<ParamArray>] arguments: Object[]) as this = 
+     inherit TestCaseAttribute(arguments)
+     do this.Properties |> FSharpTestSuite.setProps dir
 
 
 let allPermutations = 
