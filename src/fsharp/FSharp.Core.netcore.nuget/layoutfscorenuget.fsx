@@ -6,38 +6,36 @@
 #load "../../buildtools/scriptlib.fsx"
 
 try
+
     //=========================================================================================
     // Command line arguments
 
-    let usage = "usage: layoutfcsnuget.fsx -nuspec:<nuspec-path> --binaries:<binaries-dir>"
+    let usage = "usage: layoutfscorenuget.fsx -nuspec:<nuspec-path> --binaries:<binaries-dir>"
 
     let verbose     = getCmdLineArg    "--verbosity:"  "normal"
     let nuspec      = getCmdLineArg    "--nuspec:"     ""
     let bindir      = getCmdLineArg    "--bindir:"     ""
     let nuspecTitle = getBasename nuspec
-    printfn ">>%s<<" bindir
-    printfn ">>%s<<" nuspecTitle
     let layouts     = getFullPath bindir ++ "layouts" ++ nuspecTitle
     let isVerbose   = verbose = "verbose"
 
     //=========================================================================================
     // Layout nuget package
 
-    let fsharpCompilerFiles =
-        [  bindir ++ "fsc.exe"
-           bindir ++ "FSharp.Compiler.dll"
-           bindir ++ "default.win32manifest"
-           bindir ++ "fsi.exe"
-           bindir ++ "FSharp.Compiler.Interactive.Settings.dll"
-           bindir ++ "FSharp.Build.dll"
-           bindir ++ "Microsoft.FSharp.targets"
-           bindir ++ "Microsoft.Portable.FSharp.targets" ]
-    
-    //Clean intermediate directoriy
+    let fsharpCoreFiles =
+        [ bindir ++ "FSharp.Core.xml"
+          bindir ++ "FSharp.Core.dll"
+          bindir ++ "FSharp.Core.sigdata"
+          bindir ++ "FSharp.Core.optdata"
+          __SOURCE_DIRECTORY__ ++ "FSharp.Core.runtimeconfig.json" ]
+
+    //Clean intermediate directory
     deleteDirectory layouts
     makeDirectory layouts
-    for source in fsharpCompilerFiles do 
+
+    for source in fsharpCoreFiles do 
         copyFile source layouts
+
     exit 0
 
 with e -> 
