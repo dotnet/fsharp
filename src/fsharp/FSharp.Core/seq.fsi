@@ -13,6 +13,27 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
+        module SeqComposer =
+            type ISeqComponent =
+                abstract OnComplete : unit -> unit
+                abstract OnDispose : unit -> unit
+
+            type ISeqPipeline =
+                abstract StopFurtherProcessing : unit -> unit
+
+            [<AbstractClass>]
+            type SeqConsumer<'T,'U> =
+                abstract ProcessNext : input:'T -> bool
+                interface ISeqComponent
+
+            type Fold<'T> =
+                inherit SeqConsumer<'T,'T>
+                new : folder:('T->'T->'T) * initialState:'T -> Fold<'T>
+                member Folded : 'T
+
+            [<AbstractClass>]
+            type SeqEnumerable<'T> =
+                abstract member ForEach<'a when 'a :> SeqConsumer<'T,'T>> : f:(ISeqPipeline->'a) -> 'a
 
         /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
         /// <param name="source1">The first sequence.</param>
