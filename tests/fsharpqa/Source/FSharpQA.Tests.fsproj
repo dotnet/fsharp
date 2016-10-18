@@ -72,9 +72,6 @@
     <Compile Include="$(FSharpTestsRoot)\config.fs">
       <Link>config.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\update.fs">
-      <Link>update.fs</Link>
-    </Compile>
     <Compile Include="EnvLst.fs" />
     <Compile Include="nunitConf.fs" />
     <Compile Include="run.fs" />

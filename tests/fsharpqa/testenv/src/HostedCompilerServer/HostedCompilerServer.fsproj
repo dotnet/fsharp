@@ -41,7 +41,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler.Hosted\FSharp.Compiler.Hosted.fsproj"/>
     <ProjectReference Include="..\FSharp.Compiler.Hosted\FSharp.Compiler.Hosted.fsproj">
       <Project>{4fae092e-5366-43f5-85fa-71eaf66fa4a8}</Project>
       <Name>FSharp.Core</Name>

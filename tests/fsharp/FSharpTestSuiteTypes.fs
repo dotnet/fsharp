@@ -44,22 +44,11 @@ type TestConfig =
       FSDIFF : string
       FSI : string
       fsi_flags : string
-      GACUTIL : string
       ILDASM : string
       SN : string
-      INSTALL_SKU : INSTALL_SKU option
       MSBUILDTOOLSPATH : string option
       NGEN : string
       PEVERIFY : string
       RESGEN : string
-      MSBUILD : string option }
-
-and INSTALL_SKU = 
-    | Clean
-    | DesktopExpress
-    | WebExpress
-    | Ultimate
-
-type TestRunContext = 
-    { Directory: string; 
-      Config: TestConfig }
+      MSBUILD : string option 
+      Directory: string }
