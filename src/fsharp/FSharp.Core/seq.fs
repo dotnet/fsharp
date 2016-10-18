@@ -963,7 +963,6 @@ namespace Microsoft.FSharp.Collections
 
                     abstract member Compose<'U>  : (SeqComponentFactory<'T,'U>) -> IEnumerable<'U>
                     abstract member Append<'T>   : (seq<'T>) -> IEnumerable<'T>
-                    abstract member Iter         : f:('T->unit) -> unit
 
                     default this.Append source = Helpers.upcastEnumerable (AppendEnumerable [this; source])
 
@@ -1029,18 +1028,6 @@ namespace Microsoft.FSharp.Collections
                         (Helpers.upcastISeqComponent consumer).OnComplete ()
 
                         result
-
-                    override this.Iter (f:'U->unit) : unit =
-                        let enumerator = enumerable.GetEnumerator ()
-                        let result = Result<'U> ()
-    
-                        let components = current.Create result (SetResult<'U> result)
-    
-                        while (not result.Halted) && (enumerator.MoveNext ()) do
-                            if components.ProcessNext (enumerator.Current) then
-                                f result.Current
-
-                        (Helpers.upcastISeqComponent components).OnComplete ()
 
                 and AppendEnumerator<'T> (sources:list<seq<'T>>) =
                     let sources = sources |> List.rev 
@@ -1112,13 +1099,6 @@ namespace Microsoft.FSharp.Collections
 
                         result
 
-                    override this.Iter (f:'T->unit) : unit =
-                        let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
-                        let enumerator = enumerable.GetEnumerator ()
-    
-                        while enumerator.MoveNext () do
-                            f enumerator.Current
-
                 let create enumerable current =
                     Helpers.upcastEnumerable (Enumerable(enumerable, current))
 
@@ -1183,19 +1163,6 @@ namespace Microsoft.FSharp.Collections
                         (Helpers.upcastISeqComponent consumer).OnComplete ()
 
                         result
-
-                    override this.Iter (f:'U->unit) : unit =
-                        let mutable idx = 0
-                        let result = Result<'U> ()
-                        let components = current.Create result (SetResult<'U> result)
-    
-                        let array = delayedArray ()
-                        while (not result.Halted) && (idx < array.Length) do
-                            if components.ProcessNext array.[idx] then
-                                f result.Current
-                            idx <- idx + 1
-
-                        (Helpers.upcastISeqComponent components).OnComplete ()
 
                 let createDelayed (delayedArray:unit->array<'T>) (current:SeqComponentFactory<'T,'U>) =
                     Helpers.upcastEnumerable (Enumerable(delayedArray, current))
@@ -1264,23 +1231,6 @@ namespace Microsoft.FSharp.Collections
 
                         result
 
-                    override this.Iter (f:'U->unit) : unit =
-                        let result = Result<'U> ()
-                        let components = current.Create result (SetResult<'U> result)
-    
-                        let rec fold lst =
-                            match result.Halted, lst with
-                            | true, _
-                            | false, [] -> (Helpers.upcastISeqComponent components).OnComplete ()
-                            | false, hd :: tl ->
-                                if components.ProcessNext hd then
-                                    f result.Current
-                                    fold tl
-                                else
-                                    fold tl
-    
-                        fold alist
-
                 let create alist current =
                     Helpers.upcastEnumerable (Enumerable(alist, current))
 
@@ -1335,23 +1285,6 @@ namespace Microsoft.FSharp.Collections
                         iterate state
 
                         result
-
-                    override this.Iter (f:'U->unit) : unit =
-                        let result = Result<'U> ()
-                        let components = current.Create result (SetResult<'U> result)
-
-                        let rec fold current =
-                            match result.Halted, generator current with
-                            | true, _
-                            | false, None -> (Helpers.upcastISeqComponent components).OnComplete ()
-                            | false, Some (item, next) ->
-                                if components.ProcessNext item then
-                                    f result.Current
-                                    fold next
-                                else
-                                    fold next
-    
-                        fold state
 
             module Init =
                 // The original implementation of "init" delayed the calculation of Current, and so it was possible
@@ -1457,29 +1390,6 @@ namespace Microsoft.FSharp.Collections
 
                         result
 
-                    override this.Iter (iter:'U->unit) : unit =
-                        let result = Result<'U> ()
-                        let components = current.Create result (SetResult<'U> result)
-    
-                        let mutable idx = -1
-                        let terminatingIdx = getTerminatingIdx count
-
-                        let isSkipping =
-                            makeIsSkipping components
-
-                        let mutable maybeSkipping = true
-
-                        while (not result.Halted) && (idx < terminatingIdx) do
-                            if maybeSkipping then
-                                maybeSkipping <- isSkipping ()
-
-                            if (not maybeSkipping) && (components.ProcessNext (f (idx+1))) then
-                                iter result.Current
-
-                            idx <- idx + 1
-
-                        (Helpers.upcastISeqComponent components).OnComplete ()
-
                 let upto lastOption f =
                     match lastOption with
                     | Some b when b<0 -> failwith "library implementation error: upto can never be called with a negative value"
@@ -1560,12 +1470,6 @@ namespace Microsoft.FSharp.Collections
 
                         result
 
-                    override this.Iter (f:'T->unit): unit =
-                        let enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
-    
-                        while enumerator.MoveNext () do
-                            f enumerator.Current
-
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
 #else
@@ -1599,9 +1503,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
             checkNonNull "source" source
-            checkNonNull "source" source
             match source with
-            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s -> s.Iter f
+            | :? SeqComposer.Enumerable.EnumerableBase<'T> as s ->
+                s.ForEach (fun _ ->
+                    { new SeqComposer.SeqConsumer<'T,'T> () with
+                        override this.ProcessNext value =
+                            f value; true }) |> ignore
             | _ ->
                 use e = source.GetEnumerator()
                 while e.MoveNext() do
