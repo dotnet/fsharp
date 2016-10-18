@@ -244,6 +244,10 @@ if /i '%ARG%' == 'exclude' (
 	if '!EXCLUDE_TEST_SPEC_NUNIT!' == '' ( set EXCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set EXCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !EXCLUDE_TEST_SPEC_NUNIT! )
 	if '!EXCLUDE_TEST_TAGS!' == '' ( set EXCLUDE_TEST_TAGS=%ARG2% ) else (set EXCLUDE_TEST_TAGS=%ARG2%;!EXCLUDE_TEST_TAGS! )
 )
+if /i '%ARG%' == 'noskip' (
+	set EXCLUDE_TEST_SPEC_NUNIT=
+	set EXCLUDE_TEST_TAGS=
+)
 
 
 if /i '%ARG%' == 'test-all' (
@@ -578,6 +582,9 @@ if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
 if NOT "%INCLUDE_TEST_TAGS%" == "" (
     set INCLUDE_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%
 )
+if NOT "%EXCLUDE_TEST_TAGS%" == "" (
+    set EXCLUDE_ARG_RUNALL=-nottags:%EXCLUDE_TEST_TAGS%
+)
 echo WHERE_ARG_NUNIT=%WHERE_ARG_NUNIT%
 setlocal ENABLEDELAYEDEXPANSION
 
@@ -713,8 +720,8 @@ if '%TEST_NET40_FSHARPQA_SUITE%' == '1' (
 
 	popd
     if ERRORLEVEL 1 (
-        type "!OUTPUTFILE!"
-        type "!ERRORFILE!"
+        type "%RESULTSDIR%\!OUTPUTFILE!"
+        type "%RESULTSDIR%\!ERRORFILE!"
         echo Error: 'Running tests net40-fsharpqa' failed
         goto :failed_tests
     )
