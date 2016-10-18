@@ -971,8 +971,8 @@ let opsMutrec p = singleTestBuildAndRun p
 [<Test; FSharpSuiteScriptPermutations("core/nested")>]
 let nested p = singleTestBuildAndRun p
 
-[<Test; FSharpSuiteTest("core/netcore/netcore259")>]
-let netcore259 () = check (attempt {
+[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore259")>]
+let ``Run all tests using PCL profie 259 FSHarp.Core``() = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
     let envVars =
@@ -996,8 +996,8 @@ let netcore259 () = check (attempt {
     })
 
 
-[<Test; FSharpSuiteTest("core/netcore/netcore7")>]
-let netcore7 () = check (attempt {
+[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore7")>]
+let ``Run all tests using PCL profie 7 FSHarp.Core`` () = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
     let envVars =
@@ -1020,8 +1020,8 @@ let netcore7 () = check (attempt {
                 
     })
 
-[<Test; FSharpSuiteTest("core/netcore/netcore78")>]
-let netcore78 () = check (attempt {
+[<Test; Category("Expensive"); FSharpSuiteTest("core/netcore/netcore78")>]
+let ``Run all tests using PCL profie 78 FSHarp.Core``() = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
     let envVars =
@@ -1044,22 +1044,8 @@ let netcore78 () = check (attempt {
                 
     })
 
-
-[<Test; FSharpSuiteScriptPermutations("core/patterns")>]
-let patterns p = singleTestBuildAndRun p
-
-[<Test; FSharpSuiteTest("core/pinvoke")>]
-let pinvoke () = check (attempt {
-    let cfg = FSharpTestSuite.testConfig ()
-
-    do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
-   
-    do! peverifyWithArgs cfg "/nologo /MD" "test.exe"
-                
-    })
-
-[<Test; FSharpSuiteTest("core/portable")>]
-let portable () = check (attempt {
+[<Test; Category("Expensive"); FSharpSuiteTest("core/portable")>]
+let ``Run all tests using PCL profie 47 FSHarp.Core`` () = check (attempt {
     let cfg = FSharpTestSuite.testConfig ()
 
     let envVars =
@@ -1079,6 +1065,20 @@ let portable () = check (attempt {
            
     // .\ConsoleApplication1\bin\Debug\PortableTestEntry.exe
     do! exec ("."/"ConsoleApplication1"/"bin"/"Debug"/"PortableTestEntry.exe") ""
+                
+    })
+
+
+[<Test; FSharpSuiteScriptPermutations("core/patterns")>]
+let patterns p = singleTestBuildAndRun p
+
+[<Test; FSharpSuiteTest("core/pinvoke")>]
+let pinvoke () = check (attempt {
+    let cfg = FSharpTestSuite.testConfig ()
+
+    do! fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+   
+    do! peverifyWithArgs cfg "/nologo /MD" "test.exe"
                 
     })
 
