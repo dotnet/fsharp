@@ -23,13 +23,16 @@ namespace Microsoft.FSharp.Collections
 
             [<AbstractClass>]
             type SeqConsumer<'T,'U> =
+                new : unit -> SeqConsumer<'T,'U>
                 abstract ProcessNext : input:'T -> bool
                 interface ISeqComponent
 
-            type Fold<'T> =
+            [<AbstractClass>]
+            type AccumulatingConsumer<'T,'U> =
                 inherit SeqConsumer<'T,'T>
-                new : folder:('T->'T->'T) * initialState:'T -> Fold<'T>
-                member Folded : 'T
+                new : initialState:'U -> AccumulatingConsumer<'T,'U>
+                member Accumulator : 'U
+                member Accumulator : 'U with set
 
             [<AbstractClass>]
             type SeqEnumerable<'T> =
