@@ -465,16 +465,11 @@ namespace Microsoft.FSharp.Collections
                     member __.OnComplete() = ()
                     member __.OnDispose() = ()
 
-            type Fold<'T> (folder:'T->'T->'T, initialState:'T) =
+            [<AbstractClass>]
+            type AccumulatingConsumer<'T, 'U>(initialState:'U) =
                 inherit SeqConsumer<'T,'T>()
 
-                let folder = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-
-                let mutable folded = initialState
-                override __.ProcessNext input =
-                    folded <- folder.Invoke (folded, input)
-                    true
-                member __.Folded = folded
+                member val Accumulator = initialState with get, set
 
             [<AbstractClass>]
             type SeqEnumerable<'T>() =
@@ -2290,9 +2285,13 @@ namespace Microsoft.FSharp.Collections
         let inline sum (source:seq<'a>) : 'a =
             match source with
             | :? SeqComposer.SeqEnumerable<'a> as s ->
-                let summer = SeqComposer.Fold (Checked.(+), LanguagePrimitives.GenericZero)
-                s.ForEach (fun _ -> summer) |> ignore
-                summer.Folded
+                let total =
+                    s.ForEach (fun _ ->
+                        { new SeqComposer.AccumulatingConsumer<'a,'a> (LanguagePrimitives.GenericZero) with
+                            override this.ProcessNext value =
+                                this.Accumulator <- Checked.(+) this.Accumulator value
+                                true })
+                total.Accumulator
             | _ -> 
                 use e = source.GetEnumerator()
                 let mutable acc = LanguagePrimitives.GenericZero< ^a>
