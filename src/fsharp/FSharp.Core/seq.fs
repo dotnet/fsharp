@@ -488,6 +488,7 @@ namespace Microsoft.FSharp.Collections
                 let inline upcastEnumerator (t:#IEnumerator<'T>) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
                 let inline upcastEnumeratorNonGeneric (t:#IEnumerator) : IEnumerator = (# "" t : IEnumerator #)
                 let inline upcastISeqComponent (t:#ISeqComponent) : ISeqComponent = (# "" t : ISeqComponent #)
+                let inline upcastSeqConsumer (t:#SeqConsumer<'a,'b>) : SeqConsumer<'a,'b> = (# "" t : SeqConsumer<'a,'b> #)
 
 
             let seqComponentTail =
@@ -1014,7 +1015,21 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(enumerable, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) = ignore f; failwith "TBD"
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = f pipeline
+                        let consumer = current.Create pipeline result
+    
+                        use enumerator = enumerable.GetEnumerator ()
+                        while (not halted) && (enumerator.MoveNext ()) do
+                            consumer.ProcessNext enumerator.Current |> ignore
+
+                        (Helpers.upcastISeqComponent consumer).OnComplete ()
+
+                        result
 
                     override this.Iter (f:'U->unit) : unit =
                         let enumerator = enumerable.GetEnumerator ()
@@ -1098,7 +1113,23 @@ namespace Microsoft.FSharp.Collections
                     override this.Append source =
                         Helpers.upcastEnumerable (AppendEnumerable (source :: sources))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) = ignore f; failwith "TBD"
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = f pipeline
+                        let consumer = Helpers.upcastSeqConsumer result
+    
+                        let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
+                        use enumerator = enumerable.GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            consumer.ProcessNext enumerator.Current |> ignore
+
+                        (Helpers.upcastISeqComponent consumer).OnComplete ()
+
+                        result
 
                     override this.Iter (f:'T->unit) : unit =
                         let enumerable = Helpers.upcastEnumerable (AppendEnumerable sources)
@@ -1263,7 +1294,25 @@ namespace Microsoft.FSharp.Collections
                     override __.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(alist, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) = ignore f; failwith "TBD"
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = f pipeline
+                        let consumer = current.Create pipeline result
+    
+                        let rec iterate lst =
+                            match halted, lst with
+                            | true, _
+                            | false, [] -> (Helpers.upcastISeqComponent consumer).OnComplete ()
+                            | false, hd :: tl ->
+                                consumer.ProcessNext hd |> ignore
+                                iterate tl
+    
+                        iterate alist
+
+                        result
 
                     override this.Iter (f:'U->unit) : unit =
                         let result = Result<'U> ()
@@ -1337,7 +1386,25 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) = ignore f; failwith "TBD"
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = f pipeline
+                        let consumer = current.Create pipeline result
+    
+                        let rec iterate current =
+                            match halted, generator current with
+                            | true, _
+                            | false, None -> (Helpers.upcastISeqComponent consumer).OnComplete ()
+                            | false, Some (item, next) ->
+                                consumer.ProcessNext item |> ignore
+                                iterate next
+    
+                        iterate state
+
+                        result
 
                     override this.Iter (f:'U->unit) : unit =
                         let result = Result<'U> ()
@@ -1451,7 +1518,34 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'U,'V>) : IEnumerable<'V> =
                         Helpers.upcastEnumerable (new Enumerable<'T,'V>(count, f, ComposedFactory.Combine current next))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'U,'U>) = ignore f; failwith "TBD"
+                    override this.ForEach (createResult:ISeqPipeline->#SeqConsumer<'U,'U>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = createResult pipeline
+                        let consumer = current.Create pipeline result
+    
+                        let mutable idx = -1
+                        let terminatingIdx = getTerminatingIdx count
+
+                        let isSkipping =
+                            makeIsSkipping consumer
+
+                        let mutable maybeSkipping = true
+
+                        while (not halted) && (idx < terminatingIdx) do
+                            if maybeSkipping then
+                                maybeSkipping <- isSkipping ()
+
+                            if (not maybeSkipping) then
+                                consumer.ProcessNext (f (idx+1)) |> ignore
+
+                            idx <- idx + 1
+
+                        (Helpers.upcastISeqComponent consumer).OnComplete ()
+
+                        result
 
                     override this.Iter (iter:'U->unit) : unit =
                         let result = Result<'U> ()
@@ -1567,7 +1661,22 @@ namespace Microsoft.FSharp.Collections
                     override this.Compose (next:SeqComponentFactory<'T,'U>) : IEnumerable<'U> =
                         Helpers.upcastEnumerable (Enumerable<'T,'V>(count, f, next))
 
-                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) = ignore f; failwith "TBD"
+                    override this.ForEach (f:ISeqPipeline->#SeqConsumer<'T,'T>) =
+                        let mutable halted = false
+                        let pipeline =
+                            { new ISeqPipeline with member x.StopFurtherProcessing() = halted <- true }
+
+                        let result = f pipeline
+                        let consumer = Helpers.upcastSeqConsumer result
+    
+                        use enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
+    
+                        while enumerator.MoveNext () do
+                            consumer.ProcessNext enumerator.Current |> ignore
+
+                        (Helpers.upcastISeqComponent consumer).OnComplete ()
+
+                        result
 
                     override this.Iter (f:'T->unit): unit =
                         let enumerator = (Helpers.upcastEnumerable this).GetEnumerator ()
